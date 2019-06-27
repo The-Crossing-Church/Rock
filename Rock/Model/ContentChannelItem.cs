@@ -421,9 +421,28 @@ namespace Rock.Model
             {
                 ChildItems.Clear();
                 ParentItems.Clear();
+
+                DeleteRelatedSlugs( dbContext );
             }
 
             base.PreSaveChanges( dbContext, state );
+        }
+
+        /// <summary>
+        /// Delete any related slugs.
+        /// </summary>
+        /// <param name="dbContext">The database context.</param>
+        [Obsolete( "TODO Remove this once the ContentChannelItemSlugConfiguration is set to WillCascadeOnDelete( true );" )]
+        [RockObsolete( "1.10" )]
+        private void DeleteRelatedSlugs( Data.DbContext dbContext )
+        {
+            var rockContext = ( RockContext ) dbContext;
+            var contentChannelSlugSerivce = new ContentChannelItemSlugService( rockContext );
+            var slugsToDelete = contentChannelSlugSerivce.Queryable().Where( a => a.ContentChannelItemId == this.Id );
+            if ( slugsToDelete.Any() )
+            {
+                dbContext.BulkDelete( slugsToDelete );
+            }
         }
 
         /// <summary>
