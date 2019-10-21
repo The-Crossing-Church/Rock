@@ -29,261 +29,277 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.Finance
-{
-    [DisplayName( "Business List" )]
-    [Category( "Finance" )]
-    [Description( "Lists all businesses and provides filtering by business name and owner" )]
-    [LinkedPage( "Detail Page" )]
-    public partial class BusinessList : RockBlock, ICustomGridColumns
-    {
-        #region Control Methods
+namespace RockWeb.Blocks.Finance {
+  [DisplayName("Business List")]
+  [Category("Finance")]
+  [Description("Lists all businesses and provides filtering by business name and owner")]
+  [LinkedPage("Detail Page")]
+  public partial class BusinessList : RockBlock, ICustomGridColumns {
+    #region Control Methods
 
-        /// <summary>
-        /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
-        /// </summary>
-        /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
-        protected override void OnInit( EventArgs e )
-        {
-            base.OnInit( e );
+    /// <summary>
+    /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
+    /// </summary>
+    /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
+    protected override void OnInit(EventArgs e) {
+      base.OnInit(e);
 
-            bool canEdit = IsUserAuthorized( Authorization.EDIT );
+      bool canEdit = IsUserAuthorized(Authorization.EDIT);
 
-            gfBusinessFilter.ApplyFilterClick += gfBusinessFilter_ApplyFilterClick;
-            gfBusinessFilter.DisplayFilterValue += gfBusinessFilter_DisplayFilterValue;
+      gfBusinessFilter.ApplyFilterClick += gfBusinessFilter_ApplyFilterClick;
+      gfBusinessFilter.DisplayFilterValue += gfBusinessFilter_DisplayFilterValue;
 
-            gBusinessList.DataKeyNames = new string[] { "Id" };
-            gBusinessList.Actions.ShowAdd = canEdit;
-            gBusinessList.Actions.AddClick += gBusinessList_AddClick;
-            gBusinessList.GridRebind += gBusinessList_GridRebind;
-            gBusinessList.IsDeleteEnabled = canEdit;
-        }
-
-        /// <summary>
-        /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
-        /// </summary>
-        /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
-        protected override void OnLoad( EventArgs e )
-        {
-            base.OnLoad( e );
-
-            if ( !Page.IsPostBack )
-            {
-                BindFilter();
-                BindGrid();
-            }
-        }
-
-        #endregion Control Methods
-
-        #region Events
-
-        /// <summary>
-        /// Handles the DisplayFilterValue event of the gfBusinessFilter control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="Rock.Web.UI.Controls.GridFilter.DisplayFilterValueArgs"/> instance containing the event data.</param>
-        private void gfBusinessFilter_DisplayFilterValue( object sender, Rock.Web.UI.Controls.GridFilter.DisplayFilterValueArgs e )
-        {
-            switch ( e.Key )
-            {
-                case "Business Name":
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Handles the ApplyFilterClick event of the gfBusinessFilter control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        private void gfBusinessFilter_ApplyFilterClick( object sender, EventArgs e )
-        {
-            gfBusinessFilter.SaveUserPreference( "Business Name", tbBusinessName.Text );
-            if ( ddlActiveFilter.SelectedValue == "all" )
-            {
-                gfBusinessFilter.SaveUserPreference( "Active Status", string.Empty );
-            }
-            else
-            {
-                gfBusinessFilter.SaveUserPreference( "Active Status", ddlActiveFilter.SelectedValue );
-            }
-
-            // If it's there, strip the SearchTerm parameter from the query string and reload.
-            if ( !string.IsNullOrWhiteSpace( PageParameter( "SearchTerm" ) ) )
-            {
-                var parameters = System.Web.HttpUtility.ParseQueryString( Request.Url.Query );
-                parameters.Remove( "SearchTerm" );
-                string url = Request.Url.AbsolutePath + ( parameters.Count > 0 ? "?" + parameters.ToString() : string.Empty );
-                Response.Redirect( url );
-            }
-            else
-            {
-                BindGrid();
-            }
-        }
-
-        /// <summary>
-        /// Handles the GridRebind event of the gBusinessList control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        private void gBusinessList_GridRebind( object sender, EventArgs e )
-        {
-            BindGrid();
-        }
-
-        /// <summary>
-        /// Handles the AddClick event of the gBusinessList control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        private void gBusinessList_AddClick( object sender, EventArgs e )
-        {
-            var parms = new Dictionary<string, string>();
-            parms.Add( "businessId", "0" );
-            NavigateToLinkedPage( "DetailPage", parms );
-        }
-
-        /// <summary>
-        /// Handles the RowSelected event of the gBusinessList control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
-        protected void gBusinessList_RowSelected( object sender, Rock.Web.UI.Controls.RowEventArgs e )
-        {
-            var parms = new Dictionary<string, string>();
-            var businessId = e.RowKeyId;
-            parms.Add( "businessId", businessId.ToString() );
-            NavigateToLinkedPage( "DetailPage", parms );
-        }
-
-        #endregion Events
-
-        #region Internal Methods
-
-        /// <summary>
-        /// Binds the filter.
-        /// </summary>
-        private void BindFilter()
-        {
-            var rockContext = new RockContext();
-
-            // Business Name Filter
-            tbBusinessName.Text = gfBusinessFilter.GetUserPreference( "Business Name" );
-
-            // Set the Active Status
-            var itemActiveStatus = ddlActiveFilter.Items.FindByValue( gfBusinessFilter.GetUserPreference( "Active Status" ) );
-            if ( itemActiveStatus != null )
-            {
-                itemActiveStatus.Selected = true;
-            }
-        }
-
-        /// <summary>
-        /// Binds the grid.
-        /// </summary>
-        private void BindGrid()
-        {
-            var rockContext = new RockContext();
-            var recordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS.AsGuid() ).Id;
-
-            var queryable = new PersonService( rockContext ).Queryable()
-                .Where( q => q.RecordTypeValueId == recordTypeValueId );
-
-            var businessName = string.Empty;
-            bool viaSearch = false;
-
-            // Use the name passed in the page parameter if given
-            if ( !string.IsNullOrWhiteSpace( PageParameter( "SearchTerm" ) ) )
-            {
-                viaSearch = true;
-                gfBusinessFilter.Visible = false;
-                businessName = PageParameter( "SearchTerm" );
-            }
-            else
-            {
-                // Business Name Filter
-                businessName = gfBusinessFilter.GetUserPreference( "Business Name" );
-            }
-
-            if ( !string.IsNullOrWhiteSpace( businessName ) )
-            {
-                queryable = queryable.Where( a => a.LastName.Contains( businessName ) );
-            }
-
-            if ( !viaSearch )
-            {
-                var activeRecordStatusValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() ).Id;
-                string activeFilterValue = gfBusinessFilter.GetUserPreference( "Active Status" );
-                if ( activeFilterValue == "inactive" )
-                {
-                    queryable = queryable.Where( b => b.RecordStatusValueId != activeRecordStatusValueId );
-                }
-                else if ( activeFilterValue == "active" )
-                {
-                    queryable = queryable.Where( b => b.RecordStatusValueId == activeRecordStatusValueId );
-                }
-
-                SortProperty sortProperty = gBusinessList.SortProperty;
-                if ( sortProperty != null )
-                {
-                    queryable = queryable.Sort( sortProperty );
-                }
-                else
-                {
-                    queryable = queryable.OrderBy( q => q.LastName );
-                }
-            }
-
-            var workLocationTypeId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK.AsGuid() ).Id;
-            var groupMemberQuery = new GroupMemberService( rockContext ).Queryable();
-
-            var businessList = queryable.Select( b => new
-            {
-                Id = b.Id,
-                b.LastName,
-                BusinessName = b.LastName,
-                PhoneNumber = b.PhoneNumbers.FirstOrDefault().NumberFormatted,
-                Email = b.Email,
-                Address = b.GivingGroup.GroupLocations
-                                .Where( gl => gl.GroupLocationTypeValueId == workLocationTypeId )
-                                .FirstOrDefault()
-                                .Location,
-                Contacts = b.Members
-                                .Where( m => m.Group.GroupType.Guid.ToString() == Rock.SystemGuid.GroupType.GROUPTYPE_KNOWN_RELATIONSHIPS )
-                                .SelectMany( m => m.Group.Members )
-                                .Where( p => p.GroupRole.Guid.ToString() == Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER && p.PersonId != b.Id )
-                                .Select( p => p.Person.LastName + ", " + p.Person.NickName )
-            } );
-
-            if ( viaSearch && businessList.ToList().Count == 1 )
-            {
-                ShowDetailForm( businessList.ToList()[0].Id );
-            }
-            else
-            {
-                gBusinessList.EntityTypeId = EntityTypeCache.Get<Person>().Id;
-                gBusinessList.SetLinqDataSource( businessList );
-                gBusinessList.DataBind();
-            }
-        }
-
-        /// <summary>
-        /// Shows the detail form.
-        /// </summary>
-        /// <param name="id">The id.</param>
-        protected void ShowDetailForm( int id )
-        {
-            NavigateToLinkedPage( "DetailPage", "businessId", id );
-        }
-
-        protected string FormatContactInfo( string phone, string address )
-        {
-            var values = new List<string> { phone, address, "&nbsp;", "&nbsp;" };
-            return values.Where( v => v.IsNotNullOrWhiteSpace() ).Take( 2 ).ToList().AsDelimited( "<br/>" );
-        }
-
-        #endregion Internal Methods
+      gBusinessList.DataKeyNames = new string[] { "Id" };
+      gBusinessList.Actions.ShowAdd = canEdit;
+      gBusinessList.Actions.AddClick += gBusinessList_AddClick;
+      gBusinessList.GridRebind += gBusinessList_GridRebind;
+      gBusinessList.IsDeleteEnabled = canEdit;
     }
+
+    /// <summary>
+    /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
+    /// </summary>
+    /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
+    protected override void OnLoad(EventArgs e) {
+      base.OnLoad(e);
+
+      if (!Page.IsPostBack) {
+        BindFilter();
+        BindGrid();
+      }
+    }
+
+    #endregion Control Methods
+
+    #region Events
+
+    /// <summary>
+    /// Handles the DisplayFilterValue event of the gfBusinessFilter control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="Rock.Web.UI.Controls.GridFilter.DisplayFilterValueArgs"/> instance containing the event data.</param>
+    private void gfBusinessFilter_DisplayFilterValue(object sender, Rock.Web.UI.Controls.GridFilter.DisplayFilterValueArgs e) {
+      switch (e.Key) {
+        case "Business Name":
+          break;
+      }
+    }
+
+    /// <summary>
+    /// Handles the ApplyFilterClick event of the gfBusinessFilter control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+    private void gfBusinessFilter_ApplyFilterClick(object sender, EventArgs e) {
+      gfBusinessFilter.SaveUserPreference("Business Name", tbBusinessName.Text);
+      if (ddlActiveFilter.SelectedValue == "all") {
+        gfBusinessFilter.SaveUserPreference("Active Status", string.Empty);
+      } else {
+        gfBusinessFilter.SaveUserPreference("Active Status", ddlActiveFilter.SelectedValue);
+      }
+
+      // If it's there, strip the SearchTerm parameter from the query string and reload.
+      if (!string.IsNullOrWhiteSpace(PageParameter("SearchTerm"))) {
+        var parameters = System.Web.HttpUtility.ParseQueryString(Request.Url.Query);
+        parameters.Remove("SearchTerm");
+        string url = Request.Url.AbsolutePath + (parameters.Count > 0 ? "?" + parameters.ToString() : string.Empty);
+        Response.Redirect(url);
+      } else {
+        BindGrid();
+      }
+    }
+
+    /// <summary>
+    /// Handles the GridRebind event of the gBusinessList control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+    private void gBusinessList_GridRebind(object sender, EventArgs e) {
+      BindGrid();
+    }
+
+    /// <summary>
+    /// Handles the AddClick event of the gBusinessList control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+    private void gBusinessList_AddClick(object sender, EventArgs e) {
+      var parms = new Dictionary<string, string>();
+      parms.Add("businessId", "0");
+      NavigateToLinkedPage("DetailPage", parms);
+    }
+
+    /// <summary>
+    /// Handles the RowSelected event of the gBusinessList control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
+    protected void gBusinessList_RowSelected(object sender, Rock.Web.UI.Controls.RowEventArgs e) {
+      var parms = new Dictionary<string, string>();
+      var businessId = e.RowKeyId;
+      parms.Add("businessId", businessId.ToString());
+      NavigateToLinkedPage("DetailPage", parms);
+    }
+
+    #endregion Events
+
+    #region Internal Methods
+
+    /// <summary>
+    /// Binds the filter.
+    /// </summary>
+    private void BindFilter() {
+      var rockContext = new RockContext();
+
+      // Business Name Filter
+      tbBusinessName.Text = gfBusinessFilter.GetUserPreference("Business Name");
+
+      // Set the Active Status
+      var itemActiveStatus = ddlActiveFilter.Items.FindByValue(gfBusinessFilter.GetUserPreference("Active Status"));
+      if (itemActiveStatus != null) {
+        itemActiveStatus.Selected = true;
+      }
+    }
+
+    /// <summary>
+    /// Binds the grid.
+    /// </summary>
+    private void BindGrid() {
+      var rockContext = new RockContext();
+      var recordTypeValueId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_BUSINESS.AsGuid()).Id;
+
+      var queryable = new PersonService(rockContext).Queryable()
+          .Where(q => q.RecordTypeValueId == recordTypeValueId);
+
+      var businessName = string.Empty;
+      bool viaSearch = false;
+
+      // Use the name passed in the page parameter if given
+      if (!string.IsNullOrWhiteSpace(PageParameter("SearchTerm"))) {
+        viaSearch = true;
+        gfBusinessFilter.Visible = false;
+        businessName = PageParameter("SearchTerm");
+      } else {
+        // Business Name Filter
+        businessName = gfBusinessFilter.GetUserPreference("Business Name");
+      }
+
+      if (!string.IsNullOrWhiteSpace(businessName)) {
+        queryable = queryable.Where(a => a.LastName.Contains(businessName));
+      }
+
+      if (!viaSearch) {
+        var activeRecordStatusValueId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid()).Id;
+        string activeFilterValue = gfBusinessFilter.GetUserPreference("Active Status");
+        if (activeFilterValue == "inactive") {
+          queryable = queryable.Where(b => b.RecordStatusValueId != activeRecordStatusValueId);
+        } else if (activeFilterValue == "active") {
+          queryable = queryable.Where(b => b.RecordStatusValueId == activeRecordStatusValueId);
+        }
+
+        SortProperty sortProperty = gBusinessList.SortProperty;
+        if (sortProperty != null) {
+          queryable = queryable.Sort(sortProperty);
+        } else {
+          queryable = queryable.OrderBy(q => q.LastName);
+        }
+      }
+
+      var workLocationTypeId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK.AsGuid()).Id;
+      var groupMemberQuery = new GroupMemberService(rockContext).Queryable();
+
+      var businessList = queryable.Select(b => new {
+        Id = b.Id,
+        b.LastName,
+        BusinessName = b.LastName,
+        PhoneNumber = b.PhoneNumbers.FirstOrDefault().NumberFormatted,
+        Email = b.Email,
+        Address = b.GivingGroup.GroupLocations
+                         .Where(gl => gl.GroupLocationTypeValueId == workLocationTypeId)
+                         .FirstOrDefault()
+                         .Location,
+        Contacts = b.Members
+                         .Where(m => m.Group.GroupType.Guid.ToString() == Rock.SystemGuid.GroupType.GROUPTYPE_KNOWN_RELATIONSHIPS)
+                         .SelectMany(m => m.Group.Members)
+                         .Where(p => p.GroupRole.Guid.ToString() == Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_OWNER && p.PersonId != b.Id)
+                         .Select(p => p.Person.LastName + ", " + p.Person.NickName)
+      });
+
+      if (viaSearch && businessList.ToList().Count == 1) {
+        ShowDetailForm(businessList.ToList()[0].Id);
+      } else {
+        gBusinessList.EntityTypeId = EntityTypeCache.Get<Person>().Id;
+        gBusinessList.SetLinqDataSource(businessList);
+        gBusinessList.DataBind();
+      }
+    }
+
+    /// <summary>
+    /// Shows the detail form.
+    /// </summary>
+    /// <param name="id">The id.</param>
+    protected void ShowDetailForm(int id) {
+      NavigateToLinkedPage("DetailPage", "businessId", id);
+    }
+
+    protected string FormatContactInfo(string phone, string address) {
+      var values = new List<string> { phone, address, "&nbsp;", "&nbsp;" };
+      return values.Where(v => v.IsNotNullOrWhiteSpace()).Take(2).ToList().AsDelimited("<br/>");
+    }
+
+    #endregion Internal Methods
+
+    /// <summary>
+    /// Handles the DataBound event of the lContactInformation control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+    protected void lContactInformation_DataBound(object sender, RowEventArgs e) {
+      Literal lContactInformation = e.Row.FindControl("lContactInformation") as Literal;
+      BusinessSelectInfo businessSelectInfo = e.Row.DataItem as BusinessSelectInfo;
+      if (lContactInformation != null && businessSelectInfo != null) {
+        lContactInformation.Text = FormatContactInfo(businessSelectInfo.PhoneNumber, businessSelectInfo.Email);
+      }
+    }
+
+    /// <summary>
+    /// Handles the DataBound event of the lAddress control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+    protected void lAddress_DataBound(object sender, RowEventArgs e) {
+      Literal lAddress = e.Row.FindControl("lAddress") as Literal;
+      BusinessSelectInfo businessSelectInfo = e.Row.DataItem as BusinessSelectInfo;
+      if (lAddress != null && businessSelectInfo != null && businessSelectInfo.Address != null) {
+        lAddress.Text = businessSelectInfo.Address.FormattedHtmlAddress;
+      }
+    }
+
+    /// <summary>
+    /// Handles the DataBound event of the lContacts control.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+    protected void lContacts_DataBound(object sender, RowEventArgs e) {
+      Literal lContacts = e.Row.FindControl("lContacts") as Literal;
+      BusinessSelectInfo businessSelectInfo = e.Row.DataItem as BusinessSelectInfo;
+      if (lContacts != null && businessSelectInfo != null) {
+        lContacts.Text = businessSelectInfo.Contacts.ToList().AsDelimited("<br />");
+      }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="Rock.Utility.RockDynamic" />
+    private class BusinessSelectInfo : RockDynamic {
+      public int Id { get; set; }
+      public string LastName { get; set; }
+      public string BusinessName { get; set; }
+      public string PhoneNumber { get; set; }
+      public string Email { get; set; }
+      public Location Address { get; set; }
+      public IEnumerable<string> Contacts { get; set; }
+    }
+  }
 }
