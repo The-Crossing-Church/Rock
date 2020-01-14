@@ -146,6 +146,25 @@ namespace RockWeb.Blocks.Groups
             if ( groupGuid == Guid.Empty )
             {
                 groupId = PageParameter( "GroupId" ).AsInteger();
+
+                // if groupId is not yet defined, check for the presence of a CampusId PageParameter
+                // if a CampusId PageParameter is defined, attempt to determine the groupId from the Campus.TeamGroupId property
+                if ( groupId == 0 )
+                {
+                    var campusId = PageParameter( "CampusId" ).AsIntegerOrNull();
+
+                    if ( campusId.HasValue )
+                    {
+                        int? campusTeamGroupId = new CampusService( new RockContext() )
+                            .Queryable()
+                            .AsNoTracking()
+                            .Where( c => c.Id == campusId )
+                            .Select( c => c.TeamGroupId )
+                            .FirstOrDefault();
+
+                        groupId = campusTeamGroupId ?? 0;
+                    }
+                }
             }
 
             if ( !( groupId == 0 && groupGuid == Guid.Empty ) )

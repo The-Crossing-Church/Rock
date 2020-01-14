@@ -56,7 +56,7 @@ namespace RockWeb.Blocks.Core
 
             _canConfigure = IsUserAuthorized( Authorization.EDIT );
 
-            btnDelete.Attributes["onclick"] = string.Format( "javascript: return Rock.dialogs.confirmDelete(event, '{0}');", Group.FriendlyTypeName );
+            btnDelete.Attributes["onclick"] = string.Format( "javascript: return Rock.dialogs.confirmDelete(event, '{0}');", Tag.FriendlyTypeName );
             btnSecurity.EntityTypeId = EntityTypeCache.Get( typeof( Rock.Model.Tag ) ).Id;
         }
 
@@ -346,7 +346,7 @@ namespace RockWeb.Blocks.Core
                 if ( tag.IsSystem )
                 {
                     readOnly = true;
-                    nbEditModeMessage.Text = EditModeMessage.ReadOnlySystem( Group.FriendlyTypeName );
+                    nbEditModeMessage.Text = EditModeMessage.ReadOnlySystem( Tag.FriendlyTypeName );
                 }
 
                 if ( readOnly )
