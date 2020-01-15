@@ -19,7 +19,7 @@ namespace Rock.Migrations.Migrations {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class RockMigrationSQL {
@@ -1516,6 +1516,53 @@ namespace Rock.Migrations.Migrations {
         public static string _201908202115162_Rollup_0820_GroupRequirementsBadge {
             get {
                 return ResourceManager.GetString("_201908202115162_Rollup_0820_GroupRequirementsBadge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to -- un-link any &apos;Team Group&apos; Groups from all existing Campuses
+        ///UPDATE [Campus]
+        ///SET [TeamGroupId] = NULL;
+        ///GO
+        ///
+        ///-- TODO(Jason H): What other Entities to I need to delete before deleting a Group??
+        ///--                Should I even be deleting Groups? Maybe they should simply be inactivated/archived instead...
+        ///--                Risky.
+        ///
+        ///-- delete all Groups of GroupType &apos;TeamGroup&apos;
+        ///DECLARE @GroupTypeId [int] = (SELECT [Id] FROM [GroupType] WHERE [Guid] = &apos;BADD7A6C-1FB3-4E11-A721-6D1377C6958C&apos;);
+        ///
+        ///IF (@Gro [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202001142201240_AddCampusTeamToAllCampuses_Down {
+            get {
+                return ResourceManager.GetString("_202001142201240_AddCampusTeamToAllCampuses_Down", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to -- add and assign a Group of GroupType &apos;Campus Team&apos; to all existing Campuses
+        ///
+        ///IF OBJECT_ID(&apos;tempdb..#campusTemp&apos;) IS NOT NULL
+        ///BEGIN
+        ///    DROP TABLE #campusTemp;
+        ///END
+        ///
+        ///CREATE TABLE #campusTemp (
+        ///    [Id] [int] IDENTITY(1,1) NOT NULL
+        ///    , [CampusId] [int] NOT NULL
+        ///    , [CampusName] [nvarchar](100) NOT NULL
+        ///    , CONSTRAINT [pk_campusTemp] PRIMARY KEY CLUSTERED ( [Id] ASC )
+        ///);
+        ///
+        ///-- collect all existing Campuses (that don&apos;t already have a TeamGroup assigned)
+        ///INSERT INTO #campusTemp
+        ///SELECT [Id]
+        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202001142201240_AddCampusTeamToAllCampuses_Up {
+            get {
+                return ResourceManager.GetString("_202001142201240_AddCampusTeamToAllCampuses_Up", resourceCulture);
             }
         }
     }

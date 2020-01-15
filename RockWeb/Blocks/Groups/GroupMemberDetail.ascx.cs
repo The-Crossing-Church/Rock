@@ -81,7 +81,7 @@ namespace RockWeb.Blocks.Groups
             if ( !Page.IsPostBack )
             {
                 SetBlockOptions();
-                ShowDetail( PageParameter( "GroupMemberId" ).AsInteger(), PageParameter( "GroupId" ).AsIntegerOrNull() );
+                ShowDetail( PageParameter( "GroupMemberId" ).AsInteger(), PageParameter( "GroupId" ).AsIntegerOrNull(), PageParameter( "CampusId" ).AsIntegerOrNull() );
             }
         }
 
@@ -183,9 +183,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( cvGroupMember.IsValid )
                 {
-                    Dictionary<string, string> qryString = new Dictionary<string, string>();
-                    qryString["GroupId"] = hfGroupId.Value;
-                    NavigateToParentPage( qryString );
+                    BuildQueryStringAndNavigateToParentPage();
                 }
             }
 
@@ -218,9 +216,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( cvGroupMember.IsValid )
                 {
-                    Dictionary<string, string> qryString = new Dictionary<string, string>();
-                    qryString["GroupId"] = hfGroupId.Value;
-                    NavigateToParentPage( qryString );
+                    BuildQueryStringAndNavigateToParentPage();
                 }
             }
         }
@@ -236,7 +232,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( cvGroupMember.IsValid )
                 {
-                    ShowDetail( 0, hfGroupId.Value.AsIntegerOrNull() );
+                    ShowDetail( 0, hfGroupId.Value.AsIntegerOrNull(), hfCampusId.Value.AsIntegerOrNull() );
                 }
             }
         }
@@ -505,23 +501,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         protected void btnCancel_Click( object sender, EventArgs e )
         {
-            if ( hfGroupMemberId.Value.Equals( "0" ) )
-            {
-                // Cancelling on Add.  
-                Dictionary<string, string> qryString = new Dictionary<string, string>();
-                qryString["GroupId"] = hfGroupId.Value;
-                NavigateToParentPage( qryString );
-            }
-            else
-            {
-                // Cancelling on Edit.  Return to Details
-                GroupMemberService groupMemberService = new GroupMemberService( new RockContext() );
-                GroupMember groupMember = groupMemberService.Get( int.Parse( hfGroupMemberId.Value ) );
-
-                Dictionary<string, string> qryString = new Dictionary<string, string>();
-                qryString["GroupId"] = groupMember.GroupId.ToString();
-                NavigateToParentPage( qryString );
-            }
+            BuildQueryStringAndNavigateToParentPage();
         }
 
         protected void lbResendDocumentRequest_Click( object sender, EventArgs e )
@@ -564,7 +544,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="groupMemberId">The group member identifier.</param>
         public void ShowDetail( int groupMemberId )
         {
-            ShowDetail( groupMemberId, null );
+            ShowDetail( groupMemberId, null, null );
         }
 
         /// <summary>
@@ -572,7 +552,7 @@ namespace RockWeb.Blocks.Groups
         /// </summary>
         /// <param name="groupMemberId">The group member identifier.</param>
         /// <param name="groupId">The group id.</param>
-        public void ShowDetail( int groupMemberId, int? groupId )
+        public void ShowDetail( int groupMemberId, int? groupId, int? campusId )
         {
             // autoexpand the person picker if this is an add
             var personPickerStartupScript = @"Sys.Application.add_load(function () {
@@ -636,6 +616,11 @@ namespace RockWeb.Blocks.Groups
 
             hfGroupId.Value = groupMember.GroupId.ToString();
             hfGroupMemberId.Value = groupMember.Id.ToString();
+
+            if ( campusId.HasValue )
+            {
+                hfCampusId.Value = campusId.Value.ToString();
+            }
 
             if ( IsUserAuthorized( Authorization.ADMINISTRATE ) )
             {
@@ -1131,6 +1116,35 @@ namespace RockWeb.Blocks.Groups
         protected void ppGroupMemberPerson_SelectPerson( object sender, EventArgs e )
         {
             CalculateRequirements( false );
+        }
+
+        /// <summary>
+        /// Navigates to the parent page, while providing the appropriate query string parameter(s).
+        /// </summary>
+        private void BuildQueryStringAndNavigateToParentPage()
+        {
+            var qryString = new Dictionary<string, string>();
+
+            /*
+             * 1/15/2020 - JPH
+             * Since we have established a relationship between Campuses and Groups (by way of the Campus.TeamGroup property),
+             * it is now necessary to determine which query string parameter should be sent back to the parent Page.
+             *
+             * If we entered this current Page by way of a Campus-specific Page, providing the "CampusId" query string parameter
+             * takes precedence over the "GroupId" query string parameter.
+             *
+             * Reason: Campus Team Feature
+             */
+            if ( hfCampusId.Value.AsIntegerOrNull().HasValue )
+            {
+                qryString["CampusId"] = hfCampusId.Value;
+            }
+            else
+            {
+                qryString["GroupId"] = hfGroupId.Value;
+            }
+
+            NavigateToParentPage( qryString );
         }
 
         #endregion

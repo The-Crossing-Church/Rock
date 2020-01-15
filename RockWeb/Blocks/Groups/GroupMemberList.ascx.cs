@@ -155,6 +155,8 @@ namespace RockWeb.Blocks.Groups
 
                     if ( campusId.HasValue )
                     {
+                        hfCampusId.Value = campusId.Value.ToString();
+
                         int? campusTeamGroupId = new CampusService( new RockContext() )
                             .Queryable()
                             .AsNoTracking()
@@ -752,7 +754,21 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         protected void gGroupMembers_AddClick( object sender, EventArgs e )
         {
-            NavigateToLinkedPage( "DetailPage", "GroupMemberId", 0, "GroupId", _group.Id );
+            if ( hfCampusId.Value.AsIntegerOrNull().HasValue )
+            {
+                var qryString = new Dictionary<string, string>()
+                {
+                    { "GroupMemberId", "0" },
+                    { "GroupId", _group.Id.ToString() },
+                    { "CampusId", hfCampusId.Value }
+                };
+
+                NavigateToLinkedPage( "DetailPage", qryString );
+            }
+            else
+            {
+                NavigateToLinkedPage( "DetailPage", "GroupMemberId", 0, "GroupId", _group.Id );
+            }
         }
 
         /// <summary>
@@ -762,7 +778,16 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
         protected void gGroupMembers_Edit( object sender, RowEventArgs e )
         {
-            NavigateToLinkedPage( "DetailPage", "GroupMemberId", e.RowKeyId );
+            var campusId = hfCampusId.Value.AsIntegerOrNull();
+
+            if ( campusId.HasValue )
+            {
+                NavigateToLinkedPage( "DetailPage", "GroupMemberId", e.RowKeyId, "CampusId", campusId.Value );
+            }
+            else
+            {
+                NavigateToLinkedPage( "DetailPage", "GroupMemberId", e.RowKeyId );
+            }
         }
 
         /// <summary>
