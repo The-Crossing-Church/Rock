@@ -32,23 +32,22 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\Code\thecrossingchurch.com_Rockit\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\Code\thecrossingchurch.com_Rockit\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Flurl, Version=2.8.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\Rock\packages\Flurl.2.8.2\lib\net40\Flurl.dll</HintPath>
     </Reference>
     <Reference Include="HubSpot.NET, Version=0.6.17.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\Code\Rock\packages\SquaredUp.HubSpot.NET.0.6.17\lib\net451\HubSpot.NET.dll</HintPath>
+      <HintPath>..\packages\SquaredUp.HubSpot.NET.0.6.17\lib\net451\HubSpot.NET.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\Code\Rock\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Quartz, Version=2.0.0.100, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Rock\RockWeb\Bin\Quartz.dll</HintPath>
+    <Reference Include="Quartz">
+      <HintPath>..\libs\Quartz\Quartz.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -70,11 +69,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Rock\DotLiquid\DotLiquid.csproj">
+    <ProjectReference Include="..\DotLiquid\DotLiquid.csproj">
       <Project>{00edcb8d-ef33-459c-ad62-02876bd24dff}</Project>
       <Name>DotLiquid</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Rock\Rock\Rock.csproj">
+    <ProjectReference Include="..\Rock\Rock.csproj">
       <Project>{185a31d7-3037-4dae-8797-0459849a84bd}</Project>
       <Name>Rock</Name>
     </ProjectReference>
