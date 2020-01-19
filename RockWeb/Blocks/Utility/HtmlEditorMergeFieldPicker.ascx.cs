@@ -47,6 +47,12 @@ namespace RockWeb.Blocks.Utility
             {
                 mfpHtmlEditor.MergeFields = mergeFields.Split( ',' ).ToList();
             }
+			
+            mfpHtmlEditor.MergeFields.Add( "Person.NickName|Person Nick Name" );
+            mfpHtmlEditor.MergeFields.Add( "Person.LastName|Person Last Name" );
+            mfpHtmlEditor.MergeFields.Add( "Person.FullName|Person Full Name" );
+            mfpHtmlEditor.MergeFields.Add( "Person.Email|Person Email" );
+			
         }
 
         #endregion
