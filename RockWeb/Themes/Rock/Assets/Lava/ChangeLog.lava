@@ -1,0 +1,83 @@
+<style>
+  .log-details {
+    display: none;
+  }
+
+</style>
+<div class='clearfix'>
+    <a class='btn btn-primary pull-right' href='{{ LinkedPages.DetailPage }}?contentItemId=0'>Add Entry</a>
+</div>
+
+{% for item in Items %}
+	<article class='margin-t-lg'>
+		<h4>{{ item.Title }} <small>{{ item.StartDateTime | Date:'MM-dd-yyyy hh:mm tt' }}</small></h4>
+		<div>
+			{{ item.Content }}
+		</div>
+		{% assign details = item | Attribute:'MoreDetails' %}
+		<div class="margin-v-sm">
+			<a class='btn btn-xs btn-default' href='{{ LinkedPages.DetailPage }}?contentItemId={{ item.Id }}'>Edit</a>	  
+			{% if details and details != '' %}
+				<a href="#" class="btn btn-xs btn-default log-showmore">Show More <i class="fa fa-chevron-down"></i></a>
+				<a href="#" class="btn btn-xs btn-default log-showless" style="display:none">Show Less <i class="fa fa-chevron-up"></i></a>
+			{% endif %}
+		</div>
+		{% if details and details != '' %}
+			<div class="log-details">
+				{{ details }}
+			</div>
+		{% endif %}
+	</article>
+{% endfor %}
+
+<div class="clearfix">
+  {% assign nextPageString = Pagination.NextPage | ToString %}
+  {% assign prevPageString = Pagination.PreviousPage | ToString %}
+
+  {% if Pagination.PreviousPage != -1 %}
+  <a class="btn btn-primary pull-left" href="{{ Pagination.UrlTemplate | Replace:'PageNum', prevPageString }}">
+    <i class="fa fa-chevron-left"></i> Newer
+  </a>
+  {% endif %}
+
+  {% if Pagination.NextPage != -1 %}
+  <a class="btn btn-primary pull-right" href="{{ Pagination.UrlTemplate | Replace:'PageNum', nextPageString }}">
+    Older <i class="fa fa-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+
+<script>
+  $( '.log-showmore' ).on( 'click', function(e) {
+    if(e && e.preventDefault) {
+      e.preventDefault();
+    }
+    else if (e) {
+      e.returnValue = false;
+    }
+
+    $(this).hide();
+    
+	var $article = $(this).closest('article');
+    $article.find('.log-details').slideDown();
+    $article.find('.log-showless').show();
+  });
+  
+  $( '.log-showless' ).on( 'click', function(e) {
+    if(e && e.preventDefault) {
+      e.preventDefault();
+    }
+    else if (e) {
+      e.returnValue = false;
+    }
+
+	var $button = $(this);
+	var $article = $(this).closest('article');
+    $article.find('.log-details').slideUp( function() {
+		$article.find('.log-showmore').show();
+		$button.hide();
+	});
+
+  });
+
+</script>

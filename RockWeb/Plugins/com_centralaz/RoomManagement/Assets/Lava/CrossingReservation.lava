@@ -1,0 +1,154 @@
+<!-- 
+ Notes and Requester information is available using {{reservationSummary.Note}}
+ and {{reservationSummary.RequesterAlias.Person}}
+-->
+
+<div class='margin-t-sm margin-l-sm'>
+	<small>{{ FilterStartDate | Date:'M/d/yy' }}{% if TimeFrame != "Day" %} - {{ FilterEndDate | Date:'M/d/yy' }}{% endif %}</small>
+</div>
+
+{% assign reservationCount = ReservationSummaries | Size %}
+
+{% if reservationCount == 0 %}
+	<div class="panel panel-default margin-t-md">
+		<div class="margin-all-md"> There are no reservations in this time frame.</div>
+	</div>
+{% endif %}
+
+{% for reservationDate in ReservationSummaries %}
+	{% assign firstReservation = reservationDate | First %}
+	
+	<div class="panel panel-default margin-t-md">
+		<div class="panel-heading clearfix">
+			<h2 class="panel-title pull-left">
+				{{ firstReservation.CalendarDate }}
+			</h2>
+		</div>
+		<div class='panel-body'>
+			{% for reservationSummary in reservationDate %}
+				<!-- Start with one total item because the overall status must also be approved -->
+				{% assign totalItems = 1 %}
+				{% assign approvedItems = 0 %}
+				{% assign approvalNeededBy = "" %}
+
+				{% if reservationSummary.ApprovalState == 'Unapproved' %}
+					{% assign textclass = 'text-warning' %}
+					{% assign rowclass = 'warning' %}
+				{% elseif reservationSummary.ApprovalState == 'Changes Needed' %}
+					{% assign textclass = 'text-info' %}
+					{% assign rowclass = 'info' %}
+				{% else %}
+					{% assign textclass = '' %}
+					{% assign rowclass = '' %}
+				{% endif %}
+			
+				<!-- if it's approved, increment the approved counter -->
+				{% if reservationSummary.ApprovalState == 'Approved' %}
+					{% assign approvedItems = approvedItems|Plus:1 %}
+				{% endif %}
+			
+				<div class="clearfix registration-item js-clickable-row approval-state-{{ reservationSummary.ApprovalState }}" data-href="{{ DetailsPage }}?ReservationId={{ reservationSummary.Id }}">
+
+					<div class='pull-right'>
+						{{ reservationSummary.ApprovalState }}
+						{% if reservationSummary.SetupPhotoId %}
+							<div class='margin-t-sm'>
+								<a href='{{ reservationSummary.SetupPhotoLink }}' target='_blank'><img src='{{ reservationSummary.SetupPhotoLink }}&maxwidth=30&maxheight=30'/></a><br/>
+							</div>
+						{% endif %}
+					</div>
+
+					<strong>{{ reservationSummary.Id }}: {{ reservationSummary.ReservationName }}</strong><br/>
+					{% assign totalItems = reservationSummary.Locations | Size  | Plus: totalItems %}
+					{% for reservationLocation in reservationSummary.Locations %}
+						{{ reservationLocation.Location.Name }}
+						{% if reservationLocation.ApprovalState == 2 %}
+							{% assign approvedItems = approvedItems|Plus:1 %} 
+							<i class="fa fa-check"></i>
+						{% else %}
+							{% assign approvalGroup = reservationLocation.Location | Attribute:'ApprovalGroup','Object' %}
+							{% capture linkToApprover %}<a href='/Group/{{approvalGroup.Id}}'>{{approvalGroup.Name}}</a> for {{reservationLocation.Location.Name}}{% endcapture %}
+							{% assign approvalNeededBy = approvalNeededBy | Append:linkToApprover %}
+						{% endif %}
+
+						{% if reservationLocation.LocationLayoutId != null %}
+							{% assign layout = reservationLocation.LocationLayout %}
+							<i class="fa fa-info-circle"
+								data-toggle="popover" 
+								data-html="true" 
+								data-trigger="hover click focus" 
+								data-delay="{&quot;hide&quot;: 1500}" 
+								data-placement="right" 
+								title="{{layout.Name}}" 
+								data-content="<p>{{layout.Description}}</p>
+									{% if layout.LayoutPhotoId %}
+									<a href='/GetImage.ashx?id={{layout.LayoutPhotoId}}' target='_blank'><img src='/GetImage.ashx?id={{layout.LayoutPhotoId}}&maxwidth=200&maxheight=200'/></a>
+									{% endif %}"
+							></i>
+						{% endif %}
+						<br/>
+					{% endfor %}
+			
+					Event Time: {{ reservationSummary.EventDateTimeDescription }}<br/>
+					Reservation Time: {{ reservationSummary.ReservationDateTimeDescription }}<br/>
+
+					{% assign totalItems = reservationSummary.Resources | Size | Plus: totalItems %}
+					{% for reservationResource in reservationSummary.Resources %}
+						{{ reservationResource.Resource.Name }}({{reservationResource.Quantity}}) 
+						{% if reservationResource.ApprovalState == 2 %}
+							{% assign approvedItems = approvedItems|Plus:1 %} 
+							<i class="fa fa-check"></i>
+						{% else %}
+							{% capture linkToApprover %}<a href='/Group/{{reservationResource.Resource.ApprovalGroupId}}'>{{reservationResource.Resource.ApprovalGroup.Name}}</a> for {{reservationResource.Resource.Name}}{% endcapture %}
+							{% assign approvalNeededBy = approvalNeededBy | Append:linkToApprover %}
+						{% endif %}
+						<br/>
+					{% endfor %}
+					
+				</div>
+			{% endfor %}
+		</div>
+	</div>
+{% endfor %}
+
+<script type="text/javascript">
+
+	function pageLoad(sender, args) {
+		InitialiseSettings();
+	}
+
+	function InitialiseSettings(){
+		$('[data-toggle="popover"]').popover();
+
+		$(".js-clickable-row").click(function() {
+			window.location = $(this).data("href");
+		});
+	}
+
+	$( document ).ready(function() {
+		$('.js-group-item').tooltip();
+		InitialiseSettings();
+	});
+
+</script>
+
+<style>
+
+	.registration-item {
+		background-color: #aaa;
+		color: #fff;
+		font-size: 14px;
+		margin: 5px;
+		padding: 5px;
+		border-radius: 5px;
+	}
+
+	.approval-state-Approved {
+		background-color: #347689;
+	}
+
+	.js-clickable-row {
+		cursor:pointer;
+
+	}
+</style>

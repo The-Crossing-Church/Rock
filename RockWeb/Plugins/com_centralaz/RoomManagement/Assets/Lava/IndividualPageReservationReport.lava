@@ -1,0 +1,137 @@
+{% assign reservationCount = ReservationSummaries | Size %}
+
+{% assign titleStyle = 'font-size:16px;font-weight:500;font-family:{{ReportFont}};' %}
+{% assign headerStyle = 'font-size:12px;font-weight:600;padding-bottom:20px;font-family:{{ReportFont}};' %}
+{% assign itemStyle = 'font-size:10px;font-weight:normal;font-family:{{ReportFont}};' %}
+
+<div style='color: {% if Reservation.ApprovalState != 'Approved' %}#777{% else %}#000{% endif %};'>
+
+	<table>
+	<tr style='border-bottom:1px solid black'>
+
+		<td>
+			<img src='{{ImageUrl}}' height='60' width='60' ></img>
+		</td>
+		<td style='text-align:right'>
+			<p style='{{titleStyle}}'>
+				{{ Reservation.Id }}: {{ Reservation.ReservationName }}
+			</p>
+			<p style='{{headerStyle}}'>
+				{{ Reservation.EventDateTimeDescription }}
+			</p>
+		</td>
+	</tr>
+	</table>
+	
+	<br/>
+	<br/>
+	
+	<table>
+	<tr>
+
+		<td valign='top'>
+
+			<p style='{{headerStyle}}'>Reservation:</p>
+			<div style='{{itemStyle}}'> 
+				<b>Approval State:</b><br/>
+				{{ Reservation.ApprovalState }}<br/>
+				<br/>
+				
+				<b>Reservation Start/End:</b><br/>
+				{{ Reservation.ReservationDateTimeDescription }}<br/>
+				<br/>
+				
+				<b>Ministry:</b><br/>
+				{{ Reservation.Ministry }}<br/>
+				<br/>
+				
+				<b>Event Contact:</b><br/>
+				{{ Reservation.EventContact.FullName }}<br/>
+				{{ Reservation.EventContactPhoneNumber }}<br/>
+				{{ Reservation.EventContact.Email }}<br/>
+				<br/>
+
+				<b>Note:</b><br/>
+				{{ Reservation.Note }}<br/>				
+
+			</div>
+		</td>
+		
+		<td valign='top'>
+		
+			{% assign locationCount = Reservation.Locations | Size %}
+			{% if locationCount > 0 %}
+				<p style='{{headerStyle}}'>Location(s):</p>
+				<div style='{{itemStyle}}'> 
+					{% for reservationLocation in Reservation.Locations %}
+						<p>
+							<u>{{ reservationLocation.Location.Name }}{% if reservationLocation.ApprovalState == 2 %}<i class='fa fa-check'></i>{% endif %}</u><br/>
+							{% for attribute in reservationLocation.AttributeValues %}
+								{% assign attrValue = attribute.ValueFormatted %}
+								{% if attrValue and attrValue != '' %}
+									{{ attribute.AttributeName }} <b>{{ attribute.ValueFormatted }}</b></br>
+								{% endif %}
+							{% endfor %}
+						</p>
+						<br/>
+					{% endfor %}
+				</div>
+				<br/>
+			{% endif %}
+		
+			{% assign resourceCount = Reservation.Resources | Size %}
+			{% if resourceCount > 0 %}
+				<p style='{{headerStyle}}'>Resource(s):</p>
+				<div style='{{itemStyle}}'> 
+					{% assign lastResourceId = 0 %}
+					{% sql %}
+						DECLARE @QuestionIds varchar(8000) = (
+							SELECT TOP 1 [Value]
+							FROM [AttributeValue]
+							WHERE [AttributeId] = 11899
+							AND [EntityId] = {{ reportDvId }}
+						)
+						SELECT 
+							Q.[ResourceId] AS [ResourceId],
+							A.[Key] AS [AttributeKey]
+						FROM [ufnUtility_CsvToTable](@QuestionIds) T
+						INNER JOIN [_com_centralaz_RoomManagement_Question] Q ON Q.[Id] = T.[Item]
+						INNER JOIN [_com_centralaz_RoomManagement_Resource] R ON R.[Id] = Q.[ResourceId]
+						INNER JOIN [Attribute] A ON A.[Id] = Q.[AttributeId]
+						ORDER BY R.[Name],A.[Order]
+					{% endsql %}
+					{% for item in results %}
+						{% assign resourceId = item.ResourceId %}
+						{% assign attributeKey = item.AttributeKey %}
+
+						{% for reservationResource in Reservation.Resources %}
+						    {% if reservationResource.Resource.Id == resourceId %}
+    							{% if resourceId != lastResourceId %}
+									{% if lastResourceId != 0 %}<br/>{% endif %}
+        							{% assign lastResourceId = resourceId %}
+									<u>{{ reservationResource.Resource.Name }}
+									{% if reservationResource.Quantitiy > 1 %}({{reservationResource.Quantity}}){% endif %}
+									{% if reservationResource.ApprovalState == 2 %}<i class='fa fa-check'></i>{% endif %}
+									</u><br/>
+    							{% endif %}
+								{% for attribute in reservationResource.AttributeValues %}
+									{% if attribute.AttributeKey == attributeKey %}
+										{% assign attrValue = attribute.ValueFormatted %}
+										{% if attrValue and attrValue != '' %}
+											{{ attribute.AttributeName }} <b>{{ attribute.ValueFormatted }}</b><br/>
+										{% endif %}
+									{% endif %}
+								{% endfor %}
+        					{% endif %}
+						{% endfor %}
+
+					{% endfor %}					
+					<br/>
+				</div>
+			{% endif %}
+		
+		</td>
+	</tr>
+	</table>
+
+</div>

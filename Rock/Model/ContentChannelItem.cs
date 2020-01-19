@@ -433,7 +433,6 @@ namespace Rock.Model
         /// </summary>
         /// <param name="dbContext">The database context.</param>
         [Obsolete( "TODO Remove this once the ContentChannelItemSlugConfiguration is set to WillCascadeOnDelete( true );" )]
-        [RockObsolete( "1.10" )]
         private void DeleteRelatedSlugs( Data.DbContext dbContext )
         {
             var rockContext = ( RockContext ) dbContext;
