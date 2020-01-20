@@ -390,7 +390,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             public int? GroupId { get; set; }
             public int? LocationId { get; set; }
 
-            public string Threshhold
+            public string Threshold
             {
                 get
                 {

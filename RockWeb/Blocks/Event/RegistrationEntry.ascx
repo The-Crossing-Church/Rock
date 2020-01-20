@@ -250,11 +250,11 @@
                                 <%# Eval("Description") %>
                             </div>
                                 
-                            <div runat="server" class="col-sm-3 fee-value" visible='<%# (((decimal)Eval("Cost")) > 0) && (RegistrationState.DiscountPercentage > 0.0m) %>'>
+                            <div runat="server" class="col-sm-3 fee-value" visible='<%# (RegistrationState.DiscountPercentage > 0.0m) %>'>
                                 <span class="visible-xs-inline">Discounted Amount:</span> <%# Rock.Web.Cache.GlobalAttributesCache.Value( "CurrencySymbol" )%> <%# string.Format("{0:N}", Eval("DiscountedCost")) %> 
                             </div>
 
-                            <div runat="server" class="col-sm-3 fee-value" visible='<%# ((decimal)Eval("Cost")) > 0 %>'>
+                            <div class="col-sm-3 fee-value">
                                 <span class="visible-xs-inline">Amount:</span> <%# Rock.Web.Cache.GlobalAttributesCache.Value( "CurrencySymbol" )%> <%# string.Format("{0:N}", Eval("Cost")) %> 
                             </div>
                                     

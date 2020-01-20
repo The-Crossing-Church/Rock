@@ -139,7 +139,11 @@ public class SendGrid : IHttpHandler
                                         var clickEvent = item as ClickEvent;
                                         if ( clickEvent != null && interactionComponent != null )
                                         {
-                                            CreateInteraction( communicationRecipient, "Click", item, interactionService, interactionComponent );
+                                            var interaction = CreateInteraction( communicationRecipient, "Click", item, interactionService, interactionComponent );
+                                            if (interaction != null )
+                                            {
+                                                interaction.InteractionData = clickEvent.Url;
+                                            }
                                         }
                                         break;
                                     case WebhookEventType.Dropped:

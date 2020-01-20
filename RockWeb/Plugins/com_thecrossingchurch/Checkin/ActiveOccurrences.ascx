@@ -30,7 +30,7 @@
                             <Rock:TimeField DataField="CheckInStart" HeaderText="Check-In Begins" SortExpression="CheckInStart"/>
                             <Rock:TimeField DataField="Start" HeaderText="Start" SortExpression="Start"/>
                             <Rock:TimeField DataField="End" HeaderText="End" SortExpression="End"/>
-                            <Rock:RockBoundField DataField="Threshhold" HeaderText="Thresholds (soft/hard)" />
+                            <Rock:RockBoundField DataField="Threshold" HeaderText="Thresholds (soft/hard)" />
                             <asp:HyperLinkField DataTextField="Location" HeaderText="Location" SortExpression="Location" DataNavigateUrlFields="GroupTypeId,GroupId,LocationId" Target="_blank" />
                         </Columns>
                     </Rock:Grid>
