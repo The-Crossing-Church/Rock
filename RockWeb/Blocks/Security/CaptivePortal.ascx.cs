@@ -151,9 +151,6 @@ namespace RockWeb.Blocks.Security
                     The provisioning of the Service may reveal location-specific data, usage and retention of which are subject to the local standard privacy policy and jurisdiction;
                 </li>
                 <li>
-                    Every user is entitled to 20 continuous minutes free Wi-Fi service every day at the Company's designated locations(s). If the connection is disconnected within the 20 minutes due to any reason, the users cannot use the Service again on the same day;
-                </li>
-                <li>
                     The Organization excludes all liability or responsibility for any cost, claim, damage, or loss to the user or to any third party whether direct or indirect of any kind including revenue, loss or profits or any consequential loss in contract,
                         tort, under any statute or otherwise( including negligence ) arising out of or in any way related to the Service( including, but not limited to, any loss to the user arising from a suspension of the Service or Wi-Wi disconnection or degrade of Service quality); and
                 </li>
@@ -491,8 +488,8 @@ namespace RockWeb.Blocks.Security
             Person person = null;
             string mobilePhoneNumber = string.Empty;
 
-            // Looking for a 100% match
-            if ( tbFirstName.Visible && tbLastName.Visible && tbEmail.Visible && tbMobilePhone.Visible )
+            // Looking for a match using the first name, last name, and mobile number or email address information
+            if ( tbFirstName.Visible && tbLastName.Visible && ( tbMobilePhone.Visible || tbEmail.Visible ) )
             {
                 mobilePhoneNumber = tbMobilePhone.Text.RemoveAllNonAlphaNumericCharacters();
 
@@ -513,17 +510,6 @@ namespace RockWeb.Blocks.Security
                     RockPage.LinkPersonAliasToDevice( person.PrimaryAlias.Id, hfMacAddress.Value );
                     return person.PrimaryAlias.Id;
                 }
-            }
-
-            // Look for minimum info
-            if ( tbFirstName.Visible && tbLastName.Visible && ( tbMobilePhone.Visible || tbEmail.Visible ) )
-            {
-                // If no known person record then create one since we have the minimum info required
-                person = CreateAndSaveNewPerson();
-                
-                // Link new device to person alias
-                RockPage.LinkPersonAliasToDevice( person.PrimaryAlias.Id, hfMacAddress.Value );
-                return person.PrimaryAlias.Id;
             }
 
             // Just match off phone number if no other fields are showing.
