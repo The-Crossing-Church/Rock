@@ -3,6 +3,18 @@
 /bin/*.pdb
 /bin/*.xml
 
+!/bin/com.bemadev.*
+!/bin/com.bemaservices.*
+!/bin/com.bricksandmortarstudio.*
+!/bin/com.centralaz.*
+!/bin/com.minecartstudio.*
+!/bin/com.shepherdchurch.*
+!/bin/rocks.pillars.*
+
+!/bin/OpenHtmlToPdf.dll
+!/bin/itextsharp.dll
+!/bin/sendgrid.webhooks.dll
+
 /*.suo
 /*.user
 /Test.aspx
