@@ -19,6 +19,9 @@ using Rock.CheckIn;
 using System.Data.Entity;
 using System.Web.UI.HtmlControls;
 using System.Data;
+using System.Text;
+using System.Web;
+using System.IO;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
 {
@@ -36,6 +39,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
         // Variables that get set with filter 
         private DateTime start;
         private DateTime end;
+        public string csv {
+            get
+            {
+                if(ViewState["csv"] != null)
+                {
+                    return ViewState["csv"].ToString();
+                }
+                else
+                {
+                    return "";
+                }
+            }
+            set
+            {
+                ViewState["csv"] = value;
+            }
+        } 
         private List<int> svcTimes;
         public List<AttendanceReportData> results;
         public List<AttendanceReportData> thresholds; 
@@ -89,6 +109,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
 
         #region Base Control Methods
 
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            ScriptManager scriptManager = ScriptManager.GetCurrent(this.Page);
+            scriptManager.RegisterPostBackControl(this.btnExport);
+        }
+
         /// <summary>
         /// Raises the <see cref="E:Init" /> event.
         /// </summary>
@@ -134,6 +160,25 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
             svcTimes = lbSchedules.SelectedValues.Select(x => Int32.Parse(x)).ToList();
             GetAttendance();
         }
+
+        /// <summary>
+        /// Handles the Click event of the btnExport control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnExport_Click(object sender, EventArgs e)
+        {
+            Response.Clear();
+            Response.Buffer = true;
+            Response.ContentType = "application/text";
+            Response.AddHeader("content-disposition", "attachment;filename=AttendanceExport.csv");
+            Response.Cache.SetCacheability(HttpCacheability.Public);
+            Response.Charset = "";
+            Response.Output.Write(csv);
+            Response.Flush();
+            Response.End();
+        }
+
         protected void sdrpDates_SelectedDateRangeChanged(object sender, EventArgs e)
         {
             BindFilter();
@@ -547,6 +592,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
 
             phContent.Controls.Add(dailyData);
 
+            var html = "";
+            foreach (HtmlGenericControl c in phContent.Controls) {
+                System.IO.TextWriter tw = new System.IO.StringWriter();
+                HtmlTextWriter htw = new HtmlTextWriter(tw);
+                c.RenderControl(htw);
+                html += tw.ToString();
+            }
+            html = html.Replace("<div class=\"custom-row\">", "\r\n");
+            html = html.Replace("</div>", ",");
+            html = html.Replace("<div class=\"custom-col\">", "");
+            html = html.Replace("<div class=\"custom-col name-col\">", "");
+            html = html.Replace("<div class=\"custom-col first-custom-col\">", "");
+            html = html.Replace("<div class=\"custom-row bg-secondary\">", "\r\n");
+            html = html.Replace("<div class=\"service-group\">", "\r\n");
+            html = html.Replace("<div class=\"custom-row service-time\">", "");
+            html = html.Replace("<div class=\"custom-col name-col bg-secondary\">", "");
+            html = html.Replace("<div class=\"custom-seperator\">", "");
+            html = html.Replace("<div class=\"custom-col service-time name-col\">", "");
+            html = html.Replace("<div class=\"custom-col over-threshold\">", "");
+
+            this.csv = html; 
+
             phContent.Visible = true;
         }
 
@@ -848,8 +915,34 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
         //        bf.DataField = results[i].Title;
         //        bf.HeaderText = results[i].Title;
         //        grid.Columns.Add(bf);
-            //}
         //}
+        //}
+
+        public void GenerateCSV()
+        {
+            var html = "";
+            foreach (HtmlGenericControl c in phContent.Controls)
+            {
+                System.IO.TextWriter tw = new System.IO.StringWriter();
+                HtmlTextWriter htw = new HtmlTextWriter(tw);
+                c.RenderControl(htw);
+                html += tw.ToString();
+            }
+            html = html.Replace("<div class=\"custom-row\">", "\r\n");
+            html = html.Replace("</div>", ",");
+            html = html.Replace("<div class=\"custom-col\">", "");
+            html = html.Replace("<div class=\"custom-col name-col\">", "");
+            html = html.Replace("<div class=\"custom-col first-custom-col\">", "");
+            html = html.Replace("<div class=\"custom-row bg-secondary\">", "\r\n");
+            html = html.Replace("<div class=\"service-group\">", "\r\n");
+            html = html.Replace("<div class=\"custom-row service-time\">", "");
+            html = html.Replace("<div class=\"custom-col name-col bg-secondary\">", "");
+            html = html.Replace("<div class=\"custom-seperator\">", "");
+            html = html.Replace("<div class=\"custom-col service-time name-col\">", "");
+            html = html.Replace("<div class=\"custom-col over-threshold\">", "");
+
+            this.csv = html;
+        }
 
         #endregion
 

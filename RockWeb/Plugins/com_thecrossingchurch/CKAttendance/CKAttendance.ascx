@@ -28,8 +28,13 @@
             </div>
         </div>
         <br />
-        <div class="custom-container">
+        <div class="custom-container" id="DataContainer" runat="server">
             <asp:PlaceHolder ID="phContent" runat="server" Visible="false" />
+        </div>
+        <div class="row">
+            <div class="pull-right">
+                <Rock:BootstrapButton ID="btnExport" runat="server" Text="Export" CssClass="btn btn-primary" OnClick="btnExport_Click" />
+            </div>
         </div>
     </ContentTemplate>
 </asp:UpdatePanel>
