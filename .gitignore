@@ -19,6 +19,7 @@ pageviews.csv
 RockLogster.csv
 Quartz.xml
 StyleCop.Cache
+RockWeb/App_Data/RockModelViews.xml
 
 #specific folders
 [Oo]bj/
@@ -30,6 +31,11 @@ RockWeb/App_Data/PackageStaging
 .localhistory/
 
 Packages/*
+
+RockWeb/App_Data/Cache
+RockWeb/App_Data/Files
+RockWeb/App_Data/Logs
+RockWeb/App_Data/Uploads
 
 # javascript deps
 node_modules
