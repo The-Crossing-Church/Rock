@@ -12,7 +12,7 @@ _ReSharper.*
 
 #specific files
 RockJobSchedulerService.Xml
-# web.[Cc]onnectionStrings.config
+web.[Cc]onnectionStrings.config
 desktop.ini
 Rock.XML
 pageviews.csv
