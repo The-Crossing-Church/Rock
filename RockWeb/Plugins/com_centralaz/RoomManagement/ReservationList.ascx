@@ -11,9 +11,11 @@
             </div>
             <div class="panel-body">
                 <div class="grid grid-panel">
+                    <Rock:NotificationBox ID="nbMessage" runat="server" NotificationBoxType="Warning" Visible="false"></Rock:NotificationBox>
                     <Rock:GridFilter ID="gfSettings" runat="server">
                         <Rock:RockTextBox ID="tbName" runat="server" Label="Reservation Name" />
-                        <Rock:RockDropDownList ID="ddlMinistry" runat="server" Label="Ministry" DataTextField="Name" DataValueField="Id" />
+                        <Rock:RockCheckBoxList ID="cblReservationType" RepeatDirection="Horizontal" Label="Reservation Type" runat="server" DataTextField="Name" DataValueField="Id" />
+                        <Rock:RockCheckBoxList ID="cblMinistry" RepeatDirection="Horizontal" Label="Ministry" runat="server" DataTextField="Name" DataValueField="Id" />
                         <Rock:RockCheckBoxList ID="cblApproval" runat="server" Label="Approval Status" RepeatDirection="Horizontal" />
                         <Rock:DateTimePicker ID="dtpStartDateTime" runat="server" Label="Start Date" />
                         <Rock:DateTimePicker ID="dtpEndDateTime" runat="server" Label="End Date" />
@@ -25,6 +27,7 @@
                         <Columns>
                             <Rock:RockBoundField DataField="Id" HeaderText="Id" Visible="false" />
                             <Rock:RockBoundField DataField="ReservationName" HeaderText="Reservation Name" />
+                            <Rock:RockBoundField DataField="ReservationType" HeaderText="Reservation Type" />
                             <Rock:RockBoundField DataField="EventDateTimeDescription" HeaderText="Event Time" />
                             <Rock:RockBoundField DataField="ReservationDateTimeDescription" HeaderText="Reservation Time" />
                             <Rock:RockBoundField DataField="Locations" HeaderText="Locations" />

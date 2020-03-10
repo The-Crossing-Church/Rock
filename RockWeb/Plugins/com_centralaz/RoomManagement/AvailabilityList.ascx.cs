@@ -321,6 +321,8 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                 locationList = locationService.Queryable().AsNoTracking().Where( l => l.Name != null && l.Name != string.Empty ).ToList();
             }
 
+            locationList = locationList.Where( l => l.IsActive ).ToList();
+
             if ( nbMaxOccupants.Text.AsInteger() > 0 )
             {
                 locationList = locationList.Where( l => l.FirmRoomThreshold >= nbMaxOccupants.Text.AsInteger() ).ToList();
@@ -348,7 +350,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                 IsAvailable = !reservationSummaryList.Any( r => r.ReservationLocations.Any( rl => rl.ApprovalState != ReservationLocationApprovalState.Denied && rl.LocationId == l.Id ) ),
                 Availability = reservationSummaryList.Any( r => r.ReservationLocations.Any( rl => rl.ApprovalState != ReservationLocationApprovalState.Denied && rl.LocationId == l.Id ) ) ? reservationSummaryList.Where( r => r.ReservationLocations.Any( rl => rl.ApprovalState != ReservationLocationApprovalState.Denied && rl.LocationId == l.Id ) ).Select( r => r.ReservationName + "</br>" + r.ReservationDateTimeDescription ).ToList().AsDelimited( "</br></br>" ) : "Available"
             } ).OrderBy( l => l.Name ).ToList();
-            gLocations.EntityTypeId = EntityTypeCache.Read<Location>().Id;
+            gLocations.EntityTypeId = EntityTypeCache.Get<Location>().Id;
             gLocations.DataBind();
         }
 
@@ -401,7 +403,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                     Availability = resource.Quantity - reservedResources > 0 ? String.Format( "{0} Available", resource.Quantity - reservedResources ) : reservationSummaryList.Where( reservation => reservation.ReservationResources.Any( rr => rr.ApprovalState != ReservationResourceApprovalState.Denied && rr.ResourceId == resource.Id ) ).Select( reservation => reservation.ReservationName + "</br>" + reservation.ReservationDateTimeDescription ).ToList().AsDelimited( "</br></br>" )
                 };
             } ).OrderBy( l => l.Name ).ToList();
-            gResources.EntityTypeId = EntityTypeCache.Read<Reservation>().Id;
+            gResources.EntityTypeId = EntityTypeCache.Get<Reservation>().Id;
             gResources.DataBind();
         }
 

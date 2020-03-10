@@ -2799,7 +2799,7 @@ namespace RockWeb.Plugins.com_bemadev.Event
             lAccount.Text = registrationInstance.Account != null ? registrationInstance.Account.Name : string.Empty;
 
             lMaxAttendees.Visible = registrationInstance.MaxAttendees > 0;
-            lMaxAttendees.Text = registrationInstance.MaxAttendees.ToString( "N0" );
+            lMaxAttendees.Text = registrationInstance.MaxAttendees.Value.ToString( "N0" );
             lWorkflowType.Text = registrationInstance.RegistrationWorkflowType != null ?
                 registrationInstance.RegistrationWorkflowType.Name : string.Empty;
             lWorkflowType.Visible = !string.IsNullOrWhiteSpace( lWorkflowType.Text );
