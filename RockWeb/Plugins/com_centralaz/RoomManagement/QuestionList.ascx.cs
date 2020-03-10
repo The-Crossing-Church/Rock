@@ -163,12 +163,10 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
         protected void rGrid_GridReorder( object sender, GridReorderEventArgs e )
         {
             var rockContext = new RockContext();
-            var attributes = GetAttributeList();
-            if ( attributes != null )
+            var questions = GetQuestions();
+            if ( questions != null )
             {
-                var attributeService = new AttributeService( rockContext );
-                var databaseAttributes = attributeService.GetByIds( attributes.Select( a => a.Id ).ToList() ).OrderBy( a => a.Order ).ToList();
-                attributeService.Reorder( databaseAttributes, e.OldIndex, e.NewIndex );
+                new QuestionService( rockContext ).Reorder( questions, e.OldIndex, e.NewIndex );
                 rockContext.SaveChanges();
             }
 
@@ -324,7 +322,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                     nextOrder = CopyQuestionAttributes( rockContext, questionService, attributeService, keyMap, nextOrder, sourceQuestionList );
                 }
 
-                AttributeCache.RemoveEntityAttributes();
+                Rock.Web.Cache.AttributeCache.FlushEntityAttributes();
 
 
                 BindGrid();
@@ -507,7 +505,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             {
                 question = new Question();
                 question.Attribute = new Rock.Model.Attribute();
-                question.Attribute.FieldTypeId = FieldTypeCache.Get( Rock.SystemGuid.FieldType.TEXT ).Id;
+                question.Attribute.FieldTypeId = FieldTypeCache.Read( Rock.SystemGuid.FieldType.TEXT ).Id;
             }
 
             var reservedKeyNames = new List<string>();
@@ -575,9 +573,9 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             {
                 entityTypeId = new EntityTypeService( rockContext ).Get( com.centralaz.RoomManagement.SystemGuid.EntityType.RESERVATION_LOCATION.AsGuid() ).Id;
             }
-
+            
             var savedAttribute = SaveAttributeEdits( edtQuestion, entityTypeId, null, null, ResourceId, LocationId, rockContext );
-            AttributeCache.RemoveEntityAttributes();
+            AttributeCache.FlushEntityAttributes();
             return savedAttribute;
         }
 

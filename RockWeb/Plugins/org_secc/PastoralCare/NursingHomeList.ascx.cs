@@ -1,4 +1,4 @@
-// <copyright>
+﻿// <copyright>
 // Copyright Southeast Christian Church
 //
 // Licensed under the  Southeast Christian Church License (the "License");
@@ -325,7 +325,7 @@ namespace RockWeb.Plugins.org_secc.PastoralCare
 
                         SetExcelValue( worksheet.Cells[rowCounter, 5], resident.Person.ConnectionStatusValue );
 
-                        SetExcelValue( worksheet.Cells[rowCounter, 6], resident.AdmitDate );
+                        SetExcelValue( worksheet.Cells[rowCounter, 6], resident.AdmitDate.HasValue ? resident.AdmitDate.Value.Date.ToShortDateString() : "" );
 
                         SetExcelValue( worksheet.Cells[rowCounter, 7], resident.Room );
 
@@ -476,7 +476,7 @@ namespace RockWeb.Plugins.org_secc.PastoralCare
 
                     // Find the summary activity and activate it.
                     WorkflowActivityType workflowActivityType = workflow.WorkflowType.ActivityTypes.Where( at => at.Name.Contains( "Summary" ) ).FirstOrDefault();
-                    WorkflowActivity workflowActivity = WorkflowActivity.Activate( workflowActivityType, workflow, rockContext );
+                    WorkflowActivity workflowActivity = WorkflowActivity.Activate( WorkflowActivityTypeCache.Get(workflowActivityType.Id, rockContext), workflow, rockContext );
 
                 }
                 rockContext.SaveChanges();
@@ -524,11 +524,9 @@ namespace RockWeb.Plugins.org_secc.PastoralCare
             Guid nursingHomeAdmissionWorkflow = GetAttributeValue( "NursingHomeResidentWorkflow" ).AsGuid();
             Guid nursingHomeList = GetAttributeValue( "NursingHomeList" ).AsGuid();
 
-            List<DefinedValue> facilities = definedValueService.Queryable().Where( dv => dv.DefinedType.Guid == nursingHomeList ).ToList();
-            facilities.ForEach( h =>
-            {
-                h.LoadAttributes();
-            } );
+            
+            List<DefinedValueCache> facilities = DefinedTypeCache.Get( nursingHomeList ).DefinedValues;
+
 
             int entityTypeId = entityTypeService.Queryable().Where( et => et.Name == typeof( Workflow ).FullName ).FirstOrDefault().Id;
             string status = ( contextEntity != null ? "Completed" : "Active" );
@@ -550,35 +548,40 @@ namespace RockWeb.Plugins.org_secc.PastoralCare
             var wfTmpqry = workflowService.Queryable().AsNoTracking()
                     .Where( w => ( w.WorkflowType.Guid == nursingHomeAdmissionWorkflow ) && ( w.Status == "Active" || w.Status == status ) );
 
+            var visitQry = workflowActivityService.Queryable()
+                    .Join(
+                        attributeValueService.Queryable(),
+                        wa => wa.Id,
+                        av => av.EntityId.Value,
+                        ( wa, av ) => new { WorkflowActivity = wa, AttributeValue = av } )
+                .Where( a => activityAttributeIds.Contains( a.AttributeValue.AttributeId ) )
+                .GroupBy( wa => wa.WorkflowActivity )
+                .Select( obj => new { WorkflowActivity = obj.Key, AttributeValues = obj.Select( a => a.AttributeValue ) } );
+
             if ( contextEntity != null )
             {
                 var personGuid = ( ( Person ) contextEntity ).Aliases.Select( a => a.Guid.ToString() ).ToList();
                 var validWorkflowIds = new AttributeValueService( rockContext ).Queryable()
                     .Where( av => av.Attribute.Key == "PersonToVisit" && personGuid.Contains( av.Value ) ).Select( av => av.EntityId );
                 wfTmpqry = wfTmpqry.Where( w => validWorkflowIds.Contains( w.Id ) );
+                visitQry = visitQry.Where( w => validWorkflowIds.Contains( w.WorkflowActivity.WorkflowId ) );
                 gReport.Columns[10].Visible = true;
             }
 
-            var qry = wfTmpqry.Join( attributeValueService.Queryable(),
-                obj => obj.Id,
-                av => av.EntityId.Value,
-                ( obj, av ) => new { Workflow = obj, AttributeValue = av } )
+            var visits = visitQry.ToList();
+
+            var workflows = wfTmpqry.Join( 
+                    attributeValueService.Queryable(),
+                    obj => obj.Id,
+                    av => av.EntityId.Value,
+                    ( obj, av ) => new { Workflow = obj, AttributeValue = av } )
                 .Where( a => attributeIds.Contains( a.AttributeValue.AttributeId ) )
                 .GroupBy( obj => obj.Workflow )
                 .Select( obj => new { Workflow = obj.Key, AttributeValues = obj.Select( a => a.AttributeValue ) } )
-                .GroupJoin( workflowActivityService.Queryable()
-                    .Join(
-                        attributeValueService.Queryable(),
-                        obj => obj.Id,
-                        av => av.EntityId.Value,
-                        ( obj, av ) => new { WorkflowActivity = obj, AttributeValue = av } )
-                        .Where( a => activityAttributeIds.Contains( a.AttributeValue.AttributeId )
-                    ).GroupBy( obj => obj.WorkflowActivity )
-                    .Select( obj => new { WorkflowActivity = obj.Key, AttributeValues = obj.Select( a => a.AttributeValue ) } ),
-                obj => obj.Workflow.Id,
-                wa => wa.WorkflowActivity.WorkflowId,
-                ( obj, wa ) => new { Workflow = obj.Workflow, AttributeValues = obj.AttributeValues, VisitationActivities = wa } )
                 .ToList();
+
+            var qry = workflows.AsQueryable().GroupJoin( visits.AsQueryable(), wf => wf.Workflow.Id, wa => wa.WorkflowActivity.WorkflowId, ( Workflow, wa ) => new { Workflow = Workflow, WorkflowActivities = wa } )
+                .Select( obj => new { Workflow = obj.Workflow.Workflow, AttributeValues = obj.Workflow.AttributeValues, VisitationActivities = obj.WorkflowActivities } ).ToList();
 
             if ( contextEntity == null )
             {
@@ -614,7 +617,7 @@ namespace RockWeb.Plugins.org_secc.PastoralCare
                 } )(),
                 Address = new Func<string>( () =>
                 {
-                    DefinedValue dv = facilities.Where( h => h.Guid == w.AttributeValues.Where( av => av.AttributeKey == "NursingHome" ).Select( av => av.Value ).FirstOrDefault().AsGuid() ).FirstOrDefault();
+                    DefinedValueCache dv = facilities.Where( h => h.Guid == w.AttributeValues.Where( av => av.AttributeKey == "NursingHome" ).Select( av => av.Value ).FirstOrDefault().AsGuid() ).FirstOrDefault();
                     if ( dv != null )
                     {
                         return dv.AttributeValues["Qualifier1"].ValueFormatted + " " +
@@ -624,11 +627,27 @@ namespace RockWeb.Plugins.org_secc.PastoralCare
                     }
                     return "";
                 } )(),
+                PastoralMinister = new Func<string>( () =>
+                {
+                    DefinedValueCache dv = facilities.Where( h => h.Guid == w.AttributeValues.Where( av => av.AttributeKey == "NursingHome" ).Select( av => av.Value ).FirstOrDefault().AsGuid() ).FirstOrDefault();
+                    if ( dv != null && (dv.AttributeValues.ContainsKey( "PastoralMinister" ) || dv.AttributeValues.ContainsKey( "Qualifier6" ) ) )
+                    {
+                        return dv.AttributeValues.ContainsKey("PastoralMinister")?dv.AttributeValues["PastoralMinister"].ValueFormatted:dv.AttributeValues["Qualifier6"].ValueFormatted;
+                    }
+                    return "";
+                } )(),
                 Room = w.AttributeValues.Where( av => av.AttributeKey == "Room" ).Select( av => av.ValueFormatted ).FirstOrDefault(),
                 AdmitDate = w.AttributeValues.Where( av => av.AttributeKey == "AdmitDate" ).Select( av => av.ValueAsDateTime ).FirstOrDefault(),
                 Description = w.AttributeValues.Where( av => av.AttributeKey == "VisitationRequestDescription" ).Select( av => av.ValueFormatted ).FirstOrDefault(),
                 Visits = w.VisitationActivities.Where( a => a.AttributeValues != null && a.AttributeValues.Where( av => av.AttributeKey == "VisitDate" && !string.IsNullOrWhiteSpace( av.Value ) ).Any() ).Count(),
-                LastVisitor = w.VisitationActivities.Where( a => a.AttributeValues != null && a.AttributeValues.Where( av => av.AttributeKey == "VisitDate" && !string.IsNullOrWhiteSpace( av.Value ) ).Any() ).Select( va => va.AttributeValues.Where( av => av.AttributeKey == "Visitor" ).LastOrDefault() ).Select( av => av == null ? "N/A" : av.ValueFormatted ).DefaultIfEmpty( "N/A" ).LastOrDefault(),
+                LastVisitor = new Func<string>( () => {
+                    var visitor = w.VisitationActivities.Where( a => a.AttributeValues != null && a.AttributeValues.Where( av => av.AttributeKey == "VisitDate" && !string.IsNullOrWhiteSpace( av.Value ) ).Any() ).Select( va => va.AttributeValues.Where( av => av.AttributeKey == "Visitor" ).LastOrDefault() ).LastOrDefault();
+                    if (visitor != null)
+                    {
+                        return visitor.ValueFormatted;
+                    }
+                    return "N/A";
+                } )(),
                 LastVisitDate = w.VisitationActivities.Where( a => a.AttributeValues != null && a.AttributeValues.Where( av => av.AttributeKey == "VisitDate" && !string.IsNullOrWhiteSpace( av.Value ) ).Any() ).Select( va => va.AttributeValues.Where( av => av.AttributeKey == "VisitDate" ).LastOrDefault() ).Select( av => av == null ? "N/A" : av.ValueFormatted ).DefaultIfEmpty( "N/A" ).LastOrDefault(),
                 LastVisitNotes = w.VisitationActivities.Where( a => a.AttributeValues != null && a.AttributeValues.Where( av => av.AttributeKey == "VisitDate" && !string.IsNullOrWhiteSpace( av.Value ) ).Any() ).Select( va => va.AttributeValues.Where( av => av.AttributeKey == "VisitNote" ).LastOrDefault() ).Select( av => av == null ? "N/A" : av.ValueFormatted ).DefaultIfEmpty( "N/A" ).LastOrDefault(),
                 DischargeDate = w.AttributeValues.Where( av => av.AttributeKey == "DischargeDate" ).Select( av => av.ValueFormatted ).FirstOrDefault(),

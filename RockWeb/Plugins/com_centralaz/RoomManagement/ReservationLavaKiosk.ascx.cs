@@ -165,7 +165,6 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             var reservationSummaries = reservationSummaryList.Select( r => new
             {
                 Id = r.Id,
-                ReservationType = r.ReservationType,
                 ReservationName = r.ReservationName,
                 ApprovalState = r.ApprovalState.ConvertToString(),
                 Locations = r.ReservationLocations.ToList(),
@@ -177,13 +176,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                 ReservationEndDateTime = r.ReservationEndDateTime,
                 EventDateTimeDescription = r.EventTimeDescription.Replace( "a", " AM" ).Replace( "p", " PM" ),
                 ReservationDateTimeDescription = r.ReservationTimeDescription,
-                SetupPhotoId = r.SetupPhotoId,
-                Note = r.Note,
-                RequesterAlias = r.RequesterAlias,
-                EventContactPersonAlias = r.EventContactPersonAlias,
-                EventContactEmail = r.EventContactEmail,
-                EventContactPhoneNumber = r.EventContactPhoneNumber,
-                MinistryName = r.ReservationMinistry != null ? r.ReservationMinistry.Name : string.Empty,
+                SetupPhotoId = r.SetupPhotoId
             } )
             .OrderBy( r => r.EventStartDateTime )
             .GroupBy( r => r.EventStartDateTime.Date )
