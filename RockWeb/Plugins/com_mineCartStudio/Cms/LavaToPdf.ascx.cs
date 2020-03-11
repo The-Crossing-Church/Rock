@@ -212,6 +212,7 @@ namespace RockWeb.Plugins.com_mineCartStudio.Cms
             }
             catch(Exception ex )
             {
+                System.IO.File.AppendAllText("COOKSEY_ERROR.txt", ex.StackTrace + Environment.NewLine + ex.InnerException);
                 lMessages.Text = string.Format( @"<div class=""alert alert-danger"">An error occurred processing the document: {0}.", ex.Message );
             }
         }
