@@ -591,7 +591,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.RoomManagement
                     return;
                 }
 
-                reservation = reservationService.UpdateApproval( reservation, hfApprovalState.Value.ConvertToEnum<ReservationApprovalState>( ReservationApprovalState.Unapproved ), CurrentPerson );
+                reservation = reservationService.UpdateApproval( reservation, hfApprovalState.Value.ConvertToEnum<ReservationApprovalState>( ReservationApprovalState.Unapproved ) );
 
                 changes = EvaluateLocationAndResourceChanges( changes, oldReservation, reservation );
 
