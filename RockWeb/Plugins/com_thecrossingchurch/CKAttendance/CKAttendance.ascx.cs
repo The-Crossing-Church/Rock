@@ -22,6 +22,9 @@ using System.Data;
 using System.Text;
 using System.Web;
 using System.IO;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
 {
@@ -168,13 +171,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnExport_Click(object sender, EventArgs e)
         {
+            var excel = GenerateExcel();
+            byte[] byteArray;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                excel.SaveAs(ms);
+                byteArray = ms.ToArray();
+            }
             Response.Clear();
             Response.Buffer = true;
-            Response.ContentType = "application/text";
-            Response.AddHeader("content-disposition", "attachment;filename=AttendanceExport.csv");
+            Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            Response.AddHeader("content-disposition", "attachment;filename=AttendanceExport.xlsx");
             Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
-            Response.Output.Write(csv);
+            //Response.Output.Write(csv);
+            Response.BinaryWrite(byteArray);
             Response.Flush();
             Response.End();
         }
@@ -610,7 +621,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
             html = html.Replace("<div class=\"custom-col name-col bg-secondary\">", "");
             html = html.Replace("<div class=\"custom-seperator\">", "");
             html = html.Replace("<div class=\"custom-col service-time name-col\">", "");
-            html = html.Replace("<div class=\"custom-col over-threshold\">", "");
+            html = html.Replace("<div class=\"custom-col over-threshold\">", "**");
 
             this.csv = html; 
 
@@ -942,6 +953,50 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CKAttendance
             html = html.Replace("<div class=\"custom-col over-threshold\">", "");
 
             this.csv = html;
+        }
+
+        public ExcelPackage GenerateExcel() {
+            ExcelPackage excel = new ExcelPackage();
+            excel.Workbook.Properties.Title = "CK Attendance";
+            // add author info
+            Rock.Model.UserLogin userLogin = Rock.Model.UserLoginService.GetCurrentUser();
+            if (userLogin != null)
+            {
+                excel.Workbook.Properties.Author = userLogin.Person.FullName;
+            }
+            else
+            {
+                excel.Workbook.Properties.Author = "Rock";
+            }
+            ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add("Attendance");
+            worksheet.PrinterSettings.LeftMargin = .5m;
+            worksheet.PrinterSettings.RightMargin = .5m;
+            worksheet.PrinterSettings.TopMargin = .5m;
+            worksheet.PrinterSettings.BottomMargin = .5m;
+
+            var raw_data = csv.Replace("\r\n", "\n");
+            var row_data = raw_data.Split('\n');
+
+            for (var i = 1; i <= row_data.Length; i++)
+            {
+                if (row_data[i-1].Contains(','))
+                {
+                    var col_data = row_data[i-1].Split(',');
+                    for (var j = 1; j <= col_data.Length; j++)
+                    {
+                        if(col_data[j-1].Length > 2 && col_data[j-1].Substring(0, 2) == "**")
+                        {
+                            col_data[j-1] = col_data[j-1].Substring(2);
+                            Color c = System.Drawing.ColorTranslator.FromHtml("#9A0000");
+                            worksheet.Cells[i, j].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            worksheet.Cells[i, j].Style.Fill.BackgroundColor.SetColor(c);
+                        }
+                        worksheet.Cells[i, j].Value = col_data[j-1];
+
+                    }
+                }
+            }
+            return excel;
         }
 
         #endregion
