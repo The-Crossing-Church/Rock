@@ -10,7 +10,7 @@
 
             <Rock:RockRadioButtonList ID="rblMediums" runat="server" Label="Send Code To" Required="true" />
 
-            <Rock:BootstrapButton ID="btnSelect" runat="server" Text="Send Code" CssClass="btn btn-primary" OnClick="btnSelect_Click" DataLoadingText="Sending Code..." />
+            <asp:Button ID="btnSelect" runat="server" Text="Send Code" CssClass="btn btn-primary" OnClick="btnSelect_Click" />
             <asp:Button ID="btnCancelSelect" runat="server" Text="Cancel" CssClass="btn btn-link" OnClick="btnCancelSelect_Click" CausesValidation="false" />
         
         </asp:Panel>
@@ -19,7 +19,7 @@
         
             <Rock:RockTextBox ID="tbCode" runat="server" Label="Code" Required="true" />
 
-            <Rock:BootstrapButton ID="btnSubmit" runat="server" Text="Log In" CssClass="btn btn-primary" OnClick="btnLogin_Click" DataLoadingText="Logging In..." />
+            <asp:Button ID="btnSubmit" runat="server" Text="Log In" CssClass="btn btn-primary" OnClick="btnLogin_Click" />
             <asp:Button ID="btnCancelCode" runat="server" Text="Cancel" CssClass="btn btn-link" OnClick="btnCancelLogin_Click" CausesValidation="false" />
         
         </asp:Panel>
