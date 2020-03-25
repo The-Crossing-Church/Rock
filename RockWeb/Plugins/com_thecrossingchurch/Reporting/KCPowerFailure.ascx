@@ -1,0 +1,39 @@
+<%@ Control Language="C#" AutoEventWireup="true" CodeFile="KCPowerFailure.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.Reporting.KCPowerFailure" %>
+
+<asp:UpdatePanel ID="upnlContent" runat="server">
+    <ContentTemplate>
+        <div class="row">
+            <div class="pull-right">
+                <Rock:BootstrapButton ID="btnExport" runat="server" Text="Export Excel" CssClass="btn btn-primary" OnClick="btnExport_Click" />
+                <Rock:BootstrapButton ID="btnPDF" runat="server" Text="Export PDF" CssClass="btn btn-primary" OnClick="btnExportPDF_Click" />
+                <Rock:BootstrapButton ID="btnTags" runat="server" Text="Print Tags" CssClass="btn btn-primary" OnClick="btnTags_Click" />
+            </div>
+        </div>
+        <div class="custom-container" id="DataContainer" runat="server">
+            <asp:PlaceHolder ID="phContent" runat="server" Visible="false" />
+        </div>
+    </ContentTemplate>
+</asp:UpdatePanel>
+<style>
+    .class-container table td, .class-container table th {
+        min-width: 150px;
+        text-align: left;
+        border-right: 1px solid black;
+        border-bottom: 1px solid black;
+        padding: 4px;
+    }
+    .class-container table tr {
+        border-left: 1px solid black;
+    }
+    .header-row {
+        border-top: 1px solid black;
+        font-weight: bold; 
+    }
+    .class-name {
+        font-weight: bold;
+        font-size: 22px;
+    }
+    .bg-secondary {
+        background-color: #F1F1F1;
+    }
+</style>
