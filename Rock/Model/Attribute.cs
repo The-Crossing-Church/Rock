@@ -282,7 +282,7 @@ namespace Rock.Model
             {
                 if ( _abbreviatedName.IsNullOrWhiteSpace() )
                 {
-                    return Name.Truncate(100);
+                    return Name.Substring(0, 100);
                 }
 
                 return _abbreviatedName;
