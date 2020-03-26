@@ -282,7 +282,6 @@ namespace Rock.Model
             {
                 if (_abbreviatedName.IsNullOrWhiteSpace())
                 {
-                    System.IO.File.AppendAllText("error_ROCK.txt", Environment.NewLine + Name.Truncate(100) + Environment.NewLine);
                     return Name.Truncate(100);
                 }
 
