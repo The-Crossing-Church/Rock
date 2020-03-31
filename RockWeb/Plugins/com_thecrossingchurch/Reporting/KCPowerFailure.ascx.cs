@@ -45,6 +45,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         private List<int> GroupIds;
         private List<Roster> rosters;
         private string html;
+        private DateTime rptDate; 
 
         #endregion
 
@@ -90,6 +91,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnExportReports_Click(object sender, EventArgs e)
         {
+            rptDate = tagDate.SelectedDate.Value;
             byte[] files;
             using (var memoryStream = new MemoryStream())
             {
@@ -464,7 +466,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                             "Kids Club" + 
                                         "</div>" +
                                         "<div>" +
-                                            "06/05/20" + 
+                                            rptDate.ToString("MM/dd/y") + 
                                         "</div>" +
                                     "</div>" +
                                 "</div>" +
@@ -485,9 +487,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                     rosters[i].RosterData[j].AllergyMedical +
                                 "</div>";
                     }
-                    page += "</td><td class='vertical-spacer'></td><td class='tag'>";
+                    page += "</td><td class='vertical-spacer'></td><td class='tag'><div>";
                     //Parent Receipt
-                        page += "<div style='padding: 8px; text-align: center;' class='inline'>" +
+                        page += "<div style='padding: 8px 16px; float: left; text-align: center;' class='inline'>" +
                                     "<div style='font-size: 20pt;'>Receipt</div>" +
                                     "<div class='sec' style='font-size: 20pt;'>" +
                                         rosters[i].RosterData[j].Securitycode +
@@ -496,13 +498,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                         rosters[i].RosterData[j].NickName + 
                                     "</div>" +
                                     "<div style='font-size: 18pt;'>" +
-                                        "06/05/20" +
+                                        rptDate.ToString("MM/dd/y") +
                                     "</div>" +
                                     "<div style='font-size: 18pt;'>" +
                                         "Kids Club" +
                                     "</div>" +
                                 "</div>" +
-                                "<div style='padding: 8px; text-align: center;' class='inline right'>" +
+                                "<div style='padding: 8px 16px; text-align: center;' class='inline right'>" +
                                     "<div style='font-size: 20pt;'>Receipt</div>" +
                                     "<div class='sec' style='font-size: 20pt;'>" +
                                         rosters[i].RosterData[j].Securitycode +
@@ -511,13 +513,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                         rosters[i].RosterData[j].NickName +
                                     "</div>" +
                                     "<div style='font-size: 18pt;'>" +
-                                        "06/05/20" +
+                                        rptDate.ToString("MM/dd/y") +
                                     "</div>" +
                                     "<div style='font-size: 18pt;'>" +
                                         "Kids Club" +
                                     "</div>" +
                                 "</div>";
-                    page += "</td></tr>";
+                    page += "</div></td></tr>";
                     //page += "<tr class='horizontal-spacer'><td></td><td class='vertical-spacer'></td><td></td></tr>";
                     if(counter == 5)
                     {
@@ -554,7 +556,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             "</body>" +
                             "</html>";
             //var size = new PaperSize(Length.Inches(8.5), Length.Inches(11));
-            var pdf = Pdf.From(content).WithResolution(7680).WithObjectSetting("web.enableIntelligentShrinking", "false").Portrait().WithMargins(0.0.Inches()).Content();
+            var pdf = Pdf.From(content)
+                        .WithResolution(7680)
+                        .WithObjectSetting("web.enableIntelligentShrinking", "false")
+                        .WithGlobalSetting("margin.top", ".5in")
+                        .WithGlobalSetting("margin.bottom", ".5in")
+                        .WithGlobalSetting("margin.left", ".18in")
+                        .WithGlobalSetting("margin.right", ".18in")
+                        .Portrait()
+                        .Content();
             return pdf;
         }
         //public byte[] GenerateTags()

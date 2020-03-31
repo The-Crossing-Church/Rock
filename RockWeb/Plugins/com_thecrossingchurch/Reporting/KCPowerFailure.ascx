@@ -3,8 +3,13 @@
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <div class="row">
-            <div class="pull-right">
-                <Rock:BootstrapButton ID="btnExportReports" runat="server" Text="Export Reports" CssClass="btn btn-primary" OnClick="btnExportReports_Click" />
+            <div class="col pull-right">
+                <div style="display:inline-block; padding-right: 8px;" class="report-date">
+                    <Rock:DatePicker ID="tagDate" runat="server" Label="Report Date" Required="true"  class="report-date"/>
+                </div>
+                <div style="display:inline-block;">
+                    <Rock:BootstrapButton ID="btnExportReports" runat="server" Text="Export Reports" CssClass="btn btn-primary" OnClick="btnExportReports_Click" style="display: inline-block; vertical-align: bottom;" />
+                </div>
                 <%--<Rock:BootstrapButton ID="btnExport" runat="server" Text="Export Excel" CssClass="btn btn-primary" OnClick="btnExport_Click" />
                 <Rock:BootstrapButton ID="btnPDF" runat="server" Text="Export PDF" CssClass="btn btn-primary" OnClick="btnExportPDF_Click" />
                 <Rock:BootstrapButton ID="btnTags" runat="server" Text="Print Tags" CssClass="btn btn-primary" OnClick="btnTags_Click" />--%>
@@ -28,7 +33,7 @@
     }
     .header-row {
         border-top: 1px solid black;
-        font-weight: bold; 
+        font-weight: bold;
     }
     .class-name {
         font-weight: bold;
@@ -36,5 +41,12 @@
     }
     .bg-secondary {
         background-color: #F1F1F1;
+    }
+    .report-date {
+        display: inline-block;
+        vertical-align: bottom;
+    }
+    .report-date div {
+        margin: 0px;
     }
 </style>
