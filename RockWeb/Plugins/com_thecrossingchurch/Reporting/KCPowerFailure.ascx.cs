@@ -478,7 +478,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "</div>" +
                                 "<div style='padding: 8px;' style='font-size: 18pt;'>" +
                                     rosters[i].ClassName + 
-                                "</div>";
+                                "</div><br/><br/><br/>";
                     if(!String.IsNullOrWhiteSpace(rosters[i].RosterData[j].AllergyMedical))
                     {
                         page += "<div class='med' style='padding: 8px;'>" +
@@ -519,7 +519,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "</div>";
                     page += "</td></tr>";
                     //page += "<tr class='horizontal-spacer'><td></td><td class='vertical-spacer'></td><td></td></tr>";
-                    if(counter == 4)
+                    if(counter == 5)
                     {
                         page += "</table></div>";
                         tags += page;
@@ -537,13 +537,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                   //"body { widht: 8.5in; height: 11in; }" +
                                   ".page { page-break-before: always; font-family: sans-serif; margin: 0.5in 0.18in; }" +
                                   ".row { margin-bottom: 0.125in; }" +
-                                  ".tag { display: inline-block; height: 2.33in; width: 3.375in; border: 1px solid grey; position: relative; }" +
+                                  ".tag { height: 2in; width: 4in; border: 1px solid grey; position: relative; }" +
                                   ".vertical-spacer { width: 0.14in; }" +
                                   ".med { position: absolute; bottom: 0px; background-color: black; color: white; padding: 8px; font-weight: bold; }" +
                                   ".sec { background-color: black; color: white; padding: 8px; font-weight: bold; }" +
                                   ".inline { display: inline-block; }" +
                                   ".right { float: right; }" +
-                                  "td { text-align: center; } " +
+                                  "td:not(.first-tag) { text-align: center; } " +
                                 //".row { margin-bottom: 0.25in; }" +
                                 //".tag { display: inline-block; height: 4.66in; width: 6.75in; padding: 8px; border: 1px solid grey; }" +
                                 //".first-tag { margin-right: .375in; }" +
