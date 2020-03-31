@@ -4,9 +4,10 @@
     <ContentTemplate>
         <div class="row">
             <div class="pull-right">
-                <Rock:BootstrapButton ID="btnExport" runat="server" Text="Export Excel" CssClass="btn btn-primary" OnClick="btnExport_Click" />
+                <Rock:BootstrapButton ID="btnExportReports" runat="server" Text="Export Reports" CssClass="btn btn-primary" OnClick="btnExportReports_Click" />
+                <%--<Rock:BootstrapButton ID="btnExport" runat="server" Text="Export Excel" CssClass="btn btn-primary" OnClick="btnExport_Click" />
                 <Rock:BootstrapButton ID="btnPDF" runat="server" Text="Export PDF" CssClass="btn btn-primary" OnClick="btnExportPDF_Click" />
-                <Rock:BootstrapButton ID="btnTags" runat="server" Text="Print Tags" CssClass="btn btn-primary" OnClick="btnTags_Click" />
+                <Rock:BootstrapButton ID="btnTags" runat="server" Text="Print Tags" CssClass="btn btn-primary" OnClick="btnTags_Click" />--%>
             </div>
         </div>
         <div class="custom-container" id="DataContainer" runat="server">

@@ -26,6 +26,7 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
 using OpenHtmlToPdf;
+using System.IO.Compression;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 {
@@ -52,9 +53,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected void Page_Load(object sender, EventArgs e)
         {
             ScriptManager scriptManager = ScriptManager.GetCurrent(this.Page);
-            scriptManager.RegisterPostBackControl(this.btnExport);
-            scriptManager.RegisterPostBackControl(this.btnPDF);
-            scriptManager.RegisterPostBackControl(this.btnTags);
+            scriptManager.RegisterPostBackControl(this.btnExportReports);
+            //scriptManager.RegisterPostBackControl(this.btnExport);
+            //scriptManager.RegisterPostBackControl(this.btnPDF);
+            //scriptManager.RegisterPostBackControl(this.btnTags);
         }
 
         /// <summary>
@@ -80,6 +82,51 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         #endregion
 
         #region Events
+
+        /// <summary>
+        /// Handles the Click event of the btnExport control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnExportReports_Click(object sender, EventArgs e)
+        {
+            byte[] files;
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                {
+                    var excelFile = archive.CreateEntry("PowerFailureRosters.xlsx");
+                    using (var streamWriter = excelFile.Open())
+                    {
+                        var excel = GenerateExcel();
+                        new MemoryStream(excel.GetAsByteArray()).CopyTo(streamWriter);
+                    }
+
+                    var pdfFile = archive.CreateEntry("PowerFailureRosters.pdf");
+                    using (var streamWriter = pdfFile.Open())
+                    {
+                        new MemoryStream(GeneratePDF()).CopyTo(streamWriter);
+                    }
+
+
+                    var pdfTags = archive.CreateEntry("PowerFailureTags.pdf");
+                    using (var streamWriter = pdfTags.Open())
+                    {
+                        new MemoryStream(GenerateTags()).CopyTo(streamWriter);
+                    }
+                }
+                files = memoryStream.ToArray();
+            }
+            Response.Clear();
+            Response.Buffer = true;
+            Response.ContentType = "application/zip";
+            Response.AddHeader("content-disposition", "attachment;filename=PowerFailureReports.zip");
+            Response.Cache.SetCacheability(HttpCacheability.Public);
+            Response.Charset = "";
+            Response.BinaryWrite(files);
+            Response.Flush();
+            Response.End();
+        }
 
         /// <summary>
         /// Handles the Click event of the btnExport control.
@@ -375,7 +422,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "<meta charset='UTF-8'>" +
                                 "<title>Power Failure Rosters</title>" +
                                 "<style>" +
-                                    ".class-container { width:100%; font-family: sans-serif; font-size:28px; } " +
+                                    ".class-container { width:100%; font-family: sans-serif; font-size:18px; } " +
                                     ".class-container table td, .class-container table th { min-width: 150px; text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; } " +
                                     ".class-container table tr { border-left: 1px solid black; } " +
                                     ".header-row { border-top: 1px solid black; font-weight: bold; } " +
@@ -442,7 +489,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     //Parent Receipt
                         page += "<div style='padding: 8px; text-align: center;' class='inline'>" +
                                     "<div style='font-size: 20pt;'>Receipt</div>" +
-                                    "<div class='sec' style='font-size: 22pt;'>" +
+                                    "<div class='sec' style='font-size: 20pt;'>" +
                                         rosters[i].RosterData[j].Securitycode +
                                     "</div>" +
                                     "<div style='font-size: 22pt;'>" +
@@ -455,9 +502,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                         "Kids Club" +
                                     "</div>" +
                                 "</div>" +
-                                "<div style='padding: 8px; text-align: center;' class='inline'>" +
+                                "<div style='padding: 8px; text-align: center;' class='inline right'>" +
                                     "<div style='font-size: 20pt;'>Receipt</div>" +
-                                    "<div class='sec' style='font-size: 22pt;'>" +
+                                    "<div class='sec' style='font-size: 20pt;'>" +
                                         rosters[i].RosterData[j].Securitycode +
                                     "</div>" +
                                     "<div style='font-size: 22pt;'>" +

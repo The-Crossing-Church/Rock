@@ -550,6 +550,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 phContent.Controls.Add(r);
             }
 
+            //Entire day data
             var dailyData = new HtmlGenericControl("div");
             dailyData.AddCssClass("custom-seperator");
             var totals = new HtmlGenericControl("div");
@@ -570,8 +571,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             matotalsCol.InnerText = "MultiAge Total";
             matotalsCol.AddCssClass("custom-col service-time name-col");
             matotals.Controls.Add(matotalsCol);
+            var notes = new HtmlGenericControl("div");
+            notes.AddCssClass("custom-row");
+            var notesCol = new HtmlGenericControl("div");
+            notesCol.InnerText = "Notes";
+            notesCol.AddCssClass("cusotm-col service-time name-col");
+            notes.Controls.Add(notesCol);
             for (var i = 0; i < results.Count(); i++)
             {
+                //Total
                 var h = new HtmlGenericControl("div");
                 h.InnerText = results[i].Total.ToString();
                 h.AddCssClass("custom-col");
@@ -580,6 +588,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     h.AddCssClass("first-custom-col");
                 }
                 totals.Controls.Add(h);
+                //Unique Total
                 var ut = new HtmlGenericControl("div");
                 ut.InnerText = results[i].UniqueTotal.ToString();
                 ut.AddCssClass("custom-col");
@@ -588,6 +597,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     ut.AddCssClass("first-custom-col");
                 }
                 utotals.Controls.Add(ut);
+                //Multiage total
                 var mt = new HtmlGenericControl("div");
                 mt.InnerText = results[i].MultiAgeTotal.ToString();
                 mt.AddCssClass("custom-col");
@@ -596,10 +606,26 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     mt.AddCssClass("first-custom-col");
                 }
                 matotals.Controls.Add(mt);
+                //Notes
+                var nt = new HtmlGenericControl("div");
+                if(i > 0)
+                {
+                    var schedule_id = results[i].ServiceAttendace[0].ClassAttendances[0].ScheduleId;
+                    var occ_date = results[i].OccurrenceDate; 
+                    var occurence = new AttendanceOccurrenceService(new RockContext()).Queryable().Where(ao => ao.OccurrenceDate == occ_date && ao.ScheduleId == schedule_id);
+                    nt.InnerHtml = "<i class='fa fa-sticky-note'></i><br/><div>" + occurence.First().Id + "</div>";
+                }
+                nt.AddCssClass("custom-col");
+                if (i == 0)
+                {
+                    nt.AddCssClass("first-custom-col");
+                }
+                notes.Controls.Add(nt);
             }
             dailyData.Controls.Add(totals);
             dailyData.Controls.Add(utotals);
             dailyData.Controls.Add(matotals);
+            dailyData.Controls.Add(notes);
 
             phContent.Controls.Add(dailyData);
 
@@ -632,6 +658,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             try
             {
+                if (!name.Contains("(") && !name.Contains(":"))
+                {
+                    return name; 
+                }
                 if (name.Contains("("))
                 {
                     if (name.Contains("11:15"))
