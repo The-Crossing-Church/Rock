@@ -539,7 +539,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                   //"body { widht: 8.5in; height: 11in; }" +
                                   ".page { page-break-before: always; font-family: sans-serif; }" +
                                   ".row { margin-bottom: 0.125in; }" +
-                                  ".tag { height: 2in; width: 4in; border: 1px solid grey; position: relative; }" +
+                                  ".tag { height: 2in; width: 4in; position: relative; }" +
                                   ".vertical-spacer { width: 0.14in; }" +
                                   ".med { position: absolute; bottom: 0px; background-color: black; color: white; padding: 8px; font-weight: bold; }" +
                                   ".sec { background-color: black; color: white; padding: 8px; font-weight: bold; }" +
