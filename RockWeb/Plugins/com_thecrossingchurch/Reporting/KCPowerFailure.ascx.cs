@@ -537,7 +537,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "<title>Power Failure Tags</title>" +
                                 "<style>" +
                                   //"body { widht: 8.5in; height: 11in; }" +
-                                  ".page { page-break-before: always; font-family: sans-serif; margin: 0.5in 0.18in; }" +
+                                  ".page { page-break-before: always; font-family: sans-serif; }" +
                                   ".row { margin-bottom: 0.125in; }" +
                                   ".tag { height: 2in; width: 4in; border: 1px solid grey; position: relative; }" +
                                   ".vertical-spacer { width: 0.14in; }" +
@@ -555,9 +555,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             tags +
                             "</body>" +
                             "</html>";
-            //var size = new PaperSize(Length.Inches(8.5), Length.Inches(11));
+            var size = new PaperSize(Length.Inches(8.5), Length.Inches(11));
             var pdf = Pdf.From(content)
-                        .WithResolution(7680)
+                        .OfSize(size)
                         .WithObjectSetting("web.enableIntelligentShrinking", "false")
                         .WithGlobalSetting("margin.top", ".5in")
                         .WithGlobalSetting("margin.bottom", ".5in")
