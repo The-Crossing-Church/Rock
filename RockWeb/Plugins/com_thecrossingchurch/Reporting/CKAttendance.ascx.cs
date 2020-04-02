@@ -116,6 +116,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             ScriptManager scriptManager = ScriptManager.GetCurrent(this.Page);
             scriptManager.RegisterPostBackControl(this.btnExport);
+            ScriptManager.RegisterStartupScript(Page, this.GetType(), "AKey", "notes();", true);
         }
 
         /// <summary>
@@ -613,7 +614,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     var schedule_id = results[i].ServiceAttendace[0].ClassAttendances[0].ScheduleId;
                     var occ_date = results[i].OccurrenceDate; 
                     var occurence = new AttendanceOccurrenceService(new RockContext()).Queryable().Where(ao => ao.OccurrenceDate == occ_date && ao.ScheduleId == schedule_id);
-                    nt.InnerHtml = "<i class='fa fa-sticky-note'></i><br/><div>" + occurence.First().Id + "</div>";
+                    nt.InnerHtml = "<a class='add-note' href='/page/945?Id=" + occurence.First().Id +"' ><i class='fa fa-sticky-note'></i></a>";
                 }
                 nt.AddCssClass("custom-col");
                 if (i == 0)

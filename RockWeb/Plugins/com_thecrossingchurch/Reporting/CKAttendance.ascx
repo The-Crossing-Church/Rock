@@ -1,5 +1,13 @@
 <%@ Control Language="C#" AutoEventWireup="true" CodeFile="CKAttendance.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.Reporting.CKAttendance" %>
-
+<script>
+function notes() {
+    $('.add-note').click(function(e) {
+        e.preventDefault();
+        window.open($(this).attr('href'), 'fbShareWindow', 'height=450, width=550, top=' + ($(window).height() / 2 - 275) + ', left=' + ($(window).width() / 2 - 225) + ', toolbar=0, location=0, menubar=0, directories=0, scrollbars=0');
+        return false;
+    });
+}
+</script>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <div class="well">
@@ -23,7 +31,7 @@
             </div>
             <div class="row">
                 <div class="pull-right">
-                    <Rock:BootstrapButton ID="btnFilter" runat="server" Text="Filter" CssClass="btn btn-primary" OnClick="btnFilter_Click" />
+                    <Rock:BootstrapButton ID="btnFilter" runat="server" Text="Filter" CssClass="btn btn-primary" OnClientClick="notes();" OnClick="btnFilter_Click" />
                 </div>
             </div>
         </div>
