@@ -454,7 +454,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     {
                         page = "<div class='page'><table>";
                     }
-                    page += "<tr>";
+                    if (counter == 5)
+                    {
+                        page += "<tr style='padding-top:16px;'>";
+                    }
+                    else
+                    {
+                        page += "<tr>";
+                    }
                     page += "<td class='tag first-tag'>";
                     //Child Tag
                         page += "<div style='padding: 8px;'>" +
