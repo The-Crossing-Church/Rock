@@ -35,6 +35,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     [Category( "com_thecrossingchurch > CK Attendance" )]
     [Description( "Custom Attendance Report for Crossing Kids" )]
 
+    [IntegerField("Notes Page", "The page id of the notes page for the report.", true, 0, "", 0)]
+    [IntegerField("Note Type Id", "The id of the note type used for the report.", true, 0, "", 1)]
+
     public partial class CKAttendance : Rock.Web.UI.RockBlock //, ICustomGridColumns
     {
         #region Variables
@@ -42,6 +45,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         // Variables that get set with filter 
         private DateTime start;
         private DateTime end;
+        private List<int> svcTimes;
+        //Configuration Variables
+        private int pageNum;
+        private int noteTypeId;
+        //Local Variables
         public string csv {
             get
             {
@@ -59,7 +67,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 ViewState["csv"] = value;
             }
         } 
-        private List<int> svcTimes;
         public List<AttendanceReportData> results;
         public List<AttendanceReportData> thresholds; 
         public List<ClassesBySchedule> inUseClassrooms; 
@@ -145,6 +152,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             }
             start = stDate.SelectedDate.Value;
             end = endDate.SelectedDate.Value;
+            pageNum = GetAttributeValue("NotesPage").AsInteger();
+            noteTypeId = GetAttributeValue("NoteTypeId").AsInteger();
             BindFilter();
         }
 
@@ -578,6 +587,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             notesCol.InnerText = "Notes";
             notesCol.AddCssClass("cusotm-col service-time name-col");
             notes.Controls.Add(notesCol);
+            var noteDisplay = new HtmlGenericControl("div");
+            noteDisplay.AddCssClass("custom-row");
+            var noteDisplayCol = new HtmlGenericControl("div");
+            noteDisplayCol.InnerText = "Notes";
+            noteDisplayCol.AddCssClass("custom-col no-display");
+            noteDisplay.Controls.Add(noteDisplayCol);
             for (var i = 0; i < results.Count(); i++)
             {
                 //Total
@@ -609,12 +624,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 matotals.Controls.Add(mt);
                 //Notes
                 var nt = new HtmlGenericControl("div");
-                if(i > 0)
+                var attNote = new HtmlGenericControl("div");
+                attNote.AddCssClass("custom-col no-display");
+                if (i > 0)
                 {
                     var schedule_id = results[i].ServiceAttendace[0].ClassAttendances[0].ScheduleId;
                     var occ_date = results[i].OccurrenceDate; 
                     var occurence = new AttendanceOccurrenceService(new RockContext()).Queryable().Where(ao => ao.OccurrenceDate == occ_date && ao.ScheduleId == schedule_id);
-                    nt.InnerHtml = "<a class='add-note' href='/page/973?Id=" + occurence.First().Id +"' ><i class='fa fa-sticky-note'></i></a>";
+                    nt.InnerHtml = "<a class='add-note' href='/page/" + pageNum + "?Id=" + occurence.First().Id + "' ><i class='fa fa-sticky-note'></i></a>";
+                    int occId = occurence.First().Id; 
+                    var attendanceNotes = new NoteService(new RockContext()).Queryable().Where(n => n.NoteTypeId == noteTypeId && n.EntityId == occId);
+                    var str = "";
+                    foreach(var an in attendanceNotes)
+                    {
+                        str += an.Text + " -" + an.CreatedByPersonName + "<br/>"; 
+                    }
+                    attNote.InnerHtml = str; 
                 }
                 nt.AddCssClass("custom-col");
                 if (i == 0)
@@ -622,11 +647,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     nt.AddCssClass("first-custom-col");
                 }
                 notes.Controls.Add(nt);
+                noteDisplay.Controls.Add(attNote);
             }
             dailyData.Controls.Add(totals);
             dailyData.Controls.Add(utotals);
             dailyData.Controls.Add(matotals);
             dailyData.Controls.Add(notes);
+            dailyData.Controls.Add(noteDisplay);
 
             phContent.Controls.Add(dailyData);
 
@@ -649,7 +676,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             html = html.Replace("<div class=\"custom-seperator\">", "");
             html = html.Replace("<div class=\"custom-col service-time name-col\">", "");
             html = html.Replace("<div class=\"custom-col over-threshold\">", "**");
-
+            html = html.Replace("<div class=\"custom-col no-display\">", "");
+            html = html.Replace("<a class='add-note' href='/page/945?Id=", "");
+            html = html.Replace("' ><i class='fa fa-sticky-note'></i></a>", "");
+            html = html.Replace("<div class=\"cusotm-col service-time name-col\">", "");
             this.csv = html; 
 
             phContent.Visible = true;
@@ -930,7 +960,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
             for (var i = 1; i <= row_data.Length; i++)
             {
-                if (row_data[i-1].Contains(','))
+                if (row_data[i-1].Contains(',') && i != row_data.Length - 1)
                 {
                     var col_data = row_data[i-1].Split(',');
                     for (var j = 1; j <= col_data.Length; j++)
@@ -941,6 +971,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             Color c = System.Drawing.ColorTranslator.FromHtml("#9A0000");
                             worksheet.Cells[i, j].Style.Fill.PatternType = ExcelFillStyle.Solid;
                             worksheet.Cells[i, j].Style.Fill.BackgroundColor.SetColor(c);
+                        }
+                        if(col_data[j - 1].Length > 2 && col_data[j - 1].Contains("<br/>"))
+                        {
+                            col_data[j - 1] = col_data[j - 1].Replace("<br/>", "\r\n");
+                            worksheet.Cells[i, j].Style.WrapText = true;
                         }
                         worksheet.Cells[i, j].Value = col_data[j-1];
 

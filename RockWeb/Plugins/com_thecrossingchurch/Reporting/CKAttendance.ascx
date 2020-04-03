@@ -88,4 +88,7 @@ function notes() {
     .first-custom-col {
         margin-left: 150px;
     }
+    .no-display {
+        display: none; 
+    }
 </style>
