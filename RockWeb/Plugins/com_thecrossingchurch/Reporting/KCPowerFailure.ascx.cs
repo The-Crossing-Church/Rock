@@ -224,7 +224,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
                 //Header Row
                 var hrow = new HtmlGenericControl("tr");
-                hrow.AddCssClass("header-row");
+                hrow.AddCssClass("header-row bg-secondary");
 
                 var hcheckin = new HtmlGenericControl("th");
                 hcheckin.InnerText = "Initial In";
@@ -428,11 +428,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "<title>Power Failure Rosters</title>" +
                                 "<style>" +
                                     ".class-container { width:100%; font-family: sans-serif; font-size:14px; } " +
-                                    ".class-container table td, .class-container table th { min-width: 75px; text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; } " +
+                                    ".class-container table td, .class-container table th { min-width: 75px; text-align: left; padding: 2px; } " +
+                                    //".class-container table td, .class-container table th { min-width: 75px; text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; } " +
                                     ".class-container table tr { border-left: 1px solid black; } " +
-                                    ".header-row { border-top: 1px solid black; font-weight: bold; } " +
+                                    //".header-row { border-top: 1px solid black; font-weight: bold; } " +
                                     "table, tr { width:100%; } " +
-                                    "table { border: 1px solid black; } " +
+                                    //"table { border: 1px solid black; } " +
                                     ".class-name { font-weight: bold; font-size: 32px; page-break-before: always; } " +
                                     ".bg-secondary { background-color: #F1F1F1; } " +
                                     ".phone-col { min-width: 215px !important; } " +
