@@ -462,7 +462,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     {
                         page = "<div class='page'><table>";
                     }
-                    if (counter == 5)
+                    if(counter == 4)
+                    {
+                        page += "<tr style='padding-top:8px;'>";
+                    }
+                    else if (counter == 5)
                     {
                         page += "<tr style='padding-top:16px;'>";
                     }
