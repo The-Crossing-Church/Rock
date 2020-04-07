@@ -228,8 +228,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
                 var hcheckin = new HtmlGenericControl("th");
                 hcheckin.InnerText = "Initial In";
+                hcheckin.AddCssClass("initial-col");
                 var hcheckout = new HtmlGenericControl("th");
                 hcheckout.InnerText = "Initial Out";
+                hcheckout.AddCssClass("initial-col");
                 var hsecurity = new HtmlGenericControl("th");
                 hsecurity.InnerText = "Attendance Code";
                 var hname = new HtmlGenericControl("th");
@@ -425,20 +427,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "<title>Power Failure Rosters</title>" +
                                 "<style>" +
                                     ".class-container { width:100%; font-family: sans-serif; font-size:14px; } " +
-                                    ".class-container table td, .class-container table th { min-width: 150px; text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; } " +
+                                    ".class-container table td, .class-container table th { min-width: 75px; text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding: 4px; } " +
                                     ".class-container table tr { border-left: 1px solid black; } " +
                                     ".header-row { border-top: 1px solid black; font-weight: bold; } " +
                                     "table, tr { width:100%; } " +
                                     "table { border: 1px solid black; } " +
                                     ".class-name { font-weight: bold; font-size: 32px; page-break-before: always; } " +
                                     ".bg-secondary { background-color: #F1F1F1; } " +
+                                    ".initial-col { min-width:75px !important; max-width: 75px !important; } " +
                                 "</style>" +
                             "</head>" +
                             "<body>" +
                             html +
                             "</body>" +
                             "</html>";
-            var pdf = Pdf.From(content).Landscape().WithMargins(0.50.Centimeters()).Content();
+            var size = new PaperSize(Length.Inches(11), Length.Inches(8.5));
+            var pdf = Pdf.From(content).OfSize(size).WithResolution(1080).WithMargins(0.50.Centimeters()).Content();
             return pdf;
         }
 
