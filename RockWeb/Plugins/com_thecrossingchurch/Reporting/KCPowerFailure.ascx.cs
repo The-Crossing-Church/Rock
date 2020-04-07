@@ -228,14 +228,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
                 var hcheckin = new HtmlGenericControl("th");
                 hcheckin.InnerText = "Initial In";
-                hcheckin.AddCssClass("initial-col");
                 var hcheckout = new HtmlGenericControl("th");
                 hcheckout.InnerText = "Initial Out";
-                hcheckout.AddCssClass("initial-col");
                 var hsecurity = new HtmlGenericControl("th");
                 hsecurity.InnerText = "Attendance Code";
                 var hname = new HtmlGenericControl("th");
                 hname.InnerText = "Name";
+                hname.AddCssClass("child-col");
                 var hbday = new HtmlGenericControl("th");
                 hbday.InnerText = "Birthday";
                 var hgender = new HtmlGenericControl("th");
@@ -244,8 +243,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 hallergyMed.InnerText = "Allergy/Medical";
                 var hparents = new HtmlGenericControl("th");
                 hparents.InnerText = "Parent Names";
+                hparents.AddCssClass("parent-col");
                 var hphones = new HtmlGenericControl("th");
                 hphones.InnerText = "Parent Phone Numbers";
+                hphones.AddCssClass("phone-col");
 
                 hrow.Controls.Add(hcheckin);
                 hrow.Controls.Add(hcheckout);
@@ -434,7 +435,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                     "table { border: 1px solid black; } " +
                                     ".class-name { font-weight: bold; font-size: 32px; page-break-before: always; } " +
                                     ".bg-secondary { background-color: #F1F1F1; } " +
-                                    ".initial-col { min-width:75px !important; max-width: 75px !important; } " +
+                                    ".phone-col { min-width: 215px !important; } " +
+                                    ".parent-col { min-width: 200px !important; } " +
+                                    ".child-col { min-width: 150px !important; } " +
                                 "</style>" +
                             "</head>" +
                             "<body>" +
