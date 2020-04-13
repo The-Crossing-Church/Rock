@@ -180,8 +180,8 @@ namespace Rock.Utility
                     continue;
                 }
 
-                // Take only the labels that match the selected person and label types (file guids).
-                checkinLabels = checkinLabels.Where( l => l.PersonId == personId && fileGuids.Contains( l.FileGuid ) ).ToList();
+                // Take only the labels that match the selected person (or if they are Family type labels) and file guids).
+                checkinLabels = checkinLabels.Where( l => ( l.PersonId == personId || l.LabelType == KioskLabelType.Family ) && fileGuids.Contains( l.FileGuid ) ).ToList();
 
                 // Override the printer by printing to the given printerAddress?
                 if ( !string.IsNullOrEmpty( printerAddress ) )
@@ -244,9 +244,6 @@ namespace Rock.Utility
             }});
         }}
 
-	    // label data
-        var labelData = {0};
-
 		function onDeviceReady() {{
             try {{			
                 printLabels();
@@ -262,7 +259,7 @@ namespace Rock.Utility
 		
 		function printLabels() {{
 		    ZebraPrintPlugin.printTags(
-            	JSON.stringify(labelData), 
+            	JSON.stringify({0}), 
             	function(result) {{ 
 			        console.log('Tag printed');
 			    }},
@@ -406,7 +403,7 @@ namespace Rock.Utility
                         continue;
                     }
 
-                    var fileGuids = checkinLabels.Where( l => l.PersonId == personId && !handledList.ContainsKey( l.FileGuid ) )
+                    var fileGuids = checkinLabels.Where( l => ( l.PersonId == personId || l.LabelType == KioskLabelType.Family ) && !handledList.ContainsKey( l.FileGuid ) )
                         .Select( l => l.FileGuid )
                         .ToList();
 
