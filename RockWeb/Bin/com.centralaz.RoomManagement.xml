@@ -523,6 +523,22 @@
             </summary>
             <param name="context">The context.</param>
         </member>
+        <member name="T:com.centralaz.RoomManagement.Migrations.Bugfixes150">
+            <summary>
+            Migration for the RoomManagement system.
+            </summary>
+            <seealso cref="T:Rock.Plugin.Migration" />
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes150.Up">
+            <summary>
+            The commands to run to migrate plugin to the specific version
+            </summary>
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes150.Down">
+            <summary>
+            The commands to undo a migration from a specific version.
+            </summary>
+        </member>
         <member name="T:com.centralaz.RoomManagement.Migrations.AddEventItemRelationship">
             <summary>
             Migration to add the EventItem (occurrence) relationship

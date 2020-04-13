@@ -1,19 +1,10 @@
-﻿<%@ Control AutoEventWireup="true" CodeFile="SupportRequestList.ascx.cs" Inherits="RockWeb.Plugins.com_bemaservices.Support.SupportRequestList" Language="C#" %>
+<%@ Control AutoEventWireup="true" CodeFile="SupportRequestList.ascx.cs" Inherits="RockWeb.Plugins.com_bemaservices.Support.SupportRequestList" Language="C#" %>
 
 <asp:UpdatePanel ID="upnlError" runat="server" Visible="false">
     <ContentTemplate>
         <asp:Literal ID="lErrors" runat="server"></asp:Literal>
     </ContentTemplate>
 </asp:UpdatePanel>
-
-<style>
-    .btn-excelexport {
-        visibility: hidden;
-    }
-    .btn-merge-template {
-        visibility: hidden;
-    }
-</style>
 
 <asp:UpdatePanel ID="upnlFirstTimeSetup" runat="server" Visible="false">
     <ContentTemplate>
@@ -23,26 +14,25 @@
                     <h4 class="panel-title"><i class="fa fa-phone"></i>&nbsp;BEMA Services</h4>
                 </div>
                 <div class="panel-body">
-                    
-                    <img class="center-block" style="width: 400px; padding-bottom: 5px;" src="/Plugins/com_bemaservices/Support/Assets/Images/BEMALogo.svg" />
-                    
+                    <img class="center-block" style="width: 400px;" src="/Plugins/com_bemaservices/Assets/Images/BEMALogo.svg" />
+                    <br />
                     <asp:Panel ID="pnlSignupDetails" runat="server">
-                        <!--
 
                         <div class="row">
                             <div class="col-md-12">
                                 <p class="margin-v-md">
-                                    Love Rock but wish there was someone to reach out to when things just don't go as planned, or you just need an extra helping hand? 
-                                    Our highly trained Rock Support Specialists are available Monday - Friday to help your ministries have access to the quick help they need.
+                                    Love Rock but wish there was someone to reach out to when things just don't go as planned, 
+                                or you just need an extra helping hand? Our highly trained Rock Support Specialists are 
+                                available Monday – Friday to help your ministries have access to the quick help they need.
                                 </p>
                                 <p class="margin-v-md">
-                                    BEMA offers support for Rock RMS starting at only $500 per month.
+                                    This plugin offers the ability to submit a support request, view current support requests,
+                                set the status, see who submitted the request, and see how long the request has been open.
                                 </p>
                                 <p class="margin-v-md">
-                                     This plugin provides the ability to submit a support request and manage your support requests straight from within your own Rock environment.
-                                </p>
-                                <p class="margin-v-md">
-                                     We strive for responses within 2 business hours, and if a solution needs more than just a ticket to fix, our support specialists will give you a call to get more information and help resolve the problem.
+                                    We promise responses within 2 hours, and if a solution needs more than just a ticket to 
+                                fix, our support specialists will give you a call to get more information and help resolve 
+                                the problem.
                                 </p>
                                 <p class="margin-v-md">
                                     Problems our Support Specialist can help solve include:<br />
@@ -59,12 +49,10 @@
                                 <br />
                             </div>
                         </div>
-                        -->
                         <div class="well">
                             <h3 style="text-align: center;">Sign-up Form</h3>
                             <br />
                             <div class="row">
-                                <div class="col-md-12" style="padding-bottom: 20px;" >Please provide the staff contact information for the person that will be responsible for signing the Rock Support contact.</div>
                                 <div class="col-md-6">
                                     <Rock:RockTextBox ID="tbFirstName" runat="server" Label="First Name" Required="true" />
                                 </div>
@@ -84,13 +72,13 @@
 
                             <div class="row">
                                 <div class="col-md-6">
-                                    <Rock:RockTextBox ID="tbOrganization" runat="server" Label="Church Name" Required="true" />
+                                    <Rock:RockTextBox ID="tbOrganization" runat="server" Label="Organization" Required="true" />
                                 </div>
                                 <div class="col-md-6">
                                     <Rock:PhoneNumberBox ID="pnContactNumber" runat="server" Label="Contact Number" Required="true" />
                                 </div>
                                 <div class="col-md-12">
-                                    <Rock:AddressControl ID="acAddress" runat="server" Label="Church Address" Required="true" />
+                                    <Rock:AddressControl ID="acAddress" runat="server" Label="Address" Required="true" />
                                 </div>
                                 <div class="col-md-12">
                                     <asp:LinkButton ID="lbRegister" runat="server" OnClick="lbRegister_Click" CssClass="btn btn-primary center-block margin-t-md" Text="Get Started" />
@@ -149,7 +137,7 @@
                                 </Rock:RockCheckBoxList>
                                 <Rock:RockTextBox ID="rtbFilterSubmitter" runat="server" Label="Submitter"></Rock:RockTextBox>
                             </Rock:GridFilter>
-                            <Rock:Grid ID="gSupportRequests" runat="server" AllowSorting="false" OnRowSelected="gSupportRequests_RowSelected" DataKeyNames="Id">
+                            <Rock:Grid ID="gSupportRequests" runat="server" AllowSorting="false" OnRowSelected="gSupportRequests_RowSelected" DataKeyNames="Id" ShowActionRow="false">
                                 <Columns>
                                     <Rock:RockBoundField DataField="Subject" HtmlEncode="false" HeaderText="Subject" SortExpression="Subject" />
                                     <Rock:RockBoundField DataField="Urgency" HeaderText="Urgency" SortExpression="Urgency" />
