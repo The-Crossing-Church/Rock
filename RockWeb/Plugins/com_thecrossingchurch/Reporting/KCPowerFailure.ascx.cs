@@ -464,11 +464,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     }
                     if(counter == 4)
                     {
-                        page += "<tr style='padding-top:8px;'>";
+                        page += "<tr style='padding-top:16px;'>";
                     }
                     else if (counter == 5)
                     {
-                        page += "<tr style='padding-top:16px;'>";
+                        page += "<tr style='padding-top:24px;'>";
                     }
                     else
                     {
