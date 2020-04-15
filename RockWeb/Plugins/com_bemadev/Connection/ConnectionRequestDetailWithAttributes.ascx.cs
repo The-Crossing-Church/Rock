@@ -1,4 +1,4 @@
-// <copyright>
+﻿// <copyright>
 // Copyright by the Spark Development Network
 //
 // Licensed under the Rock Community License (the "License");
@@ -46,7 +46,7 @@ namespace RockWeb.Blocks.Connection
     [LinkedPage( "Workflow Detail Page", "Page used to display details about a workflow.", order: 1 )]
     [LinkedPage( "Workflow Entry Page", "Page used to launch a new workflow of the selected type.", order: 2 )]
     [LinkedPage( "Group Detail Page", "Page used to display group details.", order: 3 )]
-    [PersonBadgesField( "Badges", "The person badges to display in this block.", false, "", "", 0 )]
+    [BadgesField( "Badges", "The person badges to display in this block.", false, "", "", 0 )]
     public partial class ConnectionRequestDetailWithAttributes : PersonBlock, IDetailBlock
     {
 
@@ -135,7 +135,7 @@ namespace RockWeb.Blocks.Connection
                     Guid guid = badgeGuid.AsGuid();
                     if ( guid != Guid.Empty )
                     {
-                        var personBadge = PersonBadgeCache.Get( guid );
+                        var personBadge = BadgeCache.Get( guid );
                         if ( personBadge != null )
                         {
                             blStatus.PersonBadges.Add( personBadge );

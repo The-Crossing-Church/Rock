@@ -26,10 +26,12 @@ RockWeb/App_Data/RockModelViews.xml
 RockWeb/Cache/*
 RockWeb/Content/ASM_Thumbnails
 RockWeb/App_Data/PackageStaging
+RockWeb/App_Data/MobileAppBundles
 /scaffolding.config
 *.sln.GhostDoc.xml
 .vs/
 .localhistory/
+TestResults/
 
 Packages/*
 
