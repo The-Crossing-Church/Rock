@@ -504,6 +504,7 @@ namespace RockWeb.Blocks.Groups
             groupType.TakesAttendance = cbTakesAttendance.Checked;
             groupType.GroupsRequireCampus = cbGroupsRequireCampus.Checked;
             groupType.EnableGroupTag = cbEnableGroupTag.Checked;
+            groupType.AllowAnyChildGroupType = cbAllowAnyChildGroupType.Checked;
             groupType.ShowAdministrator = cbShowAdministrator.Checked;
             groupType.GroupAttendanceRequiresLocation = cbGroupAttendanceRequiresLocation.Checked;
             groupType.GroupAttendanceRequiresSchedule = cbGroupAttendanceRequiresSchedule.Checked;
@@ -531,7 +532,14 @@ namespace RockWeb.Blocks.Groups
             // RSVP
             groupType.EnableRSVP = cbGroupRSVPEnabled.Checked;
             groupType.RSVPReminderSystemCommunicationId = ddlRsvpReminderSystemCommunication.SelectedValueAsInt();
-            groupType.RSVPReminderOffsetDays = rsRsvpReminderOffsetDays.SelectedValue;
+            if ( rsRsvpReminderOffsetDays.SelectedValue == null || rsRsvpReminderOffsetDays.SelectedValue == 0 )
+            {
+                groupType.RSVPReminderOffsetDays = null;
+            }
+            else
+            {
+                groupType.RSVPReminderOffsetDays = rsRsvpReminderOffsetDays.SelectedValue;
+            }
 
             // Scheduling
             groupType.IsSchedulingEnabled = cbSchedulingEnabled.Checked;
@@ -659,7 +667,6 @@ namespace RockWeb.Blocks.Groups
             if ( deleteGroupHistory )
             {
                 groupTypeService.BulkDeleteGroupHistory( groupType.Id );
-                
             }
 
             NavigateToParentPage();
@@ -828,6 +835,9 @@ namespace RockWeb.Blocks.Groups
 
             ddlGroupCapacityRule.SetValue( (int)groupType.GroupCapacityRule );
 
+            cbAllowAnyChildGroupType.Checked = groupType.AllowAnyChildGroupType;
+            rcwAllowedChildGroupTypes.Visible = !cbAllowAnyChildGroupType.Checked;
+
             ChildGroupTypesList = new List<int>();
             groupType.ChildGroupTypes.ToList().ForEach( a => ChildGroupTypesList.Add( a.Id ) );
             BindChildGroupTypesGrid();
@@ -835,6 +845,7 @@ namespace RockWeb.Blocks.Groups
             cbEnableGroupTag.Checked = groupType.EnableGroupTag;
             cbGroupsRequireCampus.Checked = groupType.GroupsRequireCampus;
             cbShowAdministrator.Checked = groupType.ShowAdministrator;
+
             // Display
             cbShowInGroupList.Checked = groupType.ShowInGroupList;
             cbShowInNavigation.Checked = groupType.ShowInNavigation;
@@ -1066,22 +1077,39 @@ namespace RockWeb.Blocks.Groups
             ddlRsvpReminderSystemCommunication.Items.Clear();
             ddlRsvpReminderSystemCommunication.Items.Add( new ListItem() );
 
-            // Add System Communication selection items.
-            var systemCommunications = new SystemCommunicationService( new RockContext() ).Queryable().OrderBy( t => t.Title ).Select( a => new
-            {
-                a.Id,
-                a.Title
-            } );
+            // Get a list of System Communications - these are used for Group Scheduling and RSVP Reminders.
+            var systemCommunications = new SystemCommunicationService( new RockContext() )
+                .Queryable()
+                .OrderBy( t => t.Title )
+                .ToList();
 
-            if ( systemCommunications.Any() )
-            {
-                foreach ( var systemCommunication in systemCommunications )
+            // Group Scheduling System Communications.
+            var scheduleReminderCommunications = systemCommunications
+                .Select( a => new
                 {
-                    ddlScheduleConfirmationSystemCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
-                    ddlScheduleReminderSystemCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
-                    ddlRsvpReminderSystemCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
+                    a.Id,
+                    a.Title
+                } );
+
+            if ( scheduleReminderCommunications.Any() )
+            {
+                foreach ( var scheduleReminder in scheduleReminderCommunications )
+                {
+                    ddlScheduleConfirmationSystemCommunication.Items.Add( new ListItem(scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
+                    ddlScheduleReminderSystemCommunication.Items.Add( new ListItem(scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
                 }
             }
+
+            // RSVP Reminder System Communications.
+            var rsvpReminderCategoryId = CategoryCache.GetId( Rock.SystemGuid.Category.SYSTEM_COMMUNICATION_RSVP_CONFIRMATION.AsGuid() );
+            var rsvpReminderCommunications = systemCommunications
+                .Where( c => c.CategoryId == rsvpReminderCategoryId );
+
+            foreach ( var rsvpReminder in rsvpReminderCommunications )
+            {
+                ddlRsvpReminderSystemCommunication.Items.Add( new ListItem( rsvpReminder.Title, rsvpReminder.Id.ToString() ) );
+            }
+
         }
 
         /// <summary>
@@ -1634,6 +1662,16 @@ namespace RockWeb.Blocks.Groups
         #endregion
 
         #region Child GroupType Grid and Picker
+
+        /// <summary>
+        /// Handles the CheckedChanged event of the cbAllowAnyChildGroupType control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void cbAllowAnyChildGroupType_CheckedChanged( object sender, EventArgs e )
+        {
+            rcwAllowedChildGroupTypes.Visible = !cbAllowAnyChildGroupType.Checked;
+        }
 
         /// <summary>
         /// Handles the Add event of the gChildGroupTypes control.

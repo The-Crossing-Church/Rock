@@ -41,7 +41,7 @@ namespace Rock.Blocks.Types.Mobile.Cms
 
     [CodeEditorField( "Content Template",
         Description = "The XAML to use when rendering the block. <span class='tip tip-lava'></span>",
-        EditorMode = Web.UI.Controls.CodeEditorMode.Xml,
+        EditorMode = Rock.Web.UI.Controls.CodeEditorMode.Xml,
         Key = AttributeKeys.ContentTemplate,
         Order = 0 )]
 
@@ -157,17 +157,6 @@ namespace Rock.Blocks.Types.Mobile.Cms
             {
                 Content = content
             };
-        }
-
-        /// <summary>
-        /// Gets the current configuration.
-        /// </summary>
-        /// <returns></returns>
-        [BlockAction]
-        [RockObsolete( "1.10.2" )]
-        public object GetCurrentConfig()
-        {
-            return GetInitialContent();
         }
 
         #endregion

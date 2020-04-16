@@ -812,7 +812,6 @@ WHERE ic.ChannelId = @channelId
             return totalRowsDeleted;
         }
 
-
         /// <summary>
         /// Cleanups the orphaned attributes.
         /// </summary>
