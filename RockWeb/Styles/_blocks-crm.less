@@ -767,6 +767,46 @@
   }
 }
 
+.badge-assessment {
+
+  &.assessment-conflicttheme {
+    color: #e15759;
+  }
+
+  &.assessment-disc {
+    color: #4e79a7;
+  }
+
+  &.assessment-spiritualgifts {
+    color: #8cd17d;
+  }
+
+  &.assessment-motivators {
+    color: #f28e2b;
+  }
+
+  &.assessment-eqselfaware {
+    color: #499894;
+  }
+
+  // Incomplete and Pending have !important to allow for additional assessments with embedded CSS
+  &.not-requested {
+    color: @ui-4 !important;
+  }
+
+  &.requested {
+    color: @ui-5 !important;
+  }
+
+  .fa-stack-1x {
+    color: #fff;
+  }
+
+  .fa-stack-2x {
+    color: currentColor;
+  }
+}
+
 @-webkit-keyframes bar-grow {
   0% {
     height: 0;
@@ -1815,5 +1855,31 @@ tr.inactive {
     top: 50%;
     display: block;
     transform: perspective(1px) translateY(-50%);
+  }
+}
+
+// 20. Rapid Attendance Entry
+// -------------------------
+
+.rapid-attendance-entry {
+  .mh-300 {
+    min-height: 300px;
+  }
+}
+
+.family-select-item {
+  margin-bottom: 12px;
+  color: @text-color;
+  border: 1px solid @panel-border;
+
+  &.active {
+    border-color: var(--brand-color);
+    border-color: @brand-primary;
+  }
+
+  a {
+    display: block;
+    padding: 15px 18px;
+    color: @text-color !important;
   }
 }

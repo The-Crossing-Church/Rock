@@ -36,7 +36,7 @@ namespace Rock.Blocks.Types.Mobile.Cms
 
     [CodeEditorField( "Content",
         Description = "The XAML to use when rendering the block. <span class='tip tip-lava'></span>",
-        EditorMode = Web.UI.Controls.CodeEditorMode.Xml,
+        EditorMode = Rock.Web.UI.Controls.CodeEditorMode.Xml,
         Key = AttributeKeys.Content,
         Order = 0 )]
 
@@ -55,7 +55,7 @@ namespace Rock.Blocks.Types.Mobile.Cms
     [CodeEditorField( "Callback Logic",
         Description = "If you provided any callback commands in your Content then you can specify the Lava logic for handling those commands here. <span class='tip tip-laval'></span>",
         IsRequired = false,
-        EditorMode = Web.UI.Controls.CodeEditorMode.Xml,
+        EditorMode = Rock.Web.UI.Controls.CodeEditorMode.Xml,
         Key = AttributeKeys.CallbackLogic,
         Category = "advanced",
         Order = 0 )]
@@ -166,17 +166,6 @@ namespace Rock.Blocks.Types.Mobile.Cms
             {
                 Content = content
             };
-        }
-
-        /// <summary>
-        /// Gets the current configuration.
-        /// </summary>
-        /// <returns></returns>
-        [BlockAction]
-        [RockObsolete( "1.10.2" )]
-        public object GetCurrentConfig()
-        {
-            return GetInitialContent();
         }
 
         /// <summary>

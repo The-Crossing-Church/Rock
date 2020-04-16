@@ -60,12 +60,12 @@ namespace RockWeb.Blocks.Groups
 
     [LinkedPage( "Group Scheduler Page",
         Key = "GroupSchedulerPage",
-        Description ="The page to schedule this group.",
+        Description = "The page to schedule this group.",
         IsRequired = false,
         DefaultValue = "1815D8C6-7C4A-4C05-A810-CF23BA937477,D0F198E2-6111-4EC1-8D1D-55AC10E28D04",
         Order = 16 )]
 
-    [LinkedPage("Group RSVP List Page",
+    [LinkedPage( "Group RSVP List Page",
         Key = "GroupRSVPPage",
         Description = "The page to manage RSVPs for this group.",
         IsRequired = false,
@@ -74,7 +74,7 @@ namespace RockWeb.Blocks.Groups
 
     [BooleanField( "Enable Group Tags", "If enabled, the tags will be shown.", true, "", 18 )]
 
-    [ContextAware( typeof(Group) )]
+    [ContextAware( typeof( Group ) )]
     public partial class GroupDetail : ContextEntityBlock, IDetailBlock
     {
         #region Constants
@@ -623,7 +623,7 @@ namespace RockWeb.Blocks.Groups
                     {
                         groupLocation.GroupLocationScheduleConfigs.Remove( deleteConfig );
                     }
-                    // Remove 
+                    // Remove
                     group.GroupLocations.Remove( groupLocation );
                     groupLocationService.Delete( groupLocation );
                     checkinDataUpdated = true;
@@ -791,9 +791,16 @@ namespace RockWeb.Blocks.Groups
                 triggersUpdated = true;
             }
 
+            int? campusId = cpCampus.SelectedCampusId;
+            if ( !campusId.HasValue && group.GroupType.GroupsRequireCampus )
+            {
+                // If the CampusPicker doesn't have a selected value AND there is only one campus, grab its ID from the cache
+                campusId = CampusCache.SingleCampusId;
+            }
+
             group.Name = tbName.Text;
             group.Description = tbDescription.Text;
-            group.CampusId = cpCampus.SelectedCampusId;
+            group.CampusId = campusId;
             group.GroupTypeId = CurrentGroupTypeId;
             group.ParentGroupId = gpParentGroup.SelectedValueAsInt();
             group.StatusValueId = dvpGroupStatus.SelectedValueAsId();
@@ -811,14 +818,25 @@ namespace RockWeb.Blocks.Groups
             // Save RSVP settings.
             if ( group.GroupType.EnableRSVP )
             {
-                if ( group.GroupType.RSVPReminderSystemCommunicationId.HasValue )
+                // Offset Days
+                if ( group.GroupType.RSVPReminderOffsetDays.HasValue )
                 {
                     group.RSVPReminderOffsetDays = null;
+                }
+                else
+                {
+                    // Group Type setting takes precedence over Group setting.
+                    group.RSVPReminderOffsetDays = rsRsvpReminderOffsetDays.SelectedValue;
+                }
+
+                // Reminder
+                if ( group.GroupType.RSVPReminderSystemCommunicationId.HasValue )
+                {
                     group.RSVPReminderSystemCommunicationId = null;
                 }
                 else
-                { 
-                    group.RSVPReminderOffsetDays = rsRsvpReminderOffsetDays.SelectedValue;
+                {
+                    // Group Type setting takes precedence over Group setting.
                     group.RSVPReminderSystemCommunicationId = ddlRsvpReminderSystemCommunication.SelectedValueAsInt();
                 }
             }
@@ -928,7 +946,7 @@ namespace RockWeb.Blocks.Groups
             // Check to see if group type is allowed as a child of new parent group.
             if ( group.ParentGroup != null )
             {
-                var allowedGroupTypeIds = GetAllowedGroupTypes( group.ParentGroup, rockContext ).Select( t => t.Id ).ToList();
+                var allowedGroupTypeIds = GetAllowedGroupTypes( GroupTypeCache.Get( group.ParentGroup.GroupTypeId ), rockContext ).Select( t => t.Id ).ToList();
                 if ( !allowedGroupTypeIds.Contains( group.GroupTypeId ) )
                 {
                     var groupType = CurrentGroupTypeCache;
@@ -975,7 +993,7 @@ namespace RockWeb.Blocks.Groups
 
                 if ( adding )
                 {
-                    // Add ADMINISTRATE to the person who added the group 
+                    // Add ADMINISTRATE to the person who added the group
                     Rock.Security.Authorization.AllowPerson( group, Authorization.ADMINISTRATE, this.CurrentPerson, rockContext );
                 }
 
@@ -1258,15 +1276,13 @@ namespace RockWeb.Blocks.Groups
         {
             var rockContext = new RockContext();
             int? parentGroupId = gpParentGroup.SelectedValueAsInt();
-            Group parentGroup = null;
+            int? parentGroupGroupTypeId = null;
             if ( parentGroupId.HasValue )
             {
-                parentGroup = new GroupService( rockContext ).Queryable( "GroupType" )
-                    .Where( g => g.Id == parentGroupId.Value )
-                    .FirstOrDefault();
+                parentGroupGroupTypeId = new GroupService( rockContext ).GetSelect( parentGroupId.Value, s => s.ParentGroupId );
             }
 
-            var groupTypeQry = GetAllowedGroupTypes( parentGroup, rockContext );
+            var groupTypeQry = GetAllowedGroupTypes( GroupTypeCache.Get( parentGroupGroupTypeId ?? 0 ), rockContext );
 
             List<GroupType> groupTypes = groupTypeQry.OrderBy( a => a.Name ).ToList();
             if ( groupTypes.Count() > 1 )
@@ -1412,9 +1428,9 @@ namespace RockWeb.Blocks.Groups
                         group.ParentGroup = parentGroup;
 
                         // Get all the allowed GroupTypes as defined by the parent group type
-                        var allowedChildGroupTypesOfParentGroup = GetAllowedGroupTypes( parentGroup, rockContext ).ToList();
+                        var allowedChildGroupTypesOfParentGroup = GetAllowedGroupTypes( GroupTypeCache.Get( parentGroup.GroupTypeId ), rockContext ).ToList();
 
-                        // Narrow it down to group types that the current user is allowed to edit 
+                        // Narrow it down to group types that the current user is allowed to edit
                         var authorizedGroupTypes = new List<GroupType>();
                         foreach ( var allowedGroupType in allowedChildGroupTypesOfParentGroup )
                         {
@@ -1568,7 +1584,7 @@ namespace RockWeb.Blocks.Groups
                 ddlInactiveReason.Items.Add( new ListItem() );
                 ddlInactiveReason.Required = group.GroupType.RequiresInactiveReason;
 
-                foreach ( var reason in new GroupTypeService( rockContext ).GetInactiveReasonsForGroupType( group.GroupTypeId ).Select(r => new { Text = r.Value, Value = r.Id } ) )
+                foreach ( var reason in new GroupTypeService( rockContext ).GetInactiveReasonsForGroupType( group.GroupTypeId ).Select( r => new { Text = r.Value, Value = r.Id } ) )
                 {
                     ddlInactiveReason.Items.Add( new ListItem( reason.Text, reason.Value.ToString() ) );
                 }
@@ -1659,7 +1675,7 @@ namespace RockWeb.Blocks.Groups
             cpCampus.SelectedCampusId = group.CampusId;
 
             GroupRequirementsState = group.GetGroupRequirements( rockContext ).Where( a => a.GroupId.HasValue ).ToList();
-            GroupLocationsState = group.GroupLocations.OrderBy(a => a.Order).ThenBy(a => a.Location.Name).ToList();
+            GroupLocationsState = group.GroupLocations.OrderBy( a => a.Order ).ThenBy( a => a.Location.Name ).ToList();
 
             var groupTypeCache = CurrentGroupTypeCache;
             BindAdministratorPerson( group, groupTypeCache );
@@ -1794,23 +1810,23 @@ namespace RockWeb.Blocks.Groups
             spSchedules.Visible = groupType != null && ( groupType.EnableLocationSchedules ?? false );
 
 
-                if ( groupType != null && groupType.LocationSelectionMode != GroupLocationPickerMode.None )
-                {
-                    wpMeetingDetails.Visible = true;
-                    gGroupLocations.Visible = true;
-                    BindGroupLocationsGrid();
-                }
-                else
-                {
-                    wpMeetingDetails.Visible = pnlSchedule.Visible;
-                    gGroupLocations.Visible = false;
-                }
+            if ( groupType != null && groupType.LocationSelectionMode != GroupLocationPickerMode.None )
+            {
+                wpMeetingDetails.Visible = true;
+                gGroupLocations.Visible = true;
+                BindGroupLocationsGrid();
+            }
+            else
+            {
+                wpMeetingDetails.Visible = pnlSchedule.Visible;
+                gGroupLocations.Visible = false;
+            }
 
-                gGroupLocations.Columns[2].Visible = groupType != null && ( groupType.EnableLocationSchedules ?? false );
-                spSchedules.Visible = groupType != null && ( groupType.EnableLocationSchedules ?? false );
+            gGroupLocations.Columns[2].Visible = groupType != null && ( groupType.EnableLocationSchedules ?? false );
+            spSchedules.Visible = groupType != null && ( groupType.EnableLocationSchedules ?? false );
 
-                phGroupAttributes.Controls.Clear();
-                group.LoadAttributes();
+            phGroupAttributes.Controls.Clear();
+            group.LoadAttributes();
 
             if ( group.Attributes != null && group.Attributes.Any() )
             {
@@ -1909,7 +1925,8 @@ namespace RockWeb.Blocks.Groups
             bool showRsvp = false;
             int? offsetDays = 0;
             int? reminderSystemCommunicationId = null;
-            bool isReadOnly = true;
+            bool isReadOnly_Offset = true;
+            bool isReadOnly_Reminder = true;
 
             if ( groupType != null )
             {
@@ -1917,30 +1934,33 @@ namespace RockWeb.Blocks.Groups
 
                 if ( showRsvp )
                 {
-                    // If a specific RSVP Communication Template has been assigned for this Group Type, the RSVP settings for Groups of this type are read-only.
-                    isReadOnly = groupType.RSVPReminderSystemCommunicationId.HasValue;
+                    // Assign default values.
+                    rsRsvpReminderOffsetDays.Enabled = false;
+                    ddlRsvpReminderSystemCommunication.Enabled = false;
+                    offsetDays = groupType.RSVPReminderOffsetDays;
+                    reminderSystemCommunicationId = groupType.RSVPReminderSystemCommunicationId;
 
-                    if ( isReadOnly || group == null )
+                    // If a specific RSVP Communication Template has been assigned for this Group Type, the RSVP settings for
+                    // Groups of this type are read-only.
+                    isReadOnly_Offset = groupType.RSVPReminderOffsetDays.HasValue;
+                    isReadOnly_Reminder = groupType.RSVPReminderSystemCommunicationId.HasValue;
+
+                    if ( !isReadOnly_Offset )
                     {
-                        // Get the RSVP Communication settings from the Group Type.
-                        offsetDays = groupType.RSVPReminderOffsetDays;
-                        reminderSystemCommunicationId = groupType.RSVPReminderSystemCommunicationId;
+                        rsRsvpReminderOffsetDays.Enabled = true;
+                        offsetDays = ( group != null ) ? group.RSVPReminderOffsetDays : 0;
                     }
-                    else
+
+                    if ( !isReadOnly_Reminder )
                     {
-                        // Get the RSVP Communication settings from the Group.
-                        offsetDays = group.RSVPReminderOffsetDays;
-                        reminderSystemCommunicationId = group.RSVPReminderSystemCommunicationId;
+                        ddlRsvpReminderSystemCommunication.Enabled = true;
+                        reminderSystemCommunicationId = ( group != null ) ? group.RSVPReminderSystemCommunicationId : null;
                     }
                 }
             }
 
             wpRsvp.Visible = showRsvp;
-
             rsRsvpReminderOffsetDays.SelectedValue = offsetDays.GetValueOrDefault( 0 );
-            rsRsvpReminderOffsetDays.Enabled = !isReadOnly;
-
-            ddlRsvpReminderSystemCommunication.Enabled = !isReadOnly;
             ddlRsvpReminderSystemCommunication.SetValue( reminderSystemCommunicationId );
         }
 
@@ -2147,10 +2167,10 @@ namespace RockWeb.Blocks.Groups
         /// <summary>
         /// Gets the allowed group types.
         /// </summary>
-        /// <param name="parentGroup">The parent group.</param>
+        /// <param name="parentGroupType">Type of the parent group.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns></returns>
-        private IQueryable<GroupType> GetAllowedGroupTypes( Group parentGroup, RockContext rockContext )
+        private IQueryable<GroupType> GetAllowedGroupTypes( GroupTypeCache parentGroupGroupType, RockContext rockContext )
         {
             rockContext = rockContext ?? new RockContext();
 
@@ -2171,10 +2191,13 @@ namespace RockWeb.Blocks.Groups
             }
 
             // Next, limit GroupType to ChildGroupTypes that the ParentGroup allows
-            if ( parentGroup != null )
+            if ( parentGroupGroupType != null )
             {
-                List<int> allowedChildGroupTypeIds = parentGroup.GroupType.ChildGroupTypes.Select( a => a.Id ).ToList();
-                groupTypeQry = groupTypeQry.Where( a => allowedChildGroupTypeIds.Contains( a.Id ) );
+                if ( !parentGroupGroupType.AllowAnyChildGroupType )
+                {
+                    List<int> allowedChildGroupTypeIds = parentGroupGroupType.ChildGroupTypes.Select( a => a.Id ).ToList();
+                    groupTypeQry = groupTypeQry.Where( a => allowedChildGroupTypeIds.Contains( a.Id ) );
+                }
             }
 
             // Limit to GroupTypes where ShowInNavigation=True depending on block setting
@@ -2236,7 +2259,7 @@ namespace RockWeb.Blocks.Groups
                 .Queryable().AsNoTracking()
                 .OrderBy( t => t.Name ) )
             {
-                ddlSignatureDocumentTemplate.Items.Add( new ListItem( documentType.Name, documentType.Id.ToString() ) );                
+                ddlSignatureDocumentTemplate.Items.Add( new ListItem( documentType.Name, documentType.Id.ToString() ) );
             }
 
             // Populate RSVP Reminder Communication Templates
@@ -2246,8 +2269,10 @@ namespace RockWeb.Blocks.Groups
 
             var communicationService = new SystemCommunicationService( rockContext );
 
-            var systemCommunications = communicationService.Queryable()
+            var rsvpReminderCategoryId = CategoryCache.GetId( Rock.SystemGuid.Category.SYSTEM_COMMUNICATION_RSVP_CONFIRMATION.AsGuid() );
+            var rsvpReminderCommunications = communicationService.Queryable()
                 .AsNoTracking()
+                .Where( c => c.CategoryId == rsvpReminderCategoryId )
                 .OrderBy( t => t.Title )
                 .Select( a => new
                 {
@@ -2255,9 +2280,9 @@ namespace RockWeb.Blocks.Groups
                     a.Title
                 } );
 
-            foreach ( var systemCommunication in systemCommunications )
+            foreach ( var rsvpReminder in rsvpReminderCommunications )
             {
-                ddlRsvpReminderSystemCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
+                ddlRsvpReminderSystemCommunication.Items.Add( new ListItem(rsvpReminder.Title, rsvpReminder.Id.ToString() ) );
             }
 
             ddlAttendanceRecordRequiredForCheckIn.BindToEnum<AttendanceRecordRequiredForCheckIn>();
@@ -2533,7 +2558,7 @@ namespace RockWeb.Blocks.Groups
                 }
             }
 
-            // add any schedules that weren't shown in the repeater 
+            // add any schedules that weren't shown in the repeater
             foreach ( var schedule in schedules.Where( s => !currentGroupLocationScheduleConfigs.Any( x => x.ScheduleId == s.Id ) ) )
             {
                 currentGroupLocationScheduleConfigs.Add( new GroupLocationScheduleConfig
@@ -2542,7 +2567,7 @@ namespace RockWeb.Blocks.Groups
                     Schedule = schedule
                 } );
             }
-            
+
 
             BindGroupLocationScheduleCapacities( currentGroupLocationScheduleConfigs );
         }
@@ -2571,7 +2596,7 @@ namespace RockWeb.Blocks.Groups
             var selectedLocation = locpGroupLocation.Location;
             return selectedLocation != null;
         }
-        
+
         #endregion
 
         #region Location Grid and Picker
@@ -2756,11 +2781,11 @@ namespace RockWeb.Blocks.Groups
                             ScheduleId = s.Id,
                             Schedule = s
                         };
-            }
+                    }
                 } ).ToList();
 
                 // Handle case where schedules are created and no group location configuration exists yet
-                if ( groupLocationScheduleConfigList.Count() == 0 && schedules.Count() > 0  )
+                if ( groupLocationScheduleConfigList.Count() == 0 && schedules.Count() > 0 )
                 {
                     // No schedules have been saved yet.
                     groupLocationScheduleConfigList = new List<GroupLocationScheduleConfig>();
