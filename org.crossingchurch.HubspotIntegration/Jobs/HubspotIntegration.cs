@@ -117,14 +117,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             {
                 var person = new PersonService(new RockContext()).GetByEmail(contacts_with_email[i].Email);
                 //For Testing
-                if (contacts_with_email[i].Email == "tim@thecrossingchurch.com")
-                {
-                    person = new PersonService(new RockContext()).GetByEmail("timworstell@safety.netz");
-                }
-                if (contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com")
-                {
-                    person = new PersonService(new RockContext()).GetByEmail("jimbeaty@safety.netz");
-                }
+                //if (contacts_with_email[i].Email == "tim@thecrossingchurch.com")
+                //{
+                //    person = new PersonService(new RockContext()).GetByEmail("timworstell@safety.netz");
+                //}
+                //if (contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com")
+                //{
+                //    person = new PersonService(new RockContext()).GetByEmail("jimbeaty@safety.netz");
+                //}
                 //if (contacts_with_email[i].Email == "abby@thecrossingchurch.com")
                 //{
                 //    person = new PersonService(new RockContext()).GetByEmail("abbymcclelland@safety.netz");
