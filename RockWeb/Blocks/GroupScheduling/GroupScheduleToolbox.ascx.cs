@@ -485,7 +485,7 @@ $('#{0}').tooltip();
         /// </summary>
         private void BindUpcomingSchedulesGrid()
         {
-            var currentDateTime = RockDateTime.Now;
+            var currentDateTime = RockDateTime.Now.Date;
             var rockContext = new RockContext();
 
             var qryConfirmedScheduled = new AttendanceService( rockContext ).GetConfirmedScheduled()
@@ -934,8 +934,15 @@ $('#{0}').tooltip();
             {
                 var personScheduleExclusionService = new PersonScheduleExclusionService( rockContext );
                 var personScheduleExclusion = personScheduleExclusionService.Get( e.RowKeyId );
+
                 if ( personScheduleExclusion != null )
                 {
+                    var scheduleExclusionChildren = personScheduleExclusionService.Queryable().Where( x => x.ParentPersonScheduleExclusionId == personScheduleExclusion.Id );
+                    foreach ( var scheduleExclusionChild in scheduleExclusionChildren )
+                    {
+                        scheduleExclusionChild.ParentPersonScheduleExclusionId = null;
+                    }
+
                     personScheduleExclusionService.Delete( personScheduleExclusion );
                     rockContext.SaveChanges();
                     BindBlackoutDates();
@@ -1234,13 +1241,17 @@ $('#{0}').tooltip();
             {
                 if ( availableSchedule.GroupId != currentGroupId )
                 {
-                    currentGroupId = availableSchedule.GroupId;
+                    if ( currentGroupId != -1 )
+                    {
+                        phSignUpSchedules.Controls.Add( new LiteralControl( "</div>" ) );
+                    }
+
                     CreateGroupHeader( availableSchedule.GroupName, availableSchedule.GroupType );
                 }
 
                 if ( availableSchedule.ScheduledDateTime.Date != currentOccurrenceDate.Date )
                 {
-                    if ( currentScheduleId != -1 )
+                    if ( currentScheduleId != -1 && availableSchedule.GroupId == currentGroupId )
                     {
                         phSignUpSchedules.Controls.Add( new LiteralControl( "</div>" ) );
                     }
@@ -1249,6 +1260,7 @@ $('#{0}').tooltip();
                     CreateDateHeader( currentOccurrenceDate );
                 }
 
+                currentGroupId = availableSchedule.GroupId;
                 currentScheduleId = availableSchedule.ScheduleId;
                 CreateScheduleSignUpRow( availableSchedule, availableGroupLocationSchedules );
             }

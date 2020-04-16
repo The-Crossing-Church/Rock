@@ -16,7 +16,6 @@ using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
-
 using com.bemaservices.Support.Utility;
 
 namespace RockWeb.Plugins.com_bemaservices.Support
