@@ -31,6 +31,11 @@ using Rock.Web.UI.Controls;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
 {
+    /// <summary>
+    /// Customized to display a custom message if someone has already checked in. It works in conjuction with a 
+    /// pillars.WorkflowActions.Workflow.Action.CheckIn.CheckPreviousCheckin.cs workflow action.
+    /// </summary>
+    /// 
     [DisplayName("Person Select (Family Check-in)")]
     [Category( "com_thecrossingchurch > Check-in" )]
     [Description("Lists people who match the selected family and provides option of selecting multiple.")]
@@ -253,7 +258,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                         var pnlChangeButton = e.Item.FindControl( "pnlChangeButton" ) as Panel;
                         if ( pnlPersonButton != null && pnlChangeButton != null )
                         {
-                            pnlPersonButton.CssClass = "col-xs-12 col-sm-9 col-md-10";
+                            pnlPersonButton.CssClass = "checkin-person-btn checkin-person-has-change col-xs-12 col-sm-9 col-md-10";
                             pnlChangeButton.Visible = selectedOptions.Count > 1 || AnyUnselectedOptions( person );
                         }
                     }
@@ -273,9 +278,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                     {
                         lPersonButton.Text = string.Format( @"
 <div class='row'>
-    <div class='col-md-4 family-personselect'>{0}{2}</div>
-    <div class='col-md-8 auto-select text-light'>
-        <div class='auto-select-caption'>is checking into...</div>
+    <div class='col-md-5 family-personselect'>{0}</div>
+    <div class='col-md-7 auto-select family-auto-select'>
+        <div class='auto-select-caption'>Current Selection</div>
         <div class='auto-select-details'>{1}</div>
     </div>
 </div>
