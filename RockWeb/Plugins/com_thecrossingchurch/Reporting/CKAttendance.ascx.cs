@@ -144,11 +144,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             base.OnLoad( e );
             if (!stDate.SelectedDate.HasValue)
             {
-                stDate.SelectedDate = new DateTime(2020, 1, 1); //DateTime.Now.AddMonths(-3);
+                var dt = DateTime.Now.StartOfWeek(DayOfWeek.Sunday); 
+                stDate.SelectedDate = dt.AddDays(-21);
             }
             if (!endDate.SelectedDate.HasValue)
             {
-                endDate.SelectedDate = new DateTime(2020, 2, 15); // DateTime.Now;
+                endDate.SelectedDate = DateTime.Now;
             }
             start = stDate.SelectedDate.Value;
             end = endDate.SelectedDate.Value;
