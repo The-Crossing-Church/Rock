@@ -313,7 +313,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             for(var i=0; i<svcTimes.Count(); i++)
             {
                 var svcId = svcTimes[i];
-                var current = attendance.Where(x => x.Occurrence.ScheduleId == svcId).Select(x => x.Occurrence.Location.Name).ToList().Select(x => TransformClassName(x)).Distinct().OrderBy(x => classroomSort.IndexOf(x)).ToList();
+                var current = attendance.Where(x => x.Occurrence.ScheduleId == svcId).Select(x => x.Occurrence.Location.Name).ToList().Select(x => TransformClassName(x)).Distinct().OrderBy(x => {
+                    var name = x.Contains("11:15") ? x.Substring(6) : x.Substring(5);
+                    return classroomSort.IndexOf(name);
+                  }).ToList();
                 inUseClassrooms.Add(new ClassesBySchedule { ScheduleId = svcId, Classrooms = current });
             }
             BuildThresholdData(locations, schedules.ToList()); 
@@ -346,7 +349,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 {
                     ServiceTime = schedules.FirstOrDefault(s => s.Id == x.Key.ScheduleId).Name,
                     OccurrenceDate = x.Key.OccurrenceDate,
-                    ClassAttendances = early_childhood.Where(ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId).OrderBy(c => classroomSort.IndexOf(c.ClassName)).ToList()
+                    ClassAttendances = early_childhood.Where(ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId).OrderBy(c => {
+                        var name = c.ClassName.Contains("11:15") ? c.ClassName.Substring(6) : c.ClassName.Substring(5);
+                        return classroomSort.IndexOf(name);
+                      }).ToList()
                 };
                 svcAtt.Total = svcAtt.ClassAttendances.Select(ca => ca.AttendanceCount).Sum();
                 return svcAtt;
@@ -401,7 +407,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 if (inUseClassrooms[idx].Classrooms.IndexOf(className) < 0)
                 {
                     inUseClassrooms[idx].Classrooms.Add(className);
-                    inUseClassrooms[idx].Classrooms = inUseClassrooms[idx].Classrooms.OrderBy(iuc => classroomSort.IndexOf(iuc)).ToList();
+                    inUseClassrooms[idx].Classrooms = inUseClassrooms[idx].Classrooms.OrderBy(iuc => {
+                        var name = iuc.Contains(":") ? (iuc.Contains("11:15") ? iuc.Substring(6) : iuc.Substring(5)) : iuc;
+                        return classroomSort.IndexOf(name);
+                      }).ToList();
                 }
                 return new ClassAttendance()
                 {
@@ -410,7 +419,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     AttendanceCount = x.Count(),
                     OccurrenceDate = x.Key.OccurrenceDate
                 };
-            }).OrderBy(x => classroomSort.IndexOf(x.ClassName)).Distinct().ToList();
+            }).OrderBy(x => {
+                var name = x.ClassName.Contains("11:15") ? x.ClassName.Substring(6) : x.ClassName.Substring(5);
+                return classroomSort.IndexOf(name);
+              }).Distinct().ToList();
 
             var elemSvcAtt = elem.Union(elemMultiAge).GroupBy(x => new { x.OccurrenceDate, x.ScheduleId }).Select(x =>
             {
@@ -418,7 +430,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 {
                     ServiceTime = schedules.FirstOrDefault(s => s.Id == x.Key.ScheduleId).Name,
                     OccurrenceDate = x.Key.OccurrenceDate,
-                    ClassAttendances = elem.Where(ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId).Union(elemMultiAge.Where(em => em.ScheduleId == x.Key.ScheduleId && em.OccurrenceDate == x.Key.OccurrenceDate)).OrderBy(c => classroomSort.IndexOf(c.ClassName)).ToList()
+                    ClassAttendances = elem.Where(ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId).Union(elemMultiAge.Where(em => em.ScheduleId == x.Key.ScheduleId && em.OccurrenceDate == x.Key.OccurrenceDate)).OrderBy(c => {
+                        var name = c.ClassName.Contains("11:15") ? c.ClassName.Substring(6) : c.ClassName.Substring(5);
+                        return classroomSort.IndexOf(name);
+                    }).ToList()
                 };
                 svcAtt.Total = svcAtt.ClassAttendances.Select(ca => ca.AttendanceCount).Sum();
                 svcAtt.MultiAgeTotal = elemMultiAge.Where(ma => ma.OccurrenceDate == x.Key.OccurrenceDate && ma.ScheduleId == x.Key.ScheduleId).Select(ma => ma.AttendanceCount).Sum();
@@ -488,7 +503,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     classroom.AddCssClass("custom-row");
                     var classCol = new HtmlGenericControl("div");
                     classCol.AddCssClass("custom-col name-col");
-                    classCol.InnerText = inUseClassrooms[idx].Classrooms[j];
+                    classCol.InnerText = inUseClassrooms[idx].Classrooms[j].Contains(":") ? (inUseClassrooms[idx].Classrooms[j].Contains("11:15") ? inUseClassrooms[idx].Classrooms[j].Substring(6) : inUseClassrooms[idx].Classrooms[j].Substring(5)) : inUseClassrooms[idx].Classrooms[j];
                     if(j%2 > 0)
                     {
                         classroom.AddCssClass("bg-secondary");
@@ -700,25 +715,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     {
                         var idx = name.IndexOf("(");
                         var diff = name.Length - idx + 7; 
-                        return name.Substring(6, name.Length - diff);
+                        return name.Substring(0, name.Length - diff);
+                        //return name.Substring(6, name.Length - diff);
                     }
                     else
                     {
                         var idx = name.IndexOf("(");
                         var diff = name.Length - idx + 6;
-                        return name.Substring(5, name.Length - diff);
+                        return name.Substring(0, name.Length - diff);
+                        //return name.Substring(5, name.Length - diff);
                     }
                 }
                 else
                 {
-                    if (name.Contains("11:15"))
-                    {
-                        return name.Substring(6);
-                    }
-                    else
-                    {
-                        return name.Substring(5);
-                    }
+                    return name; 
+                    //if (name.Contains("11:15"))
+                    //{
+                    //    return name.Substring(6);
+                    //}
+                    //else
+                    //{
+                    //    return name.Substring(5);
+                    //}
                 }
             }
             catch
