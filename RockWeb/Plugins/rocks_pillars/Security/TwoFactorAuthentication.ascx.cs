@@ -319,54 +319,68 @@ namespace RockWeb.Plugins.rocks_pillars.Security
 
         private void SendCode()
         {
-            if ( login != null )
+            try
             {
-                string code = GenerateCode().ToString();
-                DateTime expires = RockDateTime.Now.AddSeconds( codeValidFor );
-                string token = string.Format( "{0}|{1}", code, expires.ToString( "o" ) );
-                login.Person.SetAttributeValue( _2FAAttributeKey, Encryption.EncryptString( token ) );
-                login.Person.SaveAttributeValue( _2FAAttributeKey, rockContext );
-
-                // Send Code to Person
-                var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-                mergeFields.Add( "Person", login.Person );
-                mergeFields.Add( "Code", code );
-
-                RockMessage rockMessage = null;
-                RecipientData recipient = null;
-                if ( rblMediums.SelectedValue == "email" )
+                if (login != null)
                 {
-                    var emailMessage = new RockEmailMessage
+                    string code = GenerateCode().ToString();
+                    DateTime expires = RockDateTime.Now.AddSeconds(codeValidFor);
+                    string token = string.Format("{0}|{1}", code, expires.ToString("o"));
+                    login.Person.SetAttributeValue(_2FAAttributeKey, Encryption.EncryptString(token));
+                    login.Person.SaveAttributeValue(_2FAAttributeKey, rockContext);
+
+                    // Send Code to Person
+                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields(null);
+                    mergeFields.Add("Person", login.Person);
+                    mergeFields.Add("Code", code);
+
+                    RockMessage rockMessage = null;
+                    RockMessageRecipient recipient = null;
+                    if (rblMediums.SelectedValue == "email")
                     {
-                        Subject = GetAttributeValue( AttributeKeys.EmailSubject ),
-                        Message = GetAttributeValue( AttributeKeys.EmailContent )
-                    };
-                    rockMessage = emailMessage;
-                    recipient = new RecipientData( login.Person.Email, mergeFields );
-                }
-                else
-                {
-                    if ( fromGuid.HasValue )
-                    {
-                        var smsMessage = new RockSMSMessage
+                        var emailMessage = new RockEmailMessage
                         {
-                            FromNumber = DefinedValueCache.Get( fromGuid.Value, rockContext ),
-                            Message = GetAttributeValue( AttributeKeys.SMSContent )
+                            Subject = GetAttributeValue(AttributeKeys.EmailSubject),
+                            Message = GetAttributeValue(AttributeKeys.EmailContent)
                         };
-                        rockMessage = smsMessage;
-
-                        var pn = login.Person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
-                        if ( pn != null && pn.IsMessagingEnabled )
+                        rockMessage = emailMessage;
+                        recipient = new RockEmailMessageRecipient(login.Person, mergeFields);
+                    }
+                    else
+                    {
+                        if (fromGuid.HasValue)
                         {
-                            string smsNumber = string.Format( "+{0}{1}", pn.CountryCode, pn.Number );
-                            recipient = new RecipientData( smsNumber, mergeFields );
+                            var smsMessage = new RockSMSMessage
+                            {
+                                FromNumber = DefinedValueCache.Get(fromGuid.Value, rockContext),
+                                Message = GetAttributeValue(AttributeKeys.SMSContent)
+                            };
+                            rockMessage = smsMessage;
+
+                            var pn = login.Person.GetPhoneNumber(Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid());
+                            if (pn != null && pn.IsMessagingEnabled)
+                            {
+                                string smsNumber = string.Format("+{0}{1}", pn.CountryCode, pn.Number);
+                                recipient = new RockSMSMessageRecipient(login.Person, smsNumber, mergeFields);
+                            }
                         }
                     }
-                }
 
-                rockMessage.AddRecipient( recipient );
-                rockMessage.AppRoot = Rock.Web.Cache.GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" ) ?? string.Empty;
-                rockMessage.Send();
+                    rockMessage.AddRecipient(recipient);
+                    rockMessage.AppRoot = Rock.Web.Cache.GlobalAttributesCache.Get().GetValue("InternalApplicationRoot") ?? string.Empty;
+                    rockMessage.CreateCommunicationRecord = true;
+                    rockMessage.Send();
+                }
+            } 
+
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException(ex, null);
+
+                nbMessage.NotificationBoxType = NotificationBoxType.Danger;
+                nbMessage.Title = "The following error occurred when attempting to send code:";
+                nbMessage.Text = ex.Message;
+                nbMessage.Visible = true;
             }
         }
 
