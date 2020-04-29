@@ -58,6 +58,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
     {
         bool _hidePhotos = false;
         bool _autoCheckin = false;
+        private static class PageParameterKey
+        {
+            public const string PersonIds = "PersonIds";
+        }
 
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
@@ -169,6 +173,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                     {
                         GoBack();
                         return;
+                    }
+
+                    var personIds = Session["PersonIds"].ToString();
+                    if (personIds.IsNotNullOrWhiteSpace())
+                    {
+                        var list = personIds.Split(',');
+                        for (var i = 0; i < list.Count(); i++)
+                        {
+                            var person = family.People.FirstOrDefault(p => p.Person.Id == Int32.Parse(list[i]));
+                            if(person != null)
+                            {
+                                person.PreSelected = true;
+                            }
+                        }
+                        lbSelect_Click(new object(), new EventArgs());
                     }
 
                     lbEditFamily.Visible = CurrentCheckInState.Kiosk.RegistrationModeEnabled;
