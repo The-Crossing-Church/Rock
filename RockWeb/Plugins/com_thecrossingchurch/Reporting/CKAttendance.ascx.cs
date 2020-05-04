@@ -647,15 +647,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     var schedule_id = results[i].ServiceAttendace[0].ClassAttendances[0].ScheduleId;
                     var occ_date = results[i].OccurrenceDate; 
                     var occurence = new AttendanceOccurrenceService(new RockContext()).Queryable().Where(ao => ao.OccurrenceDate == occ_date && ao.ScheduleId == schedule_id);
-                    nt.InnerHtml = "<a class='add-note' href='/page/" + pageNum + "?Id=" + occurence.First().Id + "' ><i class='fa fa-sticky-note'></i></a>";
-                    int occId = occurence.First().Id; 
-                    var attendanceNotes = new NoteService(new RockContext()).Queryable().Where(n => n.NoteTypeId == noteTypeId && n.EntityId == occId);
-                    var str = "";
-                    foreach(var an in attendanceNotes)
+                    if(occurence.Count() > 0)
                     {
-                        str += an.Text + " -" + an.CreatedByPersonName + "<br/>"; 
+                        nt.InnerHtml = "<a class='add-note' href='/page/" + pageNum + "?Id=" + occurence.First().Id + "' ><i class='fa fa-sticky-note'></i></a>";
+                        int occId = occurence.First().Id; 
+                        var attendanceNotes = new NoteService(new RockContext()).Queryable().Where(n => n.NoteTypeId == noteTypeId && n.EntityId == occId);
+                        var str = "";
+                        foreach(var an in attendanceNotes)
+                        {
+                            str += an.Text + " -" + an.CreatedByPersonName + "<br/>"; 
+                        }
+                        attNote.InnerHtml = str; 
                     }
-                    attNote.InnerHtml = str; 
                 }
                 nt.AddCssClass("custom-col");
                 if (i == 0)
@@ -757,7 +760,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     var t = locations[i].AttributeValues["ThresholdHistoricalData"].Value;
                     if (!String.IsNullOrEmpty(t))
                     {
-                        var pairs = t.Split(',');
+                        var pairs = t.Split('|');
                         var list = new Dictionary<DateTime, int>();
                         DateTime? mostRecentBeforeRange = null;
                         int mostRecentThreshold = 0; 
@@ -905,7 +908,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
         public int? GetThreshold(string values, DateTime occurrence)
         {
-            var data = values.Split(',');
+            var data = values.Split('|');
             var dict = new Dictionary<DateTime, int>();
             int? current = null;
             if(values != "")
