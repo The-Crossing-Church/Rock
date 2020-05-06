@@ -2793,11 +2793,10 @@ if Exist "$(SolutionDir)\RockWeb\Bin\System.Web.Mvc.dll" del "$(SolutionDir)\Roc
 if Exist "$(SolutionDir)\RockWeb\Bin\System.Web.Razor.dll" del "$(SolutionDir)\RockWeb\Bin\System.Web.Razor.dll"
 if Exist "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.Deployment.dll" del "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.Deployment.dll"
 if Exist "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.dll" del "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.dll"
-if Exist "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.Razor.dll" del "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.Razor.dll"
+<!-- if Exist "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.Razor.dll" del "$(SolutionDir)\RockWeb\Bin\System.Web.WebPages.Razor.dll" -->
 if Exist "$(SolutionDir)\RockWeb\Bin\VroomJs.dll" del "$(SolutionDir)\RockWeb\Bin\VroomJs.dll"
 if Exist "$(SolutionDir)\RockWeb\Bin\WebActivatorEx.dll" del "$(SolutionDir)\RockWeb\Bin\WebActivatorEx.dll"
-
-if Exist "$(SolutionDir)\RockWeb\Bin\Rock.TransNational.Pi.dll" del "$(SolutionDir)\RockWeb\Bin\Rock.TransNational.Pi.dll"
+<!-- if Exist "$(SolutionDir)\RockWeb\Bin\Rock.TransNational.Pi.dll" del "$(SolutionDir)\RockWeb\Bin\Rock.TransNational.Pi.dll" -->
 </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
