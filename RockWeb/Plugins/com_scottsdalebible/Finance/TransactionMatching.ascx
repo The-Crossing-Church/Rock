@@ -381,7 +381,9 @@
 
             </div>
 
-            <Rock:ModalDialog ID="mdAccountsPersonalFilter" runat="server" Title="Accounts Filter" OnSaveClick="mdAccountsPersonalFilter_SaveClick">
+            <asp:HiddenField ID="hfActiveDialog" runat="server" />
+
+            <Rock:ModalDialog ID="mdAccountsPersonalFilter" runat="server" Title="Accounts Filter" OnCancelScript="clearActiveDialog()" OnSaveClick="mdAccountsPersonalFilter_SaveClick">
                 <Content>
                     <div class="row">
                         <div class="col-sm-6">
@@ -566,6 +568,7 @@
                 }
             }
         </script>
+
 
     </ContentTemplate>
 </asp:UpdatePanel>
