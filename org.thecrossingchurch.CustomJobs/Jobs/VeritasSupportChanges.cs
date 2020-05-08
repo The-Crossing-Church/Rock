@@ -55,7 +55,7 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
         /// <see cref="ITrigger" /> fires that is associated with
         /// the <see cref="IJob" />.
         /// </summary>
-        public virtual void Execute(IJobExecutionContext context)
+        public virtual void Execute( IJobExecutionContext context )
         {
             JobDataMap dataMap = context.JobDetail.JobDataMap;
             _context = new RockContext();
@@ -63,7 +63,7 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
             string guid = dataMap.GetString("FundraisingGroup");
             int groupId = new GroupService(_context).Get(Guid.Parse(guid)).Id;
             var members = new GroupMemberService(_context).Queryable().Where(gm => gm.GroupId == groupId).ToList();
-            for(var i = 0; i < members.Count(); i++)
+            for ( var i = 0; i < members.Count(); i++ )
             {
                 //Get transaction data
                 LoadTransactionData(members[i]);
@@ -73,7 +73,7 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
         /// <summary>
         /// Get Account and Load Financial Transactions for last 24 hours
         /// </summary>
-        private void LoadTransactionData(GroupMember groupMember)
+        private void LoadTransactionData( GroupMember groupMember )
         {
             //Load Attibutes and find Primary Fundraising Account
             groupMember.LoadAttributes();
@@ -86,71 +86,66 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
         /// <summary>
         /// Process Transaction Data
         /// </summary>
-        private void ProcessTransactions(List<FinancialTransaction> transactions, GroupMember groupMember, FinancialAccount account)
+        private void ProcessTransactions( List<FinancialTransaction> transactions, GroupMember groupMember, FinancialAccount account )
         {
             DateTime dt = DateTime.Now.AddDays(-1);
             dt = new DateTime(dt.Year, dt.Month, dt.Day, 0, 0, 0);
             var current = transactions.Where(t => DateTime.Compare(dt, t.TransactionDateTime.Value) <= 0).ToList();
             var message = "";
-            for(var i = 0; i < current.Count(); i++)
+            for ( var i = 0; i < current.Count(); i++ )
             {
                 bool isFirst = false;
                 bool isChanged = false;
-                bool isCanceled = false;
                 //Check if this is first contribution to this account
                 int contributor = current[i].AuthorizedPersonAliasId.Value;
-                if(!transactions.Any(t => t.AuthorizedPersonAliasId == contributor && t.Id != current[i].Id))
+                if ( !transactions.Any(t => t.AuthorizedPersonAliasId == contributor && t.Id != current[i].Id) )
                 {
                     isFirst = true;
                 }
                 //Check if the scheduled transaction has changed
-                if(current[i].ScheduledTransactionId.HasValue)
+                if ( current[i].ScheduledTransactionId.HasValue )
                 {
-                    FinancialTransaction lastTransaction = transactions.Where(t => t.ScheduledTransactionId == current[i].ScheduledTransactionId).OrderByDescending(t => t.TransactionDateTime).First();
-                    if(lastTransaction.TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount != current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount)
+                    FinancialTransaction lastTransaction = transactions.Where(t => t.ScheduledTransactionId == current[i].ScheduledTransactionId && t.Id != current[i].Id).OrderByDescending(t => t.TransactionDateTime).First();
+                    if ( lastTransaction.TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount != current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount )
                     {
                         isChanged = true;
-                    }
-                    //Check if the scheduled transaction has been cancelled
-                    var schedule = new FinancialScheduledTransactionService(_context).Get(current[i].ScheduledTransactionId.Value);
-                    if(!schedule.IsActive)
-                    {
-                        isCanceled = true;
                     }
                 }
 
                 //Add this transaction to message if different
-                if(isChanged || isFirst || isCanceled)
+                if ( isChanged || isFirst )
                 {
                     Person person = new PersonAliasService(_context).Get(contributor).Person;
                     //Title for Section
                     message += "<p style='font-size: 18px; font-weight: bold;'>";
-                    if(isFirst)
+                    if ( isFirst )
                     {
                         message += "New Contibution From " + person.FullName;
-                    }
-                    else if(isCanceled)
-                    {
-                        message += person.FullName + " is No Longer Contributing";
                     }
                     else
                     {
                         message += "Recurring Contribution From " + person.FullName + " Has Changed";
                     }
-                    message += "</p>\n";
+                    message += "</p>\n<br/>";
                     //Information about transaction
                     message += "<p style='font-size: 14px;'>";
-                    //message += "Gifted By: " + person.FullName + "\n";
-                    message += "Amount: " + current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount + "\n";
-                    message += "Mobile Number: " + person.PhoneNumbers.FirstOrDefault(p => p.NumberTypeValue.Value == "Mobile") + "\n";
-                    message += "Address: " + person.GetHomeLocation().FormattedAddress; 
-                    message += "</p>\n\n";
+                    message += "Amount: $" + current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount + "\n<br/>";
+                    if(isChanged)
+                    {
+                        FinancialTransaction lastTransaction = transactions.Where(t => t.ScheduledTransactionId == current[i].ScheduledTransactionId && t.Id != current[i].Id).OrderByDescending(t => t.TransactionDateTime).First();
+                        message += "Previous Amount: $" + lastTransaction.TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount + "\n<br/>";
+                    }
+                    message += "Mobile Number: " + person.PhoneNumbers.FirstOrDefault(p => p.NumberTypeValue.Value == "Mobile") + "\n<br/>";
+                    message += "Address: " + person.GetHomeLocation().FormattedAddress;
+                    message += "</p>\n<br/>\n<br/>";
                 }
             }
             //Send Message
-            if(message.IsNotNullOrWhiteSpace())
+            if ( message.IsNotNullOrWhiteSpace() )
             {
-                message = "<p style='font-size: 20px; font-weight: bold;'>Contibution Changes for " + account.Name + "</p>\n" + message;
+                var header = new AttributeValueService(_context).Queryable().FirstOrDefault(a => a.AttributeId == 140).Value; //Email Header
+                var footer = new AttributeValueService(_context).Queryable().FirstOrDefault(a => a.AttributeId == 141).Value; //Email Footer 
+                message = header + "<p style='font-size: 20px; font-weight: bold;'>Contibution Changes for " + account.Name + "</p>\n<br/>" + message + footer;
                 string subject = "Contibution Changes for " + account.Name;
                 RockEmailMessageRecipient recipient = new RockEmailMessageRecipient(groupMember.Person, new Dictionary<string, object>());
                 RockEmailMessage email = new RockEmailMessage();
