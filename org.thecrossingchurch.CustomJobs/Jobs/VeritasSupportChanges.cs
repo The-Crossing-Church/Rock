@@ -27,6 +27,7 @@ using System.Data.Entity;
 using Rock.Communication;
 using System.Runtime.CompilerServices;
 using DotLiquid.Util;
+using Rock.Address;
 
 namespace org.crossingchurch.VeritasSupportChanges.Jobs
 {
@@ -96,12 +97,14 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
             {
                 bool isFirst = false;
                 bool isChanged = false;
+
                 //Check if this is first contribution to this account
                 int contributor = current[i].AuthorizedPersonAliasId.Value;
                 if ( !transactions.Any(t => t.AuthorizedPersonAliasId == contributor && t.Id != current[i].Id) )
                 {
                     isFirst = true;
                 }
+
                 //Check if the scheduled transaction has changed
                 if ( current[i].ScheduledTransactionId.HasValue )
                 {
@@ -130,16 +133,35 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
                     //Information about transaction
                     message += "<p style='font-size: 14px;'>";
                     message += "Amount: $" + current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount + "\n<br/>";
-                    if(isChanged)
+                    if ( isChanged )
                     {
                         FinancialTransaction lastTransaction = transactions.Where(t => t.ScheduledTransactionId == current[i].ScheduledTransactionId && t.Id != current[i].Id).OrderByDescending(t => t.TransactionDateTime).First();
                         message += "Previous Amount: $" + lastTransaction.TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount + "\n<br/>";
                     }
-                    message += "Mobile Number: " + person.PhoneNumbers.FirstOrDefault(p => p.NumberTypeValue.Value == "Mobile") + "\n<br/>";
-                    message += "Address: " + person.GetHomeLocation().FormattedAddress;
+                    message += GetMobileNumber(person);
+                    message += GetAddress(person);
                     message += "</p>\n<br/>\n<br/>";
                 }
             }
+
+            //Check for potentially failed payments
+            var scheduled = new FinancialScheduledTransactionService(_context).Queryable().Where(fst => fst.IsActive && fst.ScheduledTransactionDetails.Any(fstd => fstd.AccountId == account.Id) && DateTime.Compare(dt, fst.NextPaymentDate.Value) <= 0);
+            var failed = scheduled.Where(s => !current.Select(c => c.ScheduledTransactionId).Contains(s.Id)).ToList();
+            for ( var i = 0; i < failed.Count(); i++ )
+            {
+                Person person = new PersonAliasService(_context).Get(failed[i].AuthorizedPersonAliasId).Person;
+                //Title for Section
+                message += "<p style='font-size: 18px; font-weight: bold;'>";
+                message += "Potentially Failed Payment from " + person.FullName;
+                message += "</p>\n<br/>";
+                //Information about transaction
+                message += "<p style='font-size: 14px;'>";
+                message += "Amount: $" + failed[i].ScheduledTransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount + "\n<br/>";
+                message += GetMobileNumber(person);
+                message += GetAddress(person);
+                message += "</p>\n<br/>\n<br/>";
+            }
+
             //Send Message
             if ( message.IsNotNullOrWhiteSpace() )
             {
@@ -157,6 +179,34 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
                 var output = email.Send();
                 Console.WriteLine(output);
             }
+        }
+
+        private string GetMobileNumber( Person person )
+        {
+            var phone = person.PhoneNumbers.FirstOrDefault(p => p.NumberTypeValue.Value == "Mobile");
+            if ( phone == null )
+            {
+                phone = person.PhoneNumbers.FirstOrDefault();
+            }
+            if ( phone != null )
+            {
+                return phone.NumberTypeValue.Value + " Number: " + phone.NumberFormatted + "\n<br/>";
+            }
+            return "Phone Number not available.";
+        }
+
+        private string GetAddress( Person person )
+        {
+            var addr = person.GetHomeLocation();
+            if ( addr == null )
+            {
+                addr = person.GetMailingLocation();
+            }
+            if ( addr != null )
+            {
+                return "Address: " + addr.FormattedAddress;
+            }
+            return "Address not available.";
         }
     }
 }
