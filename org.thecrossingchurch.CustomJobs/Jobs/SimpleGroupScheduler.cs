@@ -22,6 +22,12 @@ using Rock.Data;
 using Rock.Model;
 using System;
 using Rock.Communication;
+using Rock.Web.Cache;
+using System.Runtime.InteropServices;
+using Rock.Workflow.Action;
+using System.Web.UI;
+using System.Linq.Expressions;
+using DotLiquid.Util;
 
 namespace org.crossingchurch.SimpleGroupScheduler.Jobs
 {
@@ -30,6 +36,7 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
     /// </summary>
     [GroupField("Group", "Group to Auto-Schedule", true, "", "", 0)]
     [BooleanField("Include Child Groups", "If checked, the job will schedule all child groups of the selected parent", false, "", 0)]
+    [PersonField("Sender", "The person the message about serving should come from", true)]
     [DisallowConcurrentExecution]
     public class SimpleGroupScheduler : IJob
     {
@@ -38,6 +45,8 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
         private AttendanceService AttendanceSvc { get; set; }
         private CommunicationService CommunicationSvc { get; set; }
         private PersonService PersonSvc { get; set; }
+        private Person Sender { get; set; }
+        private RockContext _context { get; set; }
 
         /// <summary> 
         /// Empty constructor for job initialization
@@ -55,10 +64,10 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
         /// <see cref="ITrigger" /> fires that is associated with
         /// the <see cref="IJob" />.
         /// </summary>
-        public virtual void Execute(IJobExecutionContext context)
+        public virtual void Execute( IJobExecutionContext context )
         {
             JobDataMap dataMap = context.JobDetail.JobDataMap;
-            var _context = new RockContext();
+            _context = new RockContext();
             List<Group> groups = new List<Group>();
             List<Person> scheduledPeople = new List<Person>();
             GroupSvc = new GroupService(_context);
@@ -67,11 +76,13 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
             CommunicationSvc = new CommunicationService(_context);
             PersonSvc = new PersonService(_context);
 
-            string guid = dataMap.GetString("Groups");
+            string guid = dataMap.GetString("Group");
             bool includeChildren = dataMap.GetBoolean("IncludeChildGroups");
+            string sender_guid = dataMap.GetString("Sender");
+            Sender = new PersonAliasService(_context).Get(Guid.Parse(sender_guid)).Person;
 
             Group parent = GroupSvc.Get(Guid.Parse(guid));
-            if(includeChildren)
+            if ( includeChildren )
             {
                 groups = FindAllSubGroups(groups, parent);
             }
@@ -80,75 +91,127 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
                 groups.Add(parent);
             }
             //Schedule groups
-            for(var i = 0; i < groups.Count(); i++)
+            for ( var i = 0; i < groups.Count(); i++ )
             {
                 var members = groups[i].Members.ToList();
-                for(var j = 0; j < members.Count(); j++)
+                for ( var j = 0; j < members.Count(); j++ )
                 {
                     ScheduleMember(groups[i], members[j].Person);
-                    if(!scheduledPeople.Select(p => p.Id).Contains(members[j].Person.Id))
+                    if ( !scheduledPeople.Select(p => p.Id).Contains(members[j].Person.Id) )
                     {
                         scheduledPeople.Add(members[j].Person);
                     }
                 }
             }
             //Send Notifications to Scheduled People
-            for(var i = 0; i < scheduledPeople.Count(); i++)
+            for ( var i = 0; i < scheduledPeople.Count(); i++ )
             {
                 SendMessage(scheduledPeople[i]);
             }
         }
 
-        private List<Group> FindAllSubGroups(List<Group> list, Group current)
+        private List<Group> FindAllSubGroups( List<Group> list, Group current )
         {
             //If the current group has a schedule and members, add it to our list
-            if(current.Schedule != null && current.Members.Count() > 0)
+            if ( current.Schedule != null && current.Members.Count() > 0 )
             {
                 list.Add(current);
             }
             var childGroups = GroupSvc.Queryable().Where(g => g.ParentGroupId == current.Id).ToList();
-            for(var i = 0; i < childGroups.Count(); i++)
+            for ( var i = 0; i < childGroups.Count(); i++ )
             {
                 list = FindAllSubGroups(list, childGroups[i]);
             }
-            return list; 
+            return list;
         }
 
-        private void ScheduleMember(Group group, Person person)
+        private void ScheduleMember( Group group, Person person )
         {
             var locations = group.GroupLocations.ToList();
-            for(var i = 0; i < locations.Count(); i++)
+            for ( var i = 0; i < locations.Count(); i++ )
             {
                 var schedules = locations[i].Schedules.ToList();
-                for(var j = 0; j < schedules.Count(); j++)
+                if ( schedules.Count() == 0 )
+                {
+                    //Pull Group Schedule if Location Schedule is empty
+                    schedules.Add(group.Schedule);
+                }
+                for ( var j = 0; j < schedules.Count(); j++ )
                 {
                     var nextOcc = schedules[j].GetNextStartDateTime(DateTime.Now);
-                    var occurrence = AttendanceOccurrenceSvc.GetOrAdd(nextOcc.Value, schedules[j].Id, locations[i].Id, group.Id);
-                    var attendance = new Attendance()
+                    if ( nextOcc == null )
                     {
-                        OccurrenceId = occurrence.Id,
-                        PersonAliasId = person.PrimaryAliasId,
-                        RSVP = RSVP.Unknown
-                    };
-                    AttendanceSvc.Add(attendance);
+                        //Add new occurrence if none exist
+                        nextOcc = GetNextOccurrence(schedules[j]);
+                    }
+                    var occurrence = AttendanceOccurrenceSvc.GetOrAdd(nextOcc.Value, group.Id, locations[i].LocationId, schedules[j].Id);
+                    var attendance = AttendanceSvc.ScheduledPersonAddPending(person.Id, occurrence.Id, Sender.PrimaryAlias);
+                    _context.SaveChanges();
                 }
             }
         }
 
-        private void SendMessage(Person person)
+        private void SendMessage( Person person )
         {
             var token = person.GetImpersonationToken();
-            var url = "http://localhost:6030/page/20?rckipid=" + token;
+            var url = "http://localhost:6230/page/1088?rckipid=" + token;
             var msg = "Your serving team is scheduled this week, please use this <a href='" + url + "'>link</a> to let us know if you are able to serve.";
-            if(person.CommunicationPreference == CommunicationType.SMS)
+            if ( person.CommunicationPreference != CommunicationType.SMS )
             {
+                //Get 65201 Phone
+                DefinedValue phoneDV = new DefinedValueService(_context).Get(1702);
+                var cache = new DefinedValueCache();
+                cache.SetFromEntity(phoneDV);
                 //Send SMS
-                //CommunicationSvc.CreateSMSCommunication(person, person.PrimaryAliasId, msg, , "", "Serving Scheduled");
+                PageShortLinkService ShortLinkSvc = new PageShortLinkService(_context);
+                //Create Short Link
+                var tkn = ShortLinkSvc.GetUniqueToken(3, 7);
+                var link = new PageShortLink();
+                link.SiteId = 3; //The Crossing External Site
+                link.Token = tkn;
+                link.Url = url;
+                ShortLinkSvc.Add(link);
+                _context.SaveChanges();
+                link = ShortLinkSvc.GetInclude(link.Id, l => l.Site);
+                //Set Message
+                msg = "Your serving team is scheduled this week, please use this link to let us know if you are able to serve. " + link.Site.SiteDomains.First() + "/" + link.Token;
+                RockSMSMessageRecipient recipient = new RockSMSMessageRecipient(person, person.PhoneNumbers.FirstOrDefault(p => p.NumberTypeValue.Value == "Mobile").Number, new Dictionary<string, object>());
+                RockSMSMessage sms = new RockSMSMessage();
+                sms.Message = msg;
+                sms.FromNumber = cache;
+                sms.AddRecipient(recipient);
+                var output = sms.Send();
             }
             else
             {
                 //Send Email
+                var header = new AttributeValueService(_context).Queryable().FirstOrDefault(a => a.AttributeId == 140).Value; //Email Header
+                var footer = new AttributeValueService(_context).Queryable().FirstOrDefault(a => a.AttributeId == 141).Value; //Email Footer 
+                var message = header + msg + footer;
+                string subject = "Your Serving Team is Scheduled This Week";
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient(person, new Dictionary<string, object>());
+                RockEmailMessage email = new RockEmailMessage();
+                email.Subject = subject;
+                email.Message = message;
+                email.FromEmail = "info@thecrossingchurch.com";
+                email.FromName = "The Crossing System";
+                email.AddRecipient(recipient);
+                var output = email.Send();
             }
+        }
+
+        private DateTime GetNextOccurrence( Schedule schedule )
+        {
+            //Weekly Schedule
+            if ( schedule.ScheduleType == ScheduleType.Weekly )
+            {
+                DateTime today = DateTime.Today;
+                int daysUntil = ( (int)schedule.WeeklyDayOfWeek - (int)today.DayOfWeek + 7 ) % 7;
+                DateTime nextDate = today.AddDays(daysUntil);
+                nextDate = new DateTime(nextDate.Year, nextDate.Month, nextDate.Day, schedule.WeeklyTimeOfDay.Value.Hours, schedule.WeeklyTimeOfDay.Value.Minutes, 0);
+                return nextDate;
+            }
+            return DateTime.Today;
         }
     }
 }
