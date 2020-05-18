@@ -156,7 +156,7 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
             var token = person.GetImpersonationToken();
             var url = "http://localhost:6230/page/1088?rckipid=" + token;
             var msg = "Your serving team is scheduled this week, please use this <a href='" + url + "'>link</a> to let us know if you are able to serve.";
-            if ( person.CommunicationPreference != CommunicationType.SMS )
+            if ( person.CommunicationPreference == CommunicationType.SMS )
             {
                 //Get 65201 Phone
                 DefinedValue phoneDV = new DefinedValueService(_context).Get(1702);
