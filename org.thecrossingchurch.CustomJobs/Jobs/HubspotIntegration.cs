@@ -66,7 +66,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         /// <see cref="ITrigger" /> fires that is associated with
         /// the <see cref="IJob" />.
         /// </summary>
-        public virtual void Execute(IJobExecutionContext context)
+        public virtual void Execute( IJobExecutionContext context )
         {
             JobDataMap dataMap = context.JobDetail.JobDataMap;
 
@@ -82,9 +82,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             WebRequest request = WebRequest.Create($"https://api.hubapi.com/properties/v1/contacts/properties?hapikey={key}");
             var response = request.GetResponse();
             var props = new List<HubspotProperty>();
-            using (Stream stream = response.GetResponseStream())
+            using ( Stream stream = response.GetResponseStream() )
             {
-                using (StreamReader reader = new StreamReader(stream))
+                using ( StreamReader reader = new StreamReader(stream) )
                 {
                     var jsonResponse = reader.ReadToEnd();
                     props = JsonConvert.DeserializeObject<List<HubspotProperty>>(jsonResponse);
@@ -97,7 +97,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             List<ContactHubSpotModel> contacts = new List<ContactHubSpotModel>();
             long offset = 0;
             var hasmore = true;
-            while (hasmore)
+            while ( hasmore )
             {
                 var list = api.Contact.List<ContactHubSpotModel>(new ListRequestOptions
                 {
@@ -113,7 +113,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             var contacts_with_email = contacts.Where(c => c.Email != null).ToList();
 
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
-            for (var i = 0; i < contacts_with_email.Count(); i++)
+            for ( var i = 0; i < contacts_with_email.Count(); i++ )
             {
                 var person = new PersonService(new RockContext()).GetByEmail(contacts_with_email[i].Email);
                 //For Testing
@@ -121,10 +121,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //{
                 //    person = new PersonService(new RockContext()).GetByEmail("timworstell@safety.netz");
                 //}
-                //if (contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com")
-                //{
-                //    person = new PersonService(new RockContext()).GetByEmail("jimbeaty@safety.netz");
-                //}
+                if ( contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com" )
+                {
+                    person = new PersonService(new RockContext()).GetByEmail("jimbeaty@safety.netz");
+                }
+                if ( contacts_with_email[i].Email == "cody.melton@thecrossingchurch.com")
+                {
+                    person = new PersonService(new RockContext()).GetByEmail("codymelton@safety.netz");
+                }
                 //if (contacts_with_email[i].Email == "abby@thecrossingchurch.com")
                 //{
                 //    person = new PersonService(new RockContext()).GetByEmail("abbymcclelland@safety.netz");
@@ -138,7 +142,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //    person = new PersonService(new RockContext()).GetByEmail("natalieecklund@safety.netz");
                 //}
                 //Schedule HubSpot update if 1:1 match
-                if (person.Count() == 1)
+                if ( person.Count() == 1 )
                 {
                     try
                     {
@@ -149,22 +153,23 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         var url = $"https://api.hubapi.com/contacts/v1/contact/vid/{contacts_with_email[i].Id}/profile?hapikey={key}";
                         var properties = new List<HubspotPropertyUpdate>();
                         //Add each Rock prop to the list with the Hubspot name
-                        for(var j=0; j<attrs.Count(); j++)
+                        for ( var j = 0; j < attrs.Count(); j++ )
                         {
                             var current_prop = props.FirstOrDefault(p => p.label == attrs[j].Attribute.Name);
                             //If the attribute is in our list of props from Hubspot
-                            if(current_prop != null)
+                            if ( current_prop != null )
                             {
-                                if(attrs[j].Attribute.FieldType.Name == "Date" || attrs[j].Attribute.FieldType.Name == "Date Time")
+                                if ( attrs[j].Attribute.FieldType.Name == "Date" || attrs[j].Attribute.FieldType.Name == "Date Time" )
                                 {
                                     //Get Epoc miliseconds 
                                     DateTime tryDate;
-                                    if (DateTime.TryParse(attrs[j].Value, out tryDate))
+                                    if ( DateTime.TryParse(attrs[j].Value, out tryDate) )
                                     {
                                         var d = tryDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds * 1000;
                                         properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() });
                                     }
-                                } else
+                                }
+                                else
                                 {
                                     properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = attrs[j].Value });
                                 }
@@ -172,21 +177,21 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         }
                         //All properties begining with "Rock " are properties on the Person entity itself 
                         var person_props = props.Where(p => p.label.Contains("Rock ")).ToList();
-                        foreach(PropertyInfo propInfo in person.First().GetType().GetProperties())
+                        foreach ( PropertyInfo propInfo in person.First().GetType().GetProperties() )
                         {
-                            var current_prop = props.FirstOrDefault(p => p.label == "Rock " + propInfo.Name); 
-                            if(current_prop != null)
+                            var current_prop = props.FirstOrDefault(p => p.label == "Rock " + propInfo.Name);
+                            if ( current_prop != null )
                             {
-                                if(propInfo.PropertyType.FullName == "Rock.Model.DefinedValue")
+                                if ( propInfo.PropertyType.FullName == "Rock.Model.DefinedValue" )
                                 {
                                     DefinedValue dv = JsonConvert.DeserializeObject<DefinedValue>(JsonConvert.SerializeObject(propInfo.GetValue(person.First())));
                                     properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = dv.Value });
                                 }
-                                else if (propInfo.PropertyType.FullName == "Date" || propInfo.PropertyType.FullName == "Date Time")
+                                else if ( propInfo.PropertyType.FullName == "Date" || propInfo.PropertyType.FullName == "Date Time" )
                                 {
                                     //Get Epoc miliseconds 
                                     DateTime tryDate;
-                                    if(DateTime.TryParse(propInfo.GetValue(person.First()).ToString(), out tryDate))
+                                    if ( DateTime.TryParse(propInfo.GetValue(person.First()).ToString(), out tryDate) )
                                     {
                                         var d = tryDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds * 1000;
                                         properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() });
@@ -199,23 +204,85 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                         }
 
-                        if(person.First().Members != null && person.First().Members.Count() > 0)
+                        //Special Property for Parents
+                        if ( person.First().PrimaryFamily.Members.FirstOrDefault(gm => gm.PersonId == person.First().Id).GroupRole.Name == "Adult" )
+                        {
+                            //Direct Family Members
+                            var child_ages_prop = props.FirstOrDefault(p => p.label == "Children's Age Groups");
+                            var children = person.First().PrimaryFamily.Members.Where(m => m.GroupRole.Name == "Child").ToList();
+                            var agegroups = "";
+                            //Known Relationships
+                            int pid = person.First().Id;
+                            var krGroups = new GroupMemberService(new RockContext()).Queryable().Where(gm => gm.PersonId == pid && gm.GroupRoleId == 5).Select(gm => gm.GroupId).ToList();
+                            var childRelationships = new List<int> { 4, 15, 17 };
+                            var krMembers = new GroupMemberService(new RockContext()).Queryable().Where(gm => krGroups.Contains(gm.GroupId) && childRelationships.Contains(gm.GroupRoleId)).ToList();
+                            children.AddRange(krMembers);
+                            for ( var j = 0; j < children.Count(); j++ )
+                            {
+                                if ( children[j].Person.GradeOffset > 6 )
+                                {
+                                    //Child is in K-5
+                                    if ( !agegroups.Contains("Elementary") )
+                                    {
+                                        agegroups += "Elementary,";
+                                    }
+                                }
+                                else if ( children[j].Person.GradeOffset > 3 )
+                                {
+                                    //Child is in 6-8
+                                    if ( !agegroups.Contains("Middle") )
+                                    {
+                                        agegroups += "Middle,";
+                                    }
+                                }
+                                else if ( children[j].Person.GradeOffset <= 3 )
+                                {
+                                    //Child is in 9-12
+                                    if ( !agegroups.Contains("SeniorHigh") )
+                                    {
+                                        agegroups += "SeniorHigh,";
+                                    }
+                                }
+                                else
+                                {
+                                    //Check if child is infant-toddler or adult
+                                    var bornCheck = DateTime.Now;
+                                    if ( children[j].Person.BirthYear >= ( bornCheck.Year - 5 ) )
+                                    {
+                                        if ( !agegroups.Contains("EarlyChildhood") )
+                                        {
+                                            agegroups += "EarlyChildhood,";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if ( !agegroups.Contains("Adult") )
+                                        {
+                                            agegroups += "Adult,";
+                                        }
+                                    }
+                                }
+                            }
+                            properties.Add(new HubspotPropertyUpdate() { property = child_ages_prop.name, value = agegroups.Substring(0, agegroups.Length - 1) });
+                        }
+
+                        if ( person.First().Members != null && person.First().Members.Count() > 0 )
                         {
                             //Special properties for a person's group membership 
                             //Currently in adult small group, currently in a 20s small group, currently in veritas small group, currently serving, currently in connections, membership list
                             var today = DateTime.UtcNow;
                             var term = "fall";
-                            if (DateTime.Compare(today, new DateTime(today.Year, 5, 15)) <= 0)
+                            if ( DateTime.Compare(today, new DateTime(today.Year, 5, 15)) <= 0 )
                             {
                                 term = "winter";
                             }
-                            else if (DateTime.Compare(today, new DateTime(today.Year, 8, 15)) <= 0)
+                            else if ( DateTime.Compare(today, new DateTime(today.Year, 8, 15)) <= 0 )
                             {
                                 term = "summer";
                             }
                             //All current memberships for this year
-                            var memberships = person.First().Members.Where(m => (m.Group.Name.Contains(today.ToString("yyyy")) ||
-                                m.Group.Name.Contains($"{today.AddYears(-1).ToString("yyyy")}-{today.ToString("yy")}"))).ToList();
+                            var memberships = person.First().Members.Where(m => ( m.Group.Name.Contains(today.ToString("yyyy")) ||
+                                m.Group.Name.Contains($"{today.AddYears(-1).ToString("yyyy")}-{today.ToString("yy")}") )).ToList();
                             //Where the group name has Fall/Winter/Summer
                             var current_serving = memberships.Where(m => m.Group.Name.ToLower().Contains(term)).ToList();
                             //All current groups with the words Small Group
@@ -224,45 +291,45 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             var serving_prop = props.FirstOrDefault(p => p.label == "Currently Serving");
                             var sg_props = props.Where(p => p.label.Contains("Small Group")).ToList();
                             //set the serving prop
-                            if(current_serving.Count() > 0)
+                            if ( current_serving.Count() > 0 )
                             {
                                 properties.Add(new HubspotPropertyUpdate() { property = serving_prop.name, value = "true" });
-                            } 
+                            }
                             else
                             {
                                 properties.Add(new HubspotPropertyUpdate() { property = serving_prop.name, value = "false" });
                             }
                             //figure out if they attend small group
-                            if(current_sg.Count() > 0)
+                            if ( current_sg.Count() > 0 )
                             {
-                                if(current_sg.Count() > 1 && current_sg.Where(sg => !sg.GroupRole.IsLeader).Count() > 0)
+                                if ( current_sg.Count() > 1 && current_sg.Where(sg => !sg.GroupRole.IsLeader).Count() > 0 )
                                 { //See if we can get this to one small group hopefully
                                     current_sg = current_sg.Where(sg => !sg.GroupRole.IsLeader).ToList();
                                 }
-                                foreach(var sg in current_sg)
+                                foreach ( var sg in current_sg )
                                 {
                                     var small_group = sg_props.FirstOrDefault(p => p.label == "Currently in Adult Small Group");
-                                    if (sg.Group.ParentGroup.Name.ToLower().Contains("veritas"))
+                                    if ( sg.Group.ParentGroup.Name.ToLower().Contains("veritas") )
                                     {
                                         small_group = sg_props.FirstOrDefault(p => p.label == "Currently in Veritas Small Group");
                                     }
-                                    else if (sg.Group.ParentGroup.Name.ToLower().Contains("twenties"))
+                                    else if ( sg.Group.ParentGroup.Name.ToLower().Contains("twenties") )
                                     {
                                         small_group = sg_props.FirstOrDefault(p => p.label == "Currently in Twenties Small Group");
                                     }
 
                                     var exists = properties.FirstOrDefault(p => p.property == small_group.name);
-                                    if(exists == null)
+                                    if ( exists == null )
                                     {
                                         properties.Add(new HubspotPropertyUpdate() { property = small_group.name, value = "true" });
                                     }
                                 }
                             }
                             //Make the other values false so we keep the list up to date
-                            foreach(var sg_prop in sg_props)
+                            foreach ( var sg_prop in sg_props )
                             {
                                 var exists = properties.FirstOrDefault(p => p.property == sg_prop.name);
-                                if(exists == null)
+                                if ( exists == null )
                                 {
                                     properties.Add(new HubspotPropertyUpdate() { property = sg_prop.name, value = "false" });
                                 }
@@ -270,7 +337,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             //List of all groups person is a member of (fingers crossed it's not too long) 
                             var group_prop = props.FirstOrDefault(p => p.label == "Group Membership");
                             var grps = "";
-                            for(var idx=0; idx<person.First().Members.Count(); idx++)
+                            for ( var idx = 0; idx < person.First().Members.Count(); idx++ )
                             {
                                 grps += $"{person.First().Members.ToList()[idx].Group.Name}, ";
                             }
@@ -281,10 +348,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             var conn_prop = props.FirstOrDefault(p => p.label == "Currently in Connections");
                             var groups = new GroupService(new RockContext()).Queryable().AsNoTracking().Where(g => g.ParentGroupId == 103379).ToList(); //test with sg minitry group 
                             var inConnections = FindGroup(groups, person.First(), false);
-                            if (inConnections)
+                            if ( inConnections )
                             {
                                 properties.Add(new HubspotPropertyUpdate() { property = conn_prop.name, value = "true" });
-                            } else
+                            }
+                            else
                             {
                                 properties.Add(new HubspotPropertyUpdate() { property = conn_prop.name, value = "false" });
                             }
@@ -296,17 +364,17 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             var webrequest = WebRequest.Create(url);
                             webrequest.Method = "POST";
                             webrequest.ContentType = "application/json";
-                            using (Stream requestStream = webrequest.GetRequestStream())
+                            using ( Stream requestStream = webrequest.GetRequestStream() )
                             {
                                 var json = $"{{\"properties\": {JsonConvert.SerializeObject(properties)} }}";
                                 byte[] bytes = Encoding.ASCII.GetBytes(json);
                                 requestStream.Write(bytes, 0, bytes.Length);
                             }
-                            using (WebResponse webResponse = webrequest.GetResponse())
+                            using ( WebResponse webResponse = webrequest.GetResponse() )
                             {
-                                using (Stream responseStream = webResponse.GetResponseStream())
+                                using ( Stream responseStream = webResponse.GetResponseStream() )
                                 {
-                                    using (StreamReader reader = new StreamReader(responseStream))
+                                    using ( StreamReader reader = new StreamReader(responseStream) )
                                     {
                                         var jsonResponse = reader.ReadToEnd();
                                         Console.WriteLine(jsonResponse);
@@ -314,23 +382,27 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                             }
 
-                        } catch (WebException ex) {
-                            using (Stream responseStream = ex.Response.GetResponseStream())
+                        }
+                        catch ( WebException ex )
+                        {
+                            using ( Stream responseStream = ex.Response.GetResponseStream() )
                             {
-                                using(StreamReader reader = new StreamReader(responseStream))
+                                using ( StreamReader reader = new StreamReader(responseStream) )
                                 {
                                     var jsonResponse = reader.ReadToEnd();
                                     Console.WriteLine($"Hubspot: {jsonResponse}");
                                     System.IO.File.AppendAllText("hubspot_error.txt", $"___________________________\nCurennt Id: {current_id}\nMessage: {jsonResponse}\n");
                                 }
                             }
-                        } catch (Exception e)
+                        }
+                        catch ( Exception e )
                         {
                             Console.WriteLine($"Other: {e.Message}");
                             System.IO.File.AppendAllText("hubspot_error.txt", $"___________________________\nCurennt Id: {current_id}\nMessage: {e.Message}\nStack: {e.StackTrace}\n");
                         }
 
-                    }catch (Exception err)
+                    }
+                    catch ( Exception err )
                     {
                         System.IO.File.AppendAllText("hubspot_error.txt", $"___________________________\nCurennt Id: {current_id}\nMessage: {err.Message}\nStack: {err.StackTrace}\n");
                     }
@@ -338,22 +410,29 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
         }
 
-        private bool FindGroup(List<Group> groups, Person per, bool subOfYear)
+        private bool FindGroup( List<Group> groups, Person per, bool subOfYear )
         {
             var today = DateTime.UtcNow;
             var inConnections = false;
-            for (var i=0; i<groups.Count(); i++) {
-                if (groups[i].Name.Contains(today.ToString("yyyy")) || groups[i].Name.Contains($"{today.AddYears(-1).ToString("yyyy")}-{today.ToString("yy")}") || subOfYear) {
-                    if(groups[i].Members.Count() > 0) {
+            for ( var i = 0; i < groups.Count(); i++ )
+            {
+                if ( groups[i].Name.Contains(today.ToString("yyyy")) || groups[i].Name.Contains($"{today.AddYears(-1).ToString("yyyy")}-{today.ToString("yy")}") || subOfYear )
+                {
+                    if ( groups[i].Members.Count() > 0 )
+                    {
                         var exists = groups[i].Members.FirstOrDefault(p => p.PersonId == per.Id);
-                        if(exists != null)
+                        if ( exists != null )
                         {
                             return true;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         inConnections = FindGroup(groups[i].Groups.ToList(), per, true);
                     }
-                } else {
+                }
+                else
+                {
                     inConnections = FindGroup(groups[i].Groups.ToList(), per, false);
                 }
             }
