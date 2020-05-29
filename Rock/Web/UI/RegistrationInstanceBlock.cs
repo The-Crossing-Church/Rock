@@ -732,7 +732,7 @@ namespace Rock.Web.UI
                                     filterFieldsContainer.Controls.Add( tbMobilePhoneFilter );
 
                                     var phoneNumbersField = new RockLiteralField();
-                                    phoneNumbersField.ID = "lMobile";
+                                    phoneNumbersField.ID = "lRegistrantsMobile";
                                     phoneNumbersField.HeaderText = mobileLabel;
                                     grid.Columns.Add( phoneNumbersField );
                                 }
