@@ -129,7 +129,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 {
                     for ( var i = 0; i < pdfs.Count(); i++ )
                     {
-                        var pdfFile = archive.CreateEntry(Data[i].ParentGroup.Name.Replace("/","-") + ".pdf");
+                        var fname = Data[i].ParentGroup.Name.Replace("/", "-").Replace("8:20 ", "").Replace("9:45 ", "").Replace("11:15 ","");
+                        var pdfFile = archive.CreateEntry( fname + ".pdf");
                         using ( var streamWriter = pdfFile.Open() )
                         {
                             new MemoryStream(pdfs[i]).CopyTo(streamWriter);
