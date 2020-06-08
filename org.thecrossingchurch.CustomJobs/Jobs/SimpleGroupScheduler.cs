@@ -37,6 +37,7 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
     [GroupField("Group", "Group to Auto-Schedule", true, "", "", 0)]
     [BooleanField("Include Child Groups", "If checked, the job will schedule all child groups of the selected parent", false, "", 0)]
     [PersonField("Sender", "The person the message about serving should come from", true)]
+    [TextField("RSVP Url", "The URL of the Serving RSVP Page", true)]
     [DisallowConcurrentExecution]
     public class SimpleGroupScheduler : IJob
     {
@@ -47,6 +48,7 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
         private PersonService PersonSvc { get; set; }
         private Person Sender { get; set; }
         private RockContext _context { get; set; }
+        private string baseurl { get; set; }
 
         /// <summary> 
         /// Empty constructor for job initialization
@@ -79,6 +81,7 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
             string guid = dataMap.GetString("Group");
             bool includeChildren = dataMap.GetBoolean("IncludeChildGroups");
             string sender_guid = dataMap.GetString("Sender");
+            baseurl = dataMap.GetString("RSVPUrl");
             Sender = new PersonAliasService(_context).Get(Guid.Parse(sender_guid)).Person;
 
             Group parent = GroupSvc.Get(Guid.Parse(guid));
@@ -154,7 +157,7 @@ namespace org.crossingchurch.SimpleGroupScheduler.Jobs
         private void SendMessage( Person person )
         {
             var token = person.GetImpersonationToken();
-            var url = "http://localhost:6230/page/1088?rckipid=" + token;
+            var url = baseurl + "?rckipid=" + token;
             var msg = "Your serving team is scheduled this week, please use this <a href='" + url + "'>link</a> to let us know if you are able to serve.";
             if ( person.CommunicationPreference == CommunicationType.SMS )
             {
