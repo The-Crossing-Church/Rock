@@ -13,7 +13,7 @@ function notes() {
         <div class="well">
             <div class="row">
                 <div class="col col-xs-12 col-sm-3">
-                    <Rock:GroupPicker ID="GroupIds" runat="server" RootGroupId="115942" AllowMultiSelect="true" Label="Groups"/>
+                    <Rock:GroupPicker ID="GroupIds" runat="server" AllowMultiSelect="true" Label="Groups"/>
                 </div>
                 <div class="col col-xs-12 col-sm-3">
                     <Rock:RockTextBox ID="ReportName" runat="server" Label="Report Name"></Rock:RockTextBox>

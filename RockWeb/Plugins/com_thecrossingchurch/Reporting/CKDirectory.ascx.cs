@@ -99,15 +99,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 excel.SaveAs(ms);
                 byteArray = ms.ToArray();
             }
+            this.Page.EnableViewState = false;
             Response.Clear();
-            Response.Buffer = true;
+            //Response.Buffer = true;
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             Response.AddHeader("content-disposition", "attachment;filename=" + FileName + ".xlsx");
-            Response.Cache.SetCacheability(HttpCacheability.Public);
+            //Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
             Response.BinaryWrite(byteArray);
             Response.Flush();
             Response.End();
+            this.btnExportExcel.Enabled = true; 
         }
 
         /// <summary>
@@ -140,15 +142,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 files = memoryStream.ToArray();
             }
 
+            this.Page.EnableViewState = false;
             Response.Clear();
-            Response.Buffer = true;
+            //Response.Buffer = true;
             Response.ContentType = "application/zip";
             Response.AddHeader("content-disposition", "attachment;filename=" + FileName + ".zip");
-            Response.Cache.SetCacheability(HttpCacheability.Public);
+            //Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
             Response.BinaryWrite(files);
             Response.Flush();
             Response.End();
+            this.btnExportPDF.Enabled = true;
         }
         #endregion
 
