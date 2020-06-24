@@ -101,7 +101,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             {
                 var list = api.Contact.List<ContactHubSpotModel>(new ListRequestOptions
                 {
-                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email" },
+                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone" },
                     Limit = 100,
                     Offset = offset
                 });
@@ -115,40 +115,27 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
             for ( var i = 0; i < contacts_with_email.Count(); i++ )
             {
-                var person = new PersonService(new RockContext()).GetByEmail(contacts_with_email[i].Email);
+                var query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, contacts_with_email[i].Email, contacts_with_email[i].Phone); 
+                var person = new PersonService(new RockContext()).FindPerson(query, false);
                 //For Testing
-                //if (contacts_with_email[i].Email == "tim@thecrossingchurch.com")
+                //if ( contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com" )
                 //{
-                //    person = new PersonService(new RockContext()).GetByEmail("timworstell@safety.netz");
+                //    query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "jimbeaty@safety.netz", contacts_with_email[i].Phone);
+                //    person = new PersonService(new RockContext()).FindPerson(query, false);
                 //}
-                if ( contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com" )
-                {
-                    person = new PersonService(new RockContext()).GetByEmail("jimbeaty@safety.netz");
-                }
-                if ( contacts_with_email[i].Email == "cody.melton@thecrossingchurch.com")
-                {
-                    person = new PersonService(new RockContext()).GetByEmail("codymelton@safety.netz");
-                }
-                //if (contacts_with_email[i].Email == "abby@thecrossingchurch.com")
+                //if ( contacts_with_email[i].Email == "cody.melton@thecrossingchurch.com")
                 //{
-                //    person = new PersonService(new RockContext()).GetByEmail("abbymcclelland@safety.netz");
-                //}
-                //if (contacts_with_email[i].Email == "botkinsn98@gmail.com")
-                //{
-                //    person = new PersonService(new RockContext()).GetByEmail("nataliebotkins@safety.netz");
-                //}
-                //if (contacts_with_email[i].Email == "nat.ecklund@gmail.com")
-                //{
-                //    person = new PersonService(new RockContext()).GetByEmail("natalieecklund@safety.netz");
+                //    query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "codymelton@safety.netz", contacts_with_email[i].Phone);
+                //    person = new PersonService(new RockContext()).FindPerson(query, false);
                 //}
                 //Schedule HubSpot update if 1:1 match
-                if ( person.Count() == 1 )
+                if ( person != null )
                 {
                     try
                     {
-                        current_id = person.First().Id;
+                        current_id = person.Id;
                         //Get the Attributes for that Person 
-                        var attrs = new AttributeValueService(new RockContext()).GetByEntityId(person.First().Id).ToList();
+                        var attrs = new AttributeValueService(new RockContext()).GetByEntityId(person.Id).ToList();
                         //Build the POST request and schedule in the db 10 at a time 
                         var url = $"https://api.hubapi.com/contacts/v1/contact/vid/{contacts_with_email[i].Id}/profile?hapikey={key}";
                         var properties = new List<HubspotPropertyUpdate>();
@@ -177,21 +164,21 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         }
                         //All properties begining with "Rock " are properties on the Person entity itself 
                         var person_props = props.Where(p => p.label.Contains("Rock ")).ToList();
-                        foreach ( PropertyInfo propInfo in person.First().GetType().GetProperties() )
+                        foreach ( PropertyInfo propInfo in person.GetType().GetProperties() )
                         {
                             var current_prop = props.FirstOrDefault(p => p.label == "Rock " + propInfo.Name);
                             if ( current_prop != null )
                             {
                                 if ( propInfo.PropertyType.FullName == "Rock.Model.DefinedValue" )
                                 {
-                                    DefinedValue dv = JsonConvert.DeserializeObject<DefinedValue>(JsonConvert.SerializeObject(propInfo.GetValue(person.First())));
+                                    DefinedValue dv = JsonConvert.DeserializeObject<DefinedValue>(JsonConvert.SerializeObject(propInfo.GetValue(person)));
                                     properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = dv.Value });
                                 }
                                 else if ( propInfo.PropertyType.FullName == "Date" || propInfo.PropertyType.FullName == "Date Time" )
                                 {
                                     //Get Epoc miliseconds 
                                     DateTime tryDate;
-                                    if ( DateTime.TryParse(propInfo.GetValue(person.First()).ToString(), out tryDate) )
+                                    if ( DateTime.TryParse(propInfo.GetValue(person).ToString(), out tryDate) )
                                     {
                                         var d = tryDate.Subtract(new DateTime(1970, 1, 1)).TotalSeconds * 1000;
                                         properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() });
@@ -199,20 +186,20 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                                 else
                                 {
-                                    properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = propInfo.GetValue(person.First()).ToString() });
+                                    properties.Add(new HubspotPropertyUpdate() { property = current_prop.name, value = propInfo.GetValue(person).ToString() });
                                 }
                             }
                         }
 
                         //Special Property for Parents
-                        if ( person.First().PrimaryFamily.Members.FirstOrDefault(gm => gm.PersonId == person.First().Id).GroupRole.Name == "Adult" )
+                        if ( person.PrimaryFamily.Members.FirstOrDefault(gm => gm.PersonId == person.Id).GroupRole.Name == "Adult" )
                         {
                             //Direct Family Members
                             var child_ages_prop = props.FirstOrDefault(p => p.label == "Children's Age Groups");
-                            var children = person.First().PrimaryFamily.Members.Where(m => m.GroupRole.Name == "Child").ToList();
+                            var children = person.PrimaryFamily.Members.Where(m => m.GroupRole.Name == "Child").ToList();
                             var agegroups = "";
                             //Known Relationships
-                            int pid = person.First().Id;
+                            int pid = person.Id;
                             var krGroups = new GroupMemberService(new RockContext()).Queryable().Where(gm => gm.PersonId == pid && gm.GroupRoleId == 5).Select(gm => gm.GroupId).ToList();
                             var childRelationships = new List<int> { 4, 15, 17 };
                             var krMembers = new GroupMemberService(new RockContext()).Queryable().Where(gm => krGroups.Contains(gm.GroupId) && childRelationships.Contains(gm.GroupRoleId)).ToList();
@@ -266,7 +253,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             properties.Add(new HubspotPropertyUpdate() { property = child_ages_prop.name, value = agegroups.Substring(0, agegroups.Length - 1) });
                         }
 
-                        if ( person.First().Members != null && person.First().Members.Count() > 0 )
+                        if ( person.Members != null && person.Members.Count() > 0 )
                         {
                             //Special properties for a person's group membership 
                             //Currently in adult small group, currently in a 20s small group, currently in veritas small group, currently serving, currently in connections, membership list
@@ -281,7 +268,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 term = "summer";
                             }
                             //All current memberships for this year
-                            var memberships = person.First().Members.Where(m => ( m.Group.Name.Contains(today.ToString("yyyy")) ||
+                            var memberships = person.Members.Where(m => ( m.Group.Name.Contains(today.ToString("yyyy")) ||
                                 m.Group.Name.Contains($"{today.AddYears(-1).ToString("yyyy")}-{today.ToString("yy")}") )).ToList();
                             //Where the group name has Fall/Winter/Summer
                             var current_serving = memberships.Where(m => m.Group.Name.ToLower().Contains(term)).ToList();
@@ -337,9 +324,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             //List of all groups person is a member of (fingers crossed it's not too long) 
                             var group_prop = props.FirstOrDefault(p => p.label == "Group Membership");
                             var grps = "";
-                            for ( var idx = 0; idx < person.First().Members.Count(); idx++ )
+                            for ( var idx = 0; idx < person.Members.Count(); idx++ )
                             {
-                                grps += $"{person.First().Members.ToList()[idx].Group.Name}, ";
+                                grps += $"{person.Members.ToList()[idx].Group.Name}, ";
                             }
                             grps = grps.Substring(0, grps.Length - 2);
                             properties.Add(new HubspotPropertyUpdate() { property = group_prop.name, value = grps });
@@ -347,7 +334,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             //Prod ID for Parent Group: 136298
                             var conn_prop = props.FirstOrDefault(p => p.label == "Currently in Connections");
                             var groups = new GroupService(new RockContext()).Queryable().AsNoTracking().Where(g => g.ParentGroupId == 103379).ToList(); //test with sg minitry group 
-                            var inConnections = FindGroup(groups, person.First(), false);
+                            var inConnections = FindGroup(groups, person, false);
                             if ( inConnections )
                             {
                                 properties.Add(new HubspotPropertyUpdate() { property = conn_prop.name, value = "true" });
