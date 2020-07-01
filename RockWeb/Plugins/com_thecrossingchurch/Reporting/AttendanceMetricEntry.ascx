@@ -1,23 +1,34 @@
 <%@ Control Language="C#" AutoEventWireup="true" CodeFile="AttendanceMetricEntry.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.Reporting.AttendanceMetricEntry" %>
+<script>
+    function openPanel(panel) {
+        if (panel == 'Sunday') {
+            $('#SpecialEvent').css('display', 'none')
+            $('#SpecialEvent').css('visibility', 'hidden')
+            $('#SundayMorning').css('visibility', 'visible')
+            $('#SundayMorning').css('display', 'block')
+        } else {
+            $('#SundayMorning').css('display', 'none')
+            $('#SundayMorning').css('visibility', 'hidden')
+            $('#SpecialEvent').css('visibility', 'visible')
+            $('#SpecialEvent').css('display', 'block')
+        }
+    }
+</script>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <div class="row">
             <div class="col col-xs-0 col-md-3"></div>
             <div class="col col-xs-6 col-md-3 pad-8">
-                <Rock:BootstrapButton runat="server" OnClick="OpenPanel" ID="btnSunday">
-                    <div class="tile panel panel-default">
-                        <h3>Sunday Morning Attendance</h3><br /> 
-                        <i class="fa fa-sun fa-3x"></i>
-                    </div>
-                </Rock:BootstrapButton>
+                <div class="tile panel panel-default" onclick="openPanel('Sunday')" ID="btnSunday">
+                    <h3>Sunday Morning Attendance</h3><br />
+                    <i class="fa fa-sun fa-3x"></i>
+                </div>
             </div>
             <div class="col col-xs-6 col-md-3 pad-8">
-                <Rock:BootstrapButton runat="server" OnClick="OpenPanel" ID="btnSpecial">
-                    <div class="tile panel panel-default">
-                        <h3>Special Event Attendance</h3><br />
-                        <i class="fa fa-calendar fa-3x"></i>
-                    </div>
-                </Rock:BootstrapButton>
+                <div class="tile panel panel-default" onclick="openPanel('Special')" ID="btnSpecial">
+                    <h3>Special Event Attendance</h3><br />
+                    <i class="fa fa-calendar fa-3x"></i>
+                </div>
             </div>
             <div class="col col-xs-0 col-md-3">
             </div>
@@ -33,20 +44,81 @@
                 <div class="col col-xs-0 col-md-2"></div>
             </div>
         </ContentTemplate>
-        <div class="row">
-            <div class="col col-xs-0 col-md-2"></div>
-            <div class="col col-xs-12 col-md-8">
-                <div class="well">
-                    <asp:PlaceHolder runat="server" ID="Entryform" Visible="false"></asp:PlaceHolder>
-                    <div class="row">
-                        <div class="col col-xs-12">
-                            <Rock:BootstrapButton Text="Save" ID="btnSave" OnClick="btnSave_Click" runat="server" CssClass="btn btn-primary pull-right"></Rock:BootstrapButton>
+        <ContentTemplate ID="SundayMorning" style="display: none;" class="sunday-morning">
+            <div class="row">
+                <div class="col col-xs-0 col-md-2"></div>
+                <div class="col col-xs-0 col-md-8">
+                    <div class="well">
+                        <h4>Sunday Morning Attendance</h4><br />
+                        <div class="row">
+                            <div class="col col-xs-6">
+                                <Rock:DatePicker Required="true" runat="server" ID="OccurrenceDate" Label="Date"/>
+                            </div>
+                            <div class="col col-xs-6">
+                                <Rock:RockDropDownList Required="true" runat="server" ID="Time" Label="Service" style="max-width:225px;" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col col-xs-6">
+                                <Rock:RockTextBox Required="true" runat="server" ID="Attendance" Label="Attendance" style="max-width:225px;"/>
+                            </div>
+                            <div class="col col-xs-6">
+                                <Rock:LocationItemPicker Required="true" Label="Location" ID="Location" runat="server" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col col-xs-12">
+                                <Rock:RockTextBox runat="server" ID="Notes" Label="Notes" TextMode="MultiLine" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <Rock:BootstrapButton ID="btnAddAttendance" runat="server" OnClick="btnAddAttendance_Click" Text="Save" CssClass="pull-right btn btn-primary"/>
                         </div>
                     </div>
                 </div>
+                <div class="col col-xs-0 col-md-2"></div>
             </div>
-            <div class="col col-xs-0 col-md-2"></div>
-        </div>
+        </ContentTemplate>
+        <ContentTemplate ID="SpecialEvent" style="display: none;" class="special-events">
+            <div class="row">
+                <div class="col col-xs-0 col-md-2"></div>
+                <div class="col col-xs-0 col-md-8">
+                    <div class="well">
+                        <h4>Special Event Attendance</h4><br />
+                        <div class="row">
+                            <div class="col col-xs-6">
+                                <Rock:DatePicker Required="true" runat="server" ID="seDate" Label="Date"/>
+                            </div>
+                            <div class="col col-xs-6">
+                                <Rock:TimePicker Required="true" runat="server" ID="seTime" Label="Time" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col col-xs-6">
+                                <Rock:RockDropDownList Required="true" runat="server" ID="ServiceType" Label="Service Type" style="max-width:225px;" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col col-xs-6">
+                                <Rock:RockTextBox Required="true" runat="server" ID="seAttendance" Label="Attendance" style="max-width:225px;"/>
+                            </div>
+                            <div class="col col-xs-6">
+                                <Rock:LocationItemPicker Required="true" Label="Location" ID="seLocation" runat="server" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col col-xs-12">
+                                <Rock:RockTextBox runat="server" ID="seNotes" Label="Notes" TextMode="MultiLine" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <Rock:BootstrapButton ID="btnSEAddAttendance" runat="server" OnClick="btnAddAttendance_Click" Text="Save" CssClass="pull-right btn btn-primary"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="col col-xs-0 col-md-2"></div>
+            </div>
+        </ContentTemplate>
     </ContentTemplate>
 </asp:UpdatePanel>
 <style>

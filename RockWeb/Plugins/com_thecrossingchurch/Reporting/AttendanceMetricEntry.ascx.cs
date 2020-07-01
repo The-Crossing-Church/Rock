@@ -25,9 +25,6 @@ using System.IO;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
-using AngleSharp.Dom.Html;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Information;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 {
@@ -44,7 +41,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     public partial class AttendanceMetricEntry : Rock.Web.UI.RockBlock //, ICustomGridColumns
     {
         #region Variables
-        public bool IsSunday { get; set; }
         public int ServiceTypeId { get; set; }
         public int ServiceCategoryId { get; set; }
         public List<DefinedValue> ServiceTypes { get; set; }
@@ -55,10 +51,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected void Page_Load( object sender, EventArgs e )
         {
             ScriptManager scriptManager = ScriptManager.GetCurrent(this.Page);
-            scriptManager.RegisterPostBackControl(this.btnSpecial);
-            scriptManager.RegisterPostBackControl(this.btnSunday);
-            this.Entryform.Visible = false;
-            IsSunday = true; 
+            //scriptManager.RegisterPostBackControl(this.btnSpecial);
             //ScriptManager.RegisterStartupScript(Page, this.GetType(), "AKey", "notes();", true);
         }
 
@@ -69,7 +62,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected override void OnInit( EventArgs e )
         {
             base.OnInit(e);
-            GenerateControls();
         }
 
         /// <summary>
@@ -82,6 +74,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             this.ErrorMsg.Visible = false;
             ServiceTypeId = GetAttributeValue("ServiceTypeDefinedTypeId").AsInteger();
             ServiceCategoryId = GetAttributeValue("SundayServiceTimesCategoryId").AsInteger();
+            LoadServiceTimes();
+            LoadServiceTypes();
         }
 
         #endregion
@@ -89,35 +83,44 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         #region Events
 
         /// <summary>
-        /// Btn is clicked to enter data
+        /// Adds attendance entry to metrics.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void OpenPanel( object sender, EventArgs e )
+        protected void btnAddAttendance_Click( object sender, EventArgs e )
         {
-            var btn = (Rock.Web.UI.Controls.BootstrapButton)sender;
-            if(btn.ID == "btnSunday")
+            if ( this.OccurrenceDate.SelectedDate.HasValue && !String.IsNullOrEmpty(this.Time.SelectedValue) && !String.IsNullOrEmpty(this.Attendance.Text) && !String.IsNullOrEmpty(this.Location.SelectedValue) )
             {
-                IsSunday = true;
+                DateTime occurrence = DateTime.Parse(this.OccurrenceDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + this.Time.SelectedValue);
+                int att = int.Parse(this.Attendance.Text);
+                DefinedValue serviceType = ServiceTypes.FirstOrDefault(st => st.Value == "Sunday Morning");
+                int? locationId = this.Location.SelectedValueAsInt();
+                GenerateMetric(occurrence, att, serviceType.Id, locationId.Value); 
+            }
+            else if ( this.seDate.SelectedDate.HasValue && !String.IsNullOrEmpty(this.ServiceType.SelectedValue) && this.seTime.SelectedTime.HasValue && !String.IsNullOrEmpty(this.seAttendance.Text) && !String.IsNullOrEmpty(this.seLocation.SelectedValue) )
+            {
+                DateTime occurrence = DateTime.Parse(this.seDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + this.seTime.SelectedTime);
+                int att = int.Parse(this.seAttendance.Text);
+                int? serviceTypeId = this.ServiceType.SelectedValueAsInt(); 
+                int? locationId = this.seLocation.SelectedValueAsInt();
+                GenerateMetric(occurrence, att, serviceTypeId.Value, locationId.Value);
             }
             else
             {
-                IsSunday = false;
+                //display error that not all required fields are filled out
+                this.ErrorMsg.Visible = true;
             }
-            GenerateControls();
+            //Clear all values
+            this.OccurrenceDate.SelectedDate = null;
+            this.Time.SelectedValue = null;
+            this.Attendance.Text = "";
+            this.Location.SetValue(null);
+            this.seDate.SelectedDate = null;
+            this.seTime.SelectedTime = null;
+            this.ServiceType.SelectedValue = null;
+            this.seAttendance.Text = "";
+            this.seLocation.SetValue(null);
         }
-
-        /// <summary>
-        /// Save emtric data
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void btnSave_Click( object sender, EventArgs e )
-        {
-            DatePicker dtPicker = (DatePicker)this.Entryform.FindControl("OccurrenceDate");
-            var value = dtPicker.SelectedDate.Value; 
-        }
-
 
         #endregion
 
@@ -126,7 +129,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <summary>
         /// Adds items to drop down for service time for Sunday Morning
         /// </summary>
-        protected RockDropDownList LoadServiceTimes(RockDropDownList list)
+        protected void LoadServiceTimes()
         {
             List<Schedule> schedules = new ScheduleService(new RockContext()).Queryable().Where(s => s.CategoryId == ServiceCategoryId).ToList().OrderBy(s => int.Parse(s.Name.Split(':')[0])).ToList();
             for ( var i = 0; i < schedules.Count(); i++ )
@@ -136,15 +139,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     Text = schedules[i].Name,
                     Value = schedules[i].Id.ToString()
                 };
-                list.Items.Add(item);
+                this.Time.Items.Add(item);
             }
-            return list; 
         }
 
         /// <summary>
         /// Adds items to drop down for service type for special events
         /// </summary>
-        protected RockDropDownList LoadServiceTypes( RockDropDownList list )
+        protected void LoadServiceTypes()
         {
             List<DefinedValue> values = new DefinedValueService(new RockContext()).Queryable().Where(dv => dv.DefinedTypeId == ServiceTypeId).OrderBy(dv => dv.Value).ToList();
             ServiceTypes = values;
@@ -155,102 +157,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     Text = values[i].Value,
                     Value = values[i].Id.ToString()
                 };
-                list.Items.Add(item);
+                if ( item.Text != "Sunday Morning" )
+                {
+                    this.ServiceType.Items.Add(item);
+                }
             }
-            return list;
-        }
-
-        protected void GenerateControls()
-        {
-            this.Entryform.Controls.Clear();
-
-            var content = new HtmlGenericControl("div");
-
-            var dtRow = new HtmlGenericControl("div");
-            dtRow.AddCssClass("row");
-            var dtCol = new HtmlGenericControl("div");
-            dtCol.AddCssClass("col col-xs-6");
-            var dtPicker = new DatePicker();
-            dtPicker.Label = "Date";
-            dtPicker.ID = "OccurrenceDate";
-            dtPicker.Required = true;
-            dtCol.Controls.Add(dtPicker);
-            var timeCol = new HtmlGenericControl("div");
-            timeCol.AddCssClass("col col-xs-6");
-            if ( IsSunday )
-            {
-                var serviceDropDown = new RockDropDownList();
-                serviceDropDown.Label = "Service";
-                serviceDropDown.ID = "Time";
-                serviceDropDown = LoadServiceTimes(serviceDropDown);
-                serviceDropDown.Required = true;
-                timeCol.Controls.Add(serviceDropDown);
-            }
-            else
-            {
-                var timePicker = new TimePicker();
-                timePicker.Label = "Time";
-                timePicker.ID = "Time";
-                timePicker.Required = true;
-                timeCol.Controls.Add(timePicker);
-            }
-            dtRow.Controls.Add(dtCol);
-            dtRow.Controls.Add(timeCol);
-            content.Controls.Add(dtRow);
-
-            var svcTypeRow = new HtmlGenericControl("div");
-            svcTypeRow.AddCssClass("row");
-            var svcTypeCol = new HtmlGenericControl("div");
-            svcTypeCol.AddCssClass("col col-xs-12");
-            var svcTypeDropDown = new RockDropDownList();
-            svcTypeDropDown.Label = "Service Type";
-            svcTypeDropDown.ID = "ServiceType";
-            svcTypeDropDown = LoadServiceTypes(svcTypeDropDown);
-            svcTypeDropDown.Required = true;
-            if ( IsSunday )
-            {
-                var sunday = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning");
-                svcTypeDropDown.SetValue(sunday);
-            }
-            svcTypeCol.Controls.Add(svcTypeDropDown);
-            svcTypeRow.Controls.Add(svcTypeCol);
-            svcTypeRow.Visible = IsSunday ? false : true;
-            content.Controls.Add(svcTypeRow);
-
-            var dataRow = new HtmlGenericControl("div");
-            dataRow.AddCssClass("row");
-            var attCol = new HtmlGenericControl("div");
-            attCol.AddCssClass("col col-xs-6");
-            var attTextBox = new RockTextBox();
-            attTextBox.Label = "Attendance";
-            attTextBox.ID = "Attendance";
-            attTextBox.Required = true;
-            attCol.Controls.Add(attTextBox);
-            var locCol = new HtmlGenericControl("div");
-            locCol.AddCssClass("col col-xs-6");
-            var locPicker = new LocationItemPicker();
-            locPicker.Label = "Location";
-            locPicker.ID = "Location";
-            locPicker.Required = true;
-            locCol.Controls.Add(locPicker);
-            dataRow.Controls.Add(attCol);
-            dataRow.Controls.Add(locCol);
-            content.Controls.Add(dataRow);
-
-            var notesRow = new HtmlGenericControl("div");
-            notesRow.AddCssClass("row");
-            var notesCol = new HtmlGenericControl("div");
-            notesCol.AddCssClass("col col-xs-12");
-            var noteTextBox = new RockTextBox();
-            noteTextBox.Label = "Notes";
-            noteTextBox.ID = "Notes";
-            noteTextBox.TextMode = TextBoxMode.MultiLine;
-            notesCol.Controls.Add(noteTextBox);
-            notesRow.Controls.Add(notesCol);
-            content.Controls.Add(notesRow);
-
-            this.Entryform.Controls.Add(content);
-            this.Entryform.Visible = true;
         }
 
         protected void GenerateMetric(DateTime occurrence, int attendance, int serviceTypeId, int locationId)
@@ -262,7 +173,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         }
 
         #endregion
-
 
     }
 
