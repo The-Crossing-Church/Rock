@@ -25,6 +25,8 @@ using System.IO;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
+using Microsoft.Ajax.Utilities;
+using System.Collections.ObjectModel;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 {
@@ -37,13 +39,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
     [IntegerField("Service Type DefinedTypeId", "The defined type for the service times.", true, 0, "", 0)]
     [IntegerField("Sunday Service Times CategoryId", "The category for the service times.", true, 0, "", 0)]
+    [IntegerField("MetricId", "The Id of the Metric", true, 0, "", 0)]
 
     public partial class AttendanceMetricEntry : Rock.Web.UI.RockBlock //, ICustomGridColumns
     {
         #region Variables
         public int ServiceTypeId { get; set; }
         public int ServiceCategoryId { get; set; }
+        public int MetricId { get; set; }
         public List<DefinedValue> ServiceTypes { get; set; }
+        public List<Schedule> ServiceTimes { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -71,11 +76,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad(e);
-            this.ErrorMsg.Visible = false;
             ServiceTypeId = GetAttributeValue("ServiceTypeDefinedTypeId").AsInteger();
             ServiceCategoryId = GetAttributeValue("SundayServiceTimesCategoryId").AsInteger();
-            LoadServiceTimes();
-            LoadServiceTypes();
+            MetricId = GetAttributeValue("MetricId").AsInteger();
+            if ( !Page.IsPostBack )
+            {
+                LoadServiceTimes();
+                LoadServiceTypes();
+            } 
+            ServiceTimes = new ScheduleService(new RockContext()).Queryable().Where(s => s.CategoryId == ServiceCategoryId).ToList().OrderBy(s => int.Parse(s.Name.Split(':')[0])).ToList();
+            ServiceTypes = new DefinedValueService(new RockContext()).Queryable().Where(dv => dv.DefinedTypeId == ServiceTypeId).OrderBy(dv => dv.Value).ToList();
         }
 
         #endregion
@@ -89,37 +99,61 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnAddAttendance_Click( object sender, EventArgs e )
         {
-            if ( this.OccurrenceDate.SelectedDate.HasValue && !String.IsNullOrEmpty(this.Time.SelectedValue) && !String.IsNullOrEmpty(this.Attendance.Text) && !String.IsNullOrEmpty(this.Location.SelectedValue) )
+            string time = "";
+            if ( this.seTime.SelectedTime.HasValue )
             {
-                DateTime occurrence = DateTime.Parse(this.OccurrenceDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + this.Time.SelectedValue);
-                int att = int.Parse(this.Attendance.Text);
-                DefinedValue serviceType = ServiceTypes.FirstOrDefault(st => st.Value == "Sunday Morning");
-                int? locationId = this.Location.SelectedValueAsInt();
-                GenerateMetric(occurrence, att, serviceType.Id, locationId.Value); 
-            }
-            else if ( this.seDate.SelectedDate.HasValue && !String.IsNullOrEmpty(this.ServiceType.SelectedValue) && this.seTime.SelectedTime.HasValue && !String.IsNullOrEmpty(this.seAttendance.Text) && !String.IsNullOrEmpty(this.seLocation.SelectedValue) )
-            {
-                DateTime occurrence = DateTime.Parse(this.seDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + this.seTime.SelectedTime);
-                int att = int.Parse(this.seAttendance.Text);
-                int? serviceTypeId = this.ServiceType.SelectedValueAsInt(); 
-                int? locationId = this.seLocation.SelectedValueAsInt();
-                GenerateMetric(occurrence, att, serviceTypeId.Value, locationId.Value);
+                time = this.seTime.SelectedTime.ToString();
             }
             else
             {
-                //display error that not all required fields are filled out
-                this.ErrorMsg.Visible = true;
+                var schedule = ServiceTimes.FirstOrDefault(s => s.Id == int.Parse(this.Time.SelectedValue));
+                time = schedule.Name;
             }
+            DateTime occurrence = DateTime.Parse(this.OccurrenceDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + time);
+            int att = int.Parse(this.Attendance.Text);
+            int? locationId = this.Location.SelectedValueAsInt();
+            int serviceTypeId = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning").Id;
+            if(!String.IsNullOrEmpty(this.ServiceType.SelectedItem.Value) && this.seTime.SelectedTime.HasValue )
+            {
+                serviceTypeId = int.Parse(this.ServiceType.SelectedItem.Value);
+            }
+            GenerateMetric(occurrence, att, serviceTypeId, locationId.Value, this.Notes.Text);
             //Clear all values
             this.OccurrenceDate.SelectedDate = null;
             this.Time.SelectedValue = null;
-            this.Attendance.Text = "";
-            this.Location.SetValue(null);
-            this.seDate.SelectedDate = null;
             this.seTime.SelectedTime = null;
             this.ServiceType.SelectedValue = null;
-            this.seAttendance.Text = "";
-            this.seLocation.SetValue(null);
+            this.Attendance.Text = "";
+            this.Location.SetValue(null);
+            this.Notes.Text = "";
+        }
+
+        protected void OpenPanel( object sender, EventArgs e )
+        {
+            //Clear all values
+            this.OccurrenceDate.SelectedDate = null;
+            this.Time.SelectedValue = null;
+            this.seTime.SelectedTime = null;
+            this.ServiceType.SelectedValue = null;
+            this.Attendance.Text = "";
+            this.Location.SetValue(null);
+            this.Notes.Text = "";
+            BootstrapButton btn = (BootstrapButton)sender;
+            if ( btn.ID == "btnSunday" )
+            {
+                this.Time.Visible = true;
+                this.seTime.Visible = false;
+                //var sunday = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning");
+                //this.ServiceType.SetValue(sunday);
+                this.ServiceType.Visible = false;
+            }
+            else
+            {
+                this.Time.Visible = false;
+                this.seTime.Visible = true;
+                this.ServiceType.Visible = true;
+            }
+            this.EntryForm.Visible = true;
         }
 
         #endregion
@@ -132,6 +166,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected void LoadServiceTimes()
         {
             List<Schedule> schedules = new ScheduleService(new RockContext()).Queryable().Where(s => s.CategoryId == ServiceCategoryId).ToList().OrderBy(s => int.Parse(s.Name.Split(':')[0])).ToList();
+            List<ListItem> items = new List<ListItem>(); 
             for ( var i = 0; i < schedules.Count(); i++ )
             {
                 ListItem item = new ListItem()
@@ -139,8 +174,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     Text = schedules[i].Name,
                     Value = schedules[i].Id.ToString()
                 };
-                this.Time.Items.Add(item);
+                items.Add(item);
             }
+            this.Time.DataTextField = "Text";
+            this.Time.DataValueField = "Value";
+            this.Time.DataSource = items;
+            this.Time.DataBind(); 
         }
 
         /// <summary>
@@ -149,7 +188,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected void LoadServiceTypes()
         {
             List<DefinedValue> values = new DefinedValueService(new RockContext()).Queryable().Where(dv => dv.DefinedTypeId == ServiceTypeId).OrderBy(dv => dv.Value).ToList();
-            ServiceTypes = values;
+            List<ListItem> items = new List<ListItem>();
             for ( var i = 0; i < values.Count(); i++ )
             {
                 ListItem item = new ListItem()
@@ -159,17 +198,53 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 };
                 if ( item.Text != "Sunday Morning" )
                 {
-                    this.ServiceType.Items.Add(item);
+                    items.Add(item);
                 }
             }
+            this.ServiceType.DataTextField = "Text";
+            this.ServiceType.DataValueField = "Value";
+            this.ServiceType.DataSource = items;
+            this.ServiceType.DataBind();
         }
 
-        protected void GenerateMetric(DateTime occurrence, int attendance, int serviceTypeId, int locationId)
+        protected void GenerateMetric( DateTime occurrence, int attendance, int serviceTypeId, int locationId, string notes )
         {
-            var x = occurrence;
-            var y = attendance;
-            var z = serviceTypeId;
-            var k = locationId; 
+            var _context = new RockContext();
+            List<MetricPartition> metricPartitions = new MetricPartitionService(_context).Queryable().Where(mp => mp.MetricId == MetricId).ToList();
+            Collection<MetricValuePartition> partitions = new Collection<MetricValuePartition>();
+            for ( var i = 0; i < metricPartitions.Count(); i++ )
+            {
+                var par = new MetricValuePartition();
+                par.MetricPartitionId = metricPartitions[i].Id;
+                par.CreatedDateTime = RockDateTime.Now;
+                par.ModifiedDateTime = RockDateTime.Now;
+                par.CreatedByPersonAliasId = CurrentPersonAliasId;
+                par.ModifiedByPersonAliasId = CurrentPersonAliasId;
+                if (metricPartitions[i].Label == "Location")
+                {
+                    par.EntityId = locationId;
+                }
+                else
+                {
+                    par.EntityId = serviceTypeId;
+                }
+                partitions.Add(par);
+            }
+            MetricValue value = new MetricValue()
+            {
+                MetricValueType = 0,
+                YValue = attendance,
+                MetricId = MetricId,
+                Note = notes,
+                MetricValueDateTime = occurrence,
+                CreatedDateTime = RockDateTime.Now,
+                ModifiedDateTime = RockDateTime.Now,
+                CreatedByPersonAliasId = CurrentPersonAliasId,
+                ModifiedByPersonAliasId = CurrentPersonAliasId,
+                MetricValuePartitions = partitions
+            };
+            new MetricValueService(_context).Add(value);
+            _context.SaveChanges();
         }
 
         #endregion
