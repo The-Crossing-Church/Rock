@@ -46,7 +46,7 @@
                             <Rock:RockTextBox Required="true" runat="server" ID="Attendance" Label="Attendance" style="max-width:225px;"/>
                         </div>
                         <div class="col col-xs-6">
-                            <Rock:LocationItemPicker Required="true" Label="Location" ID="Location" runat="server" />
+                            <Rock:LocationItemPicker InitialItemParentIds="2" Required="true" Label="Location" ID="Location" runat="server" />
                         </div>
                     </div>
                     <div class="row">
