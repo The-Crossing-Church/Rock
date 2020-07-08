@@ -88,7 +88,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             ServiceTypeId = GetAttributeValue("ServiceTypeDefinedTypeId").AsInteger();
             ServiceCategoryId = GetAttributeValue("SundayServiceTimesCategoryId").AsInteger();
             MetricId = GetAttributeValue("MetricId").AsInteger();
-            Id = Int32.Parse(PageParameter(PageParameterKey.Id));
+            if( !String.IsNullOrEmpty(PageParameter(PageParameterKey.Id)) )
+            {
+                Id = Int32.Parse(PageParameter(PageParameterKey.Id));
+            }
             context = new RockContext();
             service = new MetricValueService(context);
             ServiceTimes = new ScheduleService(new RockContext()).Queryable().Where(s => s.CategoryId == ServiceCategoryId).ToList().OrderBy(s => int.Parse(s.Name.Split(':')[0])).ToList();
