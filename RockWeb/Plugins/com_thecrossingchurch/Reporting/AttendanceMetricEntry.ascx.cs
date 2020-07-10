@@ -41,12 +41,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     [IntegerField("Sunday Service Times CategoryId", "The category for the service times.", true, 0, "", 0)]
     [IntegerField("MetricId", "The Id of the Metric", true, 0, "", 0)]
     [IntegerField("Detailed View Page", "The Id of the Detailed View Page", true, 0, "", 0)]
+    [IntegerField("Location Parent Group Id", "The Id of the location category to be expanded", true, 0, "", 0)]
 
     public partial class AttendanceMetricEntry : Rock.Web.UI.RockBlock //, ICustomGridColumns
     {
         #region Variables
         public int ServiceTypeId { get; set; }
         public int ServiceCategoryId { get; set; }
+        public int LocationCategoryId { get; set; }
         public int MetricId { get; set; }
         public List<DefinedValue> ServiceTypes { get; set; }
         public List<Schedule> ServiceTimes { get; set; }
@@ -87,6 +89,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             base.OnLoad(e);
             ServiceTypeId = GetAttributeValue("ServiceTypeDefinedTypeId").AsInteger();
             ServiceCategoryId = GetAttributeValue("SundayServiceTimesCategoryId").AsInteger();
+            LocationCategoryId = GetAttributeValue("LocationParentGroupId").AsInteger();
             MetricId = GetAttributeValue("MetricId").AsInteger();
             if( !String.IsNullOrEmpty(PageParameter(PageParameterKey.Id)) )
             {
@@ -96,6 +99,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             service = new MetricValueService(context);
             ServiceTimes = new ScheduleService(new RockContext()).Queryable().Where(s => s.CategoryId == ServiceCategoryId).ToList().OrderBy(s => int.Parse(s.Name.Split(':')[0])).ToList();
             ServiceTypes = new DefinedValueService(new RockContext()).Queryable().Where(dv => dv.DefinedTypeId == ServiceTypeId).OrderBy(dv => dv.Value).ToList();
+            this.Location.InitialItemParentIds = LocationCategoryId.ToString();
             if ( !Page.IsPostBack )
             {
                 LoadServiceTimes();
@@ -242,12 +246,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             this.ServiceType.DataBind();
         }
 
-        protected void GenerateMetric( DateTime occurrence, int attendance, int serviceTypeId, int locationId, string notes )
+        protected void GenerateMetric( DateTime occurrence, int? attendance, int serviceTypeId, int locationId, string notes )
         {
             if(Id.HasValue)
             {
                 Metric = service.Get(Id.Value);
                 Metric.MetricValueDateTime = occurrence;
+                //Metric.YValue = attendance == 0 ? null : attendance; //Not sure how we want it to behave, 0s or nulls so the graph breaks 
                 Metric.YValue = attendance;
                 Metric.Note = notes;
                 var loc = Metric.MetricValuePartitions.FirstOrDefault(mvp => mvp.MetricPartition.Label == "Location");
