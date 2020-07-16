@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -656,21 +656,24 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
 
             if (familyMembers.Any() || guests.Any())
             {
-                if (NewMode)
+                if ( NewMode )
                 {
                     // save the family members as their own family
                     Group familyGroup = null;
-                    familyGroup = GroupService.SaveNewFamily(rockContext, familyMembers, _campus.Id, true);
+                    familyGroup = GroupService.SaveNewFamily( rockContext, familyMembers, _campus.Id, true );
 
-                    messages.AppendLine(string.Format("New Family added: {0}<br />", familyGroup.Name));
-                    foreach (var member in familyMembers)
+                    messages.AppendLine( string.Format( "New Family added: {0}<br />", familyGroup.Name ) );
+                    foreach ( var member in familyMembers )
                     {
-                        messages.AppendLine(string.Format("&nbsp;&nbsp;&nbsp;&nbsp;Family Member: {0}<br />", member.Person.FullName));
+                        messages.AppendLine( string.Format( "&nbsp;&nbsp;&nbsp;&nbsp;Family Member: {0}<br />", member.Person.FullName ) );
                     }
 
                     // save family address
-                    var location = new LocationService(rockContext).Get(acAddress.Street1, acAddress.Street2, acAddress.City, acAddress.State, acAddress.PostalCode, acAddress.Country);
-                    GroupService.AddNewGroupAddress(rockContext, familyGroup, _homeLocationGuid, location);
+                    if ( acAddress.Street1.IsNotNullOrWhiteSpace() && acAddress.City.IsNotNullOrWhiteSpace() )
+                    { 
+                        var location = new LocationService( rockContext ).Get( acAddress.Street1, acAddress.Street2, acAddress.City, acAddress.State, acAddress.PostalCode, acAddress.Country );
+                        GroupService.AddNewGroupAddress( rockContext, familyGroup, _homeLocationGuid, location );
+                    }
 
                     // save the guests as their own family
                     if (guests.Any())
@@ -686,8 +689,11 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
                         }
 
                         // save guest address
-                        var guestLocation = new LocationService(rockContext).Get(acGuestAddress.Street1, acGuestAddress.Street2, acAddress.City, acGuestAddress.State, acGuestAddress.PostalCode, acGuestAddress.Country);
-                        GroupService.AddNewGroupAddress(rockContext, guestGroup, _homeLocationGuid, guestLocation);
+                        if ( acGuestAddress.Street1.IsNotNullOrWhiteSpace() && acGuestAddress.City.IsNotNullOrWhiteSpace() )
+                        {
+                            var guestLocation = new LocationService( rockContext ).Get( acGuestAddress.Street1, acGuestAddress.Street2, acGuestAddress.City, acGuestAddress.State, acGuestAddress.PostalCode, acGuestAddress.Country );
+                            GroupService.AddNewGroupAddress( rockContext, guestGroup, _homeLocationGuid, guestLocation );
+                        }
 
                         // add can check-in relationship to guests that links to the oldest family member entered
                         var head = familyMembers
@@ -749,9 +755,11 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
                         rockContext.SaveChanges();
 
                         // save updated address
-                        var location = new LocationService(rockContext).Get(acAddress.Street1, acAddress.Street2, acAddress.City, acAddress.State, acAddress.PostalCode, acAddress.Country);
-                        GroupService.AddNewGroupAddress(rockContext, existingFamily, _homeLocationGuid, location);
-
+                        if ( acAddress.Street1.IsNotNullOrWhiteSpace() && acAddress.City.IsNotNullOrWhiteSpace() )
+                        {
+                            var location = new LocationService( rockContext ).Get( acAddress.Street1, acAddress.Street2, acAddress.City, acAddress.State, acAddress.PostalCode, acAddress.Country );
+                            GroupService.AddNewGroupAddress( rockContext, existingFamily, _homeLocationGuid, location );
+                        }
                     }
 
                     // save the guests as their own family
@@ -761,8 +769,11 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
                         guestGroup = GroupService.SaveNewFamily(rockContext, guests, _campus.Id, true);
 
                         // save guest address
-                        var guestLocation = new LocationService(rockContext).Get(acGuestAddress.Street1, acGuestAddress.Street2, acAddress.City, acGuestAddress.State, acGuestAddress.PostalCode, acGuestAddress.Country);
-                        GroupService.AddNewGroupAddress(rockContext, guestGroup, _homeLocationGuid, guestLocation);
+                        if ( acGuestAddress.Street1.IsNotNullOrWhiteSpace() && acGuestAddress.City.IsNotNullOrWhiteSpace() )
+                        {
+                            var guestLocation = new LocationService( rockContext ).Get( acGuestAddress.Street1, acGuestAddress.Street2, acGuestAddress.City, acGuestAddress.State, acGuestAddress.PostalCode, acGuestAddress.Country );
+                            GroupService.AddNewGroupAddress( rockContext, guestGroup, _homeLocationGuid, guestLocation );
+                        }
 
                         // add can check-in relationship to guests
                         foreach (var guest in guests)
