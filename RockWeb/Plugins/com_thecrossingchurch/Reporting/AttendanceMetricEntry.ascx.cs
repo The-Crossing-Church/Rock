@@ -104,6 +104,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             {
                 LoadServiceTimes();
                 LoadServiceTypes();
+                int diff = ( 7 + ( DateTime.Now.DayOfWeek - DayOfWeek.Sunday ) ) % 7;
+                var stow =  DateTime.Now.AddDays(-1 * diff).Date;
+                this.OccurrenceDate.SelectedDate = stow; 
                 if ( Id.HasValue ) {
                     Metric = service.Get(Id.Value);
                     var sunday = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning");
@@ -160,10 +163,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             }
             GenerateMetric(occurrence, att, serviceTypeId, locationId.Value, this.Notes.Text);
             //Clear all values
-            this.OccurrenceDate.SelectedDate = null;
-            this.Time.SelectedValue = null;
-            this.seTime.SelectedTime = null;
-            this.ServiceType.SelectedValue = null;
+            //this.OccurrenceDate.SelectedDate = null;
+            //this.Time.SelectedValue = null;
+            //this.seTime.SelectedTime = null;
+            //this.ServiceType.SelectedValue = null;
             this.Attendance.Text = "";
             this.Location.SetValue(null);
             this.Notes.Text = "";
@@ -172,7 +175,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected void OpenPanel( object sender, EventArgs e )
         {
             //Clear all values
-            this.OccurrenceDate.SelectedDate = null;
+            //this.OccurrenceDate.SelectedDate = null;
             this.Time.SelectedValue = null;
             this.seTime.SelectedTime = null;
             this.ServiceType.SelectedValue = null;
