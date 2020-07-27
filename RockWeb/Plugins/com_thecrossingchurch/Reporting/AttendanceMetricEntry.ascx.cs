@@ -153,9 +153,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 var schedule = ServiceTimes.FirstOrDefault(s => s.Id == int.Parse(this.Time.SelectedValue));
                 time = schedule.Name;
             }
+            int? locationId = this.Location.SelectedValueAsInt();
+            Location location = new LocationService(context).Get(locationId.Value);
+            if ( location.Name == "Online" ) {
+                time = "00:00"; 
+            }
             DateTime occurrence = DateTime.Parse(this.OccurrenceDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + time);
             int att = int.Parse(this.Attendance.Text);
-            int? locationId = this.Location.SelectedValueAsInt();
             int serviceTypeId = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning").Id;
             if(!String.IsNullOrEmpty(this.ServiceType.SelectedItem.Value) && this.seTime.SelectedTime.HasValue )
             {
@@ -263,6 +267,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 var svc = Metric.MetricValuePartitions.FirstOrDefault(mvp => mvp.MetricPartition.Label == "Service Type");
                 svc.EntityId = serviceTypeId;
                 Metric.MetricValuePartitions = new List<MetricValuePartition>() { loc, svc };
+                Metric.ModifiedDateTime = RockDateTime.Now;
+                Metric.ModifiedByPersonAliasId = CurrentPersonAliasId;
                 context.SaveChanges();
                 int pageId = GetAttributeValue("DetailedViewPage").AsInteger();
                 var svctype = ServiceTypes.FirstOrDefault(st => st.Id == serviceTypeId);
