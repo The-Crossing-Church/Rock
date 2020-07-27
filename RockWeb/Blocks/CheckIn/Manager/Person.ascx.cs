@@ -473,6 +473,51 @@ namespace RockWeb.Blocks.CheckIn.Manager
             mdReprintLabels.Hide();
         }
 
+        /// <summary>
+        /// Handles sending the selected labels off to the selected printer from the custom buttons.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void mdReprintLabelsCustom_Click( object sender, EventArgs e )
+        {
+            // Get the person Id from the Guid in the page parameter
+            var rockContext = new RockContext();
+            Guid? personGuid = PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuidOrNull();
+            var personId = new PersonService(rockContext).Queryable().Where(p => p.Guid == personGuid.Value).Select(p => p.Id).FirstOrDefault();
+            hfPersonId.Value = personId.ToString();
+            if ( personId == 0 )
+            {
+                return;
+            }
+
+            //Get the printer based on the button they clicked
+            BootstrapButton btn = (BootstrapButton)sender;
+            string printer = "";
+            if ( btn.ID == "btnReprintDeskA" )
+            {
+                printer = "10.5.60.102";
+            }
+            else if ( btn.ID == "btnReprintDeskB" )
+            {
+                printer = "10.5.60.119";
+            }
+            else if ( btn.ID == "btnReprintFoyer3" )
+            {
+                printer = "10.5.60.112";
+            }
+
+            // Get the person Id from the Guid
+            var selectedAttendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().AsIntegerList();
+
+            // Print both child and parent labels 
+            var fileGuids = new List<Guid>() { new Guid("779123b2-a54c-4c0e-8b26-d45a4a9a5097"), new Guid("c9a9e544-073c-4133-bafd-a360d6068434") };
+
+            // Now, finally, re-print the labels.
+            List<string> messages = ZebraPrint.ReprintZebraLabels(fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, printer);
+            nbReprintMessage.Visible = true;
+            nbReprintMessage.Text = messages.JoinStrings("<br>");
+        }
+
         #endregion
 
         #endregion
