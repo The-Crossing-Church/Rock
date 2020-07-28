@@ -509,8 +509,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Get the person Id from the Guid
             var selectedAttendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().AsIntegerList();
 
-            // Print both child and parent labels 
-            var fileGuids = new List<Guid>() { new Guid("779123b2-a54c-4c0e-8b26-d45a4a9a5097"), new Guid("c9a9e544-073c-4133-bafd-a360d6068434") };
+            // Print all available label types
+            var possibleLabels = ZebraPrint.GetLabelTypesForPerson(personId, selectedAttendanceIds);
+            //var fileGuids = new List<Guid>() { new Guid("779123b2-a54c-4c0e-8b26-d45a4a9a5097"), new Guid("c9a9e544-073c-4133-bafd-a360d6068434") };
+            var fileGuids = possibleLabels.Select(pl => pl.FileGuid).ToList(); 
 
             // Now, finally, re-print the labels.
             List<string> messages = ZebraPrint.ReprintZebraLabels(fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, printer);
