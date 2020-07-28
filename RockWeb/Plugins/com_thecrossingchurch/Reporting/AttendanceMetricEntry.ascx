@@ -5,7 +5,7 @@
             <div class="col col-xs-0 col-md-3"></div>
             <div class="col col-xs-6 col-md-3 pad-8">
                 <Rock:BootstrapButton runat="server" OnClick="OpenPanel" ID="btnSunday" CausesValidation="false">
-                    <div class="tile panel panel-default" >
+                    <div class="tile panel panel-default" ID="SundayPnl" runat="server">
                         <h3>Sunday Morning Attendance</h3><br />
                         <i class="fa fa-sun fa-3x"></i>
                     </div>
@@ -13,7 +13,7 @@
             </div>
             <div class="col col-xs-6 col-md-3 pad-8">
                 <Rock:BootstrapButton runat="server" OnClick="OpenPanel" ID="btnSpecial" CausesValidation="false">
-                    <div class="tile panel panel-default">
+                    <div class="tile panel panel-default" ID="SpecialPnl" runat="server">
                         <h3>Special Event Attendance</h3><br />
                         <i class="fa fa-calendar fa-3x"></i>
                     </div>
@@ -26,7 +26,7 @@
             <div class="col col-xs-0 col-md-2"></div>
             <div class="col col-xs-0 col-md-8">
                 <div class="well">
-                    <h4>Sunday Morning Attendance</h4><br />
+                    <asp:Placeholder runat="server" ID="headingPlaceholder"></asp:Placeholder><br />
                     <div class="row">
                         <div class="col col-xs-6">
                             <Rock:DatePicker Required="true" runat="server" ID="OccurrenceDate" Label="Date"/>
@@ -75,6 +75,10 @@
     }
     .tile:hover {
         cursor: pointer;
+    }
+    .tile.pressed {
+        box-shadow: inset 0 2px 8px 0 rgba(0,0,0,0.2) !important;
+        background-color: #f3f3f3;
     }
     .required.has-error .control-wrapper .picker.picker-select a.picker-label {
         border: 1px solid #e55235; 

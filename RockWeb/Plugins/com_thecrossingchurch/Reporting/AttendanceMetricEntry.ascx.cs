@@ -159,7 +159,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 time = "00:00"; 
             }
             DateTime occurrence = DateTime.Parse(this.OccurrenceDate.SelectedDate.Value.ToString("MM/dd/yyyy") + " " + time);
-            int att = int.Parse(this.Attendance.Text);
+            int att = int.Parse(this.Attendance.Text.Replace(",",""));
             int serviceTypeId = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning").Id;
             if(!String.IsNullOrEmpty(this.ServiceType.SelectedItem.Value) && this.seTime.SelectedTime.HasValue )
             {
@@ -192,12 +192,24 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 this.Time.Visible = true;
                 this.seTime.Visible = false;
                 this.ServiceType.Visible = false;
+                this.headingPlaceholder.Controls.Clear();
+                var h4 = new HtmlGenericControl("h4");
+                h4.InnerHtml = "Sunday Morning Attendance";
+                this.headingPlaceholder.Controls.Add(h4);
+                this.SpecialPnl.RemoveCssClass("pressed");
+                this.SundayPnl.AddCssClass("pressed");
             }
             else
             {
                 this.Time.Visible = false;
                 this.seTime.Visible = true;
                 this.ServiceType.Visible = true;
+                this.headingPlaceholder.Controls.Clear();
+                var h4 = new HtmlGenericControl("h4");
+                h4.InnerHtml = "Special Event Attendance";
+                this.headingPlaceholder.Controls.Add(h4);
+                this.SundayPnl.RemoveCssClass("pressed");
+                this.SpecialPnl.AddCssClass("pressed");
             }
             this.EntryForm.Visible = true;
         }
