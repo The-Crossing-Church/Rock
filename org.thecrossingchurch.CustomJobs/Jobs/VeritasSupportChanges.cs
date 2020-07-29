@@ -108,8 +108,8 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
                 //Check if the scheduled transaction has changed
                 if ( current[i].ScheduledTransactionId.HasValue )
                 {
-                    FinancialTransaction lastTransaction = transactions.Where(t => t.ScheduledTransactionId == current[i].ScheduledTransactionId && t.Id != current[i].Id).OrderByDescending(t => t.TransactionDateTime).First();
-                    if ( lastTransaction.TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount != current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount )
+                    FinancialTransaction lastTransaction = transactions.Where(t => t.ScheduledTransactionId == current[i].ScheduledTransactionId && t.Id != current[i].Id).OrderByDescending(t => t.TransactionDateTime).FirstOrDefault();
+                    if ( lastTransaction != null && lastTransaction.TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount != current[i].TransactionDetails.FirstOrDefault(td => td.AccountId == account.Id).Amount )
                     {
                         isChanged = true;
                     }
@@ -145,7 +145,9 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
             }
 
             //Check for potentially failed payments
-            var scheduled = new FinancialScheduledTransactionService(_context).Queryable().Where(fst => fst.IsActive && fst.ScheduledTransactionDetails.Any(fstd => fstd.AccountId == account.Id) && DateTime.Compare(dt, fst.NextPaymentDate.Value) <= 0);
+            DateTime today = DateTime.Now;
+            today = new DateTime(today.Year, today.Month, today.Day, 0, 0, 0);
+            var scheduled = new FinancialScheduledTransactionService(_context).Queryable().Where(fst => fst.IsActive && fst.ScheduledTransactionDetails.Any(fstd => fstd.AccountId == account.Id) && DateTime.Compare(dt, fst.NextPaymentDate.Value) <= 0 && DateTime.Compare(today, fst.NextPaymentDate.Value) > 0).ToList();
             var failed = scheduled.Where(s => !current.Select(c => c.ScheduledTransactionId).Contains(s.Id)).ToList();
             for ( var i = 0; i < failed.Count(); i++ )
             {

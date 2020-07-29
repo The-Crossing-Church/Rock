@@ -88,7 +88,7 @@ namespace Rock.Rest
                 },
                 constraints: new
                 {
-                    httpMethod = new HttpMethodConstraint( new string[] { "POST" } ),
+                    httpMethod = new HttpMethodConstraint( new string[] { "POST", "OPTIONS" } ),
                 } );
 
             // Add API route for DeleteAttributeValue

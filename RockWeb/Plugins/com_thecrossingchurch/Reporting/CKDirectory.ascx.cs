@@ -99,15 +99,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 excel.SaveAs(ms);
                 byteArray = ms.ToArray();
             }
+            this.Page.EnableViewState = false;
             Response.Clear();
-            Response.Buffer = true;
+            //Response.Buffer = true;
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             Response.AddHeader("content-disposition", "attachment;filename=" + FileName + ".xlsx");
-            Response.Cache.SetCacheability(HttpCacheability.Public);
+            //Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
             Response.BinaryWrite(byteArray);
             Response.Flush();
             Response.End();
+            this.btnExportExcel.Enabled = true; 
         }
 
         /// <summary>
@@ -129,7 +131,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 {
                     for ( var i = 0; i < pdfs.Count(); i++ )
                     {
-                        var pdfFile = archive.CreateEntry(Data[i].ParentGroup.Name.Replace("/","-") + ".pdf");
+                        var fname = Data[i].ParentGroup.Name.Replace("/", "-").Replace("8:20 ", "").Replace("9:45 ", "").Replace("11:15 ","");
+                        var pdfFile = archive.CreateEntry( fname + ".pdf");
                         using ( var streamWriter = pdfFile.Open() )
                         {
                             new MemoryStream(pdfs[i]).CopyTo(streamWriter);
@@ -139,15 +142,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 files = memoryStream.ToArray();
             }
 
+            this.Page.EnableViewState = false;
             Response.Clear();
-            Response.Buffer = true;
+            //Response.Buffer = true;
             Response.ContentType = "application/zip";
             Response.AddHeader("content-disposition", "attachment;filename=" + FileName + ".zip");
-            Response.Cache.SetCacheability(HttpCacheability.Public);
+            //Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
             Response.BinaryWrite(files);
             Response.Flush();
             Response.End();
+            this.btnExportPDF.Enabled = true;
         }
         #endregion
 
