@@ -214,6 +214,30 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             this.EntryForm.Visible = true;
         }
 
+        /// <summary>
+        /// Deletes attendance entry metric.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnRemoveAttendance_Click( object sender, EventArgs e )
+        {
+            if ( !Id.HasValue ) {
+                return;
+            }
+            var rockContext = new RockContext();
+            var metricValueService = new MetricValueService(rockContext);
+            var metricValuePartitionService = new MetricValuePartitionService(rockContext);
+            var metricValue = metricValueService.Get(Id.Value); 
+
+            rockContext.WrapTransaction(() =>
+            {
+                metricValuePartitionService.DeleteRange(metricValue.MetricValuePartitions);
+                metricValueService.Delete(metricValue);
+                rockContext.SaveChanges();
+            });
+            Response.Redirect(Request.Url.ToString().Split('?')[0]);
+        }
+
         #endregion
 
         #region Methods

@@ -55,12 +55,28 @@
                         </div>
                     </div>
                     <div class="row">
+                        <Button ID="btnConfirmRemoveAttendance"  onclick="deleteMetric()" class="pull-left btn btn-danger"  CausesValidation="false">Delete</Button>
                         <Rock:BootstrapButton ID="btnAddAttendance" runat="server" OnClick="btnAddAttendance_Click" Text="Save" CssClass="pull-right btn btn-primary"/>
                     </div>
                 </div>
             </div>
             <div class="col col-xs-0 col-md-2"></div>
         </div>
+        <div style="display:none">
+            <Rock:BootstrapButton ID="btnRemoveAttendance" runat="server" OnClick="btnRemoveAttendance_Click" Text="Delete" CssClass="btn btn-danger" CausesValidation="false"></Rock:BootstrapButton>
+        </div>
+            <script>
+                function deleteMetric() {
+                // delete prompt
+                var confirmMessage = 'Are you sure you want to delete this attendance entry?';
+                Rock.dialogs.confirm(confirmMessage, function (result) {
+                    if (result) {
+                        var btn = $('[id$="btnRemoveAttendance"]');
+                        btn[0].click();
+                    }
+                });
+            }
+            </script>
     </ContentTemplate>
 </asp:UpdatePanel>
 <style>
