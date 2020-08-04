@@ -1,19 +1,29 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Person.ascx.cs" Inherits="RockWeb.Blocks.CheckIn.Manager.Person" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Person.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager.Person" %>
+<%@ Register Src="~/Plugins/com_thecrossingchurch/Checkin/MultiPersonSelect.ascx" TagPrefix="uc1" TagName="MultiPersonSelect" %>
+
 
 <script type="text/javascript">
     Sys.Application.add_load(function () {
         $(".photo a").fluidbox();
+
         $('.js-cancel-checkin').click(function (event) {
             event.stopImmediatePropagation();
             var personName = $('H4.js-checkin-person-name').first().text();
             return Rock.dialogs.confirmDelete(event, 'Checkin for ' + personName);
         });
-    });
+    }); <uc1: MultiPersonSelect runat="server" id="MultiPersonSelect" />
 </script>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
-
+        <!-- Custom Reprint Buttons -->
+        <div class="row margin-b-sm">
+            <div class="col-xs-12">
+                <Rock:BootstrapButton runat="server" ID="btnReprintDeskA" CssClass="btn btn-info" OnClick="mdReprintLabelsCustom_Click">Reprint Desk A</Rock:BootstrapButton>
+                <Rock:BootstrapButton runat="server" ID="btnReprintDeskB" CssClass="btn btn-success" OnClick="mdReprintLabelsCustom_Click">Reprint Desk B</Rock:BootstrapButton>
+                <Rock:BootstrapButton runat="server" ID="btnReprintFoyer3" CssClass="btn btn-warning" OnClick="mdReprintLabelsCustom_Click">Reprint Foyer 3</Rock:BootstrapButton>
+            </div>
+        </div>
         <div class="row margin-b-sm">
             <div class="col-sm-3 col-md-2 xs-text-center">
                 <asp:Literal ID="lPhoto" runat="server" />
@@ -138,12 +148,14 @@
             function setSmsSendDisabled(boolean) {
                 $('.js-btn-send').attr('disabled', boolean);
             }
+
             Sys.Application.add_load(function () {
                 setSmsSendDisabled(true);
                 $('.js-sms-message').on('input', function (e) {
                     var tbValue = $(this).val();
                     setSmsSendDisabled(!tbValue.trim());
                 });
+
                 $('.js-btn-sms').on('click', function (e) {
                     setSmsSendDisabled(true);
                 });

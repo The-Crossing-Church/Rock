@@ -35,26 +35,26 @@ using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.CheckIn.Manager
+namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
 {
     /// <summary>
     /// Block used to display person and details about recent check-ins
     /// </summary>
-    [DisplayName("Person Profile")]
-    [Category("Check-in > Manager")]
-    [Description("Displays person and details about recent check-ins.")]
+    [DisplayName( "Person Profile" )]
+    [Category( "Check-in > Manager" )]
+    [Description( "Displays person and details about recent check-ins." )]
 
     [LinkedPage(
         "Manager Page",
         Description = "Page used to manage check-in locations",
         IsRequired = true,
-        Order = 0)]
+        Order = 0 )]
 
     [BooleanField(
         "Show Related People",
         Description = "Should anyone who is allowed to check-in the current person also be displayed with the family members?",
         IsRequired = false,
-        Order = 1)]
+        Order = 1 )]
 
     [DefinedValueField(
         "Send SMS From",
@@ -63,7 +63,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         Description = "The phone number SMS messages should be sent from",
         IsRequired = false,
         AllowMultiple = false,
-        Order = 2)]
+        Order = 2 )]
 
     [AttributeCategoryField(
         "Child Attribute Category",
@@ -71,7 +71,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         AllowMultiple = false,
         EntityTypeName = "Rock.Model.Person",
         IsRequired = false,
-        Order = 3)]
+        Order = 3 )]
 
     [AttributeCategoryField(
         "Adult Attribute Category",
@@ -79,7 +79,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         AllowMultiple = false,
         EntityTypeName = "Rock.Model.Person",
         IsRequired = false,
-        Order = 4)]
+        Order = 4 )]
 
     [BooleanField(
         "Allow Label Reprinting",
@@ -87,7 +87,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         Description = " Determines if reprinting labels should be allowed.",
         DefaultBooleanValue = false,
         Category = "Manager Settings",
-        Order = 5)]
+        Order = 5 )]
 
     public partial class Person : Rock.Web.UI.RockBlock
     {
@@ -134,15 +134,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnInit( EventArgs e )
         {
-            base.OnInit(e);
+            base.OnInit( e );
 
-            RockPage.AddCSSLink("~/Styles/fluidbox.css");
-            RockPage.AddScriptLink("~/Scripts/imagesloaded.min.js");
-            RockPage.AddScriptLink("~/Scripts/jquery.fluidbox.min.js");
+            RockPage.AddCSSLink( "~/Styles/fluidbox.css" );
+            RockPage.AddScriptLink( "~/Scripts/imagesloaded.min.js" );
+            RockPage.AddScriptLink( "~/Scripts/jquery.fluidbox.min.js" );
 
             // this event gets fired after block settings are updated. it's nice to repaint the screen if these settings would alter it
             this.BlockUpdated += Block_BlockUpdated;
-            this.AddConfigurationUpdateTrigger(upnlContent);
+            this.AddConfigurationUpdateTrigger( upnlContent );
 
             gHistory.DataKeyNames = new string[] { "Id" };
             gHistory.RowDataBound += gHistory_RowDataBound;
@@ -154,23 +154,23 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnLoad( EventArgs e )
         {
-            base.OnLoad(e);
+            base.OnLoad( e );
 
             if ( !Page.IsPostBack )
             {
-                if ( IsUserAuthorized(Authorization.VIEW) )
+                if ( IsUserAuthorized( Authorization.VIEW ) )
                 {
-                    Guid? personGuid = PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuidOrNull();
+                    Guid? personGuid = PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuidOrNull();
                     if ( personGuid.HasValue )
                     {
-                        ShowDetail(personGuid.Value);
+                        ShowDetail( personGuid.Value );
                     }
                 }
             }
             else
             {
-                var person = new PersonService(new RockContext()).Get(PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuid());
-                BindAttribute(person);
+                var person = new PersonService( new RockContext() ).Get( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
+                BindAttribute( person );
             }
         }
 
@@ -187,7 +187,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            ShowDetail(PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuid());
+            ShowDetail( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
         }
 
         /// <summary>
@@ -211,21 +211,21 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
                 else
                 {
-                    Literal lActive = (Literal)e.Row.FindControl("lActive");
+                    Literal lActive = ( Literal ) e.Row.FindControl( "lActive" );
                     if ( attendanceInfo.IsActive && lActive != null )
                     {
-                        e.Row.AddCssClass("success");
+                        e.Row.AddCssClass( "success" );
                         lActive.Text = "<span class='label label-success'>Current</span>";
                         var attendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().ToList();
-                        attendanceIds.Add(attendanceInfo.Id.ToStringSafe());
-                        hfCurrentAttendanceIds.Value = attendanceIds.AsDelimited(",");
+                        attendanceIds.Add( attendanceInfo.Id.ToStringSafe() );
+                        hfCurrentAttendanceIds.Value = attendanceIds.AsDelimited( "," );
                     }
 
-                    Literal lWhoCheckedIn = (Literal)e.Row.FindControl("lWhoCheckedIn");
+                    Literal lWhoCheckedIn = ( Literal ) e.Row.FindControl( "lWhoCheckedIn" );
                     if ( lWhoCheckedIn != null && attendanceInfo.CheckInByPersonGuid.HasValue )
                     {
-                        string url = String.Format("{0}{1}{2}{3}?Person={4}", Request.Url.Scheme, Uri.SchemeDelimiter, Request.Url.Authority, Request.Url.AbsolutePath, attendanceInfo.CheckInByPersonGuid);
-                        lWhoCheckedIn.Text = string.Format("<br /><a href=\"{0}\">by: {1}</a>", url, attendanceInfo.CheckInByPersonName);
+                        string url = String.Format( "{0}{1}{2}{3}?Person={4}", Request.Url.Scheme, Uri.SchemeDelimiter, Request.Url.Authority, Request.Url.AbsolutePath, attendanceInfo.CheckInByPersonGuid );
+                        lWhoCheckedIn.Text = string.Format( "<br /><a href=\"{0}\">by: {1}</a>", url, attendanceInfo.CheckInByPersonName );
                     }
                 }
             }
@@ -235,16 +235,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             using ( var rockContext = new RockContext() )
             {
-                var service = new AttendanceService(rockContext);
-                var attendance = service.Get(e.RowKeyId);
+                var service = new AttendanceService( rockContext );
+                var attendance = service.Get( e.RowKeyId );
                 if ( attendance != null )
                 {
-                    service.Delete(attendance);
+                    service.Delete( attendance );
                     rockContext.SaveChanges();
                 }
             }
 
-            ShowDetail(PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuid());
+            ShowDetail( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
         }
 
         protected void rptrFamily_ItemDataBound( object sender, RepeaterItemEventArgs e )
@@ -252,7 +252,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem )
             {
                 dynamic familyMember = e.Item.DataItem as dynamic;
-                Literal lFamilyIcon = (Literal)e.Item.FindControl("lFamilyIcon");
+                Literal lFamilyIcon = ( Literal ) e.Item.FindControl( "lFamilyIcon" );
 
                 if ( familyMember.FamilyRole.ToString() == "Child" )
                 {
@@ -274,7 +274,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem )
             {
                 dynamic relatedMember = e.Item.DataItem as dynamic;
-                Literal lRelationshipsIcon = (Literal)e.Item.FindControl("lRelationshipsIcon");
+                Literal lRelationshipsIcon = ( Literal ) e.Item.FindControl( "lRelationshipsIcon" );
 
                 if ( relatedMember.Gender == Gender.Female )
                 {
@@ -307,36 +307,36 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnSend_Click( object sender, EventArgs e )
         {
-            var definedValueGuid = GetAttributeValue(AttributeKey.SMSFrom).AsGuidOrNull();
+            var definedValueGuid = GetAttributeValue( AttributeKey.SMSFrom ).AsGuidOrNull();
             var message = tbSmsMessage.Value.Trim();
 
             if ( message.IsNullOrWhiteSpace() || !definedValueGuid.HasValue )
             {
                 ResetSms();
-                DisplayResult(NotificationBoxType.Danger, "Error sending message. Please try again or contact an administrator if the error continues.");
+                DisplayResult( NotificationBoxType.Danger, "Error sending message. Please try again or contact an administrator if the error continues." );
                 if ( !definedValueGuid.HasValue )
                 {
-                    LogException(new Exception(string.Format("While trying to send an SMS from the Check-in Manager, the following error occurred: There is a misconfiguration with the {0} setting.", AttributeKey.SMSFrom)));
+                    LogException( new Exception( string.Format( "While trying to send an SMS from the Check-in Manager, the following error occurred: There is a misconfiguration with the {0} setting.", AttributeKey.SMSFrom ) ) );
                 }
 
                 return;
             }
 
-            var smsFromNumber = DefinedValueCache.Get(definedValueGuid.Value);
+            var smsFromNumber = DefinedValueCache.Get( definedValueGuid.Value );
             if ( smsFromNumber == null )
             {
                 ResetSms();
-                DisplayResult(NotificationBoxType.Danger, "Could not find a valid phone number to send from.");
+                DisplayResult( NotificationBoxType.Danger, "Could not find a valid phone number to send from." );
                 return;
             }
 
             var rockContext = new RockContext();
-            var person = new PersonService(rockContext).Get(PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuid());
-            var phoneNumber = person.PhoneNumbers.FirstOrDefault(n => n.IsMessagingEnabled);
+            var person = new PersonService( rockContext ).Get( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
+            var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.IsMessagingEnabled );
             if ( phoneNumber == null )
             {
                 ResetSms();
-                DisplayResult(NotificationBoxType.Danger, "Could not find a valid number for this person.");
+                DisplayResult( NotificationBoxType.Danger, "Could not find a valid number for this person." );
                 return;
             }
 
@@ -347,9 +347,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 message,
                 smsFromNumber,
                 null,
-                rockContext);
+                rockContext );
 
-            DisplayResult(NotificationBoxType.Success, "Message queued.");
+            DisplayResult( NotificationBoxType.Success, "Message queued." );
             ResetSms();
         }
 
@@ -374,17 +374,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             nbReprintMessage.Visible = false;
 
-            Guid? personGuid = PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuidOrNull();
+            Guid? personGuid = PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuidOrNull();
 
             if ( personGuid == null || !personGuid.HasValue )
             {
-                maNoLabelsFound.Show("No person was found.", ModalAlertType.Alert);
+                maNoLabelsFound.Show( "No person was found.", ModalAlertType.Alert );
                 return;
             }
 
-            if ( string.IsNullOrEmpty(hfCurrentAttendanceIds.Value) )
+            if ( string.IsNullOrEmpty( hfCurrentAttendanceIds.Value ) )
             {
-                maNoLabelsFound.Show("No labels were found for re-printing.", ModalAlertType.Alert);
+                maNoLabelsFound.Show( "No labels were found for re-printing.", ModalAlertType.Alert );
                 return;
             }
 
@@ -393,10 +393,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var attendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().AsIntegerList();
 
             // Get the person Id from the Guid in the page parameter
-            var personId = new PersonService(rockContext).Queryable().Where(p => p.Guid == personGuid.Value).Select(p => p.Id).FirstOrDefault();
+            var personId = new PersonService( rockContext ).Queryable().Where( p => p.Guid == personGuid.Value ).Select( p => p.Id ).FirstOrDefault();
             hfPersonId.Value = personId.ToString();
 
-            var possibleLabels = ZebraPrint.GetLabelTypesForPerson(personId, attendanceIds);
+            var possibleLabels = ZebraPrint.GetLabelTypesForPerson( personId, attendanceIds );
 
             if ( possibleLabels != null && possibleLabels.Count != 0 )
             {
@@ -405,29 +405,29 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
             else
             {
-                maNoLabelsFound.Show("No labels were found for re-printing.", ModalAlertType.Alert);
+                maNoLabelsFound.Show( "No labels were found for re-printing.", ModalAlertType.Alert );
                 return;
             }
 
-            cblLabels.DataSource = ZebraPrint.GetLabelTypesForPerson(personId, attendanceIds).OrderBy(l => l.Name);
+            cblLabels.DataSource = ZebraPrint.GetLabelTypesForPerson( personId, attendanceIds ).OrderBy( l => l.Name );
             cblLabels.DataBind();
 
             // Bind the printers list
-            var printers = new DeviceService(rockContext)
-                .GetByDeviceTypeGuid(new Guid(Rock.SystemGuid.DefinedValue.DEVICE_TYPE_PRINTER))
-                .OrderBy(d => d.Name)
+            var printers = new DeviceService( rockContext )
+                .GetByDeviceTypeGuid( new Guid( Rock.SystemGuid.DefinedValue.DEVICE_TYPE_PRINTER ) )
+                .OrderBy( d => d.Name )
                 .ToList();
 
             if ( printers == null || printers.Count == 0 )
             {
-                maNoLabelsFound.Show("Due to browser limitations, only server based printers are supported and none are defined on this server.", ModalAlertType.Information);
+                maNoLabelsFound.Show( "Due to browser limitations, only server based printers are supported and none are defined on this server.", ModalAlertType.Information );
                 return;
             }
 
             ddlPrinter.Items.Clear();
             ddlPrinter.DataSource = printers;
             ddlPrinter.DataBind();
-            ddlPrinter.Items.Insert(0, new ListItem(None.Text, None.IdValue));
+            ddlPrinter.Items.Insert( 0, new ListItem( None.Text, None.IdValue ) );
 
             nbReprintLabelMessages.Text = string.Empty;
             mdReprintLabels.Show();
@@ -446,7 +446,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            if ( string.IsNullOrWhiteSpace(cblLabels.SelectedValue) )
+            if ( string.IsNullOrWhiteSpace( cblLabels.SelectedValue ) )
             {
                 nbReprintLabelMessages.Visible = true;
                 nbReprintLabelMessages.Text = "Please select at least one label.";
@@ -466,11 +466,58 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var fileGuids = cblLabels.SelectedValues.AsGuidList();
 
             // Now, finally, re-print the labels.
-            List<string> messages = ZebraPrint.ReprintZebraLabels(fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, ddlPrinter.SelectedValue);
+            List<string> messages = ZebraPrint.ReprintZebraLabels( fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, ddlPrinter.SelectedValue );
             nbReprintMessage.Visible = true;
-            nbReprintMessage.Text = messages.JoinStrings("<br>");
+            nbReprintMessage.Text = messages.JoinStrings( "<br>" );
 
             mdReprintLabels.Hide();
+        }
+
+        /// <summary>
+        /// Handles sending the selected labels off to the selected printer from the custom buttons.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void mdReprintLabelsCustom_Click( object sender, EventArgs e )
+        {
+            // Get the person Id from the Guid in the page parameter
+            var rockContext = new RockContext();
+            Guid? personGuid = PageParameter(PERSON_GUID_PAGE_QUERY_KEY).AsGuidOrNull();
+            var personId = new PersonService(rockContext).Queryable().Where(p => p.Guid == personGuid.Value).Select(p => p.Id).FirstOrDefault();
+            hfPersonId.Value = personId.ToString();
+            if ( personId == 0 )
+            {
+                return;
+            }
+
+            //Get the printer based on the button they clicked
+            BootstrapButton btn = (BootstrapButton)sender;
+            string printer = "";
+            if ( btn.ID == "btnReprintDeskA" )
+            {
+                printer = "10.5.60.102";
+            }
+            else if ( btn.ID == "btnReprintDeskB" )
+            {
+                printer = "10.5.60.119";
+            }
+            else if ( btn.ID == "btnReprintFoyer3" )
+            {
+                printer = "10.5.60.112";
+            }
+
+            // Get the person Id from the Guid
+            var selectedAttendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().AsIntegerList();
+
+            // Print all available label types
+            var possibleLabels = ZebraPrint.GetLabelTypesForPerson(personId, selectedAttendanceIds);
+            //var fileGuids = new List<Guid>() { new Guid("779123b2-a54c-4c0e-8b26-d45a4a9a5097"), new Guid("c9a9e544-073c-4133-bafd-a360d6068434") };
+            var fileGuids = possibleLabels.Select(pl => pl.FileGuid).ToList(); 
+
+            // Now, finally, re-print the labels.
+            List<string> messages = ZebraPrint.ReprintZebraLabels(fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, printer);
+            nbReprintMessage.Visible = true;
+            nbReprintMessage.Text = messages.JoinStrings("<br>");
         }
 
         #endregion
@@ -485,14 +532,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="personGuid"></param>
         private void ShowDetail( Guid personGuid )
         {
-            btnReprintLabels.Visible = GetAttributeValue(AttributeKey.AllowLabelReprinting).AsBoolean();
+            btnReprintLabels.Visible = GetAttributeValue( AttributeKey.AllowLabelReprinting ).AsBoolean();
 
             using ( var rockContext = new RockContext() )
             {
-                var personService = new PersonService(rockContext);
+                var personService = new PersonService( rockContext );
 
-                var person = personService.Queryable(true, true).Include(a => a.PhoneNumbers).Include(a => a.RecordStatusValue)
-                    .FirstOrDefault(a => a.Guid == personGuid);
+                var person = personService.Queryable( true, true ).Include(a => a.PhoneNumbers).Include(a => a.RecordStatusValue)
+                    .FirstOrDefault( a => a.Guid == personGuid );
 
                 if ( person == null )
                 {
@@ -501,10 +548,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 lName.Text = person.FullName;
 
-                string photoTag = Rock.Model.Person.GetPersonPhotoImageTag(person, 200, 200);
+                string photoTag = Rock.Model.Person.GetPersonPhotoImageTag( person, 200, 200 );
                 if ( person.PhotoId.HasValue )
                 {
-                    lPhoto.Text = string.Format("<div class='photo'><a href='{0}'>{1}</a></div>", person.PhotoUrl, photoTag);
+                    lPhoto.Text = string.Format( "<div class='photo'><a href='{0}'>{1}</a></div>", person.PhotoUrl, photoTag );
                 }
                 else
                 {
@@ -527,8 +574,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 if ( person.BirthDate.HasValue )
                 {
                     string ageText = ( person.BirthYear.HasValue && person.BirthYear != DateTime.MinValue.Year ) ?
-                        string.Format("{0} yrs old ", person.BirthDate.Value.Age()) : string.Empty;
-                    lAge.Text = string.Format("{0} <small>({1})</small><br/>", ageText, person.BirthDate.Value.ToShortDateString());
+                        string.Format( "{0} yrs old ", person.BirthDate.Value.Age() ) : string.Empty;
+                    lAge.Text = string.Format( "{0} <small>({1})</small><br/>", ageText, person.BirthDate.Value.ToShortDateString() );
                 }
                 else
                 {
@@ -537,15 +584,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 lGrade.Text = person.GradeFormatted;
 
-                lEmail.Visible = !string.IsNullOrWhiteSpace(person.Email);
-                lEmail.Text = person.GetEmailTag(ResolveRockUrl("/"), "btn btn-default", "<i class='fa fa-envelope'></i>");
+                lEmail.Visible = !string.IsNullOrWhiteSpace( person.Email );
+                lEmail.Text = person.GetEmailTag( ResolveRockUrl( "/" ), "btn btn-default", "<i class='fa fa-envelope'></i>" );
 
-                BindAttribute(person);
+                BindAttribute( person );
                 // Text Message
-                var phoneNumber = person.PhoneNumbers.FirstOrDefault(n => n.IsMessagingEnabled && n.Number.IsNotNullOrWhiteSpace());
-                if ( GetAttributeValue(AttributeKey.SMSFrom).IsNotNullOrWhiteSpace() && phoneNumber != null )
+                var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.IsMessagingEnabled && n.Number.IsNotNullOrWhiteSpace() );
+                if ( GetAttributeValue( AttributeKey.SMSFrom ).IsNotNullOrWhiteSpace() && phoneNumber != null )
                 {
-                    btnSms.Text = string.Format("<i class='fa fa-mobile'></i> {0} <small>({1})</small>", phoneNumber.NumberFormatted, phoneNumber.NumberTypeValue);
+                    btnSms.Text = string.Format( "<i class='fa fa-mobile'></i> {0} <small>({1})</small>", phoneNumber.NumberFormatted, phoneNumber.NumberTypeValue );
                     btnSms.Visible = true;
                     rcwTextMessage.Label = "Text Message";
                 }
@@ -556,33 +603,33 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
 
                 // Get all family member from all families ( including self )
-                var allFamilyMembers = personService.GetFamilyMembers(person.Id, true).ToList();
+                var allFamilyMembers = personService.GetFamilyMembers( person.Id, true ).ToList();
 
                 // Add flag for this person in each family indicating if they are a child in family.
                 var childGuid = Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid();
                 var isFamilyChild = new Dictionary<int, bool>();
-                foreach ( var thisPerson in allFamilyMembers.Where(m => m.PersonId == person.Id) )
+                foreach ( var thisPerson in allFamilyMembers.Where( m => m.PersonId == person.Id ) )
                 {
-                    isFamilyChild.Add(thisPerson.GroupId, thisPerson.GroupRole.Guid.Equals(childGuid));
+                    isFamilyChild.Add( thisPerson.GroupId, thisPerson.GroupRole.Guid.Equals( childGuid ) );
                 }
 
                 // Get the current url's root (without the person's guid)
-                string urlRoot = Request.Url.ToString().ReplaceCaseInsensitive(personGuid.ToString(), "");
+                string urlRoot = Request.Url.ToString().ReplaceCaseInsensitive( personGuid.ToString(), "" );
 
                 // Get the other family members and the info needed for rendering
-                var familyMembers = allFamilyMembers.Where(m => m.PersonId != person.Id)
-                    .OrderBy(m => m.GroupId)
-                    .ThenBy(m => m.Person.BirthDate)
-                    .Select(m => new
+                var familyMembers = allFamilyMembers.Where( m => m.PersonId != person.Id )
+                    .OrderBy( m => m.GroupId )
+                    .ThenBy( m => m.Person.BirthDate )
+                    .Select( m => new
                     {
                         Url = urlRoot + m.Person.Guid.ToString(),
                         FullName = m.Person.FullName,
                         Gender = m.Person.Gender,
                         FamilyRole = m.GroupRole,
                         Note = isFamilyChild[m.GroupId] ?
-                           ( m.GroupRole.Guid.Equals(childGuid) ? " (Sibling)" : "(Parent)" ) :
-                           ( m.GroupRole.Guid.Equals(childGuid) ? " (Child)" : "" )
-                    })
+                            ( m.GroupRole.Guid.Equals( childGuid ) ? " (Sibling)" : "(Parent)" ) :
+                            ( m.GroupRole.Guid.Equals( childGuid ) ? " (Child)" : "" )
+                    } )
                     .ToList();
 
                 rcwFamily.Visible = familyMembers.Any();
@@ -590,27 +637,27 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 rptrFamily.DataBind();
 
                 rcwRelationships.Visible = false;
-                if ( GetAttributeValue(AttributeKey.ShowRelatedPeople).AsBoolean() )
+                if ( GetAttributeValue( AttributeKey.ShowRelatedPeople ).AsBoolean() )
                 {
                     var roles = new List<int>();
-                    var krRoles = new GroupTypeRoleService(rockContext)
+                    var krRoles = new GroupTypeRoleService( rockContext )
                         .Queryable().AsNoTracking()
-                        .Where(r => r.GroupType.Guid.Equals(new Guid(Rock.SystemGuid.GroupType.GROUPTYPE_KNOWN_RELATIONSHIPS)))
+                        .Where( r => r.GroupType.Guid.Equals( new Guid( Rock.SystemGuid.GroupType.GROUPTYPE_KNOWN_RELATIONSHIPS ) ) )
                         .ToList();
 
                     foreach ( var role in krRoles )
                     {
-                        role.LoadAttributes(rockContext);
-                        if ( role.GetAttributeValue("CanCheckin").AsBoolean() &&
-                            role.Attributes.ContainsKey("InverseRelationship") )
+                        role.LoadAttributes( rockContext );
+                        if ( role.GetAttributeValue( "CanCheckin" ).AsBoolean() &&
+                            role.Attributes.ContainsKey( "InverseRelationship" ) )
                         {
-                            var inverseRoleGuid = role.GetAttributeValue("InverseRelationship").AsGuidOrNull();
+                            var inverseRoleGuid = role.GetAttributeValue( "InverseRelationship" ).AsGuidOrNull();
                             if ( inverseRoleGuid.HasValue )
                             {
-                                var inverseRole = krRoles.FirstOrDefault(r => r.Guid == inverseRoleGuid.Value);
+                                var inverseRole = krRoles.FirstOrDefault( r => r.Guid == inverseRoleGuid.Value );
                                 if ( inverseRole != null )
                                 {
-                                    roles.Add(inverseRole.Id);
+                                    roles.Add( inverseRole.Id );
                                 }
                             }
                         }
@@ -618,16 +665,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                     if ( roles.Any() )
                     {
-                        var relatedMembers = personService.GetRelatedPeople(new List<int> { person.Id }, roles)
-                            .OrderBy(m => m.Person.LastName)
-                            .ThenBy(m => m.Person.NickName)
-                            .Select(m => new
+                        var relatedMembers = personService.GetRelatedPeople( new List<int> { person.Id }, roles )
+                            .OrderBy( m => m.Person.LastName )
+                            .ThenBy( m => m.Person.NickName )
+                            .Select( m => new
                             {
                                 Url = urlRoot + m.Person.Guid.ToString(),
                                 FullName = m.Person.FullName,
                                 Gender = m.Person.Gender,
                                 Note = " (" + m.GroupRole.Name + ")"
-                            })
+                            } )
                             .ToList();
 
                         rcwRelationships.Visible = relatedMembers.Any();
@@ -636,46 +683,46 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
                 }
 
-                var phoneNumbers = person.PhoneNumbers.Where(p => !p.IsUnlisted).ToList();
+                var phoneNumbers = person.PhoneNumbers.Where( p => !p.IsUnlisted ).ToList();
                 rptrPhones.DataSource = phoneNumbers;
                 rptrPhones.DataBind();
                 rcwPhone.Visible = phoneNumbers.Any();
 
-                var schedules = new ScheduleService(rockContext)
+                var schedules = new ScheduleService( rockContext )
                     .Queryable().AsNoTracking()
-                    .Where(s => s.CheckInStartOffsetMinutes.HasValue)
+                    .Where( s => s.CheckInStartOffsetMinutes.HasValue )
                     .ToList();
 
-                var scheduleIds = schedules.Select(s => s.Id).ToList();
+                var scheduleIds = schedules.Select( s => s.Id ).ToList();
 
                 int? personAliasId = person.PrimaryAliasId;
 
-                PersonAliasService personAliasService = new PersonAliasService(rockContext);
+                PersonAliasService personAliasService = new PersonAliasService( rockContext );
                 if ( !personAliasId.HasValue )
                 {
-                    personAliasId = personAliasService.GetPrimaryAliasId(person.Id);
+                    personAliasId = personAliasService.GetPrimaryAliasId( person.Id );
                 }
 
-                var attendances = new AttendanceService(rockContext)
-                    .Queryable("Occurrence.Schedule,Occurrence.Group,Occurrence.Location,AttendanceCode")
-                    .Where(a =>
-                       a.PersonAliasId.HasValue &&
-                       a.PersonAliasId == personAliasId &&
-                       a.Occurrence.ScheduleId.HasValue &&
-                       a.Occurrence.GroupId.HasValue &&
-                       a.Occurrence.LocationId.HasValue &&
-                       a.DidAttend.HasValue &&
-                       a.DidAttend.Value &&
-                       scheduleIds.Contains(a.Occurrence.ScheduleId.Value))
-                    .OrderByDescending(a => a.StartDateTime)
-                    .Take(20)
+                var attendances = new AttendanceService( rockContext )
+                    .Queryable( "Occurrence.Schedule,Occurrence.Group,Occurrence.Location,AttendanceCode" )
+                    .Where( a =>
+                        a.PersonAliasId.HasValue &&
+                        a.PersonAliasId == personAliasId &&
+                        a.Occurrence.ScheduleId.HasValue &&
+                        a.Occurrence.GroupId.HasValue &&
+                        a.Occurrence.LocationId.HasValue &&
+                        a.DidAttend.HasValue &&
+                        a.DidAttend.Value &&
+                        scheduleIds.Contains( a.Occurrence.ScheduleId.Value ) )
+                    .OrderByDescending( a => a.StartDateTime )
+                    .Take( 20 )
                     .ToList()                                                             // Run query to get recent most 20 checkins
-                    .OrderByDescending(a => a.Occurrence.OccurrenceDate)                // Then sort again by start datetime and schedule start (which is not avail to sql query )
-                    .ThenByDescending(a => a.Occurrence.Schedule.StartTimeOfDay)
+                    .OrderByDescending( a => a.Occurrence.OccurrenceDate )                // Then sort again by start datetime and schedule start (which is not avail to sql query )
+                    .ThenByDescending( a => a.Occurrence.Schedule.StartTimeOfDay )
                     .ToList()
-                    .Select(a =>
+                    .Select( a =>
                     {
-                        var checkedInByPerson = a.CheckedInByPersonAliasId.HasValue ? personAliasService.GetPerson(a.CheckedInByPersonAliasId.Value) : null;
+                        var checkedInByPerson = a.CheckedInByPersonAliasId.HasValue ? personAliasService.GetPerson( a.CheckedInByPersonAliasId.Value ) : null;
 
                         return new AttendanceInfo
                         {
@@ -689,28 +736,28 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             IsActive = a.IsCurrentlyCheckedIn,
                             Code = a.AttendanceCode != null ? a.AttendanceCode.Code : "",
                             CheckInByPersonName = checkedInByPerson != null ? checkedInByPerson.FullName : string.Empty,
-                            CheckInByPersonGuid = checkedInByPerson != null ? checkedInByPerson.Guid : (Guid?)null
+                            CheckInByPersonGuid = checkedInByPerson != null ? checkedInByPerson.Guid : ( Guid? ) null
                         };
                     }
                     ).ToList();
 
                 // Set active locations to be a link to the room in manager page
                 var qryParam = new Dictionary<string, string>();
-                qryParam.Add("Group", "");
-                qryParam.Add("Location", "");
-                foreach ( var attendance in attendances.Where(a => a.IsActive) )
+                qryParam.Add( "Group", "" );
+                qryParam.Add( "Location", "" );
+                foreach ( var attendance in attendances.Where( a => a.IsActive ) )
                 {
                     qryParam["Group"] = attendance.GroupId.ToString();
                     qryParam["Location"] = attendance.LocationId.ToString();
-                    attendance.Location = string.Format("<a href='{0}'>{1}</a>",
-                        LinkedPageUrl(AttributeKey.ManagerPage, qryParam), attendance.Location);
+                    attendance.Location = string.Format( "<a href='{0}'>{1}</a>",
+                        LinkedPageUrl( AttributeKey.ManagerPage, qryParam ), attendance.Location );
                 }
 
                 rcwCheckinHistory.Visible = attendances.Any();
 
                 // Get the index of the delete column
                 var deleteField = gHistory.Columns.OfType<Rock.Web.UI.Controls.DeleteField>().First();
-                _deleteFieldIndex = gHistory.Columns.IndexOf(deleteField);
+                _deleteFieldIndex = gHistory.Columns.IndexOf( deleteField );
 
                 gHistory.DataSource = attendances;
                 gHistory.DataBind();
@@ -722,8 +769,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private void BindAttribute( Rock.Model.Person person )
         {
-            var adultCategoryGuid = GetAttributeValue(AttributeKey.AdultAttributeCategory).AsGuidOrNull();
-            var childCategoryGuid = GetAttributeValue(AttributeKey.ChildAttributeCategory).AsGuidOrNull();
+            var adultCategoryGuid = GetAttributeValue( AttributeKey.AdultAttributeCategory ).AsGuidOrNull();
+            var childCategoryGuid = GetAttributeValue( AttributeKey.ChildAttributeCategory ).AsGuidOrNull();
             var isAdult = person.AgeClassification == AgeClassification.Adult || person.AgeClassification == AgeClassification.Unknown;
             var isChild = person.AgeClassification == AgeClassification.Child || person.AgeClassification == AgeClassification.Unknown;
 
@@ -731,14 +778,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
             pnlChildFields.Visible = isChild && childCategoryGuid.HasValue;
             if ( isAdult && adultCategoryGuid.HasValue )
             {
-                avcAdultAttributes.IncludedCategoryNames = new string[] { CategoryCache.Get(adultCategoryGuid.Value).Name };
-                avcAdultAttributes.AddDisplayControls(person);
+                avcAdultAttributes.IncludedCategoryNames = new string[] { CategoryCache.Get( adultCategoryGuid.Value ).Name };
+                avcAdultAttributes.AddDisplayControls( person );
             }
 
             if ( isChild && childCategoryGuid.HasValue )
             {
-                avcChildAttributes.IncludedCategoryNames = new string[] { CategoryCache.Get(childCategoryGuid.Value).Name };
-                avcChildAttributes.AddDisplayControls(person);
+                avcChildAttributes.IncludedCategoryNames = new string[] { CategoryCache.Get( childCategoryGuid.Value ).Name };
+                avcChildAttributes.AddDisplayControls( person );
             }
         }
 
