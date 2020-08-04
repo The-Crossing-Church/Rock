@@ -112,9 +112,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     var sunday = ServiceTypes.FirstOrDefault(dv => dv.Value == "Sunday Morning");
                     var svcType = Metric.MetricValuePartitions.FirstOrDefault(mvp => mvp.MetricPartition.Label == "Service Type");
                     var location = Metric.MetricValuePartitions.FirstOrDefault(mvp => mvp.MetricPartition.Label == "Location");
+                    var loc = new LocationService(new RockContext()).Get(location.EntityId.Value);
+                    this.Location.SetValue(loc);
+                    this.Location.DataBind();
                     if ( svcType.EntityId == sunday.Id ) {
                         OpenPanel(new BootstrapButton(){ ID = "btnSunday" }, new EventArgs(){});
-                        this.Time.SelectedValue = ServiceTimes.FirstOrDefault(st => st.Name == Metric.MetricValueDateTime.Value.ToString("h:mm")).Id.ToString();
+                        if ( loc.Name == "Online" )
+                        {
+                            this.Time.SelectedValue = ServiceTimes.First().Id.ToString();
+                        }
+                        else {
+                            this.Time.SelectedValue = ServiceTimes.FirstOrDefault(st => st.Name == Metric.MetricValueDateTime.Value.ToString("h:mm")).Id.ToString();
+                        }
                     }
                     else
                     {
@@ -125,8 +134,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     this.OccurrenceDate.SelectedDate = Metric.MetricValueDateTime;
                     this.Attendance.Text = Metric.YValue.ToString().Split('.')[0];
                     this.Attendance.DataBind(); 
-                    var loc = new LocationService(new RockContext()).Get(location.EntityId.Value);
-                    this.Location.SetValue(loc);
                     this.Notes.Text = Metric.Note; 
                 }
             } 
