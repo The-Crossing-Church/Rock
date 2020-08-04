@@ -416,7 +416,7 @@ namespace RockWeb.Blocks.Event
                     if ( field.Attribute != null )
                     {
                         var attribute = field.Attribute;
-                        var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                        var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                         if ( filterControl != null )
                         {
                             try
@@ -1138,7 +1138,7 @@ namespace RockWeb.Blocks.Event
                         {
                             foreach ( var attribute in registrantAttributes )
                             {
-                                var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                                var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                                 qry = attribute.FieldType.Field.ApplyAttributeQueryFilter( qry, filterControl, attribute, registrationRegistrantService, Rock.Reporting.FilterMode.SimpleFilter );
                             }
                         }
@@ -1160,7 +1160,7 @@ namespace RockWeb.Blocks.Event
 
                             foreach ( var attribute in personAttributes )
                             {
-                                var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                                var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                                 personQry = attribute.FieldType.Field.ApplyAttributeQueryFilter( personQry, filterControl, attribute, personService, Rock.Reporting.FilterMode.SimpleFilter );
                             }
 
@@ -1184,7 +1184,7 @@ namespace RockWeb.Blocks.Event
 
                             foreach ( var attribute in groupMemberAttributes )
                             {
-                                var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                                var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                                 groupMemberQry = attribute.FieldType.Field.ApplyAttributeQueryFilter( groupMemberQry, filterControl, attribute, groupMemberService, Rock.Reporting.FilterMode.SimpleFilter );
                             }
 
