@@ -117,10 +117,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             {
                 var query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, contacts_with_email[i].Email, contacts_with_email[i].Phone); 
                 var person = new PersonService(new RockContext()).FindPerson(query, false);
+
+                WriteToLog($"{Environment.NewLine}Query:{query.ToJson()}{Environment.NewLine}Person:{(person != null ? person.Id.ToString() : "Null")}{Environment.NewLine}");
+                
                 //For Testing
-                //if ( contacts_with_email[i].Email == "jim@thecrossingchurch.com" || contacts_with_email[i].Email == "jimbeatyjr@gmail.com" )
+                //if ( contacts_with_email[i].Email == "nzsimonsays@gmail.com"  )
                 //{
-                //    query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "jimbeaty@safety.netz", contacts_with_email[i].Phone);
+                //    query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "nathansimon@safety.netz", contacts_with_email[i].Phone);
                 //    person = new PersonService(new RockContext()).FindPerson(query, false);
                 //}
                 //if ( contacts_with_email[i].Email == "cody.melton@thecrossingchurch.com")
@@ -378,20 +381,23 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 {
                                     var jsonResponse = reader.ReadToEnd();
                                     Console.WriteLine($"Hubspot: {jsonResponse}");
-                                    System.IO.File.AppendAllText("hubspot_error.txt", $"___________________________\nCurennt Id: {current_id}\nMessage: {jsonResponse}\n");
+                                    HttpContext context2 = HttpContext.Current;
+                                    ExceptionLogService.LogException(new Exception($"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Response:{jsonResponse} "), context2);
                                 }
                             }
                         }
                         catch ( Exception e )
                         {
                             Console.WriteLine($"Other: {e.Message}");
-                            System.IO.File.AppendAllText("hubspot_error.txt", $"___________________________\nCurennt Id: {current_id}\nMessage: {e.Message}\nStack: {e.StackTrace}\n");
+                            HttpContext context2 = HttpContext.Current;
+                            ExceptionLogService.LogException(e, context2);
                         }
 
                     }
                     catch ( Exception err )
                     {
-                        System.IO.File.AppendAllText("hubspot_error.txt", $"___________________________\nCurennt Id: {current_id}\nMessage: {err.Message}\nStack: {err.StackTrace}\n");
+                        HttpContext context2 = HttpContext.Current;
+                        ExceptionLogService.LogException(err, context2);
                     }
                 }
             }
@@ -424,6 +430,36 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
             }
             return inConnections;
+        }
+
+        private void WriteToLog( string message )
+        {
+            string logFile = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Logs/HubSpotLog.txt");
+
+            // Write to the log, but if an ioexception occurs wait a couple seconds and then try again (up to 3 times).
+            var maxRetry = 3;
+            for ( int retry = 0; retry < maxRetry; retry++ )
+            {
+                try
+                {
+                    using ( System.IO.FileStream fs = new System.IO.FileStream(logFile, System.IO.FileMode.Append, System.IO.FileAccess.Write) )
+                    {
+                        using ( System.IO.StreamWriter sw = new System.IO.StreamWriter(fs) )
+                        {
+                            sw.WriteLine(string.Format("{0} - {1}", RockDateTime.Now.ToString(), message));
+                            return;
+                        }
+                    }
+                }
+                catch ( System.IO.IOException )
+                {
+                    if ( retry < maxRetry - 1 )
+                    {
+                        System.Threading.Tasks.Task.Delay(2000).Wait();
+                    }
+                }
+            }
+
         }
 
     }

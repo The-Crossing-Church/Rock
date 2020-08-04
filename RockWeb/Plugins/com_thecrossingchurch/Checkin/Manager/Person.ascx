@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Person.ascx.cs" Inherits="RockWeb.Blocks.CheckIn.Manager.Person" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Person.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager.Person" %>
 
 <script type="text/javascript">
     Sys.Application.add_load(function () {
@@ -13,7 +13,14 @@
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
-
+        <!-- Custom Reprint Buttons -->
+        <div class="row margin-b-sm">
+            <div class="col-xs-12">
+                <Rock:BootstrapButton runat="server" ID="btnReprintDeskA" CssClass="btn btn-info" OnClick="mdReprintLabelsCustom_Click">Reprint Desk A</Rock:BootstrapButton>
+                <Rock:BootstrapButton runat="server" ID="btnReprintDeskB" CssClass="btn btn-success" OnClick="mdReprintLabelsCustom_Click">Reprint Desk B</Rock:BootstrapButton>
+                <Rock:BootstrapButton runat="server" ID="btnReprintFoyer3" CssClass="btn btn-warning" OnClick="mdReprintLabelsCustom_Click">Reprint Foyer 3</Rock:BootstrapButton>
+            </div>
+        </div>
         <div class="row margin-b-sm">
             <div class="col-sm-3 col-md-2 xs-text-center">
                 <asp:Literal ID="lPhoto" runat="server" />
