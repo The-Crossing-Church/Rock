@@ -1,17 +1,14 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Person.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager.Person" %>
-<%@ Register Src="~/Plugins/com_thecrossingchurch/Checkin/MultiPersonSelect.ascx" TagPrefix="uc1" TagName="MultiPersonSelect" %>
-
 
 <script type="text/javascript">
     Sys.Application.add_load(function () {
         $(".photo a").fluidbox();
-
         $('.js-cancel-checkin').click(function (event) {
             event.stopImmediatePropagation();
             var personName = $('H4.js-checkin-person-name').first().text();
             return Rock.dialogs.confirmDelete(event, 'Checkin for ' + personName);
         });
-    }); <uc1: MultiPersonSelect runat="server" id="MultiPersonSelect" />
+    });
 </script>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
@@ -148,14 +145,12 @@
             function setSmsSendDisabled(boolean) {
                 $('.js-btn-send').attr('disabled', boolean);
             }
-
             Sys.Application.add_load(function () {
                 setSmsSendDisabled(true);
                 $('.js-sms-message').on('input', function (e) {
                     var tbValue = $(this).val();
                     setSmsSendDisabled(!tbValue.trim());
                 });
-
                 $('.js-btn-sms').on('click', function (e) {
                     setSmsSendDisabled(true);
                 });
