@@ -41,7 +41,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
     /// Block used to display person and details about recent check-ins
     /// </summary>
     [DisplayName( "Person Profile" )]
-    [Category( "com_thecrossingchurch > Check-in > Manager" )]
+    [Category( "com_thecrossingchurch > Check-in Manager" )]
     [Description( "Displays person and details about recent check-ins." )]
 
     [LinkedPage(
