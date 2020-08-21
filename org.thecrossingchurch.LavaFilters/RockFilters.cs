@@ -9,6 +9,9 @@ using System.IO;
 using Rock.Utility;
 using Newtonsoft.Json;
 using System.Configuration;
+using Rock.Data;
+using System.Collections.ObjectModel;
+using System.Collections;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -24,7 +27,7 @@ namespace com_thecrossingchurch.LavaFilters
         /// <exception cref="System.NotImplementedException"></exception>
         public void OnStartup()
         {
-            Template.RegisterFilter(typeof(RockFilters));
+            Template.RegisterFilter( typeof( RockFilters ) );
         }
     }
 
@@ -33,40 +36,66 @@ namespace com_thecrossingchurch.LavaFilters
         /// <summary>
         /// Generate QR Code for URL.
         /// </summary>
-        /// <param name="context">The context.</param>
         /// <param name="input">The input.</param>
         /// <param name="page">The page number.</param>
         /// <param name="query">The query string, = will be added to end before the input.</param>
         /// <returns></returns>
-        public static string QRCodeFromURL(object input, string page, string query)
+        public static string QRCodeFromURL( object input, string page, string query )
         {
-            if (input == null || page == null || query == null)
+            if ( input == null || page == null || query == null )
             {
                 return null;
             }
             QREncoder Encoder = new QREncoder();
             string host = ConfigurationManager.AppSettings["RockBaseUrl"];
             string url = host + "/page/" + page + "?" + query + "=" + input.ToString();
-            var qrCode = Encoder.Encode(ErrorCorrection.M, url);
-            return JsonConvert.SerializeObject(qrCode);
+            var qrCode = Encoder.Encode( ErrorCorrection.M, url );
+            return JsonConvert.SerializeObject( qrCode );
         }
 
         /// <summary>
         /// Generate QR Code from Person.
         /// </summary>
-        /// <param name="context">The context.</param>
         /// <param name="input">The input to turn into a qr.</param>
         /// <returns></returns>
-        public static string QRCodeFromString(object input)
+        public static string QRCodeFromString( object input )
         {
-            if (input == null)
+            if ( input == null )
             {
                 return null;
             }
             QREncoder Encoder = new QREncoder();
             string url = input.ToString();
-            var qrCode = Encoder.Encode(ErrorCorrection.M, url);
-            return JsonConvert.SerializeObject(qrCode);
+            var qrCode = Encoder.Encode( ErrorCorrection.M, url );
+            return JsonConvert.SerializeObject( qrCode );
+        }
+
+        /// <summary>
+        /// Array Pop Functionality.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns></returns>
+        public static dynamic Pop( object input )
+        {
+            var type = input.GetType();
+            if ( input.GetType() == typeof( string ) )
+            {
+                List<string> list = input.ToString().Split( ',' ).ToList();
+                list.RemoveAt( 0 );
+                return string.Join( ",", list );
+            }
+            else if ( type.FullName.Contains( "Collection" ) )
+            {
+                Type listType = typeof( List<> ).MakeGenericType( new[] { type } );
+                IList list = (IList)Activator.CreateInstance( listType );
+                list = (IList)input;
+                list.RemoveAt( 0 );
+                return list;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string or Collection" );
+            }
         }
     }
 }
