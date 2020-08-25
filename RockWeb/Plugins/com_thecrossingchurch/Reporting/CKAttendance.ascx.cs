@@ -307,7 +307,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 DateTime.Compare(start, x.StartDateTime) <= 0 &&
                 DateTime.Compare(end, x.StartDateTime) >= 0 &&
                 svcTimes.Contains(x.Occurrence.ScheduleId.Value) &&
-                (x.Occurrence.Group.GroupTypeId == 129 || x.Occurrence.Group.GroupTypeId == 128 || x.Occurrence.Group.GroupTypeId == 122) //LO, PS and Elem Areas Only
+                (x.Occurrence.Group.GroupTypeId == 129 || x.Occurrence.Group.GroupTypeId == 128 || x.Occurrence.Group.GroupTypeId == 122) && //LO, PS and Elem Areas Only
+                x.DidAttend != false
             );
             inUseClassrooms = new List<ClassesBySchedule>();
             for(var i=0; i<svcTimes.Count(); i++)
