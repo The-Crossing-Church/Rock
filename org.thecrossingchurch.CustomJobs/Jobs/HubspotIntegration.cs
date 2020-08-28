@@ -253,7 +253,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     }
                                 }
                             }
-                            properties.Add(new HubspotPropertyUpdate() { property = child_ages_prop.name, value = agegroups.Substring(0, agegroups.Length - 1) });
+                            if(agegroups.Length > 0)
+                            {
+                                properties.Add(new HubspotPropertyUpdate() { property = child_ages_prop.name, value = agegroups.Substring(0, agegroups.Length - 1) });
+                            }
                         }
 
                         if ( person.Members != null && person.Members.Count() > 0 )
@@ -271,7 +274,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 term = "summer";
                             }
                             //All current memberships for this year
-                            var memberships = person.Members.Where(m => ( m.Group.Name.Contains(today.ToString("yyyy")) ||
+                            var memberships = person.Members.Where(m => m.Group != null && ( m.Group.Name.Contains(today.ToString("yyyy")) ||
                                 m.Group.Name.Contains($"{today.AddYears(-1).ToString("yyyy")}-{today.ToString("yy")}") )).ToList();
                             //Where the group name has Fall/Winter/Summer
                             var current_serving = memberships.Where(m => m.Group.Name.ToLower().Contains(term)).ToList();
@@ -329,7 +332,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             var grps = "";
                             for ( var idx = 0; idx < person.Members.Count(); idx++ )
                             {
-                                grps += $"{person.Members.ToList()[idx].Group.Name}, ";
+                                grps += person.Members.ToList()[idx].Group != null ? $"{person.Members.ToList()[idx].Group.Name}, " : "";
                             }
                             grps = grps.Substring(0, grps.Length - 2);
                             properties.Add(new HubspotPropertyUpdate() { property = group_prop.name, value = grps });
@@ -351,23 +354,23 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         //Update the Hubspot Contact
                         try
                         {
-                            var webrequest = WebRequest.Create(url);
+                            var webrequest = WebRequest.Create( url );
                             webrequest.Method = "POST";
                             webrequest.ContentType = "application/json";
                             using ( Stream requestStream = webrequest.GetRequestStream() )
                             {
-                                var json = $"{{\"properties\": {JsonConvert.SerializeObject(properties)} }}";
-                                byte[] bytes = Encoding.ASCII.GetBytes(json);
-                                requestStream.Write(bytes, 0, bytes.Length);
+                                var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                                byte[] bytes = Encoding.ASCII.GetBytes( json );
+                                requestStream.Write( bytes, 0, bytes.Length );
                             }
                             using ( WebResponse webResponse = webrequest.GetResponse() )
                             {
                                 using ( Stream responseStream = webResponse.GetResponseStream() )
                                 {
-                                    using ( StreamReader reader = new StreamReader(responseStream) )
+                                    using ( StreamReader reader = new StreamReader( responseStream ) )
                                     {
                                         var jsonResponse = reader.ReadToEnd();
-                                        Console.WriteLine(jsonResponse);
+                                        Console.WriteLine( jsonResponse );
                                     }
                                 }
                             }
