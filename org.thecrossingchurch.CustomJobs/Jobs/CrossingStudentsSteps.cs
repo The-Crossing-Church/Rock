@@ -39,6 +39,9 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
     [TextField( "Step Type: Serving Id", "The Id of the Step Type for Serving", true, "", "", 0 )]
     [TextField( "Step Program Id", "The Id of the Crossing Students Step Program", true, "", "", 0 )]
     [DateField( "Override Date", "Date to use as 'Today' to create data for previous time frames", false )]
+    [BooleanField( "Run Serving", "Whether or not to run the serving portion of the job", false )]
+    [BooleanField( "Run Small Group Attendance", "Whether or not to run the small group attendance portion of the job", false )]
+    [BooleanField( "Run Sunday Attendance", "Whether or not to run the sunday attendance portion of the job", false )]
     [DisallowConcurrentExecution]
     public class CrossingStudentsSteps : IJob
     {
@@ -82,6 +85,9 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             int servingStep = Int32.Parse( dataMap.GetString( "StepType:ServingId" ) );
             int stepProgram = Int32.Parse( dataMap.GetString( "StepProgramId" ) );
             string overrideDt = dataMap.GetString( "OverrideDate" );
+            bool runServing = dataMap.GetBoolean( "RunServing" );
+            bool runSGAtt = dataMap.GetBoolean( "RunSmallGroupAttendance" );
+            bool runSunAtt = dataMap.GetBoolean( "RunSundayAttendance" );
             if ( !String.IsNullOrEmpty( overrideDt ) )
             {
                 _overrideDate = DateTime.Parse( overrideDt );
@@ -98,17 +104,32 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             _attributesvc = new AttributeService( _context );
             _attendanceoccsvc = new AttendanceOccurrenceService( _context );
             _attendancesvc = new AttendanceService( _context );
-            List<Person> students = personsvc.Queryable().ToList().Where( p => p.GradeOffset >= 0 && p.GradeOffset <= 6 && p.RecordStatusValueId != 4 ).ToList();
+            List<int> connStatuses = new DefinedValueService( _context ).Queryable().Where( dv => dv.DefinedTypeId == 4 && (
+                    dv.Value == "Student Member" ||
+                    dv.Value == "Member" ||
+                    dv.Value == "Attendee"
+               ) ).Select( dv => dv.Id ).ToList();
+            List<Person> students = personsvc.Queryable().ToList().Where( p => p.RecordStatusValueId == 3 && p.GradeOffset >= 0 && p.GradeOffset <= 6 && connStatuses.Contains( p.ConnectionStatusValueId.Value ) ).ToList();
 
-            //Check for Students No Longer Serving
-            NoLongerServing( servingStep );
-            //Check if Actively in Serving Group
-            StartedServing( students, servingStep, servingArea, stepProgram );
+            //Run the services requested
+            if ( runServing )
+            {
+                //Check for Students No Longer Serving
+                NoLongerServing( servingStep );
+                //Check if Actively in Serving Group
+                StartedServing( students, servingStep, servingArea, stepProgram );
+            }
 
-            //Check for Small Group Attendance
-            SmallGroupAttendance( students, smallgroupStep, smallGroup, stepProgram );
-            //Check for Sunday Attendance
-            SundayAttendance( students, sundayStep, stepProgram );
+            if ( runSGAtt )
+            {
+                //Check for Small Group Attendance
+                SmallGroupAttendance( students, smallgroupStep, smallGroup, stepProgram );
+            }
+            if ( runSunAtt )
+            {
+                //Check for Sunday Attendance
+                SundayAttendance( students, sundayStep, stepProgram );
+            }
         }
 
         /// <summary>
@@ -298,9 +319,6 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                     else if ( forGroup.Count() == 1 )
                     {
                         //Don't actually need to do anything here
-                        //var step = forGroup[0];
-                        //step.EndDateTime = null;
-                        //_context.SaveChanges();
                     }
                     else
                     {
@@ -361,10 +379,10 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                 start = new DateTime( today.Year, 1, 1 );
                 end = today;
             }
-            else if(today.Month == 1)
+            else if ( today.Month == 1 )
             {
                 start = new DateTime( today.Year - 1, 7, 1 );
-                end = new DateTime( today.Year - 1, 12, 31 ); 
+                end = new DateTime( today.Year - 1, 12, 31 );
             }
             else
             {
@@ -375,7 +393,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             //Crossing Students Check-in Groups
             var checkinGroups = _groupsvc.Queryable().Where( g => g.GroupTypeId == 79 || g.GroupTypeId == 80 ).Select( g => g.Id ).ToList(); //Middle School and High School 
             //Get Attendance Occurences for Sunday mornings between the start and end ranges
-            var occurrence = _attendanceoccsvc.Queryable().Where( ao => checkinGroups.Contains( ao.GroupId.Value ) && DateTime.Compare( start, ao.OccurrenceDate ) <= 0 && DateTime.Compare( end, ao.OccurrenceDate ) >= 0);
+            var occurrence = _attendanceoccsvc.Queryable().Where( ao => checkinGroups.Contains( ao.GroupId.Value ) && DateTime.Compare( start, ao.OccurrenceDate ) <= 0 && DateTime.Compare( end, ao.OccurrenceDate ) >= 0 );
             for ( var i = 0; i < students.Count(); i++ )
             {
                 var student = students[i];
@@ -386,20 +404,20 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                         ( a, ao ) => a
                     ).ToList();
                 //Get occurences that student could check-in to based off their attendance
-                if( studentAtt.Count() > 0 )
+                if ( studentAtt.Count() > 0 )
                 {
                     var groups = studentAtt.Select( a => a.Occurrence.GroupId ).Distinct();
-                    var studentOcc = occurrence.Where( ao => groups.Contains( ao.GroupId ) ).Select(ao => ao.OccurrenceDate).Distinct().ToList().Where(d => d.DayOfWeek == DayOfWeek.Sunday); 
-                    if( studentAtt.Count() > ( studentOcc.Count() / 2))
+                    var studentOcc = occurrence.Where( ao => groups.Contains( ao.GroupId ) ).Select( ao => ao.OccurrenceDate ).Distinct().ToList().Where( d => d.DayOfWeek == DayOfWeek.Sunday );
+                    if ( studentAtt.Count() > ( studentOcc.Count() / 2 ) )
                     {
                         //Student attended at least 50% of Sunday classes this semester
                         //Steps for this student in the correct date range
                         var steps = _stepsvc.Queryable().Where( s => s.StepTypeId == sundayStep && s.PersonAlias.PersonId == studentId && DateTime.Compare( start, s.StartDateTime.Value ) <= 0 && DateTime.Compare( end, s.StartDateTime.Value ) >= 0 ).ToList();
-                        if(steps.Count() > 1)
+                        if ( steps.Count() > 1 )
                         {
                             //Figure out what to do because there should only be one :(
                         }
-                        else if(steps.Count() == 0)
+                        else if ( steps.Count() == 0 )
                         {
                             //Add a step for this student 
                             var status = _stepstatussvc.Queryable().FirstOrDefault( ss => ss.StepProgramId == stepProgram && ss.Order == 0 );
@@ -421,14 +439,14 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                         //Student did not attend at least 50% of Sunday classes
                         //Steps for this student in the correct date range
                         var steps = _stepsvc.Queryable().Where( s => s.StepTypeId == sundayStep && s.PersonAlias.PersonId == studentId && DateTime.Compare( start, s.StartDateTime.Value ) <= 0 && DateTime.Compare( end, s.StartDateTime.Value ) >= 0 ).ToList();
-                        for(var k=0; k<steps.Count(); k++ )
+                        for ( var k = 0; k < steps.Count(); k++ )
                         {
                             _context.Steps.Remove( steps[k] );
                         }
                     }
                 }
             }
-            _context.SaveChanges(); 
+            _context.SaveChanges();
         }
     }
 }
