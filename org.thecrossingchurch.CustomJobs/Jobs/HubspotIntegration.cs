@@ -119,18 +119,42 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 var person = new PersonService(new RockContext()).FindPerson(query, false);
 
                 WriteToLog($"{Environment.NewLine}Query:{query.ToJson()}{Environment.NewLine}Person:{(person != null ? person.Id.ToString() : "Null")}{Environment.NewLine}");
-                
+
                 //For Testing
-                //if ( contacts_with_email[i].Email == "nzsimonsays@gmail.com"  )
+                //if ( contacts_with_email[i].Email == "nzsimonsays@gmail.com" )
                 //{
-                //    query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "nathansimon@safety.netz", contacts_with_email[i].Phone);
-                //    person = new PersonService(new RockContext()).FindPerson(query, false);
+                //    query = new PersonService.PersonMatchQuery( contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "nathansimon@safety.netz", contacts_with_email[i].Phone );
+                //    //person = new PersonService( new RockContext() ).FindPerson( query, false );
                 //}
                 //if ( contacts_with_email[i].Email == "cody.melton@thecrossingchurch.com")
                 //{
                 //    query = new PersonService.PersonMatchQuery(contacts_with_email[i].FirstName, contacts_with_email[i].LastName, "codymelton@safety.netz", contacts_with_email[i].Phone);
                 //    person = new PersonService(new RockContext()).FindPerson(query, false);
                 //}
+                //Attempt to match on email and one other piece of info 
+                if ( person == null )
+                {
+                    string email = contacts_with_email[i].Email.ToLower(); 
+                    var matches = new PersonService( new RockContext() ).Queryable().Where( p => p.Email.ToLower() == email ).ToList();
+                    if(matches.Count()== 1)
+                    {
+                        //1:1 Email match so we want to check other information, start by checking for a name match 
+                        if(matches.First().NickName.ToLower() == contacts_with_email[i].FirstName.ToLower() ||
+                            matches.First().FirstName.ToLower() == contacts_with_email[i].FirstName.ToLower() ||
+                            matches.First().LastName.ToLower() == contacts_with_email[i].LastName.ToLower()  )
+                        {
+                            person = matches.First(); 
+                        }
+                        else if (! String.IsNullOrEmpty(contacts_with_email[i].Phone ))
+                        {
+                            //Try looking for a phone number
+                            if(matches.First().PhoneNumbers.Select(p => p.Number ).Contains( contacts_with_email[i].Phone ) )
+                            {
+                                person = matches.First(); 
+                            }
+                        }
+                    }
+                }
                 //Schedule HubSpot update if 1:1 match
                 if ( person != null )
                 {
