@@ -88,6 +88,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
         DefaultBooleanValue = false,
         Category = "Manager Settings",
         Order = 5 )]
+    [TextField("Desk A IP", null, true, "10.5.60.102", Order = 6 )]
+    [TextField("Desk B IP", null, true, "10.5.60.119", Order = 7 )]
+    [TextField("Foyer IP", null, true, "10.5.60.112", Order = 8 )]
 
     public partial class Person : Rock.Web.UI.RockBlock
     {
@@ -495,15 +498,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
             string printer = "";
             if ( btn.ID == "btnReprintDeskA" )
             {
-                printer = "10.5.60.102";
+                printer = GetAttributeValue( "DeskAIP" );
             }
             else if ( btn.ID == "btnReprintDeskB" )
             {
-                printer = "10.5.60.119";
+                printer = GetAttributeValue( "DeskBIP" );
             }
             else if ( btn.ID == "btnReprintFoyer3" )
             {
-                printer = "10.5.60.112";
+                printer = GetAttributeValue( "FoyerIP" );
             }
 
             // Get the person Id from the Guid
