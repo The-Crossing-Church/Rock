@@ -151,9 +151,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     if ( matches.Count() == 1 )
                     {
                         //1:1 Email match so we want to check other information, start by checking for a name match 
-                        if ( matches.First().NickName.ToLower() == contacts_with_email[i].FirstName.ToLower() ||
-                            matches.First().FirstName.ToLower() == contacts_with_email[i].FirstName.ToLower() ||
-                            matches.First().LastName.ToLower() == contacts_with_email[i].LastName.ToLower() )
+                        if ( CustomEquals( matches.First().NickName, contacts_with_email[i].FirstName ) ||
+                            CustomEquals( matches.First().FirstName, contacts_with_email[i].FirstName ) ||
+                            CustomEquals( matches.First().LastName, contacts_with_email[i].LastName ) )
                         {
                             person = matches.First();
                         }
@@ -580,7 +580,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 worksheet.Cells[row, 2].Value += " (" + person.FirstName + ")";
             }
             //Color cells if they match
-            if ( CustomEquals(contact.FirstName,person.FirstName) || CustomEquals( contact.FirstName, person.NickName) )
+            if ( CustomEquals( contact.FirstName, person.FirstName ) || CustomEquals( contact.FirstName, person.NickName ) )
             {
                 worksheet = ColorCell( worksheet, row, 1 );
                 worksheet = ColorCell( worksheet, row, 2 );
@@ -590,7 +590,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.Cells[row, 3].Value = contact.LastName;
             worksheet.Cells[row, 4].Value = person.LastName;
             //Color cells if they match 
-            if ( CustomEquals(contact.LastName, person.LastName) )
+            if ( CustomEquals( contact.LastName, person.LastName ) )
             {
                 worksheet = ColorCell( worksheet, row, 3 );
                 worksheet = ColorCell( worksheet, row, 4 );
@@ -600,7 +600,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.Cells[row, 5].Value = contact.Email;
             worksheet.Cells[row, 6].Value = person.Email;
             //Color cells if they match
-            if ( CustomEquals(contact.Email, person.Email) )
+            if ( CustomEquals( contact.Email, person.Email ) )
             {
                 worksheet = ColorCell( worksheet, row, 5 );
                 worksheet = ColorCell( worksheet, row, 6 );
@@ -611,7 +611,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.Cells[row, 7].Value = contact.Phone;
             worksheet.Cells[row, 8].Value = num != null ? num.Number : "No Matching Number";
             //Color cells if they match
-            if ( num != null && CustomEquals(contact.Phone, num.Number) )
+            if ( num != null && CustomEquals( contact.Phone, num.Number ) )
             {
                 worksheet = ColorCell( worksheet, row, 7 );
                 worksheet = ColorCell( worksheet, row, 8 );
