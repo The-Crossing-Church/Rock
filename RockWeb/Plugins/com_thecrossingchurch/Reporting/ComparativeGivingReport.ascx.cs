@@ -146,14 +146,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             join gt in groupedTransactions on glyt.Key equals gt.Key into temp
                             from gt in temp.DefaultIfEmpty()
                             select new { PersonId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt };
-            //var joinedData = groupedTransactions.Join( groupedLyTransactions,
-            //        gt => gt.Key,
-            //        glyt => glyt.Key,
-            //        ( gt, glyt ) => new { PersonId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt }
-            //    ).ToList();
-            var joinedData = leftJoin.Union( rightJoin ).ToList(); 
-            List<DonorData> donorData = new List<DonorData>(); 
-            for(var i=0; i<joinedData.Count(); i++ )
+            var joinedData = leftJoin.Union( rightJoin ).ToList();
+            List<DonorData> donorData = new List<DonorData>();
+            for ( var i = 0; i < joinedData.Count(); i++ )
             {
                 //Create DonorData
                 Person p = new PersonService( context ).Get( joinedData[i].PersonId );
@@ -165,25 +160,32 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 };
                 d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) ) : 0;
                 d.NumberOfGifts = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Count() : 0;
-                d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round((d.AmountGiven / d.NumberOfGifts), 2) : 0;
+                d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round( ( d.AmountGiven / d.NumberOfGifts ), 2 ) : 0;
                 var prevAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) ) : 0;
                 d.PreviousNumberOfGifts = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Count() : 0;
-                d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round((prevAmountGiven / d.PreviousNumberOfGifts.Value), 2) : 0;
+                d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( ( prevAmountGiven / d.PreviousNumberOfGifts.Value ), 2 ) : 0;
                 d.AmountChange = d.AmountGiven - prevAmountGiven;
                 d.Source = joinedData[i].CurrentTransactions != null ? string.Join( ",", joinedData[i].CurrentTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : "";
                 d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
-                var allTransactions = new FinancialTransactionService( context ).Queryable().Where( ft => ft.AuthorizedPersonAlias.PersonId == p.Id ).OrderBy(ft => ft.TransactionDateTime);
+                d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
+                d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
+                var allTransactions = new FinancialTransactionService( context ).Queryable().Where( ft => ft.AuthorizedPersonAlias.PersonId == p.Id ).OrderBy( ft => ft.TransactionDateTime );
+                //If Source is empty for Current Transactions, Try Previous Transactions
+                if ( String.IsNullOrEmpty( d.Source ) )
+                {
+                    d.Source = joinedData[i].PreviousTransactions != null ? string.Join( ",", joinedData[i].PreviousTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : string.Join( ",", allTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() );
+                }
                 d.FirstGiftEver = allTransactions.First().TransactionDateTime;
                 //Determine Type of Donor
-                if(DateTime.Compare(d.FirstGiftEver.Value, start.Value) < 0)
+                if ( DateTime.Compare( d.FirstGiftEver.Value, start.Value ) < 0 )
                 {
                     //They have donated before this timeframe 
                     d.DonorType = "Existing";
                     var currentTransactions = allTransactions.Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 );
-                    if(currentTransactions.Count() == 0)
+                    if ( currentTransactions.Count() == 0 )
                     {
                         //They have donated previously but not in this time frame 
-                        d.DonorType = "Lapse"; 
+                        d.DonorType = "Lapse";
                     }
                 }
                 else
@@ -193,13 +195,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 }
                 donorData.Add( d );
             }
-            if(grdGiving.SortProperty != null )
+            if ( grdGiving.SortProperty != null )
             {
                 donorData = donorData.AsQueryable().Sort( grdGiving.SortProperty ).ToList();
             }
             else
             {
-                donorData = donorData.AsQueryable().OrderBy( d => d.Donor.LastName).ThenBy(d => d.Donor.NickName ).ToList();
+                donorData = donorData.AsQueryable().OrderBy( d => d.Donor.LastName ).ThenBy( d => d.Donor.NickName ).ToList();
             }
             grdGiving.DataSource = donorData;
             grdGiving.DataBind();
@@ -222,6 +224,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public string GivingZone { get; set; }
             public string DonorType { get; set; }
             public string GiverType { get; set; }
+            public string Average { get; set; }
+            public string StdDev { get; set; }
         }
     }
 

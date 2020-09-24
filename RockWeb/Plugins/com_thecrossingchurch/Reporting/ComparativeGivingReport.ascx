@@ -42,7 +42,9 @@
                 <Rock:DateField HeaderText="First Gift" DataField="FirstGiftEver" SortExpression="FirstGiftEver" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Giving Zone" DataField="GivingZone" SortExpression="GivingZone" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Type of Donor" DataField="DonorType" SortExpression="DonorType" ExcelExportBehavior="AlwaysInclude" />
-                <Rock:RockBoundField HeaderText="Type of Giver" DataField="GiverType" SortExpression="GiverType" ExcelExportBehavior="AlwaysInclude" />
+                <%--<Rock:RockBoundField HeaderText="Type of Giver" DataField="GiverType" SortExpression="GiverType" ExcelExportBehavior="AlwaysInclude" />--%>
+                <Rock:RockBoundField HeaderText="Average Days Between Gifts" DataField="Average" SortExpression="Average" ExcelExportBehavior="AlwaysInclude" />
+                <Rock:RockBoundField HeaderText="Standard Deviation From Average" DataField="StdDev" SortExpression="StdDev" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Source" DataField="Source" SortExpression="Source" ExcelExportBehavior="AlwaysInclude" />
             </Columns>
         </Rock:Grid>
