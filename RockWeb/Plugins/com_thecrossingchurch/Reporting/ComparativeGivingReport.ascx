@@ -3,16 +3,17 @@
     <ContentTemplate>
         <Rock:Grid ID="grdGiving" runat="server" AllowSorting="true">
             <Columns>
-                <Rock:RockTemplateField HeaderText="Donor" SortExpression="Donor.LastName, Donor.NickName" ExcelExportBehavior="NeverInclude">
+                <%--<Rock:RockTemplateField HeaderText="Donor" SortExpression="Donor.LastName, Donor.NickName" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>
                         <asp:Label ID="lblLastName" runat="server"
                             Text='<%# Bind("Donor.LastName") %>'></asp:Label>, 
                         <asp:Label ID="lblNickName" runat="server"
                             Text='<%# Bind("Donor.NickName") %>'></asp:Label>
                     </ItemTemplate>
-                </Rock:RockTemplateField>
-                <Rock:RockBoundField HeaderText="First Name" DataField="Donor.NickName" ExcelExportBehavior="AlwaysInclude" Visible="false" />
-                <Rock:RockBoundField HeaderText="Last Name" DataField="Donor.LastName" ExcelExportBehavior="AlwaysInclude" Visible="false" />
+                </Rock:RockTemplateField>--%>
+               <%-- <Rock:RockBoundField HeaderText="First Name" DataField="Donor.NickName" ExcelExportBehavior="AlwaysInclude" Visible="false" />
+                <Rock:RockBoundField HeaderText="Last Name" DataField="Donor.LastName" ExcelExportBehavior="AlwaysInclude" Visible="false" />--%>
+                <Rock:RockBoundField HeaderText="Household" DataField="HouseholdName" SortExpression="HouseholdName" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockTemplateField HeaderText="Amount Given" SortExpression="AmountGiven" ExcelExportBehavior="AlwaysInclude">
                     <ItemTemplate>
                         $<asp:Label ID="lblAmtGiven" runat="server"

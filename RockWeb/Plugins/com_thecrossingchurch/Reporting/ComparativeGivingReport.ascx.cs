@@ -25,10 +25,12 @@ using System.IO;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
-using Microsoft.Ajax.Utilities;
+//using Microsoft.Ajax.Utilities;
 using System.Collections.ObjectModel;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using Nest;
+using Amazon.S3.Model;
+using DocumentFormat.OpenXml.Vml.Spreadsheet;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 {
@@ -49,7 +51,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         private DateTime? end { get; set; }
         private DateTime? lystart { get; set; }
         private DateTime? lyend { get; set; }
+        private bool hasChanged { get; set; }
         private FinancialAccount fund { get; set; }
+        private GroupService groupSvc { get; set; }
+        private PersonService personSvc { get; set; }
+        private FinancialTransactionService ftSvc { get; set; }
         private static class PageParameterKey
         {
             public const string Start = "Start";
@@ -73,6 +79,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+            grdGiving.GridRebind += grdGiving_GridRebind;
         }
 
         /// <summary>
@@ -83,7 +90,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             base.OnLoad( e );
             context = new RockContext();
-            //GroupTypeId = GetAttributeValue( "VeritasSmallGroupTypeId" ).AsInteger();
             //Get Variable Data from Query Params
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Start ) ) )
             {
@@ -100,13 +106,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 fund = new FinancialAccountService( context ).Get( Guid.Parse( PageParameter( PageParameterKey.Fund ) ) );
             }
             //Generate Giving Data if filters have data 
-            if ( start.HasValue && end.HasValue && fund != null )
-            {
-                GenerateData();
-            }
+            personSvc = new PersonService( context );
+            groupSvc = new GroupService( context );
+            ftSvc = new FinancialTransactionService( context );
             if ( !Page.IsPostBack )
             {
-
+                if ( start.HasValue && end.HasValue && fund != null )
+                {
+                    BindGrid();
+                }
             }
         }
 
@@ -115,49 +123,100 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         #region Events
 
         /// <summary>
-        /// Adds attendance entry to metrics.
+        /// Bind Grid
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void btnAddAttendance_Click( object sender, EventArgs e )
+        protected void grdGiving_GridRebind( object sender, EventArgs e )
         {
-
+            BindGrid();
         }
 
         #endregion
 
         #region Methods
 
-        protected void GenerateData()
+        protected List<DonorData> GenerateData()
         {
             //Current Date Range Transactions
-            var transactions = new FinancialTransactionService( context ).Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 );
+            //For People
+            var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 );
+            //For Businesses
+            var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 );
             //Previous Year Transactions
-            var lytransactions = new FinancialTransactionService( context ).Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 );
-            var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.PersonId ).ToList();
-            var groupedLyTransactions = lytransactions.GroupBy( t => t.AuthorizedPersonAlias.PersonId ).ToList();
+            //For People
+            var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 );
+            //For Businesses
+            var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 );
+
+            //Join the Person Data
+            var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).OrderBy(e => e.Key).ToList();
+            var groupedLyTransactions = lytransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).ToList();
             var leftJoin =
                             from gt in groupedTransactions
                             join glyt in groupedLyTransactions on gt.Key equals glyt.Key into temp
                             from glyt in temp.DefaultIfEmpty()
-                            select new { PersonId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt };
+                            select new JoinDataObj() { KeyId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
             var rightJoin =
                             from glyt in groupedLyTransactions
                             join gt in groupedTransactions on glyt.Key equals gt.Key into temp
                             from gt in temp.DefaultIfEmpty()
-                            select new { PersonId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt };
-            var joinedData = leftJoin.Union( rightJoin ).ToList();
+                            select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
+            var perJoinedData = leftJoin.Union( rightJoin ).DistinctBy(e => e.KeyId).ToList();
+            //Join the Business Data
+            var busGroupedTransactions = busTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
+            var busGroupedLyTransactions = busLyTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
+            var busLeftJoin =
+                            from gt in busGroupedTransactions
+                            join glyt in busGroupedLyTransactions on gt.Key equals glyt.Key into temp
+                            from glyt in temp.DefaultIfEmpty()
+                            select new JoinDataObj() { KeyId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Business" };
+            var busRightJoin =
+                            from glyt in busGroupedLyTransactions
+                            join gt in busGroupedTransactions on glyt.Key equals gt.Key into temp
+                            from gt in temp.DefaultIfEmpty()
+                            select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Business" };
+            var busJoinedData = busLeftJoin.Union( busRightJoin ).DistinctBy( e => e.KeyId ).ToList();
+            //Combine Datasets
+            var joinedData = perJoinedData.Union( busJoinedData ).ToList();
             List<DonorData> donorData = new List<DonorData>();
             for ( var i = 0; i < joinedData.Count(); i++ )
             {
                 //Create DonorData
-                Person p = new PersonService( context ).Get( joinedData[i].PersonId );
+                string householdName = "";
+                Rock.Model.Group household = null;
+                Person p = null;
+                List<int> adults = new List<int>();
+                //For Family
+                if ( joinedData[i].Type == "Family" )
+                {
+                    household = groupSvc.Get( joinedData[i].KeyId.Value );
+                    adults = household.Members.Where( gm => gm.Person.AgeClassification == AgeClassification.Adult ).Select( gm => gm.PersonId ).ToList();
+                    p = personSvc.Get( adults.First() );
+                    householdName = household.Name.Replace( " Family", "" );
+                    householdName += " (" + String.Join( " & ", household.Members.Where( gm => adults.Contains( gm.PersonId ) ).Select( a => a.Person.NickName ).ToList() ) + ")";
+                }
+                //For business
+                else
+                {
+                    p = personSvc.Get( joinedData[i].KeyId.Value );
+                    adults.Add( p.Id );
+                    householdName = p.LastName;
+                }
+                //Remove leading space that is somehow being added to certain records because reasons 
+                if ( householdName.Substring( 0, 1 ) == " " )
+                {
+                    householdName = householdName.Substring( 1 ); 
+                }
                 p.LoadAttributes();
                 DonorData d = new DonorData()
                 {
-                    PersonId = joinedData[i].PersonId,
-                    Donor = p
+                    FamilyId = joinedData[i].KeyId.Value,
+                    Donor = p,
+                    Household = household,
+                    HouseholdName = householdName
                 };
+
                 d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) ) : 0;
                 d.NumberOfGifts = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Count() : 0;
                 d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round( ( d.AmountGiven / d.NumberOfGifts ), 2 ) : 0;
@@ -169,7 +228,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
                 d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
                 d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
-                var allTransactions = new FinancialTransactionService( context ).Queryable().Where( ft => ft.AuthorizedPersonAlias.PersonId == p.Id ).OrderBy( ft => ft.TransactionDateTime );
+                var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) ).OrderBy( ft => ft.TransactionDateTime );
                 //If Source is empty for Current Transactions, Try Previous Transactions
                 if ( String.IsNullOrEmpty( d.Source ) )
                 {
@@ -195,13 +254,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 }
                 donorData.Add( d );
             }
+            return donorData;
+        }
+
+        private void BindGrid()
+        {
+            var donorData = GenerateData();
             if ( grdGiving.SortProperty != null )
             {
                 donorData = donorData.AsQueryable().Sort( grdGiving.SortProperty ).ToList();
             }
             else
             {
-                donorData = donorData.AsQueryable().OrderBy( d => d.Donor.LastName ).ThenBy( d => d.Donor.NickName ).ToList();
+                donorData = donorData.AsQueryable().OrderBy( d => d.HouseholdName ).ToList();
             }
             grdGiving.DataSource = donorData;
             grdGiving.DataBind();
@@ -211,8 +276,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
         public class DonorData
         {
+            public int FamilyId { get; set; }
             public int PersonId { get; set; }
             public Person Donor { get; set; }
+            public Rock.Model.Group Household { get; set; }
+            public string HouseholdName { get; set; }
             public decimal AmountGiven { get; set; }
             public int NumberOfGifts { get; set; }
             public decimal AverageGiftAmount { get; set; }
@@ -226,6 +294,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public string GiverType { get; set; }
             public string Average { get; set; }
             public string StdDev { get; set; }
+        }
+        private class JoinDataObj
+        {
+            public int? KeyId { get; set; }
+            public IGrouping<int, FinancialTransaction> PreviousTransactions { get; set; }
+            public IGrouping<int, FinancialTransaction> CurrentTransactions { get; set; }
+            public string Type { get; set; }
         }
     }
 
