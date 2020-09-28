@@ -117,14 +117,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             props = props.Where( p => p.createdUserId != null ).ToList();
 
             //Get List of all contacts from Hubspot
-            List<ContactHubSpotModel> contacts = new List<ContactHubSpotModel>();
+            List<HubSpotContact> contacts = new List<HubSpotContact>();
             long offset = 0;
             var hasmore = true;
             while ( hasmore )
             {
-                var list = api.Contact.List<ContactHubSpotModel>( new ListRequestOptions
+                var list = api.Contact.List<HubSpotContact>( new ListRequestOptions
                 {
-                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone" },
+                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email" },
                     Limit = 100,
                     Offset = offset
                 } );
@@ -138,12 +138,28 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
             for ( var i = 0; i < contacts_with_email.Count(); i++ )
             {
-                var query = new PersonService.PersonMatchQuery( contacts_with_email[i].FirstName, contacts_with_email[i].LastName, contacts_with_email[i].Email, contacts_with_email[i].Phone );
-                var person = personService.FindPerson( query, false );
+                //First Check if they have a rock Id in their hubspot data to use
+                Person person = null;
+                if ( !String.IsNullOrEmpty( contacts_with_email[i].rock_id ) )
+                {
+                    person = personService.Get( Int32.Parse( contacts_with_email[i].rock_id ) );
+                }
 
-                WriteToLog( $"{Environment.NewLine}Query:{query.ToJson()}{Environment.NewLine}Person:{( person != null ? person.Id.ToString() : "Null" )}{Environment.NewLine}" );
+                //If there is not a value for Rock Id, proceed to run the query with HubSpot data
+                if ( person == null )
+                {
+                    var query = new PersonService.PersonMatchQuery( contacts_with_email[i].FirstName, contacts_with_email[i].LastName, contacts_with_email[i].Email, contacts_with_email[i].Phone );
+                    person = personService.FindPerson( query, false );
+                }
 
-                //Attempt to match on email and one other piece of info 
+                //If person is still null, attempt to use the Rock FirstName, Rock LastName, Rock Email for the query
+                if ( person == null && !String.IsNullOrEmpty( contacts_with_email[i].rock_firstname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_lastname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_email ) )
+                {
+                    var query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].rock_email, "" );
+                    person = personService.FindPerson( query, false );
+                }
+
+                //Attempt to match on email and one other piece of info if we are still null
                 if ( person == null )
                 {
                     string email = contacts_with_email[i].Email.ToLower();
@@ -646,5 +662,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     {
         public string property { get; set; }
         public string value { get; set; }
+    }
+
+    public class HubSpotContact : ContactHubSpotModel
+    {
+        public string rock_firstname { get; set; }
+        public string rock_lastname { get; set; }
+        public string rock_email { get; set; }
+        public string rock_id { get; set; }
     }
 }
