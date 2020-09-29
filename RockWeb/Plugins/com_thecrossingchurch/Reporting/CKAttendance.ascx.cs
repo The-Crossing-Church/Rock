@@ -386,11 +386,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     AttendanceCount = x.Count(),
                     OccurrenceDate = x.Key.OccurrenceDate
                 };
-                if ( threshold.HasValue && ca.AttendanceCount > threshold )
+                if ( threshold.HasValue && ca.AttendanceCount >= threshold )
                 {
                     ca.OverThreshold = true;
                 }
-                else if ( !threshold.HasValue && ca.AttendanceCount > location.SoftRoomThreshold )
+                else if ( !threshold.HasValue && ca.AttendanceCount >= location.SoftRoomThreshold )
                 {
                     ca.OverThreshold = true;
                 }
