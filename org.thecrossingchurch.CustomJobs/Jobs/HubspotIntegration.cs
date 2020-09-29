@@ -153,9 +153,16 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
 
                 //If person is still null, attempt to use the Rock FirstName, Rock LastName, Rock Email for the query
-                if ( person == null && !String.IsNullOrEmpty( contacts_with_email[i].rock_firstname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_lastname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_email ) )
+                if ( person == null && !String.IsNullOrEmpty( contacts_with_email[i].rock_firstname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_lastname ) && (!String.IsNullOrEmpty( contacts_with_email[i].rock_email) || !String.IsNullOrEmpty(contacts_with_email[i].Email) ) )
                 {
-                    var query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].rock_email, "" );
+                    PersonService.PersonMatchQuery query; 
+                    if( !String.IsNullOrEmpty( contacts_with_email[i].rock_email) ) {
+                        query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].rock_email, "" );
+                    }
+                    else
+                    {
+                        query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].Email, "" );
+                    }
                     person = personService.FindPerson( query, false );
                 }
 
