@@ -174,8 +174,8 @@
         let hfComp = $("[id$='_hfComponents']")[0].id;
         let hfStyle = $("[id$='_hfStyle']")[0].id;
         try {
-            let c = editor.getHtml().replaceAll('>', '&gt;').replaceAll('<', '&lt;').replaceAll("'", '&#39;').replaceAll('"', '&#34;'); 
-            document.getElementById(`${hfHtml}`).value = `${c}`;
+            let c = editor.getHtml().replaceAll(`>`, `&gt;`).replaceAll(`<`, `&lt;`).replaceAll(`&#039;`, `'`)
+            document.getElementById(hfHtml).value = `${c}`;
             document.getElementById(hfCss).value = `${editor.getCss()}`;
             document.getElementById(hfComp).value = JSON.stringify(editor.getComponents());
             document.getElementById(hfStyle).value = JSON.stringify(editor.getStyle());
