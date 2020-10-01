@@ -124,9 +124,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             item.LoadAttributes();
             txtTitle.Text = item.Title; 
             dtStart.SelectedDateTime = item.StartDateTime;
-            dtEnd.SelectedDateTime = item.ExpireDateTime.Value;
+            if(item.ExpireDateTime.HasValue)
+            {
+                dtEnd.SelectedDateTime = item.ExpireDateTime.Value;
+            }
             hfComponents.Value = item.GetAttributeValue( "GrapesJSComponents" );
             hfStyle.Value = item.GetAttributeValue( "GrapesJSStyle" );
+            nbPriority.Text = item.Priority.ToString(); 
             pkrCC.SelectedValue = item.ContentChannelId.ToString();
         }
 
@@ -173,6 +177,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             Rock.Attribute.Helper.GetEditValues( phAttributes, item );
             item.SetAttributeValue( "GrapesJSComponents", hfComponents.Value );
             item.SetAttributeValue( "GrapesJSStyle", hfStyle.Value );
+            if(!String.IsNullOrEmpty( nbPriority.Text ) )
+            {
+                item.Priority = nbPriority.Text.AsInteger(); 
+            }
+            else
+            {
+                item.Priority = 0; 
+            }
             //Save everything
             _context.ContentChannelItems.AddOrUpdate( item );
             _context.SaveChanges();

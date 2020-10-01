@@ -41,6 +41,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [ContentChannelField( "Content Channel", "The content channel for this section", true, "" )]
     [LavaCommandsField( "Enabled Lava Commands", description: "The Lava commands that should be enabled for this content channel item block.", required: false )]
     [TextField( "Display Type", "Enter one of the following: Single, Cards, Slider", true, "Single" )]
+    [IntegerField( "Item Limit", "The maximum number of items that should appear", false )]
 
     public partial class CustomContentBlock : Rock.Web.UI.RockBlock
     {
@@ -48,6 +49,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private RockContext _context { get; set; }
         private ContentChannelItemService _cciSvc { get; set; }
         private string displayType { get; set; }
+        private int? itemLimit { get; set; }
+        private int contentChannelId { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -75,6 +78,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             base.OnLoad( e );
             _context = new RockContext();
             _cciSvc = new ContentChannelItemService( _context );
+            ContentChannelService ccSvc = new ContentChannelService( _context );
+            itemLimit = GetAttributeValue( "ItemLimit" ).AsInteger();
+            contentChannelId = ccSvc.Get(Guid.Parse(GetAttributeValue( "ContentChannel" ))).Id;
 
             if ( !Page.IsPostBack )
             {
@@ -89,41 +95,42 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private void GetContent()
         {
             //Get all valid content for this block
-            var items = _cciSvc.Queryable().Where( cci => DateTime.Compare( cci.StartDateTime, DateTime.Now ) <= 1 && DateTime.Compare( cci.ExpireDateTime.Value, DateTime.Now ) >= 1 ).ToList();
-            //Get specific content if we know who is authenticated 
-            if ( CurrentPerson != null )
+            var items = _cciSvc.Queryable().Where( cci => cci.ContentChannelId == contentChannelId && DateTime.Compare( cci.StartDateTime, RockDateTime.Now ) <= 1 && ( !cci.ExpireDateTime.HasValue || DateTime.Compare( cci.ExpireDateTime.Value, RockDateTime.Now ) >= 1 ) ).ToList();
+            //Get specific content if we know who is authenticated and also all generic content
+            List<ContentChannelItem> renderItems = new List<ContentChannelItem>();
+            for ( var i = 0; i < items.Count(); i++ )
             {
-                List<ContentChannelItem> renderItems = new List<ContentChannelItem>();
-                for ( var i = 0; i < items.Count(); i++ )
+                var item = items[i];
+                item.LoadAttributes();
+                var dataviews = item.AttributeValues.FirstOrDefault( av => av.Key == "DataViews" ).Value;
+                if ( dataviews != null && !String.IsNullOrEmpty( dataviews.Value ) )
                 {
-                    var item = items[i];
-                    item.LoadAttributes();
-                    var dataviews = item.AttributeValues.FirstOrDefault( av => av.Key == "DataViews" ).Value;
-                    if ( !String.IsNullOrEmpty( dataviews.Value ) )
+                    for ( var k = 0; k < dataviews.Value.Split( ',' ).Length; k++ )
                     {
-                        for ( var k = 0; k < dataviews.Value.Split( ',' ).Length; k++ )
+                        var dataview = new DataViewService( _context ).Get( Guid.Parse( dataviews.Value.Split( ',' )[k] ) );
+                        List<string> errs = new List<string>();
+                        var data = dataview.GetQuery( null, null, out errs );
+                        var inDataView = data.FirstOrDefault( d => d.Id == CurrentPersonId );
+                        if ( inDataView != null )
                         {
-                            var dataview = new DataViewService( _context ).Get( Guid.Parse( dataviews.Value.Split( ',' )[k] ) );
-                            List<string> errs = new List<string>();
-                            var data = dataview.GetQuery( null, null, out errs );
-                            var inDataView = data.FirstOrDefault( d => d.Id == CurrentPersonId );
-                            if ( inDataView != null )
-                            {
-                                //We're in business, yeah boi
-                                renderItems.Add( item );
-                            }
+                            //This content is target to this user, add it to render list
+                            renderItems.Add( item );
                         }
                     }
                 }
-                RenderContent( renderItems );
+                else
+                {
+                    //Add generic content
+                    renderItems.Add( item );
+                }
             }
-            //Get generic content
-            else
+            //Sort by targeted content and priority
+            renderItems = renderItems.OrderBy( i => String.IsNullOrEmpty( i.AttributeValues.FirstOrDefault( av => av.Key == "DataViews" ).Value.Value ) ).ThenByDescending( i => i.Priority ).ToList();
+            if ( itemLimit.HasValue && itemLimit > 0 && renderItems.Count() > itemLimit )
             {
-                items.LoadAttributes();
-                var generic = items.Where( itm => itm.AttributeValues.Any( av => av.Key == "DataViews" && String.IsNullOrEmpty( av.Value.Value ) ) ).ToList();
-                RenderContent( generic );
+                renderItems = renderItems.Take( itemLimit.Value ).ToList();
             }
+            RenderContent( renderItems );
         }
 
         private void RenderContent( List<ContentChannelItem> items )
@@ -148,11 +155,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                         item = items[i];
                         itemMergeFields.AddOrReplace( "Item", item );
                         item.Content = item.Content.ResolveMergeFields( itemMergeFields, enabledCommands );
-                        html += item.Content; 
+                        html += item.Content;
                         html += "</div>";
                     }
                     html += "</div>";
-                    content.InnerHtml = html; 
+                    content.InnerHtml = html;
                     break;
                 case "Slider":
                     html = "<div id='customContentCarousel' class='carousel slide' data-ride='carousel'>";
@@ -160,9 +167,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     for ( var i = 0; i < items.Count(); i++ )
                     {
                         html += "<div class='item";
-                        if(i == 0 )
+                        if ( i == 0 )
                         {
-                            html += " active"; 
+                            html += " active";
                         }
                         html += "'>";
                         item = items[i];

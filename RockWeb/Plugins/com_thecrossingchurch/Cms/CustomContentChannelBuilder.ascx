@@ -26,11 +26,14 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col col-xs-6">
+                    <div class="col col-xs-4">
                         <Rock:DateTimePicker Label="Start Date" runat="server" ID="dtStart" />
                     </div>
-                    <div class="col col-xs-6">
+                    <div class="col col-xs-4">
                         <Rock:DateTimePicker Label="End Date" runat="server" ID="dtEnd" />
+                    </div>
+                    <div class="col col-xs-4">
+                        <Rock:NumberBox Label="Priority" runat="server" ID="nbPriority" />
                     </div>
                 </div>
                 <div class="row">
