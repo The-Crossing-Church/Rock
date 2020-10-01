@@ -3,43 +3,37 @@
     <ContentTemplate>
         <Rock:Grid ID="grdGiving" runat="server" AllowSorting="true">
             <Columns>
-                <%--<Rock:RockTemplateField HeaderText="Donor" SortExpression="Donor.LastName, Donor.NickName" ExcelExportBehavior="NeverInclude">
-                    <ItemTemplate>
-                        <asp:Label ID="lblLastName" runat="server"
-                            Text='<%# Bind("Donor.LastName") %>'></asp:Label>, 
-                        <asp:Label ID="lblNickName" runat="server"
-                            Text='<%# Bind("Donor.NickName") %>'></asp:Label>
-                    </ItemTemplate>
-                </Rock:RockTemplateField>--%>
-               <%-- <Rock:RockBoundField HeaderText="First Name" DataField="Donor.NickName" ExcelExportBehavior="AlwaysInclude" Visible="false" />
-                <Rock:RockBoundField HeaderText="Last Name" DataField="Donor.LastName" ExcelExportBehavior="AlwaysInclude" Visible="false" />--%>
                 <Rock:RockBoundField HeaderText="Household" DataField="HouseholdName" SortExpression="HouseholdName" ExcelExportBehavior="AlwaysInclude" />
-                <Rock:RockTemplateField HeaderText="Amount Given" SortExpression="AmountGiven" ExcelExportBehavior="AlwaysInclude">
+                <Rock:RockTemplateField HeaderText="Amount Given" SortExpression="AmountGiven" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>
                         $<asp:Label ID="lblAmtGiven" runat="server"
                             Text='<%# Bind("AmountGiven") %>'></asp:Label>
                     </ItemTemplate>
                 </Rock:RockTemplateField>
+                <Rock:RockBoundField HeaderText="Amount Given" DataField="AmountGiven" ExcelExportBehavior="AlwaysInclude" Visible="false" />
                 <Rock:RockBoundField HeaderText="Number of Gifts" DataField="NumberOfGifts" SortExpression="NumberOfGifts" ExcelExportBehavior="AlwaysInclude" />
-                <Rock:RockTemplateField HeaderText="Average Gift Amount" SortExpression="AverageGiftAmount" ExcelExportBehavior="AlwaysInclude">
+                <Rock:RockTemplateField HeaderText="Average Gift Amount" SortExpression="AverageGiftAmount" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>
                         $<asp:Label ID="lblAvgGift" runat="server"
                             Text='<%# Bind("AverageGiftAmount") %>'></asp:Label>
                     </ItemTemplate>
                 </Rock:RockTemplateField>
+                <Rock:RockBoundField HeaderText="Average Gift Amount" DataField="AverageGiftAmount" ExcelExportBehavior="AlwaysInclude" Visible="false" />
                 <Rock:RockBoundField HeaderText="Previous Number of Gifts" DataField="PreviousNumberOfGifts" SortExpression="PreviousNumberOfGifts" ExcelExportBehavior="AlwaysInclude" />
-                <Rock:RockTemplateField HeaderText="Previous Average Gift Amount" SortExpression="PreviousAverageGiftAmount" ExcelExportBehavior="AlwaysInclude">
+                <Rock:RockTemplateField HeaderText="Previous Average Gift Amount" SortExpression="PreviousAverageGiftAmount" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>
                         $<asp:Label ID="lblPreAvgGift" runat="server"
                             Text='<%# Bind("PreviousAverageGiftAmount") %>'></asp:Label>
                     </ItemTemplate>
                 </Rock:RockTemplateField>
-                <Rock:RockTemplateField HeaderText="Change" SortExpression="AmountChange" ExcelExportBehavior="AlwaysInclude">
+                <Rock:RockBoundField HeaderText="Previous Average Gift Amount" DataField="PreviousAverageGiftAmount" ExcelExportBehavior="AlwaysInclude" Visible="false" />
+                <Rock:RockTemplateField HeaderText="Change" SortExpression="AmountChange" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>
                         <asp:Label ID="lblChg" runat="server"
                             Text='<%# Bind("AmountChange") %>' class="change-amount"></asp:Label>
                     </ItemTemplate>
                 </Rock:RockTemplateField>
+                <Rock:RockBoundField HeaderText="Change" DataField="AmountChange" ExcelExportBehavior="AlwaysInclude" Visible="false" />
                 <Rock:DateField HeaderText="First Gift" DataField="FirstGiftEver" SortExpression="FirstGiftEver" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Giving Zone" DataField="GivingZone" SortExpression="GivingZone" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Type of Donor" DataField="DonorType" SortExpression="DonorType" ExcelExportBehavior="AlwaysInclude" />
