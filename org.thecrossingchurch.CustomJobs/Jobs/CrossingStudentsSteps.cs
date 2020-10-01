@@ -250,7 +250,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             else if ( today.Month >= 6 && today.Month < 9 )
             {
                 start = new DateTime( today.Year, 6, 1 );
-                end = new DateTime( today.Year, 7, 31 );
+                end = new DateTime( today.Year, 8, 31 );
             }
             else
             {
