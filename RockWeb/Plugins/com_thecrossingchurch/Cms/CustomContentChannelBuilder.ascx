@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/grapesjs/0.16.22/css/grapes.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/grapesjs/0.16.22/grapes.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/grapesjs-preset-webpage@0.1.11/dist/grapesjs-preset-webpage.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
 <div id="gjs" runat="server" style="height: 90vh !important; overflow: hidden; width: 100%;"></div>
 <br />
 <asp:UpdatePanel runat="server" ID="pnlUpdate">
@@ -112,7 +113,7 @@
     blockManager.getAll().reset();
     blockManager.add('col-one', {
         label: 'Single Column',
-        category: 'Basic',
+        category: 'Layout',
         content: `<div data-gjs-type="default" class="row" draggable="true">
                     <div data-gjs-type="column" class="col col-xs-12" draggable="true"></div>
                 </div>`,
@@ -122,13 +123,59 @@
     });
     blockManager.add('col-two', {
         label: '50/50 Column',
-        category: 'Basic',
+        category: 'Layout',
         content: `<div data-gjs-type="default" class="row" draggable="true">
                     <div data-gjs-type="default" class="col col-xs-12 col-md-6" draggable="true"></div>
                     <div data-gjs-type="default" class="col col-xs-12 col-md-6" draggable="true"></div>
                 </div>`,
         attributes: {
             class: 'fa fa-pause'
+        }
+    });
+    blockManager.add('col-two-thr-svn', {
+        label: '30/70 Column',
+        category: 'Layout',
+        content: `<div data-gjs-type="default" class="row" draggable="true">
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-3" draggable="true"></div>
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-9" draggable="true"></div>
+                </div>`,
+        attributes: {
+            class: 'fa fa-pause'
+        }
+    });
+    blockManager.add('col-two-svn-thr', {
+        label: '70/30 Column',
+        category: 'Layout',
+        content: `<div data-gjs-type="default" class="row" draggable="true">
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-9" draggable="true"></div>
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-3" draggable="true"></div>
+                </div>`,
+        attributes: {
+            class: 'fa fa-pause'
+        }
+    });
+    blockManager.add('col-three-tw-ei-tw', {
+        label: '10/80/10 Column',
+        category: 'Layout',
+        content: `<div data-gjs-type="default" class="row" draggable="true">
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-2" draggable="true"></div>
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-8" draggable="true"></div>
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-2" draggable="true"></div>
+                </div>`,
+        attributes: {
+            class: 'material-icons view_array'
+        }
+    });
+    blockManager.add('col-three-thr-thr-thr', {
+        label: '33/33/33 Column',
+        category: 'Layout',
+        content: `<div data-gjs-type="default" class="row" draggable="true">
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-4" draggable="true"></div>
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-4" draggable="true"></div>
+                    <div data-gjs-type="default" class="col col-xs-12 col-md-4" draggable="true"></div>
+                </div>`,
+        attributes: {
+            class: 'material-icons view_column'
         }
     });
     blockManager.add('card', {
@@ -168,7 +215,68 @@
                     Link Text
                   </a>`,
         attributes: {
-            class: 'fa fa-mouse'
+            class: 'fa fa-mouse-pointer'
+        }
+    });
+    blockManager.add('text', {
+        label: 'Text',
+        category: 'Basic',
+        content: `<p data-gjs-type="text" draggable="true">Text</p>`,
+        attributes: {
+            class: 'fa fa-paragraph'
+        }
+    });
+    blockManager.add('title-one', {
+        label: 'Large Title',
+        category: 'Basic',
+        content: `<h1 data-gjs-type="text" draggable="true">Title</h1>`,
+        attributes: {
+            class: 'fa fa-font'
+        }
+    });
+    blockManager.add('title-two', {
+        label: 'Medium Title',
+        category: 'Basic',
+        content: `<h2 data-gjs-type="text" draggable="true">Title</h2>`,
+        attributes: {
+            class: 'fa fa-font'
+        }
+    });
+    blockManager.add('title-three', {
+        label: 'Small Title',
+        category: 'Basic',
+        content: `<h3 data-gjs-type="text" draggable="true">Title</h3>`,
+        attributes: {
+            class: 'fa fa-font'
+        }
+    });
+    blockManager.add('block-quote', {
+        label: 'Quote',
+        category: 'Basic',
+        content: `<blockquote data-gjs-type="text" draggable="true">Quote</blockquote>`,
+        attributes: {
+            class: 'fa fa-quote-right'
+        }
+    });
+    blockManager.add('image', {
+        label: 'Image',
+        category: 'Basic',
+        content: `<img data-gjs-type="image" draggable="true" />`,
+        attributes: {
+            class: 'fa fa-image'
+        }
+    });
+    blockManager.add('video', {
+        label: 'Video',
+        category: 'Basic',
+        content: `<iframe data-gjs-type="video" draggable="true"></iframe>
+                <style>
+                    iframe {
+                        width: 100%; 
+                    }
+                </style>`,
+        attributes: {
+            class: 'fa fa-film'
         }
     });
     function saveTemplate() {
@@ -224,5 +332,16 @@
     }
     .col {
         min-height: 30px; 
+    }
+    .material-icons.view_array:before {
+        content: "view_array";
+    }
+    .material-icons.view_column:before {
+        content: "view_column";
+    }
+    .material-icons {
+        font-size: 4em;
+        line-height: 2em;
+        padding: 11px;
     }
 </style>
