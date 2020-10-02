@@ -51,6 +51,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private string displayType { get; set; }
         private int? itemLimit { get; set; }
         private int contentChannelId { get; set; }
+        private int? Id { get; set; }
+        private static class PageParameterKey
+        {
+            public const string Id = "Id";
+            public const string ContentItemId = "contentItemId";
+        }
         #endregion
 
         #region Base Control Methods
@@ -67,6 +73,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
+            {
+                Id = Int32.Parse( PageParameter( PageParameterKey.Id ) );
+            }
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.ContentItemId ) ) )
+            {
+                Id = Int32.Parse( PageParameter( PageParameterKey.ContentItemId ) );
+            }
         }
 
         /// <summary>
@@ -80,11 +94,25 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _cciSvc = new ContentChannelItemService( _context );
             ContentChannelService ccSvc = new ContentChannelService( _context );
             itemLimit = GetAttributeValue( "ItemLimit" ).AsInteger();
-            contentChannelId = ccSvc.Get(Guid.Parse(GetAttributeValue( "ContentChannel" ))).Id;
+            string ccstr = GetAttributeValue( "ContentChannel" );
+            displayType = GetAttributeValue( "DisplayType" );
+            if ( !String.IsNullOrEmpty( ccstr ) )
+            {
+                contentChannelId = ccSvc.Get(Guid.Parse(ccstr)).Id;
+            }
 
             if ( !Page.IsPostBack )
             {
-                GetContent();
+                if(Id.HasValue)
+                {
+                    //Render single item
+                    getContentById(); 
+                }
+                else if ( !String.IsNullOrEmpty( ccstr ) )
+                {
+                    //Render content for content channel
+                    GetContent();
+                }
             }
         }
 
@@ -133,6 +161,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             RenderContent( renderItems );
         }
 
+        private void getContentById()
+        {
+            List<ContentChannelItem> items = new List<ContentChannelItem>();
+            ContentChannelItem item = _cciSvc.Get( Id.Value );
+            items.Add( item );
+            displayType = "Single";
+            RenderContent( items );
+        }
+
         private void RenderContent( List<ContentChannelItem> items )
         {
             //Resolve Merge fields
@@ -142,7 +179,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
             var enabledCommands = GetAttributeValue( "EnabledLavaCommands" );
 
-            displayType = GetAttributeValue( "DisplayType" );
             ContentChannelItem item;
             string html = "";
             switch ( displayType )
