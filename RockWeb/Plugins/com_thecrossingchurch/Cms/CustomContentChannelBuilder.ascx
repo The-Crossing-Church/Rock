@@ -261,7 +261,7 @@
     blockManager.add('image', {
         label: 'Image',
         category: 'Basic',
-        content: `<img data-gjs-type="image" draggable="true" />`,
+        content: `<img data-gjs-type="image" draggable="true" style="width:100%;" />`,
         attributes: {
             class: 'fa fa-image'
         }
