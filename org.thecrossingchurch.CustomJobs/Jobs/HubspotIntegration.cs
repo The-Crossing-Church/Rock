@@ -88,7 +88,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.PrinterSettings.RightMargin = .5m;
             worksheet.PrinterSettings.TopMargin = .5m;
             worksheet.PrinterSettings.BottomMargin = .5m;
-            var headers = new List<string> { "HubSpot FirstName", "Rock FirstName", "HubSpot LastName", "Rock LastName", "HubSpot Email", "Rock Email", "HubSpot Phone", "Rock Phone", "HubSpot Link", "Rock Link" };
+            var headers = new List<string> { "HubSpot FirstName", "Rock FirstName", "HubSpot LastName", "Rock LastName", "HubSpot Email", "Rock Email", "HubSpot Phone", "Rock Phone", "HubSpot Connection Status", "Rock Connection Status", "HubSpot Link", "Rock Link" };
             var h = 1;
             var row = 2;
             foreach ( var header in headers )
@@ -124,7 +124,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             {
                 var list = api.Contact.List<HubSpotContact>( new ListRequestOptions
                 {
-                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email" },
+                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email", "which_best_describes_your_involvement_with_the_crossing_" },
                     Limit = 100,
                     Offset = offset
                 } );
@@ -593,7 +593,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             return worksheet;
         }
 
-        private ExcelWorksheet SaveData( ExcelWorksheet worksheet, int row, Person person, ContactHubSpotModel contact )
+        private ExcelWorksheet SaveData( ExcelWorksheet worksheet, int row, Person person, HubSpotContact contact )
         {
             //Add FirstNames
             worksheet.Cells[row, 1].Value = contact.FirstName;
@@ -640,9 +640,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 worksheet = ColorCell( worksheet, row, 8 );
             }
 
+            //Add Connection Statuses
+            worksheet.Cells[row, 9].Value = contact.which_best_describes_your_involvement_with_the_crossing_;
+            worksheet.Cells[row, 10].Value = person.ConnectionStatusValue;
+
             //Add links
-            worksheet.Cells[row, 9].Value = "https://app.hubspot.com/contacts/6480645/contact/" + contact.Id;
-            worksheet.Cells[row, 10].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
+            worksheet.Cells[row, 11].Value = "https://app.hubspot.com/contacts/6480645/contact/" + contact.Id;
+            worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
             return worksheet;
         }
 
@@ -677,5 +681,6 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         public string rock_lastname { get; set; }
         public string rock_email { get; set; }
         public string rock_id { get; set; }
+        public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
     }
 }
