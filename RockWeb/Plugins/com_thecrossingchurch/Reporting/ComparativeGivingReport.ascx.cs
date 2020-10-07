@@ -186,12 +186,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 string householdName = "";
                 Rock.Model.Group household = null;
                 Person p = null;
-                List<int> adults = new List<int>();
+                List<int> adults = new List<int>(); //Just family now since there are kids who give
                 //For Family
                 if ( joinedData[i].Type == "Family" )
                 {
                     household = groupSvc.Get( joinedData[i].KeyId.Value );
-                    adults = household.Members.Where( gm => gm.Person.AgeClassification == AgeClassification.Adult ).Select( gm => gm.PersonId ).ToList();
+                    adults = household.Members.Select( gm => gm.PersonId ).ToList();
                     p = personSvc.Get( adults.First() );
                     householdName = household.Name.Replace( " Family", "" );
                     householdName += " (" + String.Join( " & ", household.Members.Where( gm => adults.Contains( gm.PersonId ) ).Select( a => a.Person.NickName ).ToList() ) + ")";
