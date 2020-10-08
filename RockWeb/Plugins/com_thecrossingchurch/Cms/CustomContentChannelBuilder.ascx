@@ -178,6 +178,14 @@
             class: 'material-icons view_column'
         }
     });
+    blockManager.add('spacer', {
+        label: 'Spacer',
+        category: 'Layout',
+        content: `<div style='height:32px;'></div>`,
+        attributes: {
+            class: 'material-icons arrow_spacer'
+        }
+    });
     blockManager.add('card', {
         label: 'Simple Card',
         category: 'Basic',
@@ -285,11 +293,10 @@
         let hfComp = $("[id$='_hfComponents']")[0].id;
         let hfStyle = $("[id$='_hfStyle']")[0].id;
         try {
-            let c = editor.getHtml().replaceAll(`>`, `&gt;`).replaceAll(`<`, `&lt;`).replaceAll(`&#039;`, `'`)
-            document.getElementById(hfHtml).value = `${c}`;
-            document.getElementById(hfCss).value = `${editor.getCss()}`;
+            document.getElementById(hfHtml).value = editor.getHtml().replaceAll(`>`, `&gt;`).replaceAll(`<`, `&lt;`).replaceAll(`&#039;`, `'`);
+            document.getElementById(hfCss).value = editor.getCss().replaceAll(`box-shadow:0 4px 4px 8px`, `box-shadow: 4px 4px 8px rgba(0,0,0,.2)`);
             document.getElementById(hfComp).value = JSON.stringify(editor.getComponents());
-            document.getElementById(hfStyle).value = JSON.stringify(editor.getStyle());
+            document.getElementById(hfStyle).value = JSON.stringify(editor.getStyle()).replaceAll(`"box-shadow":"0 4px 4px 8px"`, `"box-shadow":" 4px 4px 8px rgba(0,0,0,.2)"`);
         } catch (e) {
             console.log(e);
         }
@@ -338,6 +345,9 @@
     }
     .material-icons.view_column:before {
         content: "view_column";
+    }
+    .material-icons.arrow_spacer:before {
+        content: "unfold_more";
     }
     .material-icons {
         font-size: 4em;
