@@ -88,7 +88,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.PrinterSettings.RightMargin = .5m;
             worksheet.PrinterSettings.TopMargin = .5m;
             worksheet.PrinterSettings.BottomMargin = .5m;
-            var headers = new List<string> { "HubSpot FirstName", "Rock FirstName", "HubSpot LastName", "Rock LastName", "HubSpot Email", "Rock Email", "HubSpot Phone", "Rock Phone", "HubSpot Connection Status", "Rock Connection Status", "HubSpot Link", "Rock Link" };
+            var headers = new List<string> { "HubSpot FirstName", "Rock FirstName", "HubSpot LastName", "Rock LastName", "HubSpot Email", "Rock Email", "HubSpot Phone", "Rock Phone", "HubSpot Connection Status", "Rock Connection Status", "HubSpot Link", "Rock Link", "HubSpot CreatedDate", "Rock Created Date", "HubSpot Modified Date", "Rock Modified Date", "Rock ID" };
             var h = 1;
             var row = 2;
             foreach ( var header in headers )
@@ -124,7 +124,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             {
                 var list = api.Contact.List<HubSpotContact>( new ListRequestOptions
                 {
-                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email", "which_best_describes_your_involvement_with_the_crossing_" },
+                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email", "which_best_describes_your_involvement_with_the_crossing_", "createdate", "lastmodifieddate" },
                     Limit = 100,
                     Offset = offset
                 } );
@@ -522,7 +522,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
             }
             byte[] sheetbytes = excel.GetAsByteArray();
-            System.IO.File.WriteAllBytes( "Potential_Matches.xlsx", sheetbytes );
+            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Potential_Matches.xlsx"; 
+            System.IO.File.WriteAllBytes( path, sheetbytes );
         }
 
         private bool FindGroup( List<Group> groups, Person per, bool subOfYear )
@@ -647,6 +648,20 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //Add links
             worksheet.Cells[row, 11].Value = "https://app.hubspot.com/contacts/6480645/contact/" + contact.Id;
             worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
+
+            //Add Created Dates
+            DateTime epoch = new DateTime( 1970, 1, 1, 0, 0, 0, DateTimeKind.Utc );
+            worksheet.Cells[row, 13].Value = epoch.AddMilliseconds( Double.Parse(contact.createdate) ).ToString("MM/dd/yyyy");
+            worksheet.Cells[row, 14].Value = person.CreatedDateTime.Value.ToString( "MM/dd/yyyy" );
+
+            //Add Modified Dates
+            worksheet.Cells[row, 15].Value = epoch.AddMilliseconds( Double.Parse( contact.lastmodifieddate ) ).ToString( "MM/dd/yyyy" );
+            worksheet.Cells[row, 16].Value = person.ModifiedDateTime.Value.ToString( "MM/dd/yyyy" );
+
+            //Add Rock Id
+            worksheet.Cells[row, 17].Value = person.Id;
+
+
             return worksheet;
         }
 
@@ -682,5 +697,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         public string rock_email { get; set; }
         public string rock_id { get; set; }
         public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
+        public string lastmodifieddate { get; set; }
+        public string createdate { get; set; }
     }
 }
