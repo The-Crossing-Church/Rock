@@ -16,4 +16,8 @@
     .card-actions {
         text-align: center; 
     }
+    .col {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
 </style>

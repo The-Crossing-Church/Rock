@@ -104,6 +104,24 @@
             .col {
                 min-height: 75px;
             }
+            .btn-primary, .btn-primary:hover, .btn-primary:active {
+                color: #fff !important;
+                background-color: #428bca;
+                border-color: #357ebd;
+            }
+            .btn-primary:hover, .btn-primary:active {
+                background-color: #357ebd;
+            }
+            blockquote {
+                border-left: 3px solid #9c9a9a;
+                background-color: #eaeaea;
+                border-radius: 2px 6px 6px 2px;
+            }
+            blockquote .quote-author {
+                width: 100%;
+                text-align: right;
+                font-style: italic; 
+            }
         `
     });
     //Show outlines
@@ -186,8 +204,32 @@
             class: 'material-icons arrow_spacer'
         }
     });
+    blockManager.add('card-text', {
+        label: 'Text Card',
+        category: 'Basic',
+        content: `<div class="card">
+                    <div class='card-body-wrapper'>
+                        <h3 data-gjs-type="text" class="card-title" draggable="true" contenteditable="true">Title</h3>
+                        <hr/>
+                        <div data-gjs-type="text" class="card-body" draggable="true" contenteditable="true">Body Text</div>
+                    </div>
+                </div>
+                <style>
+                    .card {
+                        box-shadow: 4px 4px 8px rgba(0,0,0,.2);
+                        border-radius: 4px;
+                        overflow: hidden;
+                    }
+                    .card-body-wrapper {
+                        padding: 8px;
+                    }
+                </style>`,
+        attributes: {
+            class: 'fa fa-clone'
+        }
+    });
     blockManager.add('card', {
-        label: 'Simple Card',
+        label: 'Media Card',
         category: 'Basic',
         content: `<div class="card">
                     <img data-gjs-type="image" class="card-media" draggable="true" />
@@ -261,7 +303,23 @@
     blockManager.add('block-quote', {
         label: 'Quote',
         category: 'Basic',
-        content: `<blockquote data-gjs-type="text" draggable="true">Quote</blockquote>`,
+        content:    `<blockquote data-gjs-type="text" draggable="true">
+                        Quote
+                        <div data-gjs-type="text" draggable="true" class="quote-author">-Author</div>
+                    </blockquote>
+                    <style>
+                        blockquote {
+                            border-left: 3px solid #9c9a9a;
+                            background-color: #eaeaea;
+                            border-radius: 2px 6px 6px 2px;
+                        }
+                        blockquote .quote-author {
+                            width: 100%;
+                            text-align: right;
+                            font-style: italic; 
+                        }
+                    </style>
+                `,
         attributes: {
             class: 'fa fa-quote-right'
         }
@@ -285,6 +343,14 @@
                 </style>`,
         attributes: {
             class: 'fa fa-film'
+        }
+    });
+    blockManager.add('hr', {
+        label: 'Horizontal Line',
+        category: 'Basic',
+        content: `<hr draggable="true" />`,
+        attributes: {
+            class: 'fa fa-bars'
         }
     });
     function saveTemplate() {
