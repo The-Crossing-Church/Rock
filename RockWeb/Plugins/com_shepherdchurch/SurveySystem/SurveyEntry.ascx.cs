@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
+using com.shepherdchurch.SurveySystem.Attribute;
+using com.shepherdchurch.SurveySystem.Model;
+
 using Newtonsoft.Json;
+
 using Rock;
 using Rock.Attribute;
 using Rock.Data;
@@ -12,10 +16,6 @@ using Rock.Model;
 using Rock.Security;
 using Rock.Web.Cache;
 using Rock.Web.UI;
-using Rock.Web.UI.Controls;
-
-using com.shepherdchurch.SurveySystem.Attribute;
-using com.shepherdchurch.SurveySystem.Model;
 
 namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
 {
@@ -112,22 +112,9 @@ namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
             var survey = new SurveyService( rockContext ).Get( surveyId );
 
             //
-            // Ensure the user is allowed to view this survey.
-            //
-            if ( survey == null || !survey.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
-            {
-                nbUnauthorized.Text = "The survey was not found or has expired.";
-                pnlDetails.Visible = false;
-
-                return;
-            }
-
-            nbUnauthorized.Text = string.Empty;
-
-            //
             // Check if an active login is required for this survey.
             //
-            if ( survey.IsLoginRequired && CurrentUser == null )
+            if ( survey != null && survey.IsLoginRequired && CurrentUser == null )
             {
                 var site = RockPage.Site;
 
@@ -143,6 +130,18 @@ namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
                 return;
             }
 
+            //
+            // Ensure the user is allowed to view this survey.
+            //
+            if ( survey == null || !survey.IsAuthorized( Authorization.VIEW, CurrentPerson ) || !survey.IsActive )
+            {
+                nbUnauthorized.Text = "The survey was not found or has expired.";
+                pnlDetails.Visible = false;
+
+                return;
+            }
+
+            nbUnauthorized.Text = string.Empty;
             pnlDetails.Visible = true;
 
             //

@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Web.UI.WebControls;
+
+using com.shepherdchurch.SurveySystem.Model;
 
 using Newtonsoft.Json;
 
@@ -13,12 +14,9 @@ using Rock.Constants;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
-using Rock.Web;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
-
-using com.shepherdchurch.SurveySystem.Model;
 
 namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
 {
@@ -27,7 +25,8 @@ namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
     [Description( "Lists survey results in the system." )]
 
     [LinkedPage( "Detail Page", "The page that allows the user to view the details of a result.", false, "", "", 0 )]
-    public partial class SurveyResultList : RockBlock
+    [LinkedPage( "Chart Page", "The page that allows the user to view the results with charts.", false, "", "", 1 )]
+    public partial class SurveyResultList : RockBlock, ICustomGridColumns
     {
         #region Private Fields
 
@@ -104,6 +103,12 @@ namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
                 ViewState["CanDelete"] = survey.IsAuthorized( Authorization.EDIT, CurrentPerson );
                 gList.Columns[2].Visible = survey.PassingGrade.HasValue;
                 gList.Columns[3].Visible = survey.PassingGrade.HasValue;
+
+                aChartLink.HRef = LinkedPageUrl( "ChartPage", new Dictionary<string, string>
+                {
+                    { "SurveyId", PageParameter( "SurveyId" ) }
+                } );
+                aChartLink.Visible = aChartLink.HRef.IsNotNullOrWhiteSpace();
 
                 SetFilter();
                 BindGrid();
@@ -338,7 +343,6 @@ namespace RockWeb.Plugins.com_shepherdchurch.SurveySystem
             foreach ( var attributeModel in new AttributeService( new RockContext() ).Queryable()
                 .Where( a =>
                     a.EntityTypeId == entityTypeId &&
-                    //a.IsGridColumn &&
                     a.EntityTypeQualifierColumn.Equals( "SurveyId", StringComparison.OrdinalIgnoreCase ) &&
                     a.EntityTypeQualifierValue.Equals( typeQualifier ) )
                 .OrderByDescending( a => a.EntityTypeQualifierColumn )

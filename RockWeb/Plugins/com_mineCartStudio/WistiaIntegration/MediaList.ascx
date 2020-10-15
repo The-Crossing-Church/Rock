@@ -17,10 +17,10 @@
                             <Columns>
                                 <Rock:RockBoundField DataField="Name" HeaderText="Name" SortExpression="Name" />
                                 <Rock:RockBoundField DataField="Section" HeaderText="Section" SortExpression="Section" />
-                                <Rock:RockBoundField DataField="Description" HeaderText="Description" TruncateLength="250" SortExpression="Description" />
-                                <Rock:RockBoundField DataField="DurationFormatted" HeaderText="Duration" ItemStyle-HorizontalAlign="Right" />
-                                <Rock:RockBoundField DataField="PlayCount" HeaderText="Play Count" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:N0}" SortExpression="PlayCount" />
-                                <Rock:RockBoundField DataField="HoursWatched" HeaderText="Hours Watched" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:#,##0.0}" SortExpression="HoursWatched" />
+                                <Rock:RockBoundField DataField="Description" HeaderText="Description" TruncateLength="250" SortExpression="Description" HeaderStyle-Width="50%" />
+                                <Rock:RockBoundField DataField="DurationFormatted" HeaderText="Duration" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
+                                <Rock:RockBoundField DataField="PlayCount" HeaderText="Play Count" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:N0}" SortExpression="PlayCount" HeaderStyle-HorizontalAlign="Right" />
+                                <Rock:RockBoundField DataField="HoursWatched" HeaderText="Hours Watched" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:#,##0.0}" SortExpression="HoursWatched" HeaderStyle-HorizontalAlign="Right" />
                          
                             </Columns>
                         </Rock:Grid>

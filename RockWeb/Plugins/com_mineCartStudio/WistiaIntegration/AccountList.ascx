@@ -14,7 +14,7 @@
                         <Columns>
                             <Rock:RockBoundField DataField="Name" HeaderText="Name" SortExpression="Name" />
                             <Rock:DateTimeField DataField="LastRefreshDateTime" NullDisplayText="No refresh has occured" ItemStyle-HorizontalAlign="Left" HeaderText="Last Refresh Date" SortExpression="LastRefreshDateTime" />
-                            <asp:TemplateField HeaderText="Media Files">
+                            <asp:TemplateField HeaderText="Media Files" HeaderStyle-HorizontalAlign="Right" ItemStyle-HorizontalAlign="Right">
                                 <ItemTemplate>
                                     <asp:Literal ID="lMediaFileCount" runat="server" />
                                 </ItemTemplate>

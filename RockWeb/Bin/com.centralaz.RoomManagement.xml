@@ -523,6 +523,54 @@
             </summary>
             <param name="context">The context.</param>
         </member>
+        <member name="T:com.centralaz.RoomManagement.Migrations.Bugfixes155">
+            <summary>
+            Migration for the RoomManagement system.
+            </summary>
+            <seealso cref="T:Rock.Plugin.Migration" />
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes155.Up">
+            <summary>
+            The commands to run to migrate plugin to the specific version
+            </summary>
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes155.Down">
+            <summary>
+            The commands to undo a migration from a specific version.
+            </summary>
+        </member>
+        <member name="T:com.centralaz.RoomManagement.Migrations.Bugfixes154">
+            <summary>
+            Migration for the RoomManagement system.
+            </summary>
+            <seealso cref="T:Rock.Plugin.Migration" />
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes154.Up">
+            <summary>
+            The commands to run to migrate plugin to the specific version
+            </summary>
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes154.Down">
+            <summary>
+            The commands to undo a migration from a specific version.
+            </summary>
+        </member>
+        <member name="T:com.centralaz.RoomManagement.Migrations.Bugfixes153">
+            <summary>
+            Migration for the RoomManagement system.
+            </summary>
+            <seealso cref="T:Rock.Plugin.Migration" />
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes153.Up">
+            <summary>
+            The commands to run to migrate plugin to the specific version
+            </summary>
+        </member>
+        <member name="M:com.centralaz.RoomManagement.Migrations.Bugfixes153.Down">
+            <summary>
+            The commands to undo a migration from a specific version.
+            </summary>
+        </member>
         <member name="T:com.centralaz.RoomManagement.Migrations.Bugfixes150">
             <summary>
             Migration for the RoomManagement system.
@@ -1262,6 +1310,14 @@
             </summary>
             <value>
             The default setup time.
+            </value>
+        </member>
+        <member name="P:com.centralaz.RoomManagement.Model.ReservationType.DefaultCleanupTime">
+            <summary>
+            Gets or sets the default cleanup time.
+            </summary>
+            <value>
+            The default cleanup time.
             </value>
         </member>
         <member name="P:com.centralaz.RoomManagement.Model.ReservationType.IsCommunicationHistorySaved">
@@ -2708,7 +2764,7 @@
             <param name="reservation">The reservation.</param>
             <returns></returns>
         </member>
-        <member name="M:com.centralaz.RoomManagement.Model.ReservationService.GetReservedLocationIds(com.centralaz.RoomManagement.Model.Reservation,System.Boolean,System.Boolean)">
+        <member name="M:com.centralaz.RoomManagement.Model.ReservationService.GetReservedLocationIds(com.centralaz.RoomManagement.Model.Reservation,System.Boolean,System.Boolean,System.Boolean)">
             <summary>
             Gets the  location ids for any existing non-denied reservations that have the a location as the ones in the given newReservation object.
             </summary>

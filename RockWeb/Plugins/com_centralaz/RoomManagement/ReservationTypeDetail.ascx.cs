@@ -234,15 +234,28 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                         return;
                     }
 
-                    // Currently the Cascade delete isn't working, so this is temp code to force the issue.
                     var reservationService = new ReservationService( rockContext );
-                    var reservationQry = reservationService.Queryable().Where( r => r.ReservationTypeId == reservationType.Id );
-                    reservationService.DeleteRange( reservationQry );
+                    var reservationResourceService = new ReservationResourceService( rockContext );
+                    var reservationLocationService = new ReservationLocationService( rockContext );
+                    var reservationWorkfowTriggerService = new ReservationWorkflowTriggerService( rockContext );
+                    var reservationMinistryService = new ReservationMinistryService( rockContext );
 
+                    var reservationQry = reservationService.Queryable().Where( r => r.ReservationTypeId == reservationType.Id );
+                    var reservationResourceQry = reservationResourceService.Queryable().Where( rr => rr.Reservation.ReservationTypeId == reservationType.Id );
+                    var reservationLocationQry = reservationLocationService.Queryable().Where( rl => rl.Reservation.ReservationTypeId == reservationType.Id );
+                    var reservationTriggerQry = reservationWorkfowTriggerService.Queryable().Where( rwt => rwt.ReservationTypeId == reservationType.Id );
+                    var reservationMinistryQry = reservationMinistryService.Queryable().Where( rm => rm.ReservationTypeId == reservationType.Id );
+
+                    reservationMinistryService.DeleteRange( reservationMinistryQry );
+                    reservationWorkfowTriggerService.DeleteRange( reservationTriggerQry );
+                    reservationResourceService.DeleteRange( reservationResourceQry );
+                    reservationLocationService.DeleteRange( reservationLocationQry );
+                    reservationService.DeleteRange( reservationQry );
                     reservationTypeService.Delete( reservationType );
+
                     rockContext.SaveChanges();
 
-                    ReservationWorkflowService.RemoveCachedTriggers();
+                    ReservationWorkflowTriggerService.RemoveCachedTriggers();
                 }
             }
 
@@ -329,6 +342,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                 reservationType.IsNumberAttendingRequired = cbIsNumberAttendingRequired.Checked;
                 reservationType.IsSetupTimeRequired = cbIsSetupTimeRequired.Checked;
                 reservationType.DefaultSetupTime = nbDefaultSetupTime.Text.AsIntegerOrNull();
+                reservationType.DefaultCleanupTime = nbDefaultCleanupTime.Text.AsIntegerOrNull();
                 reservationType.IsReservationBookedOnApproval = cbIsReservationBookedOnApproval.Checked;
 
                 foreach ( var reservationMinistryState in ReservationMinistriesState )
@@ -397,7 +411,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                     }
                 } );
 
-                ReservationWorkflowService.RemoveCachedTriggers();
+                ReservationWorkflowTriggerService.RemoveCachedTriggers();
 
                 var qryParams = new Dictionary<string, string>();
                 qryParams["ReservationTypeId"] = reservationType.Id.ToString();
@@ -1106,6 +1120,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             cbIsNumberAttendingRequired.Checked = reservationType.IsNumberAttendingRequired;
             cbIsSetupTimeRequired.Checked = reservationType.IsSetupTimeRequired;
             nbDefaultSetupTime.Text = reservationType.DefaultSetupTime.ToStringSafe();
+            nbDefaultCleanupTime.Text = reservationType.DefaultCleanupTime.ToStringSafe();
 
             LoadDropDowns();
             if ( reservationType.NotificationEmailId.HasValue )

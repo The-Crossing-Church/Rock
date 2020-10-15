@@ -30,7 +30,6 @@ using Rock.Model;
 using Rock.Web.Cache;
 using com.minecartstudio.WistiaIntegration;
 using System.Data.Entity;
-using System.Web.Helpers;
 using Newtonsoft.Json.Linq;
 
 namespace RockWeb.Plugins.com_mineCartStudio.WistiaIntegration
@@ -243,8 +242,8 @@ namespace RockWeb.Plugins.com_mineCartStudio.WistiaIntegration
                 var wistiaChannelTypeMediumValueId = DefinedValueCache.Get( com.mineCartStudio.WistiaIntegration.SystemGuid.DefinedValue.WISTIA_INTERACTION_MEDIUM.AsGuid() ).Id;
                 var interactions = new InteractionService( rockContext ).Queryable()
                     .Where( i => i.InteractionComponent.EntityId == _media.Id 
-                                    && i.InteractionComponent.Channel.ChannelEntityId == _media.WistiaProject.WistiaAccountId
-                                    && i.InteractionComponent.Channel.ChannelTypeMediumValueId == wistiaChannelTypeMediumValueId 
+                                    && i.InteractionComponent.InteractionChannel.ChannelEntityId == _media.WistiaProject.WistiaAccountId
+                                    && i.InteractionComponent.InteractionChannel.ChannelTypeMediumValueId == wistiaChannelTypeMediumValueId 
                                     && i.Operation == "Watched" );
 
                 // person filter

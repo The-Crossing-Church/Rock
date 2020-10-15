@@ -20,12 +20,12 @@
                         <Rock:Grid ID="gProject" runat="server" AllowSorting="true" TooltipField="Name" CssClass="js-grid-projects" OnRowSelected="gProject_Edit" >
                             <Columns>
                                 <Rock:RockBoundField DataField="Name" HeaderText="Name" SortExpression="Name" />
-                                <Rock:RockBoundField DataField="Description" HeaderText="Description" TruncateLength="250" SortExpression="Description" />
-                                <Rock:RockBoundField DataField="MediaCount" HeaderText="Media Files" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:N0}" />
-                                <Rock:RockBoundField DataField="PlayCount" HeaderText="Play Count" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:N0}" SortExpression="PlayCount" />
-                                <Rock:RockBoundField DataField="HoursWatched" HeaderText="Hours Watched" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:#,##0.0}" SortExpression="HoursWatched" />
-                                <Rock:BoolField DataField="IsPublic" HeaderText="Is Public" />
-                                <Rock:BoolField DataField="ShowInIntegration" HeaderText="Show In Integration" />
+                                <Rock:RockBoundField DataField="Description" HeaderText="Description" TruncateLength="250" SortExpression="Description" HeaderStyle-Width="50%" />
+                                <Rock:RockBoundField DataField="MediaCount" HeaderText="Media Files" HeaderStyle-HorizontalAlign="Right" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:N0}" />
+                                <Rock:RockBoundField DataField="PlayCount" HeaderText="Play Count" HeaderStyle-HorizontalAlign="Right" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:N0}" SortExpression="PlayCount" />
+                                <Rock:RockBoundField DataField="HoursWatched" HeaderText="Hours Watched" HeaderStyle-HorizontalAlign="Right" ItemStyle-HorizontalAlign="Right" DataFormatString="{0:#,##0.0}" SortExpression="HoursWatched" />
+                                <Rock:BoolField DataField="IsPublic" HeaderText="Is Public"  HeaderStyle-HorizontalAlign="Center" />
+                                <Rock:BoolField DataField="ShowInIntegration" HeaderText="Show In Integration" HeaderStyle-HorizontalAlign="Center" />
 
                             </Columns>
                         </Rock:Grid>
