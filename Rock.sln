@@ -71,8 +71,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Tests.Integration", "Rock.Tests.Integration\Rock.Tests.Integration.csproj", "{9BB83636-1C9C-4A3F-9C18-5CFDB1EC720A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.TransNational.Pi", "Rock.TransNational.Pi\Rock.TransNational.Pi.csproj", "{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.crossingchurch.OurRock", "org.crossingchurch.OurRock\org.crossingchurch.OurRock.csproj", "{77AB5AF2-ED4A-4503-B42C-9805A77F2099}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.DownhillCss", "Rock.DownhillCss\Rock.DownhillCss.csproj", "{CADD9206-2C6B-42E4-B20B-2DFC3EB4D6D4}"
@@ -176,10 +174,6 @@ Global
 		{9BB83636-1C9C-4A3F-9C18-5CFDB1EC720A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9BB83636-1C9C-4A3F-9C18-5CFDB1EC720A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9BB83636-1C9C-4A3F-9C18-5CFDB1EC720A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Release|Any CPU.ActiveCfg = Release|Any CPU
