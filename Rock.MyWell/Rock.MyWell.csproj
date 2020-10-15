@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}</ProjectGuid>
+    <ProjectGuid>{02BD3C29-D8F5-4BA7-A4B2-92A243A64F00}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Rock.MyWell</RootNamespace>
