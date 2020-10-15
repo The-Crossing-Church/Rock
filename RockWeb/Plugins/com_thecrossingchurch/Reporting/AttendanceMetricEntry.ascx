@@ -22,28 +22,29 @@
             <div class="col col-xs-0 col-md-3">
             </div>
         </div>
-        <div class="row" runat="server" ID="EntryForm" Visible="false">
+        <div class="row" runat="server" id="EntryForm" visible="false">
             <div class="col col-xs-0 col-md-2"></div>
             <div class="col col-xs-0 col-md-8">
                 <div class="well">
-                    <asp:Placeholder runat="server" ID="headingPlaceholder"></asp:Placeholder><br />
+                    <asp:PlaceHolder runat="server" ID="headingPlaceholder"></asp:PlaceHolder>
+                    <br />
                     <div class="row">
                         <div class="col col-xs-6">
-                            <Rock:DatePicker Required="true" runat="server" ID="OccurrenceDate" Label="Date"/>
+                            <Rock:DatePicker Required="true" runat="server" ID="OccurrenceDate" Label="Date" />
                         </div>
                         <div class="col col-xs-6">
-                            <Rock:RockDropDownList Required="true" runat="server" ID="Time" Label="Service" style="max-width:225px;" />
+                            <Rock:RockDropDownList Required="true" runat="server" ID="Time" Label="Service" Style="max-width: 225px;" />
                             <Rock:TimePicker Required="true" runat="server" ID="seTime" Label="Time" />
                         </div>
                     </div>
                     <div class="row">
                         <div class="col col-xs-6">
-                            <Rock:RockDropDownList Required="true" runat="server" ID="ServiceType" Label="Service Type" style="max-width:225px;" />
+                            <Rock:RockDropDownList Required="true" runat="server" ID="ServiceType" Label="Service Type" Style="max-width: 225px;" />
                         </div>
                     </div>
                     <div class="row">
                         <div class="col col-xs-6">
-                            <Rock:RockTextBox Required="true" runat="server" ID="Attendance" Label="Attendance" style="max-width:225px;"/>
+                            <Rock:RockTextBox Required="true" runat="server" ID="Attendance" Label="Attendance" Style="max-width: 225px;" />
                         </div>
                         <div class="col col-xs-6">
                             <Rock:LocationItemPicker Required="true" Label="Location" ID="Location" runat="server" />
@@ -55,18 +56,23 @@
                         </div>
                     </div>
                     <div class="row">
-                        <Button ID="btnConfirmRemoveAttendance"  onclick="deleteMetric()" class="pull-left btn btn-danger"  CausesValidation="false">Delete</Button>
-                        <Rock:BootstrapButton ID="btnAddAttendance" runat="server" OnClick="btnAddAttendance_Click" Text="Save" CssClass="pull-right btn btn-primary"/>
+                        <button id="btnConfirmRemoveAttendance" onclick="deleteMetric()" class="pull-left btn btn-danger" causesvalidation="false">Delete</button>
+                        <Rock:BootstrapButton ID="btnAddAttendance" runat="server" OnClick="btnAddAttendance_Click" Text="Save" CssClass="pull-right btn btn-primary" />
                     </div>
                 </div>
             </div>
             <div class="col col-xs-0 col-md-2"></div>
         </div>
-        <div style="display:none">
+        <Rock:ModalDialog runat="server" ID="alertConfirmAdd" Visible="true" SaveButtonText="Continue"  OnSaveClick="btnAddAttendance_Click">
+            <Content>
+                An attendance entry with the same date, time, and location already exists. Would you like to continue? 
+            </Content>
+        </Rock:ModalDialog>
+        <div style="display: none">
             <Rock:BootstrapButton ID="btnRemoveAttendance" runat="server" OnClick="btnRemoveAttendance_Click" Text="Delete" CssClass="btn btn-danger" CausesValidation="false"></Rock:BootstrapButton>
         </div>
-            <script>
-                function deleteMetric() {
+        <script>
+            function deleteMetric() {
                 // delete prompt
                 var confirmMessage = 'Are you sure you want to delete this attendance entry?';
                 Rock.dialogs.confirm(confirmMessage, function (result) {
@@ -76,30 +82,35 @@
                     }
                 });
             }
-            </script>
+        </script>
     </ContentTemplate>
 </asp:UpdatePanel>
 <style>
     .pad-8 {
         padding: 8px;
     }
+
     .tile {
         text-align: center;
         padding: 8px;
         border-radius: 4px !important;
         box-shadow: 0 2px 8px 0 rgba(0,0,0,0.2) !important;
     }
-    .tile:hover {
-        cursor: pointer;
-    }
-    .tile.pressed {
-        box-shadow: inset 0 2px 8px 0 rgba(0,0,0,0.2) !important;
-        background-color: #f3f3f3;
-    }
+
+        .tile:hover {
+            cursor: pointer;
+        }
+
+        .tile.pressed {
+            box-shadow: inset 0 2px 8px 0 rgba(0,0,0,0.2) !important;
+            background-color: #f3f3f3;
+        }
+
     .required.has-error .control-wrapper .picker.picker-select a.picker-label {
-        border: 1px solid #e55235; 
+        border: 1px solid #e55235;
     }
-    .required.has-error .control-wrapper .picker.picker-select a.picker-label:focus {
-        box-shadow: 0 0 0 3px rgba(229, 82, 53, 0.25);
-    }
+
+        .required.has-error .control-wrapper .picker.picker-select a.picker-label:focus {
+            box-shadow: 0 0 0 3px rgba(229, 82, 53, 0.25);
+        }
 </style>

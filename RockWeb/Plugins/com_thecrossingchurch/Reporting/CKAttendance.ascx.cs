@@ -35,8 +35,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     [Category( "com_thecrossingchurch > CK Attendance" )]
     [Description( "Custom Attendance Report for Crossing Kids" )]
 
-    [IntegerField("Notes Page", "The page id of the notes page for the report.", true, 0, "", 0)]
-    [IntegerField("Note Type Id", "The id of the note type used for the report.", true, 0, "", 1)]
+    [IntegerField( "Notes Page", "The page id of the notes page for the report.", true, 0, "", 0 )]
+    [IntegerField( "Note Type Id", "The id of the note type used for the report.", true, 0, "", 1 )]
 
     public partial class CKAttendance : Rock.Web.UI.RockBlock //, ICustomGridColumns
     {
@@ -50,10 +50,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         private int pageNum;
         private int noteTypeId;
         //Local Variables
-        public string csv {
+        public string csv
+        {
             get
             {
-                if(ViewState["csv"] != null)
+                if ( ViewState["csv"] != null )
                 {
                     return ViewState["csv"].ToString();
                 }
@@ -66,10 +67,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             {
                 ViewState["csv"] = value;
             }
-        } 
+        }
         public List<AttendanceReportData> results;
-        public List<AttendanceReportData> thresholds; 
-        public List<ClassesBySchedule> inUseClassrooms; 
+        public List<AttendanceReportData> thresholds;
+        public List<ClassesBySchedule> inUseClassrooms;
         public List<string> classroomSort = new List<string>() {
             "Infants",
             "Crawlers",
@@ -119,11 +120,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
         #region Base Control Methods
 
-        protected void Page_Load(object sender, EventArgs e)
+        protected void Page_Load( object sender, EventArgs e )
         {
-            ScriptManager scriptManager = ScriptManager.GetCurrent(this.Page);
-            scriptManager.RegisterPostBackControl(this.btnExport);
-            ScriptManager.RegisterStartupScript(Page, this.GetType(), "AKey", "notes();", true);
+            ScriptManager scriptManager = ScriptManager.GetCurrent( this.Page );
+            scriptManager.RegisterPostBackControl( this.btnExport );
+            ScriptManager.RegisterStartupScript( Page, this.GetType(), "AKey", "notes();", true );
         }
 
         /// <summary>
@@ -142,19 +143,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
-            if (!stDate.SelectedDate.HasValue)
+            if ( !stDate.SelectedDate.HasValue )
             {
-                var dt = DateTime.Now.StartOfWeek(DayOfWeek.Sunday); 
-                stDate.SelectedDate = dt.AddDays(-21);
+                var dt = DateTime.Now.StartOfWeek( DayOfWeek.Sunday );
+                stDate.SelectedDate = dt.AddDays( -21 );
             }
-            if (!endDate.SelectedDate.HasValue)
+            if ( !endDate.SelectedDate.HasValue )
             {
                 endDate.SelectedDate = DateTime.Now;
             }
             start = stDate.SelectedDate.Value;
             end = endDate.SelectedDate.Value;
-            pageNum = GetAttributeValue("NotesPage").AsInteger();
-            noteTypeId = GetAttributeValue("NoteTypeId").AsInteger();
+            pageNum = GetAttributeValue( "NotesPage" ).AsInteger();
+            noteTypeId = GetAttributeValue( "NoteTypeId" ).AsInteger();
             BindFilter();
         }
 
@@ -167,11 +168,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void btnFilter_Click(object sender, EventArgs e)
+        protected void btnFilter_Click( object sender, EventArgs e )
         {
             start = stDate.SelectedDate.Value;
             end = endDate.SelectedDate.Value;
-            svcTimes = lbSchedules.SelectedValues.Select(x => Int32.Parse(x)).ToList();
+            svcTimes = lbSchedules.SelectedValues.Select( x => Int32.Parse( x ) ).ToList();
             GetAttendance();
         }
 
@@ -180,28 +181,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void btnExport_Click(object sender, EventArgs e)
+        protected void btnExport_Click( object sender, EventArgs e )
         {
             var excel = GenerateExcel();
             byte[] byteArray;
-            using (MemoryStream ms = new MemoryStream())
+            using ( MemoryStream ms = new MemoryStream() )
             {
-                excel.SaveAs(ms);
+                excel.SaveAs( ms );
                 byteArray = ms.ToArray();
             }
             Response.Clear();
             Response.Buffer = true;
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            Response.AddHeader("content-disposition", "attachment;filename=AttendanceExport.xlsx");
-            Response.Cache.SetCacheability(HttpCacheability.Public);
+            Response.AddHeader( "content-disposition", "attachment;filename=AttendanceExport.xlsx" );
+            Response.Cache.SetCacheability( HttpCacheability.Public );
             Response.Charset = "";
             //Response.Output.Write(csv);
-            Response.BinaryWrite(byteArray);
+            Response.BinaryWrite( byteArray );
             Response.Flush();
             Response.End();
         }
 
-        protected void sdrpDates_SelectedDateRangeChanged(object sender, EventArgs e)
+        protected void sdrpDates_SelectedDateRangeChanged( object sender, EventArgs e )
         {
             BindFilter();
         }
@@ -224,64 +225,64 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             DateTime? dateStart = stDate.SelectedDate;
             DateTime? dateEnd = endDate.SelectedDate;
 
-            lbSchedules.Required = GetAttributeValue("RequireSchedule").AsBoolean(true);
-            if (lbSchedules.Required)
+            lbSchedules.Required = GetAttributeValue( "RequireSchedule" ).AsBoolean( true );
+            if ( lbSchedules.Required )
             {
-                pnlSchedules.AddCssClass("required");
+                pnlSchedules.AddCssClass( "required" );
             }
             else
             {
-                pnlSchedules.RemoveCssClass("required");
+                pnlSchedules.RemoveCssClass( "required" );
             }
 
-            if (dateStart.HasValue)
+            if ( dateStart.HasValue )
             {
-                var area = GetAttributeValue("CheckInArea").AsIntegerOrNull();
+                var area = GetAttributeValue( "CheckInArea" ).AsIntegerOrNull();
 
-                using (var rockContext = new RockContext())
+                using ( var rockContext = new RockContext() )
                 {
-                    var occQry = new AttendanceOccurrenceService(rockContext)
+                    var occQry = new AttendanceOccurrenceService( rockContext )
                         .Queryable().AsNoTracking()
-                        .Where(o =>
-                           o.OccurrenceDate >= dateStart &&
-                           (!dateEnd.HasValue || o.OccurrenceDate < dateEnd) &&
-                           o.Attendees.Any(a => a.DidAttend.HasValue && a.DidAttend.Value) &&
-                           o.Schedule != null
+                        .Where( o =>
+                            o.OccurrenceDate >= dateStart &&
+                            ( !dateEnd.HasValue || o.OccurrenceDate < dateEnd ) &&
+                            o.Attendees.Any( a => a.DidAttend.HasValue && a.DidAttend.Value ) &&
+                            o.Schedule != null
                         );
 
-                    if (area.HasValue)
+                    if ( area.HasValue )
                     {
-                        var groupTypeIds = new GroupTypeService(rockContext)
-                            .GetAllAssociatedDescendents(area.Value)
-                            .Select(t => t.Id)
+                        var groupTypeIds = new GroupTypeService( rockContext )
+                            .GetAllAssociatedDescendents( area.Value )
+                            .Select( t => t.Id )
                             .ToList();
 
                         occQry = occQry
-                            .Where(o =>
-                               o.Group != null &&
-                               groupTypeIds.Contains(o.Group.GroupTypeId));
+                            .Where( o =>
+                                o.Group != null &&
+                                groupTypeIds.Contains( o.Group.GroupTypeId ) );
                     }
 
                     var serviceTimes = occQry
-                        .Select(o => o.Schedule)
+                        .Select( o => o.Schedule )
                         .Distinct()
                         .ToList()
-                        .OrderBy(s => s.StartTimeOfDay)
-                        .Select(o => new
+                        .OrderBy( s => s.StartTimeOfDay )
+                        .Select( o => new
                         {
                             o.Id,
                             o.Name
-                        })
+                        } )
                         .ToList();
 
-                    foreach (var serviceTime in serviceTimes)
+                    foreach ( var serviceTime in serviceTimes )
                     {
-                        var item = new ListItem(serviceTime.Name, serviceTime.Id.ToString());
-                        item.Selected = selectedItems.Contains(serviceTime.Id);
-                        lbSchedules.Items.Add(item);
+                        var item = new ListItem( serviceTime.Name, serviceTime.Id.ToString() );
+                        item.Selected = selectedItems.Contains( serviceTime.Id );
+                        lbSchedules.Items.Add( item );
                     }
 
-                    if (serviceTimes.Any())
+                    if ( serviceTimes.Any() )
                     {
                         lSchedules.Visible = false;
                         lbSchedules.Visible = true;
@@ -299,118 +300,128 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <summary>
         /// Generates the report data
         /// </summary>
-        private void GetAttendance() {
-            var schedules = new ScheduleService(new RockContext()).Queryable().Where(x => svcTimes.Contains(x.Id)).ToList().OrderBy(x => x.StartTimeOfDay);
-            var locations = new LocationService(new RockContext()).Queryable().Where(l => l.IsActive && !String.IsNullOrEmpty(l.Name)).ToList();
+        private void GetAttendance()
+        {
+            var schedules = new ScheduleService( new RockContext() ).Queryable().Where( x => svcTimes.Contains( x.Id ) ).ToList().OrderBy( x => x.StartTimeOfDay );
+            var locations = new LocationService( new RockContext() ).Queryable().Where( l => !String.IsNullOrEmpty( l.Name ) ).ToList(); //l.IsActive &&
 
-            var attendance = new AttendanceService(new RockContext()).Queryable().Where(x =>
-                DateTime.Compare(start, x.StartDateTime) <= 0 &&
-                DateTime.Compare(end, x.StartDateTime) >= 0 &&
-                svcTimes.Contains(x.Occurrence.ScheduleId.Value) &&
-                (x.Occurrence.Group.GroupTypeId == 129 || x.Occurrence.Group.GroupTypeId == 128 || x.Occurrence.Group.GroupTypeId == 122) //LO, PS and Elem Areas Only
+            var attendance = new AttendanceService( new RockContext() ).Queryable().Where( x =>
+                   DateTime.Compare( start, x.StartDateTime ) <= 0 &&
+                   DateTime.Compare( end, x.StartDateTime ) >= 0 &&
+                   svcTimes.Contains( x.Occurrence.ScheduleId.Value ) &&
+                   ( x.Occurrence.Group.GroupTypeId == 129 || x.Occurrence.Group.GroupTypeId == 128 || x.Occurrence.Group.GroupTypeId == 122 ) && //LO, PS and Elem Areas Only
+                   x.DidAttend != false
             );
             inUseClassrooms = new List<ClassesBySchedule>();
-            for(var i=0; i<svcTimes.Count(); i++)
+            for ( var i = 0; i < svcTimes.Count(); i++ )
             {
                 var svcId = svcTimes[i];
-                var current = attendance.Where(x => x.Occurrence.ScheduleId == svcId).Select(x => x.Occurrence.Location.Name).ToList().Select(x => TransformClassName(x)).Distinct().OrderBy(x => {
-                    var name = x.Contains("11:15") ? x.Substring(6) : x.Substring(5);
-                    return classroomSort.IndexOf(name);
-                  }).ToList();
-                inUseClassrooms.Add(new ClassesBySchedule { ScheduleId = svcId, Classrooms = current });
+                var current = attendance.Where( x => x.Occurrence.ScheduleId == svcId ).Select( x => x.Occurrence.Location.Name ).ToList().Select( x => TransformClassName( x ) ).Distinct().OrderBy( x =>
+                {
+                    var name = x.Contains( "11:15" ) ? x.Substring( 6 ) : x.Substring( 5 );
+                    return classroomSort.IndexOf( name );
+                } ).ToList();
+                inUseClassrooms.Add( new ClassesBySchedule { ScheduleId = svcId, Classrooms = current } );
             }
-            BuildThresholdData(locations, schedules.ToList()); 
+            BuildThresholdData( locations, schedules.ToList() );
 
             //Early Childhood, Multiage doesn't exist
-            var early_childhood = attendance.Where(x => x.Occurrence.Group.GroupTypeId == 128 || x.Occurrence.Group.GroupTypeId == 122).ToList().GroupBy(x => new { x.Occurrence.OccurrenceDate, x.Occurrence.ScheduleId, x.Occurrence.LocationId }).Select(x => { 
-                var location = locations.FirstOrDefault(l => l.Id == x.Key.LocationId);
-                location.LoadAttributes();
-                var threshold = GetThreshold(location.AttributeValues["ThresholdHistoricalData"].Value.ToString(), x.Key.OccurrenceDate);
-                var ca =  new ClassAttendance()
-                {
-                    ClassName = TransformClassName(location.Name),
-                    ScheduleId = x.Key.ScheduleId.Value,
-                    AttendanceCount = x.Count(),
-                    OccurrenceDate = x.Key.OccurrenceDate
-                };
-                if (threshold.HasValue && ca.AttendanceCount >= threshold)
-                {
-                    ca.OverThreshold = true;
-                }
-                else if (!threshold.HasValue && ca.AttendanceCount >= location.SoftRoomThreshold)
-                {
-                    ca.OverThreshold = true;
-                }
-                return ca; 
-            }).Distinct().ToList();
-            var ecSvcAtt = early_childhood.GroupBy(x => new { x.OccurrenceDate, x.ScheduleId }).Select(x =>
+            var early_childhood = attendance.Where( x => x.Occurrence.Group.GroupTypeId == 128 || x.Occurrence.Group.GroupTypeId == 122 ).ToList().GroupBy( x => new { x.Occurrence.OccurrenceDate, x.Occurrence.ScheduleId, x.Occurrence.LocationId } ).Select( x =>
             {
-                var svcAtt = new ServiceAttendance()
-                {
-                    ServiceTime = schedules.FirstOrDefault(s => s.Id == x.Key.ScheduleId).Name,
-                    OccurrenceDate = x.Key.OccurrenceDate,
-                    ClassAttendances = early_childhood.Where(ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId).OrderBy(c => {
-                        var name = c.ClassName.Contains("11:15") ? c.ClassName.Substring(6) : c.ClassName.Substring(5);
-                        return classroomSort.IndexOf(name);
-                      }).ToList()
-                };
-                svcAtt.Total = svcAtt.ClassAttendances.Select(ca => ca.AttendanceCount).Sum();
-                return svcAtt;
-            });
-
-            //Elementary, Multiage exists
-            var elem = attendance.Where(x => x.Occurrence.Group.GroupTypeId == 129).ToList().Select(e => {
-                var scheduleStart = new DateTime(e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0).Add(e.Occurrence.Schedule.StartTimeOfDay);
-                var ts = scheduleStart - e.StartDateTime;
-                if (ts.TotalMinutes <= 45)
-                {
-                    return e;
-                }
-                return new Attendance() { Id = -1 };
-            }).Where(e => e.Id > 0).GroupBy(x => new { x.Occurrence.OccurrenceDate, x.Occurrence.ScheduleId, x.Occurrence.LocationId }).Select(x => {
-                var location = locations.FirstOrDefault(l => l.Id == x.Key.LocationId);
+                var location = locations.FirstOrDefault( l => l.Id == x.Key.LocationId );
                 location.LoadAttributes();
-                var threshold = GetThreshold(location.AttributeValues["ThresholdHistoricalData"].Value.ToString(), x.Key.OccurrenceDate);
+                var threshold = GetThreshold( location.AttributeValues["ThresholdHistoricalData"].Value.ToString(), x.Key.OccurrenceDate );
                 var ca = new ClassAttendance()
                 {
-                    ClassName = TransformClassName(location.Name),
+                    ClassName = TransformClassName( location.Name ),
                     ScheduleId = x.Key.ScheduleId.Value,
                     AttendanceCount = x.Count(),
                     OccurrenceDate = x.Key.OccurrenceDate
                 };
-                if (threshold.HasValue && ca.AttendanceCount > threshold)
+                if ( threshold.HasValue && ca.AttendanceCount >= threshold )
                 {
                     ca.OverThreshold = true;
                 }
-                else if (!threshold.HasValue && ca.AttendanceCount > location.SoftRoomThreshold)
+                else if ( !threshold.HasValue && ca.AttendanceCount >= location.SoftRoomThreshold )
                 {
                     ca.OverThreshold = true;
                 }
                 return ca;
-            }).Distinct().ToList();
-            var elemMultiAge = attendance.Where(x => x.Occurrence.Group.GroupTypeId == 129).ToList().Select(e => {
-                var scheduleStart = new DateTime(e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0).Add(e.Occurrence.Schedule.StartTimeOfDay);
+            } ).Distinct().ToList();
+            var ecSvcAtt = early_childhood.GroupBy( x => new { x.OccurrenceDate, x.ScheduleId } ).Select( x =>
+               {
+                   var svcAtt = new ServiceAttendance()
+                   {
+                       ServiceTime = schedules.FirstOrDefault( s => s.Id == x.Key.ScheduleId ).Name,
+                       OccurrenceDate = x.Key.OccurrenceDate,
+                       ClassAttendances = early_childhood.Where( ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId ).OrderBy( c =>
+                       {
+                           var name = c.ClassName.Contains( "11:15" ) ? c.ClassName.Substring( 6 ) : c.ClassName.Substring( 5 );
+                           return classroomSort.IndexOf( name );
+                       } ).ToList()
+                   };
+                   svcAtt.Total = svcAtt.ClassAttendances.Select( ca => ca.AttendanceCount ).Sum();
+                   return svcAtt;
+               } );
+
+            //Elementary, Multiage exists
+            var elem = attendance.Where( x => x.Occurrence.Group.GroupTypeId == 129 ).ToList().Select( e =>
+            {
+                var scheduleStart = new DateTime( e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0 ).Add( e.Occurrence.Schedule.StartTimeOfDay );
                 var ts = scheduleStart - e.StartDateTime;
-                if (ts.TotalMinutes > 45)
+                if ( ts.TotalMinutes <= 45 )
+                {
+                    return e;
+                }
+                return new Attendance() { Id = -1 };
+            } ).Where( e => e.Id > 0 ).GroupBy( x => new { x.Occurrence.OccurrenceDate, x.Occurrence.ScheduleId, x.Occurrence.LocationId } ).Select( x =>
+            {
+                var location = locations.FirstOrDefault( l => l.Id == x.Key.LocationId );
+                location.LoadAttributes();
+                var threshold = GetThreshold( location.AttributeValues["ThresholdHistoricalData"].Value.ToString(), x.Key.OccurrenceDate );
+                var ca = new ClassAttendance()
+                {
+                    ClassName = TransformClassName( location.Name ),
+                    ScheduleId = x.Key.ScheduleId.Value,
+                    AttendanceCount = x.Count(),
+                    OccurrenceDate = x.Key.OccurrenceDate
+                };
+                if ( threshold.HasValue && ca.AttendanceCount >= threshold )
+                {
+                    ca.OverThreshold = true;
+                }
+                else if ( !threshold.HasValue && ca.AttendanceCount >= location.SoftRoomThreshold )
+                {
+                    ca.OverThreshold = true;
+                }
+                return ca;
+            } ).Distinct().ToList();
+            var elemMultiAge = attendance.Where( x => x.Occurrence.Group.GroupTypeId == 129 ).ToList().Select( e =>
+            {
+                var scheduleStart = new DateTime( e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0 ).Add( e.Occurrence.Schedule.StartTimeOfDay );
+                var ts = scheduleStart - e.StartDateTime;
+                if ( ts.TotalMinutes > 45 )
                 {
                     var isK2 = false;
-                    if (e.Occurrence.Group.Name.Contains("Kindergarten") || e.Occurrence.Group.Name.Contains("1st") || e.Occurrence.Group.Name.Contains("2nd"))
+                    if ( e.Occurrence.Group.Name.Contains( "Kindergarten" ) || e.Occurrence.Group.Name.Contains( "1st" ) || e.Occurrence.Group.Name.Contains( "2nd" ) )
                     {
                         isK2 = true;
                     }
-                    return new { isValid=true, att=e, isK2= isK2};
+                    return new { isValid = true, att = e, isK2 = isK2 };
                 }
-                return new { isValid=false, att = new Attendance(){ }, isK2=false };
-            }).Where(e => e.isValid == true).GroupBy(x => new { x.isK2, x.att.Occurrence.OccurrenceDate, x.att.Occurrence.ScheduleId }).Select(x => {
-                var idx = inUseClassrooms.Select(iuc => iuc.ScheduleId).ToList().IndexOf(x.Key.ScheduleId.Value);
+                return new { isValid = false, att = new Attendance() { }, isK2 = false };
+            } ).Where( e => e.isValid == true ).GroupBy( x => new { x.isK2, x.att.Occurrence.OccurrenceDate, x.att.Occurrence.ScheduleId } ).Select( x =>
+            {
+                var idx = inUseClassrooms.Select( iuc => iuc.ScheduleId ).ToList().IndexOf( x.Key.ScheduleId.Value );
                 var className = x.Key.isK2 ? "K-2 Multi-Age" : "3-5 Multi-Age";
-                if (inUseClassrooms[idx].Classrooms.IndexOf(className) < 0)
+                if ( inUseClassrooms[idx].Classrooms.IndexOf( className ) < 0 )
                 {
-                    inUseClassrooms[idx].Classrooms.Add(className);
-                    inUseClassrooms[idx].Classrooms = inUseClassrooms[idx].Classrooms.OrderBy(iuc => {
-                        var name = iuc.Contains(":") ? (iuc.Contains("11:15") ? iuc.Substring(6) : iuc.Substring(5)) : iuc;
-                        return classroomSort.IndexOf(name);
-                      }).ToList();
+                    inUseClassrooms[idx].Classrooms.Add( className );
+                    inUseClassrooms[idx].Classrooms = inUseClassrooms[idx].Classrooms.OrderBy( iuc =>
+                    {
+                        var name = iuc.Contains( ":" ) ? ( iuc.Contains( "11:15" ) ? iuc.Substring( 6 ) : iuc.Substring( 5 ) ) : iuc;
+                        return classroomSort.IndexOf( name );
+                    } ).ToList();
                 }
                 return new ClassAttendance()
                 {
@@ -419,319 +430,322 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     AttendanceCount = x.Count(),
                     OccurrenceDate = x.Key.OccurrenceDate
                 };
-            }).OrderBy(x => {
-                var name = x.ClassName.Contains("11:15") ? x.ClassName.Substring(6) : x.ClassName.Substring(5);
-                return classroomSort.IndexOf(name);
-              }).Distinct().ToList();
-
-            var elemSvcAtt = elem.Union(elemMultiAge).GroupBy(x => new { x.OccurrenceDate, x.ScheduleId }).Select(x =>
+            } ).OrderBy( x =>
             {
-                var svcAtt = new ServiceAttendance()
-                {
-                    ServiceTime = schedules.FirstOrDefault(s => s.Id == x.Key.ScheduleId).Name,
-                    OccurrenceDate = x.Key.OccurrenceDate,
-                    ClassAttendances = elem.Where(ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId).Union(elemMultiAge.Where(em => em.ScheduleId == x.Key.ScheduleId && em.OccurrenceDate == x.Key.OccurrenceDate)).OrderBy(c => {
-                        var name = c.ClassName.Contains("11:15") ? c.ClassName.Substring(6) : c.ClassName.Substring(5);
-                        return classroomSort.IndexOf(name);
-                    }).ToList()
-                };
-                svcAtt.Total = svcAtt.ClassAttendances.Select(ca => ca.AttendanceCount).Sum();
-                svcAtt.MultiAgeTotal = elemMultiAge.Where(ma => ma.OccurrenceDate == x.Key.OccurrenceDate && ma.ScheduleId == x.Key.ScheduleId).Select(ma => ma.AttendanceCount).Sum();
-                return svcAtt;
-            });
+                var name = x.ClassName.Contains( "11:15" ) ? x.ClassName.Substring( 6 ) : x.ClassName.Substring( 5 );
+                return classroomSort.IndexOf( name );
+            } ).Distinct().ToList();
+
+            var elemSvcAtt = elem.Union( elemMultiAge ).GroupBy( x => new { x.OccurrenceDate, x.ScheduleId } ).Select( x =>
+                 {
+                     var svcAtt = new ServiceAttendance()
+                     {
+                         ServiceTime = schedules.FirstOrDefault( s => s.Id == x.Key.ScheduleId ).Name,
+                         OccurrenceDate = x.Key.OccurrenceDate,
+                         ClassAttendances = elem.Where( ec => ec.OccurrenceDate == x.Key.OccurrenceDate && ec.ScheduleId == x.Key.ScheduleId ).Union( elemMultiAge.Where( em => em.ScheduleId == x.Key.ScheduleId && em.OccurrenceDate == x.Key.OccurrenceDate ) ).OrderBy( c =>
+                         {
+                             var name = c.ClassName.Contains( "11:15" ) ? c.ClassName.Substring( 6 ) : c.ClassName.Substring( 5 );
+                             return classroomSort.IndexOf( name );
+                         } ).ToList()
+                     };
+                     svcAtt.Total = svcAtt.ClassAttendances.Select( ca => ca.AttendanceCount ).Sum();
+                     svcAtt.MultiAgeTotal = elemMultiAge.Where( ma => ma.OccurrenceDate == x.Key.OccurrenceDate && ma.ScheduleId == x.Key.ScheduleId ).Select( ma => ma.AttendanceCount ).Sum();
+                     return svcAtt;
+                 } );
 
             var list = from ec in ecSvcAtt
                        join el in elemSvcAtt
                        on new { ec.ServiceTime, ec.OccurrenceDate } equals new { el.ServiceTime, el.OccurrenceDate }
-                       select new ServiceAttendance() { ServiceTime = ec.ServiceTime, ClassAttendances = ec.ClassAttendances.Union(el.ClassAttendances).ToList(), OccurrenceDate = ec.OccurrenceDate, Total = ec.Total + el.Total, MultiAgeTotal = el.MultiAgeTotal };
+                       select new ServiceAttendance() { ServiceTime = ec.ServiceTime, ClassAttendances = ec.ClassAttendances.Union( el.ClassAttendances ).ToList(), OccurrenceDate = ec.OccurrenceDate, Total = ec.Total + el.Total, MultiAgeTotal = el.MultiAgeTotal };
 
-            results = list.GroupBy(x => new { x.OccurrenceDate }).Select(x =>
-            {
-                var data = new AttendanceReportData()
-                {
-                    Title = x.Key.OccurrenceDate.ToString("MM/dd/yy"),
-                    OccurrenceDate = x.Key.OccurrenceDate,
-                    ServiceAttendace = list.Where(l => l.OccurrenceDate == x.Key.OccurrenceDate).OrderBy(l => schedules.Select(s => s.Name).ToList().IndexOf(l.ServiceTime)).ToList()
-                };
-                data.Total = data.ServiceAttendace.Select(s => s.Total).Sum();
-                data.UniqueTotal = attendance.Where(a => a.Occurrence.OccurrenceDate == x.Key.OccurrenceDate).Select(a => a.PersonAlias.PersonId).Distinct().Count();
-                data.MultiAgeTotal = elemMultiAge.Where(em => em.OccurrenceDate == x.Key.OccurrenceDate).Select(em => em.AttendanceCount).Sum();
-                return data;
-            }).ToList();
+            results = list.GroupBy( x => new { x.OccurrenceDate } ).Select( x =>
+               {
+                   var data = new AttendanceReportData()
+                   {
+                       Title = x.Key.OccurrenceDate.ToString( "MM/dd/yy" ),
+                       OccurrenceDate = x.Key.OccurrenceDate,
+                       ServiceAttendace = list.Where( l => l.OccurrenceDate == x.Key.OccurrenceDate ).OrderBy( l => schedules.Select( s => s.Name ).ToList().IndexOf( l.ServiceTime ) ).ToList()
+                   };
+                   data.Total = data.ServiceAttendace.Select( s => s.Total ).Sum();
+                   data.UniqueTotal = attendance.Where( a => a.Occurrence.OccurrenceDate == x.Key.OccurrenceDate ).Select( a => a.PersonAlias.PersonId ).Distinct().Count();
+                   data.MultiAgeTotal = elemMultiAge.Where( em => em.OccurrenceDate == x.Key.OccurrenceDate ).Select( em => em.AttendanceCount ).Sum();
+                   return data;
+               } ).ToList();
 
             //Add in threshold data where it needs to go
-            results = results.Union(thresholds).OrderByDescending(x => x.Title).OrderBy(x => x.OccurrenceDate).ToList(); 
+            results = results.Union( thresholds ).OrderByDescending( x => x.Title ).OrderBy( x => x.OccurrenceDate ).ToList();
 
             BuildControl();
         }
 
         public void BuildControl()
         {
-            var div = new HtmlGenericControl("div");
-            div.AddCssClass("custom-row");
-            var header = new HtmlGenericControl("div");
+            var div = new HtmlGenericControl( "div" );
+            div.AddCssClass( "custom-row" );
+            var header = new HtmlGenericControl( "div" );
             header.InnerText = "Classroom";
-            header.AddCssClass("custom-col name-col");
-            div.Controls.Add(header);
-            phContent.Controls.Add(div);
-            for (var i=0; i<results.Count(); i++)
+            header.AddCssClass( "custom-col name-col" );
+            div.Controls.Add( header );
+            phContent.Controls.Add( div );
+            for ( var i = 0; i < results.Count(); i++ )
             {
-                var h = new HtmlGenericControl("div");
+                var h = new HtmlGenericControl( "div" );
                 h.InnerText = results[i].Title;
-                h.AddCssClass("custom-col");
-                if(i == 0)
+                h.AddCssClass( "custom-col" );
+                if ( i == 0 )
                 {
-                    h.AddCssClass("first-custom-col");
+                    h.AddCssClass( "first-custom-col" );
                 }
-                div.Controls.Add(h);
+                div.Controls.Add( h );
             }
-            for(var i=0; i<results[0].ServiceAttendace.Count(); i++)
+            for ( var i = 0; i < results[0].ServiceAttendace.Count(); i++ )
             {
-                var r = new HtmlGenericControl("div");
-                r.AddCssClass("service-group");
-                var svcTime = new HtmlGenericControl("div");
-                svcTime.AddCssClass("custom-row service-time");
-                var svcTimeCol = new HtmlGenericControl("div");
-                svcTimeCol.AddCssClass("custom-col name-col");
+                var r = new HtmlGenericControl( "div" );
+                r.AddCssClass( "service-group" );
+                var svcTime = new HtmlGenericControl( "div" );
+                svcTime.AddCssClass( "custom-row service-time" );
+                var svcTimeCol = new HtmlGenericControl( "div" );
+                svcTimeCol.AddCssClass( "custom-col name-col" );
                 svcTimeCol.InnerText = results[0].ServiceAttendace[i].ServiceTime;
-                svcTime.Controls.Add(svcTimeCol);
-                r.Controls.Add(svcTime);
-                var idx = inUseClassrooms.Select(x => x.ScheduleId).ToList().IndexOf(results[0].ServiceAttendace[i].ClassAttendances[0].ScheduleId);
-                for (var j=0; j<inUseClassrooms[idx].Classrooms.Count(); j++)
+                svcTime.Controls.Add( svcTimeCol );
+                r.Controls.Add( svcTime );
+                var idx = inUseClassrooms.Select( x => x.ScheduleId ).ToList().IndexOf( results[0].ServiceAttendace[i].ClassAttendances[0].ScheduleId );
+                for ( var j = 0; j < inUseClassrooms[idx].Classrooms.Count(); j++ )
                 {
-                    var classroom = new HtmlGenericControl("div");
-                    classroom.AddCssClass("custom-row");
-                    var classCol = new HtmlGenericControl("div");
-                    classCol.AddCssClass("custom-col name-col");
-                    classCol.InnerText = inUseClassrooms[idx].Classrooms[j].Contains(":") ? (inUseClassrooms[idx].Classrooms[j].Contains("11:15") ? inUseClassrooms[idx].Classrooms[j].Substring(6) : inUseClassrooms[idx].Classrooms[j].Substring(5)) : inUseClassrooms[idx].Classrooms[j];
-                    if(j%2 > 0)
+                    var classroom = new HtmlGenericControl( "div" );
+                    classroom.AddCssClass( "custom-row" );
+                    var classCol = new HtmlGenericControl( "div" );
+                    classCol.AddCssClass( "custom-col name-col" );
+                    classCol.InnerText = inUseClassrooms[idx].Classrooms[j].Contains( ":" ) ? ( inUseClassrooms[idx].Classrooms[j].Contains( "11:15" ) ? inUseClassrooms[idx].Classrooms[j].Substring( 6 ) : inUseClassrooms[idx].Classrooms[j].Substring( 5 ) ) : inUseClassrooms[idx].Classrooms[j];
+                    if ( j % 2 > 0 )
                     {
-                        classroom.AddCssClass("bg-secondary");
-                        classCol.AddCssClass("bg-secondary");
+                        classroom.AddCssClass( "bg-secondary" );
+                        classCol.AddCssClass( "bg-secondary" );
                     }
-                    classroom.Controls.Add(classCol);
+                    classroom.Controls.Add( classCol );
 
                     //Add Attendance Numbers
-                    for(var k=0; k<results.Count(); k++)
+                    for ( var k = 0; k < results.Count(); k++ )
                     {
-                        var att = new HtmlGenericControl("div");
-                        att.AddCssClass("custom-col");
-                        var temp = results[k].ServiceAttendace.Count() > i ? results[k].ServiceAttendace[i].ClassAttendances.FirstOrDefault(c => c.ClassName == inUseClassrooms[idx].Classrooms[j]) : null;
+                        var att = new HtmlGenericControl( "div" );
+                        att.AddCssClass( "custom-col" );
+                        var temp = results[k].ServiceAttendace.Count() > i ? results[k].ServiceAttendace[i].ClassAttendances.FirstOrDefault( c => c.ClassName == inUseClassrooms[idx].Classrooms[j] ) : null;
                         att.InnerText = temp != null ? temp.AttendanceCount.ToString() : "";
-                        if(temp != null && temp.OverThreshold)
+                        if ( temp != null && temp.OverThreshold )
                         {
-                            att.AddCssClass("over-threshold");
+                            att.AddCssClass( "over-threshold" );
                         }
-                        if(k == 0)
+                        if ( k == 0 )
                         {
-                            att.AddCssClass("first-custom-col");
+                            att.AddCssClass( "first-custom-col" );
                         }
-                        classroom.Controls.Add(att); 
+                        classroom.Controls.Add( att );
                     }
-                    r.Controls.Add(classroom);
+                    r.Controls.Add( classroom );
                 }
-                var total = new HtmlGenericControl("div");
-                total.AddCssClass("custom-row");
-                var totalCol = new HtmlGenericControl("div");
-                totalCol.AddCssClass("custom-col name-col");
+                var total = new HtmlGenericControl( "div" );
+                total.AddCssClass( "custom-row" );
+                var totalCol = new HtmlGenericControl( "div" );
+                totalCol.AddCssClass( "custom-col name-col" );
                 totalCol.InnerText = "Total";
-                total.Controls.Add(totalCol);
+                total.Controls.Add( totalCol );
 
                 //Add total attendance
-                for (var k = 0; k < results.Count(); k++)
+                for ( var k = 0; k < results.Count(); k++ )
                 {
-                    var att = new HtmlGenericControl("div");
-                    att.AddCssClass("custom-col");
+                    var att = new HtmlGenericControl( "div" );
+                    att.AddCssClass( "custom-col" );
                     att.InnerText = results[k].ServiceAttendace.Count() > i ? results[k].ServiceAttendace[i].Total.ToString() : "";
-                    if (k == 0)
+                    if ( k == 0 )
                     {
-                        att.AddCssClass("first-custom-col");
+                        att.AddCssClass( "first-custom-col" );
                     }
-                    total.Controls.Add(att);
+                    total.Controls.Add( att );
                 }
-                r.Controls.Add(total);
-                if(results[0].ServiceAttendace[i].MultiAgeTotal != null)
+                r.Controls.Add( total );
+                if ( results[0].ServiceAttendace[i].MultiAgeTotal != null )
                 {
-                    var mtotal = new HtmlGenericControl("div");
-                    mtotal.AddCssClass("custom-row");
-                    var mTotalCol = new HtmlGenericControl("div");
-                    mTotalCol.AddCssClass("custom-col name-col");
+                    var mtotal = new HtmlGenericControl( "div" );
+                    mtotal.AddCssClass( "custom-row" );
+                    var mTotalCol = new HtmlGenericControl( "div" );
+                    mTotalCol.AddCssClass( "custom-col name-col" );
                     mTotalCol.InnerText = "Multi-Age Total";
-                    mtotal.Controls.Add(mTotalCol);
+                    mtotal.Controls.Add( mTotalCol );
 
                     //Add total attendance
-                    for (var k = 0; k < results.Count(); k++)
+                    for ( var k = 0; k < results.Count(); k++ )
                     {
-                        var att = new HtmlGenericControl("div");
-                        att.AddCssClass("custom-col");
+                        var att = new HtmlGenericControl( "div" );
+                        att.AddCssClass( "custom-col" );
                         att.InnerText = results[k].ServiceAttendace.Count() > i ? results[k].ServiceAttendace[i].MultiAgeTotal.ToString() : "";
-                        if (k == 0)
+                        if ( k == 0 )
                         {
-                            att.AddCssClass("first-custom-col");
+                            att.AddCssClass( "first-custom-col" );
                         }
-                        mtotal.Controls.Add(att);
+                        mtotal.Controls.Add( att );
                     }
-                    r.Controls.Add(mtotal);
+                    r.Controls.Add( mtotal );
                 }
-                phContent.Controls.Add(r);
+                phContent.Controls.Add( r );
             }
 
             //Entire day data
-            var dailyData = new HtmlGenericControl("div");
-            dailyData.AddCssClass("custom-seperator");
-            var totals = new HtmlGenericControl("div");
-            totals.AddCssClass("custom-row");
-            var totalsCol = new HtmlGenericControl("div");
+            var dailyData = new HtmlGenericControl( "div" );
+            dailyData.AddCssClass( "custom-seperator" );
+            var totals = new HtmlGenericControl( "div" );
+            totals.AddCssClass( "custom-row" );
+            var totalsCol = new HtmlGenericControl( "div" );
             totalsCol.InnerText = "Total";
-            totalsCol.AddCssClass("custom-col service-time name-col");
-            totals.Controls.Add(totalsCol);
-            var utotals = new HtmlGenericControl("div");
-            utotals.AddCssClass("custom-row");
-            var utotalsCol = new HtmlGenericControl("div");
+            totalsCol.AddCssClass( "custom-col service-time name-col" );
+            totals.Controls.Add( totalsCol );
+            var utotals = new HtmlGenericControl( "div" );
+            utotals.AddCssClass( "custom-row" );
+            var utotalsCol = new HtmlGenericControl( "div" );
             utotalsCol.InnerText = "Unique Total";
-            utotalsCol.AddCssClass("custom-col service-time name-col");
-            utotals.Controls.Add(utotalsCol);
-            var matotals = new HtmlGenericControl("div");
-            matotals.AddCssClass("custom-row");
-            var matotalsCol = new HtmlGenericControl("div");
+            utotalsCol.AddCssClass( "custom-col service-time name-col" );
+            utotals.Controls.Add( utotalsCol );
+            var matotals = new HtmlGenericControl( "div" );
+            matotals.AddCssClass( "custom-row" );
+            var matotalsCol = new HtmlGenericControl( "div" );
             matotalsCol.InnerText = "MultiAge Total";
-            matotalsCol.AddCssClass("custom-col service-time name-col");
-            matotals.Controls.Add(matotalsCol);
-            var notes = new HtmlGenericControl("div");
-            notes.AddCssClass("custom-row");
-            var notesCol = new HtmlGenericControl("div");
+            matotalsCol.AddCssClass( "custom-col service-time name-col" );
+            matotals.Controls.Add( matotalsCol );
+            var notes = new HtmlGenericControl( "div" );
+            notes.AddCssClass( "custom-row" );
+            var notesCol = new HtmlGenericControl( "div" );
             notesCol.InnerText = "Notes";
-            notesCol.AddCssClass("cusotm-col service-time name-col");
-            notes.Controls.Add(notesCol);
-            var noteDisplay = new HtmlGenericControl("div");
-            noteDisplay.AddCssClass("custom-row");
-            var noteDisplayCol = new HtmlGenericControl("div");
+            notesCol.AddCssClass( "cusotm-col service-time name-col" );
+            notes.Controls.Add( notesCol );
+            var noteDisplay = new HtmlGenericControl( "div" );
+            noteDisplay.AddCssClass( "custom-row" );
+            var noteDisplayCol = new HtmlGenericControl( "div" );
             noteDisplayCol.InnerText = "Notes";
-            noteDisplayCol.AddCssClass("custom-col no-display");
-            noteDisplay.Controls.Add(noteDisplayCol);
-            for (var i = 0; i < results.Count(); i++)
+            noteDisplayCol.AddCssClass( "custom-col no-display" );
+            noteDisplay.Controls.Add( noteDisplayCol );
+            for ( var i = 0; i < results.Count(); i++ )
             {
                 //Total
-                var h = new HtmlGenericControl("div");
+                var h = new HtmlGenericControl( "div" );
                 h.InnerText = results[i].Total.ToString();
-                h.AddCssClass("custom-col");
-                if (i == 0)
+                h.AddCssClass( "custom-col" );
+                if ( i == 0 )
                 {
-                    h.AddCssClass("first-custom-col");
+                    h.AddCssClass( "first-custom-col" );
                 }
-                totals.Controls.Add(h);
+                totals.Controls.Add( h );
                 //Unique Total
-                var ut = new HtmlGenericControl("div");
+                var ut = new HtmlGenericControl( "div" );
                 ut.InnerText = results[i].UniqueTotal.ToString();
-                ut.AddCssClass("custom-col");
-                if (i == 0)
+                ut.AddCssClass( "custom-col" );
+                if ( i == 0 )
                 {
-                    ut.AddCssClass("first-custom-col");
+                    ut.AddCssClass( "first-custom-col" );
                 }
-                utotals.Controls.Add(ut);
+                utotals.Controls.Add( ut );
                 //Multiage total
-                var mt = new HtmlGenericControl("div");
+                var mt = new HtmlGenericControl( "div" );
                 mt.InnerText = results[i].MultiAgeTotal.ToString();
-                mt.AddCssClass("custom-col");
-                if (i == 0)
+                mt.AddCssClass( "custom-col" );
+                if ( i == 0 )
                 {
-                    mt.AddCssClass("first-custom-col");
+                    mt.AddCssClass( "first-custom-col" );
                 }
-                matotals.Controls.Add(mt);
+                matotals.Controls.Add( mt );
                 //Notes
-                var nt = new HtmlGenericControl("div");
-                var attNote = new HtmlGenericControl("div");
-                attNote.AddCssClass("custom-col no-display");
-                if (i > 0)
+                var nt = new HtmlGenericControl( "div" );
+                var attNote = new HtmlGenericControl( "div" );
+                attNote.AddCssClass( "custom-col no-display" );
+                if ( i > 0 )
                 {
                     var schedule_id = results[i].ServiceAttendace[0].ClassAttendances[0].ScheduleId;
-                    var occ_date = results[i].OccurrenceDate; 
-                    var occurence = new AttendanceOccurrenceService(new RockContext()).Queryable().Where(ao => ao.OccurrenceDate == occ_date && ao.ScheduleId == schedule_id);
-                    if(occurence.Count() > 0)
+                    var occ_date = results[i].OccurrenceDate;
+                    var occurence = new AttendanceOccurrenceService( new RockContext() ).Queryable().Where( ao => ao.OccurrenceDate == occ_date && ao.ScheduleId == schedule_id );
+                    if ( occurence.Count() > 0 )
                     {
                         nt.InnerHtml = "<a class='add-note' href='/page/" + pageNum + "?Id=" + occurence.First().Id + "' ><i class='fa fa-sticky-note'></i></a>";
-                        int occId = occurence.First().Id; 
-                        var attendanceNotes = new NoteService(new RockContext()).Queryable().Where(n => n.NoteTypeId == noteTypeId && n.EntityId == occId);
+                        int occId = occurence.First().Id;
+                        var attendanceNotes = new NoteService( new RockContext() ).Queryable().Where( n => n.NoteTypeId == noteTypeId && n.EntityId == occId );
                         var str = "";
-                        foreach(var an in attendanceNotes)
+                        foreach ( var an in attendanceNotes )
                         {
-                            str += an.Text + " -" + an.CreatedByPersonName + "<br/>"; 
+                            str += an.Text + " -" + an.CreatedByPersonName + "<br/>";
                         }
-                        attNote.InnerHtml = str; 
+                        attNote.InnerHtml = str;
                     }
                 }
-                nt.AddCssClass("custom-col");
-                if (i == 0)
+                nt.AddCssClass( "custom-col" );
+                if ( i == 0 )
                 {
-                    nt.AddCssClass("first-custom-col");
+                    nt.AddCssClass( "first-custom-col" );
                 }
-                notes.Controls.Add(nt);
-                noteDisplay.Controls.Add(attNote);
+                notes.Controls.Add( nt );
+                noteDisplay.Controls.Add( attNote );
             }
-            dailyData.Controls.Add(totals);
-            dailyData.Controls.Add(utotals);
-            dailyData.Controls.Add(matotals);
-            dailyData.Controls.Add(notes);
-            dailyData.Controls.Add(noteDisplay);
+            dailyData.Controls.Add( totals );
+            dailyData.Controls.Add( utotals );
+            dailyData.Controls.Add( matotals );
+            dailyData.Controls.Add( notes );
+            dailyData.Controls.Add( noteDisplay );
 
-            phContent.Controls.Add(dailyData);
+            phContent.Controls.Add( dailyData );
 
             var html = "";
-            foreach (HtmlGenericControl c in phContent.Controls) {
+            foreach ( HtmlGenericControl c in phContent.Controls )
+            {
                 System.IO.TextWriter tw = new System.IO.StringWriter();
-                HtmlTextWriter htw = new HtmlTextWriter(tw);
-                c.RenderControl(htw);
+                HtmlTextWriter htw = new HtmlTextWriter( tw );
+                c.RenderControl( htw );
                 html += tw.ToString();
             }
-            html = html.Replace("<div class=\"custom-row\">", "\r\n");
-            html = html.Replace("</div>", ",");
-            html = html.Replace("<div class=\"custom-col\">", "");
-            html = html.Replace("<div class=\"custom-col name-col\">", "");
-            html = html.Replace("<div class=\"custom-col first-custom-col\">", "");
-            html = html.Replace("<div class=\"custom-row bg-secondary\">", "\r\n");
-            html = html.Replace("<div class=\"service-group\">", "\r\n");
-            html = html.Replace("<div class=\"custom-row service-time\">", "");
-            html = html.Replace("<div class=\"custom-col name-col bg-secondary\">", "");
-            html = html.Replace("<div class=\"custom-seperator\">", "");
-            html = html.Replace("<div class=\"custom-col service-time name-col\">", "");
-            html = html.Replace("<div class=\"custom-col over-threshold\">", "**");
-            html = html.Replace("<div class=\"custom-col no-display\">", "");
-            html = html.Replace("<a class='add-note' href='/page/945?Id=", "");
-            html = html.Replace("' ><i class='fa fa-sticky-note'></i></a>", "");
-            html = html.Replace("<div class=\"cusotm-col service-time name-col\">", "");
-            this.csv = html; 
+            html = html.Replace( "<div class=\"custom-row\">", "\r\n" );
+            html = html.Replace( "</div>", "," );
+            html = html.Replace( "<div class=\"custom-col\">", "" );
+            html = html.Replace( "<div class=\"custom-col name-col\">", "" );
+            html = html.Replace( "<div class=\"custom-col first-custom-col\">", "" );
+            html = html.Replace( "<div class=\"custom-row bg-secondary\">", "\r\n" );
+            html = html.Replace( "<div class=\"service-group\">", "\r\n" );
+            html = html.Replace( "<div class=\"custom-row service-time\">", "" );
+            html = html.Replace( "<div class=\"custom-col name-col bg-secondary\">", "" );
+            html = html.Replace( "<div class=\"custom-seperator\">", "" );
+            html = html.Replace( "<div class=\"custom-col service-time name-col\">", "" );
+            html = html.Replace( "<div class=\"custom-col over-threshold\">", "**" );
+            html = html.Replace( "<div class=\"custom-col no-display\">", "" );
+            html = html.Replace( "<a class='add-note' href='/page/945?Id=", "" );
+            html = html.Replace( "' ><i class='fa fa-sticky-note'></i></a>", "" );
+            html = html.Replace( "<div class=\"cusotm-col service-time name-col\">", "" );
+            this.csv = html;
 
             phContent.Visible = true;
         }
 
-        public string TransformClassName(string name)
+        public string TransformClassName( string name )
         {
             try
             {
-                if (!name.Contains("(") && !name.Contains(":"))
+                if ( !name.Contains( "(" ) && !name.Contains( ":" ) )
                 {
-                    return name; 
+                    return name;
                 }
-                if (name.Contains("("))
+                if ( name.Contains( "(" ) )
                 {
-                    if (name.Contains("11:15"))
+                    if ( name.Contains( "11:15" ) )
                     {
-                        var idx = name.IndexOf("(");
-                        var diff = name.Length - idx + 7; 
-                        return name.Substring(0, name.Length - diff);
+                        var idx = name.IndexOf( "(" );
+                        var diff = name.Length - idx + 7;
+                        return name.Substring( 0, name.Length - diff );
                         //return name.Substring(6, name.Length - diff);
                     }
                     else
                     {
-                        var idx = name.IndexOf("(");
+                        var idx = name.IndexOf( "(" );
                         var diff = name.Length - idx + 6;
-                        return name.Substring(0, name.Length - diff);
+                        return name.Substring( 0, name.Length - diff );
                         //return name.Substring(5, name.Length - diff);
                     }
                 }
                 else
                 {
-                    return name; 
+                    return name;
                     //if (name.Contains("11:15"))
                     //{
                     //    return name.Substring(6);
@@ -749,94 +763,95 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
         }
 
-        public void BuildThresholdData(List<Location> locations, List<Schedule> schedules) {
-            var data = new List<ThresholdList>(); 
-            for(var i=0; i<locations.Count(); i++)
+        public void BuildThresholdData( List<Location> locations, List<Schedule> schedules )
+        {
+            var data = new List<ThresholdList>();
+            for ( var i = 0; i < locations.Count(); i++ )
             {
                 //If the location is in the list we're using anywhere then we need to load the attributes and get the thresholds 
-                if(inUseClassrooms.Any(iuc => iuc.Classrooms.Any(c => c == TransformClassName(locations[i].Name))))
+                if ( inUseClassrooms.Any( iuc => iuc.Classrooms.Any( c => c == TransformClassName( locations[i].Name ) ) ) )
                 {
                     locations[i].LoadAttributes();
                     var t = locations[i].AttributeValues["ThresholdHistoricalData"].Value;
-                    if (!String.IsNullOrEmpty(t))
+                    if ( !String.IsNullOrEmpty( t ) )
                     {
-                        var pairs = t.Split('|');
+                        var pairs = t.Split( '|' );
                         var list = new Dictionary<DateTime, int>();
                         DateTime? mostRecentBeforeRange = null;
-                        int mostRecentThreshold = 0; 
-                        for(var k=0; k<pairs.Count(); k++)
+                        int mostRecentThreshold = 0;
+                        for ( var k = 0; k < pairs.Count(); k++ )
                         {
-                            var info = pairs[k].Split('^');
+                            var info = pairs[k].Split( '^' );
                             //If the date is within our timeframe add it to the data list
-                            if(DateTime.Compare(start, DateTime.Parse(info[0])) <= 0 && DateTime.Compare(end, DateTime.Parse(info[0])) >= 0)
+                            if ( DateTime.Compare( start, DateTime.Parse( info[0] ) ) <= 0 && DateTime.Compare( end, DateTime.Parse( info[0] ) ) >= 0 )
                             {
-                                data = AddItem(data, locations[i], DateTime.Parse(info[0]), Int32.Parse(info[1]));
-                                list.Add(DateTime.Parse(info[0]), Int32.Parse(info[1]));
+                                data = AddItem( data, locations[i], DateTime.Parse( info[0] ), Int32.Parse( info[1] ) );
+                                list.Add( DateTime.Parse( info[0] ), Int32.Parse( info[1] ) );
                             }
-                            if (DateTime.Compare(DateTime.Parse(info[0]), start) < 0)
+                            if ( DateTime.Compare( DateTime.Parse( info[0] ), start ) < 0 )
                             {
-                                if(mostRecentBeforeRange == null || DateTime.Compare(mostRecentBeforeRange.Value, DateTime.Parse(info[0])) < 0)
+                                if ( mostRecentBeforeRange == null || DateTime.Compare( mostRecentBeforeRange.Value, DateTime.Parse( info[0] ) ) < 0 )
                                 {
-                                    mostRecentBeforeRange = DateTime.Parse(info[0]);
-                                    mostRecentThreshold = Int32.Parse(info[1]);
+                                    mostRecentBeforeRange = DateTime.Parse( info[0] );
+                                    mostRecentThreshold = Int32.Parse( info[1] );
                                 }
                             }
                         }
-                        if(!list.ContainsKey(start) && mostRecentBeforeRange.HasValue)
+                        if ( !list.ContainsKey( start ) && mostRecentBeforeRange.HasValue )
                         {
-                            list.Add(mostRecentBeforeRange.Value, mostRecentThreshold);
+                            list.Add( mostRecentBeforeRange.Value, mostRecentThreshold );
                         }
-                        else if (!list.ContainsKey(start))
+                        else if ( !list.ContainsKey( start ) )
                         {
-                            list.Add(start, locations[i].SoftRoomThreshold.Value);
+                            list.Add( start, locations[i].SoftRoomThreshold.Value );
                         }
 
-                        var startThreshold = list.OrderByDescending(l => l.Key).First(l => DateTime.Compare(l.Key, start) <= 0);
-                        var idx = data.Select(d => d.ChangeDate).ToList().IndexOf(start);
-                        if (idx < 0)
+                        var startThreshold = list.OrderByDescending( l => l.Key ).First( l => DateTime.Compare( l.Key, start ) <= 0 );
+                        var idx = data.Select( d => d.ChangeDate ).ToList().IndexOf( start );
+                        if ( idx < 0 )
                         {
                             var item = new ThresholdList()
                             {
                                 ChangeDate = start,
                                 Thresholds = new Dictionary<string, int>()
                             };
-                            item.Thresholds.Add(TransformClassName(locations[i].Name), startThreshold.Value);
-                            data.Add(item);
+                            item.Thresholds.Add( TransformClassName( locations[i].Name ), startThreshold.Value );
+                            data.Add( item );
                         }
                         else
                         {
-                            if (!data[idx].Thresholds.ContainsKey(TransformClassName(locations[i].Name)))
+                            if ( !data[idx].Thresholds.ContainsKey( TransformClassName( locations[i].Name ) ) )
                             {
-                                data[idx].Thresholds.Add(TransformClassName(locations[i].Name), startThreshold.Value);
+                                data[idx].Thresholds.Add( TransformClassName( locations[i].Name ), startThreshold.Value );
                             }
                         }
                     }
                     else
                     {
-                        var idx = data.Select(d => d.ChangeDate).ToList().IndexOf(start);
-                        if (idx < 0)
+                        var idx = data.Select( d => d.ChangeDate ).ToList().IndexOf( start );
+                        if ( idx < 0 )
                         {
                             var item = new ThresholdList()
                             {
                                 ChangeDate = start,
                                 Thresholds = new Dictionary<string, int>()
                             };
-                            item.Thresholds.Add(TransformClassName(locations[i].Name), locations[i].SoftRoomThreshold.Value);
-                            data.Add(item);
+                            item.Thresholds.Add( TransformClassName( locations[i].Name ), locations[i].SoftRoomThreshold.Value );
+                            data.Add( item );
                         }
                         else
                         {
-                            if (!data[idx].Thresholds.ContainsKey(TransformClassName(locations[i].Name)))
+                            if ( !data[idx].Thresholds.ContainsKey( TransformClassName( locations[i].Name ) ) )
                             {
-                                data[idx].Thresholds.Add(TransformClassName(locations[i].Name), locations[i].SoftRoomThreshold.Value);
+                                data[idx].Thresholds.Add( TransformClassName( locations[i].Name ), locations[i].SoftRoomThreshold.Value );
                             }
                         }
                     }
                 }
             }
-            data = data.OrderBy(x => x.ChangeDate).ToList();
-            thresholds = new List<AttendanceReportData>(); 
-            for(var i=0; i<data.Count(); i++)
+            data = data.OrderBy( x => x.ChangeDate ).ToList();
+            thresholds = new List<AttendanceReportData>();
+            for ( var i = 0; i < data.Count(); i++ )
             {
                 var item = new AttendanceReportData()
                 {
@@ -844,17 +859,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     OccurrenceDate = data[i].ChangeDate,
                     ServiceAttendace = new List<ServiceAttendance>()
                 };
-                for(var k=0; k<inUseClassrooms.Count(); k++)
+                for ( var k = 0; k < inUseClassrooms.Count(); k++ )
                 {
                     var svcAtt = new ServiceAttendance()
                     {
                         OccurrenceDate = data[i].ChangeDate,
-                        ServiceTime = schedules.FirstOrDefault(s => s.Id == inUseClassrooms[k].ScheduleId).Name,
+                        ServiceTime = schedules.FirstOrDefault( s => s.Id == inUseClassrooms[k].ScheduleId ).Name,
                         ClassAttendances = new List<ClassAttendance>(),
                         Total = 0,
                         MultiAgeTotal = 0
                     };
-                    for(var j=0; j<inUseClassrooms[k].Classrooms.Count(); j++)
+                    for ( var j = 0; j < inUseClassrooms[k].Classrooms.Count(); j++ )
                     {
                         var classAtt = new ClassAttendance()
                         {
@@ -862,68 +877,77 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             ClassName = inUseClassrooms[k].Classrooms[j],
                             ScheduleId = inUseClassrooms[k].ScheduleId
                         };
-                        if (data[i].Thresholds.ContainsKey(inUseClassrooms[k].Classrooms[j]))
+                        if ( data[i].Thresholds.ContainsKey( inUseClassrooms[k].Classrooms[j] ) )
                         {
                             classAtt.AttendanceCount = data[i].Thresholds[inUseClassrooms[k].Classrooms[j]];
                         }
                         else
                         {
-                            var h = 1;
-                            while(i -h <= 0 && !data[i-h].Thresholds.ContainsKey(inUseClassrooms[k].Classrooms[j]))
+                            // Check if other dataset has threshold we seek 
+                            var h = 0;
+                            while ( h < data.Count() && !data[h].Thresholds.ContainsKey( inUseClassrooms[k].Classrooms[j] ) )
                             {
                                 h++;
                             }
-                            classAtt.AttendanceCount = data[i-h].Thresholds[inUseClassrooms[k].Classrooms[j]];
+                            if ( data[h].Thresholds.ContainsKey( inUseClassrooms[k].Classrooms[j] ) )
+                            {
+                                classAtt.AttendanceCount = data[h].Thresholds[inUseClassrooms[k].Classrooms[j]];
+                            }
+                            else
+                            {
+                                //Default to 22 since a threshold could not be found
+                                classAtt.AttendanceCount = 22;
+                            }
                         }
-                        svcAtt.ClassAttendances.Add(classAtt);
+                        svcAtt.ClassAttendances.Add( classAtt );
                     }
-                    item.ServiceAttendace.Add(svcAtt);
+                    item.ServiceAttendace.Add( svcAtt );
                 }
-                thresholds.Add(item);
+                thresholds.Add( item );
             }
         }
 
-        private List<ThresholdList> AddItem(List<ThresholdList> data, Location location, DateTime changeDate, int threshold)
+        private List<ThresholdList> AddItem( List<ThresholdList> data, Location location, DateTime changeDate, int threshold )
         {
-            var idx = data.Select(d => d.ChangeDate).ToList().IndexOf(changeDate);
-            if (idx < 0)
+            var idx = data.Select( d => d.ChangeDate ).ToList().IndexOf( changeDate );
+            if ( idx < 0 )
             {
                 var item = new ThresholdList()
                 {
                     ChangeDate = changeDate,
                     Thresholds = new Dictionary<string, int>()
                 };
-                item.Thresholds.Add(TransformClassName(location.Name), threshold);
-                data.Add(item);
+                item.Thresholds.Add( TransformClassName( location.Name ), threshold );
+                data.Add( item );
             }
             else
             {
-                if (!data[idx].Thresholds.ContainsKey(TransformClassName(location.Name)))
+                if ( !data[idx].Thresholds.ContainsKey( TransformClassName( location.Name ) ) )
                 {
-                    data[idx].Thresholds.Add(TransformClassName(location.Name), threshold);
+                    data[idx].Thresholds.Add( TransformClassName( location.Name ), threshold );
                 }
             }
             return data;
         }
 
-        public int? GetThreshold(string values, DateTime occurrence)
+        public int? GetThreshold( string values, DateTime occurrence )
         {
-            var data = values.Split('|');
+            var data = values.Split( '|' );
             var dict = new Dictionary<DateTime, int>();
             int? current = null;
-            if(values != "")
+            if ( values != "" )
             {
-                foreach(var val in data)
+                foreach ( var val in data )
                 {
-                    var info = val.Split('^');
-                    var thresholdDate = DateTime.Parse(info[0]);
-                    var threshold = Int32.Parse(info[1]);
-                    dict.Add(thresholdDate, threshold);
+                    var info = val.Split( '^' );
+                    var thresholdDate = DateTime.Parse( info[0] );
+                    var threshold = Int32.Parse( info[1] );
+                    dict.Add( thresholdDate, threshold );
                 }
-                var sorted = dict.OrderBy(d => d.Key);
-                foreach(var item in sorted)
+                var sorted = dict.OrderBy( d => d.Key );
+                foreach ( var item in sorted )
                 {
-                    if (DateTime.Compare(occurrence, item.Key) >= 0)
+                    if ( DateTime.Compare( occurrence, item.Key ) >= 0 )
                     {
                         current = item.Value;
                     }
@@ -935,35 +959,36 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         public void GenerateCSV()
         {
             var html = "";
-            foreach (HtmlGenericControl c in phContent.Controls)
+            foreach ( HtmlGenericControl c in phContent.Controls )
             {
                 System.IO.TextWriter tw = new System.IO.StringWriter();
-                HtmlTextWriter htw = new HtmlTextWriter(tw);
-                c.RenderControl(htw);
+                HtmlTextWriter htw = new HtmlTextWriter( tw );
+                c.RenderControl( htw );
                 html += tw.ToString();
             }
-            html = html.Replace("<div class=\"custom-row\">", "\r\n");
-            html = html.Replace("</div>", ",");
-            html = html.Replace("<div class=\"custom-col\">", "");
-            html = html.Replace("<div class=\"custom-col name-col\">", "");
-            html = html.Replace("<div class=\"custom-col first-custom-col\">", "");
-            html = html.Replace("<div class=\"custom-row bg-secondary\">", "\r\n");
-            html = html.Replace("<div class=\"service-group\">", "\r\n");
-            html = html.Replace("<div class=\"custom-row service-time\">", "");
-            html = html.Replace("<div class=\"custom-col name-col bg-secondary\">", "");
-            html = html.Replace("<div class=\"custom-seperator\">", "");
-            html = html.Replace("<div class=\"custom-col service-time name-col\">", "");
-            html = html.Replace("<div class=\"custom-col over-threshold\">", "");
+            html = html.Replace( "<div class=\"custom-row\">", "\r\n" );
+            html = html.Replace( "</div>", "," );
+            html = html.Replace( "<div class=\"custom-col\">", "" );
+            html = html.Replace( "<div class=\"custom-col name-col\">", "" );
+            html = html.Replace( "<div class=\"custom-col first-custom-col\">", "" );
+            html = html.Replace( "<div class=\"custom-row bg-secondary\">", "\r\n" );
+            html = html.Replace( "<div class=\"service-group\">", "\r\n" );
+            html = html.Replace( "<div class=\"custom-row service-time\">", "" );
+            html = html.Replace( "<div class=\"custom-col name-col bg-secondary\">", "" );
+            html = html.Replace( "<div class=\"custom-seperator\">", "" );
+            html = html.Replace( "<div class=\"custom-col service-time name-col\">", "" );
+            html = html.Replace( "<div class=\"custom-col over-threshold\">", "" );
 
             this.csv = html;
         }
 
-        public ExcelPackage GenerateExcel() {
+        public ExcelPackage GenerateExcel()
+        {
             ExcelPackage excel = new ExcelPackage();
             excel.Workbook.Properties.Title = "CK Attendance";
             // add author info
             Rock.Model.UserLogin userLogin = Rock.Model.UserLoginService.GetCurrentUser();
-            if (userLogin != null)
+            if ( userLogin != null )
             {
                 excel.Workbook.Properties.Author = userLogin.Person.FullName;
             }
@@ -971,35 +996,35 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             {
                 excel.Workbook.Properties.Author = "Rock";
             }
-            ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add("Attendance");
+            ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add( "Attendance" );
             worksheet.PrinterSettings.LeftMargin = .5m;
             worksheet.PrinterSettings.RightMargin = .5m;
             worksheet.PrinterSettings.TopMargin = .5m;
             worksheet.PrinterSettings.BottomMargin = .5m;
 
-            var raw_data = csv.Replace("\r\n", "\n");
-            var row_data = raw_data.Split('\n');
+            var raw_data = csv.Replace( "\r\n", "\n" );
+            var row_data = raw_data.Split( '\n' );
 
-            for (var i = 1; i <= row_data.Length; i++)
+            for ( var i = 1; i <= row_data.Length; i++ )
             {
-                if (row_data[i-1].Contains(',') && i != row_data.Length - 1)
+                if ( row_data[i - 1].Contains( ',' ) && i != row_data.Length - 1 )
                 {
-                    var col_data = row_data[i-1].Split(',');
-                    for (var j = 1; j <= col_data.Length; j++)
+                    var col_data = row_data[i - 1].Split( ',' );
+                    for ( var j = 1; j <= col_data.Length; j++ )
                     {
-                        if(col_data[j-1].Length > 2 && col_data[j-1].Substring(0, 2) == "**")
+                        if ( col_data[j - 1].Length > 2 && col_data[j - 1].Substring( 0, 2 ) == "**" )
                         {
-                            col_data[j-1] = col_data[j-1].Substring(2);
-                            Color c = System.Drawing.ColorTranslator.FromHtml("#9A0000");
+                            col_data[j - 1] = col_data[j - 1].Substring( 2 );
+                            Color c = System.Drawing.ColorTranslator.FromHtml( "#9A0000" );
                             worksheet.Cells[i, j].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                            worksheet.Cells[i, j].Style.Fill.BackgroundColor.SetColor(c);
+                            worksheet.Cells[i, j].Style.Fill.BackgroundColor.SetColor( c );
                         }
-                        if(col_data[j - 1].Length > 2 && col_data[j - 1].Contains("<br/>"))
+                        if ( col_data[j - 1].Length > 2 && col_data[j - 1].Contains( "<br/>" ) )
                         {
-                            col_data[j - 1] = col_data[j - 1].Replace("<br/>", "\r\n");
+                            col_data[j - 1] = col_data[j - 1].Replace( "<br/>", "\r\n" );
                             worksheet.Cells[i, j].Style.WrapText = true;
                         }
-                        worksheet.Cells[i, j].Value = col_data[j-1];
+                        worksheet.Cells[i, j].Value = col_data[j - 1];
 
                     }
                 }
@@ -1013,7 +1038,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
     public class AttendanceReportData
     {
-        public string Title { get; set;  }
+        public string Title { get; set; }
         public DateTime OccurrenceDate { get; set; }
         public List<ServiceAttendance> ServiceAttendace { get; set; }
         public int Total { get; set; }

@@ -1552,7 +1552,7 @@ namespace RockWeb.com_bemaservices.Promotion
 
         #endregion
 
-        private class GroupListRowInfo : DotLiquid.Drop
+        private class GroupListRowInfo 
         {
             /// <summary>
             /// Gets or sets the identifier.
