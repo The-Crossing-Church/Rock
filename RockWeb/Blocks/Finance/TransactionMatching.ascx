@@ -59,7 +59,7 @@
                         <div class="col-md-7 transaction-matching-details">
                             <div class="header">
                                 <div class="row">
-                                    <div id="individual_details" class="col-md-6">
+                                    <div id="individual_details" class="col-md-6 col-lg-5">
                                         <Rock:RockDropDownList ID="ddlIndividual" runat="server" EnhanceForLongLists="true" Label="Individual" Help="Select a person that has previously been matched to the bank account. If the person isn't in this list, use the 'Assign to New' to select the matching person." AutoPostBack="true" OnSelectedIndexChanged="ddlIndividual_SelectedIndexChanged" />
                                         <span id="badgeIndividualCount" runat="server" class="pull-right badge badge-danger"
                                             style="position: relative; top: -58px; left: 10px"></span>
@@ -119,7 +119,7 @@
                                         </asp:Panel>
                                     </div>
 
-                                    <div id="account_entry" class="col-md-6 body">
+                                    <div id="account_entry" class="col-md-6 col-lg-7 body">
                                         <Rock:RockControlWrapper ID="rcwAccountSplit" runat="server">
                                             <div class="form-horizontal label-auto js-accounts">
                                                 <asp:Repeater ID="rptAccounts" runat="server">
@@ -382,7 +382,12 @@
                     $('#<%=pnlView.ClientID%>').rockFadeIn();
                 }
 
-                $('#<%=btnNext.ClientID%>').click(verifyUnallocated);
+                var $buttonNext = $('#<%=btnNext.ClientID%>');
+
+                $buttonNext.on('click', function (e) {
+                    var successLocation = $buttonNext.prop('href');
+                    verifyUnallocated(e, successLocation);
+                });
 
                 updateRemainingAccountAllocation();
 
@@ -422,7 +427,10 @@
             function handleAmountBoxKeyPress(element, keyCode) {
                 // if Enter was pressed when in one of the Amount boxes, click the Next button.
                 if (keyCode == 13) {
-                    $('#<%=btnNext.ClientID%>')[0].click();
+                    var successLocation = $('#<%=btnNext.ClientID%>').prop('href');
+                    if (verifyUnallocated(null, successLocation)) {
+                        return true;
+                    }
                     return false;
                 }
                 else if (keyCode == 40) {
@@ -454,19 +462,21 @@
             }
 
             // handle btnNext so that it warns if the total amount was changed from the original (if there was an amount to start with)
-            function verifyUnallocated(e) {
+            function verifyUnallocated(e, successLocation) {
                 $unallocatedAmountEl = $('#<%=pnlView.ClientID%>').find('.js-unallocated-amount');
                 if ($unallocatedAmountEl.is(':visible')) {
                     if (Number($unallocatedAmountEl.find('input').val()) != 0) {
-                        e.preventDefault();
+                        if (e) {
+                            e.preventDefault();
+                        }
 
                         var originalTotalAmountCents = Number($('#<%=pnlView.ClientID%>').find('.js-original-total-amount').val());
                         var totalAmountCents = Number($('#<%=pnlView.ClientID%>').find('.js-total-amount :input').val()) * 100;
                         var currencySymbol = $('#<%=pnlView.ClientID%>').find('.js-currencysymbol').val()
                         var warningMsg = 'Note: The original transaction amount was ' + currencySymbol + (originalTotalAmountCents / 100).toFixed(2) + '. This has been changed to ' + currencySymbol + (totalAmountCents / 100).toFixed(2) + '. Are you sure you want to proceed with this change?';
                         Rock.dialogs.confirm(warningMsg, function (result) {
-                            if (result) {
-                                window.location = e.target.href ? e.target.href : e.target.parentElement.href;
+                            if (result && successLocation) {
+                                window.location = successLocation;
                             }
                         });
                     }

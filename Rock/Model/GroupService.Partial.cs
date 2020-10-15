@@ -506,6 +506,23 @@ namespace Rock.Model
         }
 
         /// <summary>
+        /// Determines if the specified group has descendants at all or active descendants (based on param).
+        /// </summary>
+        /// <param name="parentGroupId">The parent group identifier.</param>
+        /// <param name="includeInactiveChildGroups">if set to <c>true</c> [include inactive child groups].</param>
+        /// <returns></returns>
+        public bool HasDescendantGroups( int parentGroupId, bool includeInactiveChildGroups )
+        {
+            var cte = GetGroupDescendentsCTESql( parentGroupId, includeInactiveChildGroups );
+
+            var sql = $@"
+                {cte}
+                SELECT 1 WHERE EXISTS( SELECT [Id] from CTE );";
+
+            return ( Context as RockContext ).Database.SqlQuery<int>( sql ).Any();
+        }
+
+        /// <summary>
         /// Returns a List of <see cref="GroupTypeCache">Group Types</see> of the groups that are descendents of the specified parentGroupId
         /// </summary>
         /// <param name="parentGroupId">The parent group identifier.</param>
@@ -598,21 +615,6 @@ namespace Rock.Model
             }
 
             return group.Members.Where( m => m.PersonId == personId ).Any();
-        }
-
-        /// <summary>
-        /// Groups the members not meeting requirements.
-        /// </summary>
-        /// <param name="groupId">The group identifier.</param>
-        /// <param name="includeWarnings">if set to <c>true</c> [include warnings].</param>
-        /// <param name="includeInactive">if set to <c>true</c> [include inactive].</param>
-        /// <returns></returns>
-        [RockObsolete( "1.7" )]
-        [Obsolete( "Use GroupMembersNotMeetingRequirements( roup, includeWarnings, includeInactive) instead", true )]
-        public Dictionary<GroupMember, Dictionary<PersonGroupRequirementStatus, DateTime>> GroupMembersNotMeetingRequirements( int groupId, bool includeWarnings, bool includeInactive = false )
-        {
-            var group = new GroupService( this.Context as RockContext ).Get( groupId );
-            return GroupMembersNotMeetingRequirements( group, includeWarnings, includeInactive );
         }
 
         /// <summary>

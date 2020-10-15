@@ -274,7 +274,7 @@ namespace RockWeb.Blocks.Finance
             RockPage.AddScriptLink( "~/Scripts/jquery.fluidbox.min.js" );
 
             string script = string.Format( @"
-    $('.transaction-image-thumbnail').click( function() {{
+    $('.transaction-image-thumbnail').on('click', function() {{
         var $primaryHyperlink = $('.transaction-image a');
         var $primaryImg = $('.transaction-image a img');
         var primarySrc = $primaryHyperlink.attr('href');
@@ -1991,7 +1991,8 @@ namespace RockWeb.Blocks.Finance
             var isChild = IsNewPersonRoleChild();
             var isMarried = IsNewPersonMarried();
 
-            divAddPersonSpouse.Visible = !isChild && ( isMarried || !dvpAddPersonMaritalStatus.SelectedDefinedValueId.HasValue );
+            // only prompt for Spouse if the selected marital status is married (and they aren't a child)
+            divAddPersonSpouse.Visible = !isChild && ( isMarried  );
             dvpAddPersonMaritalStatus.Visible = !isChild;
         }
 
@@ -2156,8 +2157,7 @@ namespace RockWeb.Blocks.Finance
 
             ebAddPersonEmail.Text = null;
 
-            divAddPersonSpouse.Visible = true;
-            dvpAddPersonMaritalStatus.Visible = true;
+            SyncFamilyControlsOnRoleAndMaritalStatus();
             bgAddPersonRole.Visible = ShouldShowFamilyRoleControl();
             ebAddPersonEmail.Visible = ShouldShowEmailControl();
         }

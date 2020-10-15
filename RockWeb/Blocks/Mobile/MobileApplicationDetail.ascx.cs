@@ -152,7 +152,7 @@ namespace RockWeb.Blocks.Mobile
         {
             var breadCrumbs = new List<BreadCrumb>();
 
-            int? siteId = PageParameter( pageReference, "siteId" ).AsIntegerOrNull();
+            int? siteId = PageParameter( pageReference, "SiteId" ).AsIntegerOrNull();
             if ( siteId != null )
             {
                 var site = new SiteService( new RockContext() ).Get( siteId.Value );
@@ -496,6 +496,7 @@ namespace RockWeb.Blocks.Mobile
                 cpPrimary.Value = additionalSettings.DownhillSettings.ApplicationColors.Primary;
                 cpSecondary.Value = additionalSettings.DownhillSettings.ApplicationColors.Secondary;
                 cpSuccess.Value = additionalSettings.DownhillSettings.ApplicationColors.Success;
+                cpInfo.Value = additionalSettings.DownhillSettings.ApplicationColors.Info;
                 cpDanger.Value = additionalSettings.DownhillSettings.ApplicationColors.Danger;
                 cpWarning.Value = additionalSettings.DownhillSettings.ApplicationColors.Warning;
                 cpLight.Value = additionalSettings.DownhillSettings.ApplicationColors.Light;
@@ -913,6 +914,7 @@ namespace RockWeb.Blocks.Mobile
                 additionalSettings.DownhillSettings.ApplicationColors.Primary = ParseColor( cpPrimary.Value );
                 additionalSettings.DownhillSettings.ApplicationColors.Secondary = ParseColor( cpSecondary.Value );
                 additionalSettings.DownhillSettings.ApplicationColors.Success = ParseColor( cpSuccess.Value );
+                additionalSettings.DownhillSettings.ApplicationColors.Info = ParseColor( cpInfo.Value );
                 additionalSettings.DownhillSettings.ApplicationColors.Danger = ParseColor( cpDanger.Value );
                 additionalSettings.DownhillSettings.ApplicationColors.Warning = ParseColor( cpWarning.Value );
                 additionalSettings.DownhillSettings.ApplicationColors.Light = ParseColor( cpLight.Value );
@@ -997,12 +999,14 @@ namespace RockWeb.Blocks.Mobile
         protected void lbDeploy_Click( object sender, EventArgs e )
         {
             var applicationId = PageParameter( "SiteId" ).AsInteger();
+            var deploymentDateTime = RockDateTime.Now;
+            var versionId = ( int ) ( deploymentDateTime.ToJavascriptMilliseconds() / 1000 );
 
             //
             // Generate the packages and then encode to JSON.
             //
-            var phonePackage = MobileHelper.BuildMobilePackage( applicationId, DeviceType.Phone );
-            var tabletPackage = MobileHelper.BuildMobilePackage( applicationId, DeviceType.Tablet );
+            var phonePackage = MobileHelper.BuildMobilePackage( applicationId, DeviceType.Phone, versionId );
+            var tabletPackage = MobileHelper.BuildMobilePackage( applicationId, DeviceType.Tablet, versionId );
             var phoneJson = phonePackage.ToJson();
             var tabletJson = tabletPackage.ToJson();
 
@@ -1065,7 +1069,8 @@ namespace RockWeb.Blocks.Mobile
                 // Update the last deployment date.
                 //
                 var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>() ?? new AdditionalSiteSettings();
-                additionalSettings.LastDeploymentDate = RockDateTime.Now;
+                additionalSettings.LastDeploymentDate = deploymentDateTime;
+                additionalSettings.LastDeploymentVersionId = versionId;
                 additionalSettings.PhoneUpdatePackageUrl = GetFilePath( phoneFile );
                 additionalSettings.TabletUpdatePackageUrl = GetFilePath( tabletFile );
                 site.AdditionalSettings = additionalSettings.ToJson();
@@ -1190,9 +1195,19 @@ namespace RockWeb.Blocks.Mobile
             var pageService = new PageService( rockContext );
             var page = pageService.Get( e.RowKeyId );
 
-            pageService.Delete( page );
+            if ( page != null )
+            {
+                string errorMessage;
+                if ( !pageService.CanDelete( page, out errorMessage ) )
+                {
+                    mdWarning.Show( errorMessage, ModalAlertType.Warning );
+                    return;
+                }
 
-            rockContext.SaveChanges();
+                pageService.Delete( page );
+
+                rockContext.SaveChanges();
+            }
 
             BindPages( hfSiteId.ValueAsInt() );
         }

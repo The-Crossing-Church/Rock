@@ -35,6 +35,8 @@ namespace Rock.CheckIn
     {
         private static ConcurrentDictionary<int, object> _locks = new ConcurrentDictionary<int,object>();
 
+        #region Constructors
+
         /// <summary>
         /// Prevents a default instance of the <see cref="KioskDevice" /> class from being created.
         /// </summary>
@@ -54,6 +56,27 @@ namespace Rock.CheckIn
             Device.LoadAttributes();
             KioskGroupTypes = new List<KioskGroupType>();
         }
+
+        #endregion Constructors
+
+        #region Lifespan
+
+        /// <summary>
+        /// The amount of time that this item will live in the cache before expiring. This is set to the time from now
+        /// until midnight for each cache item instance.
+        /// </summary>
+        public override TimeSpan? Lifespan
+        {
+            get
+            {
+                // Expire cache items at midnight
+                var now = RockDateTime.Now;
+                var timespan = now.Date.AddDays( 1 ).Subtract( now );
+                return timespan;
+            }
+        }
+
+        #endregion Lifespan
 
         /// <summary>
         /// Gets or sets the device.
@@ -226,7 +249,7 @@ namespace Rock.CheckIn
         /// <param name="configuredGroupTypes">The configured group types (Checkin Areas).</param>
         /// <returns></returns>
         [RockObsolete( "1.8" )]
-        [Obsolete( "Use Get( int id, List<int> configuredGroupTypes ) instead." )]
+        [Obsolete( "Use Get( int id, List<int> configuredGroupTypes ) instead.", true )]
         public static KioskDevice Read( int id, List<int> configuredGroupTypes )
         {
             return Get( id, configuredGroupTypes );
@@ -240,9 +263,7 @@ namespace Rock.CheckIn
         /// <returns></returns>
         public static KioskDevice Get( int id, List<int> configuredGroupTypes )
         {
-            var now = RockDateTime.Now;
-            var timespan = now.Date.AddDays( 1 ).Subtract( now );
-            return GetOrAddExisting( id, () => Create( id ), timespan );
+            return GetOrAddExisting( id, () => Create( id ), () => GetAllIds() );
         }
 
         /// <summary>
@@ -286,11 +307,33 @@ namespace Rock.CheckIn
         }
 
         /// <summary>
+        /// Gets a list of IDs for all devices of type CheckinKiosk
+        /// </summary>
+        /// <returns></returns>
+        private static List<string> GetAllIds()
+        {
+            int? kioskDeviceTypeValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.DEVICE_TYPE_CHECKIN_KIOSK.AsGuid() );
+
+            using( var rockContext = new RockContext() )
+            {
+                var deviceService = new DeviceService( rockContext );
+                var ids = deviceService.Queryable().Where( d => d.DeviceTypeValueId == kioskDeviceTypeValueId ).Select( d => d.Id ).ToList().ConvertAll( d => d.ToString() );
+
+                if ( ids.Any() )
+                {
+                    return ids;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Flushes the specified id.
         /// </summary>
         /// <param name="id">The id.</param>
         [RockObsolete( "1.8" )]
-        [Obsolete( "Use Remove( int id ) instead.")]
+        [Obsolete( "Use Remove( int id ) instead.", true )]
         public static void Flush( int id )
         {
             Remove( id );
@@ -300,7 +343,7 @@ namespace Rock.CheckIn
         /// Flushes all.
         /// </summary>
         [RockObsolete( "1.8" )]
-        [Obsolete( "Use Clear() instead." )]
+        [Obsolete( "Use Clear() instead.", true )]
         public static void FlushAll()
         {
             Clear();
