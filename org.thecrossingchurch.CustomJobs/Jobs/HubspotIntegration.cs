@@ -153,10 +153,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
 
                 //If person is still null, attempt to use the Rock FirstName, Rock LastName, Rock Email for the query
-                if ( person == null && !String.IsNullOrEmpty( contacts_with_email[i].rock_firstname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_lastname ) && (!String.IsNullOrEmpty( contacts_with_email[i].rock_email) || !String.IsNullOrEmpty(contacts_with_email[i].Email) ) )
+                if ( person == null && !String.IsNullOrEmpty( contacts_with_email[i].rock_firstname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_lastname ) && ( !String.IsNullOrEmpty( contacts_with_email[i].rock_email ) || !String.IsNullOrEmpty( contacts_with_email[i].Email ) ) )
                 {
-                    PersonService.PersonMatchQuery query; 
-                    if( !String.IsNullOrEmpty( contacts_with_email[i].rock_email) ) {
+                    PersonService.PersonMatchQuery query;
+                    if ( !String.IsNullOrEmpty( contacts_with_email[i].rock_email ) )
+                    {
                         query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].rock_email, "" );
                     }
                     else
@@ -294,7 +295,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     DefinedValue dv = JsonConvert.DeserializeObject<DefinedValue>( JsonConvert.SerializeObject( propInfo.GetValue( person ) ) );
                                     properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = dv.Value } );
                                 }
-                                else if ( propInfo.PropertyType.FullName == "Date" || propInfo.PropertyType.FullName == "Date Time" )
+                                else if ( propInfo.PropertyType.FullName.Contains( "Date" ) )
                                 {
                                     //Get Epoc miliseconds 
                                     DateTime tryDate;
@@ -471,26 +472,26 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         //Update the Hubspot Contact
                         try
                         {
-                            var webrequest = WebRequest.Create( url );
-                            webrequest.Method = "POST";
-                            webrequest.ContentType = "application/json";
-                            using ( Stream requestStream = webrequest.GetRequestStream() )
-                            {
-                                var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                                byte[] bytes = Encoding.ASCII.GetBytes( json );
-                                requestStream.Write( bytes, 0, bytes.Length );
-                            }
-                            using ( WebResponse webResponse = webrequest.GetResponse() )
-                            {
-                                using ( Stream responseStream = webResponse.GetResponseStream() )
-                                {
-                                    using ( StreamReader reader = new StreamReader( responseStream ) )
-                                    {
-                                        var jsonResponse = reader.ReadToEnd();
-                                        Console.WriteLine( jsonResponse );
-                                    }
-                                }
-                            }
+                            //var webrequest = WebRequest.Create( url );
+                            //webrequest.Method = "POST";
+                            //webrequest.ContentType = "application/json";
+                            //using ( Stream requestStream = webrequest.GetRequestStream() )
+                            //{
+                            //    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                            //    byte[] bytes = Encoding.ASCII.GetBytes( json );
+                            //    requestStream.Write( bytes, 0, bytes.Length );
+                            //}
+                            //using ( WebResponse webResponse = webrequest.GetResponse() )
+                            //{
+                            //    using ( Stream responseStream = webResponse.GetResponseStream() )
+                            //    {
+                            //        using ( StreamReader reader = new StreamReader( responseStream ) )
+                            //        {
+                            //            var jsonResponse = reader.ReadToEnd();
+                            //            Console.WriteLine( jsonResponse );
+                            //        }
+                            //    }
+                            //}
 
                         }
                         catch ( WebException ex )
@@ -522,7 +523,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
             }
             byte[] sheetbytes = excel.GetAsByteArray();
-            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Potential_Matches.xlsx"; 
+            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Potential_Matches.xlsx";
             System.IO.File.WriteAllBytes( path, sheetbytes );
         }
 
@@ -651,7 +652,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
             //Add Created Dates
             DateTime epoch = new DateTime( 1970, 1, 1, 0, 0, 0, DateTimeKind.Utc );
-            worksheet.Cells[row, 13].Value = epoch.AddMilliseconds( Double.Parse(contact.createdate) ).ToString("MM/dd/yyyy");
+            worksheet.Cells[row, 13].Value = epoch.AddMilliseconds( Double.Parse( contact.createdate ) ).ToString( "MM/dd/yyyy" );
             worksheet.Cells[row, 14].Value = person.CreatedDateTime.Value.ToString( "MM/dd/yyyy" );
 
             //Add Modified Dates
