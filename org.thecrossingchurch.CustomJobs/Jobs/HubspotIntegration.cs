@@ -472,26 +472,26 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         //Update the Hubspot Contact
                         try
                         {
-                            //var webrequest = WebRequest.Create( url );
-                            //webrequest.Method = "POST";
-                            //webrequest.ContentType = "application/json";
-                            //using ( Stream requestStream = webrequest.GetRequestStream() )
-                            //{
-                            //    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                            //    byte[] bytes = Encoding.ASCII.GetBytes( json );
-                            //    requestStream.Write( bytes, 0, bytes.Length );
-                            //}
-                            //using ( WebResponse webResponse = webrequest.GetResponse() )
-                            //{
-                            //    using ( Stream responseStream = webResponse.GetResponseStream() )
-                            //    {
-                            //        using ( StreamReader reader = new StreamReader( responseStream ) )
-                            //        {
-                            //            var jsonResponse = reader.ReadToEnd();
-                            //            Console.WriteLine( jsonResponse );
-                            //        }
-                            //    }
-                            //}
+                            var webrequest = WebRequest.Create( url );
+                            webrequest.Method = "POST";
+                            webrequest.ContentType = "application/json";
+                            using ( Stream requestStream = webrequest.GetRequestStream() )
+                            {
+                                var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                                byte[] bytes = Encoding.ASCII.GetBytes( json );
+                                requestStream.Write( bytes, 0, bytes.Length );
+                            }
+                            using ( WebResponse webResponse = webrequest.GetResponse() )
+                            {
+                                using ( Stream responseStream = webResponse.GetResponseStream() )
+                                {
+                                    using ( StreamReader reader = new StreamReader( responseStream ) )
+                                    {
+                                        var jsonResponse = reader.ReadToEnd();
+                                        Console.WriteLine( jsonResponse );
+                                    }
+                                }
+                            }
 
                         }
                         catch ( WebException ex )
