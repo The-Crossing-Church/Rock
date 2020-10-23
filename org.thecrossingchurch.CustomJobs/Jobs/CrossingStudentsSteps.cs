@@ -268,7 +268,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
 
             // Figure out which groups are small groups, which students are in them, and what occurrences are in the most recent trimester
             var smallGroupTypes = _grouptypesvc.Queryable().Where( gt => gt.GroupTypePurposeValueId == smallGroup );
-            var smallGroups = _groupsvc.Queryable().Where( g => g.IsActive ).Join( smallGroupTypes,
+            var smallGroups = _groupsvc.Queryable().Join( smallGroupTypes,
                     g => g.GroupTypeId,
                     gt => gt.Id,
                     ( g, gt ) => g
