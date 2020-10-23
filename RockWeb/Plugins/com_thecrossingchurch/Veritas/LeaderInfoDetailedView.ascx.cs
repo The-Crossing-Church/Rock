@@ -153,7 +153,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
                 var one = new HtmlGenericControl( "div" );
                 one.InnerText = "One on Ones: " + oneOnOne + "/" + members;
                 card.Controls.Add( one );
-                var temp = leadersItems[i].GetAttributeValue( "Thingtoprayfor" ); 
+                //Add Follow Up Details
                 if (leadersItems[i].GetAttributeValue( "Thingtoprayfor" ) == "True" )
                 {
                     var prayer = new HtmlGenericControl( "div" );
@@ -190,6 +190,41 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
                     resources.Controls.Add( req );
                     card.Controls.Add( resources );
                 }
+                if ( leadersItems[i].GetAttributeValue( "Booksrecommendations" ) == "True" )
+                {
+                    var resources = new HtmlGenericControl( "div" );
+                    var label = new HtmlGenericControl( "div" );
+                    label.AddCssClass( "floating-label" );
+                    label.InnerText = "Book Recommendations";
+                    var req = new HtmlGenericControl( "div" );
+                    req.InnerText = leadersItems[i].GetAttributeValue( "BooksrecommendationsDetails" );
+                    resources.Controls.Add( label );
+                    resources.Controls.Add( req );
+                    card.Controls.Add( resources );
+                }
+                if ( leadersItems[i].GetAttributeValue( "Curriculum" ) == "True" )
+                {
+                    var resources = new HtmlGenericControl( "div" );
+                    var label = new HtmlGenericControl( "div" );
+                    label.AddCssClass( "floating-label" );
+                    label.InnerText = "Cirriculum";
+                    var req = new HtmlGenericControl( "div" );
+                    req.InnerText = leadersItems[i].GetAttributeValue( "CurriculumDetails" );
+                    resources.Controls.Add( label );
+                    resources.Controls.Add( req );
+                    card.Controls.Add( resources );
+                }
+                //Add General Feelings
+                var generalFeelings = new HtmlGenericControl( "div" );
+                var gfLabel = new HtmlGenericControl( "div" );
+                gfLabel.AddCssClass( "floating-label" );
+                gfLabel.InnerText = "General Feelings";
+                var gfText = new HtmlGenericControl( "div" );
+                gfText.InnerText = leadersItems[i].GetAttributeValue( "GeneralFeelings" );
+                generalFeelings.Controls.Add( gfLabel );
+                generalFeelings.Controls.Add( gfText );
+                card.Controls.Add( generalFeelings );
+
                 anchor.Controls.Add( card );
                 col.Controls.Add( anchor );
                 row.Controls.Add( col );
