@@ -249,6 +249,12 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     }
                 }
 
+                //For Testing
+                //if ( contacts_with_email[i].Email != "jimbeatyjr@gmail.com" )
+                //{
+                //    person = null;
+                //}
+
                 //Schedule HubSpot update if 1:1 match
                 if ( person != null )
                 {
@@ -256,30 +262,40 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     {
                         current_id = person.Id;
                         //Get the Attributes for that Person 
-                        var attrs = new AttributeValueService( new RockContext() ).GetByEntityId( person.Id ).ToList();
+                        person.LoadAttributes();
+                        //Limit to the non Field props we want
+                        var attrs = props.Where( p => !p.label.Contains( "Rock " ) ).ToList();
                         //Build the POST request and schedule in the db 10 at a time 
                         var url = $"https://api.hubapi.com/contacts/v1/contact/vid/{contacts_with_email[i].Id}/profile?hapikey={key}";
                         var properties = new List<HubspotPropertyUpdate>();
                         //Add each Rock prop to the list with the Hubspot name
                         for ( var j = 0; j < attrs.Count(); j++ )
                         {
-                            var current_prop = props.FirstOrDefault( p => p.label == attrs[j].Attribute.Name );
+                            AttributeCache current_prop = null;
+                            try
+                            {
+                                current_prop = person.Attributes[attrs[j].label];
+                            }
+                            catch
+                            {
+                                current_prop = null; 
+                            }
                             //If the attribute is in our list of props from Hubspot
                             if ( current_prop != null )
                             {
-                                if ( attrs[j].Attribute.FieldType.Name == "Date" || attrs[j].Attribute.FieldType.Name == "Date Time" )
+                                if ( current_prop.FieldType.Name == "Date" || current_prop.FieldType.Name == "Date Time" )
                                 {
                                     //Get Epoc miliseconds 
                                     DateTime tryDate;
-                                    if ( DateTime.TryParse( attrs[j].Value, out tryDate ) )
+                                    if ( DateTime.TryParse( person.GetAttributeValue( attrs[j].label ), out tryDate ) )
                                     {
                                         var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
-                                        properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
+                                        properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = d.ToString() } );
                                     }
                                 }
                                 else
                                 {
-                                    properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = attrs[j].Value } );
+                                    properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = person.AttributeValues[attrs[j].label].ValueFormatted } );
                                 }
                             }
                         }
