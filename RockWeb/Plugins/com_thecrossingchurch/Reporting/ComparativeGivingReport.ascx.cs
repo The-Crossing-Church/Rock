@@ -140,17 +140,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             //Current Date Range Transactions
             //For People
-            var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 );
+            var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
             //For Businesses
-            var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 );
+            var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
             //Previous Year Transactions
             //For People
-            var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 );
+            var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
             //For Businesses
-            var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 );
+            var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
 
             //Join the Person Data
-            var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).OrderBy(e => e.Key).ToList();
+            var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).OrderBy( e => e.Key ).ToList();
             var groupedLyTransactions = lytransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).ToList();
             var leftJoin =
                             from gt in groupedTransactions
@@ -162,7 +162,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             join gt in groupedTransactions on glyt.Key equals gt.Key into temp
                             from gt in temp.DefaultIfEmpty()
                             select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
-            var perJoinedData = leftJoin.Union( rightJoin ).DistinctBy(e => e.KeyId).ToList();
+            var perJoinedData = leftJoin.Union( rightJoin ).DistinctBy( e => e.KeyId ).ToList();
             //Join the Business Data
             var busGroupedTransactions = busTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
             var busGroupedLyTransactions = busLyTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
@@ -206,7 +206,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 //Remove leading space that is somehow being added to certain records because reasons 
                 if ( householdName.Substring( 0, 1 ) == " " )
                 {
-                    householdName = householdName.Substring( 1 ); 
+                    householdName = householdName.Substring( 1 );
                 }
                 p.LoadAttributes();
                 DonorData d = new DonorData()
@@ -217,10 +217,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     HouseholdName = householdName
                 };
 
-                d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) ) : 0;
+                d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
                 d.NumberOfGifts = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Count() : 0;
                 d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round( ( d.AmountGiven / d.NumberOfGifts ), 2 ) : 0;
-                var prevAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) ) : 0;
+                var prevAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
                 d.PreviousNumberOfGifts = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Count() : 0;
                 d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( ( prevAmountGiven / d.PreviousNumberOfGifts.Value ), 2 ) : 0;
                 d.AmountChange = d.AmountGiven - prevAmountGiven;
