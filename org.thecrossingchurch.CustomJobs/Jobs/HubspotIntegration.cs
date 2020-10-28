@@ -250,9 +250,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
 
                 //For Testing
-                //if ( contacts_with_email[i].Email != "jimbeatyjr@gmail.com" )
+                //if ( contacts_with_email[i].Email != "coolrobot@hubspot.com" )
                 //{
                 //    person = null;
+                //}
+                //else
+                //{
+                //    person = personService.Get( 14659 );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
@@ -289,6 +293,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     DateTime tryDate;
                                     if ( DateTime.TryParse( person.GetAttributeValue( attrs[j].label ), out tryDate ) )
                                     {
+                                        //Set date time to Midnight because HubSpot sucks 
+                                        tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
                                         var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
                                         properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = d.ToString() } );
                                     }
@@ -317,6 +323,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     DateTime tryDate;
                                     if ( DateTime.TryParse( propInfo.GetValue( person ).ToString(), out tryDate ) )
                                     {
+                                        //Set date time to Midnight because HubSpot sucks 
+                                        tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 ); 
                                         var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
                                         properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
                                     }
@@ -697,6 +705,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     {
         public string name { get; set; }
         public string label { get; set; }
+        public string fieldType { get; set; }
         public bool? deleted { get; set; }
         public int? createdUserId { get; set; }
     }
