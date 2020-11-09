@@ -35,6 +35,9 @@
                 </Rock:RockTemplateField>
                 <Rock:RockBoundField HeaderText="Change" DataField="AmountChange" ExcelExportBehavior="AlwaysInclude" Visible="false" />
                 <Rock:DateField HeaderText="First Gift" DataField="FirstGiftEver" SortExpression="FirstGiftEver" ExcelExportBehavior="AlwaysInclude" />
+                <Rock:DateField HeaderText="Most Recent Gift" DataField="MostRecentGift" SortExpression="MostRecentGift" ExcelExportBehavior="AlwaysInclude" />
+                <Rock:RockBoundField HeaderText="Most Recent Fund" DataField="MostRecentFund" SortExpression="MostRecentFund" ExcelExportBehavior="AlwaysInclude" />
+                <Rock:RockBoundField HeaderText="Most Recent Fund Gift Amount" DataField="MostRecentFundAmount" SortExpression="MostRecentFundAmount" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Giving Zone" DataField="GivingZone" SortExpression="GivingZone" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Type of Donor" DataField="DonorType" SortExpression="DonorType" ExcelExportBehavior="AlwaysInclude" />
                 <%--<Rock:RockBoundField HeaderText="Type of Giver" DataField="GiverType" SortExpression="GiverType" ExcelExportBehavior="AlwaysInclude" />--%>

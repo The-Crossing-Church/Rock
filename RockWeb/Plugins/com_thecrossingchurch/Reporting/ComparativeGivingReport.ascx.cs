@@ -140,14 +140,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             //Current Date Range Transactions
             //For People
-            var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
+            var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } );
             //For Businesses
-            var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
+            var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } );
             //Previous Year Transactions
             //For People
-            var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
+            var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } );
             //For Businesses
-            var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
+            var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } );
 
             //Join the Person Data
             var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).OrderBy( e => e.Key ).ToList();
@@ -228,19 +228,34 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
                 d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
                 d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
-                var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) ).OrderBy( ft => ft.TransactionDateTime );
+                var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) && ft.TransactionTypeValueId == 53 ).Select( ft => new { Id = ft.Id, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue, TransactionDetails = ft.TransactionDetails } ).OrderBy( ft => ft.TransactionDateTime );
                 //If Source is empty for Current Transactions, Try Previous Transactions
                 if ( String.IsNullOrEmpty( d.Source ) )
                 {
                     d.Source = joinedData[i].PreviousTransactions != null ? string.Join( ",", joinedData[i].PreviousTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : string.Join( ",", allTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() );
                 }
                 d.FirstGiftEver = allTransactions.First().TransactionDateTime;
-                //Determine Type of Donor
-                if ( DateTime.Compare( d.FirstGiftEver.Value, start.Value ) < 0 )
+                var firstFundGift = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).OrderBy( ft => ft.TransactionDateTime ).First().TransactionDateTime;
+                var giftsBeforeStart = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) && DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
+                DateTime? mostRecentFundGiftBeforeStart = null;
+                if(giftsBeforeStart.Count() > 0 )
                 {
-                    //They have donated before this timeframe 
-                    d.DonorType = "Existing";
-                    var currentTransactions = allTransactions.Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 );
+                    mostRecentFundGiftBeforeStart = giftsBeforeStart.First().TransactionDateTime;
+                }
+                d.MostRecentGift = mostRecentFundGiftBeforeStart; 
+                //Determine Type of Donor
+                if ( DateTime.Compare( firstFundGift.Value, start.Value ) < 0 && mostRecentFundGiftBeforeStart.HasValue && mostRecentFundGiftBeforeStart.Value.Year >= ( RockDateTime.Now.Year - 8 ) )
+                {
+                    //They have donated before this timeframe
+                    if( mostRecentFundGiftBeforeStart.Value.Year > ( RockDateTime.Now.Year - 3 ) )
+                    {
+                        d.DonorType = "Existing";
+                    }
+                    else
+                    {
+                        d.DonorType = "Re-Engaged";
+                    }
+                    var currentTransactions = allTransactions.Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) );
                     if ( currentTransactions.Count() == 0 )
                     {
                         //They have donated previously but not in this time frame 
@@ -249,8 +264,25 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 }
                 else
                 {
-                    //This timeframe is the first time they have donated
+                    //This timeframe is the first time they have donated, or it has been more than 8 years since their last gift
                     d.DonorType = "New";
+                }
+                //Figure out what most recent gift was if it was not to the Selected Fund
+                if ( mostRecentFundGiftBeforeStart == null )
+                {
+                    var mostRecent = allTransactions.Where( ft => DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
+                    if(mostRecent.Count() > 0)
+                    {
+                        d.MostRecentGiftAnyFund = mostRecent.First().TransactionDateTime;
+                        d.MostRecentFund = String.Join( ",", mostRecent.First().TransactionDetails.Select( td => td.Account.Name ) );
+                        d.MostRecentFundAmount = mostRecent.First().TransactionDetails.Sum( td => td.Amount );
+                    }
+                }
+                else
+                {
+                    d.MostRecentGiftAnyFund = mostRecentFundGiftBeforeStart;
+                    d.MostRecentFund = fund.Name;
+                    d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount ); 
                 }
                 donorData.Add( d );
             }
@@ -288,6 +320,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public decimal? PreviousAverageGiftAmount { get; set; }
             public decimal AmountChange { get; set; }
             public DateTime? FirstGiftEver { get; set; }
+            public DateTime? MostRecentGift { get; set; }
+            public DateTime? MostRecentGiftAnyFund { get; set; }
+            public string MostRecentFund { get; set; }
+            public decimal MostRecentFundAmount { get; set; }
             public string Source { get; set; }
             public string GivingZone { get; set; }
             public string DonorType { get; set; }
@@ -295,11 +331,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public string Average { get; set; }
             public string StdDev { get; set; }
         }
+        private class FinancialTransactionLight
+        {
+            public int Id { get; set; }
+            public PersonAlias AuthorizedPersonAlias { get; set; }
+            public ICollection<FinancialTransactionDetail> TransactionDetails { get; set; }
+            public DateTime? TransactionDateTime { get; set; }
+            public DefinedValue SourceTypeValue { get; set; }
+        }
         private class JoinDataObj
         {
             public int? KeyId { get; set; }
-            public IGrouping<int, FinancialTransaction> PreviousTransactions { get; set; }
-            public IGrouping<int, FinancialTransaction> CurrentTransactions { get; set; }
+            public IGrouping<int, FinancialTransactionLight> PreviousTransactions { get; set; }
+            public IGrouping<int, FinancialTransactionLight> CurrentTransactions { get; set; }
             public string Type { get; set; }
         }
     }
