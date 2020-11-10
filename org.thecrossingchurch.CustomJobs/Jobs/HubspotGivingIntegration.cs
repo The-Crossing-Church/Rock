@@ -130,7 +130,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
                     for ( var k = 0; k < matches.Count(); k++ )
                     {
                         //Check Rate Limit
-                        if(count % 100 == 0 )
+                        if ( count % 100 == 0 )
                         {
                             System.Threading.Thread.Sleep( 10000 );
                         }
@@ -172,7 +172,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
                 webrequest.ContentType = "application/json";
                 using ( Stream requestStream = webrequest.GetRequestStream() )
                 {
-                    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                    var json = $"{{\"properties\": {GenerateJSON( properties )} }}";
                     byte[] bytes = Encoding.ASCII.GetBytes( json );
                     requestStream.Write( bytes, 0, bytes.Length );
                 }
@@ -202,6 +202,17 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
                     }
                 }
             }
+        }
+
+        private string GenerateJSON( List<HubspotPropertyUpdate> properties )
+        {
+            string json = "{";
+            for ( var i = 0; i < properties.Count(); i++ )
+            {
+                json += $"\"{properties[i].property}\":\"{properties[i].value}\"";
+            }
+            json += "}";
+            return json; 
         }
     }
 
