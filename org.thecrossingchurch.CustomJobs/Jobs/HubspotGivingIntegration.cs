@@ -209,7 +209,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             string json = "{";
             for ( var i = 0; i < properties.Count(); i++ )
             {
-                json += $"\"{properties[i].property}\":\"{properties[i].value}\"";
+                json += $"\"{properties[i].property}\":\"{properties[i].value}\",";
             }
             json += "}";
             return json; 
