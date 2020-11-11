@@ -175,8 +175,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     if ( matches.Count() == 1 )
                     {
                         //1:1 Email match so we want to check other information, start by checking for a name match 
-                        if ( CustomEquals( matches.First().NickName, contacts_with_email[i].FirstName ) ||
-                            CustomEquals( matches.First().FirstName, contacts_with_email[i].FirstName ) ||
+                        if ( ( CustomEquals( matches.First().NickName, contacts_with_email[i].FirstName ) ||
+                            CustomEquals( matches.First().FirstName, contacts_with_email[i].FirstName ) ) &&
                             CustomEquals( matches.First().LastName, contacts_with_email[i].LastName ) )
                         {
                             person = matches.First();
@@ -282,7 +282,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                             catch
                             {
-                                current_prop = null; 
+                                current_prop = null;
                             }
                             //If the attribute is in our list of props from Hubspot
                             if ( current_prop != null )
@@ -324,7 +324,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     if ( DateTime.TryParse( propInfo.GetValue( person ).ToString(), out tryDate ) )
                                     {
                                         //Set date time to Midnight because HubSpot sucks 
-                                        tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 ); 
+                                        tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
                                         var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
                                         properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
                                     }

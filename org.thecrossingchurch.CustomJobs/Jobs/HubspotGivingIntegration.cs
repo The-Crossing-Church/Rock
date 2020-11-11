@@ -172,7 +172,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
                 webrequest.ContentType = "application/json";
                 using ( Stream requestStream = webrequest.GetRequestStream() )
                 {
-                    var json = $"{{\"properties\": {{ {GenerateJSON( properties )} }} }}";
+                    var json = $"{{\"properties\": {GenerateJSON( properties )} }}";
                     byte[] bytes = Encoding.ASCII.GetBytes( json );
                     requestStream.Write( bytes, 0, bytes.Length );
                 }
@@ -211,6 +211,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             {
                 json += $"\"{properties[i].property}\":\"{properties[i].value}\",";
             }
+            json = json.Substring( 0, json.Length - 1 );
             json += "}";
             return json; 
         }
