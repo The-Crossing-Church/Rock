@@ -117,8 +117,11 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             //Contacts with emails only 
             var contacts_with_email = contacts.Where( c => c.Email != null ).ToList();
 
+            var startOfDay = RockDateTime.Now;
+            startOfDay = new DateTime( startOfDay.Year, startOfDay.Month, startOfDay.Day, 0, 0, 0 );
+
             //Get all people in Rock who have donated to the Fund
-            List<Person> sponsors = new FinancialTransactionService( _context ).Queryable().Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => ft.AuthorizedPersonAlias.Person ).ToList();
+            List<Person> sponsors = new FinancialTransactionService( _context ).Queryable().Where( ft => DateTime.Compare(ft.TransactionDateTime.Value, startOfDay) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => ft.AuthorizedPersonAlias.Person ).ToList();
 
             int count = 0;
             for ( var i = 0; i < sponsors.Count(); i++ )
