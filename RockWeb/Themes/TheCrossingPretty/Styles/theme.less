@@ -1,0 +1,558 @@
+﻿// Load Master Styles
+// -------------------------
+@import "../../../Styles/Bootstrap/variables.less";
+@import "../../../Styles/_rock-core.less";
+@import "../../../Styles/_store.less";
+@import "../../../Styles/_rock-variables.less";
+@import "_variables.less";
+@import "_variable-overrides.less";
+@import "_print.less";
+
+/*
+    Rock Theme Styles
+
+    1. HTML Overrides
+    2. Bootstrap Overides
+    3. Theme Styling
+    4. Helper Classes
+    5. Responsive Overrides
+
+*/
+
+// Variables
+// -------------------------
+@color-light-blue: #A2C3CC;
+@color-medium-blue: #5F9BAC;
+@color-dark-blue: #1B3142;
+@color-dark-teal: #054557;
+
+
+// 1. HTML Overrides
+// -------------------------
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  display: block;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/135715/00000000000000000000e800/21/l?subset_id=2&fvd=n1&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/135715/00000000000000000000e800/21/d?subset_id=2&fvd=n1&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/135715/00000000000000000000e800/21/a?subset_id=2&fvd=n1&v=3)
+      format("opentype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/f11877/00000000000000000000e801/21/l?subset_id=2&fvd=i1&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/f11877/00000000000000000000e801/21/d?subset_id=2&fvd=i1&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/f11877/00000000000000000000e801/21/a?subset_id=2&fvd=i1&v=3)
+      format("opentype");
+  font-weight: 100;
+  font-style: italic;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/903b78/00000000000000000000e7fe/21/l?subset_id=2&fvd=n3&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/903b78/00000000000000000000e7fe/21/d?subset_id=2&fvd=n3&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/903b78/00000000000000000000e7fe/21/a?subset_id=2&fvd=n3&v=3)
+      format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/e40ebd/00000000000000000000e802/21/l?subset_id=2&fvd=i3&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/e40ebd/00000000000000000000e802/21/d?subset_id=2&fvd=i3&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/e40ebd/00000000000000000000e802/21/a?subset_id=2&fvd=i3&v=3)
+      format("opentype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/778be9/00000000000000000000e803/21/l?subset_id=2&fvd=n5&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/778be9/00000000000000000000e803/21/d?subset_id=2&fvd=n5&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/778be9/00000000000000000000e803/21/a?subset_id=2&fvd=n5&v=3)
+      format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/2caf60/00000000000000000000e804/21/l?subset_id=2&fvd=i5&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/2caf60/00000000000000000000e804/21/d?subset_id=2&fvd=i5&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/2caf60/00000000000000000000e804/21/a?subset_id=2&fvd=i5&v=3)
+      format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/ad3298/00000000000000000000e805/21/l?subset_id=2&fvd=n7&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/ad3298/00000000000000000000e805/21/d?subset_id=2&fvd=n7&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/ad3298/00000000000000000000e805/21/a?subset_id=2&fvd=n7&v=3)
+      format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/ca1028/00000000000000000000e806/21/l?subset_id=2&fvd=i7&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/ca1028/00000000000000000000e806/21/d?subset_id=2&fvd=i7&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/ca1028/00000000000000000000e806/21/a?subset_id=2&fvd=i7&v=3)
+      format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/48f4f3/00000000000000000000e807/21/l?subset_id=2&fvd=n9&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/48f4f3/00000000000000000000e807/21/d?subset_id=2&fvd=n9&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/48f4f3/00000000000000000000e807/21/a?subset_id=2&fvd=n9&v=3)
+      format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: auto;
+}
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/582fd2/00000000000000000000e808/21/l?subset_id=2&fvd=i9&v=3)
+      format("woff2"),
+    url(https://use.typekit.net/af/582fd2/00000000000000000000e808/21/d?subset_id=2&fvd=i9&v=3)
+      format("woff"),
+    url(https://use.typekit.net/af/582fd2/00000000000000000000e808/21/a?subset_id=2&fvd=i9&v=3)
+      format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: auto;
+}
+
+body {
+  font-family: "museo-sans";
+}
+
+// 2. Bootstrap Overrides
+// -------------------------
+
+.navbar {
+  position: static; // default is relative which causes the dropdowns to go under the other navbars dispite having a higher z-index - JME 9/9/2013
+  // using fontawesome nav toggle button instead of the BS default
+  .navbar-toggle {
+    padding: 6px 10px;
+
+    i.fa-bars {
+      color: @navbar-inverse-toggle-icon-bar-bg;
+    }
+  }
+}
+
+a:hover i.fs {
+  text-decoration: none;
+}
+
+.btn {
+  text-decoration: none;
+  cursor: pointer;
+  min-width: 100px;
+  line-height: 1em;
+  padding: 0.625em 1.125em;
+  display: inline-block;
+  border-radius: 30px;
+  border: 2px solid #1b3142;
+  background-color: @color-dark-blue;
+  color: #fff;
+  text-align: center;
+  transition: all 0.16s ease-in;
+  font-family: museo-sans, sans-serif;
+  font-size: 1.125em;
+  font-weight: 600;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+}
+.btn-accent {
+  background-color: @color-light-blue;
+  color: @color-dark-blue !important;
+  border-color: @color-dark-blue;
+}
+.btn:active,
+.btn.active {
+  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+}
+.btn:hover {
+  background-color: @color-light-blue;
+  color: @color-dark-blue;
+  border-color: @color-dark-blue;
+}
+.btn-accent:hover {
+  background-color: @color-dark-blue;
+  color: @color-light-blue;
+  border-color: @color-light-blue;
+}
+.grid-actions {
+  background-color: #a2c3cc;
+  .btn {
+    padding: 4px;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 30px;
+    text-align: center;
+    background-color: @color-dark-blue;
+    color: #1b3142;
+    border-color: @color-dark-blue;
+    i {
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%) translateX(-50%);
+      left: 50%;
+    }
+  }
+  .btn:hover {
+    background-color: @color-light-blue;
+    color: @color-dark-blue;
+    border-color: @color-dark-blue;
+  }
+}
+
+.btn-toggle {
+  .js-toggle-off:not(.active), .js-toggle-on:not(.active) {
+    background-color: rgb(233, 232, 232);
+    border-color: rgb(233, 232, 232);
+  }
+  .btn, .js-toggle-off:hover, .js-toggle-on:hover {
+    padding: 1px 5px;
+    font-size: 12px;
+    font-weight: normal;
+    min-width: 30px;
+    background-color: #a2c3cc;
+    color: #1b3142;
+    border-color: #a2c3cc;
+  }
+}
+
+.input-group-btn {
+  .btn {
+    min-width: 1px;
+    line-height: 1em;
+    padding: 0.625em 1.125em;
+    display: inline-block;
+    border-radius: 30px;
+    border: 2px solid #1b3142;
+    background-color: #1b3142;
+    color: #fff;
+    text-align: center;
+    transition: all 0.16s ease-in;
+    font-family: museo-sans, sans-serif;
+    font-size: 1.125em;
+    font-weight: 600;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+  }
+}
+
+.panel-default,
+.well {
+  border-color: #ddd;
+  background-color: #fff;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+  margin: 16px 0px;
+  padding: 16px;
+  border-radius: 16px;
+  border-top: 8px solid #5f9bac;
+  .panel-heading {
+    background-color: #fff;
+  }
+}
+.nav-pills > li > a {
+  display: block;
+  font-size: 1em;
+  line-height: 1.55556em;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 30px;
+  padding: 14px 20px;
+}
+
+.nav-pills > li.active > a,
+.nav-pills > li > a:hover,
+.nav-pills > li.active > a:focus {
+  background: #fff;
+  color: #1b3142;
+  transition: all 0.16s linear;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.alert.alert-info {
+  color: #1b3142;
+  background-color: #a2c3cc;
+  border-color: darken(#a2c3cc, 15%);
+}
+
+.progress, .progress-bar {
+  height: 10px;
+  border-radius: 10px;
+}
+
+// 3. Theme Styling
+// -------------------------
+
+h1.pagetitle:empty {
+  // hides the page title h1 tag if the page has the title hidden
+  display: none;
+}
+
+.page-icon {
+  display: none;
+}
+
+header {
+  .page-menu,
+  .login-status {
+    float: right;
+  }
+
+  .navbar {
+    background-color: @header-bg;
+    border: 0;
+  }
+
+  .triple-bar {
+    height: 10px;
+
+    .col {
+      height: 100%;
+    }
+  }
+
+  .header-inset {
+    color: @color-light-blue !important;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+
+    .nav-menu {
+      .header-search {
+        display: inline-block;
+        vertical-align: middle;
+        width: 40px;
+        height: 40px;
+        margin-right: 15px;
+
+        .fa-search {
+          font-size: 25px;
+        }
+      }
+
+      .main-navigation {
+        display: inline-block;
+        list-style: none;
+
+        .menu-item {
+          display: inline-block;
+          vertical-align: middle;
+          margin: 0 15px;
+          position: relative;
+
+          a {
+            text-transform: uppercase;
+            font-size: 16px;
+            font-weight: 300;
+            cursor: pointer;
+          }
+          a:not(.btn){
+            color: @color-light-blue !important;
+          }
+
+          a:hover {
+            color: @color-medium-blue !important;
+            text-decoration: none;
+          }
+        }
+      }
+    }
+
+    .mobile-menu {
+      .fa-bars {
+        font-size: 25px;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .desktop-menu {
+        display: none !important;
+      }
+    }
+
+    @media (min-width: 1201px) {
+      .mobile-menu {
+        display: none;
+      }
+    }
+  }
+
+  .nav-menu.right {
+    text-align: right;
+  }
+}
+.header-image {
+    max-width: 255px !important;
+    padding: 6px 0 !important;
+}
+
+// homepage items
+#announcement-rotator {
+  margin: 0 -@grid-gutter-width / 2 @spacing-lg-px;
+
+  .item {
+    img {
+      width: 100%;
+    }
+  }
+}
+
+.announcement-list {
+  .announcement {
+    margin: 0 auto @spacing-lg-px;
+    max-width: 390px;
+  }
+
+  .announcement-title {
+    margin: @spacing-sm-px 0;
+  }
+
+  img {
+    width: 100%;
+  }
+}
+
+.announcement-detail {
+  img {
+    width: 100%;
+  }
+}
+
+footer {
+  margin-bottom: 50px;
+
+  .footer-message {
+    float: left;
+  }
+
+  .footer-address {
+    float: right;
+  }
+}
+
+#splash.error {
+  background-color: @gray-lighter;
+
+  #content {
+    margin-top: 20px;
+    background-color: @body-bg;
+    border-radius: @border-radius-base;
+    padding: 20px;
+  }
+}
+
+.not-found h2 {
+  font-size: 200px;
+  font-weight: @font-weight-bold;
+  letter-spacing: -5px;
+  line-height: 210px;
+
+  i {
+    color: #f03;
+    font-size: 210px;
+    position: relative;
+    top: -12px;
+  }
+}
+
+/* hide block panels */
+.panel.panel-block {
+  border: 0;
+  box-shadow: none;
+
+  & > .panel-heading,
+  & > .rock-panel-drawer {
+    display: none;
+  }
+
+  & > .panel-body {
+    padding: 0;
+
+    .grid.grid-panel {
+      margin: 0;
+    }
+  }
+}
+
+// 4. Helper Classes
+// -------------------------
+
+.background--light-blue, .background--accent {
+  background-color: @color-light-blue !important;
+}
+.background--medium-blue {
+  background-color: @color-medium-blue !important; 
+}
+.background--dark-blue, .background--primary {
+  background-color: @color-dark-blue !important; 
+}
+.background--dark-teal {
+  background-color: @color-dark-teal !important; 
+}
+
+// 5. Responsive Overrides
+// -------------------------
+
+// default styling should be for phones 767px or less
+
+// Small devices (tablets, 768px and up)
+@media (min-width: @screen-sm-min) {
+  #announcement-rotator {
+    margin: @spacing-lg-px 0;
+  }
+}
+
+// Medium devices (desktops, 992px and up)
+@media (min-width: @screen-md-min) {
+}
+
+// Large devices (large desktops, 1200px and up)
+@media (min-width: @screen-lg-min) {
+}
+
+@import "_css-overrides.less";
