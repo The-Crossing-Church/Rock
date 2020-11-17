@@ -1,6 +1,28 @@
 <%@ Control Language="C#" AutoEventWireup="true" CodeFile="ComparativeGivingReport.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.Reporting.ComparativeGivingReport" %>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
+        <div class="panel panel-default">
+            <div class="panel-heading"><h4 class="panel-title"><i class="fa fa-filter"></i>&nbsp;Filters</h4></div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col col-xs-12 col-md-4">
+                        <Rock:DatePicker ID="pkrStart" Label="Start Date" runat="server" />
+                    </div>
+                    <div class="col col-xs-12 col-md-4">
+                        <Rock:DatePicker ID="pkrEnd" Label="End Date" runat="server" />
+                    </div>
+                    <div class="col col-xs-12 col-md-4">
+                        <Rock:AccountPicker ID="pkrAcct" Label="Fund" runat="server" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col col-xs-12">
+                        <Rock:BootstrapButton ID="btnExport" Text="Export to Excel" runat="server" CssClass="btn btn-primary pull-right" OnClick="btnExport_Click" />
+                        <Rock:BootstrapButton ID="btnGenerate" Text="Generate Grid" runat="server" CssClass="btn btn-primary pull-right" OnClick="btnGenerate_Click" />
+                    </div>
+                </div>
+            </div>
+        </div>
         <Rock:Grid ID="grdGiving" runat="server" AllowSorting="true">
             <Columns>
                 <Rock:RockBoundField HeaderText="Household" DataField="HouseholdName" SortExpression="HouseholdName" ExcelExportBehavior="AlwaysInclude" />

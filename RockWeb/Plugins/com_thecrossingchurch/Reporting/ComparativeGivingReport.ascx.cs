@@ -69,6 +69,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         protected void Page_Load( object sender, EventArgs e )
         {
             ScriptManager scriptManager = ScriptManager.GetCurrent( this.Page );
+            scriptManager.RegisterPostBackControl( this.btnExport );
             ScriptManager.RegisterStartupScript( Page, this.GetType(), "AKey", "colorizeChange();", true );
         }
 
@@ -91,31 +92,35 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             base.OnLoad( e );
             context = new RockContext();
             //Get Variable Data from Query Params
-            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Start ) ) )
-            {
-                start = DateTime.Parse( PageParameter( PageParameterKey.Start ) );
-                lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day );
-            }
-            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.End ) ) )
-            {
-                end = DateTime.Parse( PageParameter( PageParameterKey.End ) );
-                lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day );
-            }
-            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Fund ) ) )
-            {
-                fund = new FinancialAccountService( context ).Get( Guid.Parse( PageParameter( PageParameterKey.Fund ) ) );
-            }
+            //if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Start ) ) )
+            //{
+            //    start = DateTime.Parse( PageParameter( PageParameterKey.Start ) );
+            //    lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day );
+            //}
+            //if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.End ) ) )
+            //{
+            //    end = DateTime.Parse( PageParameter( PageParameterKey.End ) );
+            //    lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day );
+            //}
+            //if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Fund ) ) )
+            //{
+            //    fund = new FinancialAccountService( context ).Get( Guid.Parse( PageParameter( PageParameterKey.Fund ) ) );
+            //}
             //Generate Giving Data if filters have data 
             personSvc = new PersonService( context );
             groupSvc = new GroupService( context );
             ftSvc = new FinancialTransactionService( context );
-            if ( !Page.IsPostBack )
+            if ( pkrAcct.SelectedValue == "0" )
             {
-                if ( start.HasValue && end.HasValue && fund != null )
-                {
-                    BindGrid();
-                }
+                pkrAcct.SetValue( 12 );
             }
+            //if ( !Page.IsPostBack )
+            //{
+            //    if ( start.HasValue && end.HasValue && fund != null )
+            //    {
+            //        BindGrid();
+            //    }
+            //}
         }
 
         #endregion
@@ -225,10 +230,72 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( ( prevAmountGiven / d.PreviousNumberOfGifts.Value ), 2 ) : 0;
                 d.AmountChange = d.AmountGiven - prevAmountGiven;
                 d.Source = joinedData[i].CurrentTransactions != null ? string.Join( ",", joinedData[i].CurrentTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : "";
-                d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
+                var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) && ft.TransactionTypeValueId == 53 ).Select( ft => new { Id = ft.Id, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue, TransactionDetails = ft.TransactionDetails } ).OrderBy( ft => ft.TransactionDateTime ).ToList();
+                // Calculate Giving Zone Based on previous year or current year
+                var startOfYear = new DateTime( lystart.Value.Year, 1, 1, 0, 0, 0 );
+                var endOfYear = new DateTime( lystart.Value.Year, 12, 31, 23, 59, 59 );
+                var givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 ).ToList();
+                if ( givingZoneTransactions.Count() == 0 )
+                {
+                    startOfYear = new DateTime( start.Value.Year, 1, 1, 0, 0, 0 );
+                    endOfYear = new DateTime( start.Value.Year, 12, 31, 23, 59, 59 );
+                    givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 ).ToList();
+                }
+                decimal givingZoneAmt = 0;
+                if ( givingZoneTransactions.Count() > 0 )
+                {
+                    givingZoneAmt = givingZoneTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) );
+
+                }
+                //var givingZoneAmt = prevAmountGiven > 0 ? prevAmountGiven : d.AmountGiven;
+                if ( givingZoneAmt < 1 )
+                {
+                    d.GivingZone = "Unknown";
+                }
+                else if ( givingZoneAmt < 600 )
+                {
+                    d.GivingZone = "Zone 1";
+                }
+                else if ( givingZoneAmt < 1200 )
+                {
+                    d.GivingZone = "Zone 2";
+                }
+                else if ( givingZoneAmt < 2400 )
+                {
+                    d.GivingZone = "Zone 3";
+                }
+                else if ( givingZoneAmt < 6000 )
+                {
+                    d.GivingZone = "Zone 4";
+                }
+                else if ( givingZoneAmt < 12000 )
+                {
+                    d.GivingZone = "Zone 5";
+                }
+                else if ( givingZoneAmt < 20000 )
+                {
+                    d.GivingZone = "Zone 6";
+                }
+                else if ( givingZoneAmt < 50000 )
+                {
+                    d.GivingZone = "Zone 7";
+                }
+                else if ( givingZoneAmt < 100000 )
+                {
+                    d.GivingZone = "Zone 8";
+                }
+                else if ( givingZoneAmt < 1000000 )
+                {
+                    d.GivingZone = "Zone 9";
+                }
+                else
+                {
+                    d.GivingZone = "Zone 10";
+                }
+
+                //d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
                 d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
                 d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
-                var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) && ft.TransactionTypeValueId == 53 ).Select( ft => new { Id = ft.Id, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue, TransactionDetails = ft.TransactionDetails } ).OrderBy( ft => ft.TransactionDateTime ).ToList();
                 //If Source is empty for Current Transactions, Try Previous Transactions
                 if ( String.IsNullOrEmpty( d.Source ) )
                 {
@@ -238,16 +305,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 var firstFundGift = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).OrderBy( ft => ft.TransactionDateTime ).First().TransactionDateTime;
                 var giftsBeforeStart = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) && DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
                 DateTime? mostRecentFundGiftBeforeStart = null;
-                if(giftsBeforeStart.Count() > 0 )
+                if ( giftsBeforeStart.Count() > 0 )
                 {
                     mostRecentFundGiftBeforeStart = giftsBeforeStart.First().TransactionDateTime;
                 }
-                d.MostRecentGift = mostRecentFundGiftBeforeStart; 
+                d.MostRecentGift = mostRecentFundGiftBeforeStart;
                 //Determine Type of Donor
                 if ( DateTime.Compare( firstFundGift.Value, start.Value ) < 0 && mostRecentFundGiftBeforeStart.HasValue && mostRecentFundGiftBeforeStart.Value.Year >= ( RockDateTime.Now.Year - 8 ) )
                 {
                     //They have donated before this timeframe
-                    if( mostRecentFundGiftBeforeStart.Value.Year > ( RockDateTime.Now.Year - 3 ) )
+                    if ( mostRecentFundGiftBeforeStart.Value.Year > ( RockDateTime.Now.Year - 3 ) )
                     {
                         d.DonorType = "Existing";
                     }
@@ -271,7 +338,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 if ( mostRecentFundGiftBeforeStart == null )
                 {
                     var mostRecent = allTransactions.Where( ft => DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
-                    if(mostRecent.Count() > 0)
+                    if ( mostRecent.Count() > 0 )
                     {
                         d.MostRecentGiftAnyFund = mostRecent.First().TransactionDateTime;
                         d.MostRecentFund = String.Join( ",", mostRecent.First().TransactionDetails.Select( td => td.Account.Name ) );
@@ -282,7 +349,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 {
                     d.MostRecentGiftAnyFund = mostRecentFundGiftBeforeStart;
                     d.MostRecentFund = fund.Name;
-                    d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount ); 
+                    d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount );
                 }
                 donorData.Add( d );
             }
@@ -345,6 +412,95 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public IGrouping<int, FinancialTransactionLight> PreviousTransactions { get; set; }
             public IGrouping<int, FinancialTransactionLight> CurrentTransactions { get; set; }
             public string Type { get; set; }
+        }
+
+        protected void btnExport_Click( object sender, EventArgs e )
+        {
+            start = pkrStart.SelectedDate;
+            end = pkrEnd.SelectedDate;
+            lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day ); 
+            lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day ); 
+            fund = new FinancialAccountService( context ).Get( Int32.Parse( pkrAcct.SelectedValue ) );
+            if ( start.HasValue && end.HasValue && fund != null )
+            {
+                var data = GenerateData();
+                ExcelPackage excel = new ExcelPackage();
+                excel.Workbook.Properties.Title = "Comparative Giving Report";
+                // add author info
+                Rock.Model.UserLogin userLogin = Rock.Model.UserLoginService.GetCurrentUser();
+                if ( userLogin != null )
+                {
+                    excel.Workbook.Properties.Author = userLogin.Person.FullName;
+                }
+                else
+                {
+                    excel.Workbook.Properties.Author = "Rock";
+                }
+                ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add( "Report" );
+                worksheet.PrinterSettings.LeftMargin = .5m;
+                worksheet.PrinterSettings.RightMargin = .5m;
+                worksheet.PrinterSettings.TopMargin = .5m;
+                worksheet.PrinterSettings.BottomMargin = .5m;
+
+                var headers = new List<string> { "Household", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
+                var h = 1;
+                var row = 2;
+                foreach ( var header in headers )
+                {
+                    worksheet.Cells[1, h].Value = header;
+                    h++;
+                }
+
+                for ( var i = 0; i < data.Count(); i++ )
+                {
+                    worksheet.Cells[row, 1].Value = data[i].HouseholdName;
+                    worksheet.Cells[row, 2].Value = data[i].AmountGiven;
+                    worksheet.Cells[row, 3].Value = data[i].NumberOfGifts;
+                    worksheet.Cells[row, 4].Value = data[i].AverageGiftAmount;
+                    worksheet.Cells[row, 5].Value = data[i].PreviousNumberOfGifts;
+                    worksheet.Cells[row, 6].Value = data[i].PreviousAverageGiftAmount;
+                    worksheet.Cells[row, 7].Value = data[i].AmountChange;
+                    worksheet.Cells[row, 8].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
+                    worksheet.Cells[row, 9].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
+                    worksheet.Cells[row, 10].Value = data[i].MostRecentFund;
+                    worksheet.Cells[row, 11].Value = data[i].MostRecentFundAmount;
+                    worksheet.Cells[row, 12].Value = data[i].GivingZone;
+                    worksheet.Cells[row, 13].Value = data[i].DonorType;
+                    worksheet.Cells[row, 14].Value = data[i].Average;
+                    worksheet.Cells[row, 15].Value = data[i].StdDev;
+                    worksheet.Cells[row, 16].Value = data[i].Source;
+                    row++;
+                }
+                byte[] byteArray;
+                using ( MemoryStream ms = new MemoryStream() )
+                {
+                    excel.SaveAs( ms );
+                    byteArray = ms.ToArray();
+                }
+                Response.Clear();
+                Response.Buffer = true;
+                Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                Response.AddHeader( "content-disposition", "attachment;filename=AttendanceExport.xlsx" );
+                Response.Cache.SetCacheability( HttpCacheability.Public );
+                Response.Charset = "";
+                //Response.Output.Write(csv);
+                Response.BinaryWrite( byteArray );
+                Response.Flush();
+                Response.End();
+            }
+        }
+
+        protected void btnGenerate_Click( object sender, EventArgs e )
+        {
+            start = pkrStart.SelectedDate;
+            end = pkrEnd.SelectedDate;
+            lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day );
+            lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day );
+            fund = new FinancialAccountService( context ).Get( Int32.Parse( pkrAcct.SelectedValue ) );
+            if ( start.HasValue && end.HasValue && fund != null )
+            {
+                BindGrid();
+            }
         }
     }
 
