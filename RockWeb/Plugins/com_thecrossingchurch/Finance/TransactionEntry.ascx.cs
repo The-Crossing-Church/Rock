@@ -3021,17 +3021,17 @@ TransactionAccountDetails: [
                 // only create/update the person if they are giving as a person. If they are giving as a Business, the person shouldn't be created this way
                 Person person = GetPerson( !givingAsBusiness );
 
-                if ( _personAttributeGuids.Count() > 0 && !givingAsBusiness )
-                {
-                    person.LoadAttributes();
-                    Rock.Attribute.Helper.GetEditValues( avcPersonAttributes, person );
-                    person.SaveAttributeValues( new RockContext() );
-                }
-
                 // Add contact person if giving as a business and current person is unknow
                 if ( person == null && givingAsBusiness )
                 {
                     person = GetBusinessContact();
+                }
+
+                if ( _personAttributeGuids.Count() > 0 )
+                {
+                    person.LoadAttributes();
+                    Rock.Attribute.Helper.GetEditValues( avcPersonAttributes, person );
+                    person.SaveAttributeValues( new RockContext() );
                 }
 
                 if ( person == null )
@@ -3136,17 +3136,17 @@ TransactionAccountDetails: [
             bool givingAsBusiness = GetAttributeValue( AttributeKey.EnableBusinessGiving ).AsBoolean() && !tglGiveAsOption.Checked;
             Person person = GetPerson( !givingAsBusiness );
 
-            if ( _personAttributeGuids.Count() > 0 && !givingAsBusiness )
-            {
-                person.LoadAttributes();
-                Rock.Attribute.Helper.GetEditValues( avcPersonAttributes, person );
-                person.SaveAttributeValues( new RockContext() );
-            }
-
             // Add contact person if giving as a business and current person is unknow
             if ( person == null && givingAsBusiness )
             {
                 person = GetBusinessContact();
+            }
+
+            if ( _personAttributeGuids.Count() > 0 )
+            {
+                person.LoadAttributes();
+                Rock.Attribute.Helper.GetEditValues( avcPersonAttributes, person );
+                person.SaveAttributeValues( new RockContext() );
             }
 
             if ( person == null )
