@@ -234,12 +234,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 // Calculate Giving Zone Based on previous year or current year
                 var startOfYear = new DateTime( lystart.Value.Year, 1, 1, 0, 0, 0 );
                 var endOfYear = new DateTime( lystart.Value.Year, 12, 31, 23, 59, 59 );
-                var givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 ).ToList();
+                var givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
                 if ( givingZoneTransactions.Count() == 0 )
                 {
                     startOfYear = new DateTime( start.Value.Year, 1, 1, 0, 0, 0 );
                     endOfYear = new DateTime( start.Value.Year, 12, 31, 23, 59, 59 );
-                    givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 ).ToList();
+                    givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
                 }
                 decimal givingZoneAmt = 0;
                 if ( givingZoneTransactions.Count() > 0 )
@@ -480,7 +480,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 Response.Clear();
                 Response.Buffer = true;
                 Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                Response.AddHeader( "content-disposition", "attachment;filename=AttendanceExport.xlsx" );
+                Response.AddHeader( "content-disposition", "attachment;filename=ComparativeGivingReport.xlsx" );
                 Response.Cache.SetCacheability( HttpCacheability.Public );
                 Response.Charset = "";
                 //Response.Output.Write(csv);
