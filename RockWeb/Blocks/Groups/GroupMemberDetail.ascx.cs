@@ -81,7 +81,7 @@ namespace RockWeb.Blocks.Groups
             if ( !Page.IsPostBack )
             {
                 SetBlockOptions();
-                ShowDetail( PageParameter( "GroupMemberId" ).AsInteger(), PageParameter( "GroupId" ).AsIntegerOrNull() );
+                ShowDetail( PageParameter( "GroupMemberId" ).AsInteger(), PageParameter( "GroupId" ).AsIntegerOrNull(), PageParameter( "CampusId" ).AsIntegerOrNull() );
             }
         }
 
@@ -183,9 +183,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( cvGroupMember.IsValid )
                 {
-                    Dictionary<string, string> qryString = new Dictionary<string, string>();
-                    qryString["GroupId"] = hfGroupId.Value;
-                    NavigateToParentPage( qryString );
+                    NavigateToParentPage();
                 }
             }
 
@@ -218,9 +216,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( cvGroupMember.IsValid )
                 {
-                    Dictionary<string, string> qryString = new Dictionary<string, string>();
-                    qryString["GroupId"] = hfGroupId.Value;
-                    NavigateToParentPage( qryString );
+                    NavigateToParentPage();
                 }
             }
         }
@@ -236,7 +232,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( cvGroupMember.IsValid )
                 {
-                    ShowDetail( 0, hfGroupId.Value.AsIntegerOrNull() );
+                    ShowDetail( 0, hfGroupId.Value.AsIntegerOrNull(), hfCampusId.Value.AsIntegerOrNull() );
                 }
             }
         }
@@ -306,6 +302,17 @@ namespace RockWeb.Blocks.Groups
                     }
                 }
 
+                groupMember.PersonId = personId.Value;
+                groupMember.GroupRoleId = role.Id;
+                groupMember.Note = tbNote.Text;
+                groupMember.GroupMemberStatus = rblStatus.SelectedValueAsEnum<GroupMemberStatus>();
+                groupMember.CommunicationPreference = rblCommunicationPreference.SelectedValueAsEnum<CommunicationType>();
+
+                if ( cbIsNotified.Visible )
+                {
+                    groupMember.IsNotified = cbIsNotified.Checked;
+                }
+
                 // check for matching archived group member with same person and role if this is a new group member or if the person and/or role has changed
                 if ( checkForArchivedGroupMember )
                 {
@@ -326,6 +333,8 @@ namespace RockWeb.Blocks.Groups
                     GroupMember archivedGroupMember;
                     if ( groupService.ExistsAsArchived( group, personId.Value, role.Id, out archivedGroupMember ) )
                     {
+                        archivedGroupMember.GroupMemberStatus = groupMember.GroupMemberStatus;
+
                         // if the archived groupMember IsValid is false, and the UI controls didn't report any errors, it is probably because the custom rules of GroupMember didn't pass.
                         // So, make sure a message is displayed in the validation summary
 
@@ -354,16 +363,7 @@ namespace RockWeb.Blocks.Groups
                     }
                 }
 
-                groupMember.PersonId = personId.Value;
-                groupMember.GroupRoleId = role.Id;
-                groupMember.Note = tbNote.Text;
-                groupMember.GroupMemberStatus = rblStatus.SelectedValueAsEnum<GroupMemberStatus>();
-                groupMember.CommunicationPreference = rblCommunicationPreference.SelectedValueAsEnum<CommunicationType>();
-
-                if ( cbIsNotified.Visible )
-                {
-                    groupMember.IsNotified = cbIsNotified.Checked;
-                }
+                
 
                 if ( pnlRequirements.Visible )
                 {
@@ -506,23 +506,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         protected void btnCancel_Click( object sender, EventArgs e )
         {
-            if ( hfGroupMemberId.Value.Equals( "0" ) )
-            {
-                // Cancelling on Add.  
-                Dictionary<string, string> qryString = new Dictionary<string, string>();
-                qryString["GroupId"] = hfGroupId.Value;
-                NavigateToParentPage( qryString );
-            }
-            else
-            {
-                // Cancelling on Edit.  Return to Details
-                GroupMemberService groupMemberService = new GroupMemberService( new RockContext() );
-                GroupMember groupMember = groupMemberService.Get( int.Parse( hfGroupMemberId.Value ) );
-
-                Dictionary<string, string> qryString = new Dictionary<string, string>();
-                qryString["GroupId"] = groupMember.GroupId.ToString();
-                NavigateToParentPage( qryString );
-            }
+            NavigateToParentPage();
         }
 
         protected void lbResendDocumentRequest_Click( object sender, EventArgs e )
@@ -565,7 +549,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="groupMemberId">The group member identifier.</param>
         public void ShowDetail( int groupMemberId )
         {
-            ShowDetail( groupMemberId, null );
+            ShowDetail( groupMemberId, null, null );
         }
 
         /// <summary>
@@ -573,7 +557,7 @@ namespace RockWeb.Blocks.Groups
         /// </summary>
         /// <param name="groupMemberId">The group member identifier.</param>
         /// <param name="groupId">The group id.</param>
-        public void ShowDetail( int groupMemberId, int? groupId )
+        public void ShowDetail( int groupMemberId, int? groupId, int? campusId )
         {
             // autoexpand the person picker if this is an add
             var personPickerStartupScript = @"Sys.Application.add_load(function () {
@@ -637,6 +621,11 @@ namespace RockWeb.Blocks.Groups
 
             hfGroupId.Value = groupMember.GroupId.ToString();
             hfGroupMemberId.Value = groupMember.Id.ToString();
+
+            if ( campusId.HasValue )
+            {
+                hfCampusId.Value = campusId.Value.ToString();
+            }
 
             if ( IsUserAuthorized( Authorization.ADMINISTRATE ) )
             {
@@ -738,7 +727,7 @@ namespace RockWeb.Blocks.Groups
             rblStatus.Enabled = !readOnly;
             rblStatus.Label = string.Format( "{0} Status", group.GroupType.GroupMemberTerm );
 
-            rblCommunicationPreference.SetValue( groupMember.CommunicationPreference == CommunicationType.SMS ? "2" : "1" );
+            rblCommunicationPreference.SetValue( ( ( int ) groupMember.CommunicationPreference ).ToString() );
 
             var registrations = new RegistrationRegistrantService( rockContext )
                 .Queryable().AsNoTracking()
@@ -1134,6 +1123,31 @@ namespace RockWeb.Blocks.Groups
         protected void ppGroupMemberPerson_SelectPerson( object sender, EventArgs e )
         {
             CalculateRequirements( false );
+        }
+
+        /// <summary>
+        /// Navigates to parent page.
+        /// </summary>
+        private void NavigateToParentPage()
+        {
+            var qryString = new Dictionary<string, string>();
+
+            /*
+             * 1/15/2020 - JPH
+             * Since we have established a relationship between Campuses and Groups (by way of the Campus.TeamGroup property),
+             * it is now necessary to determine if we need to add the "CampusId" query string parameter in addition to the
+             * "GroupId" parameter that we have always sent back to the parent Page here.
+             *
+             * Reason: Campus Team Feature
+             */
+            if ( hfCampusId.Value.AsIntegerOrNull().HasValue )
+            {
+                qryString["CampusId"] = hfCampusId.Value;
+            }
+
+            qryString["GroupId"] = hfGroupId.Value;
+
+            NavigateToParentPage( qryString );
         }
 
         #endregion

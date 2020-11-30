@@ -58,7 +58,7 @@ namespace RockWeb.Blocks.Groups
         #region Fields
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         private enum SendSummaryEmailType
         {
@@ -581,7 +581,7 @@ namespace RockWeb.Blocks.Groups
 
             if ( scheduleId == null )
             {
-                // if no specific schedule was specified in the URL, use the group's scheduleId 
+                // if no specific schedule was specified in the URL, use the group's scheduleId
                 scheduleId = _group.ScheduleId;
             }
 
@@ -610,7 +610,7 @@ namespace RockWeb.Blocks.Groups
                 occurrence = occurrenceService.Get( occurrenceDate.Value.Date, _group.Id, locationId, scheduleId );
             }
 
-            // If an occurrence date was included, but no occurrence was found with that date, and new 
+            // If an occurrence date was included, but no occurrence was found with that date, and new
             // occurrences can be added, create a new one
             if ( occurrence == null && _allowAdd )
             {
@@ -906,7 +906,8 @@ namespace RockWeb.Blocks.Groups
 
             lvMembers.DataBind();
 
-            ppAddPerson.PersonId = Rock.Constants.None.Id;
+            // Reset the PersonPicker control selection.
+            ppAddPerson.SetValue( null );
             ppAddPerson.PersonName = string.Format( "Add New {0}", GetAttributeValue( "AddPersonAs" ) );
         }
 
@@ -921,7 +922,7 @@ namespace RockWeb.Blocks.Groups
             $('div.js-roster').hide();
         }}
 
-        $('#{0}').click(function () {{
+        $('#{0}').on('click', function () {{
             if ($(this).is(':checked')) {{
                 $('div.js-roster').hide('fast');
             }} else {{
@@ -929,13 +930,13 @@ namespace RockWeb.Blocks.Groups
             }}
         }});
 
-        $('.js-add-member').click(function ( e ) {{
+        $('.js-add-member').on('click', function ( e ) {{
             e.preventDefault();
             var $a = $(this);
             var memberName = $(this).parent().find('span').html();
             Rock.dialogs.confirm('Add ' + memberName + ' to your group?', function (result) {{
                 if (result) {{
-                    window.location = $a.prop('href');                    
+                    window.location = $a.prop('href');
                 }}
             }});
         }});
@@ -1065,14 +1066,14 @@ cbDidNotMeet.ClientID );
                             }
                             else
                             {
-                                // Otherwise, only record that they attended -- don't change their attendance startDateTime 
+                                // Otherwise, only record that they attended -- don't change their attendance startDateTime
                                 attendance.DidAttend = attendee.Attended;
                             }
                         }
                     }
                 }
 
-                rockContext.SaveChanges();                
+                rockContext.SaveChanges();
 
                 if ( occurrence.LocationId.HasValue )
                 {
@@ -1090,7 +1091,11 @@ cbDidNotMeet.ClientID );
                             var workflow = Workflow.Activate( workflowType, _group.Name );
 
                             workflow.SetAttributeValue( "StartDateTime", _occurrence.OccurrenceDate.ToString( "o" ) );
-                            workflow.SetAttributeValue( "Schedule", _group.Schedule.Guid.ToString() );
+
+                            if ( _group.Schedule != null )
+                            {
+                                workflow.SetAttributeValue( "Schedule", _group.Schedule.Guid.ToString() );
+                            }
 
                             List<string> workflowErrors;
                             new WorkflowService( rockContext ).Process( workflow, _group, out workflowErrors );

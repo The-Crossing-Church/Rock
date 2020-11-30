@@ -291,9 +291,15 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                if ( string.IsNullOrWhiteSpace( _hfItemId.Value ) )
+
+                if ( IsItemIdEquivalentToEmpty( _hfItemId.Value ) )
                 {
                     _hfItemId.Value = Constants.None.IdValue;
+                }
+
+                if ( UseCategorySelection )
+                {
+                    return _hfItemId.Value.Replace( CategoryPrefix, string.Empty );
                 }
 
                 return _hfItemId.Value;
@@ -302,8 +308,35 @@ namespace Rock.Web.UI.Controls
             set
             {
                 EnsureChildControls();
-                _hfItemId.Value = value;
+
+                if ( IsItemIdEquivalentToEmpty( value ) )
+                {
+                    _hfItemId.Value = Constants.None.IdValue;
+                }
+                else
+                {
+                    if ( UseCategorySelection )
+                    {
+                        _hfItemId.Value = CategoryPrefix + value;
+                    }
+                    else
+                    {
+                        _hfItemId.Value = value;
+                    }
+                }
             }
+        }
+
+        /// <summary>
+        /// Returns a flag indicating if the provided value represents a reference to an empty item selection.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private bool IsItemIdEquivalentToEmpty( string value )
+        {
+            return ( string.IsNullOrWhiteSpace( value )
+                     || value == Constants.None.IdValue
+                     || ( this.UseCategorySelection && value == CategoryPrefix + Constants.None.IdValue ) );
         }
 
         /// <summary>
@@ -321,7 +354,14 @@ namespace Rock.Web.UI.Controls
 
                 if ( !string.IsNullOrWhiteSpace( _hfItemId.Value ) )
                 {
-                    ids.AddRange( _hfItemId.Value.Split( ',' ) );
+                    if ( UseCategorySelection )
+                    {
+                        ids.AddRange( _hfItemId.Value.Split( ',' ).Select( a => a.Replace( CategoryPrefix, string.Empty ) ) );
+                    }
+                    else
+                    {
+                        ids.AddRange( _hfItemId.Value.Split( ',' ) );
+                    }
                 }
 
                 return ids;
@@ -330,7 +370,24 @@ namespace Rock.Web.UI.Controls
             set
             {
                 EnsureChildControls();
-                _hfItemId.Value = string.Join( ",", value );
+
+                string newValue;
+
+                if ( UseCategorySelection )
+                {
+                    newValue = string.Join( ",", value.Select( a => CategoryPrefix + a ) );
+                }
+                else
+                {
+                    newValue = string.Join( ",", value );
+                }
+
+                if ( IsItemIdEquivalentToEmpty( newValue ) )
+                {
+                    newValue = Constants.None.IdValue;
+                }
+
+                _hfItemId.Value = newValue;
             }
         }
 
@@ -461,7 +518,22 @@ namespace Rock.Web.UI.Controls
         /// <value>
         ///   <c>true</c> if [allow category selection]; otherwise, <c>false</c>.
         /// </value>
-        public bool AllowCategorySelection { get; set; } = false;
+        [RockObsolete( "1.11" )]
+        [Obsolete( "ItemPicker no longer supports selection of both items and categories concurrently.", false )]
+        public bool AllowCategorySelection
+        {
+            get => UseCategorySelection;
+            set => UseCategorySelection = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether category selection is used.
+        /// If set to true then the user will be allowed to select a Category but not Items.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if category selection is used; otherwise, <c>false</c>.
+        /// </value>
+        public bool UseCategorySelection { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether [show select children].
@@ -502,6 +574,15 @@ namespace Rock.Web.UI.Controls
         ///   <c>true</c> if [hide picker label]; otherwise, <c>false</c>.
         /// </value>
         public bool HidePickerLabel { get; set; }
+
+        #endregion
+
+        #region Fields
+
+        /// <summary>
+        /// The category prefix used when <see cref="UseCategorySelection"/> is true.
+        /// </summary>
+        private const string CategoryPrefix = "C";
 
         #endregion
 
@@ -558,7 +639,8 @@ $@"Rock.controls.itemPicker.initialize({{
     controlId: '{this.ClientID}',
     restUrl: '{this.ResolveUrl( ItemRestUrl )}',
     allowMultiSelect: {this.AllowMultiSelect.ToString().ToLower()},
-    allowCategorySelection: {this.AllowCategorySelection.ToString().ToLower()},
+    allowCategorySelection: {this.UseCategorySelection.ToString().ToLower()},
+    categoryPrefix: '{CategoryPrefix}',
     defaultText: '{this.DefaultText}',
     restParams: $('#{_hfItemRestUrlExtraParams.ClientID}').val(),
     expandedIds: [{this.InitialItemParentIds}],
@@ -580,7 +662,7 @@ $@"Rock.controls.itemPicker.initialize({{
             _hfItemId = new HiddenFieldWithClass();
             _hfItemId.ID = this.ID + "_hfItemId";
             _hfItemId.CssClass = "js-item-id-value";
-            _hfItemId.Value = "0";
+            _hfItemId.Value = Constants.None.IdValue;
 
             _hfInitialItemParentIds = new HiddenFieldWithClass();
             _hfInitialItemParentIds.ID = this.ID + "_hfInitialItemParentIds";
@@ -633,7 +715,7 @@ $@"Rock.controls.itemPicker.initialize({{
             
             RockControlHelper.CreateChildControls( this, Controls );
 
-            RequiredFieldValidator.InitialValue = "0";
+            RequiredFieldValidator.InitialValue = Constants.None.IdValue;
             RequiredFieldValidator.ControlToValidate = _hfItemId.ID;
             RequiredFieldValidator.Display = ValidatorDisplay.Dynamic;
         }

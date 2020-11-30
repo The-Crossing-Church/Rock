@@ -39,8 +39,10 @@ namespace Rockweb.Blocks.Crm
     [Description( "Allows you to take a Motivators Assessment test and saves your results." )]
 
     #region Block Attributes
-    [CodeEditorField( "Instructions",
-        Key = AttributeKeys.Instructions,
+
+    [CodeEditorField(
+        "Instructions",
+        Key = AttributeKey.Instructions,
         Description = "The text (HTML) to display at the top of the instructions section.  <span class='tip tip-lava'></span> <span class='tip tip-html'></span>",
         EditorMode = CodeEditorMode.Html,
         EditorTheme = CodeEditorTheme.Rock,
@@ -49,8 +51,9 @@ namespace Rockweb.Blocks.Crm
         DefaultValue = InstructionsDefaultValue,
         Order = 0 )]
 
-    [CodeEditorField( "Results Message",
-        Key = AttributeKeys.ResultsMessage,
+    [CodeEditorField(
+        "Results Message",
+        Key = AttributeKey.ResultsMessage,
         Description = "The text (HTML) to display at the top of the results section.<span class='tip tip-lava'></span><span class='tip tip-html'></span>",
         EditorMode = CodeEditorMode.Html,
         EditorTheme = CodeEditorTheme.Rock,
@@ -60,36 +63,38 @@ namespace Rockweb.Blocks.Crm
         Order = 1 )]
 
     [TextField( "Set Page Title",
-        Key = AttributeKeys.SetPageTitle,
+        Key = AttributeKey.SetPageTitle,
         Description = "The text to display as the heading.",
         IsRequired = false,
         DefaultValue = "Motivators Assessment",
         Order = 2 )]
 
     [TextField( "Set Page Icon",
-        Key = AttributeKeys.SetPageIcon,
+        Key = AttributeKey.SetPageIcon,
         Description = "The css class name to use for the heading icon.",
         IsRequired = false,
         DefaultValue = "fa fa-key",
         Order = 3 )]
 
-    [IntegerField( "Number of Questions",
-        Key = AttributeKeys.NumberofQuestions,
+    [IntegerField(
+        "Number of Questions",
+        Key = AttributeKey.NumberOfQuestions,
         Description = "The number of questions to show per page while taking the test",
         IsRequired = true,
         DefaultIntegerValue = 20,
         Order = 4 )]
     #endregion Block Attributes
+
     public partial class Motivators : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
-        private static class AttributeKeys
+        private static class AttributeKey
         {
             public const string Instructions = "Instructions";
             public const string SetPageTitle = "SetPageTitle";
             public const string SetPageIcon = "SetPageIcon";
             public const string ResultsMessage = "ResultsMessage";
-            public const string NumberofQuestions = "NumberofQuestions";
+            public const string NumberOfQuestions = "NumberofQuestions";
         }
 
         #endregion Attribute Keys
@@ -151,36 +156,36 @@ namespace Rockweb.Blocks.Crm
 </p>";
 
         private const string ResultMessageDefaultValue = @"<p>
-   {{ Person.NickName }}, here are your motivators results. We’ve listed your Top 5 Motivators, your
-   growth propensity score, along with a complete listing of all 22 motivators and your results
-   for each.
+    {{ Person.NickName }}, here are your motivators results. We’ve listed your Top 5 Motivators, your
+    growth propensity score, along with a complete listing of all 22 motivators and your results
+    for each.
 </p>
 <h2>Growth Propensity</h2>
 <p>
     Growth Propensity measures your perceived mindset on a continuum between a growth mindset and
     fixed mindset. These are two ends of a spectrum about how we view our own capacity and potential.
 </p>
-<div style=""margin: 0;max-width:280px"">
-{[ chart type:'gauge' backgroundcolor:'#f13c1f,#f0e3ba,#0e9445,#3f56a1' gaugelimits:'0,2,17,85,100' chartheight:'150px']}
-    [[ dataitem value:'{{ GrowthScore }}' fillcolor:'#484848' ]] [[ enddataitem ]]
-{[ endchart ]}
+<div style='margin: 0;max-width:280px'>
+    {[ chart type:'gauge' backgroundcolor:'#f13c1f,#f0e3ba,#0e9445,#3f56a1' gaugelimits:'0,2,17,85,100' chartheight:'150px']}
+        [[ dataitem value:'{{ GrowthScore }}' fillcolor:'#484848' ]] [[ enddataitem ]]
+    {[ endchart ]}
 </div>
 <h2>Individual Motivators</h2>
 <p>
     There are 22 possible motivators in this assessment. While your Top 5 Motivators may be most helpful in understanding your results in a snapshot, you may also find it helpful to see your scores on each for a complete picture.
 </p>
-<!--  Theme Chart -->
-<div class=""panel panel-default"">
-    <div class=""panel-heading"">
-    <h2 class=""panel-title""><b>Composite Score</b></h2>
+<!-- Theme Chart -->
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h2 class='panel-title'><b>Composite Score</b></h2>
     </div>
-    <div class=""panel-body"">
-    {[chart type:'horizontalBar' chartheight:'200px' ]}
-    {% for motivatorThemeScore in MotivatorThemeScores %}
-        [[dataitem label:'{{ motivatorThemeScore.DefinedValue.Value }}' value:'{{ motivatorThemeScore.Value }}' fillcolor:'{{ motivatorThemeScore.DefinedValue | Attribute:'Color' }}' ]]
-        [[enddataitem]]
-    {% endfor %}
-    {[endchart]}
+    <div class='panel-body'>
+        {[chart type:'horizontalBar' chartheight:'200px' xaxistype:'linearhorizontal0to100' ]}
+            {% for motivatorThemeScore in MotivatorThemeScores %}
+                [[dataitem label:'{{ motivatorThemeScore.DefinedValue.Value }}' value:'{{ motivatorThemeScore.Value }}' fillcolor:'{{ motivatorThemeScore.DefinedValue | Attribute:'Color' }}' ]]
+                [[enddataitem]]
+            {% endfor %}
+        {[endchart]}
     </div>
 </div>
 <p>
@@ -196,25 +201,24 @@ namespace Rockweb.Blocks.Crm
     </p>
 {% endfor %}
 <p>
-   The following graph shows your motivators ranked from top to bottom.
+    The following graph shows your motivators ranked from top to bottom.
 </p>
-  <div class=""panel panel-default"">
-    <div class=""panel-heading"">
-      <h2 class=""panel-title""><b>Ranked Motivators</b></h2>
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h2 class='panel-title'><b>Ranked Motivators</b></h2>
     </div>
-    <div class=""panel-body"">
-      {[ chart type:'horizontalBar' ]}
-        {% for motivatorScore in MotivatorScores %}
-        {% assign theme = motivatorScore.DefinedValue | Attribute:'Theme' %}
-            {% if theme and theme != empty %}
-                [[dataitem label:'{{ motivatorScore.DefinedValue.Value }}' value:'{{ motivatorScore.Value }}' fillcolor:'{{ motivatorScore.DefinedValue | Attribute:'Color' }}' ]]
-                [[enddataitem]]
-            {% endif %}
-        {% endfor %}
+    <div class='panel-body'>
+        {[ chart type:'horizontalBar' xaxistype:'linearhorizontal0to100' ]}
+            {% for motivatorScore in MotivatorScores %}
+                {% assign theme = motivatorScore.DefinedValue | Attribute:'Theme' %}
+                {% if theme and theme != empty %}
+                    [[dataitem label:'{{ motivatorScore.DefinedValue.Value }}' value:'{{ motivatorScore.Value }}' fillcolor:'{{ motivatorScore.DefinedValue | Attribute:'Color' }}' ]]
+                    [[enddataitem]]
+                {% endif %}
+            {% endfor %}
         {[endchart]}
     </div>
-  </div>
-";
+</div>";
 
         #endregion Attribute Default values
 
@@ -244,8 +248,8 @@ namespace Rockweb.Blocks.Crm
         /// </summary>
         public int QuestionCount
         {
-            get { return ViewState[AttributeKeys.NumberofQuestions] as int? ?? 0; }
-            set { ViewState[AttributeKeys.NumberofQuestions] = value; }
+            get { return ViewState[AttributeKey.NumberOfQuestions] as int? ?? 0; }
+            set { ViewState[AttributeKey.NumberOfQuestions] = value; }
         }
 
         /// <summary>
@@ -551,17 +555,15 @@ namespace Rockweb.Blocks.Crm
             Assessment assessment = null;
             Assessment previouslyCompletedAssessment = null;
 
-            // This is a computed property so it cannot be in the linq query
-            int primaryAliasId = _targetPerson.PrimaryAliasId.Value;
-
             // A "0" value indicates that the block should create a new assessment instead of looking for an existing one, so keep assessment null. e.g. a user directed re-take
             if ( _assessmentId != 0 )
             {
                 var assessments = new AssessmentService( rockContext )
                 .Queryable()
                 .AsNoTracking()
-                .Where( a => a.PersonAliasId == primaryAliasId )
-                .Where( a => a.AssessmentTypeId == assessmentType.Id )
+                .Where( a => a.PersonAlias != null
+                             && a.PersonAlias.PersonId == _targetPerson.Id
+                             && a.AssessmentTypeId == assessmentType.Id )
                 .OrderByDescending( a => a.CompletedDateTime ?? a.RequestedDateTime )
                 .ToList();
 
@@ -675,13 +677,13 @@ namespace Rockweb.Blocks.Crm
         /// </summary>
         private void SetPanelTitleAndIcon()
         {
-            string panelTitle = this.GetAttributeValue( AttributeKeys.SetPageTitle );
+            string panelTitle = this.GetAttributeValue( AttributeKey.SetPageTitle );
             if ( !string.IsNullOrEmpty( panelTitle ) )
             {
                 lTitle.Text = panelTitle;
             }
 
-            string panelIcon = this.GetAttributeValue( AttributeKeys.SetPageIcon );
+            string panelIcon = this.GetAttributeValue( AttributeKey.SetPageIcon );
             if ( !string.IsNullOrEmpty( panelIcon ) )
             {
                 iIcon.Attributes["class"] = panelIcon;
@@ -704,7 +706,7 @@ namespace Rockweb.Blocks.Crm
                 mergeFields.Add( "Person", _targetPerson );
             }
 
-            lInstructions.Text = GetAttributeValue( AttributeKeys.Instructions ).ResolveMergeFields( mergeFields );
+            lInstructions.Text = GetAttributeValue( AttributeKey.Instructions ).ResolveMergeFields( mergeFields );
         }
 
         /// <summary>
@@ -743,7 +745,7 @@ namespace Rockweb.Blocks.Crm
                 mergeFields.Add( "GrowthScore", result.GrowthScore );
             }
 
-            lResult.Text = GetAttributeValue( AttributeKeys.ResultsMessage ).ResolveMergeFields( mergeFields );
+            lResult.Text = GetAttributeValue( AttributeKey.ResultsMessage ).ResolveMergeFields( mergeFields );
         }
 
         /// <summary>
@@ -766,7 +768,7 @@ namespace Rockweb.Blocks.Crm
             if ( QuestionCount == 0 && _assessmentResponses != null )
             {
                 // Set the max number of questions to be no greater than the actual number of questions.
-                int numQuestions = this.GetAttributeValue( AttributeKeys.NumberofQuestions ).AsInteger();
+                int numQuestions = this.GetAttributeValue( AttributeKey.NumberOfQuestions ).AsInteger();
                 QuestionCount = ( numQuestions > _assessmentResponses.Count ) ? _assessmentResponses.Count : numQuestions;
             }
 

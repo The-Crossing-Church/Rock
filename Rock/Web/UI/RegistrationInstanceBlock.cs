@@ -136,6 +136,11 @@ namespace Rock.Web.UI
             public const string GridFilter_CellPhone = "CellPhone";
 
             /// <summary>
+            /// The grid filter work phone
+            /// </summary>
+            public const string GridFilter_WorkPhone = "WorkPhone";
+
+            /// <summary>
             /// The grid filter email
             /// </summary>
             public const string GridFilter_Email = "Email";
@@ -331,6 +336,16 @@ namespace Rock.Web.UI
         protected const string FILTER_HOME_PHONE_ID = "tbHomePhoneFilter";
 
         /// <summary>
+        /// The filter work phone Identifier
+        /// </summary>
+        protected const string FILTER_WORK_PHONE_ID = "tbWorkPhoneFilter";
+
+        /// <summary>
+        /// Filter attribute prefix
+        /// </summary>
+        protected const string FILTER_ATTRIBUTE_PREFIX = "filterRegistrants_";
+
+        /// <summary>
         /// The active RegistrationInstance in this context.
         /// </summary>
         public RegistrationInstance RegistrationInstance
@@ -478,10 +493,11 @@ namespace Rock.Web.UI
 
             if ( registrantFields != null )
             {
-                foreach ( var field in registrantFields )
+                // This needs to be a unique list to prevent FindControl() getting an exception on PersonFields in grid events.
+                var distinctRegistrantFields = registrantFields.DistinctBy( f => new { f.AttributeId, f.FieldSource, f.PersonFieldType } );
+                foreach ( var field in distinctRegistrantFields )
                 {
-                    if ( field.FieldSource == RegistrationFieldSource.PersonField
-                         && field.PersonFieldType.HasValue )
+                    if ( field.FieldSource == RegistrationFieldSource.PersonField && field.PersonFieldType.HasValue )
                     {
                         switch ( field.PersonFieldType.Value )
                         {
@@ -504,7 +520,7 @@ namespace Rock.Web.UI
                                     filterFieldsContainer.Controls.Add( ddlCampus );
 
                                     var templateField = new RockLiteralField();
-                                    templateField.ID = "lCampus";
+                                    templateField.ID = "lRegistrantsCampus";
                                     templateField.HeaderText = "Campus";
                                     grid.Columns.Add( templateField );
                                 }
@@ -694,15 +710,15 @@ namespace Rock.Web.UI
                                 {
                                     var dvpConnectionStatusFilter = new DefinedValuePicker();
                                     dvpConnectionStatusFilter.ID = FILTER_CONNECTION_STATUS_ID;
-                                    dvpConnectionStatusFilter.DefinedTypeId = DefinedTypeCache.Get(Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS.AsGuid()).Id;
+                                    dvpConnectionStatusFilter.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS.AsGuid() ).Id;
                                     dvpConnectionStatusFilter.Label = "Connection Status";
 
-                                    if (setValues)
+                                    if ( setValues )
                                     {
-                                        dvpConnectionStatusFilter.SetValue(gridFilter.GetUserPreference(UserPreferenceKeyBase.GridFilter_ConnectionStatus));
+                                        dvpConnectionStatusFilter.SetValue( gridFilter.GetUserPreference( UserPreferenceKeyBase.GridFilter_ConnectionStatus ) );
                                     }
 
-                                    filterFieldsContainer.Controls.Add(dvpConnectionStatusFilter);
+                                    filterFieldsContainer.Controls.Add( dvpConnectionStatusFilter );
 
                                     dataFieldExpression = "PersonAlias.Person.ConnectionStatusValue.Value";
 
@@ -710,7 +726,7 @@ namespace Rock.Web.UI
                                     connectionStatusField.DataField = dataFieldExpression;
                                     connectionStatusField.HeaderText = "ConnectionStatus";
                                     connectionStatusField.SortExpression = dataFieldExpression;
-                                    grid.Columns.Add(connectionStatusField);
+                                    grid.Columns.Add( connectionStatusField );
                                 }
 
                                 break;
@@ -763,6 +779,30 @@ namespace Rock.Web.UI
 
                                 break;
 
+                            case RegistrationPersonFieldType.WorkPhone:
+                                {
+                                    // Per discussion this should not have "Phone" appended to the end if it's missing.
+                                    var workLabel = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK ).Value;
+
+                                    var tbWorkPhoneFilter = new RockTextBox();
+                                    tbWorkPhoneFilter.ID = FILTER_WORK_PHONE_ID;
+                                    tbWorkPhoneFilter.Label = workLabel;
+
+                                    if ( setValues )
+                                    {
+                                        tbWorkPhoneFilter.Text = gridFilter.GetUserPreference( UserPreferenceKeyBase.GridFilter_WorkPhone );
+                                    }
+
+                                    filterFieldsContainer.Controls.Add( tbWorkPhoneFilter );
+
+                                    var workPhoneNumbersField = new RockLiteralField();
+                                    workPhoneNumbersField.ID = "lWorkPhone";
+                                    workPhoneNumbersField.HeaderText = workLabel;
+                                    grid.Columns.Add( workPhoneNumbersField );
+                                }
+
+                                break;
+
                             case RegistrationPersonFieldType.Address:
                                 {
                                     var addressField = new RockLiteralField();
@@ -786,7 +826,7 @@ namespace Rock.Web.UI
                         var attribute = field.Attribute;
 
                         // Add dynamic filter fields
-                        var filterFieldControl = attribute.FieldType.Field.FilterControl( attribute.QualifierValues, "filterRegistrants_" + attribute.Id.ToString(), false, Rock.Reporting.FilterMode.SimpleFilter );
+                        var filterFieldControl = attribute.FieldType.Field.FilterControl( attribute.QualifierValues, FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString(), false, Rock.Reporting.FilterMode.SimpleFilter );
                         if ( filterFieldControl != null )
                         {
                             if ( filterFieldControl is IRockControl )
@@ -1041,6 +1081,18 @@ namespace Rock.Web.UI
         protected Dictionary<int, PhoneNumber> GetPersonMobilePhoneLookup( RockContext rockContext, IEnumerable<RegistrantFormField> registrantFields, List<int> personIds )
         {
             return GetPersonPhoneDictionary( rockContext, registrantFields, personIds, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE, RegistrationPersonFieldType.MobilePhone );
+        }
+
+        /// <summary>
+        /// Gets the person work phone lookup.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="registrantFields">The registrant fields.</param>
+        /// <param name="personIds">The person ids.</param>
+        /// <returns></returns>
+        protected Dictionary<int, PhoneNumber> GetPersonWorkPhoneLookup( RockContext rockContext, IEnumerable<RegistrantFormField> registrantFields, List<int> personIds )
+        {
+            return GetPersonPhoneDictionary( rockContext, registrantFields, personIds, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK, RegistrationPersonFieldType.WorkPhone );
         }
 
         /// <summary>

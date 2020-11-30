@@ -629,7 +629,6 @@ namespace RockWeb.Blocks.Groups
         public bool DidNotOccur { get; set; }
         public int DidAttendCount { get; set; }
         public double AttendanceRate { get; set; }
-        public double PercentMembersAttended { get; set; }
         public bool CanDelete { get; set; }
         public string Notes { get; set; }
 
@@ -659,7 +658,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( occurrence.Schedule.Name.IsNotNullOrWhiteSpace() )
                 {
-                    ScheduleName = occurrence.Schedule.Name;
+                    ScheduleName = occurrence.Schedule.Name.EncodeHtml();
                 }
                 else
                 {
@@ -672,7 +671,6 @@ namespace RockWeb.Blocks.Groups
             DidNotOccur = occurrence.DidNotOccur ?? false;
             DidAttendCount = occurrence.DidAttendCount;
             AttendanceRate = occurrence.AttendanceRate;
-            PercentMembersAttended = occurrence.PercentMembersAttended;
             Notes = occurrence.Notes;
         }
     }

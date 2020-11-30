@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -45,7 +45,7 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
         private bool _confirmMaritalStatus = false;
         private int _childRoleId = 0;
         private int _adultRoleId = 0;
-        private DefinedValueCache _mobilePhone = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid());
+        private DefinedValueCache _mobilePhone = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid());
         private bool _SMSEnabled = false;
 
         private string _groupSelectorPage = string.Empty;
@@ -100,14 +100,14 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
         {
             base.OnInit(e);
 
-            _campus = CampusCache.Read(GetAttributeValue("Campus").AsGuid());
+            _campus = CampusCache.Get(GetAttributeValue("Campus").AsGuid());
 
             if (_campus != null)
             {
                 lCampus.Text = _campus.Name;
             }
 
-            _groupType = GroupTypeCache.Read(Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY);
+            _groupType = GroupTypeCache.Get(Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY);
             if (_groupType == null)
             {
                 _groupType = GroupTypeCache.GetFamilyGroupType();
@@ -281,17 +281,17 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
             NewGroupMembers = new List<NewGroupMember>();
 
             int? childMaritalStatusId = null;
-            var childMaritalStatus = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE.AsGuid());
+            var childMaritalStatus = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE.AsGuid());
             if (childMaritalStatus != null)
             {
                 //childMaritalStatus.Id = 144;
                 childMaritalStatusId = childMaritalStatus.Id;
             }
-            //int? adultMaritalStatusId = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid()).Id;
-            int? adultMaritalStatusId = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE.AsGuid()).Id;
+            //int? adultMaritalStatusId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid()).Id;
+            int? adultMaritalStatusId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE.AsGuid()).Id;
 
-            int recordTypePersonId = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid()).Id;
-            int recordStatusActiveId = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid()).Id;
+            int recordTypePersonId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid()).Id;
+            int recordStatusActiveId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid()).Id;
 
             foreach (NewFamilyMembersRow row in nfmMembers.FamilyMemberRows)
             {
@@ -398,9 +398,9 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
 
         private void AddGroupMember()
         {
-            int recordTypePersonId = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid()).Id;
-            int recordStatusActiveId = DefinedValueCache.Read(Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid()).Id;
-            var ConnectionStatusValue = DefinedValueCache.Read(GetAttributeValue("DefaultConnectionStatus").AsGuid());
+            int recordTypePersonId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid()).Id;
+            int recordStatusActiveId = DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid()).Id;
+            var ConnectionStatusValue = DefinedValueCache.Get(GetAttributeValue("DefaultConnectionStatus").AsGuid());
 
             int defaultRoleId;
             if (GetAttributeValue("ChildRoleAsDefault").AsBoolean())
@@ -575,7 +575,7 @@ namespace RockWeb.Plugins.com_bemadev.Checkin
             var rockContext = new RockContext();
             var personService = new PersonService(rockContext);
             var memberService = new GroupMemberService(rockContext);
-            var allergyAttribute = AttributeCache.Read(GetAttributeValue("AllergyPersonAttribute").AsGuid());
+            var allergyAttribute = AttributeCache.Get(GetAttributeValue("AllergyPersonAttribute").AsGuid());
             var attributeValueService = new AttributeValueService(rockContext);
             var canCheckinRelationshipId = new GroupTypeRoleService(rockContext).Get(Rock.SystemGuid.GroupRole.GROUPROLE_KNOWN_RELATIONSHIPS_CAN_CHECK_IN.AsGuid()).Id;
 

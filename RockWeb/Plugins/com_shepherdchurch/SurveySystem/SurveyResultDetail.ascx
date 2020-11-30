@@ -5,15 +5,15 @@
         <Rock:NotificationBox ID="nbUnauthorized" runat="server" NotificationBoxType="Warning"></Rock:NotificationBox>
 
         <asp:Panel ID="pnlDetails" CssClass="panel panel-block" runat="server" Visible="false">
-            <div class="panel-heading clearfix">
-                <span class="pull-right">
-                    <Rock:HighlightLabel ID="hlDidPass" runat="server" />
-                    <Rock:HighlightLabel ID="hlTestResult" runat="server" LabelType="Info" />
-                </span>
-
+            <div class="panel-heading">
                 <h1 class="panel-title">
                     <asp:Literal ID="lTitle" runat="server" />
                 </h1>
+
+                <span class="panel-labels">
+                    <Rock:HighlightLabel ID="hlDidPass" runat="server" />
+                    <Rock:HighlightLabel ID="hlTestResult" runat="server" LabelType="Info" />
+                </span>
             </div>
 
             <div class="panel-body">

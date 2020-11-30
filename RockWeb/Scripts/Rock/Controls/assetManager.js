@@ -73,6 +73,8 @@
                     $('.js-assetselect').addClass('aspNetDisabled');
                 }
 
+                $fileCheckboxes.removeAttr('checked');
+
                 // Can only add if either an asset or folder is selected
                 if ($selectFolder.val() == "" && $assetStorageId.val() == "-1") {
                     $('.js-createfolder').addClass('aspNetDisabled');
@@ -132,7 +134,7 @@
 
                     $folderTreeView.on('rockTree:expand rockTree:collapse', function (evt, data) {
                         resizeScrollAreaHeight();
-                        
+
                         // get the data-id values of rock-tree items that are showing visible children (in other words, Expanded Nodes)
                         var expandedDataIds = $(evt.currentTarget).find('.rocktree-children').filter(":visible").closest('.rocktree-item').map(function () {
                             var dataId = $(this).attr('data-id');

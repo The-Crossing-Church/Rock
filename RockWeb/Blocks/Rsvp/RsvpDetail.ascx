@@ -133,8 +133,8 @@
 
         <asp:Panel ID="pnlAttendees" runat="server" CssClass="panel panel-block">
             <script type="text/javascript">
-                Sys.Application.add_load(function () {
-                    $('.js-rsvp-paired-checkbox').click(function (e) {
+            Sys.Application.add_load(function () {
+                $('.js-rsvp-paired-checkbox').on('click', function (e) {
                         if ($(this)[0].checked) {
                             var pairedCheckbox = $('#' + $(this).data('paired-checkbox'))[0];
                             pairedCheckbox.checked = false;
@@ -152,8 +152,9 @@
                             <Rock:RockCheckBoxList ID="cblStatus" runat="server" Label="Status" RepeatDirection="Horizontal" />
                             <Rock:RockCheckBoxList ID="cblDeclineReason" runat="server" PropertyName="Value" DataTextField="Value" Label="Decline Reason" DataValueField="Id" RepeatDirection="Horizontal"/>
                         </Rock:GridFilter>
-                        <Rock:Grid ID="gAttendees" runat="server" ExportSource="ColumnOutput" OnRowDataBound="gAttendees_RowDataBound" DataKeyNames="PersonId">
+                        <Rock:Grid ID="gAttendees" runat="server" ExportSource="ColumnOutput" OnRowDataBound="gAttendees_RowDataBound" PersonIdField="PersonId" DataKeyNames="PersonId">
                             <Columns>
+                                <Rock:SelectField></Rock:SelectField>
                                 <Rock:RockBoundField DataField="FullName" HeaderText="Invitees" ExcelExportBehavior="AlwaysInclude" />
                                 <Rock:BoolField DataField="Accept" HeaderText="Accept" ExcelExportBehavior="IncludeIfVisible" Visible="false" />
                                 <Rock:BoolField DataField="Decline" HeaderText="Decline" ExcelExportBehavior="IncludeIfVisible" Visible="false" />

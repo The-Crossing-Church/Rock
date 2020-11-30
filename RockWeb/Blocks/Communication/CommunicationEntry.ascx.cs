@@ -43,6 +43,8 @@ namespace RockWeb.Blocks.Communication
     [Category( "Communication" )]
     [Description( "Used for creating and sending a new communications such as email, SMS, etc. to recipients." )]
 
+    #region Block Attributes
+
     [SecurityAction( Authorization.APPROVE, "The roles and/or users that have access to approve new communications." )]
 
     [BooleanField( "Enable Lava",
@@ -56,74 +58,80 @@ namespace RockWeb.Blocks.Communication
         Description = "The Lava commands that should be enabled for this HTML block if Enable Lava is checked.",
         IsRequired = false,
         Order = 1 )]
+    [BooleanField("Enable Person Parameter",
+        Key = AttributeKey.EnablePersonParameter,
+        Description = "When enabled, allows passing a 'person' querystring parameter with a person Id to the block to create a communication for that person.",
+        DefaultBooleanValue = false,
+        IsRequired = false,
+        Order = 2 )]
     [ComponentsField( "Rock.Communication.MediumContainer, Rock",
         Name = "Mediums",
         Key = AttributeKey.Mediums,
         Description = "The Mediums that should be available to user to send through (If none are selected, all active mediums will be available).",
         IsRequired = false,
-        Order = 1 )]
+        Order = 3 )]
     [CommunicationTemplateField( "Default Template",
         Key = AttributeKey.DefaultTemplate,
         Description = "The default template to use for a new communication.  (Note: This will only be used if the template is for the same medium as the communication.)",
         IsRequired = false,
-        Order = 2 )]
+        Order = 4 )]
     [IntegerField( "Maximum Recipients",
         Key = AttributeKey.MaximumRecipients,
         Description = "The maximum number of recipients allowed before communication will need to be approved",
         IsRequired = false,
         DefaultIntegerValue = 0,
-        Order = 3 )]
+        Order = 5 )]
     [IntegerField( "Display Count",
         Key = AttributeKey.DisplayCount,
         Description = "The initial number of recipients to display prior to expanding list",
         IsRequired = false,
         DefaultIntegerValue = 0,
-        Order = 4 )]
+        Order = 6 )]
     [BooleanField( "Send When Approved",
         Key = AttributeKey.SendWhenApproved,
         Description = "Should communication be sent once it's approved (vs. just being queued for scheduled job to send)?",
         DefaultBooleanValue = true,
-        Order = 5 )]
+        Order = 7 )]
     [CustomDropdownListField( "Mode",
         "The mode to use ( 'Simple' mode will prevent users from searching/adding new people to communication).",
         "Full,Simple",
         Key = AttributeKey.Mode,
         IsRequired = true,
         DefaultValue = "Full",
-        Order = 6 )]
+        Order = 8 )]
     [BooleanField( "Allow CC/Bcc",
         Key = AttributeKey.AllowCcBcc,
         Description = "Allow CC and Bcc addresses to be entered for email communications?",
         DefaultBooleanValue = false,
-        Order = 7 )]
+        Order = 9 )]
     [BooleanField( "Show Attachment Uploader",
         Key = AttributeKey.ShowAttachmentUploader,
         Description = "Should the attachment uploader be shown for email communications.",
         DefaultBooleanValue = true,
-        Order = 8 )]
+        Order = 10 )]
     [DefinedValueField( "Allowed SMS Numbers",
         Key = AttributeKey.AllowedSMSNumbers,
         Description = "Set the allowed FROM numbers to appear when in SMS mode (if none are selected all numbers will be included).",
         IsRequired = false,
         DefinedTypeGuid = Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
         AllowMultiple = true,
-        Order = 9 )]
+        Order = 11 )]
     [BooleanField( "Simple Communications Are Bulk",
         Key = AttributeKey.SendSimpleAsBulk,
         Description = "Should simple mode communications be sent as a bulk communication?",
         DefaultBooleanValue = true,
-        Order = 10 )]
+        Order = 12 )]
     [BinaryFileTypeField( "Attachment Binary File Type",
         Key = AttributeKey.AttachmentBinaryFileType,
         Description = "The FileType to use for files that are attached to an sms or email communication",
         IsRequired = true,
         DefaultBinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.COMMUNICATION_ATTACHMENT,
-        Order = 11 )]
+        Order = 13 )]
     [BooleanField( "Default As Bulk",
         Key = AttributeKey.DefaultAsBulk,
         Description = "Should new entries be flagged as bulk communication by default?",
         DefaultBooleanValue = false,
-        Order = 12 )]
+        Order = 14 )]
     [TextField( "Document Root Folder",
         Key =  AttributeKey.DocumentRootFolder,
         Description = "The folder to use as the root when browsing or uploading documents.",
@@ -145,6 +153,7 @@ namespace RockWeb.Blocks.Communication
         Category = "HTML Editor Settings",
         Order = 2 )]
 
+    #endregion Block Attributes
     public partial class CommunicationEntry : RockBlock
     {
         #region Attribute Keys
@@ -172,6 +181,7 @@ namespace RockWeb.Blocks.Communication
             public const string Mediums = "Mediums";
             public const string DefaultTemplate = "DefaultTemplate";
             public const string EnableLava = "EnableLava";
+            public const string EnablePersonParameter = "EnablePersonParameter";
         }
 
         #endregion Attribute Keys
@@ -318,7 +328,7 @@ namespace RockWeb.Blocks.Communication
             base.OnInit( e );
 
             string script = @"
-    $('a.remove-all-recipients').click(function( e ){
+    $('a.remove-all-recipients').on('click', function( e ){
         e.preventDefault();
         Rock.dialogs.confirm('Are you sure you want to remove all of the pending recipients from this communication?', function (result) {
             if (result) {
@@ -917,7 +927,7 @@ namespace RockWeb.Blocks.Communication
 
                 lTitle.Text = "New Communication".FormatAsHtmlTitle();
 
-                int? personId = PageParameter( "Person" ).AsIntegerOrNull();
+                int? personId = GetAttributeValue( AttributeKey.EnablePersonParameter ).AsBoolean() ? PageParameter( "Person" ).AsIntegerOrNull() : null;
                 if ( personId.HasValue )
                 {
                     communication.IsBulkCommunication = false;
@@ -948,7 +958,7 @@ namespace RockWeb.Blocks.Communication
             }
 
             // If a template guid was passed in, it overrides any default template.
-            string templateGuid = PageParameter( "templateGuid" );
+            string templateGuid = PageParameter( "TemplateGuid" );
             if ( !string.IsNullOrEmpty( templateGuid ) )
             {
                 var guid = new Guid( templateGuid );
@@ -1070,7 +1080,8 @@ namespace RockWeb.Blocks.Communication
             lNumRecipients.Text = recipientCount.ToString( "N0" ) +
                 ( recipientCount == 1 ? " Person" : " People" );
 
-            ppAddPerson.PersonId = Rock.Constants.None.Id;
+            // Reset the PersonPicker control selection.
+            ppAddPerson.SetValue( null );
             ppAddPerson.PersonName = "Add Person";
 
             int displayCount = int.MaxValue;
@@ -1262,7 +1273,7 @@ namespace RockWeb.Blocks.Communication
             var mediumControl = GetMediumControl();
             if ( mediumControl != null )
             {
-                // If using simple mode, the control should be re-initialized from sender since sender fields 
+                // If using simple mode, the control should be re-initialized from sender since sender fields
                 // are not presented for editing and user shouldn't be able to change them
                 if ( !_fullMode && CurrentPerson != null )
                 {
@@ -1316,8 +1327,8 @@ namespace RockWeb.Blocks.Communication
         /// <param name="communication">The communication.</param>
         private void ShowActions( Rock.Model.Communication communication )
         {
-            // Determine if user is allowed to save changes, if not, disable 
-            // submit and save buttons 
+            // Determine if user is allowed to save changes, if not, disable
+            // submit and save buttons
             if ( IsUserAuthorized( "Approve" ) ||
                 ( CurrentPersonAliasId.HasValue && CurrentPersonAliasId == communication.SenderPersonAliasId ) ||
                 IsUserAuthorized( Authorization.EDIT ) )

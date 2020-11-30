@@ -218,20 +218,14 @@ namespace RockWeb.Blocks.Communication
         {
             base.OnInit( e );
 
-            // Initialize JSON Data properties to empty, to prevent syntax errors in the page script.
-            LineChartDataLabelsJSON = "[]";
-            LineChartDataOpensJSON = "[]";
-            LineChartDataClicksJSON = "[]";
-            LineChartDataUnOpenedJSON = "[]";
-            PieChartDataOpenClicksJSON = "[]";
-            PieChartDataClientLabelsJSON = "[]";
-            PieChartDataClientCountsJSON = "[]";
-            SeriesColorsJSON = "[]";
+            InitializeAnalyticsPanelControls();
 
             InitializeInteractionsList();
             InitializeRecipientsList();
 
             InitializeRecipientsFilter();
+
+            InitializeChartScripts();
 
             _EditingApproved = PageParameter( PageParameterKey.Edit ).AsBoolean() && IsUserAuthorized( "Approve" );
 
@@ -267,27 +261,48 @@ namespace RockWeb.Blocks.Communication
 
             if ( Page.IsPostBack )
             {
-                // Set the tab page to the parent of the postback control.
-                var targetControl = GetPostBackControl();
+                var argument = Request.Params.Get( "__EVENTARGUMENT" );
 
-                if ( targetControl != null )
+                if ( argument == "ShowPendingRecipients" )
                 {
-                    var parentTab = targetControl.FindFirstParentWhere( x => ( x is WebControl ) && ( ( WebControl ) x ).CssClass == "tab-panel" ) as WebControl;
+                    ShowRecipientsListForDeliveryStatus( CommunicationRecipientStatus.Pending );
+                }
+                else if ( argument == "ShowDeliveredRecipients" )
+                {
+                    ShowRecipientsListForDeliveryStatus( CommunicationRecipientStatus.Delivered );
+                }
+                else if ( argument == "ShowFailedRecipients" )
+                {
+                    ShowRecipientsListForDeliveryStatus( CommunicationRecipientStatus.Failed );
+                }
+                else if ( argument == "ShowCancelledRecipients" )
+                {
+                    ShowRecipientsListForDeliveryStatus( CommunicationRecipientStatus.Cancelled );
+                }
+                else
+                {
+                    // Set the tab page to the parent of the postback control.
+                    var targetControl = GetPostBackControl();
 
-                    if ( parentTab != null )
+                    if ( targetControl != null )
                     {
-                        var panelToTabMap = this.GetPanelControlToTabNameMap();
+                        var parentTab = targetControl.FindFirstParentWhere( x => ( x is WebControl ) && ( ( WebControl ) x ).CssClass == "tab-panel" ) as WebControl;
 
-                        if ( _PanelControlToTabNameMap.ContainsKey( parentTab.UniqueID ) )
+                        if ( parentTab != null )
                         {
-                            var panelName = _PanelControlToTabNameMap[parentTab.UniqueID];
+                            var panelToTabMap = this.GetPanelControlToTabNameMap();
 
-                            SetActivePanel( panelName );
+                            if ( _PanelControlToTabNameMap.ContainsKey( parentTab.UniqueID ) )
+                            {
+                                var panelName = _PanelControlToTabNameMap[parentTab.UniqueID];
+
+                                SetActivePanel( panelName );
+                            }
                         }
                     }
-                }
 
-                ShowDialog();
+                    ShowDialog();
+                }
             }
             else
             {
@@ -624,6 +639,7 @@ namespace RockWeb.Blocks.Communication
                 var dataContext = this.GetDataContext();
 
                 var service = new CommunicationService( dataContext );
+                var communicationRecipientService = new CommunicationRecipientService( dataContext );
                 var communication = service.Get( CommunicationId.Value );
                 if ( communication != null )
                 {
@@ -643,15 +659,37 @@ namespace RockWeb.Blocks.Communication
                     newCommunication.ReviewerNote = string.Empty;
                     newCommunication.SendDateTime = null;
 
-                    communication.Recipients.ToList().ForEach( r =>
+                    // Get the recipients from the original communication,
+                    // but only for recipients that are using the person's primary alias id.
+                    // This will avoid an issue where a copied communication will include the same person multiple times
+                    // if they have been merged since the original communication was created
+                    var primaryAliasRecipients = communicationRecipientService.Queryable()
+                        .Where( a => a.CommunicationId == communication.Id )
+                        .Select( a => new
+                        {
+                            a.PersonAlias.Person,
+                            a.AdditionalMergeValuesJson,
+                            a.PersonAliasId
+                        } ).ToList()
+                        .GroupBy( a => a.Person.PrimaryAliasId )
+                        .Select( s => new
+                        {
+                            PersonAliasId = s.Key,
+                            AdditionalMergeValuesJson = s.Where( a => a.PersonAliasId == s.Key ).Select( x => x.AdditionalMergeValuesJson ).FirstOrDefault()
+                        } )
+                        .Where( s => s.PersonAliasId.HasValue )
+                        .ToList();
+
+                    foreach ( var primaryAliasRecipient in primaryAliasRecipients )
+                    {
                         newCommunication.Recipients.Add( new CommunicationRecipient()
                         {
-                            PersonAliasId = r.PersonAliasId,
+                            PersonAliasId = primaryAliasRecipient.PersonAliasId.Value,
                             Status = CommunicationRecipientStatus.Pending,
                             StatusNote = string.Empty,
-                            AdditionalMergeValuesJson = r.AdditionalMergeValuesJson
-                        } ) );
-
+                            AdditionalMergeValuesJson = primaryAliasRecipient.AdditionalMergeValuesJson
+                        } );
+                    }
 
                     foreach ( var attachment in communication.Attachments.ToList() )
                     {
@@ -722,11 +760,15 @@ namespace RockWeb.Blocks.Communication
                 if ( communication == null )
                     return;
 
+                int? categoryId = cpTemplateCategory.SelectedValue.AsIntegerOrNull();
+
+                categoryId = ( categoryId == 0 ) ? null : categoryId;
+
                 var template = new CommunicationTemplate
                 {
                     SenderPersonAliasId = CurrentPersonAliasId,
                     Name = tbTemplateName.Text,
-                    CategoryId = cpTemplateCategory.SelectedValue.AsIntegerOrNull(),
+                    CategoryId = categoryId,
                     Description = tbTemplateDescription.Text,
                     Subject = communication.Subject,
                     FromName = communication.FromName,
@@ -913,6 +955,7 @@ namespace RockWeb.Blocks.Communication
         #region Recipients Grid Events
 
         private bool _GridIsExporting = false;
+        private bool _GridIsCommunication = false;
 
         /// <summary>
         /// Handles the GridRebind event of the Recipient grid controls.
@@ -922,7 +965,7 @@ namespace RockWeb.Blocks.Communication
         void gRecipients_GridRebind( object sender, GridRebindEventArgs e )
         {
             _GridIsExporting = e.IsExporting;
-
+            _GridIsCommunication = e.IsCommunication;
             BindRecipientsGrid();
         }
 
@@ -945,7 +988,7 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
-            if ( _GridIsExporting )
+            if ( _GridIsExporting || _GridIsCommunication )
             {
                 return;
             }
@@ -1012,8 +1055,6 @@ namespace RockWeb.Blocks.Communication
         /// <param name="e">The e.</param>
         private void rFilter_DisplayFilterValue( object sender, GridFilter.DisplayFilterValueArgs e )
         {
-            SaveRecipientsFilterSettings();
-
             e.Value = GetRecipientsFilterValueDescription( e.Key );
         }
 
@@ -1211,16 +1252,16 @@ namespace RockWeb.Blocks.Communication
         /// </summary>
         private void InitializeRecipientsFilter()
         {
+            // Hook up the filter event handlers.
+            rFilter.ApplyFilterClick += rFilter_ApplyFilterClick;
+            rFilter.DisplayFilterValue += rFilter_DisplayFilterValue;
+            rFilter.ClearFilterClick += rFilter_ClearFilterClick;
+
             // If this is a full page load, initialize the filter control and load the filter values.
             if ( !Page.IsPostBack )
             {
                 BindRecipientsFilter();
             }
-
-            // Hook up the filter event handlers.
-            rFilter.ApplyFilterClick += rFilter_ApplyFilterClick;
-            rFilter.DisplayFilterValue += rFilter_DisplayFilterValue;
-            rFilter.ClearFilterClick += rFilter_ClearFilterClick;
         }
 
         /// <summary>
@@ -1263,6 +1304,28 @@ namespace RockWeb.Blocks.Communication
             }
 
             return queryParams;
+        }
+
+        /// <summary>
+        /// Initialize controls on the Analytics Pane.
+        /// </summary>
+        private void InitializeAnalyticsPanelControls()
+        {
+            // Initialize Chart Data properties to empty, to prevent syntax errors in the page script.
+            LineChartDataLabelsJSON = "[]";
+            LineChartDataOpensJSON = "[]";
+            LineChartDataClicksJSON = "[]";
+            LineChartDataUnOpenedJSON = "[]";
+            PieChartDataOpenClicksJSON = "[]";
+            PieChartDataClientLabelsJSON = "[]";
+            PieChartDataClientCountsJSON = "[]";
+            SeriesColorsJSON = "[]";
+
+            // Add handlers for postback events.
+            pnlPendingSummary.Attributes["onclick"] = Page.ClientScript.GetPostBackEventReference( pnlPendingSummary, "ShowPendingRecipients" );
+            pnlDeliveredSummary.Attributes["onclick"] = Page.ClientScript.GetPostBackEventReference( pnlDeliveredSummary, "ShowDeliveredRecipients" );
+            pnlCancelledSummary.Attributes["onclick"] = Page.ClientScript.GetPostBackEventReference( pnlCancelledSummary, "ShowCancelledRecipients" );
+            pnlFailedSummary.Attributes["onclick"] = Page.ClientScript.GetPostBackEventReference( pnlFailedSummary, "ShowFailedRecipients" );
         }
 
         /// <summary>
@@ -1331,6 +1394,8 @@ namespace RockWeb.Blocks.Communication
                                           .OrderBy( x => x.Name )
                                           .ToList();
 
+            cblProperties.Items.Clear();
+
             foreach ( var column in columns )
             {
                 cblProperties.Items.Add( new ListItem { Text = column.Name, Value = column.Key } );
@@ -1347,6 +1412,8 @@ namespace RockWeb.Blocks.Communication
             var columns = availableColumns.Where( x => x.ContentType == PersonDataSourceColumnSourceSpecifier.Attribute )
                                           .OrderBy( x => x.Name )
                                           .ToList();
+
+            lbAttributes.Items.Clear();
 
             foreach ( var column in columns )
             {
@@ -1390,10 +1457,10 @@ namespace RockWeb.Blocks.Communication
             {
                 PopulatePersonPropertiesSelectionItems();
                 PopulatePersonAttributesSelectionItems();
-                LoadRecipientListPreferences();
-
-                BindRecipientsGrid();
                 PopulateRecipientFilterSelectionLists();
+
+                LoadRecipientListPreferences();
+                BindRecipientsGrid();
             }
 
             SetActivePanel( _ActivePanel );
@@ -1613,8 +1680,13 @@ namespace RockWeb.Blocks.Communication
                 {
                     contentType = ReportOutputBuilder.ReportOutputBuilderFieldContentSpecifier.FormattedText;
                 }
-                else
+                else if ( !_GridIsCommunication )
                 {
+
+                    /* 27-May-2020 - SK
+                     * Not allow paging if grid is binded for exporting OR Communication.
+                     */
+
                     // Only retrieve data for the current grid page.
                     pageSize = gRecipients.PageSize;
                     pageIndex = gRecipients.PageIndex;
@@ -1704,7 +1776,7 @@ namespace RockWeb.Blocks.Communication
                 var interactions = new InteractionService( dataContext )
                     .Queryable()
                     .Include( a => a.PersonAlias.Person )
-                    .Where( r => r.InteractionComponent.Channel.Guid == interactionChannelGuid && r.InteractionComponent.EntityId == CommunicationId.Value );
+                    .Where( r => r.InteractionComponent.InteractionChannel.Guid == interactionChannelGuid && r.InteractionComponent.EntityId == CommunicationId.Value );
 
                 var sortProperty = gInteractions.SortProperty;
                 if ( sortProperty != null )
@@ -2109,7 +2181,7 @@ namespace RockWeb.Blocks.Communication
 
             var interactionQuery = interactionService.Queryable()
                                     .AsNoTracking()
-                                    .Where( a => a.InteractionComponent.ChannelId == interactionChannelCommunication.Id
+                                    .Where( a => a.InteractionComponent.InteractionChannelId == interactionChannelCommunication.Id
                                     && a.InteractionComponent.EntityId.Value == communicationId );
 
             return interactionQuery;
@@ -2285,19 +2357,22 @@ namespace RockWeb.Blocks.Communication
                     this.LineChartTimeFormat = "LLLL";
                 }
 
-                interactionsSummary = interactionsList.GroupBy( a => new { a.CommunicationRecipientId, a.Operation } )
+                // Get a summary of interactions.
+                // If a Click interaction exists without an Open, the Open is implied in the count.
+                interactionsSummary = interactionsList.GroupBy( a => new { a.CommunicationRecipientId } )
                     .Select( a => new
                     {
                         InteractionSummaryDateTime = a.Min( b => b.InteractionDateTime ).Round( roundTimeSpan ),
                         a.Key.CommunicationRecipientId,
-                        a.Key.Operation
+                        Clicked = a.Any( x => x.Operation == "Click"),
+                        Opened = a.Any( x => x.Operation == "Opened" )
                     } )
                     .GroupBy( a => a.InteractionSummaryDateTime )
                     .Select( x => new SummaryInfo
                     {
                         SummaryDateTime = x.Key,
-                        ClickCounts = x.Count( xx => xx.Operation == "Click" ),
-                        OpenCounts = x.Count( xx => xx.Operation == "Opened" )
+                        ClickCounts = x.Count( xx => xx.Clicked ),
+                        OpenCounts = x.Count( xx => xx.Opened || ( !xx.Opened && xx.Clicked ) )
                     } ).OrderBy( a => a.SummaryDateTime ).ToList();
             }
 
@@ -2358,14 +2433,28 @@ namespace RockWeb.Blocks.Communication
             }
 
             /* Actions Pie Chart and Stats */
-            int totalOpens = interactionsList.Where( a => a.Operation == "Opened" ).Count();
-            int totalClicks = interactionsList.Where( a => a.Operation == "Click" ).Count();
+            var openInteractions = interactionsList.Where( a => a.Operation == "Opened" ).ToList();
+            var clickInteractions = interactionsList.Where( a => a.Operation == "Click" ).ToList();
 
-            // Unique Opens is the number of times a Recipient opened at least once
-            int uniqueOpens = interactionsList.Where( a => a.Operation == "Opened" ).GroupBy( a => a.CommunicationRecipientId ).Count();
+            int totalOpens = openInteractions.Count();
+            int totalClicks = clickInteractions.Count();
 
+            var recipientsWithOpens = openInteractions.GroupBy( a => a.CommunicationRecipientId ).Select(x => x.Key).ToList();
+            var recipientsWithClicks = clickInteractions.GroupBy( a => a.CommunicationRecipientId ).Select( x => x.Key ).ToList();
+
+            int recipientsWithClicksNoOpensCount = recipientsWithClicks.Except( recipientsWithOpens ).Count();
+            
             // Unique Clicks is the number of times a Recipient clicked at least once in an email
-            int uniqueClicks = interactionsList.Where( a => a.Operation == "Click" ).GroupBy( a => a.CommunicationRecipientId ).Count();
+            int uniqueClicks = recipientsWithClicks.Count();
+
+            // Unique Opens is the number of times a Recipient opened the message at least once.
+            int uniqueOpens = recipientsWithOpens.Count();
+
+            // When calculating Opens, include Recipients that have a Click interaction recorded without a corresponding Open interaction
+            // to capture the scenario where an email is viewed without loading the image links that are required to trigger the Open event.
+            // For Total Opens, only impute a single Open per recipient regardless of the number of Clicks.
+            uniqueOpens += recipientsWithClicksNoOpensCount;
+            totalOpens += recipientsWithClicksNoOpensCount;
 
             decimal percentOpened = 0;
 
@@ -2594,7 +2683,7 @@ namespace RockWeb.Blocks.Communication
 
             // create dictionary
             var recipients = new Dictionary<int, RecipientInfo>();
-            foreach( var recipient in queryList )
+            foreach ( var recipient in queryList )
             {
                 // since we order by ModifiedDateTime this will end up ignoring any order recipient records for the personid
                 // NOTE: We tried to do this in SQL but it caused performance issues, so we'll do it in C# instead.
@@ -2641,7 +2730,7 @@ namespace RockWeb.Blocks.Communication
                         HasOpened = ( x.Status == CommunicationRecipientStatus.Opened ),
                         HasClicked = clickRecipientsIdList.Contains( x.PersonAlias.PersonId ),
                         ModifiedDateTime = x.ModifiedDateTime
-                    });
+                    } );
 
             return recipientQuery;
         }
@@ -2914,6 +3003,34 @@ namespace RockWeb.Blocks.Communication
             }
 
             return _PanelControlToTabNameMap;
+        }
+
+        /// <summary>
+        /// Display the Recipients List filtered by the specified delivery status.
+        /// </summary>
+        /// <param name="status"></param>
+        private void ShowRecipientsListForDeliveryStatus( CommunicationRecipientStatus status )
+        {
+            SetActivePanel( CommunicationDetailPanels.RecipientDetails );
+
+            InitializeActiveCommunication();
+
+            PopulatePersonPropertiesSelectionItems();
+            PopulatePersonAttributesSelectionItems();
+            PopulateRecipientFilterSelectionLists();
+
+            LoadRecipientListPreferences();
+
+            // Set the filter.
+            var settings = GetRecipientsFilterSettings();
+
+            settings[FilterSettingName.DeliveryStatus] = status.ConvertToInt().ToString();
+
+            ApplyRecipientsFilterSettings( settings );
+
+            SaveRecipientsFilterSettings();
+
+            BindRecipientsGrid();
         }
 
         #endregion

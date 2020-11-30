@@ -128,6 +128,11 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string COMMUNICATION_QUEUE = "2FC7D3E3-D85B-4265-8983-970345215DEA";
 
+        /// <summary>
+        /// Gets the template guid for the communication approval email
+        /// </summary>
+        public const string COMMUNICATION_APPROVAL_EMAIL = "11D325F4-DAF3-4579-A9D8-6347CCC02341";
+
         #endregion
 
         #region Finance
@@ -189,6 +194,11 @@ namespace Rock.SystemGuid
         /// Gets the template guid for 
         /// </summary>
         public const string GROUP_SYNC_EXIT = "9AC62F1B-16E0-3886-4CE6-2B9290D6B135";
+
+        /// <summary>
+        /// Gets the template guid for the group attendance digest
+        /// </summary>
+        public const string GROUP_ATTENDANCE_DIGEST = "345CD403-11D2-4B74-A467-ADD15572DD4F";
 
         #endregion
 

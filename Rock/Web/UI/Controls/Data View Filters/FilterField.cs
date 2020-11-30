@@ -24,6 +24,7 @@ using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Reporting;
+using Rock.Reporting.DataFilter;
 using Rock.Security;
 using Rock.Web.Cache;
 
@@ -236,6 +237,8 @@ namespace Rock.Web.UI.Controls
         /// <value>
         /// The entity fields override.
         /// </value>
+        [RockObsolete( "1.12" )]
+        [Obsolete( "Not Supported. Could cause inconsistent results." )]
         public Rock.Data.IEntity Entity { get; set; }
 
         /// <summary>
@@ -489,6 +492,27 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Gets the related data view identifier.
+        /// </summary>
+        /// <returns></returns>
+        public int? GetRelatedDataViewId()
+        {
+            EnsureChildControls();
+
+            var component = Rock.Reporting.DataFilterContainer.GetComponent( FilterEntityTypeName ) as IRelatedChildDataView;
+            if ( component != null )
+            {
+                var relatedDataViewId = component.GetRelatedDataViewId( filterControls );
+                if ( relatedDataViewId.HasValue && relatedDataViewId > 0 )
+                {
+                    return relatedDataViewId;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Called by the ASP.NET page framework to notify server controls that use composition-based implementation to create any child controls they contain in preparation for posting back or rendering.
         /// </summary>
         protected override void CreateChildControls()
@@ -502,11 +526,6 @@ namespace Rock.Web.UI.Controls
             var component = Rock.Reporting.DataFilterContainer.GetComponent( FilterEntityTypeName );
             if ( component != null )
             {
-                if ( component is Reporting.DataFilter.PropertyFilter )
-                {
-                    ( component as Reporting.DataFilter.PropertyFilter ).Entity = this.Entity;
-                }
-
                 component.Options = FilterOptions;
                 filterControls = component.CreateChildControls( FilteredEntityType, this, this.FilterMode );
             }
@@ -521,32 +540,34 @@ namespace Rock.Web.UI.Controls
             ddlFilterType.SelectedIndexChanged += ddlFilterType_SelectedIndexChanged;
 
             ddlFilterType.Items.Clear();
-
-            foreach ( var section in AuthorizedComponents )
+            if ( AuthorizedComponents != null )
             {
-                foreach ( var item in section.Value )
+                foreach ( var section in AuthorizedComponents )
                 {
-                    if ( !this.ExcludedFilterTypes.Any( a => a == item.Key ) )
+                    foreach ( var item in section.Value )
                     {
-                        ListItem li = new ListItem( item.Value, item.Key );
-
-                        if ( !string.IsNullOrWhiteSpace( section.Key ) )
+                        if ( !this.ExcludedFilterTypes.Any( a => a == item.Key ) )
                         {
-                            li.Attributes.Add( "optiongroup", section.Key );
-                        }
+                            ListItem li = new ListItem( item.Value, item.Key );
 
-                        var filterComponent = Rock.Reporting.DataFilterContainer.GetComponent( item.Key );
-                        if ( filterComponent != null )
-                        {
-                            string description = Reflection.GetDescription( filterComponent.GetType() );
-                            if ( !string.IsNullOrWhiteSpace( description ) )
+                            if ( !string.IsNullOrWhiteSpace( section.Key ) )
                             {
-                                li.Attributes.Add( "title", description );
+                                li.Attributes.Add( "optiongroup", section.Key );
                             }
-                        }
 
-                        li.Selected = item.Key == FilterEntityTypeName;
-                        ddlFilterType.Items.Add( li );
+                            var filterComponent = Rock.Reporting.DataFilterContainer.GetComponent( item.Key );
+                            if ( filterComponent != null )
+                            {
+                                string description = Reflection.GetDescription( filterComponent.GetType() );
+                                if ( !string.IsNullOrWhiteSpace( description ) )
+                                {
+                                    li.Attributes.Add( "title", description );
+                                }
+                            }
+
+                            li.Selected = item.Key == FilterEntityTypeName;
+                            ddlFilterType.Items.Add( li );
+                        }
                     }
                 }
             }
@@ -598,7 +619,7 @@ namespace Rock.Web.UI.Controls
                 if ( component != null )
                 {
                     clientFormatString =
-                       string.Format( "if ($(this).find('.filter-view-state').children('i').hasClass('fa-chevron-up')) {{ var $article = $(this).parents('article:first'); var $content = $article.children('div.panel-body'); $article.find('div.filter-item-description:first').html({0}); }}", component.GetClientFormatSelection( FilteredEntityType ) );
+                       string.Format( "if ($(this).find('.filter-view-state').children('i').hasClass('fa-chevron-up')) {{ var $article = $(this).parents('article').first(); var $content = $article.children('div.panel-body'); $article.find('div.filter-item-description').first().html({0}); }}", component.GetClientFormatSelection( FilteredEntityType ) );
                 }
             }
 

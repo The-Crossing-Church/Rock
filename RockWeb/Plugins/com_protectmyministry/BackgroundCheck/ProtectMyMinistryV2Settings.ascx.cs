@@ -694,9 +694,9 @@ namespace RockWeb.Plugins.com_protectmyministry.BackgroundCheck
 
                                             dv.SetAttributeValue( "PMMPackageName", invitation.Id );
                                             dv.SaveAttributeValues( rockContext );
-                                        }
 
-                                        existingInvitations.Add( invitation.Id );
+                                            existingInvitations.Add( invitation.Id );
+                                        }
                                     }
 
                                     // New 

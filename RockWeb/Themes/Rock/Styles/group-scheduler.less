@@ -14,19 +14,58 @@
 @pending-icon-color: @brand-warning;
 @declined-icon-color: @brand-danger;
 
-.group-scheduler-resourcelist {
-  height: 100%;
+@meetsdesired-icon-color: fade(@brand-success, 75%);
+@belowdesired-icon-color: fade(@brand-warning, 75%);
+@belowminimum-icon-color: fade(@brand-danger, 75%);
+
+.group-scheduler {
+  // Duplicated Style for Embedding in External Themes
+  .panel.panel-block {
+
+    position: relative;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid @panel-default-border;
+  }
+
+  .panel.panel-block > .panel-heading {
+    display: inherit;
+  }
+
+  .panel.panel-block > .panel-body {
+    padding: @panel-body-padding;
+  }
+
+  .panel.panel-groupscheduler > .panel-body {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .panel-block > .panel-heading {
+    display: -ms-flexbox;
+    display: flex;
+    align-content: center;
+    align-items: center;
+  }
+
+  .panel-block > .panel-heading > .panel-title {
+    margin-right: auto;
+  }
+
+  .panel-block > .panel-heading > .panel-labels,
+  .panel-block > .panel-heading > .pull-right {
+    margin-left: auto;
+    text-align: right;
+  }
 }
 
 .resource-list {
   position: sticky !important;
   top: 16px;
   max-height: ~"calc(100vh - 32px)";
-
-  @media (min-width: @screen-md-min) {
-    top: @navbar-top-height + 16px;
-    max-height: ~"calc(100vh - 112px)";
-  }
 
   .is-fullscreen & {
     top: 16px;
@@ -40,6 +79,7 @@
     flex: 0 1 auto !important;
     -ms-flex-direction: column !important;
     flex-direction: column !important;
+    width: 100%;
     overflow: hidden;
   }
 
@@ -218,11 +258,6 @@
   background-color: #f3f3f3;
 }
 
-.panel-groupscheduler > .panel-body {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
 .dropzone {
   &:empty {
     position: relative;
@@ -307,6 +342,7 @@
 
 /* Resource List */
 .group-scheduler-resourcelist {
+  height: 100%;
 
   .resource {
     .flex {
@@ -373,15 +409,15 @@
     border-radius: 50%;
 
     &[data-status="below-minimum"] {
-      background-color: @state-danger-bg;
+      background-color: @belowminimum-icon-color;
     }
 
     &[data-status="below-desired"] {
-      background-color: @state-warning-bg;
+      background-color: @belowdesired-icon-color;
     }
 
     &[data-status="meets-desired"] {
-      background-color: @state-success-bg;
+      background-color: @meetsdesired-icon-color;
     }
 
     &[data-status="none"] {

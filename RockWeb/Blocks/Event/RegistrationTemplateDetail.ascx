@@ -391,7 +391,7 @@
                         <div class="col-md-6">
                             <Rock:RockLiteral ID="lGroupType" runat="server" Label="Group Type" />
                             <Rock:RockLiteral ID="lWorkflowType" runat="server" Label="Registration Workflow" />
-                            <Rock:RockLiteral ID="lRequiredSignedDocument" runat="server" Label="Required Signed Document" />
+                            <Rock:RockLiteral ID="lRequiredSignedDocument" runat="server" Label="Required Signature Document" />
                             <Rock:RockControlWrapper ID="rcwRegistrantFormsSummary" runat="server" Label="Registrant Forms" CssClass="js-expandable-summary-wrapper">
                                 <div class="js-expandable-summary" style="display: none">
                                     <asp:Literal ID="lRegistrantFormsSummary" runat="server" />
@@ -512,18 +512,13 @@
                         </Rock:RockRadioButtonList>
                         <Rock:NumberBox ID="nbDiscountPercentage" runat="server" AppendText="%" CssClass="input-width-md" Label="Discount Percentage" NumberType="Integer" ValidationGroup="Discount" />
                         <Rock:CurrencyBox ID="cbDiscountAmount" runat="server" CssClass="input-width-md" Label="Discount Amount" ValidationGroup="Discount" />
-                        <Rock:RockCheckBox ID="cbcAutoApplyDiscount" runat="server" Label="Auto Apply Discount"
-                            Help="Will automatically apply the discount if the registration meets the criteria.  If multiple automatic discounts exist, only the first one that meets the criteria will be applied." />
+                        <Rock:RockCheckBox ID="cbcAutoApplyDiscount" runat="server" Label="Auto Apply Discount" Help="Will automatically apply the discount if the registration meets the criteria. If multiple automatic discounts exist, only the first one that meets the criteria will be applied." />
                     </div>
                     <div class="col-md-6">
-                        <Rock:NumberBox ID="nbDiscountMaxUsage" runat="server" NumberType="Integer" MinimumValue="0" Label="Maximum Usage"
-                            Help="The maximum number of times (registrations) that the discount code can be used (leave blank for none)." />
-                        <Rock:NumberBox ID="nbDiscountMaxRegistrants" runat="server" NumberType="Integer" MinimumValue="0" Label="Maximum Registrants"
-                            Help="The maximum number of registrants (per registration) that the discount code should apply to." />
-                        <Rock:NumberBox ID="nbDiscountMinRegistrants" runat="server" NumberType="Integer" MinimumValue="0" Label="Minimum Registrants"
-                            Help="The minimum number of registrants (per registration) that are required in order to use this discount code." />
-                        <Rock:DateRangePicker ID="drpDiscountDateRange" runat="server" Label="Effective Dates"
-                            Help="The beginning and/or ending date that this discount code can be used." />
+                        <Rock:NumberBox ID="nbDiscountMaxUsage" runat="server" NumberType="Integer" MinimumValue="0" Label="Maximum Usage" Help="The maximum number of registrations that the discount code can be used on (leave blank for none)." />
+                        <Rock:NumberBox ID="nbDiscountMaxRegistrants" runat="server" NumberType="Integer" MinimumValue="0" Label="Maximum Registrants" Help="The maximum number of registrants in a single registration that the discount code can be used on." />
+                        <Rock:NumberBox ID="nbDiscountMinRegistrants" runat="server" NumberType="Integer" MinimumValue="0" Label="Minimum Registrants" Help="The minimum number of registrants in the registration that are required in order to use the discount code." />
+                        <Rock:DateRangePicker ID="drpDiscountDateRange" runat="server" Label="Effective Dates" Help="The beginning and/or ending date that the discount code can be used." />
                     </div>
                 </div>
             </Content>
@@ -592,6 +587,7 @@
                     <div class="col-md-6">
                         <Rock:RockRadioButtonList ID="rblFeeType" runat="server" Label="Options" ValidationGroup="Fee" RepeatDirection="Horizontal" AutoPostBack="true" OnSelectedIndexChanged="rblFeeType_SelectedIndexChanged" />
                         <Rock:NotificationBox ID="nbFeeItemsConfigurationWarning" runat="server" NotificationBoxType="Warning" Visible="false" />
+
                         <Rock:RockControlWrapper ID="rcwFeeItemsSingle" runat="server" Label="">
                             <asp:HiddenField ID="hfFeeItemSingleGuid" runat="server" />
                             <Rock:CurrencyBox ID="cbFeeItemSingleCost" runat="server" Label="Cost" ValidationGroup="Fee" />
@@ -615,10 +611,12 @@
                                     </div>
                                 </ItemTemplate>
                             </asp:Repeater>
+
+                            <div class="actions">
+                                <asp:LinkButton ID="btnAddFeeItem" runat="server" CssClass="btn btn-action btn-sm" OnClick="btnAddFeeItem_Click"><i class="fa fa-plus-circle"></i></asp:LinkButton>
+                            </div>
                         </Rock:RockControlWrapper>
-                        <div class="actions">
-                            <asp:LinkButton ID="btnAddFeeItem" runat="server" CssClass="btn btn-action btn-sm" OnClick="btnAddFeeItem_Click"><i class="fa fa-plus-circle"></i></asp:LinkButton>
-                        </div>
+
                     </div>
                     <div class="col-md-3">
                         <Rock:RockCheckBox ID="cbAllowMultiple" runat="server" Label="Enable Quantity" ValidationGroup="Fee" Text="Yes" Help="Should registrants be able to select more than one of this item?" CssClass="form-check" />
@@ -627,6 +625,7 @@
                     </div>
                     <div class="col-md-3">
                         <Rock:RockCheckBox ID="cbFeeIsRequired" runat="server" Label="Is Required" ValidationGroup="Fee" Text="Yes" Help="Checking this will mark the fee for new registrations required." />
+                        <Rock:RockCheckBox ID="cbHideWhenNoneRemaining" runat="server" Label="Hide When None Remaining" ValidationGroup="Fee" Text="Yes" Help="If checked then items that have 0 remaining will not display. If not checked then the items will display but will not be selectable." />
                     </div>
                 </div>
             </Content>
@@ -643,36 +642,38 @@
                     return ui;
                 };
 
-                $('#cb-showdetails').change(function () {
+                $('#cb-showdetails').on('change', function () {
                     $('#registration-details').slideDown();
                     $('#registration-detailscheckbox').slideUp();
                 });
 
-                $('.js-expandable-summary-wrapper > label.control-label').click(function () {
+                $('.js-expandable-summary-wrapper > label.control-label').on('click', function () {
                     $(this).closest('.js-expandable-summary-wrapper').find('.js-expandable-summary').toggle(500);
                 })
 
                 // NOTE: js-optional-form-list is a div created in codebehind around the optional forms
                 var $formList = $('.js-optional-form-list');
 
-                $formList.sortable({
-                    helper: fixHelper,
-                    handle: '.form-reorder',
-                    containment: 'parent',
-                    tolerance: 'pointer',
-                    start: function (event, ui) {
-                        {
-                            var start_pos = ui.item.index();
-                            ui.item.data('start_pos', start_pos);
+                if ($formList.length > 0) {
+                    $formList.sortable({
+                        helper: fixHelper,
+                        handle: '.form-reorder',
+                        containment: 'parent',
+                        tolerance: 'pointer',
+                        start: function (event, ui) {
+                            {
+                                var start_pos = ui.item.index();
+                                ui.item.data('start_pos', start_pos);
+                            }
+                        },
+                        update: function (event, ui) {
+                            {
+                                var postbackArg = 're-order-form:' + ui.item.attr('data-key') + ';' + ui.item.index();
+                                window.location = "javascript:__doPostBack('<%=upDetail.ClientID %>', '" +  postbackArg + "')";
+                            }
                         }
-                    },
-                    update: function (event, ui) {
-                        {
-                            var postbackArg = 're-order-form:' + ui.item.attr('data-key') + ';' + ui.item.index();
-                            window.location = "javascript:__doPostBack('<%=upDetail.ClientID %>', '" + postbackArg + "')";
-                        }
-                    }
-                });
+                    });
+                }
 
             });
         </script>

@@ -1054,7 +1054,13 @@ namespace RockWeb.Blocks.Cms
             lName.Text = CurrentPerson.FullName;
             if ( CurrentPerson.BirthDate.HasValue )
             {
-                lAge.Text = string.Format( "{0} old <small>({1})</small><br/>", CurrentPerson.FormatAge(), CurrentPerson.BirthYear != DateTime.MinValue.Year ? CurrentPerson.BirthDate.Value.ToShortDateString() : CurrentPerson.BirthDate.Value.ToMonthDayString() );
+                var formattedAge = CurrentPerson.FormatAge();
+                if ( formattedAge.IsNotNullOrWhiteSpace() )
+                {
+                    formattedAge += " old";
+                }
+
+                lAge.Text = string.Format( "{0} <small>({1})</small><br/>", formattedAge, ( CurrentPerson.BirthYear != DateTime.MinValue.Year && CurrentPerson.BirthYear != null ) ? CurrentPerson.BirthDate.Value.ToShortDateString() : CurrentPerson.BirthDate.Value.ToMonthDayString() );
             }
 
             lGender.Text = CurrentPerson.Gender != Gender.Unknown ? CurrentPerson.Gender.ToString() : string.Empty;
@@ -1207,10 +1213,14 @@ namespace RockWeb.Blocks.Cms
                     rblRole.DataBind();
                     rblRole.Visible = true;
                     rblRole.Required = true;
+
+                    tbFirstName.Enabled = true;
+                    tbLastName.Enabled = true;
                 }
                 else
                 {
                     person = new PersonService( rockContext ).Get( personGuid );
+
                     if ( GetAttributeValue( AttributeKey.DisableNameEdit ).AsBoolean() )
                     {
                         tbFirstName.Enabled = false;
@@ -1222,11 +1232,6 @@ namespace RockWeb.Blocks.Cms
                 {
                     if ( person != null )
                     {
-                        if ( GetAttributeValue( AttributeKey.DisableNameEdit ).AsBoolean() )
-                        {
-                            tbFirstName.Enabled = false;
-                            tbLastName.Enabled = false;
-                        }
                         imgPhoto.BinaryFileId = person.PhotoId;
                         imgPhoto.NoPictureUrl = Person.GetPersonNoPictureUrl( person, 200, 200 );
                         dvpTitle.SetValue( person.TitleValueId );

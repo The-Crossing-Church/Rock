@@ -91,8 +91,14 @@ namespace Rock.Rest.Controllers
 
             var person = GetPerson();
 
+            // fetch the parentGroup so that Auth doesn't have do lazy load the ParentGroup for every group
+            var parentGroup = groupService.Get( id > 0 ? id : rootGroupId );
+
             foreach ( var group in qry.OrderBy( g => g.Order ).ThenBy( g => g.Name ) )
             {
+                // we already have the ParentGroup record, so lets set it for each group to avoid a database round-trip during Auth
+                group.ParentGroup = parentGroup;
+
                 if ( group.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
                 {
                     var groupType = GroupTypeCache.Get( group.GroupTypeId );
@@ -107,6 +113,13 @@ namespace Rock.Rest.Controllers
                         }
                         else
                         {
+                            /*
+                            2020-05-01 BJW
+
+                            This heirarchy query was timing out on some Rock instances with a large amount of groups. I removed the
+                            limitToSchedulingEnabled=true param from the group scheduling block because of it. This logic will remain here
+                            for backwards compatability, but note that sometimes there are performance issues.
+                            */
                             bool hasChildScheduledEnabledGroups = groupService.GetAllDescendentsGroupTypes( group.Id, includeInactiveGroups ).Any( a => a.IsSchedulingEnabled == true );
                             if ( hasChildScheduledEnabledGroups )
                             {

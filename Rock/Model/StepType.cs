@@ -27,7 +27,7 @@ namespace Rock.Model
     /// <summary>
     /// Represents a step type in Rock.
     /// </summary>
-    [RockDomain( "Steps" )]
+    [RockDomain( "Engagement" )]
     [Table( "StepType" )]
     [DataContract]
     public partial class StepType : Model<StepType>, IOrdered, IHasActiveFlag
@@ -49,6 +49,9 @@ namespace Rock.Model
     <p class=""step-status"">
         {% if LatestStepStatus %}
             <span class=""label"" style=""background-color: {{ LatestStepStatus.StatusColor }};"">{{ LatestStepStatus.Name }}</span>
+        {% endif %}
+        {% if ShowCampus and LatestStep and LatestStep.Campus != '' %}
+            <span class=""label label-campus"">{{ LatestStep.Campus.Name }}</span>
         {% endif %}
         {% if LatestStep and LatestStep.CompletedDateTime != '' %}
             <br />

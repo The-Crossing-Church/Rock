@@ -385,10 +385,10 @@ namespace RockWeb.Blocks.Event
                                 break;
 
                             case RegistrationPersonFieldType.ConnectionStatus:
-                                var dvpConnectionStatusFilter = phWaitListFormFieldFilters.FindControl(FILTER_CONNECTION_STATUS_ID) as DefinedValuePicker;
-                                if (dvpConnectionStatusFilter != null)
+                                var dvpConnectionStatusFilter = phWaitListFormFieldFilters.FindControl( FILTER_CONNECTION_STATUS_ID ) as DefinedValuePicker;
+                                if ( dvpConnectionStatusFilter != null )
                                 {
-                                    fWaitList.SaveUserPreference(UserPreferenceKeyBase.GridFilter_ConnectionStatus, dvpConnectionStatusFilter.SelectedValue);
+                                    fWaitList.SaveUserPreference( UserPreferenceKeyBase.GridFilter_ConnectionStatus, dvpConnectionStatusFilter.SelectedValue );
                                 }
 
                                 break;
@@ -416,7 +416,7 @@ namespace RockWeb.Blocks.Event
                     if ( field.Attribute != null )
                     {
                         var attribute = field.Attribute;
-                        var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                        var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                         if ( filterControl != null )
                         {
                             try
@@ -535,10 +535,10 @@ namespace RockWeb.Blocks.Event
                                 break;
 
                             case RegistrationPersonFieldType.ConnectionStatus:
-                                var dvpConnectionStatusFilter = phWaitListFormFieldFilters.FindControl(FILTER_CONNECTION_STATUS_ID) as DefinedValuePicker;
-                                if (dvpConnectionStatusFilter != null)
+                                var dvpConnectionStatusFilter = phWaitListFormFieldFilters.FindControl( FILTER_CONNECTION_STATUS_ID ) as DefinedValuePicker;
+                                if ( dvpConnectionStatusFilter != null )
                                 {
-                                    dvpConnectionStatusFilter.SetValue((Guid?)null);
+                                    dvpConnectionStatusFilter.SetValue( ( Guid? ) null );
                                 }
 
                                 break;
@@ -662,9 +662,9 @@ namespace RockWeb.Blocks.Event
 
                 case "Connection Status":
                     int? connStatId = e.Value.AsIntegerOrNull();
-                    if (connStatId.HasValue)
+                    if ( connStatId.HasValue )
                     {
-                        var connectionStatus = DefinedValueCache.Get(connStatId.Value);
+                        var connectionStatus = DefinedValueCache.Get( connStatId.Value );
                         e.Value = connectionStatus != null ? connectionStatus.Value : string.Empty;
                     }
                     else
@@ -1070,15 +1070,15 @@ namespace RockWeb.Blocks.Event
                                     break;
 
                                 case RegistrationPersonFieldType.ConnectionStatus:
-                                    var dvpConnectionStatusFilter = phWaitListFormFieldFilters.FindControl(FILTER_CONNECTION_STATUS_ID) as DefinedValuePicker;
-                                    if (dvpConnectionStatusFilter != null)
+                                    var dvpConnectionStatusFilter = phWaitListFormFieldFilters.FindControl( FILTER_CONNECTION_STATUS_ID ) as DefinedValuePicker;
+                                    if ( dvpConnectionStatusFilter != null )
                                     {
                                         var connectionStatusId = dvpConnectionStatusFilter.SelectedValue.AsIntegerOrNull();
-                                        if (connectionStatusId.HasValue)
+                                        if ( connectionStatusId.HasValue )
                                         {
-                                            qry = qry.Where(r =>
+                                            qry = qry.Where( r =>
                                                r.PersonAlias.Person.ConnectionStatusValueId.HasValue &&
-                                               r.PersonAlias.Person.ConnectionStatusValueId.Value == connectionStatusId.Value);
+                                               r.PersonAlias.Person.ConnectionStatusValueId.Value == connectionStatusId.Value );
                                         }
                                     }
 
@@ -1138,7 +1138,7 @@ namespace RockWeb.Blocks.Event
                         {
                             foreach ( var attribute in registrantAttributes )
                             {
-                                var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                                var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                                 qry = attribute.FieldType.Field.ApplyAttributeQueryFilter( qry, filterControl, attribute, registrationRegistrantService, Rock.Reporting.FilterMode.SimpleFilter );
                             }
                         }
@@ -1160,7 +1160,7 @@ namespace RockWeb.Blocks.Event
 
                             foreach ( var attribute in personAttributes )
                             {
-                                var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                                var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                                 personQry = attribute.FieldType.Field.ApplyAttributeQueryFilter( personQry, filterControl, attribute, personService, Rock.Reporting.FilterMode.SimpleFilter );
                             }
 
@@ -1184,7 +1184,7 @@ namespace RockWeb.Blocks.Event
 
                             foreach ( var attribute in groupMemberAttributes )
                             {
-                                var filterControl = phWaitListFormFieldFilters.FindControl( "filterWaitlist_" + attribute.Id.ToString() );
+                                var filterControl = phWaitListFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
                                 groupMemberQry = attribute.FieldType.Field.ApplyAttributeQueryFilter( groupMemberQry, filterControl, attribute, groupMemberService, Rock.Reporting.FilterMode.SimpleFilter );
                             }
 

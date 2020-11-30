@@ -8,6 +8,9 @@
         <asp:Panel ID="pnlResultList" runat="server" CssClass="panel panel-block">
             <div class="panel-heading">
                 <h1 class="panel-title"><i class="fa fa-list-ul"></i> <asp:Literal ID="ltTitle" runat="server" /></h1>
+                <div class="pull-right">
+                    <a id="aChartLink" runat="server" class="btn btn-xs btn-default"><i class="fa fa-chart-pie"></i> View Charts</a>
+                </div>
             </div>
 
             <div class="panel-body">
@@ -22,7 +25,7 @@
 
                     <Rock:Grid ID="gList" runat="server" AllowSorting="true">
                         <Columns>
-                            <Rock:RockBoundField DataField="CreatedByPersonAlias.Person.FullName" HeaderText="Completed By" SortExpression="CreatedByPersonAlias.Person.FullName" />
+                            <Rock:PersonField DataField="CreatedByPersonAlias.Person" HeaderText="Completed By" SortExpression="CreatedByPersonAlias.Person.FullName" />
                             <Rock:DateField DataField="CreatedDateTime" HeaderText="Completed Date" SortExpression="CreatedDateTime" />
                             <Rock:BoolField DataField="DidPass" HeaderText="Did Pass" SortExpression="DidPass" />
                             <Rock:DateField DataField="TestResult" HeaderText="Score" SortExpression="TestResult" DataFormatString="{0}%" />

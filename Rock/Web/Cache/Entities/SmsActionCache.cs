@@ -39,6 +39,7 @@ namespace Rock.Web.Cache
         /// <value>
         /// The name of the action.
         /// </value>
+        [DataMember]
         public string Name { get; set; }
 
         /// <summary>
@@ -47,6 +48,7 @@ namespace Rock.Web.Cache
         /// <value>
         ///   <c>true</c> if this instance is active; otherwise, <c>false</c>.
         /// </value>
+        [DataMember]
         public bool IsActive { get; set; }
 
         /// <summary>
@@ -55,6 +57,7 @@ namespace Rock.Web.Cache
         /// <value>
         /// The order of this action in the system.
         /// </value>
+        [DataMember]
         public int Order { get; set; }
 
         /// <summary>
@@ -63,6 +66,7 @@ namespace Rock.Web.Cache
         /// <value>
         /// The identifier for the entity type that handles this action's logic.
         /// </value>
+        [DataMember]
         public int SmsActionComponentEntityTypeId { get; set; }
 
         /// <summary>
@@ -71,7 +75,17 @@ namespace Rock.Web.Cache
         /// <value>
         ///   <c>true</c> if further actions should be processed; otherwise, <c>false</c>.
         /// </value>
+        [DataMember]
         public bool ContinueAfterProcessing { get; set; }
+
+        /// <summary>
+        /// Gets or sets the SMS pipeline identifier.
+        /// </summary>
+        /// <value>
+        /// The SMS pipeline identifier.
+        /// </value>
+        [DataMember]
+        public int SmsPipelineId { get; set; }
 
         /// <summary>
         /// Gets the field.
@@ -122,6 +136,7 @@ namespace Rock.Web.Cache
             Order = smsAction.Order;
             SmsActionComponentEntityTypeId = smsAction.SmsActionComponentEntityTypeId;
             ContinueAfterProcessing = smsAction.ContinueAfterProcessing;
+            SmsPipelineId = smsAction.SmsPipelineId;
         }
 
         /// <summary>

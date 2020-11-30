@@ -990,6 +990,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             {
                 var rlSummary = new ReservationLocationSummary();
                 rlSummary.CopyPropertiesFrom( reservationLocation );
+                rlSummary.Guid = Guid.NewGuid();
                 LocationsState.Add( rlSummary );
             }
 
@@ -998,6 +999,7 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             {
                 var rrSummary = new ReservationResourceSummary();
                 rrSummary.CopyPropertiesFrom( reservationResource );
+                rrSummary.Guid = Guid.NewGuid();
                 ResourcesState.Add( rrSummary );
             }
 
@@ -2308,6 +2310,25 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
                     nbError.Text = conflictInfo;
                     nbError.Visible = true;
                 }
+
+                string btnDownloadText = @"
+                        <script>function ics_click() {
+                            text = `{{ Reservation.Schedule.iCalendarContent }}`.replace('END:VEVENT', 'SUMMARY: {{ Reservation.Name }}\r\nLOCATION: {{ Reservation.ReservationLocations | Select:'Location' | Select:'Name' | Join:', ' }}\r\nEND:VEVENT');
+                            var element = document.createElement('a');
+                            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                            element.setAttribute('download', '{{ Reservation.Name }}.ics');
+                            element.style.display = 'none';
+                            document.body.appendChild(element);
+                            element.click();
+                            document.body.removeChild(element);
+                        }
+                        </script>
+                        <a href='' class='btn btn-default' onclick='return ics_click()' class='socialicon socialicon-calendar' title='' data-original-title='Download Event'>
+                           <i class='fa fa-download'></i>
+                        </a>";
+                var mergeFields = new Dictionary<string, object>();
+                mergeFields.Add( "Reservation", reservation );
+                btnDownload.Text = btnDownloadText.ResolveMergeFields( mergeFields );
             }
 
             if ( reservation == null )
@@ -2747,21 +2768,27 @@ namespace RockWeb.Plugins.com_centralaz.RoomManagement
             pnEventContactPhone.Required = requireContactDetails;
             tbEventContactEmail.Required = requireContactDetails;
 
-            var defaultTime = ReservationType.DefaultSetupTime.ToString();
-            if ( defaultTime == "-1" )
+            var defaultSetupTime = ReservationType.DefaultSetupTime.ToString();
+            if ( defaultSetupTime == "-1" )
             {
-                defaultTime = string.Empty;
+                defaultSetupTime = string.Empty;
+            }
+
+            var defaultCleanupTime = ReservationType.DefaultCleanupTime.ToString();
+            if ( defaultCleanupTime == "-1" )
+            {
+                defaultCleanupTime = string.Empty;
             }
 
             if ( reservation == null )
             {
-                nbSetupTime.Text = defaultTime;
-                nbCleanupTime.Text = defaultTime;
+                nbSetupTime.Text = defaultSetupTime;
+                nbCleanupTime.Text = defaultCleanupTime;
             }
             else
             {
-                nbSetupTime.Text = reservation.SetupTime.HasValue ? reservation.SetupTime.ToString() : defaultTime;
-                nbCleanupTime.Text = reservation.CleanupTime.HasValue ? reservation.CleanupTime.ToString() : defaultTime;
+                nbSetupTime.Text = reservation.SetupTime.HasValue ? reservation.SetupTime.ToString() : defaultSetupTime;
+                nbCleanupTime.Text = reservation.CleanupTime.HasValue ? reservation.CleanupTime.ToString() : defaultCleanupTime;
             }
         }
 

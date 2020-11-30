@@ -126,12 +126,13 @@ namespace Rock.Model
             // If an attendance record doesn't exist for the occurrence, add a new record
             if ( attendance == null )
             {
-                attendance = ( ( RockContext ) Context ).Attendances.Create();
+                attendance = new Attendance
                 {
-                    attendance.Occurrence = occurrence;
-                    attendance.OccurrenceId = occurrence.Id;
-                    attendance.PersonAliasId = personAliasId;
+                    Occurrence = occurrence,
+                    OccurrenceId = occurrence.Id,
+                    PersonAliasId = personAliasId
                 };
+
                 Add( attendance );
             }
 
@@ -1044,11 +1045,26 @@ namespace Rock.Model
                     } )
                     .ToDictionary( k => k.PersonId, v => v.LastScheduledDate );
 
+                /*
+                 * BJW 03-20-2020
+                 *
+                 * I added the where clauses in the following query that limit to active schedules or locations. The intent was to
+                 * prevent people from being rescheduled that are scheduled for a location or schedule where that location or
+                 * schedule has since become inactive.
+                 *
+                 * Consider this scenario:
+                 * - Ted is scheduled for AV on Sunday at 12
+                 * - The Sunday schedule for 12 is marked inactive
+                 * - Alisha comes to the scheduler block to put Ted in another schedule but she cannot because:
+                 *      - Ted is "already scheduled" and doesn't show in the available people panel
+                 *      - Alisha cannot remove Ted's now invalid assignement because she can no longer see the inactive schedule
+                 */
                 var scheduledAttendanceGroupIdsLookup = attendanceService.Queryable()
                     .Where( a => ( a.RequestedToAttend == true || a.ScheduledToAttend == true )
                               && a.Occurrence.ScheduleId == schedulerResourceParameters.AttendanceOccurrenceScheduleId
                               && scheduleOccurrenceDateList.Contains( a.Occurrence.OccurrenceDate )
                               && a.Occurrence.GroupId.HasValue )
+                    .WhereDeducedIsActive()
                     .GroupBy( a => a.PersonAlias.PersonId )
                     .Select( a => new
                     {
@@ -1102,7 +1118,8 @@ namespace Rock.Model
         /// <returns></returns>
         public IEnumerable<SchedulerResourceAttend> GetAttendingSchedulerResources( int attendanceOccurrenceId )
         {
-            var conflictingScheduledAttendancesQuery = this.Queryable();
+            // Only count occurrences with active locations and active schedules as conflicting.
+            var conflictingScheduledAttendancesQuery = this.Queryable().WhereDeducedIsActive();
 
             var attendanceOccurrenceInfo = new AttendanceOccurrenceService( this.Context as RockContext ).GetSelect( attendanceOccurrenceId, s => new
             {
@@ -1208,7 +1225,7 @@ namespace Rock.Model
             var endDate = sundayDate.Date;
 
             var groupLocationQry = new GroupLocationService( rockContext ).Queryable().Where( a => a.GroupId == groupId );
-            var scheduleList = groupLocationQry.SelectMany( a => a.Schedules ).Distinct().AsNoTracking().ToList();
+            var scheduleList = groupLocationQry.SelectMany( a => a.Schedules ).WhereIsActive().Distinct().AsNoTracking().ToList();
             var scheduleOccurrenceDateList = scheduleList
                 .Select( s => new
                 {
@@ -1244,8 +1261,13 @@ namespace Rock.Model
         {
             var rockContext = this.Context as RockContext;
             var groupLocationQry = new GroupLocationService( rockContext ).Queryable();
-            var attendanceOccurrencesQry = new AttendanceOccurrenceService( rockContext ).GetByIds( attendanceOccurrenceIdList )
-                .Where( a => a.GroupId.HasValue && a.LocationId.HasValue && a.ScheduleId.HasValue );
+            var attendanceOccurrencesQry = new AttendanceOccurrenceService( rockContext )
+                .GetByIds( attendanceOccurrenceIdList )
+                .Where( ao =>
+                    ao.GroupId.HasValue &&
+                    ao.LocationId.HasValue &&
+                    ao.ScheduleId.HasValue )
+                .WhereDeducedIsActive();
 
             // sort the occurrences by the Date, then by the associated GroupLocation.Order then by Location.name
             var sortedAttendanceOccurrenceList = attendanceOccurrencesQry
@@ -1435,8 +1457,10 @@ namespace Rock.Model
                 var personAliasId = new PersonAliasService( rockContext ).GetPrimaryAliasId( personId );
                 var attendanceOccurrence = new AttendanceOccurrenceService( rockContext ).Get( attendanceOccurrenceId );
                 var scheduledDateTime = attendanceOccurrence.OccurrenceDate.Add( attendanceOccurrence.Schedule.StartTimeOfDay );
+                int? campusId = new LocationService( rockContext ).GetCampusIdForLocation( attendanceOccurrence.LocationId ) ?? new GroupService( rockContext ).Get( attendanceOccurrence.GroupId.Value ).CampusId;
                 scheduledAttendance = new Attendance
                 {
+                    CampusId = campusId,
                     PersonAliasId = personAliasId,
                     OccurrenceId = attendanceOccurrenceId,
                     ScheduledByPersonAliasId = scheduledByPersonAlias?.Id,
@@ -1612,11 +1636,22 @@ namespace Rock.Model
         /// </summary>
         /// <param name="occurrenceId">The ID of the AttendanceOccurrence record.</param>
         /// <param name="personIds">A comma-delimited list of Person IDs.</param>
+        [Obsolete( "Use the method which accepts a List<int> parameter instead." )]
+        [RockObsolete( "1.10.4" )]
         public void RegisterRSVPRecipients( int occurrenceId, string personIds )
         {
-            var rockContext = this.Context as RockContext;
-
             var personIdList = personIds.Split( ',' ).Select( int.Parse ).ToList();
+            RegisterRSVPRecipients( occurrenceId, personIdList );
+        }
+
+        /// <summary>
+        /// Creates attendance records if they don't exist for a designated occurrence and list of person IDs.
+        /// </summary>
+        /// <param name="occurrenceId">The ID of the AttendanceOccurrence record.</param>
+        /// <param name="personIdList">A a list of Person IDs.</param>
+        public void RegisterRSVPRecipients( int occurrenceId, List<int> personIdList )
+        {
+            var rockContext = this.Context as RockContext;
 
             // Get Occurrence.
             var occurrence = new AttendanceOccurrenceService( rockContext ).Queryable().AsNoTracking()
@@ -1648,7 +1683,8 @@ namespace Rock.Model
                             OccurrenceId = occurrenceId,
                             PersonAliasId = personAliasId,
                             StartDateTime = startDateTime,
-                            RSVP = Rock.Model.RSVP.Unknown
+                            RSVP = Rock.Model.RSVP.Unknown,
+                            DidAttend = false
                         } );
                 }
             }
@@ -1669,7 +1705,12 @@ namespace Rock.Model
         {
             if ( attendancesImport == null )
             {
-                throw new Exception( "AttendancesImport must be assigned a value." );
+                throw new ArgumentNullException( "AttendancesImport must be assigned a value." );
+            }
+
+            if ( attendancesImport.Attendances.Any( a => !a.PersonAliasId.HasValue && !a.PersonId.HasValue ) )
+            {
+                throw new Exception( "All Attendance records must have either a PersonId or PersonAliasId assigned." );
             }
 
             var attendanceImportList = attendancesImport.Attendances;
@@ -1782,7 +1823,6 @@ namespace Rock.Model
                  return attendance;
              } ).ToList();
 
-// NOTE: This can insert 100,000 records in less than 10 seconds, but the documentation will recommend a limit of 1000 records at a time
             rockContext.BulkInsert( attendancesToBulkInsert );
         }
 
@@ -2171,6 +2211,52 @@ namespace Rock.Model
             }
 
             return qryAttendanceGroupedBy;
+        }
+
+        /// <summary>
+        /// Where the attendance occurred at an active location (or the location is null).
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns></returns>
+        public static IQueryable<Attendance> WhereHasActiveLocation(this IQueryable<Attendance> query)
+        {
+            // Null is allowed since the location relationship is not required
+            return query.Where( a => a.Occurrence.Location == null || a.Occurrence.Location.IsActive );
+        }
+
+        /// <summary>
+        /// Where the attendance occurred with an active schedule (or the schedule is null).
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns></returns>
+        public static IQueryable<Attendance> WhereHasActiveSchedule( this IQueryable<Attendance> query )
+        {
+            // Null is allowed since the schedule relationship is not required
+            return query.Where( a => a.Occurrence.Schedule == null || a.Occurrence.Schedule.IsActive );
+        }
+
+        /// <summary>
+        /// Where the attendance occurred with an active group (or the group is null).
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns></returns>
+        public static IQueryable<Attendance> WhereHasActiveGroup( this IQueryable<Attendance> query )
+        {
+            // Null is allowed since the group relationship is not required
+            return query.Where( a => a.Occurrence.Group == null || a.Occurrence.Group.IsActive );
+        }
+
+        /// <summary>
+        /// Where the entities are active (deduced from the group, schedule, and location all being active or null).
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns></returns>
+        public static IQueryable<Attendance> WhereDeducedIsActive( this IQueryable<Attendance> query )
+        {
+            return query
+                .WhereHasActiveLocation()
+                .WhereHasActiveSchedule()
+                .WhereHasActiveGroup();
         }
     }
 }

@@ -274,7 +274,7 @@ namespace RockWeb.Blocks.Finance
             RockPage.AddScriptLink( "~/Scripts/jquery.fluidbox.min.js" );
 
             string script = string.Format( @"
-    $('.transaction-image-thumbnail').click( function() {{
+    $('.transaction-image-thumbnail').on('click', function() {{
         var $primaryHyperlink = $('.transaction-image a');
         var $primaryImg = $('.transaction-image a img');
         var primarySrc = $primaryHyperlink.attr('href');
@@ -1236,13 +1236,29 @@ namespace RockWeb.Blocks.Finance
 
             var accountNumberSecured = hfCheckMicrHashed.Value;
 
+
+            /* 07/24/2014 (added engineer note on 2020-09-23) MDP 
+             * 
+             * Note: The logic for this isn't what you might expect!
+             * 
+             * A FinancialTransaction should only have amounts if it is matched to a person, so
+             
+             - If individual is not selected, don't save any amounts, even if they entered amounts on the UI. So we will ignore them since an individual wasn't selected.
+             - If they 'Unmatched' (the transaction had previously been matched to an individual, but now it isn't) clear out any amounts (even if amounts were specified in the UI)
+
+             - If an individual is selected, then amount is required
+               - If amount and individual are both specified, the transaction will updated (and will be considered a Matched transaction)
+               - If an individual is selected, but amount isn't, a warning will be shown tell them the amount is required
+             */
+
+
             // if the transaction was previously matched, but user unmatched it, save it as an unmatched transaction and clear out the detail records (we don't want an unmatched transaction to have detail records)
             if ( financialTransaction != null &&
                 financialTransaction.AuthorizedPersonAliasId.HasValue &&
                 !authorizedPersonId.HasValue )
             {
                 financialTransaction.AuthorizedPersonAliasId = null;
-                foreach ( var detail in financialTransaction.TransactionDetails )
+                foreach ( var detail in financialTransaction.TransactionDetails.ToList() )
                 {
                     History.EvaluateChange( changes, detail.Account != null ? detail.Account.Name : "Unknown", detail.Amount.FormatAsCurrency(), string.Empty );
                     financialTransactionDetailService.Delete( detail );
@@ -1991,7 +2007,8 @@ namespace RockWeb.Blocks.Finance
             var isChild = IsNewPersonRoleChild();
             var isMarried = IsNewPersonMarried();
 
-            divAddPersonSpouse.Visible = !isChild && ( isMarried || !dvpAddPersonMaritalStatus.SelectedDefinedValueId.HasValue );
+            // only prompt for Spouse if the selected marital status is married (and they aren't a child)
+            divAddPersonSpouse.Visible = !isChild && ( isMarried  );
             dvpAddPersonMaritalStatus.Visible = !isChild;
         }
 
@@ -2156,8 +2173,7 @@ namespace RockWeb.Blocks.Finance
 
             ebAddPersonEmail.Text = null;
 
-            divAddPersonSpouse.Visible = true;
-            dvpAddPersonMaritalStatus.Visible = true;
+            SyncFamilyControlsOnRoleAndMaritalStatus();
             bgAddPersonRole.Visible = ShouldShowFamilyRoleControl();
             ebAddPersonEmail.Visible = ShouldShowEmailControl();
         }

@@ -2201,7 +2201,7 @@ namespace Rock.Model
         /// <param name="dbContext">The database context.</param>
         public override void PostSaveChanges( Data.DbContext dbContext )
         {
-            if ( HistoryChanges != null && HistoryChanges.Any() )
+            if ( HistoryChanges?.Any() == true )
             {
                 HistoryService.SaveChanges( ( RockContext ) dbContext, typeof( Person ), Rock.SystemGuid.Category.HISTORY_PERSON_DEMOGRAPHIC_CHANGES.AsGuid(), this.Id, HistoryChanges, true, this.ModifiedByPersonAliasId );
             }
@@ -2286,6 +2286,7 @@ namespace Rock.Model
             {
                 var rockContext = new RockContext();
                 var topSignal = Signals
+                    .Where( s => !s.ExpirationDate.HasValue || s.ExpirationDate >= RockDateTime.Now )
                     .Select( s => new
                     {
                         Id = s.Id,
@@ -2319,14 +2320,14 @@ namespace Rock.Model
         /// <returns>
         ///   <c>true</c> if this Person can receive emails; otherwise, <c>false</c>.
         /// </returns>
-        public bool CanReceiveEmail(bool isBulk = true)
+        public bool CanReceiveEmail( bool isBulk = true )
         {
             var userAllowsBulk = EmailPreference != EmailPreference.NoMassEmails;
 
             return Email.IsNotNullOrWhiteSpace()
                     && IsEmailActive
                     && EmailPreference != EmailPreference.DoNotEmail
-                    && (!isBulk || userAllowsBulk);
+                    && ( !isBulk || userAllowsBulk );
         }
         #endregion
 
@@ -2511,7 +2512,7 @@ namespace Rock.Model
         /// <param name="maxHeight">The maximum height (in px).</param>
         /// <returns></returns>
         [RockObsolete( "1.8" )]
-        [Obsolete( "Use other GetPersonPhotoUrl" )]
+        [Obsolete( "Use other GetPersonPhotoUrl", true )]
         public static string GetPersonPhotoUrl( int? personId, int? photoId, int? age, Gender gender, Guid? recordTypeValueGuid, int? maxWidth = null, int? maxHeight = null )
         {
             return GetPersonPhotoUrl( personId, photoId, age, gender, recordTypeValueGuid, null, maxWidth, maxHeight );

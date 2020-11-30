@@ -5,7 +5,7 @@
 
         <asp:HiddenField ID="hfGroupId" runat="server" />
         <asp:HiddenField ID="hfGroupMemberId" runat="server" />
-
+        <asp:HiddenField ID="hfCampusId" runat="server" />
 
         <div class="panel panel-block">
             <div class="panel-heading">
@@ -59,6 +59,7 @@
                         <div class="col-md-6">
                             <Rock:RockRadioButtonList ID="rblStatus" runat="server" Label="Status" RepeatDirection="Horizontal" />
                             <Rock:RockRadioButtonList ID="rblCommunicationPreference" runat="server" RepeatDirection="Horizontal" Label="Communication Preference">
+                                <asp:ListItem Text="No Preference" Value="0" />
                                 <asp:ListItem Text="Email" Value="1" />
                                 <asp:ListItem Text="SMS" Value="2" />
                             </Rock:RockRadioButtonList>

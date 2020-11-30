@@ -560,27 +560,16 @@ namespace RockWeb.Blocks.Event
                 registrationInstance.MaxAttendees = maximumAttendees;
             }
 
-            // Set Cost variables if Cost is to be determined on the instance.
             var registrationTemplateService = new RegistrationTemplateService( rockContext );
             var registrationTemplate = registrationTemplateService.Get( registrationInstance.RegistrationTemplateId );
+            registrationInstance.AccountId = apAccount.SelectedValueAsId();
+
+            // Set Cost variables if Cost is to be determined on the instance.
             if ( registrationTemplate.SetCostOnInstance == true )
             {
-                // Set Account
-                registrationInstance.AccountId = apAccount.SelectedValueAsId();
-
-                // Set Cost
-                decimal cost = 0.0M;
-                if ( decimal.TryParse( cbCost.Text, out cost ) )
-                {
-                    registrationInstance.Cost = cost;
-                }
-
-                // Set Minimum Payment
-                decimal minimumPayment = 0.0M;
-                if ( decimal.TryParse( cbMinimumInitialPayment.Text, out minimumPayment ) )
-                {
-                    registrationInstance.MinimumInitialPayment = minimumPayment;
-                }
+                registrationInstance.Cost = cbCost.Text.AsDecimalOrNull();
+                registrationInstance.MinimumInitialPayment = cbMinimumInitialPayment.Text.AsDecimalOrNull();
+                registrationInstance.DefaultPayment = cbDefaultPaymentAmount.Text.AsDecimalOrNull();
             }
 
             // Save changes to database.
@@ -1025,7 +1014,7 @@ namespace RockWeb.Blocks.Event
             }
 
 
-            var registrationTemplates = registrationTemplateQuery.ToList();
+            var registrationTemplates = registrationTemplateQuery.ToList().OrderBy( r => r.Name );
             ddlTemplate.DataSource = registrationTemplates;
             ddlTemplate.DataBind();
         }
@@ -1586,6 +1575,7 @@ namespace RockWeb.Blocks.Event
             if ( selectedTemplateId == null )
             {
                 pnlCosts.Visible = true;
+                pnlDefaultPayment.Visible = true;
                 return;
             }
 
@@ -1594,7 +1584,8 @@ namespace RockWeb.Blocks.Event
                 var registrationTemplateService = new RegistrationTemplateService( rockContext );
                 var registrationTemplate = registrationTemplateService.Get( selectedTemplateId.Value );
                 SaveSelectedTemplate( registrationTemplate );
-                pnlCosts.Visible = registrationTemplate.SetCostOnInstance ?? false ;
+                pnlCosts.Visible = registrationTemplate.SetCostOnInstance ?? false;
+                pnlDefaultPayment.Visible = registrationTemplate.SetCostOnInstance ?? false;
                 if ( !registrationTemplate.GroupTypeId.HasValue )
                 {
                     tbGroupName.Text = string.Empty;

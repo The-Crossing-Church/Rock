@@ -34,9 +34,22 @@ namespace RockWeb.Blocks.Core
     [DisplayName( "Device Detail" )]
     [Category( "Core" )]
     [Description( "Displays the details of the given device." )]
-    [DefinedValueField( Rock.SystemGuid.DefinedType.MAP_STYLES, "Map Style", "The map theme that should be used for styling the GeoPicker map.", true, false, Rock.SystemGuid.DefinedValue.MAP_STYLE_ROCK )]
+
+    [DefinedValueField( "Map Style",
+        DefinedTypeGuid = Rock.SystemGuid.DefinedType.MAP_STYLES,
+        Description = "The map theme that should be used for styling the GeoPicker map.",
+        IsRequired = true,
+        AllowMultiple = false,
+        DefaultValue = Rock.SystemGuid.DefinedValue.MAP_STYLE_ROCK,
+        Key = AttributeKey.MapStyle )]
+
     public partial class DeviceDetail : RockBlock, IDetailBlock
     {
+        public static class AttributeKey
+        {
+            public const string MapStyle = "MapStyle";
+        }
+
         #region Properties
 
         /// <summary>
@@ -85,6 +98,7 @@ namespace RockWeb.Blocks.Core
             gLocations.Actions.ShowAdd = true;
             gLocations.Actions.AddClick += gLocations_AddClick;
             gLocations.GridRebind += gLocations_GridRebind;
+            geopFence.SelectGeography += geopFence_SelectGeography;
         }
 
         /// <summary>
@@ -119,7 +133,7 @@ namespace RockWeb.Blocks.Core
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            Guid mapStyleValueGuid = GetAttributeValue( "MapStyle" ).AsGuid();
+            Guid mapStyleValueGuid = GetAttributeValue( AttributeKey.MapStyle ).AsGuid();
             geopPoint.MapStyleValueGuid = mapStyleValueGuid;
             geopFence.MapStyleValueGuid = mapStyleValueGuid;
         }
@@ -131,7 +145,9 @@ namespace RockWeb.Blocks.Core
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         protected void btnSave_Click( object sender, EventArgs e )
         {
+            Page.Validate();
             Device device = null;
+            nbGeoFence.Visible = false;
 
             var rockContext = new RockContext();
             var deviceService = new DeviceService( rockContext );
@@ -182,6 +198,16 @@ namespace RockWeb.Blocks.Core
                     device.Location = new Location();
                 }
 
+                // Custom validation checking
+                string errorMessage = string.Empty;
+                if ( ! geopFence.IsGeoFenceValid( out errorMessage ) )
+                {
+                    geopFence.RequiredErrorMessage = "error";
+                    nbGeoFence.Visible = true;
+                    nbGeoFence.Text = errorMessage;
+                    return;
+                }
+
                 device.Location.GeoPoint = geopPoint.SelectedValue;
                 device.Location.GeoFence = geopFence.SelectedValue;
 
@@ -196,7 +222,7 @@ namespace RockWeb.Blocks.Core
 
                 // Remove any deleted locations
                 foreach ( var location in device.Locations
-                    .Where( l =>!Locations.Keys.Contains( l.Id ) )
+                    .Where( l => !Locations.Keys.Contains( l.Id ) )
                     .ToList() )
                 {
                     device.Locations.Remove( location );
@@ -343,6 +369,25 @@ namespace RockWeb.Blocks.Core
             mdLocationPicker.Hide();
         }
 
+        /// <summary>
+        /// Handles the SelectGeography event of the geopFence control.
+        /// We're doing this to check if the fence they just picked was valid for Rock.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void geopFence_SelectGeography( object sender, EventArgs e )
+        {
+            string message = string.Empty;
+            if ( !geopFence.IsGeoFenceValid( out message ) )
+            {
+                nbGeoFence.Visible = true;
+                nbGeoFence.Text = message;
+            }
+            else
+            {
+                nbGeoFence.Visible = false;
+            }
+        }
         #endregion
 
         #region Methods
@@ -447,7 +492,7 @@ namespace RockWeb.Blocks.Core
 
             BindLocations();
 
-            Guid mapStyleValueGuid = GetAttributeValue( "MapStyle" ).AsGuid();
+            Guid mapStyleValueGuid = GetAttributeValue( AttributeKey.MapStyle ).AsGuid();
             geopPoint.MapStyleValueGuid = mapStyleValueGuid;
             geopFence.MapStyleValueGuid = mapStyleValueGuid;
 

@@ -152,7 +152,7 @@ namespace RockWeb.Blocks.CheckIn
         "Allow Label Reprinting",
         Key = AttributeKey.AllowLabelReprinting,
         Description = " Determines if reprinting labels should be allowed.",
-        DefaultBooleanValue = false,
+        DefaultBooleanValue = true,
         Category = "Manager Settings",
         Order = 21 )]
 
@@ -371,7 +371,7 @@ namespace RockWeb.Blocks.CheckIn
             // Set to null so that object will be recreated with a potentially updated group type cache.
             CurrentCheckInState.CheckInType = null;
 
-            var checkinStatus = CheckinConfigurationHelper.GetCheckinStatus( CurrentCheckInState.Kiosk, CurrentCheckInState.ConfiguredGroupTypes, CurrentCheckInState.CheckInType );
+            var checkinStatus = CheckinConfigurationHelper.GetCheckinStatus( CurrentCheckInState );
 
             switch ( checkinStatus )
             {
