@@ -97,14 +97,14 @@ public class SendGrid : IHttpHandler
                                 {
                                     interactionComponent = interactionComponentService
                                         .Queryable()
-                                        .FirstOrDefault( c => c.ChannelId == interactionChannel.Id &&
+                                        .FirstOrDefault( c => c.InteractionChannelId == interactionChannel.Id &&
                                                               c.EntityId == communicationRecipient.Communication.Id );
                                     if ( interactionComponent == null )
                                     {
                                         interactionComponent = new InteractionComponent();
                                         interactionComponent.Name = communicationRecipient.Communication.Subject;
                                         interactionComponent.EntityId = communicationRecipient.CommunicationId;
-                                        interactionComponent.ChannelId = interactionChannel.Id;
+                                        interactionComponent.InteractionChannelId = interactionChannel.Id;
                                         interactionComponentService.Add( interactionComponent );
                                         rockContext.SaveChanges();
                                     }

@@ -31,10 +31,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     /// <summary>
     /// Displays the details of a Referral Agency.
     /// </summary>
-    [DisplayName("CK Directory Report")]
-    [Category("com_thecrossingchurch > CK Directory")]
-    [Description("Directory Crossing Kids")]
-    [IntegerField("Time Frame", "The number of weeks back from the current day to include as recent attendance.", true, 0, "", 0)]
+    [DisplayName( "CK Directory Report" )]
+    [Category( "com_thecrossingchurch > CK Directory" )]
+    [Description( "Directory Crossing Kids" )]
+    [IntegerField( "Time Frame", "The number of weeks back from the current day to include as recent attendance.", true, 0, "", 0 )]
 
     public partial class CKDirectory : Rock.Web.UI.RockBlock //, ICustomGridColumns
     {
@@ -53,9 +53,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
         protected void Page_Load( object sender, EventArgs e )
         {
-            ScriptManager scriptManager = ScriptManager.GetCurrent(this.Page);
-            scriptManager.RegisterPostBackControl(this.btnExportExcel);
-            scriptManager.RegisterPostBackControl(this.btnExportPDF);
+            ScriptManager scriptManager = ScriptManager.GetCurrent( this.Page );
+            scriptManager.RegisterPostBackControl( this.btnExportExcel );
+            scriptManager.RegisterPostBackControl( this.btnExportPDF );
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected override void OnInit( EventArgs e )
         {
-            base.OnInit(e);
+            base.OnInit( e );
         }
 
         /// <summary>
@@ -73,8 +73,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected override void OnLoad( EventArgs e )
         {
-            base.OnLoad(e);
-            weeksPrior = GetAttributeValue("TimeFrame").AsInteger();
+            base.OnLoad( e );
+            weeksPrior = GetAttributeValue( "TimeFrame" ).AsInteger();
         }
 
         #endregion
@@ -88,7 +88,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnExportExcel_Click( object sender, EventArgs e )
         {
-            Groups = GroupIds.SelectedValue.Split(',').Select(i => Int32.Parse(i)).ToList();
+            Groups = GroupIds.SelectedValue.Split( ',' ).Select( i => Int32.Parse( i ) ).ToList();
             FileName = ReportName.Text;
             Data = new List<ReportData>();
             GenerateData();
@@ -96,20 +96,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             byte[] byteArray;
             using ( MemoryStream ms = new MemoryStream() )
             {
-                excel.SaveAs(ms);
+                excel.SaveAs( ms );
                 byteArray = ms.ToArray();
             }
             this.Page.EnableViewState = false;
             Response.Clear();
             //Response.Buffer = true;
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            Response.AddHeader("content-disposition", "attachment;filename=" + FileName + ".xlsx");
+            Response.AddHeader( "content-disposition", "attachment;filename=" + FileName + ".xlsx" );
             //Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
-            Response.BinaryWrite(byteArray);
+            Response.BinaryWrite( byteArray );
             Response.Flush();
             Response.End();
-            this.btnExportExcel.Enabled = true; 
+            this.btnExportExcel.Enabled = true;
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnExportPDF_Click( object sender, EventArgs e )
         {
-            Groups = GroupIds.SelectedValue.Split(',').Select(i => Int32.Parse(i)).ToList();
+            Groups = GroupIds.SelectedValue.Split( ',' ).Select( i => Int32.Parse( i ) ).ToList();
             FileName = ReportName.Text;
             Data = new List<ReportData>();
             GenerateData();
@@ -127,15 +127,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             byte[] files;
             using ( var memoryStream = new MemoryStream() )
             {
-                using ( var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true) )
+                using ( var archive = new ZipArchive( memoryStream, ZipArchiveMode.Create, true ) )
                 {
                     for ( var i = 0; i < pdfs.Count(); i++ )
                     {
-                        var fname = Data[i].ParentGroup.Name.Replace("/", "-").Replace("8:20 ", "").Replace("9:45 ", "").Replace("11:15 ","");
-                        var pdfFile = archive.CreateEntry( fname + ".pdf");
+                        var fname = Data[i].ParentGroup.Name.Replace( "/", "-" ).Replace( "8:20 ", "" ).Replace( "9:45 ", "" ).Replace( "11:15 ", "" );
+                        var pdfFile = archive.CreateEntry( fname + ".pdf" );
                         using ( var streamWriter = pdfFile.Open() )
                         {
-                            new MemoryStream(pdfs[i]).CopyTo(streamWriter);
+                            new MemoryStream( pdfs[i] ).CopyTo( streamWriter );
                         }
                     }
                 }
@@ -146,10 +146,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             Response.Clear();
             //Response.Buffer = true;
             Response.ContentType = "application/zip";
-            Response.AddHeader("content-disposition", "attachment;filename=" + FileName + ".zip");
+            Response.AddHeader( "content-disposition", "attachment;filename=" + FileName + ".zip" );
             //Response.Cache.SetCacheability(HttpCacheability.Public);
             Response.Charset = "";
-            Response.BinaryWrite(files);
+            Response.BinaryWrite( files );
             Response.Flush();
             Response.End();
             this.btnExportPDF.Enabled = true;
@@ -164,18 +164,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             for ( var i = 0; i < Groups.Count(); i++ )
             {
                 List<Person> members = new List<Person>();
-                Group group = new GroupService(context).Get(Groups[i]);
-                List<int> childGroups = GetChildGroups(Groups[i]);
+                Group group = new GroupService( context ).Get( Groups[i] );
+                List<int> childGroups = GetChildGroups( Groups[i] );
                 if ( group.Members.Count() > 0 )
                 {
-                    members.AddRange(group.Members.Select(gm => gm.Person));
+                    members.AddRange( group.Members.Select( gm => gm.Person ) );
                 }
                 for ( var k = 0; k < childGroups.Count(); k++ )
                 {
-                    Group g = new GroupService(context).Get(childGroups[k]);
+                    Group g = new GroupService( context ).Get( childGroups[k] );
                     if ( g.Members.Count() > 0 )
                     {
-                        members.AddRange(g.Members.Select(gm => gm.Person));
+                        members.AddRange( g.Members.Select( gm => gm.Person ) );
                     }
                 }
                 ReportData rd = new ReportData
@@ -183,7 +183,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     ParentGroup = group,
                     Members = members.Distinct().ToList()
                 };
-                Data.Add(rd);
+                Data.Add( rd );
             }
         }
 
@@ -191,13 +191,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             RockContext context = new RockContext();
             List<int> grps = new List<int>();
-            List<int> children = new GroupService(context).Queryable().Where(g => g.ParentGroupId == groupid).Select(g => g.Id).ToList();
+            List<int> children = new GroupService( context ).Queryable().Where( g => g.ParentGroupId == groupid ).Select( g => g.Id ).ToList();
             if ( children.Count() > 0 )
             {
-                grps.AddRange(children);
+                grps.AddRange( children );
                 for ( var i = 0; i < children.Count(); i++ )
                 {
-                    grps.AddRange(GetChildGroups(children[i]));
+                    grps.AddRange( GetChildGroups( children[i] ) );
                 }
             }
             return grps;
@@ -219,7 +219,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             }
             for ( var i = 0; i < Data.Count(); i++ )
             {
-                ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add(Data[i].ParentGroup.Name);
+                ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add( Data[i].ParentGroup.Name );
                 worksheet.PrinterSettings.LeftMargin = .5m;
                 worksheet.PrinterSettings.RightMargin = .5m;
                 worksheet.PrinterSettings.TopMargin = .5m;
@@ -235,19 +235,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 }
                 //Child Data
                 int row = 0;
-                var sorted = Data[i].Members.OrderBy(p => p.FullName).ToList();
+                var sorted = Data[i].Members.OrderBy( p => p.FullName ).ToList();
                 for ( var k = 0; k < sorted.Count(); k++ )
                 {
-                    if ( HasAttendedRecently(sorted[k]) )
+                    if ( HasAttendedRecently( sorted[k] ) )
                     {
                         //Generate Parental Data
-                        List<Person> parents = sorted[k].GetFamilyMembers().Where(fm => fm.GroupRoleId == 3).Select(gm => gm.Person).ToList();
-                        string parentNames = string.Join(", ", parents.Select(p => p.FullName));
-                        string parentPhones = string.Join(", ", parents.Where(p => p.PhoneNumbers.Count() > 0).Select(p => p.PhoneNumbers.Any(pn => pn.NumberTypeValue.Value == "Mobile") == true ? p.PhoneNumbers.FirstOrDefault(pn => pn.NumberTypeValue.Value == "Mobile").NumberFormatted : p.PhoneNumbers.FirstOrDefault().NumberFormatted));
-                        string parentEmails = string.Join(", ", parents.Select(p => p.Email));
+                        List<Person> parents = sorted[k].GetFamilyMembers().Where( fm => fm.GroupRoleId == 3 ).Select( gm => gm.Person ).ToList();
+                        string parentNames = string.Join( ", ", parents.Select( p => p.FullName ) );
+                        string parentPhones = string.Join( ", ", parents.Where( p => p.PhoneNumbers.Count() > 0 ).Select( p => p.PhoneNumbers.Any( pn => pn.NumberTypeValue.Value == "Mobile" ) == true ? p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValue.Value == "Mobile" ).NumberFormatted : p.PhoneNumbers.FirstOrDefault().NumberFormatted ) );
+                        string parentEmails = string.Join( ", ", parents.Select( p => p.Email ) );
                         //Add Data to Cells
                         worksheet.Cells[row + 2, 1].Value = sorted[k].FullName;
-                        worksheet.Cells[row + 2, 2].Value = sorted[k].BirthDate.Value.ToString("MM/dd/yyyy");
+                        worksheet.Cells[row + 2, 2].Value = sorted[k].BirthDate.HasValue ? sorted[k].BirthDate.Value.ToString( "MM/dd/yyyy" ) : "";
                         worksheet.Cells[row + 2, 3].Value = sorted[k].Gender;
                         worksheet.Cells[row + 2, 4].Value = sorted[k].GetHomeLocation() != null ? sorted[k].GetHomeLocation().FormattedAddress : "";
                         worksheet.Cells[row + 2, 5].Value = parentNames;
@@ -265,11 +265,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         private bool HasAttendedRecently( Person child )
         {
             RockContext context = new RockContext();
-            Attendance att = new AttendanceService(context).Queryable().Where(a => a.PersonAliasId == child.PrimaryAliasId && a.Occurrence != null && a.Occurrence.OccurrenceDate != null).OrderByDescending(a => a.Occurrence.OccurrenceDate).FirstOrDefault();
+            Attendance att = new AttendanceService( context ).Queryable().Where( a => a.PersonAliasId == child.PrimaryAliasId && a.Occurrence != null && a.Occurrence.OccurrenceDate != null ).OrderByDescending( a => a.Occurrence.OccurrenceDate ).FirstOrDefault();
             if ( att != null )
             {
-                DateTime checkDt = DateTime.Now.AddDays(-7 * weeksPrior); //Last x number of weeks to include as recent attendance 
-                if ( DateTime.Compare(checkDt, att.Occurrence.OccurrenceDate) <= 0 )
+                DateTime checkDt = DateTime.Now.AddDays( -7 * weeksPrior ); //Last x number of weeks to include as recent attendance 
+                if ( DateTime.Compare( checkDt, att.Occurrence.OccurrenceDate ) <= 0 )
                 {
                     return true;
                 }
@@ -339,21 +339,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                                 "</thead>" +
                                 "<tbody>";
 
-                var sorted = Data[i].Members.OrderBy(p => p.FullName).ToList();
+                var sorted = Data[i].Members.OrderBy( p => p.FullName ).ToList();
                 var row = 0;
                 for ( var k = 0; k < sorted.Count(); k++ )
                 {
-                    if ( HasAttendedRecently(sorted[k]) )
+                    if ( HasAttendedRecently( sorted[k] ) )
                     {
                         //Generate Parental Data
-                        List<Person> parents = sorted[k].GetFamilyMembers().Where(fm => fm.GroupRoleId == 3).Select(gm => gm.Person).ToList();
-                        string parentNames = string.Join(", ", parents.Select(p => p.FullName));
-                        string parentPhones = string.Join(", ", parents.Where(p => p.PhoneNumbers.Count() > 0).Select(p => p.PhoneNumbers.Any(pn => pn.NumberTypeValue.Value == "Mobile") == true ? p.PhoneNumbers.FirstOrDefault(pn => pn.NumberTypeValue.Value == "Mobile").NumberFormatted : p.PhoneNumbers.FirstOrDefault().NumberFormatted));
-                        string parentEmails = string.Join(", ", parents.Select(p => p.Email));
+                        List<Person> parents = sorted[k].GetFamilyMembers().Where( fm => fm.GroupRoleId == 3 ).Select( gm => gm.Person ).ToList();
+                        string parentNames = string.Join( ", ", parents.Select( p => p.FullName ) );
+                        string parentPhones = string.Join( ", ", parents.Where( p => p.PhoneNumbers.Count() > 0 ).Select( p => p.PhoneNumbers.Any( pn => pn.NumberTypeValue.Value == "Mobile" ) == true ? p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValue.Value == "Mobile" ).NumberFormatted : p.PhoneNumbers.FirstOrDefault().NumberFormatted ) );
+                        string parentEmails = string.Join( ", ", parents.Select( p => p.Email ) );
                         content +=
                             ( row % 2 == 0 ? "<tr>" : "<tr class='bg-alt'>" ) +
                                 "<td>" + sorted[k].FullName + "</td>" +
-                                "<td>" + sorted[k].BirthDate.Value.ToString("MM/dd/yyyy") + "</td>" +
+                                "<td>" + ( sorted[k].BirthDate.HasValue ? sorted[k].BirthDate.Value.ToString( "MM/dd/yyyy" ) : "" ) + "</td>" +
                                 "<td>" + sorted[k].Gender + "</td>" +
                                 "<td>" + ( sorted[k].GetHomeLocation() != null ? sorted[k].GetHomeLocation().FormattedAddress : " " ) + "</td>" +
                                 "<td>" + parentNames + "</td>" +
@@ -370,9 +370,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                             "</table>" +
                         "</body>" +
                     "</html>";
-                var size = new PaperSize(Length.Inches(11), Length.Inches(8.5));
-                var pdf = Pdf.From(content).OfSize(size).WithResolution(1080).WithMargins(0.25.Inches()).Content();
-                pdfs.Add(pdf);
+                var size = new PaperSize( Length.Inches( 11 ), Length.Inches( 8.5 ) );
+                var pdf = Pdf.From( content ).OfSize( size ).WithResolution( 1080 ).WithMargins( 0.25.Inches() ).Content();
+                pdfs.Add( pdf );
             }
             return pdfs;
         }

@@ -324,6 +324,17 @@
             class: 'fa fa-quote-right'
         }
     });
+    blockManager.add('code', {
+        label: 'Code',
+        category: 'Basic',
+        content: `<code data-gjs-type="text" draggable="true">
+                        // TODO
+                  </code>
+                `,
+        attributes: {
+            class: 'fa fa-code'
+        }
+    });
     blockManager.add('image', {
         label: 'Image',
         category: 'Basic',

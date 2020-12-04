@@ -41,8 +41,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     [Category( "com_thecrossingchurch > Reporting" )]
     [Description( "Comparative Giving Report to view data across years" )]
 
-    [IntegerField( "ContentChannelId", "The id of the content channel.", true, 0, "", 0 )]
-
     public partial class ComparativeGivingReport : Rock.Web.UI.RockBlock
     {
         #region Variables
