@@ -191,14 +191,24 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
     [WorkflowTypeField( "Transaction Workflow",
         Key = AttributeKey.TransactionWorkflow,
         Description = "An optional workflow type to launch when a new transaction is completed.",
-        Order = 19 )]
+        Order = 19,
+        IsRequired = false )]
 
-    [AttributeField( "Person Attributes",
+    [AttributeField( "Person Attributes (Personal Information)",
         Key = AttributeKey.PersonAttributes,
-        Description = "The person attributes to prompt the user to fill out.",
+        Description = "The person attributes to prompt the user to fill out that will display in the bottom of the personal informaiton section.",
         AllowMultiple = true,
         EntityTypeGuid = Rock.SystemGuid.EntityType.PERSON,
-        Order = 20 )]
+        Order = 20,
+        IsRequired = false )]
+
+    [AttributeField( "Person Attributes (Payment Information)",
+        Key = AttributeKey.PersonAttributesPayment,
+        Description = "The person attributes to prompt the user to fill out that will display in the bottom of the payment informaiton section.",
+        AllowMultiple = true,
+        EntityTypeGuid = Rock.SystemGuid.EntityType.PERSON,
+        Order = 21,
+        IsRequired = false )]
 
     #endregion Default Category
 
@@ -480,6 +490,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             public const string EnableAnonymousGiving = "EnableAnonymousGiving";
             public const string TransactionWorkflow = "TransactionWorkflow";
             public const string PersonAttributes = "PersonAttributes";
+            public const string PersonAttributesPayment = "PersonAttributesPayment";
 
             // Email Templates Category
             public const string ConfirmAccountTemplate = "ConfirmAccountTemplate";
@@ -612,6 +623,7 @@ TransactionAccountDetails: [
         private int _currentCampusContextId = -1;
         private Guid? _transactionWorkflow = null;
         private List<Guid> _personAttributeGuids = null;
+        private List<Guid> _personAttributePaymentGuids = null;
 
         /// <summary>
         /// The scheduled transaction to be transferred.  This will get set if the
@@ -701,6 +713,27 @@ TransactionAccountDetails: [
         }
 
         /// <summary>
+        /// Gets or sets the person attributes in payment section. 
+        /// </summary>
+        protected List<AttributeValueCache> PersonAttributesPayment
+        {
+            get
+            {
+                var attributes = ViewState["PersonAttributesPayment"] as List<AttributeValueCache>;
+                if ( attributes == null )
+                {
+                    attributes = new List<AttributeValueCache>();
+                }
+                return attributes;
+            }
+
+            set
+            {
+                ViewState["PersonAttributesPayment"] = value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the payment transaction code.
         /// </summary>
         protected string TransactionCode
@@ -753,6 +786,7 @@ TransactionAccountDetails: [
             _onlyPublicAccountsInUrl = GetAttributeValue( AttributeKey.OnlyPublicAccountsInURL ).AsBoolean( true );
             _transactionWorkflow = GetAttributeValue( AttributeKey.TransactionWorkflow ).AsGuid();
             _personAttributeGuids = GetAttributeValues( AttributeKey.PersonAttributes ).AsGuidList();
+            _personAttributePaymentGuids = GetAttributeValues( AttributeKey.PersonAttributesPayment ).AsGuidList();
 
             // Add handler for page navigation
             RockPage page = Page as RockPage;
@@ -1884,6 +1918,9 @@ TransactionAccountDetails: [
             // Determine if billing address should be displayed
             cbBillingAddress.Visible = _ccGatewayComponent != null && _ccGatewayComponent.PromptForBillingAddress( _ccGateway );
             divBillingAddress.Visible = _ccGatewayComponent != null && _ccGatewayComponent.PromptForBillingAddress( _ccGateway );
+
+            bool displayPersonAttributesPayment = GetAttributeValues( AttributeKey.PersonAttributesPayment ).AsGuidList().Count() > 0 ? true : false;
+            avcPersonAttributesPayment.Visible = displayPersonAttributesPayment;
         }
 
         #endregion
@@ -2161,7 +2198,22 @@ TransactionAccountDetails: [
             }
             if ( _personAttributeGuids.Count() > 0 )
             {
-                Rock.Attribute.Helper.AddEditControls( "Additional Information", PersonAttributeKeys, person, avcPersonAttributes, BlockValidationGroup, true, new List<string>() );
+                Rock.Attribute.Helper.AddEditControls( "", PersonAttributeKeys, person, avcPersonAttributes, BlockValidationGroup, true, new List<string>() );
+            }
+            List<string> PersonAttributePaymentKeys = new List<string>();
+            foreach ( Guid g in _personAttributePaymentGuids )
+            {
+                string key = AttributeCache.Get( g ).Key;
+                PersonAttributePaymentKeys.Add( key );
+                var value = PersonAttributes.FirstOrDefault( av => av.AttributeKey == key );
+                if ( value != null )
+                {
+                    person.SetAttributeValue( key, value.Value );
+                }
+            }
+            if ( _personAttributePaymentGuids.Count() > 0 )
+            {
+                Rock.Attribute.Helper.AddEditControls( "", PersonAttributePaymentKeys, person, avcPersonAttributesPayment, BlockValidationGroup, true, new List<string>() );
             }
         }
 
@@ -2791,6 +2843,19 @@ TransactionAccountDetails: [
                     PersonAttributes.Add( value );
                 }
             }
+            if ( _personAttributePaymentGuids.Count() > 0 )
+            {
+                var person = new Person();
+                person.LoadAttributes();
+                Rock.Attribute.Helper.GetEditValues( avcPersonAttributesPayment, person );
+                PersonAttributes = new List<AttributeValueCache>();
+                foreach ( Guid g in _personAttributePaymentGuids )
+                {
+                    AttributeCache attribute = AttributeCache.Get( g );
+                    AttributeValueCache value = person.AttributeValues.FirstOrDefault( av => av.Key == attribute.Key ).Value;
+                    PersonAttributes.Add( value );
+                }
+            }
         }
 
         /// <summary>
@@ -3034,6 +3099,13 @@ TransactionAccountDetails: [
                     person.SaveAttributeValues( new RockContext() );
                 }
 
+                if ( _personAttributePaymentGuids.Count() > 0 )
+                {
+                    person.LoadAttributes();
+                    Rock.Attribute.Helper.GetEditValues( avcPersonAttributesPayment, person );
+                    person.SaveAttributeValues( new RockContext() );
+                }
+
                 if ( person == null )
                 {
                     errorMessage = "There was a problem creating the person information";
@@ -3146,6 +3218,13 @@ TransactionAccountDetails: [
             {
                 person.LoadAttributes();
                 Rock.Attribute.Helper.GetEditValues( avcPersonAttributes, person );
+                person.SaveAttributeValues( new RockContext() );
+            }
+
+            if ( _personAttributePaymentGuids.Count() > 0 )
+            {
+                person.LoadAttributes();
+                Rock.Attribute.Helper.GetEditValues( avcPersonAttributesPayment, person );
                 person.SaveAttributeValues( new RockContext() );
             }
 

@@ -49,6 +49,11 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
     [AccountField( "Fund", "The fund to pull people from to add to HubSpot", true, "", "", 0 )]
     [TextField( "Hubspot API Key", "API Key for Hubspot", true, "", "", 1 )]
     [TextField( "Hubspot Property", "Property to Update in Hubspot", true, "", "", 2 )]
+    [AttributeField( "Person Attributes",
+        Description = "Person Attributes to save to Hubspot",
+        AllowMultiple = true,
+        EntityTypeGuid = Rock.SystemGuid.EntityType.PERSON,
+        IsRequired = false )]
     [DisallowConcurrentExecution]
     public class HubspotGivingIntegration : IJob
     {
@@ -80,6 +85,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             string key = dataMap.GetString( "HubspotAPIKey" );
             string property = dataMap.GetString( "HubspotProperty" );
             string fundGuid = dataMap.GetString( "Fund" );
+            List<string> rockAttrGuids = dataMap.GetString( "PersonAttributes" ).Split( ',' ).ToList();
             FinancialAccount fund = new FinancialAccountService( _context ).Get( Guid.Parse( fundGuid ) );
             HubSpotApi api = new HubSpotApi( key );
 
@@ -121,11 +127,12 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             startOfDay = new DateTime( startOfDay.Year, startOfDay.Month, startOfDay.Day, 0, 0, 0 );
 
             //Get all people in Rock who have donated to the Fund
-            List<Person> sponsors = new FinancialTransactionService( _context ).Queryable().Where( ft => DateTime.Compare(ft.TransactionDateTime.Value, startOfDay) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => ft.AuthorizedPersonAlias.Person ).ToList();
+            List<Person> sponsors = new FinancialTransactionService( _context ).Queryable().Where( ft => DateTime.Compare( ft.TransactionDateTime.Value, startOfDay ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => ft.AuthorizedPersonAlias.Person ).ToList();
 
             int count = 0;
             for ( var i = 0; i < sponsors.Count(); i++ )
             {
+                sponsors[i].LoadAttributes();
                 var matches = contacts_with_email.Where( c => c.rock_id == sponsors[i].Id.ToString() || c.Email.ToLower() == sponsors[i].Email.ToLower() ).ToList();
                 //Update Existing HubSpot Contacts
                 if ( matches.Count() > 0 )
@@ -139,6 +146,16 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
                         }
                         List<HubspotPropertyUpdate> properties = new List<HubspotPropertyUpdate>();
                         properties.Add( new HubspotPropertyUpdate { property = property, value = "Yes" } );
+                        foreach ( string g in rockAttrGuids )
+                        {
+                            Rock.Model.Attribute attr = new AttributeService( _context ).Get( Guid.Parse( g ) );
+                            var hsProp = props.FirstOrDefault( hsp => hsp.label == attr.Key );
+                            var val = sponsors[i].AttributeValues[attr.Key];
+                            if ( !String.IsNullOrEmpty( val.Value ) )
+                            {
+                                properties.Add( new HubspotPropertyUpdate { property = hsProp.name, value = val.ValueFormatted } );
+                            }
+                        }
                         MakeRequest( "PATCH", $"https://api.hubapi.com/crm/v3/objects/contacts/{matches[k].Id}?hapikey={key}", properties, sponsors[i].Id );
                         //Increase count for rate-limit check
                         count++;
@@ -157,6 +174,16 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
                     properties.Add( new HubspotPropertyUpdate { property = "firstname", value = sponsors[i].NickName } );
                     properties.Add( new HubspotPropertyUpdate { property = "lastname", value = sponsors[i].LastName } );
                     properties.Add( new HubspotPropertyUpdate { property = property, value = "Yes" } );
+                    foreach ( string g in rockAttrGuids )
+                    {
+                        Rock.Model.Attribute attr = new AttributeService( _context ).Get( Guid.Parse( g ) );
+                        var hsProp = props.FirstOrDefault( hsp => hsp.label == attr.Key );
+                        var val = sponsors[i].AttributeValues[attr.Key];
+                        if ( !String.IsNullOrEmpty( val.Value ) )
+                        {
+                            properties.Add( new HubspotPropertyUpdate { property = hsProp.name, value = val.Value } );
+                        }
+                    }
                     MakeRequest( "POST", $"https://api.hubapi.com/crm/v3/objects/contacts?hapikey={key}", properties, sponsors[i].Id );
                     //Increase count for rate-limit check
                     count++;
@@ -216,7 +243,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             }
             json = json.Substring( 0, json.Length - 1 );
             json += "}";
-            return json; 
+            return json;
         }
     }
 

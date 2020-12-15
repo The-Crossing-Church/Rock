@@ -193,6 +193,7 @@
                                 </div>
 
                             </div>
+                            <Rock:DynamicPlaceholder ID="avcPersonAttributesPayment" runat="server" />
                         </div>
                     </asp:Panel>
 
