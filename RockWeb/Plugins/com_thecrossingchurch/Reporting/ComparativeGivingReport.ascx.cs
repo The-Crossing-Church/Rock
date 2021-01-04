@@ -349,7 +349,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     d.MostRecentFund = fund.Name;
                     d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount );
                 }
-                donorData.Add( d );
+                if( prevAmountGiven > 0 || d.AmountGiven > 0 )
+                {
+                    donorData.Add( d );
+                }
             }
             return donorData;
         }
