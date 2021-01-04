@@ -38,7 +38,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsSpace"
-                :label="`A physical space for an event (${boolToYesNo(request.needsSpace)})`"
+                :label="`A physical space for an event`"
               ></v-switch>
             </v-col>
           </v-row>
@@ -46,7 +46,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsOnline"
-                :label="`An online event (${boolToYesNo(request.needsOnline)})`"
+                :label="`An online event`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsOnline"
               ></v-switch>
@@ -56,7 +56,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsPub"
-                :label="`Publicity (${boolToYesNo(request.needsPub)})`"
+                :label="`Publicity`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsPub"
               ></v-switch>
@@ -66,7 +66,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsCatering"
-                :label="`Catering (${boolToYesNo(request.needsCatering)})`"
+                :label="`Catering`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsCatering"
               ></v-switch>
@@ -76,7 +76,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsChildCare"
-                :label="`Childcare (${boolToYesNo(request.needsChildCare)})`"
+                :label="`Childcare`"
                 hint="Requests involving childcare must be made at least 30 days in advance"
                 :persistent-hint="request.needsChildCare"
               ></v-switch>
@@ -86,7 +86,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsAccom"
-                :label="`Special accommodations (tech, drinks, registration, extensive set-up, etc.) (${boolToYesNo(request.needsAccom)})`"
+                :label="`Special accommodations (tech, drinks, registration, extensive set-up, etc.)`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsAccom"
               ></v-switch>
@@ -221,12 +221,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           label="What are your preferred rooms/spaces?"
                           chips
                           multiple
-                          :items="availableRooms"
+                          :items="rooms"
                           item-text="Value"
                           item-value="Id"
                           v-model="request.Rooms"
                           attach
-                          :rules="[rules.requiredArr(request.Rooms, 'Room/Space')]"
+                          :rules="[rules.requiredArr(request.Rooms, 'Room/Space'), rules.roomCapacity(rooms, request.Rooms, request.ExpectedAttendance)]"
                         ></v-autocomplete>
                       </v-col>
                     </v-row>
@@ -326,12 +326,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         label="What are your preferred rooms/spaces?"
                         chips
                         multiple
-                        :items="availableRooms"
+                        :items="rooms"
                         item-text="Value"
                         item-value="Id"
                         v-model="request.Rooms"
                         attach
-                        :rules="[rules.requiredArr(request.Rooms, 'Room/Space')]"
+                        :rules="[rules.requiredArr(request.Rooms, 'Room/Space'), rules.roomCapacity(rooms, request.Rooms, request.ExpectedAttendance)]"
                       ></v-autocomplete>
                     </v-col>
                   </v-row>
@@ -370,25 +370,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <h3 class="primary--text">Publicity Information</h3>
                 </v-col>
               </v-row>
-              <v-row
+              <template
                 v-for="(i, idx) in request.Publicity"
-                :key="`pub_${idx}`"
-                align-center
               >
-                <v-col>
-                  <publicity-picker
-                    :value="i"
-                    :earliest-date="earliestPubDate"
-                  ></publicity-picker>
-                </v-col>
-                <v-col cols="1">
-                  <v-btn fab color="red" v-if="idx > 0" @click="removePub(idx)">
-                    <v-icon>mdi-delete-forever</v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
+                <v-row><v-col><strong>Week {{idx + 1}}</strong></v-col></v-row>
+                <v-row
+                  :key="`pub_${idx}`"
+                  align-center
+                >
+                  <v-col>
+                    <publicity-picker
+                      :value="i"
+                      :earliest-date="earliestPubDate"
+                    ></publicity-picker>
+                  </v-col>
+                  <v-col cols="1">
+                    <v-btn fab color="red" v-if="idx > 0" @click="removePub(idx)" class='btn-pub-del'>
+                      <v-icon>mdi-delete-forever</v-icon>
+                      <span class='tooltip'>Delete Publicity</span>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </template>
               <v-row>
-                <v-col>
+                <v-col style="position: relative;">
                   <v-btn
                     absolute
                     right
@@ -396,8 +401,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     color="accent"
                     :disabled="pubBtnDisabled"
                     @click="addPub"
+                    class='btn-pub-add'
                   >
                     <v-icon>mdi-plus</v-icon>
+                    <span class='tooltip'>Add Publicity</span>
                   </v-btn>
                 </v-col>
               </v-row>
@@ -570,7 +577,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     multiple
                     attach
                     v-model="request.ChildCareOptions"
-                  ></v-autocomplete>
+                  >
+                    <template v-slot:item="data">
+                      <div style="padding: 12px 0px; width: 100%;">
+                        <v-icon v-if="request.ChildCareOptions.includes(data.item)" color="primary" style="margin-right:32px;">mdi-checkbox-marked</v-icon> 
+                        <v-icon v-else color="primary" style="margin-right:32px;">mdi-checkbox-blank-outline</v-icon> 
+                        {{data.item}}
+                      </div>
+                    </template>
+                    <template v-slot:append-item>
+                      <v-list-item>
+                        <div class='hover' style="padding: 12px 0px; width: 100%;" @click="toggleChildCareOptions">
+                          <v-icon v-if="childCareSelectAll" color="primary" style="margin-right:32px;">mdi-checkbox-marked</v-icon> 
+                          <v-icon v-else color="primary" style="margin-right:32px;">mdi-checkbox-blank-outline</v-icon> 
+                          Select All
+                        </div>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -642,7 +666,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    label="What is the registration fee for this event?"
+                    label="If there is a registration fee for this event, how much is it?"
                     type="number"
                     prepend-inner-icon="mdi-currency-usd"
                     v-model="request.Fee"
@@ -700,27 +724,28 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-col cols="12" md="6">
                         <v-menu
                         v-model="menu"
-                        :close-on-content-click="false"
-                        :nudge-right="40"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="290px"
-                        attach
+                          :close-on-content-click="false"
+                          :nudge-right="40"
+                          transition="scale-transition"
+                          offset-y
+                          min-width="290px"
+                          attach
                         >
                         <template v-slot:activator="{ on, attrs }">
                             <v-text-field
-                            v-model="value.Date"
-                            label="Publicity Date"
-                            prepend-inner-icon="mdi-calendar"
-                            readonly
-                            v-bind="attrs"
-                            v-on="on"
+                              v-model="value.Date"
+                              label="Publicity Date"
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
                             ></v-text-field>
                         </template>
                         <v-date-picker
                             v-model="value.Date"
                             @input="menu = false"
                             :min="earliestDate"
+                            :allowed-dates="allowedDates"
                         ></v-date-picker>
                         </v-menu>
                     </v-col>
@@ -741,6 +766,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     menu: false,
                 };
             },
+            methods: {
+                allowedDates(val) {
+                    let dow = moment(val).day()
+                    return dow == 0
+                }
+            }
         });
         Vue.component("time-picker", {
             template: `
@@ -863,7 +894,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </v-sheet>
                 </template>
                 <template v-else>
-                  <h4>{{ moment(eventDate).format('dddd, MMMM Do yyyy') }}</h4>
+                  <h4>{{ formatDate(eventDate) }}</h4>
                   <v-row>
                     <v-col>
                       <strong>What time will your event begin and end?</strong>
@@ -902,7 +933,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-col>
                       <v-btn color='accent' @click="page=0">back</v-btn>  
                     </v-col>  
-                  </v-row
+                  </v-row>
                 </template>
               </v-form>
             `,
@@ -1012,6 +1043,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         att: this.att,
                     });
                 },
+                formatDate(val) {
+                    return moment(val).format('dddd, MMMM Do yyyy')
+                }
             },
             watch: {
                 selected(val) {
@@ -1064,11 +1098,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     EventDates: [],
                     StartTime: "",
                     EndTime: "",
+                    MinsStartBuffer: 0,
+                    MinsEndBuffer: 0,
                     ExpectedAttendance: "",
                     Rooms: "",
                     EventURL: "",
                     ZoomPassword: "",
-                    Publicity: [{ Date: "", Needs: "" }],
+                    Publicity: [{ Date: "", Needs: "" }, { Date: "", Needs: "" }, { Date: "", Needs: "" }],
                     PublicityBlurb: "",
                     PubImage: null,
                     ShowOnCalendar: false,
@@ -1156,9 +1192,28 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             return true;
                         }
                     },
+                    roomCapacity(allRooms, rooms, attendance) {
+                        if (attendance) {
+                            let selectedRooms = allRooms.filter(r => {
+                                return rooms.includes(r.Id)
+                            })
+                            let maxCapacity = 0
+                            selectedRooms.forEach(r => {
+                                let roomCap = r.Value.split("(")[1].replace(')', '')
+                                maxCapacity += parseInt(roomCap)
+                            })
+                            if (attendance <= maxCapacity) {
+                                return true
+                            } else {
+                                return `Attendance for your event cannot exceed ${maxCapacity} ${(maxCapacity > 0 ? 'people' : 'person')}, please select more rooms for your event or update the expected attendance`
+                            }
+                        }
+                        return true
+                    }
                 },
                 valid: true,
                 triedSubmit: false,
+                childCareSelectAll: false,
                 tab: 0
             },
             created() {
@@ -1300,6 +1355,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                     reader.readAsDataURL(e)
                 },
+                toggleChildCareOptions() {
+                    this.childCareSelectAll = !this.childCareSelectAll
+                    if (this.childCareSelectAll) {
+                        this.request.ChildCareOptions = ['Infant/Toddler', 'Preschool', 'K-2nd', '3-5th']
+                    } else {
+                        this.request.ChildCareOptions = []
+                    }
+                },
                 validate() {
                     this.triedSubmit = true;
                     this.$refs.form.validate();
@@ -1324,6 +1387,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   .col {
     padding: 4px 12px !important;
   }
+  .hover {
+    cursor: pointer;
+  }
   input[type="text"]:focus,
   textarea:focus {
     border: none !important;
@@ -1338,4 +1404,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   .btn-hidden {
     visibility: hidden;
   }
+  .tooltip {
+    opacity: 0;
+    color: #ffffff;
+    background-color: #545454;
+    border-radius: 6px;
+    transition: .16s ease-in; 
+    padding: 8px;
+    width: 125px;
+    text-align: center;
+    font-size: 14px;
+    position: absolute;
+    top: -250%;
+  }
+  .btn-pub-add:hover .tooltip, .btn-pub-del:hover .tooltip {
+    opacity: 1;
+  } 
 </style>
