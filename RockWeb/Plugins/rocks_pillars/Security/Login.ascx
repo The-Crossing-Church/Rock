@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Login.ascx.cs" Inherits="RockWeb.Blocks.Security.Login" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Login.ascx.cs" Inherits="RockWeb.Plugins.rocks_pillars.Security.Login" %>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
 
