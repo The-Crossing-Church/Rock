@@ -12,6 +12,7 @@ using System.Configuration;
 using Rock.Data;
 using System.Collections.ObjectModel;
 using System.Collections;
+using Rock.Model;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -95,6 +96,38 @@ namespace com_thecrossingchurch.LavaFilters
             else
             {
                 throw new Exception( "Invalid Input: input must be of type string or Collection" );
+            }
+        }
+
+        /// <summary>
+        /// Gives correct pronoun for list of personids
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns></returns>
+        public static dynamic Pronoun( object input )
+        {
+            var type = input.GetType();
+            if ( input.GetType() == typeof( string ) )
+            {
+                List<string> list = input.ToString().Split( ',' ).ToList();
+                if(list.Count() > 1 )
+                {
+                    return new { Subject = "they", Object = "them", Posessive = "their" };
+                }
+                Person p = new PersonService( new RockContext() ).Get( Int32.Parse( list[0] ) );
+                if(p.Gender == Gender.Female )
+                {
+                    return new { Subject = "she", Object = "her", Posessive = "her" };
+                }
+                else if(p.Gender == Gender.Male )
+                {
+                    return new { Subject = "he", Object = "him", Posessive = "his" };
+                }
+                return new { Subject = "they", Object = "them", Posessive = "their" };
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string" );
             }
         }
     }
