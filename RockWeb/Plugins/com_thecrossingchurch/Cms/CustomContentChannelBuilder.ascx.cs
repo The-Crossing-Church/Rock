@@ -42,6 +42,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Description( "Block to create a cci with GrapesJS" )]
 
     [IntegerField( "Page Id", "The Id of the Page to Redirect to on Save", true )]
+    [MemoField( "Additional Themes", "A comma separated list of local paths to theme.css files (/Themes/MyTheme/Styles/theme.css)", false )]
+    [CodeEditorField( "Additional Grapes Components", mode: CodeEditorMode.JavaScript )]
     public partial class CustomContentChannelBuilder : Rock.Web.UI.RockBlock
     {
         #region Variables
@@ -62,6 +64,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         protected void Page_Load( object sender, EventArgs e )
         {
             ScriptManager scriptManager = ScriptManager.GetCurrent( this.Page );
+            string grapesScript = "\n<script>\n" + GetAttributeValue( "AdditionalGrapesComponents" ) + "\n</script>\n";
+            Page.ClientScript.RegisterStartupScript( this.GetType(), "grapesJS", grapesScript, false );
         }
 
         /// <summary>
@@ -94,10 +98,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
             PageId = GetAttributeValue( "PageId" ).AsInteger();
-
+            hfStyleSheets.Value = GetAttributeValue( "AdditionalThemes" );
             if ( !Page.IsPostBack )
             {
                 BindData();
+                if ( !String.IsNullOrEmpty( PageParameter( "ContentChannelId" ) ) )
+                {
+                    pkrCC.SelectedValue = PageParameter( "ContentChannelId" );
+                }
                 if ( Id.HasValue )
                 {
                     LoadContent();
@@ -122,15 +130,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         {
             ContentChannelItem item = _cciSvc.Get( Id.Value );
             item.LoadAttributes();
-            txtTitle.Text = item.Title; 
+            txtTitle.Text = item.Title;
             dtStart.SelectedDateTime = item.StartDateTime;
-            if(item.ExpireDateTime.HasValue)
+            if ( item.ExpireDateTime.HasValue )
             {
                 dtEnd.SelectedDateTime = item.ExpireDateTime.Value;
             }
             hfComponents.Value = item.GetAttributeValue( "GrapesJSComponents" );
             hfStyle.Value = item.GetAttributeValue( "GrapesJSStyle" );
-            nbPriority.Text = item.Priority.ToString(); 
+            nbPriority.Text = item.Priority.ToString();
             pkrCC.SelectedValue = item.ContentChannelId.ToString();
         }
 
@@ -177,13 +185,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             Rock.Attribute.Helper.GetEditValues( phAttributes, item );
             item.SetAttributeValue( "GrapesJSComponents", hfComponents.Value );
             item.SetAttributeValue( "GrapesJSStyle", hfStyle.Value );
-            if(!String.IsNullOrEmpty( nbPriority.Text ) )
+            if ( !String.IsNullOrEmpty( nbPriority.Text ) )
             {
-                item.Priority = nbPriority.Text.AsInteger(); 
+                item.Priority = nbPriority.Text.AsInteger();
             }
             else
             {
-                item.Priority = 0; 
+                item.Priority = 0;
             }
             //Save everything
             _context.ContentChannelItems.AddOrUpdate( item );

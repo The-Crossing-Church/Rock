@@ -22,17 +22,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
   crossorigin="anonymous"
 ></script>
+<script 
+  src="https://cdnjs.cloudflare.com/ajax/libs/moment-range/4.0.2/moment-range.js" 
+  integrity="sha512-XKgbGNDruQ4Mgxt7026+YZFOqHY6RsLRrnUJ5SVcbWMibG46pPAC97TJBlgs83N/fqPTR0M89SWYOku6fQPgyw==" 
+  crossorigin="anonymous"
+></script>
 
 <asp:HiddenField ID="hfRooms" runat="server" />
+<asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfReservations" runat="server" />
 <asp:HiddenField ID="hfRequest" runat="server" />
+<asp:HiddenField ID="hfUpcomingRequests" runat="server" />
 
 <div id="app">
   <v-app>
     <div>
       <v-card v-if="panel == 0">
         <v-card-text>
-          <h3>I am requesting...</h3>
+          <h3>Let's Design Your Event</h3>
           <strong><i>Check all that apply</i></strong>
           <v-row>
             <v-col>
@@ -66,7 +73,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsCatering"
-                :label="`Catering`"
+                :label="`Food Request`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsCatering"
               ></v-switch>
@@ -86,7 +93,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsAccom"
-                :label="`Special accommodations (tech, drinks, registration, extensive set-up, etc.)`"
+                :label="`Special Accommodations (tech, drinks, registration, extensive set-up, etc.)`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsAccom"
               ></v-switch>
@@ -101,9 +108,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       <v-card v-if="panel == 1">
         <v-card-text>
           <v-form ref="form" v-model="valid">
-            <v-alert type="error" v-if="!isValid && triedSubmit"
-              >Please review your request and fix all errors</v-alert
-            >
+            <v-alert type="error" v-if="!isValid && triedSubmit">
+              Please review your request and fix all errors
+              <template v-if="conflictingRequestMsg != ''">
+                <br/> {{conflictingRequestMsg}}
+              </template>
+              </v-alert>
             <%-- Basic Request Information --%>
             <v-row>
               <v-col>
@@ -121,11 +131,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-row>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field
+                <!-- <v-text-field
                   label="What ministry is sponsoring this event?"
                   v-model="request.Ministry"
                   :rules="[rules.required(request.Ministry, 'Ministry')]"
-                ></v-text-field>
+                ></v-text-field> -->
+                <v-autocomplete
+                  label="What ministry is sponsoring this event?"
+                  :items="ministries"
+                  item-text="Value"
+                  item-value="Id"
+                  attach
+                  v-model="request.Ministry"
+                  :rules="[rules.required(request.Ministry, 'Ministry')]"
+                ></v-autocomplete>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
@@ -473,7 +492,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 <v-col>
                   <v-switch
                     v-model="request.FoodDelivery"
-                    :label="`Food should be delivered? ${request.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`"
+                    :label="`Would you like your food to be delivered? ${request.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`"
                   ></v-switch>
                 </v-col>
               </v-row>
@@ -617,7 +636,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-autocomplete
                     label="What drinks would you like to have?"
                     :items="['Coffee', 'Soda', 'Water']"
-                    :hint="`${request.Drinks.toString().includes('Coffee') ? 'If you are requesting coffee, you will be required to have a serving team during COVID-19' : ''}`"
+                    :hint="`${request.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`"
                     persistent-hint
                     v-model="request.Drinks"
                     multiple
@@ -1126,8 +1145,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     Fee: null,
                     Notes: "",
                 },
+                existingRequests: [],
                 pubImage: {},
                 rooms: [],
+                ministries: [],
                 menu: false,
                 rules: {
                     required(val, field) {
@@ -1143,8 +1164,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         let info = room.replace("(", "").replace(")", "").split(" ");
                         let cap = parseInt(info[info.length - 1]);
                         if (val > cap) {
-                            return `You cannot have more than ${cap} ${
-                                cap == 1 ? "person" : "people"
+                            return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
                                 } in the selected space`;
                         }
                         return true;
@@ -1163,8 +1183,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             let isAfter = momentEnd.isAfter(momentStart);
                             return (
                                 isAfter ||
-                                `${
-                                isStart
+                                `${isStart
                                     ? "Start time must come before end time"
                                     : "End time must come after start time"
                                 }`
@@ -1212,12 +1231,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 valid: true,
+                conflictingRequestMsg: '',
                 triedSubmit: false,
                 childCareSelectAll: false,
                 tab: 0
             },
             created() {
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
                 let req = $('[id$="hfRequest"]')[0].value
                 if (req) {
                     this.request = JSON.parse(req)
@@ -1225,6 +1246,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         this.pubImage = this.request.PubImage
                     }
                 }
+                window['moment-range'].extendMoment(moment)
             },
             mounted() {
                 let query = window.location.search.substring(1)
@@ -1363,7 +1385,59 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         this.request.ChildCareOptions = []
                     }
                 },
+                checkForConflicts() {
+                    this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
+                    let conflictingDates = [], conflictingRooms = []
+                    let conflictingRequests = this.existingRequests.filter(r => {
+                        r = JSON.parse(r)
+                        let isConflictingRoom = false
+                        let isConflictingDate = false
+                        for (let i = 0; i < this.request.Rooms.length; i++) {
+                            if (r.Rooms.includes(this.request.Rooms[i])) {
+                                isConflictingRoom = true
+                                let roomName = this.rooms.filter(room => {
+                                    return room.Id == this.request.Rooms[i]
+                                })
+                                if (roomName.length > 0) {
+                                    roomName = roomName[0].Value.split(' (')[0]
+                                }
+                                if (!conflictingRooms.includes(roomName)) {
+                                    conflictingRooms.push(roomName)
+                                }
+                            }
+                        }
+                        for (let i = 0; i < this.request.EventDates.length; i++) {
+                            if (r.EventDates.includes(this.request.EventDates[i])) {
+                                debugger
+                                //Dates are the same, check they do not overlap with moment-range
+                                let cd = r.EventDates.filter(ed => { return ed == this.request.EventDates[i] })[0]
+                                let cdStart = moment(`${cd} ${r.StartTime}`, `yyyy-MM-DD hh:mm A`)
+                                if (r.MinsStartBuffer) {
+                                    cdStart = cdStart.subtract(r.MinsStartBuffer, 'minute')
+                                }
+                                let cdEnd = moment(`${cd} ${r.EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                if (r.MinsStartBuffer) {
+                                    cdEnd = cdEnd.add(r.MinsEndBuffer, 'minute')
+                                }
+                                let cRange = moment.range(cdStart, cdEnd)
+                                let current = moment.range(moment(`${this.request.EventDates[i]} ${this.request.StartTime}`, `yyyy-MM-DD hh:mm A`), moment(`${this.request.EventDates[i]} ${this.request.EndTime}`, `yyyy-MM-DD hh:mm A`))
+                                if (cRange.overlaps(current)) {
+                                    isConflictingDate = true
+                                    if (!conflictingDates.includes(this.request.EventDates[i])) {
+                                        conflictingDates.push(this.request.EventDates[i])
+                                    }
+                                }
+                            }
+                        }
+                        return isConflictingRoom && isConflictingDate
+                    })
+                    if (conflictingRequests.length > 0) {
+                        this.valid = false
+                        this.conflictingRequestMsg = `There are conflicts on ${conflictingDates.join(', ')} with the following rooms: ${conflictingRooms.join(', ')}`
+                    }
+                },
                 validate() {
+                    this.valid = true
                     this.triedSubmit = true;
                     this.$refs.form.validate();
                     if (this.$refs.roompckr && this.tab == 1) {
@@ -1375,6 +1449,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             errors.push(...e.errorBucket);
                         }
                     });
+                    this.checkForConflicts()
                 },
             },
         });

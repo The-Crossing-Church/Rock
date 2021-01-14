@@ -23,19 +23,33 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
   crossorigin="anonymous"
 ></script>
+<script 
+  src="https://cdnjs.cloudflare.com/ajax/libs/moment-range/4.0.2/moment-range.js" 
+  integrity="sha512-XKgbGNDruQ4Mgxt7026+YZFOqHY6RsLRrnUJ5SVcbWMibG46pPAC97TJBlgs83N/fqPTR0M89SWYOku6fQPgyw==" 
+  crossorigin="anonymous"
+></script>
 
 <asp:HiddenField ID="hfRooms" runat="server" />
+<asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
+<asp:HiddenField ID="hfUpcomingRequests" runat="server" />
 <asp:HiddenField ID="hfCurrent" runat="server" />
 <asp:HiddenField ID="hfRequestURL" runat="server" />
 <asp:HiddenField ID="hfHistoryURL" runat="server" />
 <asp:HiddenField ID="hfRequestID" runat="server" />
 <asp:HiddenField ID="hfAction" runat="server" />
+<asp:HiddenField ID="hfUpdatedItem" runat="server" />
 <Rock:BootstrapButton
   ID="btnChangeStatus"
   CssClass="btn-hidden"
   runat="server"
   OnClick="ChangeStatus_Click"
+/>
+<Rock:BootstrapButton
+  ID="btnAddBuffer"
+  CssClass="btn-hidden"
+  runat="server"
+  OnClick="AddBuffer_Click"
 />
 
 <div id="app">
@@ -52,7 +66,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col><strong>Submitted By</strong></v-col>
                     <v-col><strong>Submitted On</strong></v-col>
                     <v-col><strong>Event Dates</strong></v-col>
+                    <v-col><strong>Requested Resources</strong></v-col>
                     <v-col><strong>Status</strong></v-col>
+                    <v-col cols="1"><strong>Add Buffer</strong></v-col>
                   </v-row>
                 </v-list-item>
                 <v-list-item
@@ -67,6 +83,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col>{{ r.CreatedBy }}</v-col>
                     <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
+                    <v-col>{{ requestType(r) }}</v-col>
                     <v-col>
                       <v-row align="center">
                         <v-col :class="getStatusPillClass(r.RequestStatus)"
@@ -81,6 +98,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           >
                         </v-col>
                       </v-row>
+                    </v-col>
+                    <v-col cols="1">
+                      <v-btn v-if="r.RequestStatus != 'Approved'" color="primary" @click="selected = r; bufferErrMsg = ''; dialog = true;" fab>
+                        <v-icon>mdi-clock-outline</v-icon>
+                      </v-btn>
                     </v-col>
                   </v-row>
                 </v-list-item>
@@ -153,7 +175,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row>
               <v-col>
                 <div class="floating-title">Ministry</div>
-                {{selected.Ministry}}
+                {{formatMinistry(selected.Ministry)}}
               </v-col>
               <v-col>
                 <div class="floating-title">Contact</div>
@@ -163,7 +185,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row>
               <v-col>
                 <div class="floating-title">Requested Resources</div>
-                {{requestType}}
+                {{requestType(this.selected)}}
               </v-col>
             </v-row>
             <v-row>
@@ -180,6 +202,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-col v-if="selected.EndTime">
                 <div class="floating-title">End Time</div>
                 {{selected.EndTime}}
+              </v-col>
+            </v-row>
+            <v-row v-if="selected.MinsStartBuffer || selected.MinsEndBuffer">
+              <v-col v-if="selected.MinsStartBuffer">
+                <div class="floating-title">Set-up Buffer</div>
+                {{selected.MinsStartBuffer}} minutes
+              </v-col>
+              <v-col v-if="selected.MinsEndBuffer">
+                <div class="floating-title">Tear-down Buffer</div>
+                {{selected.MinsEndBuffer}} minutes
               </v-col>
             </v-row>
             <template v-if="selected.needsSpace">
@@ -240,7 +272,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <template v-if="selected.needsChildCare">
               <v-row>
                 <v-col>
-                  <div class="floating-title">Childcare Ages Groups</div>
+                  <div class="floating-title">Childcare Age Groups</div>
                   {{selected.ChildCareOptions.join(', ')}}
                 </v-col>
                 <v-col>
@@ -362,6 +394,45 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           </v-card-actions>
         </v-card>
       </v-overlay>
+      <v-dialog
+        v-model="dialog"
+        v-if="dialog"
+        max-width="50%"
+      >
+        <v-card>
+          <v-card-title>
+            {{selected.Name}}
+          </v-card-title>
+          <v-card-text>
+            <v-alert v-if="bufferErrMsg != ''">{{bufferErrMsg}}</v-alert>
+            <div>
+              {{formatDates(selected.EventDates)}} <br/>
+              {{selected.StartTime}} - {{selected.EndTime}}
+            </div>
+            <v-row>
+              <v-col>
+                <v-autocomplete
+                  label="Set-up Buffer"
+                  v-model="selected.MinsStartBuffer"
+                  :items="[{text: '15 Mins', value:'15'}, {text: '30 Mins', value:'30'}, {text: '45 Mins', value:'45'}, {text: '1 Hour', value:'60'}]"
+                  clearable
+                  ></v-autocomplete>
+                </v-col>
+                <v-col>
+                  <v-autocomplete
+                  label="Tear-down Buffer"
+                  v-model="selected.MinsEndBuffer"
+                  :items="[{text: '15 Mins', value:'15'}, {text: '30 Mins', value:'30'}, {text: '45 Mins', value:'45'}, {text: '1 Hour', value:'60'}]"
+                  clearable
+                ></v-autocomplete>
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" @click="addBuffer">Add Buffer</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -389,12 +460,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 current: [],
                 selected: {},
                 overlay: false,
+                dialog: false,
                 rooms: [],
+                ministries: [],
+                bufferErrMsg: ''
             },
             created() {
                 this.getRecent();
                 this.getCurrent();
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+                window['moment-range'].extendMoment(moment)
             },
             filters: {
                 formatDateTime(val) {
@@ -412,31 +488,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 },
             },
             computed: {
-                requestType() {
-                    if (this.selected) {
-                        let resoures = [];
-                        if (this.selected.needsSpace) {
-                            resoures.push("Room");
-                        }
-                        if (this.selected.needsOnline) {
-                            resoures.push("Online");
-                        }
-                        if (this.selected.needsPub) {
-                            resoures.push("Publicity");
-                        }
-                        if (this.selected.needsChildCare) {
-                            resoures.push("Childcare");
-                        }
-                        if (this.selected.needsCatering) {
-                            resoures.push("Catering");
-                        }
-                        if (this.selected.needsAccom) {
-                            resoures.push("Extra Resources");
-                        }
-                        return resoures.join(", ");
-                    }
-                    return "";
-                },
                 foodTimeTitle() {
                     if (this.selected) {
                         if (this.selected.FoodDelivery) {
@@ -545,6 +596,40 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     }
                     return "";
                 },
+                formatMinistry(val) {
+                    if (val) {
+                        let formattedVal = this.ministries.filter(m => {
+                            return m.Id == val
+                        })
+                        return formattedVal
+                    }
+                    return "";
+                },
+                requestType(itm) {
+                    if (itm) {
+                        let resoures = [];
+                        if (itm.needsSpace) {
+                            resoures.push("Room");
+                        }
+                        if (itm.needsOnline) {
+                            resoures.push("Online");
+                        }
+                        if (itm.needsPub) {
+                            resoures.push("Publicity");
+                        }
+                        if (itm.needsChildCare) {
+                            resoures.push("Childcare");
+                        }
+                        if (itm.needsCatering) {
+                            resoures.push("Catering");
+                        }
+                        if (itm.needsAccom) {
+                            resoures.push("Extra Resources");
+                        }
+                        return resoures.join(", ");
+                    }
+                    return "";
+                },
                 getClass(idx) {
                     if (idx < this.requests.length - 1) {
                         return "list-with-border";
@@ -586,6 +671,84 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     $('[id$="hfAction"]').val(status);
                     $('[id$="btnChangeStatus"]')[0].click();
                 },
+                addBuffer() {
+                    this.bufferErrMsg = ''
+                    if (!this.checkHasConflicts()) {
+                        $('[id$="hfRequestID"]').val(this.selected.Id);
+                        $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
+                        $('[id$="btnAddBuffer"]')[0].click();
+                    } else {
+                        this.bufferErrMsg = 'The buffer you have chosen will conflict with another event'
+                    }
+                },
+                checkHasConflicts() {
+                    let raw = JSON.parse($('[id$="hfUpcomingRequests"]').val());
+                    let temp = [];
+                    raw.forEach((i) => {
+                        let req = JSON.parse(i.Value);
+                        req.Id = i.Id;
+                        req.CreatedBy = i.CreatedBy;
+                        req.CreatedOn = i.CreatedOn;
+                        req.RequestStatus = i.RequestStatus;
+                        temp.push(req);
+                    });
+                    this.existingRequests = temp;
+
+                    let conflictingDates = [], conflictingRooms = []
+                    let conflictingRequests = this.existingRequests.filter(r => {
+                        let isConflictingRoom = false
+                        let isConflictingDate = false
+                        for (let i = 0; i < this.selected.Rooms.length; i++) {
+                            if (r.Rooms.includes(this.selected.Rooms[i])) {
+                                isConflictingRoom = true
+                                let roomName = this.rooms.filter(room => {
+                                    return room.Id == this.selected.Rooms[i]
+                                })
+                                if (roomName.length > 0) {
+                                    roomName = roomName[0].Value.split(' (')[0]
+                                }
+                                if (!conflictingRooms.includes(roomName)) {
+                                    conflictingRooms.push(roomName)
+                                }
+                            }
+                        }
+                        for (let i = 0; i < this.selected.EventDates.length; i++) {
+                            if (r.EventDates.includes(this.selected.EventDates[i]) && r.Id != this.selected.Id) {
+                                //Dates are the same, check they do not overlap with moment-range
+                                let cd = r.EventDates.filter(ed => { return ed == this.selected.EventDates[i] })[0]
+                                let cdStart = moment(`${cd} ${r.StartTime}`, `yyyy-MM-DD hh:mm A`)
+                                if (r.MinsStartBuffer) {
+                                    cdStart = cdStart.subtract(r.MinsStartBuffer, 'minute')
+                                }
+                                let cdEnd = moment(`${cd} ${r.EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                if (r.MinsStartBuffer) {
+                                    cdEnd = cdEnd.add(r.MinsEndBuffer, 'minute')
+                                }
+                                let cRange = moment.range(cdStart, cdEnd)
+                                let currStart = moment(`${this.selected.EventDates[i]} ${this.selected.StartTime}`, `yyyy-MM-DD hh:mm A`)
+                                if (this.selected.MinsStartBuffer) {
+                                    currStart = currStart.subtract(this.selected.MinsStartBuffer, 'minute')
+                                }
+                                let currEnd = moment(`${this.selected.EventDates[i]} ${this.selected.EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                if (this.selected.MinsEndBuffer) {
+                                    currEnd = currEnd.add(this.selected.MinsEndBuffer, 'minute')
+                                }
+                                let current = moment.range(currStart, currEnd)
+                                if (cRange.overlaps(current)) {
+                                    isConflictingDate = true
+                                    if (!conflictingDates.includes(this.selected.EventDates[i])) {
+                                        conflictingDates.push(this.selected.EventDates[i])
+                                    }
+                                }
+                            }
+                        }
+                        return isConflictingRoom && isConflictingDate
+                    })
+                    if (conflictingRequests.length > 0) {
+                        return true
+                    }
+                    return false
+                },
             },
         });
     });
@@ -593,6 +756,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <style>
   .theme--light.v-application {
     background: rgba(0, 0, 0, 0);
+  }
+  .row {
+    margin: 0;
   }
   .col {
     padding: 4px 12px !important;

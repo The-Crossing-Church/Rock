@@ -43,18 +43,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         prepend-inner-icon="mdi-magnify"
                         v-model="filters.query"
                         clearable
-                        ></v-text-field>
-                      </v-col>
-                      <v-col>
-                        <v-text-field
+                      ></v-text-field>
+                    </v-col>
+                    <v-col>
+                      <v-text-field
                         label="Submitter"
                         prepend-inner-icon="mdi-account"
                         v-model="filters.submitter"
                         clearable
-                        ></v-text-field>
-                      </v-col>
-                      <v-col>
-                        <v-autocomplete
+                      ></v-text-field>
+                    </v-col>
+                    <v-col>
+                      <v-autocomplete
                         label="Status"
                         :items="['Submitted', 'Approved', 'Denied', 'Cancelled']"
                         v-model="filters.status"
@@ -63,8 +63,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         clearable
                       ></v-autocomplete>
                     </v-col>
+                    <v-col>
+                      <v-autocomplete
+                        label="Resources"
+                        :items="['Room', 'Online', 'Publicity', 'Childcare', 'Catering', 'Extra Resources']"
+                        v-model="filters.resources"
+                        multiple
+                        attach
+                        clearable
+                      ></v-autocomplete>
+                    </v-col>
                     <v-col cols="2">
-                      <v-btn color="primary" class='pull-right' @click="filter">Filter</v-btn>
+                      <v-btn color="primary" class="pull-right" @click="filter"
+                        >Filter</v-btn
+                      >
                     </v-col>
                   </v-row>
                 </v-list-item>
@@ -74,6 +86,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     <v-col><strong>Submitted By</strong></v-col>
                     <v-col><strong>Submitted On</strong></v-col>
                     <v-col><strong>Event Dates</strong></v-col>
+                    <v-col><strong>Requested Resources</strong></v-col>
                     <v-col><strong>Status</strong></v-col>
                   </v-row>
                 </v-list-item>
@@ -89,7 +102,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     <v-col>{{ r.CreatedBy }}</v-col>
                     <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
-                    <v-col :class="getStatusPillClass(r.RequestStatus)">{{ r.RequestStatus }}</v-col>
+                    <v-col>{{ requestType(r) }}</v-col>
+                    <v-col :class="getStatusPillClass(r.RequestStatus)"
+                      >{{ r.RequestStatus }}</v-col
+                    >
                   </v-row>
                 </v-list-item>
               </v-list>
@@ -125,10 +141,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
           width="100%"
           style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
-          <v-card-title> 
-            {{selected.Name}} 
+          <v-card-title>
+            {{selected.Name}}
             <v-spacer></v-spacer>
-            <div :class="getStatusPillClass(selected.RequestStatus)">{{selected.RequestStatus}}</div>
+            <div :class="getStatusPillClass(selected.RequestStatus)">
+              {{selected.RequestStatus}}
+            </div>
           </v-card-title>
           <v-card-text>
             <v-row>
@@ -155,7 +173,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row>
               <v-col>
                 <div class="floating-title">Requested Resources</div>
-                {{requestType}}
+                {{requestType(selected)}}
               </v-col>
             </v-row>
             <v-row>
@@ -324,10 +342,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn 
-              color="secondary" 
-              @click="overlay = false; selected = {}"
-            >
+            <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
             </v-btn>
           </v-card-actions>
@@ -364,9 +379,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 page: 0,
                 rows: 15,
                 filters: {
-                    query: '',
-                    submitter: '',
-                    status: []
+                    query: "",
+                    submitter: "",
+                    status: [],
                 },
             },
             created() {
@@ -389,31 +404,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 },
             },
             computed: {
-                requestType() {
-                    if (this.selected) {
-                        let resoures = [];
-                        if (this.selected.needsSpace) {
-                            resoures.push("Room");
-                        }
-                        if (this.selected.needsOnline) {
-                            resoures.push("Online");
-                        }
-                        if (this.selected.needsPub) {
-                            resoures.push("Publicity");
-                        }
-                        if (this.selected.needsChildCare) {
-                            resoures.push("Childcare");
-                        }
-                        if (this.selected.needsCatering) {
-                            resoures.push("Catering");
-                        }
-                        if (this.selected.needsAccom) {
-                            resoures.push("Extra Resources");
-                        }
-                        return resoures.join(", ");
-                    }
-                    return "";
-                },
                 foodTimeTitle() {
                     if (this.selected) {
                         if (this.selected.FoodDelivery) {
@@ -438,36 +428,55 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         temp.push(req);
                     });
                     this.allrequests = temp;
-                    this.requests = temp.slice(0, this.rows)
+                    this.requests = temp.slice(0, this.rows);
                 },
                 filter() {
-                    let temp = this.allrequests
-                    if (this.filters.submitter != '' && this.filters.submitter != null) {
-                        temp = temp.filter(i => {
-                            return i.CreatedBy.toLowerCase().includes(this.filters.submitter.toLowerCase())
-                        })
+                    let temp = this.allrequests;
+                    if (this.filters.submitter != "" && this.filters.submitter != null) {
+                        temp = temp.filter((i) => {
+                            return i.CreatedBy.toLowerCase().includes(
+                                this.filters.submitter.toLowerCase()
+                            );
+                        });
                     }
                     if (this.filters.status.length > 0) {
-                        temp = temp.filter(i => {
-                            return this.filters.status.includes(i.RequestStatus)
+                        temp = temp.filter((i) => {
+                            return this.filters.status.includes(i.RequestStatus);
+                        });
+                    }
+                    if (this.filters.resources.length > 0) {
+                        temp = temp.filter((i) => {
+                            let iRR = this.requestType(i).split(',')
+                            let intersects = false
+                            this.filters.resources.forEach(r => {
+                                if (iRR.includes(r)) {
+                                    intersects = true
+                                }
+                            })
+                            return intersects
                         })
                     }
-                    if (this.filters.query != '' && this.filters.query != null) {
-                        temp = temp.filter(i => {
-                            return i.Name.toLowerCase().includes(this.filters.query.toLowerCase())
-                        })
+                    if (this.filters.query != "" && this.filters.query != null) {
+                        temp = temp.filter((i) => {
+                            return i.Name.toLowerCase().includes(
+                                this.filters.query.toLowerCase()
+                            );
+                        });
                     }
-                    this.requests = temp.slice(this.page * this.rows, (this.page * this.rows) + this.rows)
+                    this.requests = temp.slice(
+                        this.page * this.rows,
+                        this.page * this.rows + this.rows
+                    );
                 },
                 paginate(val) {
-                    if (val == 'next') {
-                        let total = this.requests.length
-                        if ((total / this.rows) > this.page) {
-                            this.page++
+                    if (val == "next") {
+                        let total = this.requests.length;
+                        if (total / this.rows > this.page) {
+                            this.page++;
                         }
                     } else {
                         if (this.page > 0) {
-                            this.page--
+                            this.page--;
                         }
                     }
                 },
@@ -508,18 +517,43 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     return "";
                 },
                 getStatusPillClass(status) {
-                    if (status == 'Approved') {
-                        return 'no-top-pad status-pill approved'
+                    if (status == "Approved") {
+                        return "no-top-pad status-pill approved";
                     }
-                    if (status == 'Submitted') {
-                        return 'no-top-pad status-pill submitted'
+                    if (status == "Submitted") {
+                        return "no-top-pad status-pill submitted";
                     }
-                    if (status == 'Cancelled') {
-                        return 'no-top-pad status-pill cancelled'
+                    if (status == "Cancelled") {
+                        return "no-top-pad status-pill cancelled";
                     }
-                    if (status == 'Denied') {
-                        return 'no-top-pad status-pill denied'
+                    if (status == "Denied") {
+                        return "no-top-pad status-pill denied";
                     }
+                },
+                requestType(itm) {
+                    if (itm) {
+                        let resources = [];
+                        if (itm.needsSpace) {
+                            resources.push("Room");
+                        }
+                        if (itm.needsOnline) {
+                            resources.push("Online");
+                        }
+                        if (itm.needsPub) {
+                            resources.push("Publicity");
+                        }
+                        if (itm.needsChildCare) {
+                            resources.push("Childcare");
+                        }
+                        if (itm.needsCatering) {
+                            resources.push("Catering");
+                        }
+                        if (itm.needsAccom) {
+                            resources.push("Extra Resources");
+                        }
+                        return resources.join(", ");
+                    }
+                    return "";
                 },
                 saveFile() {
                     var a = document.createElement("a");
@@ -532,11 +566,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             },
             watch: {
                 page(val) {
-                    this.filter()
+                    this.filter();
                 },
                 rows(val) {
-                    this.filter()
-                }
+                    this.filter();
+                },
             },
         });
     });
@@ -590,16 +624,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
     justify-content: center;
   }
   .status-pill.submitted {
-    border: 2px solid #347689; 
+    border: 2px solid #347689;
   }
   .status-pill.approved {
-    border: 2px solid #8ed2c9; 
+    border: 2px solid #8ed2c9;
   }
   .status-pill.denied {
-    border: 2px solid #f44336; 
+    border: 2px solid #f44336;
   }
   .status-pill.cancelled {
-    border: 2px solid #9e9e9e; 
+    border: 2px solid #9e9e9e;
   }
   ::-webkit-scrollbar {
     width: 5px;
