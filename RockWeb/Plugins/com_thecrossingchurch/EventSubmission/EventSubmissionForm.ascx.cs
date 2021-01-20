@@ -259,10 +259,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelItem item = new ContentChannelItem();
             item.ContentChannelTypeId = ContentChannelTypeId;
             item.ContentChannelId = ContentChannelId;
+            bool isExisting = false;
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 int id = Int32.Parse( PageParameter( PageParameterKey.Id ) );
                 item = svc.Get( id );
+                isExisting = true;
             }
             item.LoadAttributes();
             item.CreatedByPersonAliasId = CurrentPersonAliasId;
@@ -278,10 +280,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             context.ContentChannelItems.AddOrUpdate( item );
             context.SaveChanges();
             item.SaveAttributeValues( context );
-            NotifyReviewers( item, request, isPreApproved );
-            ConfirmationEmail( item, request, isPreApproved );
+            if ( String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
+            {
+                NotifyReviewers( item, request, isPreApproved );
+                ConfirmationEmail( item, request, isPreApproved );
+            }
             Dictionary<string, string> query = new Dictionary<string, string>();
             query.Add( "ShowSuccess", "true" );
+            if( isExisting )
+            {
+                query.Add( "Id", item.Id.ToString() );
+            }
             NavigateToPage( Guid.Parse( GetAttributeValue( "PageGuid" ) ), query );
         }
 
@@ -339,7 +348,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 //Notify the Room Only Request Group
                 subject = "New Room Request from " + CurrentPerson.FullName;
                 groupMembers = RoomOnlySR.Members.ToList();
-                message = CurrentPerson.FullName + " has submitted a room request for " + request.Ministry + ".<br/>";
+                message = CurrentPerson.FullName + " has submitted a room request for " + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + ".<br/>";
                 message += "<strong>Ministry Contact:</strong> " + request.Contact + "<br/>";
                 message += "<strong>Event Dates:</strong> " + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "<br/>";
                 message += "<strong>Start Time:</strong> " + request.StartTime + "<br/>";
@@ -408,7 +417,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private string GenerateEmailDetails( ContentChannelItem item, EventRequest request )
         {
             string message = "";
-            message += "<strong>Ministry:</strong> " + request.Ministry + "<br/>";
+            message += "<strong>Ministry:</strong> " + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + "<br/>";
             message += "<strong>Ministry Contact:</strong> " + request.Contact + "<br/>";
             message += "<strong>Requested Resources:</strong> " + item.AttributeValues["RequestType"].Value + "<br/>";
             message += "<strong>Event Dates:</strong> " + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "<br/>";
@@ -423,6 +432,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( request.needsSpace )
             {
                 message += "<strong>Requested Rooms:</strong> " + String.Join( ", ", Rooms.Where( dv => request.Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
+                message += "<strong>Needs Check-in:</strong> " + ( request.Checkin.Value == true ? "Yes" : "No" ) + "<br/>";
                 message += "<strong>Expected Attendance:</strong> " + request.ExpectedAttendance + "<br/>";
             }
             if ( request.needsOnline )
@@ -437,7 +447,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 for ( var i = 0; i < request.Publicity.Count(); i++ )
                 {
-                    message += "<strong>Publicity Week " + (i+1) + ":</strong> " + DateTime.Parse( request.Publicity[i].Date ).ToString( "MM/dd/yyyy" ) + " - " + String.Join( ", ", request.Publicity[i].Needs ) + "<br/>";
+                    message += "<strong>Publicity Week " + ( i + 1 ) + ":</strong> " + DateTime.Parse( request.Publicity[i].Date ).ToString( "MM/dd/yyyy" ) + " - " + String.Join( ", ", request.Publicity[i].Needs ) + "<br/>";
                 }
                 if ( !String.IsNullOrEmpty( request.PublicityBlurb ) )
                 {
@@ -517,6 +527,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string EndTime { get; set; }
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
+            public bool? Checkin { get; set; }
             public string EventURL { get; set; }
             public string ZoomPassword { get; set; }
             public List<PublicityItem> Publicity { get; set; }

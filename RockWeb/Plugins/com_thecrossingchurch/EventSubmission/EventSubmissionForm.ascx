@@ -22,9 +22,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
   crossorigin="anonymous"
 ></script>
-<script 
-  src="https://cdnjs.cloudflare.com/ajax/libs/moment-range/4.0.2/moment-range.js" 
-  integrity="sha512-XKgbGNDruQ4Mgxt7026+YZFOqHY6RsLRrnUJ5SVcbWMibG46pPAC97TJBlgs83N/fqPTR0M89SWYOku6fQPgyw==" 
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/moment-range/4.0.2/moment-range.js"
+  integrity="sha512-XKgbGNDruQ4Mgxt7026+YZFOqHY6RsLRrnUJ5SVcbWMibG46pPAC97TJBlgs83N/fqPTR0M89SWYOku6fQPgyw=="
   crossorigin="anonymous"
 ></script>
 
@@ -107,13 +107,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       </v-card>
       <v-card v-if="panel == 1">
         <v-card-text>
-          <v-form ref="form" v-model="valid">
+          <v-form ref="form" v-model="formValid">
             <v-alert type="error" v-if="!isValid && triedSubmit">
               Please review your request and fix all errors
-              <template v-if="conflictingRequestMsg != ''">
-                <br/> {{conflictingRequestMsg}}
-              </template>
-              </v-alert>
+            </v-alert>
             <%-- Basic Request Information --%>
             <v-row>
               <v-col>
@@ -131,11 +128,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-row>
             <v-row>
               <v-col cols="12" md="6">
-                <!-- <v-text-field
-                  label="What ministry is sponsoring this event?"
-                  v-model="request.Ministry"
-                  :rules="[rules.required(request.Ministry, 'Ministry')]"
-                ></v-text-field> -->
                 <v-autocomplete
                   label="What ministry is sponsoring this event?"
                   :items="ministries"
@@ -249,6 +241,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         ></v-autocomplete>
                       </v-col>
                     </v-row>
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <v-switch
+                          label="Do you need check-in?"
+                          v-model="request.Checkin"
+                        ></v-switch>
+                      </v-col>
+                    </v-row>
                   </template>
                 </v-tab-item>
                 <v-tab>I want to search for something quick</v-tab>
@@ -354,6 +354,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       ></v-autocomplete>
                     </v-col>
                   </v-row>
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-switch
+                        label="Do you need check-in?"
+                        v-model="request.Checkin"
+                      ></v-switch>
+                    </v-col>
+                  </v-row>
                 </template>
               </template>
             </template>
@@ -389,14 +397,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <h3 class="primary--text">Publicity Information</h3>
                 </v-col>
               </v-row>
-              <template
-                v-for="(i, idx) in request.Publicity"
-              >
-                <v-row><v-col><strong>Week {{idx + 1}}</strong></v-col></v-row>
+              <template v-for="(i, idx) in request.Publicity">
                 <v-row
-                  :key="`pub_${idx}`"
-                  align-center
+                  ><v-col><strong>Week {{idx + 1}}</strong></v-col></v-row
                 >
+                <v-row :key="`pub_${idx}`" align-center>
                   <v-col>
                     <publicity-picker
                       :value="i"
@@ -404,15 +409,21 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     ></publicity-picker>
                   </v-col>
                   <v-col cols="1">
-                    <v-btn fab color="red" v-if="idx > 0" @click="removePub(idx)" class='btn-pub-del'>
+                    <v-btn
+                      fab
+                      color="red"
+                      v-if="idx > 0"
+                      @click="removePub(idx)"
+                      class="btn-pub-del"
+                    >
                       <v-icon>mdi-delete-forever</v-icon>
-                      <span class='tooltip'>Delete Publicity</span>
+                      <span class="tooltip">Delete Publicity</span>
                     </v-btn>
                   </v-col>
                 </v-row>
               </template>
               <v-row>
-                <v-col style="position: relative;">
+                <v-col style="position: relative">
                   <v-btn
                     absolute
                     right
@@ -420,10 +431,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     color="accent"
                     :disabled="pubBtnDisabled"
                     @click="addPub"
-                    class='btn-pub-add'
+                    class="btn-pub-add"
                   >
                     <v-icon>mdi-plus</v-icon>
-                    <span class='tooltip'>Add Publicity</span>
+                    <span class="tooltip">Add Publicity</span>
                   </v-btn>
                 </v-col>
               </v-row>
@@ -535,6 +546,41 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></time-picker>
                 </v-col>
               </v-row>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <br />
+                  <v-row>
+                    <v-col>
+                      <v-autocomplete
+                        label="What drinks would you like to have?"
+                        :items="['Coffee', 'Soda', 'Water']"
+                        :hint="`${request.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`"
+                        persistent-hint
+                        v-model="request.Drinks"
+                        multiple
+                        chips
+                        attach
+                      ></v-autocomplete>
+                    </v-col>
+                  </v-row>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <strong>What time would you like your drinks to be delivered?</strong>
+                  <time-picker
+                    v-model="request.DrinkTime"
+                    :value="request.DrinkTime"
+                    :default="defaultFoodTime"
+                  ></time-picker>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    label="Where would you like your drinks delivered?"
+                    v-model="request.DrinkDropOff"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
               <%-- Childcare Catering --%>
               <template v-if="request.needsChildCare">
                 <v-row>
@@ -598,17 +644,41 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     v-model="request.ChildCareOptions"
                   >
                     <template v-slot:item="data">
-                      <div style="padding: 12px 0px; width: 100%;">
-                        <v-icon v-if="request.ChildCareOptions.includes(data.item)" color="primary" style="margin-right:32px;">mdi-checkbox-marked</v-icon> 
-                        <v-icon v-else color="primary" style="margin-right:32px;">mdi-checkbox-blank-outline</v-icon> 
+                      <div style="padding: 12px 0px; width: 100%">
+                        <v-icon
+                          v-if="request.ChildCareOptions.includes(data.item)"
+                          color="primary"
+                          style="margin-right: 32px"
+                          >mdi-checkbox-marked</v-icon
+                        >
+                        <v-icon
+                          v-else
+                          color="primary"
+                          style="margin-right: 32px"
+                          >mdi-checkbox-blank-outline</v-icon
+                        >
                         {{data.item}}
                       </div>
                     </template>
                     <template v-slot:append-item>
                       <v-list-item>
-                        <div class='hover' style="padding: 12px 0px; width: 100%;" @click="toggleChildCareOptions">
-                          <v-icon v-if="childCareSelectAll" color="primary" style="margin-right:32px;">mdi-checkbox-marked</v-icon> 
-                          <v-icon v-else color="primary" style="margin-right:32px;">mdi-checkbox-blank-outline</v-icon> 
+                        <div
+                          class="hover"
+                          style="padding: 12px 0px; width: 100%"
+                          @click="toggleChildCareOptions"
+                        >
+                          <v-icon
+                            v-if="childCareSelectAll"
+                            color="primary"
+                            style="margin-right: 32px"
+                            >mdi-checkbox-marked</v-icon
+                          >
+                          <v-icon
+                            v-else
+                            color="primary"
+                            style="margin-right: 32px"
+                            >mdi-checkbox-blank-outline</v-icon
+                          >
                           Select All
                         </div>
                       </v-list-item>
@@ -634,21 +704,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-row>
                 <v-col cols="12" md="6">
                   <v-autocomplete
-                    label="What drinks would you like to have?"
-                    :items="['Coffee', 'Soda', 'Water']"
-                    :hint="`${request.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`"
-                    persistent-hint
-                    v-model="request.Drinks"
-                    multiple
-                    chips
-                    attach
-                  ></v-autocomplete>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-autocomplete
                     label="What tech needs do you have?"
                     :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Live Stream', 'Pipe and Drape', 'BOSE System']"
                     v-model="request.TechNeeds"
+                    :hint="`${request.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`"
+                    persistent-hint
                     multiple
                     chips
                     attach
@@ -712,7 +772,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-card-actions>
           <v-btn color="secondary" @click="prev">Back</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="next">Submit</v-btn>
+          <v-btn color="primary" @click="next">{{( isExistingRequest ? 'Update' : 'Submit')}}</v-btn>
           <Rock:BootstrapButton
             runat="server"
             ID="btnSubmit"
@@ -723,15 +783,53 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       </v-card>
       <v-card v-if="panel == 2">
         <v-card-text>
-          <v-alert type="success"
-            >Your request has been submitted! You will receive a confirmation
+          <v-alert v-if="isExistingRequest" type="success">
+            This request has been updated
+          </v-alert>
+          <v-alert v-else type="success">
+            Your request has been submitted! You will receive a confirmation
             email now with the details of your request, when it has been
             approved by the Events Director you will receive an email securing
             your reservation with any additional information from the Events
-            Director</v-alert
-          >
+            Director
+          </v-alert>
         </v-card-text>
       </v-card>
+      <v-dialog 
+        v-if="dialog" 
+        v-model="dialog" 
+        max-width="850px"
+      >
+        <v-card>
+          <v-card-title></v-card-title>
+          <v-card-text>
+            <v-alert type="warning">
+              <template v-if="conflictingRequestMsg != ''">
+                {{conflictingRequestMsg}}
+              </template>
+              <br v-if="beforeHoursMsg != '' || afterHoursMsg != ''" />
+              <template v-if="beforeHoursMsg != ''">
+                {{beforeHoursMsg}}
+              </template>
+              <br v-if="beforeHoursMsg != '' && afterHoursMsg != ''" />
+              <template v-if="afterHoursMsg != ''">
+                {{afterHoursMsg}}
+              </template>
+            </v-alert>
+            <br/>
+            <v-row>
+              <v-col>
+                If you wish to submit your request despite these warnings click "Submit", otherwise click "Cancel" to modify your request. 
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="secondary" @click="dialog = false;">Cancel</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="submit">Submit</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -787,10 +885,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             },
             methods: {
                 allowedDates(val) {
-                    let dow = moment(val).day()
-                    return dow == 0
-                }
-            }
+                    let dow = moment(val).day();
+                    return dow == 0;
+                },
+            },
         });
         Vue.component("time-picker", {
             template: `
@@ -810,7 +908,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             data: function () {
                 return {
                     hour: null,
-                    minute: null,
+                    minute: "00",
                     ap: null,
                     hours: [
                         "01",
@@ -1063,8 +1161,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     });
                 },
                 formatDate(val) {
-                    return moment(val).format('dddd, MMMM Do yyyy')
-                }
+                    return moment(val).format("dddd, MMMM Do yyyy");
+                },
             },
             watch: {
                 selected(val) {
@@ -1121,9 +1219,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     MinsEndBuffer: 0,
                     ExpectedAttendance: "",
                     Rooms: "",
+                    Checkin: false,
                     EventURL: "",
                     ZoomPassword: "",
-                    Publicity: [{ Date: "", Needs: "" }, { Date: "", Needs: "" }, { Date: "", Needs: "" }],
+                    Publicity: [
+                        { Date: "", Needs: "" },
+                        { Date: "", Needs: "" },
+                        { Date: "", Needs: "" },
+                    ],
                     PublicityBlurb: "",
                     PubImage: null,
                     ShowOnCalendar: false,
@@ -1131,15 +1234,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     Menu: "",
                     FoodDelivery: true,
                     FoodTime: "",
-                    BudgetLine: "",
                     FoodDropOff: "",
+                    Drinks: "",
+                    DinkTime: "",
+                    DrinkDropOff: "",
+                    BudgetLine: "",
                     CCVendor: "",
                     CCMenu: "",
                     CCFoodTime: "",
                     CCBudgetLine: "",
                     ChildCareOptions: "",
                     EstimatedKids: null,
-                    Drinks: "",
                     TechNeeds: "",
                     RegistrationDate: "",
                     Fee: null,
@@ -1213,47 +1318,56 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     },
                     roomCapacity(allRooms, rooms, attendance) {
                         if (attendance) {
-                            let selectedRooms = allRooms.filter(r => {
-                                return rooms.includes(r.Id)
-                            })
-                            let maxCapacity = 0
-                            selectedRooms.forEach(r => {
-                                let roomCap = r.Value.split("(")[1].replace(')', '')
-                                maxCapacity += parseInt(roomCap)
-                            })
+                            let selectedRooms = allRooms.filter((r) => {
+                                return rooms.includes(r.Id);
+                            });
+                            let maxCapacity = 0;
+                            selectedRooms.forEach((r) => {
+                                let roomCap = r.Value.split("(")[1].replace(")", "");
+                                maxCapacity += parseInt(roomCap);
+                            });
                             if (attendance <= maxCapacity) {
-                                return true
+                                return true;
                             } else {
-                                return `Attendance for your event cannot exceed ${maxCapacity} ${(maxCapacity > 0 ? 'people' : 'person')}, please select more rooms for your event or update the expected attendance`
+                                return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
                             }
                         }
-                        return true
-                    }
+                        return true;
+                    },
                 },
                 valid: true,
-                conflictingRequestMsg: '',
+                formValid: true,
+                dialog: false,
+                conflictingRequestMsg: "",
+                beforeHoursMsg: "",
+                afterHoursMsg: "",
                 triedSubmit: false,
                 childCareSelectAll: false,
-                tab: 0
+                tab: 0,
             },
             created() {
-                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
-                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
-                let req = $('[id$="hfRequest"]')[0].value
+                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
+                let req = $('[id$="hfRequest"]')[0].value;
                 if (req) {
-                    this.request = JSON.parse(req)
+                    this.request = JSON.parse(req);
                     if (this.request.PubImage) {
-                        this.pubImage = this.request.PubImage
+                        this.pubImage = this.request.PubImage;
                     }
                 }
-                window['moment-range'].extendMoment(moment)
+                window["moment-range"].extendMoment(moment);
             },
             mounted() {
-                let query = window.location.search.substring(1)
-                if (query.includes('ShowSuccess')) {
-                    let info = query.split('=')
-                    if (info[1] == 'true') {
-                        this.panel = 2
+                let query = new URLSearchParams(window.location.search);
+                let success = query.get('ShowSuccess');
+                console.log(query)
+                if (success) {
+                    if (success == "true") {
+                        this.panel = 2;
+                        let id = query.get('Id');
+                        if (id) {
+                            window.history.go(-2)
+                        }
                     }
                 }
             },
@@ -1319,10 +1433,19 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 isValid() {
                     if (this.$refs.roompckr && this.tab == 1) {
-                        return this.valid && this.$refs.roompckr.valid;
+                        return this.valid && this.formValid && this.$refs.roompckr.valid;
                     }
-                    return this.valid;
+                    return this.valid && this.formValid;
                 },
+                isExistingRequest() {
+                    let urlParams = new URLSearchParams(window.location.search);
+                    let id = urlParams.get('Id');
+                    if (id) {
+                        return true
+                    }
+                    return false
+                }
+
             },
             methods: {
                 boolToYesNo(val) {
@@ -1335,8 +1458,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     if (this.panel == 1) {
                         this.validate();
                         if (this.isValid) {
-                            $('[id$="hfRequest"]').val(JSON.stringify(this.request));
-                            $('[id$="btnSubmit"')[0].click();
+                            this.submit()
+                        } else {
+                            let formIsValid = this.formValid
+                            if (this.$refs.roompckr && this.tab == 1) {
+                                formIsValid = this.formValid && this.$refs.roompckr.valid;
+                            }
+                            if (formIsValid) {
+                                this.dialog = true
+                            }
                         }
                     } else {
                         this.panel += 1;
@@ -1352,6 +1482,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.panel = tab;
                     window.scrollTo(0, 0);
                 },
+                submit() {
+                    $('[id$="hfRequest"]').val(JSON.stringify(this.request));
+                    $('[id$="btnSubmit"')[0].click();
+                },
                 addPub() {
                     this.request.Publicity.push({ Date: "", Needs: "" });
                 },
@@ -1366,90 +1500,153 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.request.ExpectedAttendance = val.att;
                 },
                 handleFile(e) {
-                    console.log(e)
-                    let file = { name: e.name, type: e.type }
-                    var reader = new FileReader()
-                    const self = this
+                    console.log(e);
+                    let file = { name: e.name, type: e.type };
+                    var reader = new FileReader();
+                    const self = this;
                     reader.onload = function (e) {
-                        console.log(e.target.result)
-                        file.data = e.target.result
-                        self.request.PubImage = file
-                    }
-                    reader.readAsDataURL(e)
+                        console.log(e.target.result);
+                        file.data = e.target.result;
+                        self.request.PubImage = file;
+                    };
+                    reader.readAsDataURL(e);
                 },
                 toggleChildCareOptions() {
-                    this.childCareSelectAll = !this.childCareSelectAll
+                    this.childCareSelectAll = !this.childCareSelectAll;
                     if (this.childCareSelectAll) {
-                        this.request.ChildCareOptions = ['Infant/Toddler', 'Preschool', 'K-2nd', '3-5th']
+                        this.request.ChildCareOptions = [
+                            "Infant/Toddler",
+                            "Preschool",
+                            "K-2nd",
+                            "3-5th",
+                        ];
                     } else {
-                        this.request.ChildCareOptions = []
+                        this.request.ChildCareOptions = [];
                     }
                 },
                 checkForConflicts() {
-                    this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
-                    let conflictingDates = [], conflictingRooms = []
-                    let conflictingRequests = this.existingRequests.filter(r => {
-                        r = JSON.parse(r)
-                        let isConflictingRoom = false
-                        let isConflictingDate = false
+                    this.existingRequests = JSON.parse(
+                        $('[id$="hfUpcomingRequests"]')[0].value
+                    );
+                    let conflictingDates = [],
+                        conflictingRooms = [];
+                    let conflictingRequests = this.existingRequests.filter((r) => {
+                        r = JSON.parse(r);
+                        let isConflictingRoom = false;
+                        let isConflictingDate = false;
                         for (let i = 0; i < this.request.Rooms.length; i++) {
                             if (r.Rooms.includes(this.request.Rooms[i])) {
-                                isConflictingRoom = true
-                                let roomName = this.rooms.filter(room => {
-                                    return room.Id == this.request.Rooms[i]
-                                })
+                                isConflictingRoom = true;
+                                let roomName = this.rooms.filter((room) => {
+                                    return room.Id == this.request.Rooms[i];
+                                });
                                 if (roomName.length > 0) {
-                                    roomName = roomName[0].Value.split(' (')[0]
+                                    roomName = roomName[0].Value.split(" (")[0];
                                 }
                                 if (!conflictingRooms.includes(roomName)) {
-                                    conflictingRooms.push(roomName)
+                                    conflictingRooms.push(roomName);
                                 }
                             }
                         }
                         for (let i = 0; i < this.request.EventDates.length; i++) {
                             if (r.EventDates.includes(this.request.EventDates[i])) {
-                                debugger
                                 //Dates are the same, check they do not overlap with moment-range
-                                let cd = r.EventDates.filter(ed => { return ed == this.request.EventDates[i] })[0]
-                                let cdStart = moment(`${cd} ${r.StartTime}`, `yyyy-MM-DD hh:mm A`)
+                                let cd = r.EventDates.filter((ed) => {
+                                    return ed == this.request.EventDates[i];
+                                })[0];
+                                let cdStart = moment(
+                                    `${cd} ${r.StartTime}`,
+                                    `yyyy-MM-DD hh:mm A`
+                                );
                                 if (r.MinsStartBuffer) {
-                                    cdStart = cdStart.subtract(r.MinsStartBuffer, 'minute')
+                                    cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
                                 }
-                                let cdEnd = moment(`${cd} ${r.EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                let cdEnd = moment(`${cd} ${r.EndTime}`, `yyyy-MM-DD hh:mm A`);
                                 if (r.MinsStartBuffer) {
-                                    cdEnd = cdEnd.add(r.MinsEndBuffer, 'minute')
+                                    cdEnd = cdEnd.add(r.MinsEndBuffer, "minute");
                                 }
-                                let cRange = moment.range(cdStart, cdEnd)
-                                let current = moment.range(moment(`${this.request.EventDates[i]} ${this.request.StartTime}`, `yyyy-MM-DD hh:mm A`), moment(`${this.request.EventDates[i]} ${this.request.EndTime}`, `yyyy-MM-DD hh:mm A`))
+                                let cRange = moment.range(cdStart, cdEnd);
+                                let current = moment.range(
+                                    moment(
+                                        `${this.request.EventDates[i]} ${this.request.StartTime}`,
+                                        `yyyy-MM-DD hh:mm A`
+                                    ),
+                                    moment(
+                                        `${this.request.EventDates[i]} ${this.request.EndTime}`,
+                                        `yyyy-MM-DD hh:mm A`
+                                    )
+                                );
                                 if (cRange.overlaps(current)) {
-                                    isConflictingDate = true
+                                    isConflictingDate = true;
                                     if (!conflictingDates.includes(this.request.EventDates[i])) {
-                                        conflictingDates.push(this.request.EventDates[i])
+                                        conflictingDates.push(this.request.EventDates[i]);
                                     }
                                 }
                             }
                         }
-                        return isConflictingRoom && isConflictingDate
-                    })
+                        return isConflictingRoom && isConflictingDate;
+                    });
                     if (conflictingRequests.length > 0) {
+                        this.valid = false;
+                        this.conflictingRequestMsg = `There are conflicts on ${conflictingDates.join(
+                            ", "
+                        )} with the following rooms: ${conflictingRooms.join(", ")}`
+                    }
+                },
+                checkTimeMeetsRequirements() {
+                    //Check general 9-9 time rule
+                    let meetsTimeRequirements = true
+                    if (this.request.StartTime.includes("AM")) {
+                        let info = this.request.StartTime.split(':')
+                        if (parseInt(info[0]) < 9) {
+                            meetsTimeRequirements = false
+                            this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
+                        }
+                    }
+                    if (this.request.EndTime.includes("PM")) {
+                        let info = this.request.EndTime.split(':')
+                        if (parseInt(info[0]) >= 9) {
+                            meetsTimeRequirements = false
+                            this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director.'
+                        }
+                    }
+                    //Check more specific range for Satuday and Sunday
+                    // for(var i=0; i<this.request.EventDates.length; i++){
+                    //   let dt = moment(this.request.EventDates[i])
+                    //   if(dt.day() == 0){
+                    //     //Sunday
+                    //     if(this.request.StartTime.includes("AM")) {
+                    //       meetsTimeRequirements = false
+                    //     }
+                    //   } else if(dt.day() == 6) {
+                    //     //Saturday
+                    //     if(this.request.StartTime.includes("PM")) {
+                    //       meetsTimeRequirements = false
+                    //     }
+                    //     if(this.request.EndTime.includes("PM") && this.request.EndTime != "12:00 PM") {
+                    //       meetsTimeRequirements = false
+                    //     }
+                    //   }
+                    // }
+                    if (!meetsTimeRequirements) {
                         this.valid = false
-                        this.conflictingRequestMsg = `There are conflicts on ${conflictingDates.join(', ')} with the following rooms: ${conflictingRooms.join(', ')}`
                     }
                 },
                 validate() {
                     this.valid = true
-                    this.triedSubmit = true;
-                    this.$refs.form.validate();
+                    this.triedSubmit = true
+                    this.$refs.form.validate()
                     if (this.$refs.roompckr && this.tab == 1) {
-                        this.$refs.roompckr.$refs.roomform.validate();
+                        this.$refs.roompckr.$refs.roomform.validate()
                     }
                     const errors = [];
                     this.$refs.form.inputs.forEach((e) => {
                         if (e.errorBucket && e.errorBucket.length) {
-                            errors.push(...e.errorBucket);
+                            errors.push(...e.errorBucket)
                         }
                     });
                     this.checkForConflicts()
+                    this.checkTimeMeetsRequirements()
                 },
             },
         });
@@ -1484,7 +1681,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
     color: #ffffff;
     background-color: #545454;
     border-radius: 6px;
-    transition: .16s ease-in; 
+    transition: 0.16s ease-in;
     padding: 8px;
     width: 125px;
     text-align: center;
@@ -1492,7 +1689,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
     position: absolute;
     top: -250%;
   }
-  .btn-pub-add:hover .tooltip, .btn-pub-del:hover .tooltip {
+  .btn-pub-add:hover .tooltip,
+  .btn-pub-del:hover .tooltip {
     opacity: 1;
-  } 
+  }
 </style>

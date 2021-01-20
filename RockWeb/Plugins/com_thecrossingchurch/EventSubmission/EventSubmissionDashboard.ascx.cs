@@ -26,7 +26,7 @@ using OfficeOpenXml.Style;
 using System.Drawing;
 using Microsoft.Ajax.Utilities;
 using Microsoft.Graph;
-using Microsoft.Graph.Auth; 
+using Microsoft.Graph.Auth;
 using System.Collections.ObjectModel;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using Newtonsoft.Json;
@@ -52,6 +52,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [TextField( "MicrosoftTennant", "MS Tennant for Graph API", true )]
     [TextField( "MicrosoftClientID", "MS Client ID for Graph API", true )]
     [TextField( "MicrosoftClientSecret", "MS Client Secret for Graph API", true )]
+    [WorkflowTypeField( "Request Workflow", "Workflow to launch when request is approved or denied to send email" )]
+    [LinkedPage( "Workflow Entry Page" )]
 
     public partial class EventSubmissionDashboard : Rock.Web.UI.RockBlock
     {
@@ -140,6 +142,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 item.SaveAttributeValues( context );
                 hfRequestID.Value = null;
+                if ( action == "Approved" || action == "Deny" )
+                {
+                    Dictionary<string, string> query = new Dictionary<string, string>();
+                    WorkflowType wfType = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "RequestWorkflow" ) ) );
+                    query.Add( "WorkflowTypeId", wfType.Id.ToString() );
+                    query.Add( "ItemId", item.Id.ToString() );
+                    NavigateToLinkedPage( "WorkflowEntryPage", query );
+                }
                 GetRecentRequests();
                 GetThisWeeksEvents();
             }
@@ -300,6 +310,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public int? MinsEndBuffer { get; set; }
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
+            public bool? Checkin { get; set; }
             public string EventURL { get; set; }
             public string ZoomPassword { get; set; }
             public List<PublicityItem> Publicity { get; set; }

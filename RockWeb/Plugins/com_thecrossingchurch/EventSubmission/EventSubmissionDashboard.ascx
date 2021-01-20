@@ -39,6 +39,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <asp:HiddenField ID="hfRequestID" runat="server" />
 <asp:HiddenField ID="hfAction" runat="server" />
 <asp:HiddenField ID="hfUpdatedItem" runat="server" />
+<asp:HiddenField ID="hfApprovedEmail" runat="server" />
+<asp:HiddenField ID="hfDeniedEmail" runat="server" />
 <Rock:BootstrapButton
   ID="btnChangeStatus"
   CssClass="btn-hidden"
@@ -223,6 +225,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <div class="floating-title">Desired Rooms/Spaces</div>
                   {{formatRooms(selected.Rooms)}}
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Check-in Requested</div>
+                  {{boolToYesNo(selected.Checkin)}}
                 </v-col>
               </v-row>
             </template>
@@ -463,7 +471,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 dialog: false,
                 rooms: [],
                 ministries: [],
-                bufferErrMsg: ''
+                bufferErrMsg: '',
             },
             created() {
                 this.getRecent();
@@ -601,7 +609,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         let formattedVal = this.ministries.filter(m => {
                             return m.Id == val
                         })
-                        return formattedVal
+                        return formattedVal[0].Value
                     }
                     return "";
                 },
