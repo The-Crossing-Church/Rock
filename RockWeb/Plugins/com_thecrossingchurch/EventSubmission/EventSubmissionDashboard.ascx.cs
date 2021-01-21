@@ -328,6 +328,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string CCBudgetLine { get; set; }
             public List<string> ChildCareOptions { get; set; }
             public int? EstimatedKids { get; set; }
+            public string CCStartTime { get; set; }
+            public string CCEndTime { get; set; }
             public List<string> Drinks { get; set; }
             public List<string> TechNeeds { get; set; }
             public DateTime? RegistrationDate { get; set; }

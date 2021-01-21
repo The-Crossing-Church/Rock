@@ -288,6 +288,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   {{selected.EstimatedKids}}
                 </v-col>
               </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Childcare Start Time</div>
+                  {{selected.CCStartTime}}
+                </v-col>
+                <v-col>
+                  <div class="floating-title">Childcare End Time</div>
+                  {{selected.CCEndTime}}
+                </v-col>
+              </v-row>
             </template>
             <template v-if="selected.needsCatering">
               <v-row>

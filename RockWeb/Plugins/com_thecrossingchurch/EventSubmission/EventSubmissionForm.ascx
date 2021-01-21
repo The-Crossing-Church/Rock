@@ -39,7 +39,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
     <div>
       <v-card v-if="panel == 0">
         <v-card-text>
-          <h3>Let's Design Your Event</h3>
+          <v-layout>
+            <h3>Let's Design Your Event</h3>
+            <v-spacer></v-spacer>
+            <v-menu 
+              attach
+              offset-x
+              left
+            >
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn fab color="accent" v-on="on" v-bind="attrs">
+                  <v-icon>mdi-help</v-icon>
+                </v-btn>
+              </template>
+              <v-sheet min-width="200px" style="padding: 8px;">
+                Need help? Click <a href="mailto:events@thecrossingchurch.com">here</a> to email the Events Director with a question about your event.
+              </v-sheet>
+            </v-menu>
+          </v-layout>
           <strong><i>Check all that apply</i></strong>
           <v-row>
             <v-col>
@@ -112,11 +129,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               Please review your request and fix all errors
             </v-alert>
             <%-- Basic Request Information --%>
-            <v-row>
-              <v-col>
-                <h3 class="primary--text">Basic Information</h3>
-              </v-col>
-            </v-row>
+            <v-layout>
+              <h3 class="primary--text">Basic Information</h3>
+              <v-spacer></v-spacer> 
+              <v-menu 
+                attach
+                offset-x
+                left
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn fab color="accent" v-on="on" v-bind="attrs">
+                    <v-icon>mdi-help</v-icon>
+                  </v-btn>
+                </template>
+                <v-sheet min-width="200px" style="padding: 8px;">
+                  Need help? Click <a href="mailto:events@thecrossingchurch.com">here</a> to email the Events Director with a question about your event.
+                </v-sheet>
+              </v-menu>
+            </v-layout>
             <v-row>
               <v-col>
                 <v-text-field
@@ -475,6 +505,41 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 </v-col>
               </v-row>
               <v-row>
+                <v-col cols="12" style='font-weight: bold;'>
+                  If you want to avoid a serving team, be sure to choose a vendor that is currently offering individually boxed meals. 
+                  <v-menu attach>
+                    <template v-slot:activator="{ on, attrs }">
+                      <span v-bind="attrs" v-on="on" class='accent-text'>
+                        Click here to see that list.
+                      </span>
+                    </template>
+                    <v-list>
+                      <v-list-item>
+                        Chick-fil-A
+                      </v-list-item>
+                      <v-list-item>
+                        Como Smoke and Fire
+                      </v-list-item>
+                      <v-list-item>
+                        Honey Baked Ham
+                      </v-list-item>
+                      <v-list-item>
+                        Panera
+                      </v-list-item>
+                      <v-list-item>
+                        Pickleman's
+                      </v-list-item>
+                      <v-list-item>
+                        Tropical Smoothie Cafe
+                      </v-list-item>
+                      <v-list-item>
+                        Word of Mouth Catering
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </v-col>
+              </v-row>
+              <v-row>
                 <v-col>
                   <v-text-field
                     label="Preferred Vendor"
@@ -579,6 +644,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     label="Where would you like your drinks delivered?"
                     v-model="request.DrinkDropOff"
                   ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-checkbox
+                    v-if="request.FoodDropOff != ''"
+                    label="Set-up drinks with food"
+                    v-model="sameFoodDrinkDropOff"
+                    dense
+                  ></v-checkbox>
                 </v-col>
               </v-row>
               <%-- Childcare Catering --%>
@@ -693,6 +766,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></v-text-field>
                 </v-col>
               </v-row>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <strong>
+                    What time do you need childcare to start?
+                  </strong>
+                  <time-picker
+                    v-model="request.CCStartTime"
+                    :value="request.CCStartTime"
+                    :default="defaultFoodTime"
+                    :rules="[rules.required(request.CCStartTime, 'Time')]"
+                  ></time-picker>
+                </v-col> 
+                <v-col cols="12" md="6">
+                  <strong>
+                    What time will childcare end?
+                  </strong>
+                  <time-picker
+                    v-model="request.CCEndTime"
+                    :value="request.CCEndTime"
+                    :default="request.EndTime"
+                    :rules="[rules.required(request.CCEndTime, 'Time')]"
+                  ></time-picker>
+                </v-col> 
+              </v-row>
             </template>
             <%-- Special Accommodations Info --%>
             <template v-if="request.needsAccom">
@@ -705,7 +802,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 <v-col cols="12" md="6">
                   <v-autocomplete
                     label="What tech needs do you have?"
-                    :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Live Stream', 'Pipe and Drape', 'BOSE System']"
+                    :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Basic Live Stream', 'Advanced Live Stream', 'Pipe and Drape', 'BOSE System']"
                     v-model="request.TechNeeds"
                     :hint="`${request.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`"
                     persistent-hint
@@ -1245,6 +1342,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     CCBudgetLine: "",
                     ChildCareOptions: "",
                     EstimatedKids: null,
+                    CCStartTime: '',
+                    CCEndTime: '',
                     TechNeeds: "",
                     RegistrationDate: "",
                     Fee: null,
@@ -1255,6 +1354,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 rooms: [],
                 ministries: [],
                 menu: false,
+                sameFoodDrinkDropOff: false,
                 rules: {
                     required(val, field) {
                         return !!val || `${field} is required`;
@@ -1483,6 +1583,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     window.scrollTo(0, 0);
                 },
                 submit() {
+                    this.request.Publicity = this.request.Publicity.filter(pub => {
+                        return pub.Date != '' && pub.Needs != ''
+                    })
+                    console.log(this.request)
                     $('[id$="hfRequest"]').val(JSON.stringify(this.request));
                     $('[id$="btnSubmit"')[0].click();
                 },
@@ -1649,6 +1753,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.checkTimeMeetsRequirements()
                 },
             },
+            watch: {
+                sameFoodDrinkDropOff(val) {
+                    if (val) {
+                        this.request.DrinkDropOff = this.request.FoodDropOff
+                    }
+                }
+            }
         });
     });
 </script>
@@ -1692,5 +1803,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   .btn-pub-add:hover .tooltip,
   .btn-pub-del:hover .tooltip {
     opacity: 1;
+  }
+  .accent-text {
+    color: #8ED2C9;
   }
 </style>
