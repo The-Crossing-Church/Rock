@@ -65,6 +65,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private int PageId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
         private List<DefinedValue> Ministries { get; set; }
+        private static class PageParameterKey
+        {
+            public const string Id = "Id";
+        }
         #endregion
 
         #region Base Control Methods
@@ -128,6 +132,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 ContentChannelItem item = new ContentChannelItemService( context ).Get( id.Value );
                 item.LoadAttributes();
                 string action = hfAction.Value;
+                bool emailDenyOptions = false;
                 switch ( action )
                 {
                     case "Deny":
@@ -136,13 +141,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     case "Cancel":
                         item.SetAttributeValue( "RequestStatus", "Cancelled" );
                         break;
+                    case "DenyUserComments":
+                        //Need to email user alternative
+                        emailDenyOptions = true; 
+                        item.SetAttributeValue( "RequestStatus", "Proposed Changes Denied" );
+                        break;
+                    case "DenyUser":
+                        item.SetAttributeValue( "RequestStatus", "Proposed Changes Denied" );
+                        break;
                     default:
                         item.SetAttributeValue( "RequestStatus", "Approved" );
                         break;
                 }
                 item.SaveAttributeValues( context );
                 hfRequestID.Value = null;
-                if ( action == "Approved" || action == "Deny" )
+                if ( action == "Approved" || action == "Deny" || emailDenyOptions )
                 {
                     Dictionary<string, string> query = new Dictionary<string, string>();
                     WorkflowType wfType = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "RequestWorkflow" ) ) );
@@ -194,8 +207,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelItemService svc = new ContentChannelItemService( context );
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
+            {
+                var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );
+                if(items.IndexOf(item) < 0 )
+                {
+                    items.Add( item );
+                }
+            }
             items.LoadAttributes();
-            hfRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } ) );
+            var requests = items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } );
+            hfRequests.Value = JsonConvert.SerializeObject( requests );
         }
 
         /// <summary>

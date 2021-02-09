@@ -39,6 +39,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
     <div>
       <v-card v-if="panel == 0">
         <v-card-text>
+          <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it has been {{request.Status}}.</v-alert>
+          <v-alert v-if="canEdit && request.Status && request.Status != 'Submitted'" type="warning">Any changes made to this request will need to be approved.</v-alert>
           <v-layout>
             <h3>Let's Design Your Event</h3>
             <v-spacer></v-spacer>
@@ -124,6 +126,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       </v-card>
       <v-card v-if="panel == 1">
         <v-card-text>
+          <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it has been {{request.Status}}.</v-alert>
+          <v-alert v-if="canEdit && request.Status && request.Status != 'Submitted'" type="warning">Any changes made to this request will need to be approved.</v-alert>
           <v-form ref="form" v-model="formValid">
             <v-alert type="error" v-if="!isValid && triedSubmit">
               Please review your request and fix all errors
@@ -271,7 +275,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         ></v-autocomplete>
                       </v-col>
                     </v-row>
-                    <v-row>
+                    <v-row v-if="request.needsOnline || request.needsPub || request.needsCatering || request.needsChildCare || request.needsAccom">
                       <v-col cols="12" md="6">
                         <v-switch
                           label="Do you need check-in?"
@@ -384,7 +388,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       ></v-autocomplete>
                     </v-col>
                   </v-row>
-                  <v-row>
+                  <v-row v-if="request.needsOnline || request.needsPub || request.needsCatering || request.needsChildCare || request.needsAccom">
                     <v-col cols="12" md="6">
                       <v-switch
                         label="Do you need check-in?"
@@ -478,6 +482,37 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></v-textarea>
                 </v-col>
               </v-row>
+              <template v-if="isRequestingVideo">
+                <v-row>
+                  <v-col>
+                    <strong>If you are requesting a video announcement, please provide three talking points to guide your spoken announcement. These should be no longer than 20 seconds when read aloud at a normal speaking pace.</strong>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-textarea
+                      label="Talking Point One"
+                      v-model="request.TalkingPointOne"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-textarea
+                      label="Talking Point Two"
+                      v-model="request.TalkingPointTwo"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-textarea
+                      label="Talking Point Three"
+                      v-model="request.TalkingPointThree"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+              </template>
               <v-row>
                 <v-col cols="12" md="6">
                   <v-file-input
@@ -638,6 +673,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></time-picker>
                 </v-col>
               </v-row>
+              <v-row v-if="request.Drinks.includes('Coffee')">
+                <v-col cols="12" md="6">
+                  <v-checkbox
+                    label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
+                    :rules="[rules.required(request.ServingTeamAgree, 'Agreement to provide a serving team')]"
+                    v-model="request.ServingTeamAgree"
+                  ></v-checkbox>
+                </v-col>
+              </v-row>
               <v-row>
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -708,6 +752,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
+                  <strong>
+                    What time do you need childcare to start?
+                  </strong>
+                  <time-picker
+                    v-model="request.CCStartTime"
+                    :value="request.CCStartTime"
+                    :default="defaultFoodTime"
+                    :rules="[rules.required(request.CCStartTime, 'Time')]"
+                  ></time-picker>
+                </v-col> 
+                <v-col cols="12" md="6">
+                  <strong>
+                    What time will childcare end?
+                  </strong>
+                  <time-picker
+                    v-model="request.CCEndTime"
+                    :value="request.CCEndTime"
+                    :default="request.EndTime"
+                    :rules="[rules.required(request.CCEndTime, 'Time')]"
+                  ></time-picker>
+                </v-col> 
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6">
                   <v-autocomplete
                     label="What ages of childcare do you want to offer?"
                     :items="['Infant/Toddler', 'Preschool', 'K-2nd', '3-5th']"
@@ -766,30 +834,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></v-text-field>
                 </v-col>
               </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <strong>
-                    What time do you need childcare to start?
-                  </strong>
-                  <time-picker
-                    v-model="request.CCStartTime"
-                    :value="request.CCStartTime"
-                    :default="defaultFoodTime"
-                    :rules="[rules.required(request.CCStartTime, 'Time')]"
-                  ></time-picker>
-                </v-col> 
-                <v-col cols="12" md="6">
-                  <strong>
-                    What time will childcare end?
-                  </strong>
-                  <time-picker
-                    v-model="request.CCEndTime"
-                    :value="request.CCEndTime"
-                    :default="request.EndTime"
-                    :rules="[rules.required(request.CCEndTime, 'Time')]"
-                  ></time-picker>
-                </v-col> 
-              </v-row>
             </template>
             <%-- Special Accommodations Info --%>
             <template v-if="request.needsAccom">
@@ -812,6 +856,50 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></v-autocomplete>
                 </v-col>
               </v-row>
+              <template v-if="!request.needsCatering">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <br />
+                    <v-row>
+                      <v-col>
+                        <v-autocomplete
+                          label="What drinks would you like to have?"
+                          :items="['Coffee', 'Soda', 'Water']"
+                          :hint="`${request.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`"
+                          persistent-hint
+                          v-model="request.Drinks"
+                          multiple
+                          chips
+                          attach
+                        ></v-autocomplete>
+                      </v-col>
+                    </v-row>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <strong>What time would you like your drinks to be delivered?</strong>
+                    <time-picker
+                      v-model="request.DrinkTime"
+                      :value="request.DrinkTime"
+                      :default="defaultFoodTime"
+                    ></time-picker>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col cols="12" md="6" v-if="request.Drinks.includes('Coffee')">
+                    <v-checkbox
+                      label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
+                      :rules="[rules.required(request.ServingTeamAgree, 'Agreement to provide a serving team')]"
+                      v-model="request.ServingTeamAgree"
+                    ></v-checkbox>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      label="Where would you like your drinks delivered?"
+                      v-model="request.DrinkDropOff"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </template>
               <v-row>
                 <v-col cols="12" md="6">
                   <v-menu
@@ -831,6 +919,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         readonly
                         v-bind="attrs"
                         v-on="on"
+                        clearable
                       ></v-text-field>
                     </template>
                     <v-date-picker
@@ -847,6 +936,51 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     prepend-inner-icon="mdi-currency-usd"
                     v-model="request.Fee"
                   ></v-text-field>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <br/>
+                  <v-row>
+                    <v-col>
+                      <v-menu
+                        v-model="menu2"
+                        :close-on-content-click="false"
+                        :nudge-right="40"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="290px"
+                        attach
+                      >
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-text-field
+                            v-model="request.RegistrationEndDate"
+                            label="What date should registration close?"
+                            prepend-inner-icon="mdi-calendar"
+                            readonly
+                            v-bind="attrs"
+                            v-on="on"
+                            :rules="[rules.registrationCloseDate(request.EventDates, request.RegistrationEndDate, request.needsChildCare)]"
+                            clearable
+                          ></v-text-field>
+                        </template>
+                        <v-date-picker
+                          v-model="request.RegistrationEndDate"
+                          @input="menu2 = false"
+                          :min="earliestPubDate"
+                        ></v-date-picker>
+                      </v-menu>
+                    </v-col>
+                  </v-row>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <strong>What time should registration close?</strong>
+                  <time-picker
+                    v-model="request.RegistrationEndTime"
+                    :value="request.RegistrationEndTime"
+                    :default="request.StartTime"
+                    :rules="[rules.registrationCloseTime(request.EventDates, request.RegistrationEndDate, request.needsChildCare, request.StartTime, request.EndTime, request.RegistrationEndTime)]"
+                  ></time-picker>
                 </v-col>
               </v-row>
             </template>
@@ -869,7 +1003,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-card-actions>
           <v-btn color="secondary" @click="prev">Back</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="next">{{( isExistingRequest ? 'Update' : 'Submit')}}</v-btn>
+          <v-btn color="primary" @click="next" v-if="canEdit">{{( isExistingRequest ? 'Update' : 'Submit')}}</v-btn>
           <Rock:BootstrapButton
             runat="server"
             ID="btnSubmit"
@@ -991,13 +1125,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             template: `
             <v-row>
                 <v-col>
-                    <v-select label="Hour" :items="hours" v-model="hour" attach :error-messages="errorMessage"></v-select>
+                    <v-select label="Hour" :items="hours" v-model="hour" attach :error-messages="errorMessage" clearable></v-select>
                 </v-col>
                 <v-col>
-                    <v-select label="Minute" :items="mins" v-model="minute" attach required></v-select>
+                    <v-select label="Minute" :items="mins" v-model="minute" attach required clearable></v-select>
                 </v-col>
                 <v-col>
-                    <v-select label="AM/PM" :items="aps" v-model="ap" attach required></v-select>
+                    <v-select label="AM/PM" :items="aps" v-model="ap" attach required clearable></v-select>
                 </v-col>
             </v-row>
         `,
@@ -1325,6 +1459,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         { Date: "", Needs: "" },
                     ],
                     PublicityBlurb: "",
+                    TalkingPointOne: "",
+                    TalkingPointTwo: "",
+                    TalkingPointThree: "",
                     PubImage: null,
                     ShowOnCalendar: false,
                     Vendor: "",
@@ -1334,6 +1471,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     FoodDropOff: "",
                     Drinks: "",
                     DinkTime: "",
+                    ServingTeamAgree: false,
                     DrinkDropOff: "",
                     BudgetLine: "",
                     CCVendor: "",
@@ -1346,6 +1484,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     CCEndTime: '',
                     TechNeeds: "",
                     RegistrationDate: "",
+                    RegistrationEndDate: "",
+                    RegistrationEndTime: "",
                     Fee: null,
                     Notes: "",
                 },
@@ -1354,6 +1494,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 rooms: [],
                 ministries: [],
                 menu: false,
+                menu2: false,
                 sameFoodDrinkDropOff: false,
                 rules: {
                     required(val, field) {
@@ -1434,6 +1575,38 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                         return true;
                     },
+                    registrationCloseDate(eventDates, closeDate, needsChildCare) {
+                        let dates = eventDates.map(d => moment(d))
+                        let minDate = moment.min(dates)
+                        if (needsChildCare) {
+                            minDate = minDate.subtract(1, "day")
+                        }
+                        if (moment(closeDate).isAfter(minDate)) {
+                            if (needsChildCare) {
+                                return 'When requesting childcare, registration must close 24 hours before the start of your event'
+                            }
+                            return 'Registration cannot end after your event'
+                        }
+                        return true
+                    },
+                    registrationCloseTime(eventDates, closeDate, needsChildCare, startTime, endtime, closeTime) {
+                        let dates = eventDates.map(d => moment(d))
+                        let minDate = moment.min(dates)
+                        let actualDate = moment(`${closeDate} ${closeTime}`)
+                        if (needsChildCare) {
+                            minDate = minDate.subtract(1, "day")
+                            minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
+                        } else {
+                            minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
+                        }
+                        if (moment(actualDate).isAfter(minDate)) {
+                            if (needsChildCare) {
+                                return 'When requesting childcare, registration must close 24 hours before the start of your event'
+                            }
+                            return 'Registration cannot end after your event'
+                        }
+                        return true
+                    }
                 },
                 valid: true,
                 formValid: true,
@@ -1450,7 +1623,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
                 let req = $('[id$="hfRequest"]')[0].value;
                 if (req) {
-                    this.request = JSON.parse(req);
+                    let parsed = JSON.parse(req)
+                    this.request = JSON.parse(parsed.Value)
+                    this.request.Id = parsed.Id
+                    this.request.Status = parsed.RequestStatus
+                    this.request.CreatedBy = parsed.CreatedBy
+                    this.request.canEdit = parsed.CanEdit
                     if (this.request.PubImage) {
                         this.pubImage = this.request.PubImage;
                     }
@@ -1460,7 +1638,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             mounted() {
                 let query = new URLSearchParams(window.location.search);
                 let success = query.get('ShowSuccess');
-                console.log(query)
                 if (success) {
                     if (success == "true") {
                         this.panel = 2;
@@ -1526,6 +1703,31 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                     return null;
                 },
+                defaultRegistraionStart() {
+                    if (this.request.needsAccom) {
+                        if (this.request.RegistrationDate) {
+                            return this.request.RegistrationDate
+                        }
+                        if (this.request.Publicity) {
+                            let pubDates = this.request.Publicity.filter(p => { return p.Date != '' }).map(p => moment(p.Date))
+                            let firstDate = moment.min(pubDates)
+                            return firstDate.subtract(3, 'days').format("yyyy-MM-DD")
+                        }
+                    }
+                    return ""
+                },
+                defaultRegistraionEnd() {
+                    if (this.request.needsAccom) {
+                        if (this.request.RegistrationEndDate) {
+                            return this.request.RegistrationEndDate
+                        }
+                        if (this.request.EventDates) {
+                            let dates = this.request.EventDates.map(d => moment(d))
+                            return moment.min(dates).subtract(1, "day").format("yyyy-MM-DD")
+                        }
+                    }
+                    return ""
+                },
                 longDates() {
                     return this.request.EventDates.map((i) => {
                         return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
@@ -1544,8 +1746,25 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         return true
                     }
                     return false
+                },
+                isRequestingVideo() {
+                    if (this.request) {
+                        let isRequesting = false
+                        this.request.Publicity.forEach(p => {
+                            if (p.Needs.includes('Video/Stage Announcement')) {
+                                isRequesting = true
+                            }
+                        })
+                        return isRequesting
+                    }
+                    return false
+                },
+                canEdit() {
+                    if (this.request.canEdit != null) {
+                        return this.request.canEdit
+                    }
+                    return true
                 }
-
             },
             methods: {
                 boolToYesNo(val) {
@@ -1711,7 +1930,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         let info = this.request.EndTime.split(':')
                         if (parseInt(info[0]) >= 9) {
                             meetsTimeRequirements = false
-                            this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director.'
+                            this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
                         }
                     }
                     //Check more specific range for Satuday and Sunday
@@ -1757,6 +1976,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 sameFoodDrinkDropOff(val) {
                     if (val) {
                         this.request.DrinkDropOff = this.request.FoodDropOff
+                    }
+                },
+                defaultRegistraionEnd(val) {
+                    if (val) {
+                        this.request.RegistrationEndDate = val
+                    }
+                },
+                defaultRegistraionStart(val) {
+                    if (val) {
+                        this.request.RegistrationDate = val
                     }
                 }
             }

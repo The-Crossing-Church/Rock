@@ -41,6 +41,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Description( "All Event Submissions" )]
 
     [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
+    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 0 )]
     [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 0 )]
 
     public partial class EventSubmissionHistory : Rock.Web.UI.RockBlock
@@ -48,9 +49,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         #region Variables
         public RockContext context { get; set; }
         private int DefinedTypeId { get; set; }
+        private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
         private int PageId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
+        private List<DefinedValue> Ministries { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -78,9 +81,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             base.OnLoad( e );
             context = new RockContext();
             DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
+            MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
             ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
             Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
             hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
+            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
+            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
             GetAllRequests();
             if ( !Page.IsPostBack )
             {

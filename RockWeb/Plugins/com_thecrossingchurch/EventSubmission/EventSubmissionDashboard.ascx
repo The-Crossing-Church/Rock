@@ -69,7 +69,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col><strong>Submitted On</strong></v-col>
                     <v-col><strong>Event Dates</strong></v-col>
                     <v-col><strong>Requested Resources</strong></v-col>
-                    <v-col><strong>Status</strong></v-col>
+                    <v-col cols="3"><strong>Status</strong></v-col>
                     <v-col cols="1"><strong>Add Buffer</strong></v-col>
                   </v-row>
                 </v-list-item>
@@ -86,14 +86,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
                     <v-col>{{ requestType(r) }}</v-col>
-                    <v-col>
+                    <v-col cols="3">
                       <v-row align="center">
-                        <v-col :class="getStatusPillClass(r.RequestStatus)"
+                        <v-col cols="6" :class="getStatusPillClass(r.RequestStatus)"
                           >{{ r.RequestStatus }}</v-col
                         >
-                        <v-col class="no-top-pad">
+                        <v-col cols="6" class="no-top-pad">
                           <v-btn
-                            v-if="r.RequestStatus == 'Submitted'"
+                            v-if="r.RequestStatus == 'Submitted' || r.RequestStatus == 'Pending Changes'"
                             color="accent"
                             @click="changeStatus('Approved', r.Id)"
                             >Approve</v-btn
@@ -101,7 +101,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </v-col>
                       </v-row>
                     </v-col>
-                    <v-col cols="1">
+                    <v-col cols="1" class='d-flex justify-center'>
                       <v-btn v-if="r.RequestStatus != 'Approved'" color="primary" @click="selected = r; bufferErrMsg = ''; dialog = true;" fab>
                         <v-icon>mdi-clock-outline</v-icon>
                       </v-btn>
@@ -156,7 +156,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
           <v-card-title>
-            {{selected.Name}}
+            <template v-if="selected.Changes != null && selected.Name != selected.Changes.Name">
+              <span class='red--text'>{{selected.Name}}: </span>
+              <span class='primary--text'>{{selected.Changes.Name}}</span>
+            </template>
+            <template v-else>
+              {{selected.Name}}
+            </template>
             <v-spacer></v-spacer>
             <div :class="getStatusPillClass(selected.RequestStatus)">
               {{selected.RequestStatus}}
@@ -177,11 +183,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row>
               <v-col>
                 <div class="floating-title">Ministry</div>
-                {{formatMinistry(selected.Ministry)}}
+                <template v-if="selected.Changes != null && selected.Ministry != selected.Changes.Ministry">
+                  <span class='red--text'>{{formatMinistry(selected.Ministry)}}: </span>
+                  <span class='primary--text'>{{formatMinistry(selected.Changes.Ministry)}}</span>
+                </template>
+                <template v-else>
+                  {{formatMinistry(selected.Ministry)}}
+                </template>
               </v-col>
               <v-col>
                 <div class="floating-title">Contact</div>
-                {{selected.Contact}}
+                <template v-if="selected.Changes != null && selected.Contact != selected.Changes.Contact">
+                  <span class='red--text'>{{selected.Contact}}: </span>
+                  <span class='primary--text'>{{selected.Changes.Contact}}</span>
+                </template>
+                <template v-else>
+                  {{selected.Contact}}
+                </template>
               </v-col>
             </v-row>
             <v-row>
@@ -193,17 +211,35 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row>
               <v-col>
                 <div class="floating-title">Request Dates</div>
-                {{formatDates(selected.EventDates)}}
+                <template v-if="selected.Changes != null && formatDates(selected.EventDates) != formatDates(selected.Changes.EventDates)">
+                  <span class='red--text'>{{formatDates(selected.EventDates)}}: </span>
+                  <span class='primary--text'>{{formatDates(selected.Changes.EventDates)}}</span>
+                </template>
+                <template v-else>
+                  {{formatDates(selected.EventDates)}}
+                </template>
               </v-col>
             </v-row>
             <v-row v-if="selected.StartTime || selected.EndTime">
               <v-col v-if="selected.StartTime">
                 <div class="floating-title">Start Time</div>
-                {{selected.StartTime}}
+                <template v-if="selected.Changes != null && selected.StartTime != selected.Changes.StartTime">
+                  <span class='red--text'>{{selected.StartTime}}: </span>
+                  <span class='primary--text'>{{selected.Changes.StartTime}}</span>
+                </template>
+                <template v-else>
+                  {{selected.StartTime}}
+                </template>
               </v-col>
               <v-col v-if="selected.EndTime">
                 <div class="floating-title">End Time</div>
-                {{selected.EndTime}}
+                <template v-if="selected.Changes != null && selected.EndTime != selected.Changes.EndTime">
+                  <span class='red--text'>{{selected.EndTime}}: </span>
+                  <span class='primary--text'>{{selected.Changes.EndTime}}</span>
+                </template>
+                <template v-else>
+                  {{selected.EndTime}}
+                </template>
               </v-col>
             </v-row>
             <v-row v-if="selected.MinsStartBuffer || selected.MinsEndBuffer">
@@ -220,17 +256,35 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-row>
                 <v-col>
                   <div class="floating-title">Expected Number of Attendees</div>
-                  {{selected.ExpectedAttendance}}
+                  <template v-if="selected.Changes != null && selected.ExpectedAttendance != selected.Changes.ExpectedAttendance">
+                    <span class='red--text'>{{selected.ExpectedAttendance}}: </span>
+                    <span class='primary--text'>{{selected.Changes.ExpectedAttendance}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.ExpectedAttendance}}
+                  </template>
                 </v-col>
                 <v-col>
                   <div class="floating-title">Desired Rooms/Spaces</div>
-                  {{formatRooms(selected.Rooms)}}
+                  <template v-if="selected.Changes != null && formatRooms(selected.Rooms) != formatRooms(selected.Changes.Rooms)">
+                    <span class='red--text'>{{formatRooms(selected.Rooms)}}: </span>
+                    <span class='primary--text'>{{formatRooms(selected.Changes.Rooms)}}</span>
+                  </template>
+                  <template v-else>
+                    {{formatRooms(selected.Rooms)}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
                   <div class="floating-title">Check-in Requested</div>
-                  {{boolToYesNo(selected.Checkin)}}
+                  <template v-if="selected.Changes != null && selected.Checkin != selected.Changes.Checkin">
+                    <span class='red--text'>{{boolToYesNo(selected.Checkin)}}: </span>
+                    <span class='primary--text'>{{boolToYesNo(selected.Changes.Checkin)}}</span>
+                  </template>
+                  <template v-else>
+                    {{boolToYesNo(selected.Checkin)}}
+                  </template>
                 </v-col>
               </v-row>
             </template>
@@ -238,11 +292,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-row>
                 <v-col>
                   <div class="floating-title">Event Link</div>
-                  {{selected.EventURL}}
+                  <template v-if="selected.Changes != null && selected.EventURL != selected.Changes.EventURL">
+                    <span class='red--text'>{{selected.EventURL}}: </span>
+                    <span class='primary--text'>{{selected.Changes.EventURL}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.EventURL}}
+                  </template>
                 </v-col>
                 <v-col v-if="selected.ZoomPassword != ''">
                   <div class="floating-title">Password</div>
-                  {{selected.ZoomPassword}}
+                  <template v-if="selected.Changes != null && selected.ZoomPassword != selected.Changes.ZoomPassword">
+                    <span class='red--text'>{{selected.ZoomPassword}}: </span>
+                    <span class='primary--text'>{{selected.Changes.ZoomPassword}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.ZoomPassword}}
+                  </template>
                 </v-col>
               </v-row>
             </template>
@@ -250,17 +316,71 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-row v-for="(p, idx) in selected.Publicity" :key="`pub_${idx}`">
                 <v-col>
                   <div class="floating-title">Publicity Date</div>
-                  {{p.Date | formatDate}}
+                  <template v-if="selected.Changes != null && p.Date != selected.Changes.Publicity[idx].Date">
+                    <span class='red--text'>{{p.Date | formatDate}}: </span>
+                    <span class='primary--text'>{{selected.Changes.Publicity[idx].Date | formatDate}}</span>
+                  </template>
+                  <template v-else>
+                    {{p.Date | formatDate}}
+                  </template>
                 </v-col>
                 <v-col>
                   <div class="floating-title">Publicity Need</div>
-                  {{p.Needs.join(', ')}}
+                  <template v-if="selected.Changes != null && p.Needs.join(', ') != selected.Changes.Publicity[idx].Needs.join(', ')">
+                    <span class='red--text'>{{p.Needs.join(', ')}}: </span>
+                    <span class='primary--text'>{{selected.Changes.Publicity[idx].Needs.join(', ')}}</span>
+                  </template>
+                  <template v-else>
+                    {{p.Needs.join(', ')}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row v-if="selected.PublicityBlurb">
                 <v-col>
                   <div class="floating-title">Publicity Blurb</div>
-                  {{selected.PublicityBlurb}}
+                  <template v-if="selected.Changes != null && selected.PublicityBlurb != selected.Changes.PublicityBlurb">
+                    <span class='red--text'>{{selected.PublicityBlurb}}: </span>
+                    <span class='primary--text'>{{selected.Changes.PublicityBlurb}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.PublicityBlurb}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.TalkingPointOne">
+                <v-col>
+                  <div class="floating-title">Talking Point One</div>
+                  <template v-if="selected.Changes != null && selected.TalkingPointOne != selected.Changes.TalkingPointOne">
+                    <span class='red--text'>{{selected.TalkingPointOne}}: </span>
+                    <span class='primary--text'>{{selected.Changes.TalkingPointOne}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.TalkingPointOne}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.TalkingPointTwo">
+                <v-col>
+                  <div class="floating-title">Talking Point Two</div>
+                  <template v-if="selected.Changes != null && selected.TalkingPointTwo != selected.Changes.TalkingPointTwo">
+                    <span class='red--text'>{{selected.TalkingPointTwo}}: </span>
+                    <span class='primary--text'>{{selected.Changes.TalkingPointTwo}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.TalkingPointTwo}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.TalkingPointThree">
+                <v-col>
+                  <div class="floating-title">Talking Point Three</div>
+                  <template v-if="selected.Changes != null && selected.TalkingPointThree != selected.Changes.TalkingPointThree">
+                    <span class='red--text'>{{selected.TalkingPointThree}}: </span>
+                    <span class='primary--text'>{{selected.Changes.TalkingPointThree}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.TalkingPointThree}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row>
@@ -273,7 +393,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </v-col>
                 <v-col>
                   <div class="floating-title">Add to public calendar</div>
-                  {{boolToYesNo(selected.ShowOnCalendar)}}
+                  <template v-if="selected.Changes != null && selected.ShowOnCalendar != selected.Changes.ShowOnCalendar">
+                    <span class='red--text'>{{boolToYesNo(selected.ShowOnCalendar)}}: </span>
+                    <span class='primary--text'>{{boolToYesNo(selected.Changes.ShowOnCalendar)}}</span>
+                  </template>
+                  <template v-else>
+                    {{boolToYesNo(selected.ShowOnCalendar)}}
+                  </template>
                 </v-col>
               </v-row>
             </template>
@@ -281,21 +407,45 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-row>
                 <v-col>
                   <div class="floating-title">Childcare Age Groups</div>
-                  {{selected.ChildCareOptions.join(', ')}}
+                  <template v-if="selected.Changes != null && selected.ChildCareOptions.join(', ') != selected.Changes.ChildCareOptions.join(', ')">
+                    <span class='red--text'>{{selected.ChildCareOptions.join(', ')}}: </span>
+                    <span class='primary--text'>{{selected.Changes.ChildCareOptions.join(', ')}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.ChildCareOptions.join(', ')}}
+                  </template>
                 </v-col>
                 <v-col>
                   <div class="floating-title">Expected Number of Children</div>
-                  {{selected.EstimatedKids}}
+                  <template v-if="selected.Changes != null && selected.EstimatedKids != selected.Changes.EstimatedKids">
+                    <span class='red--text'>{{selected.EstimatedKids}}: </span>
+                    <span class='primary--text'>{{selected.Changes.EstimatedKids}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.EstimatedKids}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
                   <div class="floating-title">Childcare Start Time</div>
-                  {{selected.CCStartTime}}
+                  <template v-if="selected.Changes != null && selected.CCStartTime != selected.Changes.CCStartTime">
+                    <span class='red--text'>{{selected.CCStartTime}}: </span>
+                    <span class='primary--text'>{{selected.Changes.CCStartTime}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.CCStartTime}}
+                  </template>
                 </v-col>
                 <v-col>
                   <div class="floating-title">Childcare End Time</div>
-                  {{selected.CCEndTime}}
+                  <template v-if="selected.Changes != null && selected.CCEndTime != selected.Changes.CCEndTime">
+                    <span class='red--text'>{{selected.CCEndTime}}: </span>
+                    <span class='primary--text'>{{selected.Changes.CCEndTime}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.CCEndTime}}
+                  </template>
                 </v-col>
               </v-row>
             </template>
@@ -303,27 +453,57 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-row>
                 <v-col>
                   <div class="floating-title">Preferred Vendor</div>
-                  {{selected.Vendor}}
+                  <template v-if="selected.Changes != null && selected.Vendor != selected.Changes.Vendor">
+                    <span class='red--text'>{{selected.Vendor}}: </span>
+                    <span class='primary--text'>{{selected.Changes.Vendor}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.Vendor}}
+                  </template>
                 </v-col>
                 <v-col>
                   <div class="floating-title">Budget Line</div>
-                  {{selected.BudgetLine}}
+                  <template v-if="selected.Changes != null && selected.BudgetLine != selected.Changes.BudgetLine">
+                    <span class='red--text'>{{selected.BudgetLine}}: </span>
+                    <span class='primary--text'>{{selected.Changes.BudgetLine}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.BudgetLine}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
                   <div class="floating-title">Preferred Menu</div>
-                  {{selected.Menu}}
+                  <template v-if="selected.Changes != null && selected.Menu != selected.Changes.Menu">
+                    <span class='red--text'>{{selected.Menu}}: </span>
+                    <span class='primary--text'>{{selected.Changes.Menu}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.Menu}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
                   <div class="floating-title">{{foodTimeTitle}}</div>
-                  {{selected.FoodTime}}
+                  <template v-if="selected.Changes != null && selected.FoodTime != selected.Changes.FoodTime">
+                    <span class='red--text'>{{selected.FoodTime}}: </span>
+                    <span class='primary--text'>{{selected.Changes.FoodTime}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.FoodTime}}
+                  </template>
                 </v-col>
                 <v-col v-if="selected.FoodDelivery">
                   <div class="floating-title">Food Drop off Location</div>
-                  {{selected.FoodDropOff}}
+                  <template v-if="selected.Changes != null && selected.FoodDropOff != selected.Changes.FoodDropOff">
+                    <span class='red--text'>{{selected.FoodDropOff}}: </span>
+                    <span class='primary--text'>{{selected.Changes.FoodDropOff}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.FoodDropOff}}
+                  </template>
                 </v-col>
               </v-row>
               <template v-if="selected.needsChildCare">
@@ -332,11 +512,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <div class="floating-title">
                       Preferred Vendor for Childcare
                     </div>
-                    {{selected.CCVendor}}
+                    <template v-if="selected.Changes != null && selected.CCVendor != selected.Changes.CCVendor">
+                      <span class='red--text'>{{selected.CCVendor}}: </span>
+                      <span class='primary--text'>{{selected.Changes.CCVendor}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.CCVendor}}
+                    </template>
                   </v-col>
                   <v-col>
                     <div class="floating-title">Budget Line for Childcare</div>
-                    {{selected.CCBudgetLine}}
+                    <template v-if="selected.Changes != null && selected.CCBudgetLine != selected.Changes.CCBudgetLine">
+                      <span class='red--text'>{{selected.CCBudgetLine}}: </span>
+                      <span class='primary--text'>{{selected.Changes.CCBudgetLine}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.CCBudgetLine}}
+                    </template>
                   </v-col>
                 </v-row>
                 <v-row>
@@ -344,38 +536,118 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <div class="floating-title">
                       Preferred Menu for Childcare
                     </div>
-                    {{selected.CCMenu}}
+                    <template v-if="selected.Changes != null && selected.CCMenu != selected.Changes.CCMenu">
+                      <span class='red--text'>{{selected.CCMenu}}: </span>
+                      <span class='primary--text'>{{selected.Changes.CCMenu}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.CCMenu}}
+                    </template>
                   </v-col>
                 </v-row>
                 <v-row>
                   <v-col>
                     <div class="floating-title">ChildCare Food Set-up time</div>
-                    {{selected.CCFoodTime}}
+                    <template v-if="selected.Changes != null && selected.CCFoodTime != selected.Changes.CCFoodTime">
+                      <span class='red--text'>{{selected.CCFoodTime}}: </span>
+                      <span class='primary--text'>{{selected.Changes.CCFoodTime}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.CCFoodTime}}
+                    </template>
                   </v-col>
                 </v-row>
               </template>
             </template>
-            <template v-if="selected.needsAccom">
-              <v-row v-if="selected.Drinks">
-                <v-col>
-                  <div class="floating-title">Desired Drinks</div>
+            <v-row v-if="selected.Drinks && selected.Drinks.length > 0">
+              <v-col>
+                <div class="floating-title">Desired Drinks</div>
+                <template v-if="selected.Changes != null && selected.Drinks.join(', ') != selected.Changes.Drinks.join(', ')">
+                  <span class='red--text'>{{selected.Drinks.join(', ')}}: </span>
+                  <span class='primary--text'>{{selected.Changes.Drinks.join(', ')}}</span>
+                </template>
+                <template v-else>
                   {{selected.Drinks.join(', ')}}
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.TechNeeds">
+                </template>
+              </v-col>
+            </v-row>
+            <v-row v-if="selected.DrinkTime">
+              <v-col>
+                <div class="floating-title">Drink Set-up Time</div>
+                <template v-if="selected.Changes != null && selected.DrinkTime != selected.Changes.DrinkTime">
+                  <span class='red--text'>{{selected.DrinkTime}}: </span>
+                  <span class='primary--text'>{{selected.Changes.DrinkTime}}</span>
+                </template>
+                <template v-else>
+                  {{selected.DrinkTime}}
+                </template>
+              </v-col>
+              <v-col>
+                <div class="floating-title">Drink Drop off Location</div>
+                <template v-if="selected.Changes != null && selected.DrinkDropOff != selected.Changes.DrinkDropOff">
+                  <span class='red--text'>{{selected.DrinkDropOff}}: </span>
+                  <span class='primary--text'>{{selected.Changes.DrinkDropOff}}</span>
+                </template>
+                <template v-else>
+                  {{selected.DrinkDropOff}}
+                </template>
+              </v-col>
+            </v-row>
+            <template v-if="selected.needsAccom">
+              <v-row v-if="selected.TechNeeds && selected.TechNeeds.length > 0">
                 <v-col>
                   <div class="floating-title">Tech Needs</div>
-                  {{selected.TechNeeds.join(', ')}}
+                  <template v-if="selected.Changes != null && selected.TechNeeds.join(', ') != selected.Changes.TechNeeds.join(', ')">
+                    <span class='red--text'>{{selected.TechNeeds.join(', ')}}: </span>
+                    <span class='primary--text'>{{selected.Changes.TechNeeds.join(', ')}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.TechNeeds.join(', ')}}
+                  </template>
                 </v-col>
               </v-row>
               <v-row v-if="selected.RegistrationDate">
                 <v-col>
                   <div class="floating-title">Registration Date</div>
-                  {{selected.RegistrationDate | formatDate}}
+                  <template v-if="selected.Changes != null && selected.RegistrationDate != selected.Changes.RegistrationDate">
+                    <span class='red--text'>{{selected.RegistrationDate | formatDate}}: </span>
+                    <span class='primary--text'>{{selected.Changes.RegistrationDate | formatDate}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.RegistrationDate | formatDate}}
+                  </template>
                 </v-col>
                 <v-col v-if="selected.Fee">
                   <div class="floating-title">Registration Fee</div>
-                  {{selected.Fee | formatCurrency}}
+                  <template v-if="selected.Changes != null && selected.Fee != selected.Changes.Fee">
+                    <span class='red--text'>{{selected.Fee | formatCurrency}}: </span>
+                    <span class='primary--text'>{{selected.Changes.Fee | formatCurrency}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.Fee | formatCurrency}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.RegistrationEndDate">
+                <v-col>
+                  <div class="floating-title">Registration Close Date</div>
+                  <template v-if="selected.Changes != null && selected.RegistrationEndDate != selected.Changes.RegistrationEndDate">
+                    <span class='red--text'>{{selected.RegistrationEndDate | formatDate}}: </span>
+                    <span class='primary--text'>{{selected.Changes.RegistrationEndDate | formatDate}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.RegistrationEndDate | formatDate}}
+                  </template>
+                </v-col>
+                <v-col v-if="selected.RegistrationEndTime">
+                  <div class="floating-title">Registration Close Time</div>
+                  <template v-if="selected.Changes != null && selected.RegistrationEndTime != selected.Changes.RegistrationEndTime">
+                    <span class='red--text'>{{selected.RegistrationEndTime}}: </span>
+                    <span class='primary--text'>{{selected.Changes.RegistrationEndTime}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.RegistrationEndTime}}
+                  </template>
                 </v-col>
               </v-row>
             </template>
@@ -391,17 +663,47 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             >
               <v-icon>mdi-check</v-icon> Approve
             </v-btn>
-            <v-btn
-              v-if="selected.RequestStatus != 'Denied'"
-              color="red"
-              @click="changeStatus('Deny', selected.Id)"
+            <v-speed-dial
+              v-model="fab"
+              open-on-hover
+              style="margin-left: 8px;"
             >
-              <v-icon>mdi-close</v-icon> Deny
-            </v-btn>
+              <template v-slot:activator>
+                <v-btn
+                  v-if="selected.RequestStatus != 'Denied'"
+                  color="red"
+                  v-model="fab"
+                >
+                  <v-icon>mdi-close</v-icon> Deny
+                </v-btn>
+              </template>
+              <v-btn
+                v-if="selected.RequestStatus != 'Denied'"
+                color="red"
+                @click="changeStatus('Deny', selected.Id)"
+              >
+                <v-icon>mdi-close</v-icon> Request
+              </v-btn>
+              <v-btn
+                v-if="selected.RequestStatus == 'Pending Changes'"
+                color="red"
+                @click="changeStatus('DenyUser', selected.Id)"
+              >
+                <v-icon>mdi-close</v-icon> Changes
+              </v-btn>
+              <v-btn
+                v-if="selected.RequestStatus == 'Pending Changes'"
+                color="red"
+                @click="changeStatus('DenyUserComments', selected.Id)"
+              >
+                <v-icon>mdi-close</v-icon> Changes w/ Comment
+              </v-btn>
+            </v-speed-dial>
             <v-btn
               v-if="selected.RequestStatus != 'Cancelled'"
               color="grey"
               @click="changeStatus('Cancel', selected.Id)"
+              style="margin-left: 8px;"
             >
               <v-icon>mdi-cancel</v-icon> Cancel
             </v-btn>
@@ -482,6 +784,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 rooms: [],
                 ministries: [],
                 bufferErrMsg: '',
+                fab: false
             },
             created() {
                 this.getRecent();
@@ -489,6 +792,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
                 this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
                 window['moment-range'].extendMoment(moment)
+                let query = new URLSearchParams(window.location.search);
+                if (query.get('Id')) {
+                    this.selected = this.requests.filter(i => {
+                        if (i.Id == query.get('Id')) {
+                            return i
+                        }
+                    })[0]
+                    this.overlay = true
+                }
             },
             filters: {
                 formatDateTime(val) {
@@ -567,6 +879,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         req.CreatedBy = i.CreatedBy;
                         req.CreatedOn = i.CreatedOn;
                         req.RequestStatus = i.RequestStatus;
+                        req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
                         temp.push(req);
                     });
                     this.requests = temp;
@@ -658,13 +971,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     if (status == "Approved") {
                         return "no-top-pad status-pill approved";
                     }
-                    if (status == "Submitted") {
+                    if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
                         return "no-top-pad status-pill submitted";
                     }
-                    if (status == "Cancelled") {
+                    if (status == "Cancelled" || status == "Cancelled by User") {
                         return "no-top-pad status-pill cancelled";
                     }
-                    if (status == "Denied") {
+                    if (status == "Denied" || status == "Proposed Changes Denied") {
                         return "no-top-pad status-pill denied";
                     }
                 },

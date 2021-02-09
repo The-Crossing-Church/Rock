@@ -25,6 +25,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 ></script>
 
 <asp:HiddenField ID="hfRooms" runat="server" />
+<asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 
 <div id="app">
@@ -163,7 +164,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row>
               <v-col>
                 <div class="floating-title">Ministry</div>
-                {{selected.Ministry}}
+                {{formatMinistry(selected.Ministry)}}
               </v-col>
               <v-col>
                 <div class="floating-title">Contact</div>
@@ -173,7 +174,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row>
               <v-col>
                 <div class="floating-title">Requested Resources</div>
-                {{requestType(selected)}}
+                {{requestType(this.selected)}}
               </v-col>
             </v-row>
             <v-row>
@@ -192,6 +193,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 {{selected.EndTime}}
               </v-col>
             </v-row>
+            <v-row v-if="selected.MinsStartBuffer || selected.MinsEndBuffer">
+              <v-col v-if="selected.MinsStartBuffer">
+                <div class="floating-title">Set-up Buffer</div>
+                {{selected.MinsStartBuffer}} minutes
+              </v-col>
+              <v-col v-if="selected.MinsEndBuffer">
+                <div class="floating-title">Tear-down Buffer</div>
+                {{selected.MinsEndBuffer}} minutes
+              </v-col>
+            </v-row>
             <template v-if="selected.needsSpace">
               <v-row>
                 <v-col>
@@ -201,6 +212,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 <v-col>
                   <div class="floating-title">Desired Rooms/Spaces</div>
                   {{formatRooms(selected.Rooms)}}
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Check-in Requested</div>
+                  {{boolToYesNo(selected.Checkin)}}
                 </v-col>
               </v-row>
             </template>
@@ -233,6 +250,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                   {{selected.PublicityBlurb}}
                 </v-col>
               </v-row>
+              <v-row v-if="selected.TalkingPointOne">
+                <v-col>
+                  <div class="floating-title">Talking Point One</div>
+                  {{selected.TalkingPointOne}}
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.TalkingPointTwo">
+                <v-col>
+                  <div class="floating-title">Talking Point Two</div>
+                  {{selected.TalkingPointTwo}}
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.TalkingPointThree">
+                <v-col>
+                  <div class="floating-title">Talking Point Three</div>
+                  {{selected.TalkingPointThree}}
+                </v-col>
+              </v-row>
               <v-row>
                 <v-col v-if="selected.PubImage">
                   <div class="floating-title">Publicity Image</div>
@@ -250,12 +285,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <template v-if="selected.needsChildCare">
               <v-row>
                 <v-col>
-                  <div class="floating-title">Childcare Ages Groups</div>
+                  <div class="floating-title">Childcare Age Groups</div>
                   {{selected.ChildCareOptions.join(', ')}}
                 </v-col>
                 <v-col>
                   <div class="floating-title">Expected Number of Children</div>
                   {{selected.EstimatedKids}}
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Childcare Start Time</div>
+                  {{selected.CCStartTime}}
+                </v-col>
+                <v-col>
+                  <div class="floating-title">Childcare End Time</div>
+                  {{selected.CCEndTime}}
                 </v-col>
               </v-row>
             </template>
@@ -376,6 +421,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 selected: {},
                 overlay: false,
                 rooms: [],
+                ministries: [],
                 page: 0,
                 rows: 15,
                 filters: {
@@ -387,6 +433,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             created() {
                 this.getRequests();
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
             },
             filters: {
                 formatDateTime(val) {
@@ -507,6 +554,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                             });
                         });
                         return rms.join(", ");
+                    }
+                    return "";
+                },
+                formatMinistry(val) {
+                    if (val) {
+                        let formattedVal = this.ministries.filter(m => {
+                            return m.Id == val
+                        })
+                        return formattedVal[0].Value
                     }
                     return "";
                 },
