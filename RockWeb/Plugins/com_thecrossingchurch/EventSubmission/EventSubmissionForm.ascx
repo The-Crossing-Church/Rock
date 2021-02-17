@@ -33,6 +33,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 <asp:HiddenField ID="hfReservations" runat="server" />
 <asp:HiddenField ID="hfRequest" runat="server" />
 <asp:HiddenField ID="hfUpcomingRequests" runat="server" />
+<asp:HiddenField ID="hfThisWeeksRequests" runat="server" />
 
 <div id="app">
   <v-app>
@@ -278,7 +279,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-row v-if="request.needsOnline || request.needsPub || request.needsCatering || request.needsChildCare || request.needsAccom">
                       <v-col cols="12" md="6">
                         <v-switch
-                          label="Do you need check-in?"
+                          label="Do you need in-person check-in on the day of the event?"
                           v-model="request.Checkin"
                         ></v-switch>
                       </v-col>
@@ -391,7 +392,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-row v-if="request.needsOnline || request.needsPub || request.needsCatering || request.needsChildCare || request.needsAccom">
                     <v-col cols="12" md="6">
                       <v-switch
-                        label="Do you need check-in?"
+                        label="Do you need in-person check-in on the day of the event?"
                         v-model="request.Checkin"
                       ></v-switch>
                     </v-col>
@@ -521,7 +522,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     prepend-inner-icon="mdi-camera"
                     prepend-icon=""
                     v-model="pubImage"
-                    @change="handleFile"
+                    @change="handlePubFile"
                   ></v-file-input>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -983,6 +984,26 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></time-picker>
                 </v-col>
               </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-textarea
+                    label="Please describe the set-up you require for your event"
+                    v-model="request.SetUp"
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-file-input
+                    accept="image/*"
+                    label="If you have an image of the set-up layout you would like upload it here"
+                    prepend-inner-icon="mdi-camera"
+                    prepend-icon=""
+                    v-model="setupImage"
+                    @change="handleSetUpFile"
+                  ></v-file-input>
+                </v-col>
+              </v-row>
             </template>
             <%-- Notes --%>
             <v-row>
@@ -1177,6 +1198,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             },
             computed: {
                 time() {
+                    if (`${this.hour}:${this.minute} ${this.ap}` == 'null:null null') {
+                        return ''
+                    }
                     return `${this.hour}:${this.minute} ${this.ap}`;
                 },
             },
@@ -1192,9 +1216,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 value(val) {
-                    this.hour = val.split(":")[0];
-                    this.minute = val.split(":")[1].split(" ")[0];
-                    this.ap = val.split(" ")[1];
+                    if (val) {
+                        this.hour = val.split(":")[0];
+                        this.minute = val.split(":")[1].split(" ")[0];
+                        this.ap = val.split(" ")[1];
+                    }
                 },
                 rules(val) {
                     let allTrue = true;
@@ -1306,31 +1332,21 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             created() {
                 this.allEvents = [];
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-                let names = [
-                    "Meeting",
-                    "Useless Meeting",
-                    "Small Group",
-                    "OK Boomers",
-                    "CK Event",
-                    "Rave",
-                ];
-                let start = new Date();
-                let end = new Date(moment().add(7, "days").format("yyyy-MM-DD"));
-                for (i = 0; i < this.rooms.length * 3; i++) {
-                    let nameIdx = Math.floor(Math.random() * 6);
-                    let roomIdx = Math.floor(Math.random() * this.rooms.length);
-                    let dtStart = new Date(
-                        start.getTime() + Math.random() * (end.getTime() - start.getTime())
-                    );
-                    let duration = Math.floor(Math.random() * 2) + 1;
-                    this.allEvents.push({
-                        name: names[nameIdx],
-                        start: moment(dtStart).format("yyyy-MM-DD HH:mm"),
-                        end: moment(dtStart)
-                            .add(duration, "hours")
-                            .format("yyyy-MM-DD HH:mm"),
-                        loc: this.rooms[roomIdx],
-                    });
+                let rawEvents = JSON.parse($('[id$="hfThisWeeksRequests"]')[0].value);
+                let oneWeek = moment().add(6, 'days')
+                for (i = 0; i < rawEvents.length; i++) {
+                    let event = JSON.parse(rawEvents[i])
+                    for (k = 0; k < event.EventDates.length; k++) {
+                        let inRange = moment(event.EventDates[k]).isBetween(moment(), oneWeek, 'days', '[]')
+                        if (inRange) {
+                            this.allEvents.push({
+                                name: event.Name,
+                                start: moment(`${event.EventDates[k]} ${event.StartTime}`).format("yyyy-MM-DD HH:mm"),
+                                end: moment(`${event.EventDates[k]} ${event.EndTime}`).format("yyyy-MM-DD HH:mm"),
+                                loc: event.Rooms,
+                            });
+                        }
+                    }
                 }
             },
             computed: {
@@ -1348,7 +1364,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 events() {
                     if (this.selected) {
                         return this.allEvents.filter((i) => {
-                            return i.loc.Id == this.selected;
+                            return i.loc.includes(this.selected);
                         });
                     } else {
                         return [];
@@ -1487,10 +1503,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     RegistrationEndDate: "",
                     RegistrationEndTime: "",
                     Fee: null,
+                    SetUp: "",
+                    SetUpImage: null,
                     Notes: "",
                 },
                 existingRequests: [],
                 pubImage: {},
+                setupImage: {},
                 rooms: [],
                 ministries: [],
                 menu: false,
@@ -1631,6 +1650,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.request.canEdit = parsed.CanEdit
                     if (this.request.PubImage) {
                         this.pubImage = this.request.PubImage;
+                    }
+                    if (this.request.SetUpImage) {
+                        this.setupImage = this.request.SetUpImage;
                     }
                 }
                 window["moment-range"].extendMoment(moment);
@@ -1822,8 +1844,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.request.EventDates = [val.eventDate];
                     this.request.ExpectedAttendance = val.att;
                 },
-                handleFile(e) {
-                    console.log(e);
+                handlePubFile(e) {
                     let file = { name: e.name, type: e.type };
                     var reader = new FileReader();
                     const self = this;
@@ -1831,6 +1852,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         console.log(e.target.result);
                         file.data = e.target.result;
                         self.request.PubImage = file;
+                    };
+                    reader.readAsDataURL(e);
+                },
+                handleSetUpFile(e) {
+                    let file = { name: e.name, type: e.type };
+                    var reader = new FileReader();
+                    const self = this;
+                    reader.onload = function (e) {
+                        file.data = e.target.result;
+                        self.request.SetUpImage = file;
                     };
                     reader.readAsDataURL(e);
                 },

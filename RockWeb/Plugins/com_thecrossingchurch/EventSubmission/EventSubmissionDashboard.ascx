@@ -387,7 +387,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col v-if="selected.PubImage">
                   <div class="floating-title">Publicity Image</div>
                   {{selected.PubImage.name}}
-                  <v-btn icon color="accent" @click="saveFile"
+                  <v-btn icon color="accent" @click="saveFile('pub')"
                     ><v-icon color="accent">mdi-download</v-icon></v-btn
                   >
                 </v-col>
@@ -648,6 +648,27 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   <template v-else>
                     {{selected.RegistrationEndTime}}
                   </template>
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.SetUp">
+                <v-col>
+                  <div class="floating-title">Requested Set-up</div>
+                  <template v-if="selected.Changes != null && selected.SetUp != selected.Changes.SetUp">
+                    <span class='red--text'>{{selected.SetUp}}: </span>
+                    <span class='primary--text'>{{selected.Changes.SetUp}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.SetUp}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row v-if="selected.SetUpImage">
+                <v-col>
+                  <div class="floating-title">Set-up Image</div>
+                  {{selected.SetUpImage.name}}
+                  <v-btn icon color="accent" @click="saveFile('setup')">
+                    <v-icon color="accent">mdi-download</v-icon>
+                  </v-btn>
                 </v-col>
               </v-row>
             </template>
@@ -989,12 +1010,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     let url = $('[id$="hfHistoryURL"]').val();
                     window.location = url
                 },
-                saveFile() {
+                saveFile(type) {
                     var a = document.createElement("a");
                     a.style = "display: none";
                     document.body.appendChild(a);
-                    a.href = this.selected.PubImage.data;
-                    a.download = this.selected.PubImage.name;
+                    if (type == 'pub') {
+                        a.href = this.selected.PubImage.data;
+                        a.download = this.selected.PubImage.name;
+                    } else if (type == 'setup') {
+                        a.href = this.selected.SetUpImage.data;
+                        a.download = this.selected.SetUpImage.name;
+                    }
                     a.click();
                 },
                 changeStatus(status, id) {

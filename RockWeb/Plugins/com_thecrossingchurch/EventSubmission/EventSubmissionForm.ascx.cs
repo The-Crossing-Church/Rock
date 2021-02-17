@@ -47,6 +47,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [IntegerField( "ContentChannelTypeId", "The id of the content channel type for an event request.", true, 0, "", 3 )]
     [TextField( "Page Guid", "The guid of the page for redirect on save.", true, "", "", 4 )]
     [TextField( "Rock Base URL", "Base URL for Rock", true, "https://rock.thecrossingchurch.com", "", 5 )]
+    [TextField( "Request Page Id", "Page Id of the Request Form", true, "", "", 6 )]
+    [TextField( "Dashboard Page Id", "Page Id of the Request Dashboard", true, "", "", 7 )]
     [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true )]
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true )]
 
@@ -55,6 +57,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         #region Variables
         public RockContext context { get; set; }
         public string BaseURL { get; set; }
+        public string RequestPageId { get; set; }
+        public string DashboardPageId { get; set; }
         private int DefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
@@ -98,6 +102,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
             ContentChannelTypeId = GetAttributeValue( "ContentChannelTypeId" ).AsInteger();
             BaseURL = GetAttributeValue( "RockBaseURL" );
+            RequestPageId = GetAttributeValue( "RequestPageId" );
+            DashboardPageId = GetAttributeValue( "DashboardPageId" );
             var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
             var EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
             if ( RoomSRGuid.HasValue )
@@ -112,6 +118,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
             Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
             hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
+            ThisWeekRequests();
             if ( !Page.IsPostBack )
             {
                 if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
@@ -367,6 +374,38 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         }
 
         /// <summary>
+        /// Load requests happening in the next seven days to display on the quick view event selection
+        /// </summary>
+        protected void ThisWeekRequests()
+        {
+            ContentChannelItemService svc = new ContentChannelItemService( context );
+            List<ContentChannelItem> items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
+            items.LoadAttributes();
+            DateTime oneWeek = DateTime.Now.AddDays( 7 );
+            oneWeek = new DateTime( oneWeek.Year, oneWeek.Month, oneWeek.Day, 23, 59, 59 );
+            items = items.Where( i => {
+                //Don't show non-approved requests
+                string status = i.AttributeValues["RequestStatus"].Value;
+                if(status == "Submitted" || status == "Denied" || status == "Cancelled" || status == "Cancelled by User" )
+                {
+                    return false;
+                }
+                var dateStr = i.AttributeValues["EventDates"];
+                var dates = dateStr.Value.Split( ',' );
+                foreach ( var d in dates )
+                {
+                    DateTime dt = DateTime.Parse( d );
+                    if ( DateTime.Compare( dt, DateTime.Now ) >= 0 && DateTime.Compare(dt, oneWeek) <= 0 )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            } ).ToList();
+            hfThisWeeksRequests.Value = JsonConvert.SerializeObject( items.Select( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value ).ToList() );
+        }
+
+        /// <summary>
         /// Load upcoming requests
         /// </summary>
         protected void LoadUpcoming()
@@ -382,6 +421,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             items = items.Where( i =>
             {
                 if ( i.Id == id )
+                {
+                    return false;
+                }
+                //Don't show non-approved requests
+                string status = i.AttributeValues["RequestStatus"].Value;
+                if ( status == "Submitted" || status == "Denied" || status == "Cancelled" || status == "Cancelled by User" )
                 {
                     return false;
                 }
@@ -454,7 +499,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 message = GenerateEmailDetails( item, request );
             }
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
+            message += "<br/>" +
+                "<table style='width: 100%;'>" +
+                    "<tr>" +
+                        "<td></td>" +
+                        "<td style='text-align:center;'>" +
+                            "<a href='" + BaseURL + DashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
+                        "</td>" +
+                        "<td></td>" +
+                    "</tr>" +
+                "</table>";
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
             for ( var i = 0; i < groupMembers.Count(); i++ )
@@ -502,12 +557,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             message += GenerateEmailDetails( item, request );
             message += "<br/>" +
-                "<table>" +
+                "<table style='width: 100%;'>" +
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
                             "<strong>See a mistake? You can modify your request using the link below. If your request was already approved the changes you make will have to be approved as well.</strong><br/><br/><br/>" +
-                            "<a href='" + BaseURL + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Modify Request</a>" +
+                            "<a href='" + BaseURL + RequestPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Modify Request</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -597,7 +652,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 else
                 {
-                    message += "<strong>Desired Pick-up time from Vendore:</strong> " + request.FoodTime + "<br/>";
+                    message += "<strong>Desired Pick-up time from Vendor:</strong> " + request.FoodTime + "<br/>";
                 }
                 if ( request.Drinks != null && request.Drinks.Count() > 0 )
                 {
@@ -716,6 +771,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public DateTime? RegistrationEndDate { get; set; }
             public string RegistrationEndTime { get; set; }
             public string Fee { get; set; }
+            public string SetUp { get; set; }
             public string Notes { get; set; }
         }
 
