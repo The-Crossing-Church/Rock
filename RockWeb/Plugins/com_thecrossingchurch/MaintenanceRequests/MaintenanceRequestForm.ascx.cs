@@ -105,6 +105,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
             Locations = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
             Locations.LoadAttributes();
             hfLocations.Value = JsonConvert.SerializeObject( Locations.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues["Type"].Value } ) );
+            LoadActiveRequests();
             if ( !Page.IsPostBack )
             {
 
@@ -149,6 +150,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
         #endregion
 
         #region Methods
+
+        protected void LoadActiveRequests()
+        {
+            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
+            items.LoadAttributes();
+            var formattedItems = items.Select( i => new { Id = i.Id, Description = i.AttributeValues["Description"].Value, Location = i.AttributeValues["Location"].Value,  RequestStatus = i.AttributeValues["RequestStatus"].Value } ).Where( i => i.RequestStatus != "Complete" ).ToList();
+            hfActiveRequests.Value = JsonConvert.SerializeObject( formattedItems );
+        }
 
         protected void NotifyGroup( Request request )
         {
