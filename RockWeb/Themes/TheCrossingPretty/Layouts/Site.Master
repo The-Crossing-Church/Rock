@@ -38,7 +38,80 @@
     <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>" ></script>
 
     <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
-
+    <script>
+        function toggleSearch() {
+            let search = $('#icoSearch')
+            let input = $('#txtSearch')
+            if (search.hasClass('active')) {
+                search.removeClass('active')
+                input.removeClass('active')
+            } else {
+                search.addClass('active')
+                input.addClass('active')
+                setTimeout(function () { input.focus() }, 500)
+            }
+        }
+        $(document).ready(function () {
+            $('#txtSearch').bind("enterKey", function (e) {
+                console.log('The Search content is: ' + $('#txtSearch').val())
+            });
+            $('#txtSearch').keyup(function (e) {
+                if (e.keyCode == 13) {
+                    $(this).trigger("enterKey");
+                }
+            });
+            $('#mobile-menu-toggle').click(function () {
+                let menu = $('#menu-mobile-menu')
+                let toggle = $('#mobile-menu-toggle')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    toggle.removeClass('active')
+                } else {
+                    menu.addClass('active')
+                    toggle.addClass('active')
+                }
+            })
+            $('#about-menu-open').click(function () {
+                let menu = $('.about-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    },20)
+                } 
+            })
+            $('#about-menu-return').click(function () {
+                let menu = $('.about-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                } 
+            })
+            $('#ministry-menu-open').click(function () {
+                let menu = $('.ministry-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    },20)
+                } 
+            })
+            $('#ministry-menu-return').click(function () {
+                let menu = $('.ministry-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                } 
+            })
+        })
+    </script>
+    <!-- Start of HubSpot Embed Code -->
+    <%--<script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>--%>
+    <!-- End of HubSpot Embed Code -->
 </head>
 <body runat="server" id="body">
 
@@ -46,52 +119,174 @@
 
         <!-- Page Header -->
         <header>
-            <div class="row triple-bar">
+            <div class="triple-bar">
                 <div class="col col-xs-4 background--accent"></div>
                 <div class="col col-xs-4 background--medium-blue"></div>
                 <div class="col col-xs-4 background--dark-teal"></div>
             </div>
-			<div class="header-inset row" style="background-color: #163244;">
-                <div class="nav-menu left col col-xs-2 col-md-5">
+			<div class="header-inset">
+                <div class="nav-menu left">
                     <div class="header-search">
-                        <i class="fa fa-search fa-xl"></i>
+                        <div class="search-icon-wrap" id="icoSearch" onclick="toggleSearch()">
+                            <i class="fa fa-search fa-xl"></i>
+                        </div>
+                        <div class="input-wrap">
+                            <input class="search-input" type="text" placeholder="Search The Crossing..." id="txtSearch" />
+                        </div>
                     </div>
                     <ul id="menu-left" class="main-navigation desktop-menu">
                         <li class="menu-item main-nav-item">
                             <a>I'm New</a>
                         </li>
                         <li class="menu-item main-nav-item">
-                            <a>Events</a>
+                            <a href="/Events">Events</a>
                         </li>
-                        <li class="menu-item main-nav-item">
-                            <a>Watch, Listen, Read</a>
+                        <li class="menu-item main-nav-item dropdown">
+                            <a class="resource-nav dropdown-toggle" data-toggle="dropdon">Resources</a>
+                                <div class="resource-menu dropdown-menu">
+                                    <div>
+                                        <a href="/Resources" class="text-white">Watch, Listen, Read</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">Small Group Resources</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">Women's Bible Study Studies</a>
+                                    </div>
+                                </div>
                         </li>
                     </ul>
                 </div>
-				<div class="website-logo col col-xs-8 col-md-2">
+				<div class="website-logo">
 					<a href="https://www.thecrossingchurch.com/" >
 						<img src="/Themes/TheCrossing/Assets/Logos/logo.png" class="header-image img-responsive" />
 					</a>
 				</div>
-                <div class="nav-menu right col col-xs-2 col-md-5">
+                <div class="nav-menu right">
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
-                            <li class="menu-item main-nav-item">
-                                <a>About</a>
+                            <li class="menu-item main-nav-item about-nav dropdown">
+                                <a href="/About" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
+                                <div class="about-menu dropdown-menu">
+                                    <div>
+                                        <a href="/Blog" class="text-white">The Crossing Blog</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">Contact Us</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">FAQs</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">Serving</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">Staff</a>
+                                    </div>
+                                </div>
                             </li>
-                            <li class="menu-item main-nav-item">
-                                <a>Ministries</a>
+                            <li class="menu-item main-nav-item ministry-nav dropdown">
+                                <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Ministries</a>
+                                <div class="ministry-menu dropdown-menu">
+                                    <div>
+                                        <a href="/Ministry/Children" class="text-white">Children</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Students" class="text-white">Students</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">College</a>
+                                    </div>
+                                    <div>
+                                        <a class="text-white">Adults</a>
+                                    </div>
+                                </div>
                             </li>
                             <li class="menu-item main-nav-item">
                                 <a>Give</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a class="btn btn-accent">Live Stream</a>
+                                <a href="/Livestream" class="btn btn-accent">Live Stream</a>
                             </li>
                         </ul>
                     </div>
                     <div class="mobile-menu">
-                        <i class="fa fa-bars"></i>
+                        <div id="mobile-menu-toggle">
+                            <i class="fa fa-bars"></i>
+                            <i class="fa fa-times"></i>
+                        </div>
+                        <ul class="main-navigation" id="menu-mobile-menu">
+                            <li class="menu-item">
+                                <a class="text-white">I'm New</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Events" class="text-white">Events</a>
+                            </li>
+                            <li class="menu-item">
+                                <a class="text-white">Watch, Listen, Read</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/About" class="text-white" id="about-menu-open">
+                                    About
+                                    <i class="fa fa-chevron-right pull-right"></i>
+                                </a>
+                                <div class="about-menu-mobile">
+                                    <div>
+                                        <a class="text-white" id="about-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i> Menu</a>
+                                    </div>
+                                    <div>
+                                        <a href="/About">About</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Blog" class="text-white">The Crossing Blog</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a class="text-white">Contact Us</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a class="text-white">FAQs</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a class="text-white">Serving</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a class="text-white">Staff</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="menu-item">
+                                <a class="text-white" id="ministry-menu-open">
+                                    Ministries
+                                    <i class="fa fa-chevron-right pull-right"></i>
+                                </a>
+                                <div class="ministry-menu-mobile">
+                                    <div>
+                                        <a class="text-white" id="ministry-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i> Menu</a>
+                                    </div>
+                                    <div>
+                                        <a>Ministries</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Children" class="text-white">Children</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Students" class="text-white">Students</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a class="text-white">College</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a class="text-white">Adults</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="menu-item">
+                                <a class="text-white">Give Now</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Livestream" class="text-white">Watch Live Stream</a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 			</div>
