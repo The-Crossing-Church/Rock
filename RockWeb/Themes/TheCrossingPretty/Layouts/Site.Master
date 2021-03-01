@@ -226,7 +226,7 @@
                                 <a class="text-white">Watch, Listen, Read</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/About" class="text-white" id="about-menu-open">
+                                <a class="text-white" id="about-menu-open">
                                     About
                                     <i class="fa fa-chevron-right pull-right"></i>
                                 </a>

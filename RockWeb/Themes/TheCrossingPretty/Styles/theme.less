@@ -645,6 +645,8 @@ header {
     padding-left: 0px;
     padding-right: 20px;
   }
+
+
   /* Overwrite some Bootstrap Styling */
   .dropdown-menu {
     margin: 0px;
@@ -682,7 +684,58 @@ header {
     display: block;
   }
 }
-
+h1, h2, h3, h4, h5, h6 {
+    color: @color-dark-blue; 
+}
+h1 {
+  font-size: 3em;
+  line-height: 1.1875em;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 0 auto;
+}
+h2 {
+  font-size: 2.25em;
+  line-height: 1.1875em;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin: 0 auto;
+}
+h3 {
+  font-size: 1.5em;
+  line-height: 1.20833em;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin: 10px 0 0;
+}
+h4 {
+  font-size: 1.25em;
+  line-height: 1.20833em;
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin: 10px 0 0;
+}
+h5 {
+  font-size: 1em;
+  line-height: 1.20833em;
+  letter-spacing: 1px;
+  font-weight: 500;
+  margin: 10px 0 0;
+}
+p, body {
+  font-size: 18px;
+}
+@media only screen and (max-width: 768px) {
+  h1 {
+    font-size: 1.875em;
+  }
+  h2 {
+    font-size: 1.5em;
+  }
+  h3 {
+    font-size: 1.25em;
+  }
+}
 //Footer
 footer {
   .inset {
@@ -914,6 +967,10 @@ footer {
 
 .background--dark-teal {
   background-color: @color-dark-teal !important;
+}
+
+.text--upper {
+    text-transform: uppercase;
 }
 
 // 5. Responsive Overrides
