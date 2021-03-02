@@ -73,35 +73,32 @@
         width="100%"
       >
         <template v-slot:event="{event}">
-          <v-hover v-slot="{ hover }">
-            <div @mouseover="showEvent">
-              {% raw %}<strong @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
-              <v-menu
-                v-model="hover"
-                max-width="350px"
-                :activator="selectedElement"
-              >
-                <v-card
-                  color="grey lighten-4"
-                  min-width="350px"
-                  flat
-                >
-                  <v-card-text>
-                    <span style="font-size: 14px; font-weight: bold;" v-html="event.name"></span><br/>
-                    <span v-html="event.time"></span>
-                    <v-row>
-                      <v-col cols="6">
-                          <v-img max-width="150px" :src="event.photo"/>
-                      </v-col>
-                      <v-col cols="6">
-                          <div id="summary" v-html="summary(event.description)"></div>
-                      </v-col>
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </v-menu>
-            </div>
-          </v-hover>
+          <v-menu
+            max-width="350px"
+            open-on-hover
+          >
+            <template v-slot:activator="{ on, attrs }">
+              {% raw %}<strong v-bind="attrs" v-on="on" @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
+            </template>
+            <v-card
+              color="grey lighten-4"
+              min-width="350px"
+              flat
+            >
+              <v-card-text>
+                <span style="font-size: 14px; font-weight: bold;" v-html="event.name"></span><br/>
+                <span v-html="event.time"></span>
+                <v-row>
+                  <v-col cols="6">
+                      <v-img max-width="150px" :src="event.photo"/>
+                  </v-col>
+                  <v-col cols="6">
+                      <div id="summary" v-html="summary(event.description)"></div>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-menu>
         </template> 
       </v-calendar>
       <div class='d-block d-md-none' v-if="focus">
