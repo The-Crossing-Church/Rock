@@ -341,7 +341,7 @@ header {
   .triple-bar {
     height: 10px;
 
-    .col {
+    .col-xs-4 {
       height: 100%;
     }
   }
@@ -491,7 +491,7 @@ header {
         }
 
         #menu-mobile-menu {
-          display: flex;
+          display: none;
           flex-direction: column;
           opacity: 0;
           align-items: flex-start;
@@ -582,6 +582,11 @@ header {
           .about-menu-mobile.visible, .ministry-menu-mobile.visible {
             display: block;
           }
+
+        }
+
+        #menu-mobile-menu.visible {
+          display: flex;
         }
 
         #menu-mobile-menu.active {
@@ -645,8 +650,6 @@ header {
     padding-left: 0px;
     padding-right: 20px;
   }
-
-
   /* Overwrite some Bootstrap Styling */
   .dropdown-menu {
     margin: 0px;
@@ -969,8 +972,19 @@ footer {
   background-color: @color-dark-teal !important;
 }
 
+.background--grey {
+  background-color: #F5F5F5;
+}
+
 .text--upper {
     text-transform: uppercase;
+}
+
+.full-width {
+  width: 100vw;
+  margin-left: -50vw;
+  left: 50%;
+  position: relative;
 }
 
 // 5. Responsive Overrides
