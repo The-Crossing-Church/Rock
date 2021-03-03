@@ -12,11 +12,16 @@
     {% if numDates > 0 %}
     <span class="floating-event-title">Date/Time</span> <br />
     <ul class="list-unstyled">
-      {% for scheduledDate in scheduledDates %}
+      {% if numDates > 1 %}
+        {{scheduledDates | First | Date:'dddd, MMMM d, yyyy'}} - {{ scheduledDates | Last | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
+      {% else %}
+        {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
+      {% endif %}
+      {% comment %} {% for scheduledDate in scheduledDates %}
       <li>
         {{ scheduledDate | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
       </li>
-      {% endfor %}
+      {% endfor %} {% endcomment %}
     </ul>
     {% endif %}
     {% if EventItemOccurrence.Location != '' %}
@@ -29,60 +34,60 @@
       <div class="col col-xs-12" style="min-height: 50px; display: flex; align-items: center;">
       {% if EventItemOccurrence.ContactEmail != '' %}
         {% if EventItemOccurrence.ContactEmail != '' %}
-          <a href="mailto:{{ EventItemOccurrence.ContactEmail }}" class="btn btn-primary">Contact</a>
+          <a href="mailto:{{ EventItemOccurrence.ContactEmail }}" class="btn btn-primary margin-t-md">Contact</a>
         {% endif %}
-        {% endif %}
-        {% assign eventItemOccurrenceLinkages = EventItemOccurrence.Linkages %}
-        {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
-        {% if eventItemOccurrenceLinkagesCount > 0 %}
+      {% endif %}
+      {% assign eventItemOccurrenceLinkages = EventItemOccurrence.Linkages %}
+      {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+      {% if eventItemOccurrenceLinkagesCount > 0 %}
         {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
-        {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
-        {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
-        {% assign showRegistration = true %}
-        {% assign registrationMessage = '' %}
+          {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
+          {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+          {% assign showRegistration = true %}
+          {% assign registrationMessage = '' %}
 
-        {% if daysTillStartDate and daysTillStartDate > 0 %}
-        {% assign showRegistration = false %}
-        {% if eventItemOccurrenceLinkagesCount == 1 %}
-        {% capture registrationMessage %}<p>Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
-      {% else %}
-      {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
-      {% endif %}
-      {% endif %}
+          {% if daysTillStartDate and daysTillStartDate > 0 %}
+            {% assign showRegistration = false %}
+            {% if eventItemOccurrenceLinkagesCount == 1 %}
+              {% capture registrationMessage %}<p>Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+            {% else %}
+              {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+            {% endif %}
+          {% endif %}
 
-      {% if daysTillEndDate and daysTillEndDate < 0 %}
-                {% assign showRegistration = false %}
-                {% if eventItemOccurrenceLinkagesCount == 1 %}
-                  {% capture registrationMessage %}<p>Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
-      {% else %}
-      {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
-      {% endif %}
-      {% endif %}
+          {% if daysTillEndDate and daysTillEndDate < 0 %}
+            {% assign showRegistration = false %}
+              {% if eventItemOccurrenceLinkagesCount == 1 %}
+                {% capture registrationMessage %}<p>Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+              {% else %}
+                {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+              {% endif %}
+          {% endif %}
 
-      {% if showRegistration == true %}
-      {% assign statusLabel = RegistrationStatusLabels[eventItemOccurrenceLinkage.RegistrationInstanceId] %}
-      {% if eventItemOccurrenceLinkagesCount == 1 %}
-      {% assign registrationButtonText = statusLabel %}
-      {% else %}
-      {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
-      {% endif %}
+          {% if showRegistration == true %}
+            {% assign statusLabel = RegistrationStatusLabels[eventItemOccurrenceLinkage.RegistrationInstanceId] %}
+            {% if eventItemOccurrenceLinkagesCount == 1 %}
+              {% assign registrationButtonText = statusLabel %}
+            {% else %}
+              {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
+            {% endif %}
 
-      {% if statusLabel == 'Full' %}
-      {% if eventItemOccurrenceLinkagesCount == 1 %}
-      {% assign registrationButtonText = 'Registration Full' %}
-      {% else %}
-      {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
-      {% endif %}
-      <div class='label label-default text-center margin-t-md' style='display: block; padding: 8px;'>{{ registrationButtonText }}</div>
-      {% else %}
-      {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
-      <a href='{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-md'>{{ registrationButtonText }}</a>
-      {% else %}
-      <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn margin-t-md">{{ registrationButtonText }}</a>
-      {% endif %}
-      {% endif %}
-      {% endif %}
-      {% endfor %}
+            {% if statusLabel == 'Full' %}
+              {% if eventItemOccurrenceLinkagesCount == 1 %}
+                {% assign registrationButtonText = 'Registration Full' %}
+              {% else %}
+                {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
+              {% endif %}
+              <div class='label label-default text-center margin-t-md' style='display: block; padding: 8px;'>{{ registrationButtonText }}</div>
+            {% else %}
+              {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
+                <a href='{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-md'>{{ registrationButtonText }}</a>
+              {% else %}
+                <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn margin-t-md">{{ registrationButtonText }}</a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
       {% endif %}
       </div>
     </div>

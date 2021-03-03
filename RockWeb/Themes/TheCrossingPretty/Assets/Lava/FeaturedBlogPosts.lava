@@ -46,12 +46,13 @@ $(document).ready(function () {
     var itemsDiv = ('.MultiCarousel-inner');
     var itemWidth = "";
 
-    $('.leftLst, .rightLst').click(function () {
+    $('.leftLst, .rightLst').click(function (e) {
+        e.preventDefault();
         var condition = $(this).hasClass("leftLst");
         if (condition)
-            click(0, this);
+            clickCarousel(0, this);
         else
-            click(1, this)
+            clickCarousel(1, this)
     });
 
     ResCarouselSize();
@@ -135,7 +136,7 @@ $(document).ready(function () {
     }
 
     //It is used to get some elements from btn
-    function click(ell, ee) {
+    function clickCarousel(ell, ee) {
         var Parent = "#" + $(ee).parent().attr("id");
         var slide = $(Parent).attr("data-slide");
         ResCarousel(ell, Parent, slide);

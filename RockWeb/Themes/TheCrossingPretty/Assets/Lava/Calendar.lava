@@ -73,34 +73,35 @@
         width="100%"
       >
         <template v-slot:event="{event}">
-          <v-menu
-            max-width="350px"
-            open-on-hover
-          >
-            <template v-slot:activator="{ on, attrs }">
-              {% raw %}<strong v-bind="attrs" v-on="on" @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
-            </template>
-            <v-card
-              color="grey lighten-4"
-              min-width="350px"
-              flat
-            >
-              <v-card-text>
-                <span style="font-size: 14px; font-weight: bold;" v-html="event.name"></span><br/>
-                <span v-html="event.time"></span>
-                <v-row>
-                  <v-col cols="6">
-                      <v-img max-width="150px" :src="event.photo"/>
-                  </v-col>
-                  <v-col cols="6">
-                      <div id="summary" v-html="summary(event.description)"></div>
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </v-menu>
+          {% raw %}<strong @mouseover="showEvent(event)" @mouseleave="hideEvent" @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
         </template> 
       </v-calendar>
+      <div class='d-none d-md-block' style="position: relative;">
+        <v-dialog
+          max-width="350px"
+          v-model="popover"
+        >
+          <v-card
+            color="grey lighten-4"
+            min-width="350px"
+            absolute
+            top
+          >
+            <v-card-text>
+              <span style="font-size: 14px; font-weight: bold;" v-html="selectedEvent.name"></span><br/>
+              <span v-html="selectedEvent.time"></span>
+              <v-row>
+                <v-col cols="6">
+                    <v-img max-width="150px" :src="selectedEvent.photo"/>
+                </v-col>
+                <v-col cols="6">
+                    <div id="summary" v-html="summary(selectedEvent.description)"></div>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+      </div>
       <div class='d-block d-md-none' v-if="focus">
         <h4 v-if="focusEvents.length > 0">Events for {% raw %}{{ focus | longDate }}{% endraw %}</h4>
         <h5 v-else style='text-align: center;'>There are no events on {% raw %}{{ focus | longDate }}{% endraw %}</h5>
@@ -158,7 +159,8 @@
                 selectedEvent: {},
                 selectedElement: null,
                 date: '',
-                search: ''
+                search: '',
+                popover: false,
             },
             created() {
                 this.loadEvents()
@@ -200,7 +202,12 @@
                     this.events = events
                 },
                 showEvent(e){
-                  this.selectedElement = e.target
+                  this.selectedEvent= e
+                  this.popover = true
+                },
+                hideEvent(){
+                  this.popover = false
+                  this.selectedEvent = {}
                 },
                 openEvent(event){
                   window.open(event.link,"_self")
