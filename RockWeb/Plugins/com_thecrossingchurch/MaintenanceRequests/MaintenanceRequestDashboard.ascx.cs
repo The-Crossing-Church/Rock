@@ -194,15 +194,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
                 items = items.Where( i => i.CreatedByPersonAliasId == CurrentPersonAliasId ).ToList();
             }
             items.LoadAttributes();
-            var formattedItems = items.Select( i => new { Id = i.Id, Title = i.Title, CreatedBy = i.CreatedByPersonAlias.Person, CreatedOn = i.CreatedDateTime, Description = i.AttributeValues["Description"].Value, RequestedCompletionDate = i.AttributeValues["RequestedCompletionDate"].Value, Location = i.AttributeValues["Location"].Value, SafetyIssue = i.AttributeValues["SafetyIssue"].Value, RequestStatus = i.AttributeValues["RequestStatus"].Value, Image = i.AttributeValues["Image"].Value, Comments = i.AttributeValues["Comments"].Value } ).Where( i => i.RequestStatus != "Complete" ).ToList();
+            var formattedItems = items.Select( i => new { Id = i.Id, Title = i.Title, CreatedBy = i.CreatedByPersonAlias.Person, CreatedOn = i.CreatedDateTime, Description = i.AttributeValues["Description"].Value, RequestedCompletionDate = i.AttributeValues["RequestedCompletionDate"].Value, Location = i.AttributeValues["Location"].Value, SafetyIssue = i.AttributeValues["SafetyIssue"].Value, RequestStatus = i.AttributeValues["RequestStatus"].Value, Image = i.AttributeValues["Image"].Value, Comments = i.AttributeValues["Comments"].Value } ).ToList();
             hfRequests.Value = JsonConvert.SerializeObject( formattedItems );
         }
 
         protected void SendCompleteNotification( PersonAlias person, string title )
         {
-            string message = CurrentPerson.FullName + " has completed " + title + " with this note.<br/>";
+            string message = "<a href='mailto:" + CurrentPerson.Email + "'>" + CurrentPerson.FullName + "</a> has marked your maintenance request as complete.<br/>";
             string subject = title + " is Complete";
-            message += "<blockquote>" + hfNewComment.Value + "</blockquote><br/><br/>";
+            message += "<strong>Location: " + title + "</strong><br/><strong>Details:</strong><blockquote>" + hfNewComment.Value + "</blockquote><br/><br/>";
 
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
@@ -212,15 +212,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
             email.AddRecipient( recipient );
             email.Subject = subject;
             email.Message = message;
-            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromEmail = "no-reply@thecrossingchurch.com";
             email.FromName = "The Crossing System";
             var output = email.Send();
         }
 
         protected void SendCommentNotification( Comment comm, string title, PersonAlias person )
         {
-            string message = comm.CreatedBy + " has added a Comment to " + title + ".<br/>";
+            string message = comm.CreatedBy + " has added a comment to your maintenance request.<br/>";
             string subject = "New Comment on " + title;
+            message += "<strong>Location: " + title + "</strong><br/>"; 
+            message += "<strong>Comment:</strong><br/>"; 
             message += "<blockquote>" + comm.Message + "</blockquote>";
             message += "<br/>" +
                         "<p style='text-align:center; width: 100%;'>" +
@@ -249,7 +251,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
             }
             email.Subject = subject;
             email.Message = message;
-            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromEmail = "no-reply@thecrossingchurch.com";
             email.FromName = "The Crossing System";
             var output = email.Send();
         }

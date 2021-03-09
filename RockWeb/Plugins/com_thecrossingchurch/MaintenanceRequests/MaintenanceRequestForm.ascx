@@ -161,14 +161,25 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
             </v-row>
             <v-row v-for="r in possibleDuplicates" :key="r.Id">
               <v-col>
-                {{r.Description}}
+                <v-card outlined>
+                  <v-card-text>
+                    {{r.Description}}
+                  </v-card-text>
+                </v-card>
               </v-col>
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="secondary" @click="request = {}; dialog = false;">Duplicate, Don't Submit</v-btn>
-            <v-spacer></v-spacer>
-            <v-btn color="primary" @click="save">Unique, Submit Request</v-btn>
+            <div class="d-none d-md-flex" style="width: 100%;">
+              <v-btn color="secondary" @click="request = {}; dialog = false;">Duplicate, Don't Submit</v-btn>
+              <v-spacer></v-spacer>
+              <v-btn color="primary" @click="save">Unique, Submit Request</v-btn>
+            </div>
+            <div class="d-flex d-md-none" style="flex-direction: column; width: 100%;">
+              <v-btn color="secondary" @click="request = {}; dialog = false;">Duplicate, Don't Submit</v-btn>
+              <br/>
+              <v-btn color="primary" @click="save">Unique, Submit Request</v-btn>
+            </div>
           </v-card-actions>
         </v-card>
       </v-dialog>

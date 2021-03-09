@@ -50,6 +50,126 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
 <div id="app">
   <v-app>
     <div>
+      <v-expansion-panels v-model="expansion">
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            <div class='justify-left'>
+              <v-icon>mdi-filter</v-icon> Filters
+            </div>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-autocomplete
+                  label="Location"
+                  :items="locations"
+                  item-text="Value"
+                  item-value="Id"
+                  multiple
+                  clearable
+                  v-model="search.location"
+                  attach
+                ></v-autocomplete>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-autocomplete
+                  label="Current Status"
+                  :items="['Submitted', 'Active', 'Complete']"
+                  v-model="search.status"
+                  multiple
+                  clearable
+                  attach
+                ></v-autocomplete>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-checkbox
+                  label="Is Safety Issue?"
+                  v-model="search.isSafety"
+                ></v-checkbox>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-menu
+                  ref="startMenu"
+                  v-model="startMenu"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="auto"
+                  attach
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-text-field
+                      v-model="search.start"
+                      label="Requests Created After"
+                      prepend-inner-icon="mdi-calendar"
+                      readonly
+                      v-bind="attrs"
+                      v-on="on"
+                      clearable
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="search.start"
+                    @input="startMenu = false"
+                  >
+                  </v-date-picker>
+                </v-menu>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-menu
+                  ref="endMenu"
+                  v-model="endMenu"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                  min-width="auto"
+                  attach
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-text-field
+                      v-model="search.end"
+                      label="Requests Created Before"
+                      prepend-inner-icon="mdi-calendar"
+                      readonly
+                      v-bind="attrs"
+                      v-on="on"
+                      clearable
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                    v-model="search.end"
+                    @input="endMenu = false"
+                  >
+                  </v-date-picker>
+                </v-menu>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-autocomplete
+                  label="Sort By"
+                  v-model="search.sort"
+                  :items="sortOps"
+                  attach
+                ></v-autocomplete>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-textarea
+                  label="Description or Comments Contains"
+                  v-model="search.text"
+                ></v-textarea>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-btn style='float:right;' color="primary" @click="filter">Filter</v-btn>
+                <v-btn style='float:right; margin-right:8px;' color="secondary" @click="search = {}; filter();">Clear Filters</v-btn>
+              </v-col>
+            </v-row>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+      <br/>
       <v-card class="d-none d-md-block">
         <v-card-text>
           <v-list>
@@ -63,7 +183,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
               </v-row>
             </v-list-item>
             <v-list-item
-              v-for="i in requests"
+              v-for="i in filtered"
               :key="i.Id"
             >
               <v-row align="center">
@@ -71,7 +191,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
                 <v-col cols="2">{{i.CreatedBy.FullName}}</v-col>
                 <v-col cols="2">{{i.CreatedOn | formatDateTime}}</v-col>
                 <v-col cols="1">{{i.RequestStatus}}</v-col>
-                <v-col cols="4" style="display: flex;">
+                <v-col cols="4" class="d-none d-lg-flex">
                   <v-btn color="primary" v-if="i.RequestStatus == 'Submitted' && isAdmin" @click="changeStatus(`${nextStatus(i.RequestStatus)}`, i.Id)">
                     Mark {{nextStatus(i.RequestStatus)}}
                   </v-btn>
@@ -79,32 +199,40 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
                   <v-spacer></v-spacer>
                   <v-btn color="secondary" @click="addComment(i)">Add Comment</v-btn>
                 </v-col>
+                <v-col cols="4" class="d-flex d-lg-none">
+                  <v-btn icon @click="addComment(i)">
+                    <v-icon color="#0C4557">mdi-comment-edit</v-icon>
+                  </v-btn>
+                  <v-btn icon v-if="isAdmin" @click="selectStatus(i, false)">
+                    <v-icon :class="getStatusPillClass(i.RequestStatus)">mdi-progress-wrench</v-icon>
+                  </v-btn>
+                </v-col>
               </v-row>
             </v-list-item>
           </v-list>
         </v-card-text>
       </v-card>
-      <v-list class="d-block d-md-none">
+      <v-list class="d-block d-md-none" style="background-color: rgba(225,225,225,0);">
         <v-list-item
-          v-for="i in requests"
+          v-for="i in filtered"
           :key="i.Id"
-          style="padding-bottom: 8px"
+          style="padding: 4px 0px;"
         >
-          <v-card>
+          <v-card style="width: 100%;">
             <v-card-text>
-              <strong>{{i.Title}}</strong><br />
+              <strong @click="openRequest(i)">{{i.Title}}</strong><br />
               {{i.CreatedBy.FullName}} - {{i.CreatedOn | formatDateTime}}<br />
-              {{i.RequestStatus}}
+              <span :class="getStatusPillClass(i.RequestStatus)">{{i.RequestStatus}}</span>
             </v-card-text>
             <v-card-actions>
               <v-btn icon @click="openRequest(i)">
-                <v-icon>mdi-format-list-text</v-icon>
+                <v-icon color="#0C4557">mdi-format-list-text</v-icon>
               </v-btn>
               <v-btn icon @click="addComment(i)">
-                <v-icon>mdi-comment-edit</v-icon>
+                <v-icon color="#0C4557">mdi-comment-edit</v-icon>
               </v-btn>
               <v-btn icon v-if="isAdmin" @click="selectStatus(i, false)">
-                <v-icon>mdi-progress-wrench</v-icon>
+                <v-icon :class="getStatusPillClass(i.RequestStatus)">mdi-progress-wrench</v-icon>
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -247,6 +375,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
             data: {
                 isAdmin: false,
                 requests: [],
+                filtered: [],
                 locations: [],
                 selected: {},
                 dialog: false,
@@ -258,10 +387,19 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
                 isStatusUpdated: false,
                 statusDialog: false,
                 status: '',
+                expansion: [],
+                search: {
+                    status: ['Submitted', 'Active'],
+                    sort: 'Created On'
+                },
+                sortOps: ['Created By', 'Created On', 'Location', 'Requested Completion Date', 'Request Status', 'Title'],
+                startMenu: false,
+                endMenu: false
             },
             created() {
                 this.locations = JSON.parse($('[id$="hfLocations"]')[0].value);
                 this.requests = JSON.parse($('[id$="hfRequests"]')[0].value);
+                this.filter()
                 let isadmin = $('[id$="hfIsAdmin"]')[0].value
                 if (isadmin == "True") {
                     this.isAdmin = true
@@ -301,13 +439,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
                 },
                 getStatusPillClass(status) {
                     if (status == "Active") {
-                        return "no-top-pad status-pill approved";
+                        return "status-active";
                     }
                     if (status == "Submitted") {
-                        return "no-top-pad status-pill submitted";
+                        return "status-submitted";
                     }
                     if (status == "Complete") {
-                        return "no-top-pad status-pill cancelled";
+                        return "status-complete";
                     }
                 },
                 nextStatus(status) {
@@ -353,6 +491,116 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
                     $('[id$="hfNewStatus"]').val(status);
                     $('[id$="hfNewComment"]').val(this.comment);
                     $('[id$="btnChangeStatus"')[0].click();
+                },
+                filter() {
+                    let temp = JSON.parse(JSON.stringify(this.requests))
+                    if (this.search.location && this.search.location.length > 0) {
+                        temp = temp.filter(i => {
+                            return this.search.location.includes(parseInt(i.Location))
+                        })
+                    }
+                    if (this.search.status && this.search.status.length > 0) {
+                        temp = temp.filter(i => {
+                            return this.search.status.includes(i.RequestStatus)
+                        })
+                    }
+                    if (this.search.start) {
+                        temp = temp.filter(i => {
+                            return moment(i.CreatedOn).isAfter(moment(this.search.start), 'day')
+                        })
+                    }
+                    if (this.search.end) {
+                        temp = temp.filter(i => {
+                            return moment(i.CreatedOn).isBefore(moment(this.search.end), 'day')
+                        })
+                    }
+                    if (this.search.text) {
+                        temp = temp.filter(i => {
+                            return i.Description.toLowerCase().includes(this.search.text.toLowerCase()) || i.Comments.toLowerCase().includes(this.search.text.toLowerCase())
+                        })
+                    }
+                    if (this.search.isSafety) {
+                        temp = temp.filter(i => {
+                            return i.SafetyIssue == "True"
+                        })
+                    }
+                    if (this.search.sort) {
+                        switch (this.search.sort) {
+                            case 'Created By':
+                                temp = temp.sort((a, b) => {
+                                    if (a.CreatedBy.FullName < b.CreatedBy.FullName) {
+                                        return -1
+                                    } else if (a.CreatedBy.FullName > b.CreatedBy.FullName) {
+                                        return 1
+                                    } else {
+                                        return 0
+                                    }
+                                })
+                                break;
+                            case 'Title':
+                                temp = temp.sort((a, b) => {
+                                    if (a.Title < b.Title) {
+                                        return -1
+                                    } else if (a.Title > b.Title) {
+                                        return 1
+                                    } else {
+                                        return 0
+                                    }
+                                })
+                                break;
+                            case 'Location':
+                                let self = this
+                                temp = temp.sort((a, b) => {
+                                    let locA = self.locations.filter(i => { return i.Id.toString() == a.Location })[0].Value
+                                    let locB = self.locations.filter(i => { return i.Id.toString() == b.Location })[0].Value
+                                    if (locA < locB) {
+                                        return -1
+                                    } else if (locA > locB) {
+                                        return 1
+                                    } else {
+                                        return 0
+                                    }
+                                })
+                                break;
+                            case 'Request Status':
+                                let statuses = ['Submitted', 'Active', 'Complete']
+                                temp = temp.sort((a, b) => {
+                                    if (statuses.indexOf(a.RequestStatus) < statuses.indexOf(b.RequestStatus)) {
+                                        return -1
+                                    } else if (statuses.indexOf(a.RequestStatus) > statuses.indexOf(b.RequestStatus)) {
+                                        return 1
+                                    } else {
+                                        return 0
+                                    }
+                                })
+                                break;
+                            case 'Requested Completion Date':
+                                temp = temp.sort((a, b) => {
+                                    if (moment(a.RequestedCompletionDate).isAfter(moment(b.RequestedCompletionDate), 'minute')) {
+                                        return -1
+                                    } else if (moment(a.RequestedCompletionDate).isBefore(moment(b.RequestedCompletionDate), 'minute')) {
+                                        return 1
+                                    } else {
+                                        return 0
+                                    }
+                                })
+                                break;
+                            default:
+                                temp = temp.sort((a, b) => {
+                                    if (moment(a.CreatedOn).isAfter(moment(b.CreatedOn), 'minute')) {
+                                        return -1
+                                    } else if (moment(a.CreatedOn).isBefore(moment(b.CreatedOn), 'minute')) {
+                                        return 1
+                                    } else {
+                                        return 0
+                                    }
+                                })
+                                break;
+                        }
+                    }
+                    this.filtered = temp
+                    this.expansion = []
+                    window.scrollTo(0, 0);
                 }
             },
             filters: {
@@ -411,29 +659,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests.MaintenanceR
   .accent-text {
     color: #8ed2c9;
   }
-  .status-pill {
-    border-radius: 6px;
-    display: flex;
-    min-height: 36px;
-    align-items: center;
-    justify-content: center;
+  .status-active {
+    color: #347689 !important;
   }
-  .status-pill.submitted {
-    border: 2px solid #347689;
+  .status-submitted {
+    color: #8ed2c9 !important;
   }
-  .status-pill.approved {
-    border: 2px solid #8ed2c9;
-  }
-  .status-pill.denied {
-    border: 2px solid #f44336;
-  }
-  .status-pill.cancelled {
-    border: 2px solid #9e9e9e;
+  .status-compelte {
+    color: #9e9e9e !important;
   }
   .comment {
     background-color: lightgrey;
     padding: 8px;
     border-radius: 6px;
+    margin: 4px 0px;
   }
   .floating-title {
     text-transform: uppercase;

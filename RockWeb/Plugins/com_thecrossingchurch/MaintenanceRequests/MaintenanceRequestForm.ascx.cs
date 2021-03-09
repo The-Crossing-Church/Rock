@@ -172,7 +172,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
             }
             email.Subject = subject;
             email.Message = message;
-            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromEmail = "no-reply@thecrossingchurch.com";
             email.FromName = "The Crossing System";
             var output = email.Send();
         }
@@ -186,7 +186,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
             email.AddRecipient( recipient );
             email.Subject = subject;
             email.Message = message;
-            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromEmail = "no-reply@thecrossingchurch.com";
             email.FromName = "The Crossing System";
             var output = email.Send();
         }
@@ -196,13 +196,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.MaintenanceRequests
             string message = "";
             if ( isConfirmation )
             {
-                message = CurrentPerson.NickName + ", your Maintenance Request has been submitted. Here are the details of your submitted request.<br/>";
+                message = CurrentPerson.NickName + ", your Maintenance Request has been submitted. Here are the details of your submitted request.<br/><br/>";
             }
             else
             {
-                message = CurrentPerson.FullName + " has submitted a new Maintenance Request.<br/>";
+                message = CurrentPerson.FullName + " has submitted a new Maintenance Request.<br/><br/>";
             }
-            message += "<strong>Description:</strong> " + request.Description + "<br/>";
+            message += "<strong>Description:</strong> " + request.Description + "<br/><br/>";
             if ( request.RequestedCompletionDate.HasValue )
             {
                 message += "<strong>Requested Completion Date:</strong> " + request.RequestedCompletionDate.Value.ToString( "MM/dd/yyyy" ) + "<br/>";
