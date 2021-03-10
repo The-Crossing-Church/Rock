@@ -36,6 +36,7 @@ html {
 
 main {
   display: block;
+  padding-top: 160px !important;
 }
 
 @font-face {
@@ -155,7 +156,7 @@ a:hover i.fs, a, a:hover, .btn-link {
   text-align: center;
   transition: all 0.16s ease-in;
   font-family: museo-sans, sans-serif;
-  font-size: 1.125em;
+  font-size: 16px;
   font-weight: 600;
   box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
 }
@@ -317,9 +318,16 @@ a:hover i.fs, a, a:hover, .btn-link {
   border-radius: 10px;
 }
 
+.rock-check-box .control-wrapper {
+  float: left;
+}
+.rockcheckboxlist .checkbox-inline .label-text {
+    margin-top: 2px;
+    padding-left: 6px;
+}
+
 // 3. Theme Styling
 // -------------------------
-
 h1.pagetitle:empty {
   // hides the page title h1 tag if the page has the title hidden
   display: none;
@@ -331,6 +339,10 @@ h1.pagetitle:empty {
 
 header {
   background-color: @color-dark-blue;
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 
   .page-menu,
   .login-status {
@@ -340,6 +352,7 @@ header {
   .navbar {
     background-color: @header-bg;
     border: 0;
+    margin-bottom: 0px !important;
   }
 
   .triple-bar {
@@ -586,7 +599,6 @@ header {
           .about-menu-mobile.visible, .ministry-menu-mobile.visible {
             display: block;
           }
-
         }
 
         #menu-mobile-menu.visible {
@@ -728,9 +740,6 @@ h5 {
   letter-spacing: 1px;
   font-weight: 500;
   margin: 10px 0 0;
-}
-p, body {
-  font-size: 18px;
 }
 @media only screen and (max-width: 768px) {
   h1 {
