@@ -150,7 +150,7 @@ a:hover i.fs, a, a:hover, .btn-link {
   padding: 0.625em 1.125em;
   display: inline-block;
   border-radius: 30px;
-  border: 2px solid #1b3142;
+  border: 2px solid @color-dark-blue;
   background-color: @color-dark-blue;
   color: #fff;
   text-align: center;
@@ -168,7 +168,7 @@ a:hover i.fs, a, a:hover, .btn-link {
 .btn-accent {
   background-color: @color-light-blue;
   color: @color-dark-blue !important;
-  border-color: @color-dark-blue;
+  border-color: @color-light-blue;
 }
 
 .btn:active,
@@ -337,7 +337,7 @@ h1.pagetitle:empty {
   display: none;
 }
 
-header {
+header:not(.panel-heading) {
   background-color: @color-dark-blue;
   position: fixed;
   left: 0;
@@ -703,6 +703,9 @@ header {
     display: block;
   }
 }
+.pagetitle {
+    text-align: center;
+}
 h1, h2, h3, h4, h5, h6 {
     color: @color-dark-blue; 
 }
@@ -998,6 +1001,19 @@ footer {
   margin-left: -50vw;
   left: 50%;
   position: relative;
+}
+
+.justify-left {
+    display: flex;
+    justify-content: flex-start;
+}
+.justify-center {
+  display: flex;
+  justify-content: center;
+}
+.justify-right {
+  display: flex;
+  justify-content: flex-end;
 }
 
 // 5. Responsive Overrides
