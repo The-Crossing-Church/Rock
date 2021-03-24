@@ -88,16 +88,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col>{{ requestType(r) }}</v-col>
                     <v-col cols="3">
                       <v-row align="center">
-                        <v-col cols="6" :class="getStatusPillClass(r.RequestStatus)"
-                          >{{ r.RequestStatus }}</v-col
-                        >
+                        <v-col cols="6" :class="getStatusPillClass(r.RequestStatus)">{{ r.RequestStatus }}</v-col>
                         <v-col cols="6" class="no-top-pad">
                           <v-btn
                             v-if="r.RequestStatus == 'Submitted' || r.RequestStatus == 'Pending Changes'"
                             color="accent"
                             @click="changeStatus('Approved', r.Id)"
-                            >Approve</v-btn
-                          >
+                          >Approve</v-btn>
                         </v-col>
                       </v-row>
                     </v-col>
@@ -126,14 +123,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-row v-for="d in sortedCurrent" :key="d.Timeframe">
                   <v-col>
                     <v-list dense>
-                      <v-list-item
-                        ><strong>{{d.Timeframe}}</strong></v-list-item
-                      >
+                      <v-list-item><strong>{{d.Timeframe}}</strong></v-list-item>
                       <v-list-item
                         v-for="(i, idx) in d.Events"
                         :key="`event_${idx}`"
                         class="event-pill hover"
-                        @click="selected = i; overlay = true;"
+                        @click="selected = i.Full; overlay = true;"
                       >
                         {{i.Name}} {{i.StartTime}} - {{formatRooms(i.Rooms)}}
                       </v-list-item>
@@ -208,7 +203,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 {{requestType(this.selected)}}
               </v-col>
             </v-row>
-            <v-row>
+            <!-- <v-row>
               <v-col>
                 <div class="floating-title">Request Dates</div>
                 <template v-if="selected.Changes != null && formatDates(selected.EventDates) != formatDates(selected.Changes.EventDates)">
@@ -219,459 +214,416 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   {{formatDates(selected.EventDates)}}
                 </template>
               </v-col>
-            </v-row>
-            <v-row v-if="selected.StartTime || selected.EndTime">
-              <v-col v-if="selected.StartTime">
-                <div class="floating-title">Start Time</div>
-                <template v-if="selected.Changes != null && selected.StartTime != selected.Changes.StartTime">
-                  <span class='red--text'>{{selected.StartTime}}: </span>
-                  <span class='primary--text'>{{selected.Changes.StartTime}}</span>
-                </template>
-                <template v-else>
-                  {{selected.StartTime}}
-                </template>
-              </v-col>
-              <v-col v-if="selected.EndTime">
-                <div class="floating-title">End Time</div>
-                <template v-if="selected.Changes != null && selected.EndTime != selected.Changes.EndTime">
-                  <span class='red--text'>{{selected.EndTime}}: </span>
-                  <span class='primary--text'>{{selected.Changes.EndTime}}</span>
-                </template>
-                <template v-else>
-                  {{selected.EndTime}}
-                </template>
-              </v-col>
-            </v-row>
-            <v-row v-if="selected.MinsStartBuffer || selected.MinsEndBuffer">
-              <v-col v-if="selected.MinsStartBuffer">
-                <div class="floating-title">Set-up Buffer</div>
-                {{selected.MinsStartBuffer}} minutes
-              </v-col>
-              <v-col v-if="selected.MinsEndBuffer">
-                <div class="floating-title">Tear-down Buffer</div>
-                {{selected.MinsEndBuffer}} minutes
-              </v-col>
-            </v-row>
-            <template v-if="selected.needsSpace">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Expected Number of Attendees</div>
-                  <template v-if="selected.Changes != null && selected.ExpectedAttendance != selected.Changes.ExpectedAttendance">
-                    <span class='red--text'>{{selected.ExpectedAttendance}}: </span>
-                    <span class='primary--text'>{{selected.Changes.ExpectedAttendance}}</span>
+            </v-row> -->
+            <v-expansion-panels v-model="panels" multiple>
+              <v-expansion-panel v-for="e in selected.Events">
+                <v-expansion-panel-header>
+                  <template v-if="selected.IsSame || selected.Events.length == 1">
+                    {{formatDates(selected.EventDates)}} ({{formatRooms(e.Rooms)}})
                   </template>
                   <template v-else>
-                    {{selected.ExpectedAttendance}}
+                    {{e.EventDate | formatDate}} ({{formatRooms(e.Rooms)}})
                   </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Desired Rooms/Spaces</div>
-                  <template v-if="selected.Changes != null && formatRooms(selected.Rooms) != formatRooms(selected.Changes.Rooms)">
-                    <span class='red--text'>{{formatRooms(selected.Rooms)}}: </span>
-                    <span class='primary--text'>{{formatRooms(selected.Changes.Rooms)}}</span>
+                </v-expansion-panel-header>
+                <v-expansion-panel-content>
+                  <v-row v-if="e.StartTime || e.EndTime">
+                    <v-col v-if="e.StartTime">
+                      <div class="floating-title">Start Time</div>
+                      <template v-if="e.Changes != null && e.StartTime != e.Changes.StartTime">
+                        <span class='red--text'>{{e.StartTime}}: </span>
+                        <span class='primary--text'>{{e.Changes.StartTime}}</span>
+                      </template>
+                      <template v-else>
+                        {{e.StartTime}}
+                      </template>
+                    </v-col>
+                    <v-col v-if="e.EndTime">
+                      <div class="floating-title">End Time</div>
+                      <template v-if="e.Changes != null && e.EndTime != e.Changes.EndTime">
+                        <span class='red--text'>{{e.EndTime}}: </span>
+                        <span class='primary--text'>{{e.Changes.EndTime}}</span>
+                      </template>
+                      <template v-else>
+                        {{e.EndTime}}
+                      </template>
+                    </v-col>
+                  </v-row>
+                  <v-row v-if="e.MinsStartBuffer || e.MinsEndBuffer">
+                    <v-col v-if="e.MinsStartBuffer">
+                      <div class="floating-title">Set-up Buffer</div>
+                      {{e.MinsStartBuffer}} minutes
+                    </v-col>
+                    <v-col v-if="e.MinsEndBuffer">
+                      <div class="floating-title">Tear-down Buffer</div>
+                      {{e.MinsEndBuffer}} minutes
+                    </v-col>
+                  </v-row>
+                  <template v-if="selected.needsSpace">
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Expected Number of Attendees</div>
+                        <template v-if="e.Changes != null && e.ExpectedAttendance != e.Changes.ExpectedAttendance">
+                          <span class='red--text'>{{e.ExpectedAttendance}}: </span>
+                          <span class='primary--text'>{{e.Changes.ExpectedAttendance}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.ExpectedAttendance}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Desired Rooms/Spaces</div>
+                        <template v-if="e.Changes != null && formatRooms(e.Rooms) != formatRooms(e.Changes.Rooms)">
+                          <span class='red--text'>{{formatRooms(e.Rooms)}}: </span>
+                          <span class='primary--text'>{{formatRooms(e.Changes.Rooms)}}</span>
+                        </template>
+                        <template v-else>
+                          {{formatRooms(e.Rooms)}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Check-in Requested</div>
+                        <template v-if="e.Changes != null && e.Checkin != e.Changes.Checkin">
+                          <span class='red--text'>{{boolToYesNo(e.Checkin)}}: </span>
+                          <span class='primary--text'>{{boolToYesNo(e.Changes.Checkin)}}</span>
+                        </template>
+                        <template v-else>
+                          {{boolToYesNo(e.Checkin)}}
+                        </template>
+                      </v-col>
+                    </v-row>
                   </template>
-                  <template v-else>
-                    {{formatRooms(selected.Rooms)}}
+                  <template v-if="selected.needsOnline">
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Event Link</div>
+                        <template v-if="e.Changes != null && e.EventURL != e.Changes.EventURL">
+                          <span class='red--text'>{{e.EventURL}}: </span>
+                          <span class='primary--text'>{{e.Changes.EventURL}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.EventURL}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.ZoomPassword != ''">
+                        <div class="floating-title">Password</div>
+                        <template v-if="e.Changes != null && e.ZoomPassword != e.Changes.ZoomPassword">
+                          <span class='red--text'>{{e.ZoomPassword}}: </span>
+                          <span class='primary--text'>{{e.Changes.ZoomPassword}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.ZoomPassword}}
+                        </template>
+                      </v-col>
+                    </v-row>
                   </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Check-in Requested</div>
-                  <template v-if="selected.Changes != null && selected.Checkin != selected.Changes.Checkin">
-                    <span class='red--text'>{{boolToYesNo(selected.Checkin)}}: </span>
-                    <span class='primary--text'>{{boolToYesNo(selected.Changes.Checkin)}}</span>
+                  <template v-if="selected.needsChildCare">
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Childcare Age Groups</div>
+                        <template v-if="e.Changes != null && e.ChildCareOptions.join(', ') != e.Changes.ChildCareOptions.join(', ')">
+                          <span class='red--text'>{{e.ChildCareOptions.join(', ')}}: </span>
+                          <span class='primary--text'>{{e.Changes.ChildCareOptions.join(', ')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.ChildCareOptions.join(', ')}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Expected Number of Children</div>
+                        <template v-if="e.Changes != null && e.EstimatedKids != e.Changes.EstimatedKids">
+                          <span class='red--text'>{{e.EstimatedKids}}: </span>
+                          <span class='primary--text'>{{e.Changes.EstimatedKids}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.EstimatedKids}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Childcare Start Time</div>
+                        <template v-if="e.Changes != null && e.CCStartTime != e.Changes.CCStartTime">
+                          <span class='red--text'>{{e.CCStartTime}}: </span>
+                          <span class='primary--text'>{{e.Changes.CCStartTime}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.CCStartTime}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Childcare End Time</div>
+                        <template v-if="e.Changes != null && e.CCEndTime != e.Changes.CCEndTime">
+                          <span class='red--text'>{{e.CCEndTime}}: </span>
+                          <span class='primary--text'>{{e.Changes.CCEndTime}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.CCEndTime}}
+                        </template>
+                      </v-col>
+                    </v-row>
                   </template>
-                  <template v-else>
-                    {{boolToYesNo(selected.Checkin)}}
-                  </template>
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsOnline">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Event Link</div>
-                  <template v-if="selected.Changes != null && selected.EventURL != selected.Changes.EventURL">
-                    <span class='red--text'>{{selected.EventURL}}: </span>
-                    <span class='primary--text'>{{selected.Changes.EventURL}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.EventURL}}
-                  </template>
-                </v-col>
-                <v-col v-if="selected.ZoomPassword != ''">
-                  <div class="floating-title">Password</div>
-                  <template v-if="selected.Changes != null && selected.ZoomPassword != selected.Changes.ZoomPassword">
-                    <span class='red--text'>{{selected.ZoomPassword}}: </span>
-                    <span class='primary--text'>{{selected.Changes.ZoomPassword}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.ZoomPassword}}
-                  </template>
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsPub">
-              <v-row v-for="(p, idx) in selected.Publicity" :key="`pub_${idx}`">
-                <v-col>
-                  <div class="floating-title">Publicity Date</div>
-                  <template v-if="selected.Changes != null && p.Date != selected.Changes.Publicity[idx].Date">
-                    <span class='red--text'>{{p.Date | formatDate}}: </span>
-                    <span class='primary--text'>{{selected.Changes.Publicity[idx].Date | formatDate}}</span>
-                  </template>
-                  <template v-else>
-                    {{p.Date | formatDate}}
-                  </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Publicity Need</div>
-                  <template v-if="selected.Changes != null && p.Needs.join(', ') != selected.Changes.Publicity[idx].Needs.join(', ')">
-                    <span class='red--text'>{{p.Needs.join(', ')}}: </span>
-                    <span class='primary--text'>{{selected.Changes.Publicity[idx].Needs.join(', ')}}</span>
-                  </template>
-                  <template v-else>
-                    {{p.Needs.join(', ')}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.PublicityBlurb">
-                <v-col>
-                  <div class="floating-title">Publicity Blurb</div>
-                  <template v-if="selected.Changes != null && selected.PublicityBlurb != selected.Changes.PublicityBlurb">
-                    <span class='red--text'>{{selected.PublicityBlurb}}: </span>
-                    <span class='primary--text'>{{selected.Changes.PublicityBlurb}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.PublicityBlurb}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.TalkingPointOne">
-                <v-col>
-                  <div class="floating-title">Talking Point One</div>
-                  <template v-if="selected.Changes != null && selected.TalkingPointOne != selected.Changes.TalkingPointOne">
-                    <span class='red--text'>{{selected.TalkingPointOne}}: </span>
-                    <span class='primary--text'>{{selected.Changes.TalkingPointOne}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.TalkingPointOne}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.TalkingPointTwo">
-                <v-col>
-                  <div class="floating-title">Talking Point Two</div>
-                  <template v-if="selected.Changes != null && selected.TalkingPointTwo != selected.Changes.TalkingPointTwo">
-                    <span class='red--text'>{{selected.TalkingPointTwo}}: </span>
-                    <span class='primary--text'>{{selected.Changes.TalkingPointTwo}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.TalkingPointTwo}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.TalkingPointThree">
-                <v-col>
-                  <div class="floating-title">Talking Point Three</div>
-                  <template v-if="selected.Changes != null && selected.TalkingPointThree != selected.Changes.TalkingPointThree">
-                    <span class='red--text'>{{selected.TalkingPointThree}}: </span>
-                    <span class='primary--text'>{{selected.Changes.TalkingPointThree}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.TalkingPointThree}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col v-if="selected.PubImage">
-                  <div class="floating-title">Publicity Image</div>
-                  {{selected.PubImage.name}}
-                  <v-btn icon color="accent" @click="saveFile('pub')"
-                    ><v-icon color="accent">mdi-download</v-icon></v-btn
-                  >
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Add to public calendar</div>
-                  <template v-if="selected.Changes != null && selected.ShowOnCalendar != selected.Changes.ShowOnCalendar">
-                    <span class='red--text'>{{boolToYesNo(selected.ShowOnCalendar)}}: </span>
-                    <span class='primary--text'>{{boolToYesNo(selected.Changes.ShowOnCalendar)}}</span>
-                  </template>
-                  <template v-else>
-                    {{boolToYesNo(selected.ShowOnCalendar)}}
-                  </template>
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsChildCare">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Childcare Age Groups</div>
-                  <template v-if="selected.Changes != null && selected.ChildCareOptions.join(', ') != selected.Changes.ChildCareOptions.join(', ')">
-                    <span class='red--text'>{{selected.ChildCareOptions.join(', ')}}: </span>
-                    <span class='primary--text'>{{selected.Changes.ChildCareOptions.join(', ')}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.ChildCareOptions.join(', ')}}
-                  </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Expected Number of Children</div>
-                  <template v-if="selected.Changes != null && selected.EstimatedKids != selected.Changes.EstimatedKids">
-                    <span class='red--text'>{{selected.EstimatedKids}}: </span>
-                    <span class='primary--text'>{{selected.Changes.EstimatedKids}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.EstimatedKids}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Childcare Start Time</div>
-                  <template v-if="selected.Changes != null && selected.CCStartTime != selected.Changes.CCStartTime">
-                    <span class='red--text'>{{selected.CCStartTime}}: </span>
-                    <span class='primary--text'>{{selected.Changes.CCStartTime}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.CCStartTime}}
-                  </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Childcare End Time</div>
-                  <template v-if="selected.Changes != null && selected.CCEndTime != selected.Changes.CCEndTime">
-                    <span class='red--text'>{{selected.CCEndTime}}: </span>
-                    <span class='primary--text'>{{selected.Changes.CCEndTime}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.CCEndTime}}
-                  </template>
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsCatering">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Preferred Vendor</div>
-                  <template v-if="selected.Changes != null && selected.Vendor != selected.Changes.Vendor">
-                    <span class='red--text'>{{selected.Vendor}}: </span>
-                    <span class='primary--text'>{{selected.Changes.Vendor}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.Vendor}}
-                  </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Budget Line</div>
-                  <template v-if="selected.Changes != null && selected.BudgetLine != selected.Changes.BudgetLine">
-                    <span class='red--text'>{{selected.BudgetLine}}: </span>
-                    <span class='primary--text'>{{selected.Changes.BudgetLine}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.BudgetLine}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Preferred Menu</div>
-                  <template v-if="selected.Changes != null && selected.Menu != selected.Changes.Menu">
-                    <span class='red--text'>{{selected.Menu}}: </span>
-                    <span class='primary--text'>{{selected.Changes.Menu}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.Menu}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">{{foodTimeTitle}}</div>
-                  <template v-if="selected.Changes != null && selected.FoodTime != selected.Changes.FoodTime">
-                    <span class='red--text'>{{selected.FoodTime}}: </span>
-                    <span class='primary--text'>{{selected.Changes.FoodTime}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.FoodTime}}
-                  </template>
-                </v-col>
-                <v-col v-if="selected.FoodDelivery">
-                  <div class="floating-title">Food Drop off Location</div>
-                  <template v-if="selected.Changes != null && selected.FoodDropOff != selected.Changes.FoodDropOff">
-                    <span class='red--text'>{{selected.FoodDropOff}}: </span>
-                    <span class='primary--text'>{{selected.Changes.FoodDropOff}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.FoodDropOff}}
-                  </template>
-                </v-col>
-              </v-row>
-              <template v-if="selected.needsChildCare">
-                <v-row>
-                  <v-col>
-                    <div class="floating-title">
-                      Preferred Vendor for Childcare
-                    </div>
-                    <template v-if="selected.Changes != null && selected.CCVendor != selected.Changes.CCVendor">
-                      <span class='red--text'>{{selected.CCVendor}}: </span>
-                      <span class='primary--text'>{{selected.Changes.CCVendor}}</span>
+                  <template v-if="selected.needsCatering">
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Preferred Vendor</div>
+                        <template v-if="e.Changes != null && e.Vendor != e.Changes.Vendor">
+                          <span class='red--text'>{{e.Vendor}}: </span>
+                          <span class='primary--text'>{{e.Changes.Vendor}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.Vendor}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Budget Line</div>
+                        <template v-if="e.Changes != null && e.BudgetLine != e.Changes.BudgetLine">
+                          <span class='red--text'>{{e.BudgetLine}}: </span>
+                          <span class='primary--text'>{{e.Changes.BudgetLine}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.BudgetLine}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Preferred Menu</div>
+                        <template v-if="e.Changes != null && e.Menu != e.Changes.Menu">
+                          <span class='red--text'>{{e.Menu}}: </span>
+                          <span class='primary--text'>{{e.Changes.Menu}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.Menu}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">{{foodTimeTitle(e)}}</div>
+                        <template v-if="e.Changes != null && e.FoodTime != e.Changes.FoodTime">
+                          <span class='red--text'>{{e.FoodTime}}: </span>
+                          <span class='primary--text'>{{e.Changes.FoodTime}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.FoodTime}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.FoodDelivery">
+                        <div class="floating-title">Food Drop off Location</div>
+                        <template v-if="e.Changes != null && e.FoodDropOff != e.Changes.FoodDropOff">
+                          <span class='red--text'>{{e.FoodDropOff}}: </span>
+                          <span class='primary--text'>{{e.Changes.FoodDropOff}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.FoodDropOff}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <template v-if="selected.needsChildCare">
+                      <v-row>
+                        <v-col>
+                          <div class="floating-title">
+                            Preferred Vendor for Childcare
+                          </div>
+                          <template v-if="e.Changes != null && e.CCVendor != e.Changes.CCVendor">
+                            <span class='red--text'>{{e.CCVendor}}: </span>
+                            <span class='primary--text'>{{e.Changes.CCVendor}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.CCVendor}}
+                          </template>
+                        </v-col>
+                        <v-col>
+                          <div class="floating-title">Budget Line for Childcare</div>
+                          <template v-if="e.Changes != null && e.CCBudgetLine != e.Changes.CCBudgetLine">
+                            <span class='red--text'>{{e.CCBudgetLine}}: </span>
+                            <span class='primary--text'>{{e.Changes.CCBudgetLine}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.CCBudgetLine}}
+                          </template>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <div class="floating-title">
+                            Preferred Menu for Childcare
+                          </div>
+                          <template v-if="e.Changes != null && e.CCMenu != e.Changes.CCMenu">
+                            <span class='red--text'>{{e.CCMenu}}: </span>
+                            <span class='primary--text'>{{e.Changes.CCMenu}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.CCMenu}}
+                          </template>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <div class="floating-title">ChildCare Food Set-up time</div>
+                          <template v-if="e.Changes != null && e.CCFoodTime != e.Changes.CCFoodTime">
+                            <span class='red--text'>{{e.CCFoodTime}}: </span>
+                            <span class='primary--text'>{{e.Changes.CCFoodTime}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.CCFoodTime}}
+                          </template>
+                        </v-col>
+                      </v-row>
                     </template>
-                    <template v-else>
-                      {{selected.CCVendor}}
-                    </template>
-                  </v-col>
-                  <v-col>
-                    <div class="floating-title">Budget Line for Childcare</div>
-                    <template v-if="selected.Changes != null && selected.CCBudgetLine != selected.Changes.CCBudgetLine">
-                      <span class='red--text'>{{selected.CCBudgetLine}}: </span>
-                      <span class='primary--text'>{{selected.Changes.CCBudgetLine}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.CCBudgetLine}}
-                    </template>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <div class="floating-title">
-                      Preferred Menu for Childcare
-                    </div>
-                    <template v-if="selected.Changes != null && selected.CCMenu != selected.Changes.CCMenu">
-                      <span class='red--text'>{{selected.CCMenu}}: </span>
-                      <span class='primary--text'>{{selected.Changes.CCMenu}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.CCMenu}}
-                    </template>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <div class="floating-title">ChildCare Food Set-up time</div>
-                    <template v-if="selected.Changes != null && selected.CCFoodTime != selected.Changes.CCFoodTime">
-                      <span class='red--text'>{{selected.CCFoodTime}}: </span>
-                      <span class='primary--text'>{{selected.Changes.CCFoodTime}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.CCFoodTime}}
-                    </template>
-                  </v-col>
-                </v-row>
-              </template>
-            </template>
-            <v-row v-if="selected.Drinks && selected.Drinks.length > 0">
-              <v-col>
-                <div class="floating-title">Desired Drinks</div>
-                <template v-if="selected.Changes != null && selected.Drinks.join(', ') != selected.Changes.Drinks.join(', ')">
-                  <span class='red--text'>{{selected.Drinks.join(', ')}}: </span>
-                  <span class='primary--text'>{{selected.Changes.Drinks.join(', ')}}</span>
-                </template>
-                <template v-else>
-                  {{selected.Drinks.join(', ')}}
-                </template>
-              </v-col>
-            </v-row>
-            <v-row v-if="selected.DrinkTime">
-              <v-col>
-                <div class="floating-title">Drink Set-up Time</div>
-                <template v-if="selected.Changes != null && selected.DrinkTime != selected.Changes.DrinkTime">
-                  <span class='red--text'>{{selected.DrinkTime}}: </span>
-                  <span class='primary--text'>{{selected.Changes.DrinkTime}}</span>
-                </template>
-                <template v-else>
-                  {{selected.DrinkTime}}
-                </template>
-              </v-col>
-              <v-col>
-                <div class="floating-title">Drink Drop off Location</div>
-                <template v-if="selected.Changes != null && selected.DrinkDropOff != selected.Changes.DrinkDropOff">
-                  <span class='red--text'>{{selected.DrinkDropOff}}: </span>
-                  <span class='primary--text'>{{selected.Changes.DrinkDropOff}}</span>
-                </template>
-                <template v-else>
-                  {{selected.DrinkDropOff}}
-                </template>
-              </v-col>
-            </v-row>
-            <template v-if="selected.needsAccom">
-              <v-row v-if="selected.TechNeeds && selected.TechNeeds.length > 0">
-                <v-col>
-                  <div class="floating-title">Tech Needs</div>
-                  <template v-if="selected.Changes != null && selected.TechNeeds.join(', ') != selected.Changes.TechNeeds.join(', ')">
-                    <span class='red--text'>{{selected.TechNeeds.join(', ')}}: </span>
-                    <span class='primary--text'>{{selected.Changes.TechNeeds.join(', ')}}</span>
                   </template>
-                  <template v-else>
-                    {{selected.TechNeeds.join(', ')}}
+                  <v-row v-if="e.Drinks && e.Drinks.length > 0">
+                    <v-col>
+                      <div class="floating-title">Desired Drinks</div>
+                      <template v-if="e.Changes != null && e.Drinks.join(', ') != e.Changes.Drinks.join(', ')">
+                        <span class='red--text'>{{e.Drinks.join(', ')}}: </span>
+                        <span class='primary--text'>{{e.Changes.Drinks.join(', ')}}</span>
+                      </template>
+                      <template v-else>
+                        {{e.Drinks.join(', ')}}
+                      </template>
+                    </v-col>
+                  </v-row>
+                  <v-row v-if="e.DrinkTime">
+                    <v-col>
+                      <div class="floating-title">Drink Set-up Time</div>
+                      <template v-if="e.Changes != null && e.DrinkTime != e.Changes.DrinkTime">
+                        <span class='red--text'>{{e.DrinkTime}}: </span>
+                        <span class='primary--text'>{{e.Changes.DrinkTime}}</span>
+                      </template>
+                      <template v-else>
+                        {{e.DrinkTime}}
+                      </template>
+                    </v-col>
+                    <v-col>
+                      <div class="floating-title">Drink Drop off Location</div>
+                      <template v-if="e.Changes != null && e.DrinkDropOff != e.Changes.DrinkDropOff">
+                        <span class='red--text'>{{e.DrinkDropOff}}: </span>
+                        <span class='primary--text'>{{e.Changes.DrinkDropOff}}</span>
+                      </template>
+                      <template v-else>
+                        {{e.DrinkDropOff}}
+                      </template>
+                    </v-col>
+                  </v-row>
+                  <template v-if="selected.needsAccom">
+                    <v-row v-if="e.TechNeeds || e.TechDescription">
+                      <v-col v-if="e.TechNeeds && e.TechNeeds.length > 0">
+                        <div class="floating-title">Tech Needs</div>
+                        <template v-if="e.Changes != null && e.TechNeeds.join(', ') != e.Changes.TechNeeds.join(', ')">
+                          <span class='red--text'>{{e.TechNeeds.join(', ')}}: </span>
+                          <span class='primary--text'>{{e.Changes.TechNeeds.join(', ')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.TechNeeds.join(', ')}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.TechDescription">
+                        <div class="floating-title">Tech Description</div>
+                        <template v-if="e.Changes != null && e.TechDescription != e.Changes.TechDescription">
+                          <span class='red--text'>{{e.TechDescription}}: </span>
+                          <span class='primary--text'>{{e.Changes.TechDescription}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.TechDescription}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Add to public calendar</div>
+                        <template v-if="e.Changes != null && e.ShowOnCalendar != e.Changes.ShowOnCalendar">
+                          <span class='red--text'>{{boolToYesNo(e.ShowOnCalendar)}}: </span>
+                          <span class='primary--text'>{{boolToYesNo(e.Changes.ShowOnCalendar)}}</span>
+                        </template>
+                        <template v-else>
+                          {{boolToYesNo(e.ShowOnCalendar)}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.ShowOnCalendar && e.PublicityBlurb">
+                      <v-col>
+                        <div class="floating-title">Publicity Blurb</div>
+                        <template v-if="e.Changes != null && e.PublicityBlurb != e.Changes.PublicityBlurb">
+                          <span class='red--text'>{{e.PublicityBlurb}}: </span>
+                          <span class='primary--text'>{{e.Changes.PublicityBlurb}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.PublicityBlurb}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.RegistrationDate">
+                      <v-col>
+                        <div class="floating-title">Registration Date</div>
+                        <template v-if="e.Changes != null && e.RegistrationDate != e.Changes.RegistrationDate">
+                          <span class='red--text'>{{e.RegistrationDate | formatDate}}: </span>
+                          <span class='primary--text'>{{e.Changes.RegistrationDate | formatDate}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.RegistrationDate | formatDate}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.Fee">
+                        <div class="floating-title">Registration Fee</div>
+                        <template v-if="e.Changes != null && e.Fee != e.Changes.Fee">
+                          <span class='red--text'>{{e.Fee | formatCurrency}}: </span>
+                          <span class='primary--text'>{{e.Changes.Fee | formatCurrency}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.Fee | formatCurrency}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.RegistrationEndDate">
+                      <v-col>
+                        <div class="floating-title">Registration Close Date</div>
+                        <template v-if="e.Changes != null && e.RegistrationEndDate != e.Changes.RegistrationEndDate">
+                          <span class='red--text'>{{e.RegistrationEndDate | formatDate}}: </span>
+                          <span class='primary--text'>{{e.Changes.RegistrationEndDate | formatDate}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.RegistrationEndDate | formatDate}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.RegistrationEndTime">
+                        <div class="floating-title">Registration Close Time</div>
+                        <template v-if="e.Changes != null && e.RegistrationEndTime != e.Changes.RegistrationEndTime">
+                          <span class='red--text'>{{e.RegistrationEndTime}}: </span>
+                          <span class='primary--text'>{{e.Changes.RegistrationEndTime}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.RegistrationEndTime}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.SetUp">
+                      <v-col>
+                        <div class="floating-title">Requested Set-up</div>
+                        <template v-if="e.Changes != null && e.SetUp != e.Changes.SetUp">
+                          <span class='red--text'>{{e.SetUp}}: </span>
+                          <span class='primary--text'>{{e.Changes.SetUp}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.SetUp}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.SetUpImage">
+                      <v-col>
+                        <div class="floating-title">Set-up Image</div>
+                        {{e.SetUpImage.name}}
+                        <v-btn icon color="accent" @click="saveFile('setup')">
+                          <v-icon color="accent">mdi-download</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
                   </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.RegistrationDate">
-                <v-col>
-                  <div class="floating-title">Registration Date</div>
-                  <template v-if="selected.Changes != null && selected.RegistrationDate != selected.Changes.RegistrationDate">
-                    <span class='red--text'>{{selected.RegistrationDate | formatDate}}: </span>
-                    <span class='primary--text'>{{selected.Changes.RegistrationDate | formatDate}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.RegistrationDate | formatDate}}
-                  </template>
-                </v-col>
-                <v-col v-if="selected.Fee">
-                  <div class="floating-title">Registration Fee</div>
-                  <template v-if="selected.Changes != null && selected.Fee != selected.Changes.Fee">
-                    <span class='red--text'>{{selected.Fee | formatCurrency}}: </span>
-                    <span class='primary--text'>{{selected.Changes.Fee | formatCurrency}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.Fee | formatCurrency}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.RegistrationEndDate">
-                <v-col>
-                  <div class="floating-title">Registration Close Date</div>
-                  <template v-if="selected.Changes != null && selected.RegistrationEndDate != selected.Changes.RegistrationEndDate">
-                    <span class='red--text'>{{selected.RegistrationEndDate | formatDate}}: </span>
-                    <span class='primary--text'>{{selected.Changes.RegistrationEndDate | formatDate}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.RegistrationEndDate | formatDate}}
-                  </template>
-                </v-col>
-                <v-col v-if="selected.RegistrationEndTime">
-                  <div class="floating-title">Registration Close Time</div>
-                  <template v-if="selected.Changes != null && selected.RegistrationEndTime != selected.Changes.RegistrationEndTime">
-                    <span class='red--text'>{{selected.RegistrationEndTime}}: </span>
-                    <span class='primary--text'>{{selected.Changes.RegistrationEndTime}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.RegistrationEndTime}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.SetUp">
-                <v-col>
-                  <div class="floating-title">Requested Set-up</div>
-                  <template v-if="selected.Changes != null && selected.SetUp != selected.Changes.SetUp">
-                    <span class='red--text'>{{selected.SetUp}}: </span>
-                    <span class='primary--text'>{{selected.Changes.SetUp}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.SetUp}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.SetUpImage">
-                <v-col>
-                  <div class="floating-title">Set-up Image</div>
-                  {{selected.SetUpImage.name}}
-                  <v-btn icon color="accent" @click="saveFile('setup')">
-                    <v-icon color="accent">mdi-download</v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </template>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+            </v-expansion-panels>
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="editRequest">
@@ -802,6 +754,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 selected: {},
                 overlay: false,
                 dialog: false,
+                panels: [0],
                 rooms: [],
                 ministries: [],
                 bufferErrMsg: '',
@@ -839,16 +792,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 },
             },
             computed: {
-                foodTimeTitle() {
-                    if (this.selected) {
-                        if (this.selected.FoodDelivery) {
-                            return "Food Set-up time";
-                        } else {
-                            return "Desired Pick-up time from Vendor";
-                        }
-                    }
-                    return "";
-                },
                 sortedCurrent() {
                     let ordered = [
                         { Timeframe: "Today", Events: [] },
@@ -861,8 +804,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     ];
                     this.current.forEach((i) => {
                         let dates = i.EventDates;
-                        let timeframe = [];
                         dates.forEach((d) => {
+                            let timeframe = [];
                             if (d == moment().format("yyyy-MM-DD")) {
                                 timeframe.push("Today");
                             }
@@ -878,11 +821,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                             ) {
                                 timeframe.push(moment(d).format("dddd"));
                             }
-                        });
-                        ordered.forEach((o) => {
-                            if (timeframe.includes(o.Timeframe)) {
-                                o.Events.push(i);
-                            }
+                            ordered.forEach((o) => {
+                                if (timeframe.includes(o.Timeframe)) {
+                                    if (i.IsSame || i.Events.length == 1) {
+                                        o.Events.push({ Name: i.Name, Rooms: i.Events[0].Rooms, Full: i });
+                                    } else {
+                                        let idx = i.EventDates.indexOf(d)
+                                        o.Events.push({ Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i })
+                                    }
+                                }
+                            });
                         });
                     });
                     return ordered.filter((o) => {
@@ -940,7 +888,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         val.forEach((i) => {
                             this.rooms.forEach((r) => {
                                 if (i == r.Id) {
-                                    rms.push(r.Value.split(` (`)[0]);
+                                    rms.push(r.Value);
                                 }
                             });
                         });
@@ -1000,6 +948,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     }
                     if (status == "Denied" || status == "Proposed Changes Denied") {
                         return "no-top-pad status-pill denied";
+                    }
+                },
+                foodTimeTitle(e) {
+                    if (e.FoodDelivery) {
+                        return "Food Set-up time";
+                    } else {
+                        return "Desired Pick-up time from Vendor";
                     }
                 },
                 editRequest() {
@@ -1191,5 +1146,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   ::-webkit-scrollbar-thumb:active {
     background: #888;
     -webkit-box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .v-expansion-panel--active>.v-expansion-panel-header {
+    border-bottom: 1px solid #e2e2e2;
   }
 </style>

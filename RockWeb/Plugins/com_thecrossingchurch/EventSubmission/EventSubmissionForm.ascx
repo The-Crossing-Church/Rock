@@ -84,8 +84,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsPub"
                 :label="`Publicity`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                hint="Requests involving publicity must be made at least 6 weeks in advance"
                 :persistent-hint="request.needsPub"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-switch
+                v-model="request.needsReg"
+                :label="`Registration`"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                :persistent-hint="request.needsReg"
               ></v-switch>
             </v-col>
           </v-row>
@@ -113,7 +123,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsAccom"
-                :label="`Special Accommodations (tech, drinks, registration, extensive set-up, etc.)`"
+                :label="`Special Accommodations (tech, drinks, web calendar, extensive set-up, etc.)`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsAccom"
               ></v-switch>
@@ -182,7 +192,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-col>
             </v-row>
             <template
-              v-if="request.needsSpace && !request.needsOnline && !request.needsPub && !request.needsCatering && !request.needsChildCare && !request.needsAccom"
+              v-if="request.needsSpace && !request.needsOnline && !request.needsPub && !request.needsReg && !request.needsCatering && !request.needsChildCare && !request.needsAccom"
             >
               <v-tabs v-model="tab">
                 <v-tab>I have specific dates(s) and times</v-tab>
@@ -216,74 +226,45 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       ></v-select>
                     </v-col>
                   </v-row>
-                  <template
-                    v-if="request.needsSpace || request.needsOnline || request.needsPub || request.needsChildCare"
-                  >
+                  <v-row v-if="request.EventDates.length > 1">
+                    <v-col>
+                      <v-switch
+                        :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
+                        v-model="request.IsSame"
+                      ></v-switch>
+                    </v-col>
+                  </v-row>
+                  <template v-for="e in request.Events">
                     <v-row>
                       <v-col>
-                        <strong
-                          >What time will your event begin and end?</strong
-                        >
+                        <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
+                        <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
                       </v-col>
                     </v-row>
                     <v-row>
                       <v-col cols="12" md="6">
                         <strong>Start Time</strong>
                         <time-picker
-                          v-model="request.StartTime"
-                          :value="request.StartTime"
-                          :rules="[rules.required(request.StartTime, 'Start Time'), rules.validTime(request.StartTime, request.EndTime, true)]"
+                          v-model="e.StartTime"
+                          :value="e.StartTime"
+                          :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
                         ></time-picker>
                       </v-col>
                       <v-col cols="12" md="6">
                         <strong>End Time</strong>
                         <time-picker
-                          v-model="request.EndTime"
-                          :value="request.EndTime"
-                          :rules="[rules.required(request.EndTime, 'End Time'), rules.validTime(request.EndTime, request.StartTime, false)]"
+                          v-model="e.EndTime"
+                          :value="e.EndTime"
+                          :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
                         ></time-picker>
                       </v-col>
                     </v-row>
                   </template>
                   <%-- Space Information --%>
                   <template v-if="request.needsSpace">
-                    <v-row>
-                      <v-col>
-                        <h3 class="primary--text">Space Information</h3>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          label="How many people are you expecting to attend?"
-                          type="number"
-                          v-model="request.ExpectedAttendance"
-                          :hint="`${request.ExpectedAttendance > 100 ? 'Events with more than 100 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''}`"
-                          :rules="[rules.required(request.ExpectedAttendance, 'Expected Attendance')]"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" md="6">
-                        <v-autocomplete
-                          label="What are your preferred rooms/spaces?"
-                          chips
-                          multiple
-                          :items="rooms"
-                          item-text="Value"
-                          item-value="Id"
-                          v-model="request.Rooms"
-                          attach
-                          :rules="[rules.requiredArr(request.Rooms, 'Room/Space'), rules.roomCapacity(rooms, request.Rooms, request.ExpectedAttendance)]"
-                        ></v-autocomplete>
-                      </v-col>
-                    </v-row>
-                    <v-row v-if="request.needsOnline || request.needsPub || request.needsCatering || request.needsChildCare || request.needsAccom">
-                      <v-col cols="12" md="6">
-                        <v-switch
-                          label="Do you need in-person check-in on the day of the event?"
-                          v-model="request.Checkin"
-                        ></v-switch>
-                      </v-col>
-                    </v-row>
+                    <template v-for="e in request.Events">
+                      <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
+                    </template>
                   </template>
                 </v-tab-item>
                 <v-tab>I want to search for something quick</v-tab>
@@ -332,98 +313,74 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   ></v-select>
                 </v-col>
               </v-row>
-              <template
-                v-if="request.needsSpace || request.needsOnline || request.needsPub || request.needsChildCare"
-              >
+              <v-row v-if="request.EventDates.length > 1">
+                <v-col>
+                  <v-switch
+                    :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
+                    v-model="request.IsSame"
+                  ></v-switch>
+                </v-col>
+              </v-row>
+              <template v-for="e in request.Events">
                 <v-row>
                   <v-col>
-                    <strong>What time will your event begin and end?</strong>
+                    <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
+                    <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
                   </v-col>
                 </v-row>
                 <v-row>
                   <v-col cols="12" md="6">
                     <strong>Start Time</strong>
                     <time-picker
-                      v-model="request.StartTime"
-                      :value="request.StartTime"
-                      :rules="[rules.required(request.StartTime, 'Start Time'), rules.validTime(request.StartTime, request.EndTime, true)]"
+                      v-model="e.StartTime"
+                      :value="e.StartTime"
+                      :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
                     ></time-picker>
                   </v-col>
                   <v-col cols="12" md="6">
                     <strong>End Time</strong>
                     <time-picker
-                      v-model="request.EndTime"
-                      :value="request.EndTime"
-                      :rules="[rules.required(request.EndTime, 'End Time'), rules.validTime(request.EndTime, request.StartTime, false)]"
+                      v-model="e.EndTime"
+                      :value="e.EndTime"
+                      :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
                     ></time-picker>
                   </v-col>
                 </v-row>
-                <%-- Space Information --%>
-                <template v-if="request.needsSpace">
-                  <v-row>
-                    <v-col>
-                      <h3 class="primary--text">Space Information</h3>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        label="How many people are you expecting to attend?"
-                        type="number"
-                        v-model="request.ExpectedAttendance"
-                        :rules="[rules.required(request.ExpectedAttendance, 'Expected Attendance')]"
-                        :hint="`${request.ExpectedAttendance > 100 ? 'Events with more than 100 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''}`"
-                      ></v-text-field>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                      <v-autocomplete
-                        label="What are your preferred rooms/spaces?"
-                        chips
-                        multiple
-                        :items="rooms"
-                        item-text="Value"
-                        item-value="Id"
-                        v-model="request.Rooms"
-                        attach
-                        :rules="[rules.requiredArr(request.Rooms, 'Room/Space'), rules.roomCapacity(rooms, request.Rooms, request.ExpectedAttendance)]"
-                      ></v-autocomplete>
-                    </v-col>
-                  </v-row>
-                  <v-row v-if="request.needsOnline || request.needsPub || request.needsCatering || request.needsChildCare || request.needsAccom">
-                    <v-col cols="12" md="6">
-                      <v-switch
-                        label="Do you need in-person check-in on the day of the event?"
-                        v-model="request.Checkin"
-                      ></v-switch>
-                    </v-col>
-                  </v-row>
+              </template>
+              <%-- Space Information --%>
+              <template v-if="request.needsSpace">
+                <template v-for="e in request.Events">
+                  <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
                 </template>
               </template>
             </template>
             <%-- Online Information --%>
             <template v-if="request.needsOnline">
-              <v-row>
-                <v-col>
-                  <h3 class="primary--text">Online Information</h3>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-text-field
-                    label="If there is a link your attendees will need to access this event, list it here"
-                    v-model="request.EventURL"
-                    :rules="[rules.required(request.EventURL, 'Link')]"
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-text-field
-                    label="If there is a password for the link, list it here"
-                    v-model="request.ZoomPassword"
-                  ></v-text-field>
-                </v-col>
-              </v-row>
+              <template v-for="e in request.Events">
+                <v-row>
+                  <v-col>
+                    <h3 class="primary--text" v-if="request.Events.length == 1">Online Information</h3>
+                    <h3 class="primary--text" v-else>Online Information for {{e.EventDate | formatDate}}</h3>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-text-field
+                      label="If there is a link your attendees will need to access this event, list it here"
+                      v-model="e.EventURL"
+                      :rules="[rules.required(e.EventURL, 'Link')]"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-text-field
+                      label="If there is a password for the link, list it here"
+                      v-model="e.ZoomPassword"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </template>
             </template>
             <%-- Publicity Information --%>
             <template v-if="request.needsPub">
@@ -432,479 +389,47 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <h3 class="primary--text">Publicity Information</h3>
                 </v-col>
               </v-row>
-              <template v-for="(i, idx) in request.Publicity">
-                <v-row
-                  ><v-col><strong>Week {{idx + 1}}</strong></v-col></v-row
-                >
-                <v-row :key="`pub_${idx}`" align-center>
-                  <v-col>
-                    <publicity-picker
-                      :value="i"
-                      :earliest-date="earliestPubDate"
-                    ></publicity-picker>
-                  </v-col>
-                  <v-col cols="1">
-                    <v-btn
-                      fab
-                      color="red"
-                      v-if="idx > 0"
-                      @click="removePub(idx)"
-                      class="btn-pub-del"
-                    >
-                      <v-icon>mdi-delete-forever</v-icon>
-                      <span class="tooltip">Delete Publicity</span>
-                    </v-btn>
-                  </v-col>
-                </v-row>
-              </template>
-              <v-row>
-                <v-col style="position: relative">
-                  <v-btn
-                    absolute
-                    right
-                    fab
-                    color="accent"
-                    :disabled="pubBtnDisabled"
-                    @click="addPub"
-                    class="btn-pub-add"
-                  >
-                    <v-icon>mdi-plus</v-icon>
-                    <span class="tooltip">Add Publicity</span>
-                  </v-btn>
-                </v-col>
-              </v-row>
               <v-row>
                 <v-col>
                   <v-textarea
-                    label="Please type out your blurb"
-                    v-model="request.PublicityBlurb"
-                    :rules="[rules.blurbValidation(request.PublicityBlurb, request.Publicity)]"
-                    validate-on-blur
-                  ></v-textarea>
-                </v-col>
-              </v-row>
-              <template v-if="isRequestingVideo">
-                <v-row>
-                  <v-col>
-                    <strong>If you are requesting a video announcement, please provide three talking points to guide your spoken announcement. These should be no longer than 20 seconds when read aloud at a normal speaking pace.</strong>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <v-textarea
-                      label="Talking Point One"
-                      v-model="request.TalkingPointOne"
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <v-textarea
-                      label="Talking Point Two"
-                      v-model="request.TalkingPointTwo"
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <v-textarea
-                      label="Talking Point Three"
-                      v-model="request.TalkingPointThree"
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-              </template>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-file-input
-                    accept="image/*"
-                    label="If your event has an existing graphic, please upload it here"
-                    prepend-inner-icon="mdi-camera"
-                    prepend-icon=""
-                    v-model="pubImage"
-                    @change="handlePubFile"
-                  ></v-file-input>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-switch
-                    :label="`I would like this event to be listed on the public web calendar (${boolToYesNo(request.ShowOnCalendar)})`"
-                    v-model="request.ShowOnCalendar"
-                  ></v-switch>
-                </v-col>
-              </v-row>
-            </template>
-            <%-- Catering Information --%>
-            <template v-if="request.needsCatering">
-              <v-row>
-                <v-col>
-                  <h3 class="primary--text">Catering Information</h3>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12" style='font-weight: bold;'>
-                  If you want to avoid a serving team, be sure to choose a vendor that is currently offering individually boxed meals. 
-                  <v-menu attach>
-                    <template v-slot:activator="{ on, attrs }">
-                      <span v-bind="attrs" v-on="on" class='accent-text'>
-                        Click here to see that list.
-                      </span>
-                    </template>
-                    <v-list>
-                      <v-list-item>
-                        Chick-fil-A
-                      </v-list-item>
-                      <v-list-item>
-                        Como Smoke and Fire
-                      </v-list-item>
-                      <v-list-item>
-                        Honey Baked Ham
-                      </v-list-item>
-                      <v-list-item>
-                        Panera
-                      </v-list-item>
-                      <v-list-item>
-                        Pickleman's
-                      </v-list-item>
-                      <v-list-item>
-                        Tropical Smoothie Cafe
-                      </v-list-item>
-                      <v-list-item>
-                        Word of Mouth Catering
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-text-field
-                    label="Preferred Vendor"
-                    v-model="request.Vendor"
-                    :rules="[rules.required(request.Vendor, 'Vendor')]"
-                  ></v-text-field>
-                </v-col>
-                <v-col>
-                  <v-text-field
-                    label="Food Budget Line"
-                    v-model="request.BudgetLine"
-                    :rules="[rules.required(request.BudgetLine, 'Budget Line')]"
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-textarea
-                    label="Preferred Menu"
-                    v-model="request.Menu"
-                    :rules="[rules.required(request.Menu, 'Menu')]"
+                    label="In 450 characters or less, describe why someone should attend your event and what they will learn/receive."
+                    v-model="request.WhyAttendSixtyFive"
+                    :hint="`Be sure to write in the second person. Using rhetorical questions that elicit interest, or touch on a felt need. (${request.WhyAttendSixtyFive.length}/450)`"
+                    :rules="[rules.required(request.WhyAttendSixtyFive, 'Copy'), rules.publicityCharacterLimit(request.WhyAttendSixtyFive, 450)]"
                   ></v-textarea>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
-                  <v-switch
-                    v-model="request.FoodDelivery"
-                    :label="`Would you like your food to be delivered? ${request.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`"
-                  ></v-switch>
-                </v-col>
-              </v-row>
-              <v-row v-if="request.FoodDelivery">
-                <v-col cols="12" md="6">
-                  <strong
-                    >What time would you like food to be set up and
-                    ready?</strong
-                  >
-                  <time-picker
-                    v-model="request.FoodTime"
-                    :value="request.FoodTime"
-                    :default="defaultFoodTime"
-                    :rules="[rules.required(request.FoodTime, 'Time')]"
-                  ></time-picker>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <br />
-                  <v-row>
-                    <v-col>
-                      <v-text-field
-                        label="Where should the food be set up?"
-                        v-model="request.FoodDropOff"
-                        :rules="[rules.required(request.FoodDropOff, 'Location')]"
-                      ></v-text-field>
-                    </v-col>
-                  </v-row>
-                </v-col>
-              </v-row>
-              <v-row v-else>
-                <v-col cols="12" md="6">
-                  <strong
-                    >What time would you like to pick up your food?</strong
-                  >
-                  <time-picker
-                    v-model="request.FoodTime"
-                    :value="request.FoodTime"
-                    :default="defaultFoodTime"
-                    :rules="[rules.required(request.FoodTime, 'Time')]"
-                  ></time-picker>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <br />
-                  <v-row>
-                    <v-col>
-                      <v-autocomplete
-                        label="What drinks would you like to have?"
-                        :items="['Coffee', 'Soda', 'Water']"
-                        :hint="`${request.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`"
-                        persistent-hint
-                        v-model="request.Drinks"
-                        multiple
-                        chips
-                        attach
-                      ></v-autocomplete>
-                    </v-col>
-                  </v-row>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <strong>What time would you like your drinks to be delivered?</strong>
-                  <time-picker
-                    v-model="request.DrinkTime"
-                    :value="request.DrinkTime"
-                    :default="defaultFoodTime"
-                  ></time-picker>
-                </v-col>
-              </v-row>
-              <v-row v-if="request.Drinks.includes('Coffee')">
-                <v-col cols="12" md="6">
-                  <v-checkbox
-                    label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
-                    :rules="[rules.required(request.ServingTeamAgree, 'Agreement to provide a serving team')]"
-                    v-model="request.ServingTeamAgree"
-                  ></v-checkbox>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    label="Where would you like your drinks delivered?"
-                    v-model="request.DrinkDropOff"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-checkbox
-                    v-if="request.FoodDropOff != ''"
-                    label="Set-up drinks with food"
-                    v-model="sameFoodDrinkDropOff"
-                    dense
-                  ></v-checkbox>
-                </v-col>
-              </v-row>
-              <%-- Childcare Catering --%>
-              <template v-if="request.needsChildCare">
-                <v-row>
-                  <v-col>
-                    <v-select
-                      label="Preferred Vendor for Childcare"
-                      v-model="request.CCVendor"
-                      :rules="[rules.required(request.CCVendor, 'Vendor')]"
-                      :items="['Pizza', 'Other']"
-                      attach
-                    ></v-select>
-                  </v-col>
-                  <v-col>
-                    <v-text-field
-                      label="Food Budget Line for Childcare"
-                      v-model="request.CCBudgetLine"
-                      :rules="[rules.required(request.CCBudgetLine, 'Budget Line')]"
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <v-textarea
-                      label="Preferred Menu for Childcare"
-                      v-model="request.CCMenu"
-                      :rules="[rules.required(request.CCMenu, 'Menu')]"
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <strong
-                      >What time would you like food to be set up and ready for
-                      childcare?</strong
-                    >
-                    <time-picker
-                      v-model="request.CCFoodTime"
-                      :value="request.CCFoodTime"
-                      :default="defaultFoodTime"
-                      :rules="[rules.required(request.CCFoodTime, 'Time')]"
-                    ></time-picker>
-                  </v-col>
-                </v-row>
-              </template>
-            </template>
-            <%-- Childcare Info --%>
-            <template v-if="request.needsChildCare">
-              <v-row>
-                <v-col>
-                  <h3 class="primary--text">Childcare Information</h3>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <strong>
-                    What time do you need childcare to start?
-                  </strong>
-                  <time-picker
-                    v-model="request.CCStartTime"
-                    :value="request.CCStartTime"
-                    :default="defaultFoodTime"
-                    :rules="[rules.required(request.CCStartTime, 'Time')]"
-                  ></time-picker>
-                </v-col> 
-                <v-col cols="12" md="6">
-                  <strong>
-                    What time will childcare end?
-                  </strong>
-                  <time-picker
-                    v-model="request.CCEndTime"
-                    :value="request.CCEndTime"
-                    :default="request.EndTime"
-                    :rules="[rules.required(request.CCEndTime, 'Time')]"
-                  ></time-picker>
-                </v-col> 
-              </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-autocomplete
-                    label="What ages of childcare do you want to offer?"
-                    :items="['Infant/Toddler', 'Preschool', 'K-2nd', '3-5th']"
-                    chips
-                    multiple
+                  <v-select
+                    label="Who are you targeting with this event/class?"
+                    v-model="request.TargetAudience"
+                    :items="[{text: 'Top of the Funnel Event/Class', desc: 'People who have not attended past ministry events'}, {text: 'Middle of the Funnel Event/Class', desc: 'People who are currently attending ministry events'}, {text: 'Bottom of the Funnel Event/Class', desc: 'Leaders/Super fans of your ministry events'}]"
+                    :rules="[rules.required(request.TargetAudience, 'Target Audience')]"
+                    item-value="text"
                     attach
-                    v-model="request.ChildCareOptions"
                   >
                     <template v-slot:item="data">
-                      <div style="padding: 12px 0px; width: 100%">
-                        <v-icon
-                          v-if="request.ChildCareOptions.includes(data.item)"
-                          color="primary"
-                          style="margin-right: 32px"
-                          >mdi-checkbox-marked</v-icon
-                        >
-                        <v-icon
-                          v-else
-                          color="primary"
-                          style="margin-right: 32px"
-                          >mdi-checkbox-blank-outline</v-icon
-                        >
-                        {{data.item}}
-                      </div>
+                      <v-list-item-content>
+                        <v-list-item-title>{{data.item.text}}</v-list-item-title>
+                        <v-list-item-subtitle>{{data.item.desc}}</v-list-item-subtitle>
+                      </v-list-item-content>
                     </template>
-                    <template v-slot:append-item>
-                      <v-list-item>
-                        <div
-                          class="hover"
-                          style="padding: 12px 0px; width: 100%"
-                          @click="toggleChildCareOptions"
-                        >
-                          <v-icon
-                            v-if="childCareSelectAll"
-                            color="primary"
-                            style="margin-right: 32px"
-                            >mdi-checkbox-marked</v-icon
-                          >
-                          <v-icon
-                            v-else
-                            color="primary"
-                            style="margin-right: 32px"
-                            >mdi-checkbox-blank-outline</v-icon
-                          >
-                          Select All
-                        </div>
-                      </v-list-item>
-                    </template>
-                  </v-autocomplete>
+                  </v-select>
                 </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    label="Estimated number of kids"
-                    type="number"
-                    v-model="request.EstimatedKids"
-                  ></v-text-field>
+                <v-col>
+                  <v-checkbox
+                    label="Is your event a “sticky” event?"
+                    hint="i.e. NewComers, Small Group Preview, Discovery Class or Serving at Church"
+                    persistent-hint
+                    v-model="request.EventIsSticky"
+                  ></v-checkbox>
                 </v-col>
               </v-row>
-            </template>
-            <%-- Special Accommodations Info --%>
-            <template v-if="request.needsAccom">
               <v-row>
                 <v-col>
-                  <h3 class="primary--text">Other Accommodations</h3>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-autocomplete
-                    label="What tech needs do you have?"
-                    :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Basic Live Stream', 'Advanced Live Stream', 'Pipe and Drape', 'BOSE System']"
-                    v-model="request.TechNeeds"
-                    :hint="`${request.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`"
-                    persistent-hint
-                    multiple
-                    chips
-                    attach
-                  ></v-autocomplete>
-                </v-col>
-              </v-row>
-              <template v-if="!request.needsCatering">
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <br />
-                    <v-row>
-                      <v-col>
-                        <v-autocomplete
-                          label="What drinks would you like to have?"
-                          :items="['Coffee', 'Soda', 'Water']"
-                          :hint="`${request.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`"
-                          persistent-hint
-                          v-model="request.Drinks"
-                          multiple
-                          chips
-                          attach
-                        ></v-autocomplete>
-                      </v-col>
-                    </v-row>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <strong>What time would you like your drinks to be delivered?</strong>
-                    <time-picker
-                      v-model="request.DrinkTime"
-                      :value="request.DrinkTime"
-                      :default="defaultFoodTime"
-                    ></time-picker>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12" md="6" v-if="request.Drinks.includes('Coffee')">
-                    <v-checkbox
-                      label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
-                      :rules="[rules.required(request.ServingTeamAgree, 'Agreement to provide a serving team')]"
-                      v-model="request.ServingTeamAgree"
-                    ></v-checkbox>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      label="Where would you like your drinks delivered?"
-                      v-model="request.DrinkDropOff"
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-              </template>
-              <v-row>
-                <v-col cols="12" md="6">
                   <v-menu
-                    v-model="menu"
+                    v-model="pubStartMenu"
                     :close-on-content-click="false"
                     :nudge-right="40"
                     transition="scale-transition"
@@ -914,96 +439,199 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   >
                     <template v-slot:activator="{ on, attrs }">
                       <v-text-field
-                        v-model="request.RegistrationDate"
-                        label="What date do you need the registration link to be ready and live?"
+                        v-model="request.PublicityStartDate"
+                        label="What is the earliest date you are comfortable advertising your event?"
                         prepend-inner-icon="mdi-calendar"
                         readonly
                         v-bind="attrs"
                         v-on="on"
                         clearable
+                        :rules="[rules.required(request.PublicityStartDate, 'Date')]"
                       ></v-text-field>
                     </template>
                     <v-date-picker
-                      v-model="request.RegistrationDate"
-                      @input="menu = false"
+                      v-model="request.PublicityStartDate"
+                      @input="pubStartMenu = false"
                       :min="earliestPubDate"
                     ></v-date-picker>
                   </v-menu>
                 </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    label="If there is a registration fee for this event, how much is it?"
-                    type="number"
-                    prepend-inner-icon="mdi-currency-usd"
-                    v-model="request.Fee"
-                  ></v-text-field>
+                <v-col>
+                  <v-menu
+                    v-model="pubEndMenu"
+                    :close-on-content-click="false"
+                    :nudge-right="40"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                    attach
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-text-field
+                        v-model="request.PublicityEndDate"
+                        label="What is the latest date you are comfortable advertising your event?"
+                        prepend-inner-icon="mdi-calendar"
+                        readonly
+                        v-bind="attrs"
+                        v-on="on"
+                        :rules="[rules.required(request.PublicityEndDate, 'Date'), rules.publicityEndDate(request.EventDates, request.PublicityEndDate, request.PublicityStartDate)]"
+                        clearable
+                      ></v-text-field>
+                    </template>
+                    <v-date-picker
+                      v-model="request.PublicityEndDate"
+                      @input="pubEndMenu = false"
+                      :min="earliestPubDate"
+                    ></v-date-picker>
+                  </v-menu>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <br/>
-                  <v-row>
-                    <v-col>
-                      <v-menu
-                        v-model="menu2"
-                        :close-on-content-click="false"
-                        :nudge-right="40"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="290px"
-                        attach
+                  <v-select
+                    label="What publicity strategies are you interested in implementing for your event/class?"
+                    :items="pubStrategyOptions"
+                    v-model="request.PublicityStrategies"
+                    attach
+                    multiple
+                    :rules="[rules.required(request.PublicityStrategies, 'Publicity Strategy')]"
+                  ></v-select>
+                </v-col>
+              </v-row>
+              <template v-if="request.PublicityStrategies.includes('Social Media/Google Ads')">
+                <v-row>
+                  <v-col>
+                    <i><strong style="font-size: 16px;">As a reminder the information you are filling out below is a request for Social Media/Google Ads. The Communication Manager will provide further direction and strategy.</strong></i>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-textarea
+                      label="In 90 characters or less, describe why someone should attend your event."
+                      v-model="request.WhyAttendNinety"
+                      :rules="[rules.required(request.WhyAttendNinety, 'Copy'), rules.publicityCharacterLimit(request.WhyAttendNinety, 90)]"
+                      :hint="`${request.WhyAttendNinety.length}/90`"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <label class="v-label theme--light">Words, phrases, or questions you want your event to appear under when someone searches on Google</label>
+                    <v-chip-group>
+                      <v-chip
+                        v-for="(key, idx) in request.GoogleKeys"
+                        :key="`google_${idx}`"
+                        close
+                        @click:close="removeGoogleKey(idx)"
+                        close-icon="mdi-delete"
                       >
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-text-field
-                            v-model="request.RegistrationEndDate"
-                            label="What date should registration close?"
-                            prepend-inner-icon="mdi-calendar"
-                            readonly
-                            v-bind="attrs"
-                            v-on="on"
-                            :rules="[rules.registrationCloseDate(request.EventDates, request.RegistrationEndDate, request.needsChildCare)]"
-                            clearable
-                          ></v-text-field>
-                        </template>
-                        <v-date-picker
-                          v-model="request.RegistrationEndDate"
-                          @input="menu2 = false"
-                          :min="earliestPubDate"
-                        ></v-date-picker>
-                      </v-menu>
-                    </v-col>
-                  </v-row>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <strong>What time should registration close?</strong>
-                  <time-picker
-                    v-model="request.RegistrationEndTime"
-                    :value="request.RegistrationEndTime"
-                    :default="request.StartTime"
-                    :rules="[rules.registrationCloseTime(request.EventDates, request.RegistrationEndDate, request.needsChildCare, request.StartTime, request.EndTime, request.RegistrationEndTime)]"
-                  ></time-picker>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12">
-                  <v-textarea
-                    label="Please describe the set-up you require for your event"
-                    v-model="request.SetUp"
-                  ></v-textarea>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-file-input
-                    accept="image/*"
-                    label="If you have an image of the set-up layout you would like upload it here"
-                    prepend-inner-icon="mdi-camera"
-                    prepend-icon=""
-                    v-model="setupImage"
-                    @change="handleSetUpFile"
-                  ></v-file-input>
-                </v-col>
-              </v-row>
+                        {{key}}
+                      </v-chip>
+                    </v-chip-group>
+                    <v-text-field
+                      label="Type a word or phrase here, then hit the 'Enter' key to add it to your list"
+                      v-model="googleCurrentKey"
+                      @keydown.enter="addGoogleKey"
+                      :disabled="request.GoogleKeys.length >= 50"
+                      :hint="`Limited to 50 keys (${request.GoogleKeys.length}/50)`"
+                      persistent-hint
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+              </template>
+              <template v-if="request.PublicityStrategies.includes('Mobile Worship Folder')">
+                <v-row>
+                  <v-col>
+                    <i><strong style="font-size: 16px;">As a reminder the information you are filling out below is a request for Mobile Worship Folder. The Communication Manager will provide further direction and strategy.</strong></i>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-text-field
+                      label="In 65 characters or less, describe why someone should attend your event."
+                      v-model="request.WhyAttendTen"
+                      :hint="`${request.WhyAttendTen.length}/65`"
+                      :rules="[rules.required(request.WhyAttendTen, 'Copy'), rules.publicityCharacterLimit(request.WhyAttendTen, 65)]"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-textarea
+                      label="Offer the graphic designer any idea you have about visuals, symbols or imagery that might compliment your event well."
+                      v-model="request.VisualIdeas"
+                      :hint="`${request.VisualIdeas.length}/300`"
+                      :rules="[rules.publicityCharacterLimit(request.VisualIdeas, 300)]"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+              </template>
+              <template v-if="request.PublicityStrategies.includes('Announcement')">
+                <v-row>
+                  <v-col>
+                    <strong style="font-size: 16px;">Please give the name and email of 1-3 people who have benefited from this in the past. Write a 1 paragraph description of their involvement and experience.</strong>
+                  </v-col>
+                </v-row>
+                <v-row v-for="(s, idx) in request.Stories" :key="`story_${idx}`">
+                  <v-col>
+                    <v-text-field
+                      label="Name"
+                      v-model="s.Name"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col>
+                    <v-text-field
+                      label="Email"
+                      v-model="s.Email"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12">
+                    <v-textarea
+                      label="Description of their involvement and experience."
+                      v-model="s.Description"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-btn color="accent" :disabled="request.Stories.length == 3" @click="request.Stories.push({Name:'', Email: '', Description: ''})">Add Person</v-btn>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <v-textarea
+                      label="In 175 characters or less, describe why someone should attend your event."
+                      v-model="request.WhyAttendTwenty"
+                      :rules="[rules.publicityCharacterLimit(request.WhyAttendTwenty, 175)]"
+                      :hint="`Be sure to write in the second person. Using rhetorical questions that elicit interest, or touch on a felt need. (${request.WhyAttendTwenty.length}/175)`"
+                    ></v-textarea>
+                  </v-col>
+                </v-row>
+              </template>
+            </template>
+            <%-- Registration Information --%>
+            <template v-if="request.needsReg">
+              <template v-for="e in request.Events">
+                <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" ref="regloop" v-on:updatereg="updateReg"></registration>
+              </template>
+            </template>
+            <%-- Catering Information --%>
+            <template v-if="request.needsCatering">
+              <template v-for="e in request.Events">
+                <catering :e="e" :request="request" ref="cateringloop" v-on:updatecatering="updateCatering"></catering>
+              </template>
+            </template>
+            <%-- Childcare Info --%>
+            <template v-if="request.needsChildCare">
+              <template v-for="e in request.Events">
+                <childcare :e="e" :request="request" ref="childcareloop" v-on:updatechildcare="updateChildcare"></childcare>
+              </template>
+            </template>
+            <%-- Special Accommodations Info --%>
+            <template v-if="request.needsAccom">
+              <template v-for="e in request.Events">
+                <accom :e="e" :request="request" ref="accomloop" v-on:updateaccom="updateAccom"></accom>
+              </template>
             </template>
             <%-- Notes --%>
             <v-row>
@@ -1059,7 +687,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <template v-if="conflictingRequestMsg != ''">
                 {{conflictingRequestMsg}}
               </template>
-              <br v-if="beforeHoursMsg != '' || afterHoursMsg != ''" />
+              <br v-if="conflictingRequestMsg != '' && (beforeHoursMsg != '' || afterHoursMsg != '')" />
               <template v-if="beforeHoursMsg != ''">
                 {{beforeHoursMsg}}
               </template>
@@ -1087,61 +715,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        Vue.component("publicity-picker", {
-            template: `
-                <v-row>
-                    <v-col cols="12" md="6">
-                        <v-menu
-                        v-model="menu"
-                          :close-on-content-click="false"
-                          :nudge-right="40"
-                          transition="scale-transition"
-                          offset-y
-                          min-width="290px"
-                          attach
-                        >
-                        <template v-slot:activator="{ on, attrs }">
-                            <v-text-field
-                              v-model="value.Date"
-                              label="Publicity Date"
-                              prepend-inner-icon="mdi-calendar"
-                              readonly
-                              v-bind="attrs"
-                              v-on="on"
-                            ></v-text-field>
-                        </template>
-                        <v-date-picker
-                            v-model="value.Date"
-                            @input="menu = false"
-                            :min="earliestDate"
-                            :allowed-dates="allowedDates"
-                        ></v-date-picker>
-                        </v-menu>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                        <v-autocomplete
-                            label="Publicity Needs"
-                            v-model="value.Needs"
-                            :items="['Video/Stage Announcement', 'Digital Worship Folder']"
-                            multiple
-                            chips
-                            attach
-                        ></v-autocomplete>
-                    </v-col>
-                </v-row>`,
-            props: ["value", "earliestDate"],
-            data: function () {
-                return {
-                    menu: false,
-                };
-            },
-            methods: {
-                allowedDates(val) {
-                    let dow = moment(val).day();
-                    return dow == 0;
-                },
-            },
-        });
         Vue.component("time-picker", {
             template: `
             <v-row>
@@ -1209,7 +782,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.$emit("input", val);
                 },
                 default(val) {
-                    if (!this.originalValue) {
+                    if (!this.originalValue && (!this.value || this.value.includes('null'))) {
                         this.hour = val.split(":")[0];
                         this.minute = val.split(":")[1].split(" ")[0];
                         this.ap = val.split(" ")[1];
@@ -1238,79 +811,83 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         });
         Vue.component("room-picker", {
             template: `
-              <v-form ref="roomform" v-model="valid">
-                <v-row>
-                  <v-col>
-                    <v-autocomplete
-                      label="Select a Room/Space to view availability"
-                      v-model="selected"
-                      :items="rooms"
-                      item-value="Id"
-                      item-text="Value"
-                      attach
-                      :rules="[rules.required(selected, 'Room/Space')]"
-                      :value="request.Rooms"
-                    ></v-autocomplete>  
-                  </v-col>  
-                </v-row>
-                <template v-if="page == 0">
-                  <v-sheet height="600">
-                    <v-calendar
-                      ref="calendar"
-                      :now="today"
-                      :value="today"
-                      :events="events"
-                      color="primary"
-                      type="week"
-                      @click:time="calendarClick"
-                      :weekdays="weekdays"
-                    ></v-calendar>
-                  </v-sheet>
+        <v-form ref="roomform" v-model="valid">
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                label="Select a Room/Space to view availability"
+                v-model="selected"
+                :items="rooms"
+                item-value="Id"
+                item-text="Value"
+                attach
+                :rules="[rules.required(selected, 'Room/Space')]"
+                :value="request.Rooms"
+              >
+                <template v-slot:item="{ item }">
+                  {{item.Value}} ({{item.Capacity}})
                 </template>
-                <template v-else>
-                  <h4>{{ formatDate(eventDate) }}</h4>
-                  <v-row>
-                    <v-col>
-                      <strong>What time will your event begin and end?</strong>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <strong>Start Time</strong>
-                      <time-picker
-                        v-model="startTime"
-                        :value="startTime"
-                        :rules="[rules.required(startTime, 'Start Time'), rules.validTime(startTime, endTime, true)]"
-                      ></time-picker>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                      <strong>End Time</strong>
-                      <time-picker
-                        v-model="endTime"
-                        :value="endTime"
-                        :rules="[rules.required(endTime, 'End Time'), rules.validTime(endTime, startTime, false)]"
-                      ></time-picker>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <v-text-field
-                        label="How many people are you expecting to attend?"
-                        type="number"
-                        v-model="att"
-                        :value="request.ExpectedAttendance"
-                        :rules="[rules.required(att, 'Expected Attendance'), rules.exceedsSelected(att, selected, rooms)]"
-                      ></v-text-field>
-                    </v-col>  
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <v-btn color='accent' @click="page=0">back</v-btn>  
-                    </v-col>  
-                  </v-row>
-                </template>
-              </v-form>
-            `,
+              </v-autocomplete>  
+            </v-col>  
+          </v-row>
+          <template v-if="page == 0">
+            <v-sheet height="600">
+              <v-calendar
+                ref="calendar"
+                :now="today"
+                :value="today"
+                :events="events"
+                color="primary"
+                type="week"
+                @click:time="calendarClick"
+                :weekdays="weekdays"
+              ></v-calendar>
+            </v-sheet>
+          </template>
+          <template v-else>
+            <h4>{{ formatDate(eventDate) }}</h4>
+            <v-row>
+              <v-col>
+                <strong>What time will your event begin and end?</strong>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
+                <strong>Start Time</strong>
+                <time-picker
+                  v-model="startTime"
+                  :value="startTime"
+                  :rules="[rules.required(startTime, 'Start Time'), rules.validTime(startTime, endTime, true)]"
+                ></time-picker>
+              </v-col>
+              <v-col cols="12" md="6">
+                <strong>End Time</strong>
+                <time-picker
+                  v-model="endTime"
+                  :value="endTime"
+                  :rules="[rules.required(endTime, 'End Time'), rules.validTime(endTime, startTime, false)]"
+                ></time-picker>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-text-field
+                  label="How many people are you expecting to attend?"
+                  type="number"
+                  v-model="att"
+                  :value="request.ExpectedAttendance"
+                  :rules="[rules.required(att, 'Expected Attendance'), rules.exceedsSelected(att, selected, rooms)]"
+                ></v-text-field>
+              </v-col>  
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-btn color='accent' @click="page=0">back</v-btn>  
+              </v-col>  
+            </v-row>
+          </template>
+        </v-form>
+      `,
             props: ["rules", "request"],
             data: function () {
                 return {
@@ -1430,90 +1007,761 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
             },
         });
-        new Vue({
-            el: "#app",
-            vuetify: new Vuetify({
-                theme: {
-                    themes: {
-                        light: {
-                            primary: "#347689",
-                            secondary: "#3D3D3D",
-                            accent: "#8ED2C9",
+        Vue.component("space", {
+            template: `
+        <v-form ref="spaceForm" v-model="valid">
+          <v-row>
+            <v-col>
+              <h3 class="primary--text" v-if="request.Events.length == 1">Space Information</h3>
+              <h3 class="primary--text" v-else>
+                Space Information for {{e.EventDate | formatDate}}
+                <v-btn rounded outlined color="accent" @click="prefillDate = ''; dialog = true; ">
+                  Prefill
+                </v-btn>
+              </h3>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                label="How many people are you expecting to attend?"
+                type="number"
+                v-model="e.ExpectedAttendance"
+                :rules="[rules.required(e.ExpectedAttendance, 'Expected Attendance')]"
+                :hint="attHint"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-autocomplete
+                label="What are your preferred rooms/spaces?"
+                chips
+                multiple
+                :items="rooms"
+                item-text="Value"
+                item-value="Id"
+                v-model="e.Rooms"
+                attach
+                :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
+              >
+                <template v-slot:item="{ item }">
+                  {{item.Value}} ({{item.Capacity}})
+                </template>
+              </v-autocomplete>
+            </v-col>
+          </v-row>
+          <v-row v-if="request.needsReg">
+            <v-col cols="12" md="6">
+              <v-switch
+                label="Do you need in-person check-in on the day of the event?"
+                v-model="e.Checkin"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-dialog
+            v-if="dialog"
+            v-model="dialog"
+            max-width="850px"
+          >
+            <v-card>
+              <v-card-title>
+                Pre-fill this section with information from another date
+              </v-card-title>  
+              <v-card-text>
+                <v-select
+                  :items="prefillOptions"
+                  v-model="prefillDate"
+                >
+                  <template v-slot:selection="data">
+                    {{data.item | formatDate}}
+                  </template>
+                  <template v-slot:item="data">
+                    {{data.item | formatDate}}
+                  </template>
+                </v-select>  
+              </v-card-text>  
+              <v-card-actions>
+                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn> 
+                <v-spacer></v-spacer> 
+                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>  
+              </v-card-actions>  
+            </v-card>
+          </v-dialog>
+        </v-form>
+      `,
+            props: ["e", "request"],
+            data: function () {
+                return {
+                    dialog: false,
+                    valid: true,
+                    rooms: [],
+                    prefillDate: '',
+                    rules: {
+                        required(val, field) {
+                            return !!val || `${field} is required`;
                         },
-                    },
-                },
-                iconfont: "mdi",
-            }),
-            config: {
-                devtools: true,
+                        requiredArr(val, field) {
+                            return val.length > 0 || `${field} is required`;
+                        },
+                        exceedsSelected(val, selected, rooms) {
+                            let room = rooms.filter((i) => {
+                                return i.Id == selected;
+                            })[0];
+                            let cap = room.Capacity;
+                            if (val > cap) {
+                                return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
+                                    } in the selected space`;
+                            }
+                            return true;
+                        },
+                        roomCapacity(allRooms, rooms, attendance) {
+                            if (attendance) {
+                                let selectedRooms = allRooms.filter((r) => {
+                                    return rooms.includes(r.Id);
+                                });
+                                let maxCapacity = 0;
+                                selectedRooms.forEach((r) => {
+                                    maxCapacity += r.Capacity;
+                                });
+                                if (attendance <= maxCapacity) {
+                                    return true;
+                                } else {
+                                    return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
+                                }
+                            }
+                            return true;
+                        },
+                    }
+                }
             },
-            data: {
-                panel: 0,
-                request: {
-                    needsSpace: false,
-                    needsOnline: false,
-                    needsPub: false,
-                    needsCatering: false,
-                    needsChildCare: false,
-                    needsAccom: false,
-                    Name: "",
-                    Ministry: "",
-                    Contact: "",
-                    EventDates: [],
-                    StartTime: "",
-                    EndTime: "",
-                    MinsStartBuffer: 0,
-                    MinsEndBuffer: 0,
-                    ExpectedAttendance: "",
-                    Rooms: "",
-                    Checkin: false,
-                    EventURL: "",
-                    ZoomPassword: "",
-                    Publicity: [
-                        { Date: "", Needs: "" },
-                        { Date: "", Needs: "" },
-                        { Date: "", Needs: "" },
-                    ],
-                    PublicityBlurb: "",
-                    TalkingPointOne: "",
-                    TalkingPointTwo: "",
-                    TalkingPointThree: "",
-                    PubImage: null,
-                    ShowOnCalendar: false,
-                    Vendor: "",
-                    Menu: "",
-                    FoodDelivery: true,
-                    FoodTime: "",
-                    FoodDropOff: "",
-                    Drinks: "",
-                    DinkTime: "",
-                    ServingTeamAgree: false,
-                    DrinkDropOff: "",
-                    BudgetLine: "",
-                    CCVendor: "",
-                    CCMenu: "",
-                    CCFoodTime: "",
-                    CCBudgetLine: "",
-                    ChildCareOptions: "",
-                    EstimatedKids: null,
-                    CCStartTime: '',
-                    CCEndTime: '',
-                    TechNeeds: "",
-                    RegistrationDate: "",
-                    RegistrationEndDate: "",
-                    RegistrationEndTime: "",
-                    Fee: null,
-                    SetUp: "",
-                    SetUpImage: null,
-                    Notes: "",
+            created: function () {
+                this.allEvents = [];
+                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+            },
+            filters: {
+                formatDate(val) {
+                    return moment(val).format("MM/DD/yyyy");
                 },
-                existingRequests: [],
-                pubImage: {},
-                setupImage: {},
+            },
+            computed: {
+                attHint() {
+                    return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
+                },
+                prefillOptions() {
+                    return this.request.EventDates.filter(i => i != this.e.EventDate)
+                }
+            },
+            methods: {
+                prefillSection() {
+                    this.dialog = false
+                    let idx = this.request.EventDates.indexOf(this.prefillDate)
+                    let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+                    this.$emit('updatespace', { targetIdx: idx, currIdx: currIdx })
+                }
+            }
+        });
+        Vue.component("registration", {
+            template: `
+        <v-form ref="regForm" v-model="valid">
+          <v-row>
+            <v-col>
+              <h3 class="primary--text" v-if="request.Events.length == 1">Registration Information</h3>
+              <h3 class="primary--text" v-else>
+                Registration Information for {{e.EventDate | formatDate}}
+                <v-btn rounded outlined color="accent" @click="prefillDate = ''; dialog = true; ">
+                  Prefill
+                </v-btn>
+              </h3>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-menu
+                v-model="menu"
+                :close-on-content-click="false"
+                :nudge-right="40"
+                transition="scale-transition"
+                offset-y
+                min-width="290px"
+                attach
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-text-field
+                    v-model="e.RegistrationDate"
+                    label="What date do you need the registration link to be ready and live?"
+                    prepend-inner-icon="mdi-calendar"
+                    readonly
+                    v-bind="attrs"
+                    v-on="on"
+                    clearable
+                    :rules="[rules.required(e.RegistrationDate, 'Start Date'), ]"
+                  ></v-text-field>
+                </template>
+                <v-date-picker
+                  v-model="e.RegistrationDate"
+                  @input="menu = false"
+                  :min="earliestPubDate"
+                ></v-date-picker>
+              </v-menu>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                label="If there is a registration fee for this event, how much is it?"
+                type="number"
+                prepend-inner-icon="mdi-currency-usd"
+                v-model="e.Fee"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <br/>
+              <v-row>
+                <v-col>
+                  <v-menu
+                    v-model="menu2"
+                    :close-on-content-click="false"
+                    :nudge-right="40"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                    attach
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-text-field
+                        v-model="e.RegistrationEndDate"
+                        label="What date should registration close?"
+                        prepend-inner-icon="mdi-calendar"
+                        readonly
+                        v-bind="attrs"
+                        v-on="on"
+                        :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.RegistrationEndDate, request.needsChildCare)]"
+                        clearable
+                      ></v-text-field>
+                    </template>
+                    <v-date-picker
+                      v-model="e.RegistrationEndDate"
+                      @input="menu2 = false"
+                      :min="earliestPubDate"
+                    ></v-date-picker>
+                  </v-menu>
+                </v-col>
+              </v-row>
+            </v-col>
+            <v-col cols="12" md="6">
+              <strong>What time should registration close?</strong>
+              <time-picker
+                v-model="e.RegistrationEndTime"
+                :value="e.RegistrationEndTime"
+                :default="e.StartTime"
+                :rules="[rules.required(e.RegistrationEndTime, 'End Time'), rules.registrationCloseTime(e.EventDate, e.RegistrationEndDate, request.needsChildCare, e.StartTime, e.EndTime, e.RegistrationEndTime)]"
+              ></time-picker>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <h4 class="primary--text">Confirmation Email</h4>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-text-field
+                label="Sender"
+                v-model="e.Sender"
+              ></v-text-field>
+              <v-text-field
+                label="Sender Email"
+                v-model="e.SenderEmail"
+                hint="If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here"
+              ></v-text-field>
+              <v-textarea
+                label="Thank You"
+                v-model="e.ThankYou"
+              ></v-textarea>
+              <v-textarea
+                label="Time and Location"
+                v-model="e.TimeLocation"
+              ></v-textarea>
+              <v-textarea
+                label="Additional Details"
+                v-model="e.AdditionalDetails"
+              ></v-textarea>
+            </v-col>
+            <v-col>
+              <div v-html="emailPreview"></div>
+            </v-col>
+          </v-row>
+          <v-dialog
+            v-if="dialog"
+            v-model="dialog"
+            max-width="850px"
+          >
+            <v-card>
+              <v-card-title>
+                Pre-fill this section with information from another date
+              </v-card-title>  
+              <v-card-text>
+                <v-select
+                  :items="prefillOptions"
+                  v-model="prefillDate"
+                >
+                  <template v-slot:selection="data">
+                    {{data.item | formatDate}}
+                  </template>
+                  <template v-slot:item="data">
+                    {{data.item | formatDate}}
+                  </template>
+                </v-select>  
+              </v-card-text>  
+              <v-card-actions>
+                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn> 
+                <v-spacer></v-spacer> 
+                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>  
+              </v-card-actions>  
+            </v-card>
+          </v-dialog>
+        </v-form>
+      `,
+            props: ["e", "request", "earliestPubDate"],
+            data: function () {
+                return {
+                    menu: false,
+                    menu2: false,
+                    dialog: false,
+                    prefillDate: '',
+                    valid: true,
+                    rules: {
+                        required(val, field) {
+                            return !!val || `${field} is required`;
+                        },
+                        registrationCloseDate(eventDates, closeDate, needsChildCare) {
+                            let dates = eventDates.map(d => moment(d))
+                            let minDate = moment.min(dates)
+                            if (needsChildCare) {
+                                minDate = minDate.subtract(1, "day")
+                            }
+                            if (moment(closeDate).isAfter(minDate)) {
+                                if (needsChildCare) {
+                                    return 'When requesting childcare, registration must close 24 hours before the start of your event'
+                                }
+                                return 'Registration cannot end after your event'
+                            }
+                            return true
+                        },
+                        registrationCloseTime(eventDate, closeDate, needsChildCare, startTime, endtime, closeTime) {
+                            let minDate = moment(eventDate)
+                            let actualDate = moment(`${closeDate} ${closeTime}`)
+                            if (needsChildCare) {
+                                minDate = minDate.subtract(1, "day")
+                                minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
+                            } else {
+                                minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
+                            }
+                            if (moment(actualDate).isAfter(minDate)) {
+                                if (needsChildCare) {
+                                    return 'When requesting childcare, registration must close 24 hours before the start of your event'
+                                }
+                                return 'Registration cannot end after your event'
+                            }
+                            return true
+                        }
+                    }
+                }
+            },
+            methods: {
+                formatRooms(val) {
+                    if (val) {
+                        let rms = [];
+                        val.forEach((i) => {
+                            this.rooms.forEach((r) => {
+                                if (i == r.Id) {
+                                    rms.push(r.Value);
+                                }
+                            });
+                        });
+                        return rms.join(", ");
+                    }
+                    return "";
+                },
+                prefillSection() {
+                    this.dialog = false
+                    let idx = this.request.EventDates.indexOf(this.prefillDate)
+                    let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+                    this.$emit('updatereg', { targetIdx: idx, currIdx: currIdx })
+                }
+            },
+            computed: {
+                defaultRegistraionStart() {
+                    if (this.request.needsReg) {
+                        if (this.e.RegistrationDate) {
+                            return this.e.RegistrationDate
+                        }
+                        if (this.request.PublicityStartDate) {
+                            return moment(this.request.PublicityStartDate).subtract(3, 'days').format("yyyy-MM-DD")
+                        }
+                    }
+                    return ""
+                },
+                defaultRegistraionEnd() {
+                    if (this.request.needsReg) {
+                        if (this.e.RegistrationEndDate) {
+                            return this.e.RegistrationEndDate
+                        }
+                        if (this.request.EventDates) {
+                            if (this.e.EventDate) {
+                                return moment(this.e.EventDate).subtract(1, "day").format("yyyy-MM-DD")
+                            } else {
+                                let eventDates = this.request.EventDates.map(p => moment(p))
+                                let firstDate = moment.min(eventDates)
+                                return moment(firstDate).subtract(1, "day").format("yyyy-MM-DD")
+                            }
+                        }
+                    }
+                    return ""
+                },
+                defaultThankYou() {
+                    if (this.request.needsReg) {
+                        if (this.request.Id > 0 && this.e.ThankYou) {
+                            return this.e.ThankYou
+                        }
+                        if (this.request.Name) {
+                            return "Thank you for registering for " + this.request.Name
+                        }
+                        return ""
+                    }
+                    return ""
+                },
+                defaultTimeLocation() {
+                    if (this.request.needsReg) {
+                        if (this.request.Id > 0 && this.e.TimeLocation) {
+                            return this.e.TimeLocation
+                        }
+                        if (this.request.Name && this.e.StartTime) {
+                            return this.request.Name + " will take place at " + this.e.StartTime + " in " + this.formatRooms(this.e.Rooms)
+                        }
+                        return ""
+                    }
+                    return ""
+                },
+                emailPreview() {
+                    let preview =
+                        "<div style='background-color: #F2F2F2;'>" +
+                        "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
+                        "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
+                        "</div>" +
+                        "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
+                        "<h1>" + this.request.Name + "</h1><br/>" +
+                        this.e.ThankYou + "<br/>" +
+                        this.e.TimeLocation + "<br/><br/>" +
+                        "<p>The following people have been registered for " + this.request.Name + ":</p>" +
+                        "<ul>" +
+                        "<li>First Registrant</li>" +
+                        "<li>Second Registrant</li>" +
+                        "</ul>"
+                    if (this.e.Fee) {
+                        preview +=
+                            "<p>" +
+                            "Total Cost: $" + this.e.Fee + "<br/>" +
+                            "Total Paid: $" + this.e.Fee + "<br/>" +
+                            "Balance Due: $0.00<br/>" +
+                            "</p>"
+                    }
+                    preview += this.e.AdditionalDetails
+                    preview += "</div>"
+                    preview +=
+                        "<div style='text-align:center;'><br/>" +
+                        "<b>The Crossing</b><br/>" +
+                        "3615 Southland Dr.<br/>" +
+                        "Columbia, MO 65201<br/>" +
+                        "(573) 256-4410<br/>" +
+                        "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
+                        "</div>"
+                    preview += "</div>"
+                    return preview
+                },
+                prefillOptions() {
+                    return this.request.EventDates.filter(i => i != this.e.EventDate)
+                }
+            },
+            watch: {
+                e(val) {
+                    this.$emit('change', val)
+                },
+                defaultRegistraionEnd(val) {
+                    if (val) {
+                        this.e.RegistrationEndDate = val
+                    }
+                },
+                defaultRegistraionStart(val) {
+                    if (val) {
+                        this.e.RegistrationDate = val
+                    }
+                },
+                defaultThankYou(val) {
+                    if (val) {
+                        this.e.ThankYou = val
+                    }
+                },
+                defaultTimeLocation(val) {
+                    if (val) {
+                        this.e.TimeLocation = val
+                    }
+                }
+            },
+            filters: {
+                formatDate(val) {
+                    return moment(val).format("MM/DD/yyyy");
+                },
+            },
+        });
+        Vue.component("catering", {
+            template: `
+        <v-form ref="cateringForm" v-model="valid">
+          <v-row>
+            <v-col>
+              <h3 class="primary--text" v-if="request.Events.length == 1">Catering Information</h3>
+              <h3 class="primary--text" v-else>
+                Catering Information for {{e.EventDate | formatDate}}
+                <v-btn rounded outlined color="accent" @click="prefillDate = ''; dialog = true; ">
+                  Prefill
+                </v-btn>
+              </h3>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" style='font-weight: bold;'>
+              If you want to avoid a serving team, be sure to choose a vendor that is currently offering individually boxed meals. 
+              <v-menu attach>
+                <template v-slot:activator="{ on, attrs }">
+                  <span v-bind="attrs" v-on="on" class='accent-text'>
+                    Click here to see that list.
+                  </span>
+                </template>
+                <v-list>
+                  <v-list-item>
+                    Chick-fil-A
+                  </v-list-item>
+                  <v-list-item>
+                    Como Smoke and Fire
+                  </v-list-item>
+                  <v-list-item>
+                    Honey Baked Ham
+                  </v-list-item>
+                  <v-list-item>
+                    Panera
+                  </v-list-item>
+                  <v-list-item>
+                    Pickleman's
+                  </v-list-item>
+                  <v-list-item>
+                    Tropical Smoothie Cafe
+                  </v-list-item>
+                  <v-list-item>
+                    Word of Mouth Catering
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-text-field
+                label="Preferred Vendor"
+                v-model="e.Vendor"
+                :rules="[rules.required(e.Vendor, 'Vendor')]"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-text-field
+                label="Food Budget Line"
+                v-model="e.BudgetLine"
+                :rules="[rules.required(e.BudgetLine, 'Budget Line')]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-textarea
+                label="Preferred Menu"
+                v-model="e.Menu"
+                :rules="[rules.required(e.Menu, 'Menu')]"
+              ></v-textarea>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-switch
+                v-model="e.FoodDelivery"
+                :label="deliveryLabel"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row v-if="e.FoodDelivery">
+            <v-col cols="12" md="6">
+              <strong>What time would you like food to be set up and ready?</strong>
+              <time-picker
+                v-model="e.FoodTime"
+                :value="e.FoodTime"
+                :default="defaultFoodTime"
+                :rules="[rules.required(e.FoodTime, 'Time')]"
+              ></time-picker>
+            </v-col>
+            <v-col cols="12" md="6">
+              <br />
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    label="Where should the food be set up?"
+                    v-model="e.FoodDropOff"
+                    :rules="[rules.required(e.FoodDropOff, 'Location')]"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-col>
+          </v-row>
+          <v-row v-else>
+            <v-col cols="12" md="6">
+              <strong>What time would you like to pick up your food?</strong>
+              <time-picker
+                v-model="e.FoodTime"
+                :value="e.FoodTime"
+                :default="defaultFoodTime"
+                :rules="[rules.required(e.FoodTime, 'Time')]"
+              ></time-picker>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <br />
+              <v-row>
+                <v-col>
+                  <v-autocomplete
+                    label="What drinks would you like to have?"
+                    :items="['Coffee', 'Soda', 'Water']"
+                    :hint="drinkHint"
+                    persistent-hint
+                    v-model="e.Drinks"
+                    multiple
+                    chips
+                    attach
+                  ></v-autocomplete>
+                </v-col>
+              </v-row>
+            </v-col>
+            <v-col cols="12" md="6">
+              <strong>What time would you like your drinks to be delivered?</strong>
+              <time-picker
+                v-model="e.DrinkTime"
+                :value="e.DrinkTime"
+                :default="defaultFoodTime"
+              ></time-picker>
+            </v-col>
+          </v-row>
+          <v-row v-if="e.Drinks.includes('Coffee')">
+            <v-col cols="12" md="6">
+              <v-checkbox
+                label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
+                :rules="[rules.required(e.ServingTeamAgree, 'Agreement to provide a serving team')]"
+                v-model="e.ServingTeamAgree"
+              ></v-checkbox>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                label="Where would you like your drinks delivered?"
+                v-model="e.DrinkDropOff"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-checkbox
+                v-if="e.FoodDropOff != ''"
+                label="Set-up drinks with food"
+                v-model="sameFoodDrinkDropOff"
+                dense
+              ></v-checkbox>
+            </v-col>
+          </v-row>
+          <%-- Childcare Catering --%>
+          <template v-if="request.needsChildCare">
+            <v-row>
+              <v-col>
+                <v-select
+                  label="Preferred Vendor for Childcare"
+                  v-model="e.CCVendor"
+                  :rules="[rules.required(e.CCVendor, 'Vendor')]"
+                  :items="['Pizza', 'Other']"
+                  attach
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-text-field
+                  label="Food Budget Line for Childcare"
+                  v-model="e.CCBudgetLine"
+                  :rules="[rules.required(e.CCBudgetLine, 'Budget Line')]"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-textarea
+                  label="Preferred Menu for Childcare"
+                  v-model="e.CCMenu"
+                  :rules="[rules.required(e.CCMenu, 'Menu')]"
+                ></v-textarea>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
+                <strong>
+                  What time would you like food to be set up and ready for childcare?
+                </strong>
+                <time-picker
+                  v-model="e.CCFoodTime"
+                  :value="e.CCFoodTime"
+                  :default="defaultFoodTime"
+                  :rules="[rules.required(e.CCFoodTime, 'Time')]"
+                ></time-picker>
+              </v-col>
+            </v-row>
+          </template>
+          <v-dialog
+            v-if="dialog"
+            v-model="dialog"
+            max-width="850px"
+          >
+            <v-card>
+              <v-card-title>
+                Pre-fill this section with information from another date
+              </v-card-title>
+              <v-card-text>
+                <v-select
+                  :items="prefillOptions"
+                  v-model="prefillDate"
+                >
+                  <template v-slot:selection="data">
+                    {{data.item | formatDate}}
+                  </template>
+                  <template v-slot:item="data">
+                    {{data.item | formatDate}}
+                  </template>
+                </v-select>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-form>
+      `,
+        props: ["e", "request"],
+        data: function () {
+            return {
+                dialog: false,
+                valid: true,
                 rooms: [],
-                ministries: [],
-                menu: false,
-                menu2: false,
+                prefillDate: '',
                 sameFoodDrinkDropOff: false,
                 rules: {
                     required(val, field) {
@@ -1522,506 +1770,1123 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     requiredArr(val, field) {
                         return val.length > 0 || `${field} is required`;
                     },
-                    exceedsSelected(val, selected, rooms) {
-                        let room = rooms.filter((i) => {
-                            return i.Id == selected;
-                        })[0].Value;
-                        let info = room.replace("(", "").replace(")", "").split(" ");
-                        let cap = parseInt(info[info.length - 1]);
-                        if (val > cap) {
-                            return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
-                                } in the selected space`;
-                        }
-                        return true;
-                    },
-                    validTime(val, compareVal, isStart) {
-                        if (
-                            !!val &&
-                            !!compareVal &&
-                            !val.includes("null") &&
-                            !compareVal.includes("null")
-                        ) {
-                            let startTime = isStart ? val : compareVal;
-                            let endTime = isStart ? compareVal : val;
-                            let momentStart = moment(startTime, "hh:mm A");
-                            let momentEnd = moment(endTime, "hh:mm A");
-                            let isAfter = momentEnd.isAfter(momentStart);
-                            return (
-                                isAfter ||
-                                `${isStart
-                                    ? "Start time must come before end time"
-                                    : "End time must come after start time"
-                                }`
-                            );
-                        } else if (val.includes("null")) {
-                            return "Please fill out all time information";
-                        }
-                        return true;
-                    },
-                    blurbValidation(value, pubDates) {
-                        let pubDate = pubDates[0].Date;
-                        pubDates.forEach((i) => {
-                            let isAfter = moment(pubDate).isAfter(moment(i.Date));
-                            if (isAfter) {
-                                pubDate = i.Date;
-                            }
-                        });
-                        let daysUntil = moment(pubDate).diff(moment(), "days");
-                        if (daysUntil <= 30) {
-                            return (
-                                value.length >= 100 ||
-                                "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
-                            );
-                        } else {
-                            return true;
-                        }
-                    },
-                    roomCapacity(allRooms, rooms, attendance) {
-                        if (attendance) {
-                            let selectedRooms = allRooms.filter((r) => {
-                                return rooms.includes(r.Id);
-                            });
-                            let maxCapacity = 0;
-                            selectedRooms.forEach((r) => {
-                                let roomCap = r.Value.split("(")[1].replace(")", "");
-                                maxCapacity += parseInt(roomCap);
-                            });
-                            if (attendance <= maxCapacity) {
-                                return true;
-                            } else {
-                                return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
-                            }
-                        }
-                        return true;
-                    },
-                    registrationCloseDate(eventDates, closeDate, needsChildCare) {
-                        let dates = eventDates.map(d => moment(d))
-                        let minDate = moment.min(dates)
-                        if (needsChildCare) {
-                            minDate = minDate.subtract(1, "day")
-                        }
-                        if (moment(closeDate).isAfter(minDate)) {
-                            if (needsChildCare) {
-                                return 'When requesting childcare, registration must close 24 hours before the start of your event'
-                            }
-                            return 'Registration cannot end after your event'
-                        }
-                        return true
-                    },
-                    registrationCloseTime(eventDates, closeDate, needsChildCare, startTime, endtime, closeTime) {
-                        let dates = eventDates.map(d => moment(d))
-                        let minDate = moment.min(dates)
-                        let actualDate = moment(`${closeDate} ${closeTime}`)
-                        if (needsChildCare) {
-                            minDate = minDate.subtract(1, "day")
-                            minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
-                        } else {
-                            minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
-                        }
-                        if (moment(actualDate).isAfter(minDate)) {
-                            if (needsChildCare) {
-                                return 'When requesting childcare, registration must close 24 hours before the start of your event'
-                            }
-                            return 'Registration cannot end after your event'
-                        }
-                        return true
-                    }
-                },
-                valid: true,
-                formValid: true,
-                dialog: false,
-                conflictingRequestMsg: "",
-                beforeHoursMsg: "",
-                afterHoursMsg: "",
-                triedSubmit: false,
-                childCareSelectAll: false,
-                tab: 0,
-            },
-            created() {
-                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
-                let req = $('[id$="hfRequest"]')[0].value;
-                if (req) {
-                    let parsed = JSON.parse(req)
-                    this.request = JSON.parse(parsed.Value)
-                    this.request.Id = parsed.Id
-                    this.request.Status = parsed.RequestStatus
-                    this.request.CreatedBy = parsed.CreatedBy
-                    this.request.canEdit = parsed.CanEdit
-                    if (this.request.PubImage) {
-                        this.pubImage = this.request.PubImage;
-                    }
-                    if (this.request.SetUpImage) {
-                        this.setupImage = this.request.SetUpImage;
-                    }
-                }
-                window["moment-range"].extendMoment(moment);
-            },
-            mounted() {
-                let query = new URLSearchParams(window.location.search);
-                let success = query.get('ShowSuccess');
-                if (success) {
-                    if (success == "true") {
-                        this.panel = 2;
-                        let id = query.get('Id');
-                        if (id) {
-                            window.history.go(-2)
-                        }
-                    }
-                }
-            },
-            computed: {
-                earliestDate() {
-                    let eDate = new moment();
-                    if (
-                        this.request.needsOnline ||
-                        this.request.needsPub ||
-                        this.request.needsCatering ||
-                        this.request.needsAccom
-                    ) {
-                        eDate = moment(eDate).add(14, "days");
-                    }
-                    if (
-                        this.request.needsChildCare ||
-                        this.request.ExpectedAttendance > 100
-                    ) {
-                        eDate = moment().add(30, "days");
-                        this.request.EventDates.forEach((itm, i) => {
-                            if (
-                                !moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))
-                            ) {
-                                this.request.EventDates.splice(i, 1);
-                            }
-                        });
-                    }
-                    return moment(eDate).format("yyyy-MM-DD");
-                },
-                earliestPubDate() {
-                    let eDate = new moment();
-                    eDate = moment(eDate).add(14, "days");
-                    return moment(eDate).format("yyyy-MM-DD");
-                },
-                availableRooms() {
-                    let ar = [];
-                    this.rooms.forEach((i) => {
-                        let info = i.Value.replace("(", "").replace(")", "").split(" ");
-                        let cap = parseInt(info[info.length - 1]);
-                        if (parseInt(this.request.ExpectedAttendance) <= cap) {
-                            ar.push(i);
-                        }
-                    });
-                    return ar;
-                },
-                pubBtnDisabled() {
-                    if (this.request.Publicity.length > 3) {
-                        return true;
-                    }
-                    return false;
-                },
-                defaultFoodTime() {
-                    if (this.request.StartTime) {
-                        let time = moment(this.request.StartTime, "hh:mm A");
-                        return time.subtract(30, "minutes").format("hh:mm A");
-                    }
-                    return null;
-                },
-                defaultRegistraionStart() {
-                    if (this.request.needsAccom) {
-                        if (this.request.RegistrationDate) {
-                            return this.request.RegistrationDate
-                        }
-                        if (this.request.Publicity) {
-                            let pubDates = this.request.Publicity.filter(p => { return p.Date != '' }).map(p => moment(p.Date))
-                            let firstDate = moment.min(pubDates)
-                            return firstDate.subtract(3, 'days').format("yyyy-MM-DD")
-                        }
-                    }
-                    return ""
-                },
-                defaultRegistraionEnd() {
-                    if (this.request.needsAccom) {
-                        if (this.request.RegistrationEndDate) {
-                            return this.request.RegistrationEndDate
-                        }
-                        if (this.request.EventDates) {
-                            let dates = this.request.EventDates.map(d => moment(d))
-                            return moment.min(dates).subtract(1, "day").format("yyyy-MM-DD")
-                        }
-                    }
-                    return ""
-                },
-                longDates() {
-                    return this.request.EventDates.map((i) => {
-                        return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
-                    });
-                },
-                isValid() {
-                    if (this.$refs.roompckr && this.tab == 1) {
-                        return this.valid && this.formValid && this.$refs.roompckr.valid;
-                    }
-                    return this.valid && this.formValid;
-                },
-                isExistingRequest() {
-                    let urlParams = new URLSearchParams(window.location.search);
-                    let id = urlParams.get('Id');
-                    if (id) {
-                        return true
-                    }
-                    return false
-                },
-                isRequestingVideo() {
-                    if (this.request) {
-                        let isRequesting = false
-                        this.request.Publicity.forEach(p => {
-                            if (p.Needs.includes('Video/Stage Announcement')) {
-                                isRequesting = true
-                            }
-                        })
-                        return isRequesting
-                    }
-                    return false
-                },
-                canEdit() {
-                    if (this.request.canEdit != null) {
-                        return this.request.canEdit
-                    }
-                    return true
-                }
-            },
-            methods: {
-                boolToYesNo(val) {
-                    if (val) {
-                        return "Yes";
-                    }
-                    return "No";
-                },
-                next() {
-                    if (this.panel == 1) {
-                        this.validate();
-                        if (this.isValid) {
-                            this.submit()
-                        } else {
-                            let formIsValid = this.formValid
-                            if (this.$refs.roompckr && this.tab == 1) {
-                                formIsValid = this.formValid && this.$refs.roompckr.valid;
-                            }
-                            if (formIsValid) {
-                                this.dialog = true
-                            }
-                        }
-                    } else {
-                        this.panel += 1;
-                    }
-                    window.scrollTo(0, 0);
-                },
-                prev() {
-                    let tab = this.panel;
-                    tab -= 1;
-                    if (tab < 0) {
-                        tab = 0;
-                    }
-                    this.panel = tab;
-                    window.scrollTo(0, 0);
-                },
-                submit() {
-                    this.request.Publicity = this.request.Publicity.filter(pub => {
-                        return pub.Date != '' && pub.Needs != ''
-                    })
-                    console.log(this.request)
-                    $('[id$="hfRequest"]').val(JSON.stringify(this.request));
-                    $('[id$="btnSubmit"')[0].click();
-                },
-                addPub() {
-                    this.request.Publicity.push({ Date: "", Needs: "" });
-                },
-                removePub(idx) {
-                    this.request.Publicity.splice(idx, 1);
-                },
-                setDate(val) {
-                    this.request.Rooms = [val.room];
-                    this.request.StartTime = val.startTime;
-                    this.request.EndTime = val.endTime;
-                    this.request.EventDates = [val.eventDate];
-                    this.request.ExpectedAttendance = val.att;
-                },
-                handlePubFile(e) {
-                    let file = { name: e.name, type: e.type };
-                    var reader = new FileReader();
-                    const self = this;
-                    reader.onload = function (e) {
-                        console.log(e.target.result);
-                        file.data = e.target.result;
-                        self.request.PubImage = file;
-                    };
-                    reader.readAsDataURL(e);
-                },
-                handleSetUpFile(e) {
-                    let file = { name: e.name, type: e.type };
-                    var reader = new FileReader();
-                    const self = this;
-                    reader.onload = function (e) {
-                        file.data = e.target.result;
-                        self.request.SetUpImage = file;
-                    };
-                    reader.readAsDataURL(e);
-                },
-                toggleChildCareOptions() {
-                    this.childCareSelectAll = !this.childCareSelectAll;
-                    if (this.childCareSelectAll) {
-                        this.request.ChildCareOptions = [
-                            "Infant/Toddler",
-                            "Preschool",
-                            "K-2nd",
-                            "3-5th",
-                        ];
-                    } else {
-                        this.request.ChildCareOptions = [];
-                    }
-                },
-                checkForConflicts() {
-                    this.existingRequests = JSON.parse(
-                        $('[id$="hfUpcomingRequests"]')[0].value
-                    );
-                    let conflictingDates = [],
-                        conflictingRooms = [];
-                    let conflictingRequests = this.existingRequests.filter((r) => {
-                        r = JSON.parse(r);
-                        let isConflictingRoom = false;
-                        let isConflictingDate = false;
-                        for (let i = 0; i < this.request.Rooms.length; i++) {
-                            if (r.Rooms.includes(this.request.Rooms[i])) {
-                                isConflictingRoom = true;
-                                let roomName = this.rooms.filter((room) => {
-                                    return room.Id == this.request.Rooms[i];
-                                });
-                                if (roomName.length > 0) {
-                                    roomName = roomName[0].Value.split(" (")[0];
-                                }
-                                if (!conflictingRooms.includes(roomName)) {
-                                    conflictingRooms.push(roomName);
-                                }
-                            }
-                        }
-                        for (let i = 0; i < this.request.EventDates.length; i++) {
-                            if (r.EventDates.includes(this.request.EventDates[i])) {
-                                //Dates are the same, check they do not overlap with moment-range
-                                let cd = r.EventDates.filter((ed) => {
-                                    return ed == this.request.EventDates[i];
-                                })[0];
-                                let cdStart = moment(
-                                    `${cd} ${r.StartTime}`,
-                                    `yyyy-MM-DD hh:mm A`
-                                );
-                                if (r.MinsStartBuffer) {
-                                    cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
-                                }
-                                let cdEnd = moment(`${cd} ${r.EndTime}`, `yyyy-MM-DD hh:mm A`);
-                                if (r.MinsStartBuffer) {
-                                    cdEnd = cdEnd.add(r.MinsEndBuffer, "minute");
-                                }
-                                let cRange = moment.range(cdStart, cdEnd);
-                                let current = moment.range(
-                                    moment(
-                                        `${this.request.EventDates[i]} ${this.request.StartTime}`,
-                                        `yyyy-MM-DD hh:mm A`
-                                    ),
-                                    moment(
-                                        `${this.request.EventDates[i]} ${this.request.EndTime}`,
-                                        `yyyy-MM-DD hh:mm A`
-                                    )
-                                );
-                                if (cRange.overlaps(current)) {
-                                    isConflictingDate = true;
-                                    if (!conflictingDates.includes(this.request.EventDates[i])) {
-                                        conflictingDates.push(this.request.EventDates[i]);
-                                    }
-                                }
-                            }
-                        }
-                        return isConflictingRoom && isConflictingDate;
-                    });
-                    if (conflictingRequests.length > 0) {
-                        this.valid = false;
-                        this.conflictingRequestMsg = `There are conflicts on ${conflictingDates.join(
-                            ", "
-                        )} with the following rooms: ${conflictingRooms.join(", ")}`
-                    }
-                },
-                checkTimeMeetsRequirements() {
-                    //Check general 9-9 time rule
-                    let meetsTimeRequirements = true
-                    if (this.request.StartTime.includes("AM")) {
-                        let info = this.request.StartTime.split(':')
-                        if (parseInt(info[0]) < 9) {
-                            meetsTimeRequirements = false
-                            this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
-                        }
-                    }
-                    if (this.request.EndTime.includes("PM")) {
-                        let info = this.request.EndTime.split(':')
-                        if (parseInt(info[0]) >= 9) {
-                            meetsTimeRequirements = false
-                            this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
-                        }
-                    }
-                    //Check more specific range for Satuday and Sunday
-                    // for(var i=0; i<this.request.EventDates.length; i++){
-                    //   let dt = moment(this.request.EventDates[i])
-                    //   if(dt.day() == 0){
-                    //     //Sunday
-                    //     if(this.request.StartTime.includes("AM")) {
-                    //       meetsTimeRequirements = false
-                    //     }
-                    //   } else if(dt.day() == 6) {
-                    //     //Saturday
-                    //     if(this.request.StartTime.includes("PM")) {
-                    //       meetsTimeRequirements = false
-                    //     }
-                    //     if(this.request.EndTime.includes("PM") && this.request.EndTime != "12:00 PM") {
-                    //       meetsTimeRequirements = false
-                    //     }
-                    //   }
-                    // }
-                    if (!meetsTimeRequirements) {
-                        this.valid = false
-                    }
-                },
-                validate() {
-                    this.valid = true
-                    this.triedSubmit = true
-                    this.$refs.form.validate()
-                    if (this.$refs.roompckr && this.tab == 1) {
-                        this.$refs.roompckr.$refs.roomform.validate()
-                    }
-                    const errors = [];
-                    this.$refs.form.inputs.forEach((e) => {
-                        if (e.errorBucket && e.errorBucket.length) {
-                            errors.push(...e.errorBucket)
-                        }
-                    });
-                    this.checkForConflicts()
-                    this.checkTimeMeetsRequirements()
-                },
-            },
-            watch: {
-                sameFoodDrinkDropOff(val) {
-                    if (val) {
-                        this.request.DrinkDropOff = this.request.FoodDropOff
-                    }
-                },
-                defaultRegistraionEnd(val) {
-                    if (val) {
-                        this.request.RegistrationEndDate = val
-                    }
-                },
-                defaultRegistraionStart(val) {
-                    if (val) {
-                        this.request.RegistrationDate = val
-                    }
                 }
             }
-        });
+        },
+        created: function () {
+            this.allEvents = [];
+            this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+        },
+        filters: {
+            formatDate(val) {
+                return moment(val).format("MM/DD/yyyy");
+            },
+        },
+        computed: {
+            prefillOptions() {
+                return this.request.EventDates.filter(i => i != this.e.EventDate)
+            },
+            deliveryLabel() {
+                return `Would you like your food to be delivered? ${this.e.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`
+            },
+            drinkHint() {
+                return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+            },
+            defaultFoodTime() {
+                if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+                    let time = moment(this.e.StartTime, "hh:mm A");
+                    return time.subtract(30, "minutes").format("hh:mm A");
+                }
+                return null;
+            },
+        },
+        methods: {
+            prefillSection() {
+                this.dialog = false
+                let idx = this.request.EventDates.indexOf(this.prefillDate)
+                let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+                this.$emit('updatecatering', { targetIdx: idx, currIdx: currIdx })
+            }
+        },
+        watch: {
+            sameFoodDrinkDropOff(val) {
+                if (val) {
+                    this.e.DrinkDropOff = this.e.FoodDropOff
+                }
+            },
+        }
     });
+      Vue.component("childcare", {
+          template: `
+        <v-form ref="childForm" v-model="valid">
+          <v-row>
+            <v-col>
+              <h3 class="primary--text" v-if="request.Events.length == 1">Childcare Information</h3>
+              <h3 class="primary--text" v-else>
+                Childcare Information for {{e.EventDate | formatDate}}
+                <v-btn rounded outlined color="accent" @click="prefillDate = ''; dialog = true; ">
+                  Prefill
+                </v-btn>
+              </h3>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <strong>
+                What time do you need childcare to start?
+              </strong>
+              <time-picker
+                v-model="e.CCStartTime"
+                :value="e.CCStartTime"
+                :default="defaultFoodTime"
+                :rules="[rules.required(e.CCStartTime, 'Time')]"
+              ></time-picker>
+            </v-col> 
+            <v-col cols="12" md="6">
+              <strong>
+                What time will childcare end?
+              </strong>
+              <time-picker
+                v-model="e.CCEndTime"
+                :value="e.CCEndTime"
+                :default="e.EndTime"
+                :rules="[rules.required(e.CCEndTime, 'Time')]"
+              ></time-picker>
+            </v-col> 
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-autocomplete
+                label="What ages of childcare do you want to offer?"
+                :items="['Infant/Toddler', 'Preschool', 'K-2nd', '3-5th']"
+                chips
+                multiple
+                attach
+                v-model="e.ChildCareOptions"
+              >
+                <template v-slot:item="data">
+                  <div style="padding: 12px 0px; width: 100%">
+                    <v-icon
+                      v-if="e.ChildCareOptions.includes(data.item)"
+                      color="primary"
+                      style="margin-right: 32px"
+                      >mdi-checkbox-marked</v-icon
+                    >
+                    <v-icon
+                      v-else
+                      color="primary"
+                      style="margin-right: 32px"
+                      >mdi-checkbox-blank-outline</v-icon
+                    >
+                    {{data.item}}
+                  </div>
+                </template>
+                <template v-slot:append-item>
+                  <v-list-item>
+                    <div
+                      class="hover"
+                      style="padding: 12px 0px; width: 100%"
+                      @click="toggleChildCareOptions"
+                    >
+                      <v-icon
+                        v-if="childCareSelectAll"
+                        color="primary"
+                        style="margin-right: 32px"
+                        >mdi-checkbox-marked</v-icon
+                      >
+                      <v-icon
+                        v-else
+                        color="primary"
+                        style="margin-right: 32px"
+                        >mdi-checkbox-blank-outline</v-icon
+                      >
+                      Select All
+                    </div>
+                  </v-list-item>
+                </template>
+              </v-autocomplete>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                label="Estimated number of kids"
+                type="number"
+                v-model="e.EstimatedKids"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <v-dialog
+            v-if="dialog"
+            v-model="dialog"
+            max-width="850px"
+          >
+            <v-card>
+              <v-card-title>
+                Pre-fill this section with information from another date
+              </v-card-title>  
+              <v-card-text>
+                <v-select
+                  :items="prefillOptions"
+                  v-model="prefillDate"
+                >
+                  <template v-slot:selection="data">
+                    {{data.item | formatDate}}
+                  </template>
+                  <template v-slot:item="data">
+                    {{data.item | formatDate}}
+                  </template>
+                </v-select>  
+              </v-card-text>  
+              <v-card-actions>
+                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn> 
+                <v-spacer></v-spacer> 
+                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>  
+              </v-card-actions>  
+            </v-card>
+          </v-dialog>
+        </v-form>
+      `,
+          props: ["e", "request"],
+          data: function () {
+              return {
+                  dialog: false,
+                  valid: true,
+                  prefillDate: '',
+                  childCareSelectAll: false,
+                  rules: {
+                      required(val, field) {
+                          return !!val || `${field} is required`;
+                      },
+                      requiredArr(val, field) {
+                          return val.length > 0 || `${field} is required`;
+                      },
+                  }
+              }
+          },
+          created: function () {
+          },
+          filters: {
+              formatDate(val) {
+                  return moment(val).format("MM/DD/yyyy");
+              },
+          },
+          computed: {
+              prefillOptions() {
+                  return this.request.EventDates.filter(i => i != this.e.EventDate)
+              },
+              defaultFoodTime() {
+                  if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+                      let time = moment(this.e.StartTime, "hh:mm A");
+                      return time.subtract(30, "minutes").format("hh:mm A");
+                  }
+                  return null;
+              },
+          },
+          methods: {
+              toggleChildCareOptions() {
+                  this.childCareSelectAll = !this.childCareSelectAll;
+                  if (this.childCareSelectAll) {
+                      this.request.ChildCareOptions = [
+                          "Infant/Toddler",
+                          "Preschool",
+                          "K-2nd",
+                          "3-5th",
+                      ];
+                  } else {
+                      this.request.ChildCareOptions = [];
+                  }
+              },
+              prefillSection() {
+                  this.dialog = false
+                  let idx = this.request.EventDates.indexOf(this.prefillDate)
+                  let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+                  this.$emit('updatechildcare', { targetIdx: idx, currIdx: currIdx })
+              }
+          }
+      });
+      Vue.component("accom", {
+          template: `
+        <v-form ref="accomForm" v-model="valid">
+          <v-row>
+            <v-col>
+              <h3 class="primary--text" v-if="request.Events.length == 1">Other Accommodations</h3>
+              <h3 class="primary--text" v-else>
+                Other Accommodations for {{e.EventDate | formatDate}}
+                <v-btn rounded outlined color="accent" @click="prefillDate = ''; dialog = true; ">
+                  Prefill
+                </v-btn>
+              </h3>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12">
+              <v-autocomplete
+                label="What tech needs do you have?"
+                :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Basic Live Stream', 'Advanced Live Stream', 'Pipe and Drape', 'BOSE System']"
+                v-model="e.TechNeeds"
+                :hint="techHint"
+                persistent-hint
+                multiple
+                chips
+                attach
+              ></v-autocomplete>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12">
+              <v-textarea
+                label="Please describe what you are envisioning regarding your tech needs. For example, We'd like to play videos in the gym."
+                v-model="e.TechDescription"
+              ></v-textarea>
+            </v-col>
+          </v-row>
+          <template v-if="!request.needsCatering">
+            <v-row>
+              <v-col cols="12" md="6">
+                <br />
+                <v-row>
+                  <v-col>
+                    <v-autocomplete
+                      label="What drinks would you like to have?"
+                      :items="['Coffee', 'Soda', 'Water']"
+                      :hint="drinkHint"
+                      persistent-hint
+                      v-model="e.Drinks"
+                      multiple
+                      chips
+                      attach
+                    ></v-autocomplete>
+                  </v-col>
+                </v-row>
+              </v-col>
+              <v-col cols="12" md="6" v-if="e.Drinks.length > 0">
+                <strong>What time would you like your drinks to be delivered?</strong>
+                <time-picker
+                  v-model="e.DrinkTime"
+                  :value="e.DrinkTime"
+                  :default="defaultFoodTime"
+                  :rules="[rules.required(e.DrinkTime, 'Time')]"
+                ></time-picker>
+              </v-col>
+            </v-row>
+            <v-row v-if="e.Drinks.length > 0">
+              <v-col cols="12" md="6" v-if="e.Drinks.includes('Coffee')">
+                <v-checkbox
+                  label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
+                  :rules="[rules.required(e.ServingTeamAgree, 'Agreement to provide a serving team')]"
+                  v-model="e.ServingTeamAgree"
+                ></v-checkbox>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  label="Where would you like your drinks delivered?"
+                  v-model="e.DrinkDropOff"
+                  :rules="[rules.required(e.DrinkDropOff, 'Location')]"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </template>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-switch
+                :label="calLabel"
+                v-model="e.ShowOnCalendar"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row v-if="e.ShowOnCalendar">
+            <v-col>
+              <v-textarea
+                label="Please type out your blurb"
+                v-model="e.PublicityBlurb"
+                :rules="[rules.blurbValidation(e.PublicityBlurb, request.PublicityStartDate)]"
+                validate-on-blur
+              ></v-textarea>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12">
+              <v-textarea
+                label="Please describe the set-up you require for your event"
+                v-model="e.SetUp"
+              ></v-textarea>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-file-input
+                accept="image/*"
+                label="If you have an image of the set-up layout you would like upload it here"
+                prepend-inner-icon="mdi-camera"
+                prepend-icon=""
+                v-model="setupImage"
+                @change="handleSetUpFile"
+              ></v-file-input>
+            </v-col>
+          </v-row>
+          <v-dialog
+            v-if="dialog"
+            v-model="dialog"
+            max-width="850px"
+          >
+            <v-card>
+              <v-card-title>
+                Pre-fill this section with information from another date
+              </v-card-title>  
+              <v-card-text>
+                <v-select
+                  :items="prefillOptions"
+                  v-model="prefillDate"
+                >
+                  <template v-slot:selection="data">
+                    {{data.item | formatDate}}
+                  </template>
+                  <template v-slot:item="data">
+                    {{data.item | formatDate}}
+                  </template>
+                </v-select>  
+              </v-card-text>  
+              <v-card-actions>
+                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn> 
+                <v-spacer></v-spacer> 
+                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>  
+              </v-card-actions>  
+            </v-card>
+          </v-dialog>
+        </v-form>
+      `,
+          props: ["e", "request"],
+          data: function () {
+              return {
+                  dialog: false,
+                  valid: true,
+                  prefillDate: '',
+                  setupImage: {},
+                  rules: {
+                      required(val, field) {
+                          return !!val || `${field} is required`;
+                      },
+                      requiredArr(val, field) {
+                          return val.length > 0 || `${field} is required`;
+                      },
+                      blurbValidation(value, pubDate) {
+                          let daysUntil = moment(pubDate).diff(moment(), "days");
+                          if (daysUntil <= 30) {
+                              return (
+                                  value.length >= 100 ||
+                                  "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
+                              );
+                          } else {
+                              return true;
+                          }
+                      },
+                  }
+              }
+          },
+          created: function () {
+              if (this.e.SetUpImage) {
+                  this.setupImage = this.e.SetUpImage;
+              }
+          },
+          filters: {
+              formatDate(val) {
+                  return moment(val).format("MM/DD/yyyy");
+              },
+          },
+          computed: {
+              prefillOptions() {
+                  return this.request.EventDates.filter(i => i != this.e.EventDate)
+              },
+              techHint() {
+                  return `${this.e.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`
+              },
+              calLabel() {
+                  return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
+              },
+              drinkHint() {
+                  return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+              },
+              defaultFoodTime() {
+                  if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+                      let time = moment(this.e.StartTime, "hh:mm A");
+                      return time.subtract(30, "minutes").format("hh:mm A");
+                  }
+                  return null;
+              },
+          },
+          methods: {
+              prefillSection() {
+                  this.dialog = false
+                  let idx = this.request.EventDates.indexOf(this.prefillDate)
+                  let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+                  this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
+              },
+              handleSetUpFile(e) {
+                  let file = { name: e.name, type: e.type };
+                  var reader = new FileReader();
+                  const self = this;
+                  reader.onload = function (e) {
+                      file.data = e.target.result;
+                      self.request.SetUpImage = file;
+                  };
+                  reader.readAsDataURL(e);
+              },
+              boolToYesNo(val) {
+                  if (val) {
+                      return "Yes";
+                  }
+                  return "No";
+              },
+          }
+      });
+      new Vue({
+          el: "#app",
+          vuetify: new Vuetify({
+              theme: {
+                  themes: {
+                      light: {
+                          primary: "#347689",
+                          secondary: "#3D3D3D",
+                          accent: "#8ED2C9",
+                      },
+                  },
+              },
+              iconfont: "mdi",
+          }),
+          config: {
+              devtools: true,
+          },
+          data: {
+              panel: 0,
+              request: {
+                  needsSpace: false,
+                  needsOnline: false,
+                  needsPub: false,
+                  needsReg: false,
+                  needsCatering: false,
+                  needsChildCare: false,
+                  needsAccom: false,
+                  IsSame: true,
+                  Name: "",
+                  Ministry: "",
+                  Contact: "",
+                  Events: [
+                      {
+                          EventDate: "",
+                          StartTime: "",
+                          EndTime: "",
+                          MinsStartBuffer: 0,
+                          MinsEndBuffer: 0,
+                          ExpectedAttendance: "",
+                          Rooms: "",
+                          Checkin: false,
+                          EventURL: "",
+                          ZoomPassword: "",
+                          ThankYou: "",
+                          TimeLocation: "",
+                          AdditionalDetails: "",
+                          Sender: "",
+                          SenderEmail: "",
+                          RegistrationDate: "",
+                          RegistrationEndDate: "",
+                          RegistrationEndTime: "",
+                          Fee: null,
+                          Vendor: "",
+                          Menu: "",
+                          FoodDelivery: true,
+                          FoodTime: "",
+                          FoodDropOff: "",
+                          Drinks: "",
+                          DinkTime: "",
+                          ServingTeamAgree: false,
+                          DrinkDropOff: "",
+                          BudgetLine: "",
+                          CCVendor: "",
+                          CCMenu: "",
+                          CCFoodTime: "",
+                          CCBudgetLine: "",
+                          ChildCareOptions: "",
+                          EstimatedKids: null,
+                          CCStartTime: '',
+                          CCEndTime: '',
+                          TechNeeds: "",
+                          TechDescription: "",
+                          ShowOnCalendar: false,
+                          PublicityBlurb: "",
+                          SetUp: "",
+                          SetUpImage: null,
+                      }
+                  ],
+                  EventDates: [],
+                  WhyAttendSixtyFive: "",
+                  TargetAudience: "",
+                  EventIsSticky: false,
+                  PublicityStartDate: "",
+                  PublicityEndDate: "",
+                  PublicityStrategies: "",
+                  WhyAttendNinety: "",
+                  GoogleKeys: [],
+                  WhyAttendTen: "",
+                  VisualIdeas: "",
+                  Stories: [{ Name: "", Email: "", Description: "" }],
+                  WhyAttendTwenty: "",
+                  Notes: "",
+              },
+              existingRequests: [],
+              rooms: [],
+              ministries: [],
+              pubStartMenu: false,
+              pubEndMenu: false,
+              googleCurrentKey: "",
+              rules: {
+                  required(val, field) {
+                      return !!val || `${field} is required`;
+                  },
+                  requiredArr(val, field) {
+                      return val.length > 0 || `${field} is required`;
+                  },
+                  exceedsSelected(val, selected, rooms) {
+                      let room = rooms.filter((i) => {
+                          return i.Id == selected;
+                      })[0];
+                      let cap = room.Capacity;
+                      if (val > cap) {
+                          return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
+                              } in the selected space`;
+                      }
+                      return true;
+                  },
+                  validTime(val, compareVal, isStart) {
+                      if (
+                          !!val &&
+                          !!compareVal &&
+                          !val.includes("null") &&
+                          !compareVal.includes("null")
+                      ) {
+                          let startTime = isStart ? val : compareVal;
+                          let endTime = isStart ? compareVal : val;
+                          let momentStart = moment(startTime, "hh:mm A");
+                          let momentEnd = moment(endTime, "hh:mm A");
+                          let isAfter = momentEnd.isAfter(momentStart);
+                          return (
+                              isAfter ||
+                              `${isStart
+                                  ? "Start time must come before end time"
+                                  : "End time must come after start time"
+                              }`
+                          );
+                      } else if (val.includes("null")) {
+                          return "Please fill out all time information";
+                      }
+                      return true;
+                  },
+                  roomCapacity(allRooms, rooms, attendance) {
+                      if (attendance) {
+                          let selectedRooms = allRooms.filter((r) => {
+                              return rooms.includes(r.Id);
+                          });
+                          let maxCapacity = 0;
+                          selectedRooms.forEach((r) => {
+                              maxCapacity += r.Capacity;
+                          });
+                          if (attendance <= maxCapacity) {
+                              return true;
+                          } else {
+                              return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
+                          }
+                      }
+                      return true;
+                  },
+                  publicityWordLimit(text, limit) {
+                      if (text) {
+                          let arr = text.split(' ')
+                          if (arr.length > limit) {
+                              return `Please limit yourself to ${limit} words`
+                          }
+                      }
+                      return true
+                  },
+                  publicityCharacterLimit(text, limit) {
+                      if (text) {
+                          if (text.length > limit) {
+                              return `Please limit yourself to ${limit} characters`
+                          }
+                      }
+                      return true
+                  },
+                  publicityEndDate(eventDates, endDate, startDate) {
+                      let dates = eventDates.map(d => moment(d))
+                      let minDate = moment.min(dates)
+                      if (moment(endDate).isAfter(minDate)) {
+                          return 'Publicity cannot end after event.'
+                      }
+                      let span = moment(endDate).diff(moment(startDate), 'days')
+                      if (span < 21) {
+                          return 'Publicity end date must be at least 21 days after publicity start.'
+                      }
+                      return true
+                  },
+              },
+              valid: true,
+              formValid: true,
+              dialog: false,
+              conflictingRequestMsg: "",
+              beforeHoursMsg: "",
+              afterHoursMsg: "",
+              triedSubmit: false,
+              tab: 0,
+          },
+          created() {
+              this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+              this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
+              let req = $('[id$="hfRequest"]')[0].value;
+              if (req) {
+                  let parsed = JSON.parse(req)
+                  this.request = JSON.parse(parsed.Value)
+                  this.request.Id = parsed.Id
+                  this.request.Status = parsed.RequestStatus
+                  this.request.CreatedBy = parsed.CreatedBy
+                  this.request.canEdit = parsed.CanEdit
+              }
+              window["moment-range"].extendMoment(moment);
+          },
+          mounted() {
+              let query = new URLSearchParams(window.location.search);
+              let success = query.get('ShowSuccess');
+              if (success) {
+                  if (success == "true") {
+                      this.panel = 2;
+                      let id = query.get('Id');
+                      if (id) {
+                          window.history.go(-2)
+                      }
+                  }
+              }
+          },
+          computed: {
+              requestedResources() {
+                  let items = []
+                  if (this.request.needsSpace) {
+                      items.push('rooms')
+                  }
+                  if (this.request.needsOnline) {
+                      items.push('online resources')
+                  }
+                  if (this.request.needsReg) {
+                      items.push('registration')
+                  }
+                  if (this.request.needsChildCare) {
+                      items.push('childcare')
+                  }
+                  if (this.request.needsCatering) {
+                      items.push('catering')
+                  }
+                  if (this.request.needsAccom) {
+                      items.push('accommodations')
+                  }
+                  items[items.length - 1] = "and " + items[items.length - 1]
+                  return items.join(", ");
+              },
+              earliestDate() {
+                  let eDate = new moment();
+                  if (
+                      this.request.needsOnline ||
+                      this.request.needsCatering ||
+                      this.request.needsReg ||
+                      this.request.needsAccom
+                  ) {
+                      eDate = moment(eDate).add(14, "days");
+                  }
+                  if (this.request.needsPub) {
+                      eDate = moment(eDate).add(6, "weeks");
+                  }
+                  if (
+                      this.request.needsChildCare ||
+                      this.request.ExpectedAttendance > 250
+                  ) {
+                      eDate = moment().add(30, "days");
+                      this.request.EventDates.forEach((itm, i) => {
+                          if (
+                              !moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))
+                          ) {
+                              this.request.EventDates.splice(i, 1);
+                          }
+                      });
+                  }
+                  return moment(eDate).format("yyyy-MM-DD");
+              },
+              earliestPubDate() {
+                  let eDate = new moment();
+                  eDate = moment(eDate).add(21, "days");
+                  return moment(eDate).format("yyyy-MM-DD");
+              },
+              latestPubDate() {
+                  let sortedDates = this.request.EventDates.sort((a, b) => a.diff(b))
+                  let eDate = new moment(sortedDates[0]);
+                  eDate = moment(eDate).subtract(21, "days");
+                  return moment(eDate).format("yyyy-MM-DD");
+              },
+              pubStrategyOptions() {
+                  let ops = ['Social Media/Google Ads', 'Mobile Worship Folder']
+                  if (this.request.EventIsSticky) {
+                      ops.push('Announcement')
+                  }
+                  return ops
+              },
+              longDates() {
+                  return this.request.EventDates.map((i) => {
+                      return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
+                  });
+              },
+              isValid() {
+                  if (this.$refs.roompckr && this.tab == 1) {
+                      return this.valid && this.formValid && this.$refs.roompckr.valid;
+                  }
+                  return this.valid && this.formValid;
+              },
+              isExistingRequest() {
+                  let urlParams = new URLSearchParams(window.location.search);
+                  let id = urlParams.get('Id');
+                  if (id) {
+                      return true
+                  }
+                  return false
+              },
+              canEdit() {
+                  if (this.request.canEdit != null) {
+                      return this.request.canEdit
+                  }
+                  return true
+              }
+          },
+          methods: {
+              boolToYesNo(val) {
+                  if (val) {
+                      return "Yes";
+                  }
+                  return "No";
+              },
+              next() {
+                  if (this.panel == 1) {
+                      this.validate();
+                      if (this.isValid) {
+                          this.submit()
+                      } else {
+                          let formIsValid = this.formValid
+                          if (this.$refs.roompckr && this.tab == 1) {
+                              formIsValid = this.formValid && this.$refs.roompckr.valid;
+                          }
+                          if (formIsValid) {
+                              this.dialog = true
+                          }
+                      }
+                  } else {
+                      this.panel += 1;
+                  }
+                  window.scrollTo(0, 0);
+              },
+              prev() {
+                  let tab = this.panel;
+                  tab -= 1;
+                  if (tab < 0) {
+                      tab = 0;
+                  }
+                  this.panel = tab;
+                  window.scrollTo(0, 0);
+              },
+              submit() {
+                  console.log(this.request)
+                  $('[id$="hfRequest"]').val(JSON.stringify(this.request));
+                  $('[id$="btnSubmit"')[0].click();
+              },
+              setDate(val) {
+                  this.request.Rooms = [val.room];
+                  this.request.StartTime = val.startTime;
+                  this.request.EndTime = val.endTime;
+                  this.request.EventDates = [val.eventDate];
+                  this.request.ExpectedAttendance = val.att;
+              },
+              addGoogleKey(key) {
+                  if (this.googleCurrentKey) {
+                      this.request.GoogleKeys.push(this.googleCurrentKey)
+                      this.googleCurrentKey = ''
+                  }
+              },
+              removeGoogleKey(idx) {
+                  this.request.GoogleKeys.splice(idx, 1)
+              },
+              updateReg(indexes) {
+                  this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
+                  this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
+                  this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
+                  this.request.Events[indexes.currIdx].Sender = this.request.Events[indexes.targetIdx].Sender
+                  this.request.Events[indexes.currIdx].SenderEmail = this.request.Events[indexes.targetIdx].SenderEmail
+                  this.request.Events[indexes.currIdx].ThankYou = this.request.Events[indexes.targetIdx].ThankYou
+                  this.request.Events[indexes.currIdx].TimeLocation = this.request.Events[indexes.targetIdx].TimeLocation
+                  this.request.Events[indexes.currIdx].AdditionalDetails = this.request.Events[indexes.targetIdx].AdditionalDetails
+              },
+              updateSpace(indexes) {
+                  this.request.Events[indexes.currIdx].Rooms = this.request.Events[indexes.targetIdx].Rooms
+                  this.request.Events[indexes.currIdx].ExpectedAttendance = this.request.Events[indexes.targetIdx].ExpectedAttendance
+                  this.request.Events[indexes.currIdx].Checkin = this.request.Events[indexes.targetIdx].Checkin
+              },
+              updateCatering(indexes) {
+                  this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
+                  this.request.Events[indexes.currIdx].BudgetLine = this.request.Events[indexes.targetIdx].BudgetLine
+                  this.request.Events[indexes.currIdx].Menu = this.request.Events[indexes.targetIdx].Menu
+                  this.request.Events[indexes.currIdx].FoodDelivery = this.request.Events[indexes.targetIdx].FoodDelivery
+                  this.request.Events[indexes.currIdx].FoodTime = this.request.Events[indexes.targetIdx].FoodTime
+                  this.request.Events[indexes.currIdx].FoodDropOff = this.request.Events[indexes.targetIdx].FoodDropOff
+                  this.request.Events[indexes.currIdx].Drinks = this.request.Events[indexes.targetIdx].Drinks
+                  this.request.Events[indexes.currIdx].DrinkTime = this.request.Events[indexes.targetIdx].DrinkTime
+                  this.request.Events[indexes.currIdx].ServingTeamAgree = this.request.Events[indexes.targetIdx].ServingTeamAgree
+                  this.request.Events[indexes.currIdx].DrinkDropOff = this.request.Events[indexes.targetIdx].DrinkDropOff
+                  this.request.Events[indexes.currIdx].CCVendor = this.request.Events[indexes.targetIdx].CCVendor
+                  this.request.Events[indexes.currIdx].CCBudgetLine = this.request.Events[indexes.targetIdx].CCBudgetLine
+                  this.request.Events[indexes.currIdx].CCMenu = this.request.Events[indexes.targetIdx].CCMenu
+                  this.request.Events[indexes.currIdx].CCFoodTime = this.request.Events[indexes.targetIdx].CCFoodTime
+              },
+              updateChildcare(indexes) {
+                  this.request.Events[indexes.currIdx].CCStartTime = this.request.Events[indexes.targetIdx].CCStartTime
+                  this.request.Events[indexes.currIdx].CCEndTime = this.request.Events[indexes.targetIdx].CCEndTime
+                  this.request.Events[indexes.currIdx].ChildCareOptions = this.request.Events[indexes.targetIdx].ChildCareOptions
+                  this.request.Events[indexes.currIdx].EstimatedKids = this.request.Events[indexes.targetIdx].EstimatedKids
+              },
+              updateAccom(indexes) {
+                  this.request.Events[indexes.currIdx].TechNeeds = this.request.Events[indexes.targetIdx].TechNeeds
+                  this.request.Events[indexes.currIdx].TechDescription = this.request.Events[indexes.targetIdx].TechDescription
+                  this.request.Events[indexes.currIdx].Drinks = this.request.Events[indexes.targetIdx].Drinks
+                  this.request.Events[indexes.currIdx].DrinkTime = this.request.Events[indexes.targetIdx].DrinkTime
+                  this.request.Events[indexes.currIdx].ServingTeamAgree = this.request.Events[indexes.targetIdx].ServingTeamAgree
+                  this.request.Events[indexes.currIdx].DrinkDropOff = this.request.Events[indexes.targetIdx].DrinkDropOff
+                  this.request.Events[indexes.currIdx].ShowOnCalendar = this.request.Events[indexes.targetIdx].ShowOnCalendar
+                  this.request.Events[indexes.currIdx].PublicityBlurb = this.request.Events[indexes.targetIdx].PublicityBlurb
+                  this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
+                  this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
+              },
+              checkForConflicts() {
+                  this.existingRequests = JSON.parse(
+                      $('[id$="hfUpcomingRequests"]')[0].value
+                  );
+                  let conflictingMessage = []
+                  let conflictingRequests = this.existingRequests.filter((r) => {
+                      r = JSON.parse(r);
+                      let compareTarget = [], compareSource = []
+                      //Build an object for each date to compare with 
+                      if (r.IsSame || r.Events.length == 1) {
+                          for (let i = 0; i < r.EventDates.length; i++) {
+                              compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                          }
+                      } else {
+                          for (let i = 0; i < r.Events.length; i++) {
+                              compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
+                          }
+                      }
+                      if (this.request.Events.length == 1 || this.request.IsSame) {
+                          for (let i = 0; i < this.request.EventDates.length; i++) {
+                              compareSource.push({ Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer })
+                          }
+                      } else {
+                          for (let i = 0; i < this.request.Events.length; i++) {
+                              compareSource.push({ Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer })
+                          }
+                      }
+                      let conflicts = false
+                      for (let x = 0; x < compareTarget.length; x++) {
+                          for (let y = 0; y < compareSource.length; y++) {
+                              if (compareTarget[x].Date == compareSource[y].Date) {
+                                  //On same date
+                                  //Check for conflicting rooms
+                                  let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                  if (conflictingRooms.length > 0) {
+                                      //Check they do not overlap with moment-range
+                                      let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
+                                      if (compareTarget[x].MinsStartBuffer) {
+                                          cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
+                                      }
+                                      let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                                      if (compareTarget[x].MinsEndBuffer) {
+                                          cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
+                                      }
+                                      let cRange = moment.range(cdStart, cdEnd);
+                                      let current = moment.range(
+                                          moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
+                                          moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                      );
+                                      if (cRange.overlaps(current)) {
+                                          conflicts = true
+                                          let roomNames = []
+                                          conflictingRooms.forEach(r => {
+                                              let roomName = this.rooms.filter((room) => {
+                                                  return room.Id == r;
+                                              });
+                                              if (roomName.length > 0) {
+                                                  roomName = roomName[0].Value;
+                                              }
+                                              roomNames.push(roomName)
+                                          })
+                                          conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                      return conflicts
+                  });
+                  if (conflictingRequests.length > 0) {
+                      this.valid = false;
+                      this.conflictingRequestMsg = "There are conflicts with the following dates and rooms: " + conflictingMessage.join(", ")
+                  }
+              },
+              checkTimeMeetsRequirements() {
+                  this.beforeHoursMsg = ''
+                  this.afterHoursMsg = ''
+                  //Check general 9-9 time rule
+                  let meetsTimeRequirements = true
+                  if (this.request.StartTime.includes("AM")) {
+                      let info = this.request.StartTime.split(':')
+                      if (parseInt(info[0]) < 9) {
+                          meetsTimeRequirements = false
+                          this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
+                      }
+                  }
+                  if (this.request.EndTime.includes("PM")) {
+                      let info = this.request.EndTime.split(':')
+                      if (parseInt(info[0]) >= 9) {
+                          meetsTimeRequirements = false
+                          this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+                      }
+                  }
+                  //Check more specific range for Satuday and Sunday
+                  for (var i = 0; i < this.request.EventDates.length; i++) {
+                      let dt = moment(this.request.EventDates[i])
+                      if (dt.day() == 0) {
+                          //Sunday
+                          if (this.request.StartTime.includes("AM")) {
+                              meetsTimeRequirements = false
+                          }
+                      } else if (dt.day() == 6) {
+                          //Saturday
+                          // if(this.request.StartTime.includes("PM")) {
+                          //   meetsTimeRequirements = false
+                          // }
+                          if (this.request.EndTime.includes("PM") && this.request.EndTime != "12:00 PM") {
+                              meetsTimeRequirements = false
+                              this.afterHoursMsg = 'On Saturday our facilities close at 12PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+                          }
+                      }
+                  }
+                  if (!meetsTimeRequirements) {
+                      this.valid = false
+                  }
+              },
+              validate() {
+                  this.valid = true
+                  this.triedSubmit = true
+                  this.$refs.form.validate()
+                  if (this.$refs.roompckr && this.tab == 1) {
+                      this.$refs.roompckr.$refs.roomform.validate()
+                  }
+                  if (this.$refs.spaceloop) {
+                      this.$refs.spaceloop.forEach(i => {
+                          i.$refs.spaceForm.validate()
+                      })
+                  }
+                  if (this.$refs.regloop) {
+                      this.$refs.regloop.forEach(i => {
+                          i.$refs.regForm.validate()
+                      })
+                  }
+                  if (this.$refs.cateringloop) {
+                      this.$refs.cateringloop.forEach(i => {
+                          i.$refs.cateringForm.validate()
+                      })
+                  }
+                  if (this.$refs.childcareloop) {
+                      this.$refs.childcareloop.forEach(i => {
+                          i.$refs.childForm.validate()
+                      })
+                  }
+                  if (this.$refs.accomloop) {
+                      this.$refs.accomloop.forEach(i => {
+                          i.$refs.accomForm.validate()
+                      })
+                  }
+                  const errors = [];
+                  this.$refs.form.inputs.forEach((e) => {
+                      if (e.errorBucket && e.errorBucket.length) {
+                          errors.push(...e.errorBucket)
+                      }
+                  });
+                  this.checkForConflicts()
+                  // this.checkTimeMeetsRequirements()
+              },
+              matchMultiEvent() {
+                  this.request.EventDates.forEach((e, idx) => {
+                      if (this.request.Events[idx]) {
+                          if (this.request.Events[idx].EventDate) {
+                              if (this.request.Events[idx].EventDate != e) {
+                                  if (this.request.Events.length > this.request.EventDates.length) {
+                                      this.request.Events.splice(idx, 1)
+                                  }
+                              }
+                          } else {
+                              this.request.Events[idx].EventDate = e
+                          }
+                      } else {
+                          let t = JSON.parse(JSON.stringify(this.request.Events[0]))
+                          t.EventDate = e
+                          t.RegistrationDate = ""
+                          t.RegistrationEndDate = ""
+                          this.request.Events.push(t)
+                      }
+                  })
+                  this.request.EventDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
+                  this.request.Events = this.request.Events.sort((a, b) => moment(a.EventDate).diff(moment(b.EventDate)))
+              }
+          },
+          filters: {
+              formatDateTime(val) {
+                  return moment(val).format("MM/DD/yyyy hh:mm A");
+              },
+              formatDate(val) {
+                  return moment(val).format("MM/DD/yyyy");
+              },
+              formatCurrency(val) {
+                  var formatter = new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                  });
+                  return formatter.format(val);
+              },
+          },
+          watch: {
+              'request.EventDates'(val, oval) {
+                  if (!this.request.IsSame) {
+                      if (val.length == 1) {
+                          this.request.Events.length = 1
+                      } else if (val.length != oval.length) {
+                          this.matchMultiEvent()
+                      }
+                  } else {
+                      if (this.request.Events.length > 1) {
+                          //remove the rest because they said everything will be the same
+                          this.request.Events.length = 1
+                      }
+                  }
+              },
+              'request.IsSame'(val) {
+                  if (!val) {
+                      this.matchMultiEvent()
+                  } else {
+                      if (this.request.Events.length > 1) {
+                          //remove the rest because they said everything will be the same
+                          this.request.Events.length = 1
+                      }
+                  }
+              },
+          }
+      });
+  });
 </script>
 <style>
   .theme--light.v-application {
@@ -2040,6 +2905,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   }
   .v-input__slot {
     min-height: 42px !important;
+  }
+  .v-label--active {
+    max-width: 133%;
+    transform: translateY(-18px) scale(.75);
   }
   .v-window {
     overflow: visible !important;

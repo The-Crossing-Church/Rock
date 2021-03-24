@@ -34,6 +34,7 @@ using CSScriptLibrary;
 using System.Data.Entity.Migrations;
 using Microsoft.Identity.Client;
 using System.Threading.Tasks;
+using Rock.Communication;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -54,6 +55,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [TextField( "MicrosoftClientSecret", "MS Client Secret for Graph API", true )]
     [WorkflowTypeField( "Request Workflow", "Workflow to launch when request is approved or denied to send email" )]
     [LinkedPage( "Workflow Entry Page" )]
+    [TextField( "Denied ChangesURL", "URL for the User Action Workflow Entry" )]
 
     public partial class EventSubmissionDashboard : Rock.Web.UI.RockBlock
     {
@@ -103,7 +105,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             var HistoryPageId = GetAttributeValue( "HistoryPageId" ).AsInteger();
             hfHistoryURL.Value = "/page/" + HistoryPageId;
             Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
+            Rooms.LoadAttributes();
+            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger() } ) );
             Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
             hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
             GetRecentRequests();
@@ -143,14 +146,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         break;
                     case "DenyUserComments":
                         //Need to email user alternative
-                        emailDenyOptions = true; 
+                        emailDenyOptions = true;
                         item.SetAttributeValue( "RequestStatus", "Proposed Changes Denied" );
                         break;
                     case "DenyUser":
+                        //This option will send a generic denied changes email allowing them to revert or cancel 
                         item.SetAttributeValue( "RequestStatus", "Proposed Changes Denied" );
                         break;
                     default:
                         item.SetAttributeValue( "RequestStatus", "Approved" );
+                        if(string.IsNullOrEmpty(item.AttributeValues["MicrosoftCalendarEvents"].Value))
+                        {
+                            AddToCalendar( item, JsonConvert.DeserializeObject<EventRequest>( item.AttributeValues["RequestJSON"].Value ) );
+                        }
                         break;
                 }
                 item.SaveAttributeValues( context );
@@ -162,6 +170,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     query.Add( "WorkflowTypeId", wfType.Id.ToString() );
                     query.Add( "ItemId", item.Id.ToString() );
                     NavigateToLinkedPage( "WorkflowEntryPage", query );
+                }
+                if ( action == "DenyUser" )
+                {
+                    //Send Generic Email
+                    SendDeniedChangesEmail( item );
                 }
                 GetRecentRequests();
                 GetThisWeeksEvents();
@@ -210,7 +223,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );
-                if(items.IndexOf(item) < 0 )
+                if ( items.IndexOf( item ) < 0 )
                 {
                     items.Add( item );
                 }
@@ -278,30 +291,148 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             hfCurrent.Value = JsonConvert.SerializeObject( current );
         }
 
-        public void getEvents()
+        /// <summary>
+        /// Add the newly approved Event Request to the associated Microsoft calendars
+        /// </summary>
+        /// <param name="item">The approved request</param>
+        private void AddToCalendar( ContentChannelItem item, EventRequest request )
         {
-            string tennant = GetAttributeValue( "MicrosoftTennant" );
-            string clientId = GetAttributeValue( "MicrosoftClientID" );
-            string clientSecret = GetAttributeValue( "MicrosoftClientSecret" );
-            List<string> scopes = new List<string>() { "https://graph.microsoft.com/.default" };
-            IPublicClientApplication publicClientApplication = PublicClientApplicationBuilder
-            .Create( clientId )
-            .WithTenantId( tennant )
-            .Build();
+            //string tennant = GetAttributeValue( "MicrosoftTennant" );
+            //string clientId = GetAttributeValue( "MicrosoftClientID" );
+            //string clientSecret = GetAttributeValue( "MicrosoftClientSecret" );
+            //IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
+            //.Create( clientId )
+            //.WithTenantId( tennant )
+            //.WithClientSecret( clientSecret )
+            //.Build();
 
-            IntegratedWindowsAuthenticationProvider authProvider = new IntegratedWindowsAuthenticationProvider( publicClientApplication, scopes );
-            GraphServiceClient graphClient = new GraphServiceClient( authProvider );
+            //ClientCredentialProvider authProvider = new ClientCredentialProvider( confidentialClientApplication );
+            //GraphServiceClient graphClient = new GraphServiceClient( authProvider );
 
-            var graphTask = Task.Run( async () =>
-            {
-                await graphClient.Me.Events
-                .Request()
-                //.Header( "Prefer", "outlook.timezone=\"Pacific Standard Time\"" )
-                .Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-                .GetAsync();
-            } );
-            graphTask.Wait();
-            Console.WriteLine( "ey" );
+            //List<CalendarRoomLink> Calendars = new List<CalendarRoomLink>();
+            //for ( int i = 0; i < request.Rooms.Count(); i++ )
+            //{
+            //    string roomType = Rooms.FirstOrDefault( r => r.Id == Int32.Parse( request.Rooms[i] ) ).AttributeValues["Type"].Value;
+            //    string cal = LocationCalendarLink[roomType];
+            //    if ( !Calendars.Select( c => c.Calendar ).Contains( cal ) )
+            //    {
+            //        CalendarRoomLink link = new CalendarRoomLink();
+            //        link.Calendar = cal;
+            //        link.Rooms = new List<string>() { Rooms.FirstOrDefault(r => r.Id.ToString() == request.Rooms[i]).Value };
+            //        link.Events = new Dictionary<string, string>();
+            //        Calendars.Add( link );
+            //    }
+            //    else
+            //    {
+            //        CalendarRoomLink link = Calendars.FirstOrDefault( c => c.Calendar == cal );
+            //        link.Rooms.Add( Rooms.FirstOrDefault( r => r.Id.ToString() == request.Rooms[i] ).Value );
+            //    }
+            //}
+            ////For Testing
+            //Calendars = new List<CalendarRoomLink>() { new CalendarRoomLink { Calendar = "AAMkADg5NmRlYmYzLWE3ODMtNDUyNC1iNmNjLWYyMjA1NDJlZDNlNgBGAAAAAACQHiszpEjLQ5ANTXBsyjz-BwCYFW-pxglGTbnCnhARG3dbAAAAAAEGAACYFW-pxglGTbnCnhARG3dbAAAAAEEVAAA=", Rooms = request.Rooms, Events = new Dictionary<string, string>() } };
+
+            //string adjustedStartTime = request.StartTime.Split(' ')[0];
+            //if( request.StartTime.Split( ' ' )[1] == "PM" && !request.StartTime.Contains("12") )
+            //{
+            //    int hour = Int32.Parse( adjustedStartTime.Split( ':' )[0] ) + 12;
+            //    adjustedStartTime = hour + ":" + adjustedStartTime.Split( ':' )[1];
+            //}
+            //string adjustedEndTime = request.EndTime.Split( ' ' )[0];
+            //if ( request.EndTime.Split( ' ' )[1] == "PM" && !request.EndTime.Contains( "12" ) )
+            //{
+            //    int hour = Int32.Parse( adjustedEndTime.Split( ':' )[0] ) + 12;
+            //    adjustedEndTime = hour + ":" + adjustedEndTime.Split( ':' )[1];
+            //}
+
+            ////Add events to each calendar
+            //for ( int i = 0; i < Calendars.Count(); i++ )
+            //{
+            //    //Create event for each date
+            //    for ( int k = 0; k < request.EventDates.Count(); k++ )
+            //    {
+            //        DateTime start = new DateTime();
+            //        if (request.MinsStartBuffer.HasValue)
+            //        {
+            //            double startBuffer = request.MinsStartBuffer.Value * -1;
+            //            start = DateTime.Parse( request.EventDates[k] + "T" + adjustedStartTime ).AddMinutes( startBuffer );
+            //        }
+            //        DateTime end = new DateTime();
+            //        if (request.MinsEndBuffer.HasValue)
+            //        {
+            //            double endBuffer = request.MinsEndBuffer.Value * -1;
+            //            end = DateTime.Parse( request.EventDates[k] + "T" + adjustedEndTime ).AddMinutes( endBuffer );
+            //        }
+            //        Event e = new Event()
+            //        {
+            //            Subject = item.Title,
+            //            Body = new ItemBody() {
+            //                Content = "Ministry: " + Ministries.FirstOrDefault(m => m.Id.ToString() == request.Ministry).Value + "<br/>Contact: " + request.Contact,
+            //                ContentType = BodyType.Html
+            //            },
+            //            Start = new DateTimeTimeZone
+            //            {
+            //                DateTime = start.ToString("s"),
+            //                TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
+            //            },
+            //            End = new DateTimeTimeZone
+            //            {
+            //                DateTime = end.ToString("s"),
+            //                TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
+            //            },
+            //            Location = new Microsoft.Graph.Location
+            //            {
+            //                DisplayName = String.Join( ", ", Calendars[i].Rooms )
+            //            },
+            //        };
+            //        var graphTask = Task.Run( async () =>
+            //        {
+            //            //return await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events
+            //            //.Request()
+            //            //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
+            //            //.GetAsync();
+            //            return await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[Calendars[i].Calendar].Events
+            //            .Request()
+            //            .AddAsync( e );
+            //        } );
+            //        var result = graphTask.Result;
+            //        Calendars[i].Events.Add( request.EventDates[k] , result.Id );
+            //    }
+            //}
+            //item.SetAttributeValue( "MicrosoftCalendarEvents", JsonConvert.SerializeObject( Calendars ) );
+            //item.SaveAttributeValues( context );
+        }
+
+        protected void SendDeniedChangesEmail( ContentChannelItem item )
+        {
+            string subject = "Proposed Changes for " + item.Title + " have been Denied";
+            string message = "Hello " + item.CreatedByPersonName + ",<br/>" +
+                "<p>We regret to inform you the changes you have requested to your event request have been denied.</p> <br/>" +
+                "<p>Please select one of the following options for your request. You can...</p>" +
+                "<ul>" +
+                    "<li> Continue with the originally approved request </li>" +
+                    "<li> Cancel your request entirely </li>" +
+                "</ul>" +
+                "<table>" +
+                    "<tr>" +
+                        "<td style='tect-align: center;'>" +
+                            "<a href='" + GetAttributeValue( "DeniedChangesURL" ) + item.Id + "&Action=Original' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Use Original</a>" +
+                        "</td>" +
+                        "<td style='tect-align: center;'>" +
+                            "<a href='" + GetAttributeValue( "DeniedChangesURL" ) + item.Id + "&Action=Cancelled' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Cancel Request </a>" +
+                        "</td>" +
+                    "</tr>" +
+                "</table>";
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( item.CreatedByPersonAlias.Person, new Dictionary<string, object>() );
+            email.AddRecipient( recipient );
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            var output = email.Send();
         }
 
         #endregion
@@ -319,13 +450,40 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public bool needsSpace { get; set; }
             public bool needsOnline { get; set; }
             public bool needsPub { get; set; }
+            public bool needsReg { get; set; }
             public bool needsCatering { get; set; }
             public bool needsChildCare { get; set; }
             public bool needsAccom { get; set; }
+            public bool IsSame { get; set; }
             public string Name { get; set; }
             public string Ministry { get; set; }
             public string Contact { get; set; }
             public List<string> EventDates { get; set; }
+            public List<EventDetails> Events { get; set; }
+
+            public string WhyAttendSixtyFive { get; set; }
+            public string TargetAudience { get; set; }
+            public bool EventIsSticky { get; set; }
+            public DateTime? PublicityStartDate { get; set; }
+            public DateTime? PublicityEndDate { get; set; }
+            public List<string> PublicityStrategies { get; set; }
+            public string WhyAttendNinety { get; set; }
+            public List<string> GoogleKeys { get; set; }
+            public string WhyAttendTen { get; set; }
+            public string VisualIdeas { get; set; }
+            public List<StoryItem> Stories { get; set; }
+            public string WhyAttendTwenty { get; set; }
+            public string Notes { get; set; }
+        }
+        private class StoryItem
+        {
+            public string Name { get; set; }
+            public string Email { get; set; }
+            public string Description { get; set; }
+        }
+        private class EventDetails
+        {
+            public string EventDate { get; set; }
             public string StartTime { get; set; }
             public string EndTime { get; set; }
             public int? MinsStartBuffer { get; set; }
@@ -335,9 +493,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public bool? Checkin { get; set; }
             public string EventURL { get; set; }
             public string ZoomPassword { get; set; }
-            public List<PublicityItem> Publicity { get; set; }
-            public string PublicityBlurb { get; set; }
-            public bool ShowOnCalendar { get; set; }
+            public DateTime? RegistrationDate { get; set; }
+            public DateTime? RegistrationEndDate { get; set; }
+            public string RegistrationEndTime { get; set; }
+            public string Fee { get; set; }
+            public string Sender { get; set; }
+            public string SenderEmail { get; set; }
+            public string ThankYou { get; set; }
+            public string TimeLocation { get; set; }
+            public string AdditionalDetails { get; set; }
             public string Vendor { get; set; }
             public string Menu { get; set; }
             public bool FoodDelivery { get; set; }
@@ -353,15 +517,32 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string CCStartTime { get; set; }
             public string CCEndTime { get; set; }
             public List<string> Drinks { get; set; }
+            public string DrinkDropOff { get; set; }
+            public string DrinkTime { get; set; }
             public List<string> TechNeeds { get; set; }
-            public DateTime? RegistrationDate { get; set; }
-            public string Fee { get; set; }
-            public string Notes { get; set; }
+            public bool ShowOnCalendar { get; set; }
+            public string PublicityBlurb { get; set; }
+            public string TechDescription { get; set; }
+            public string SetUp { get; set; }
         }
-        private class PublicityItem
+        private Dictionary<string, string> LocationCalendarLink
         {
-            public string Date { get; set; }
-            public List<string> Needs { get; set; }
+            get
+            {
+                return new Dictionary<string, string>()
+                {
+                    { "Main Building", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAARNgxcAAA=" },
+                    { "Auditorium", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAA8aNryAAA=" },
+                    { "Student Center", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAARNgxfAAA=" },
+                    { "Gym", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAARNgxbAAA=" }
+                };
+            }
+        }
+        private class CalendarRoomLink
+        {
+            public string Calendar { get; set; }
+            public List<string> Rooms { get; set; }
+            public Dictionary<string, string> Events { get; set; }
         }
     }
 }
