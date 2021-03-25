@@ -1985,14 +1985,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               toggleChildCareOptions() {
                   this.childCareSelectAll = !this.childCareSelectAll;
                   if (this.childCareSelectAll) {
-                      this.request.ChildCareOptions = [
+                      this.e.ChildCareOptions = [
                           "Infant/Toddler",
                           "Preschool",
                           "K-2nd",
                           "3-5th",
                       ];
                   } else {
-                      this.request.ChildCareOptions = [];
+                      this.e.ChildCareOptions = [];
                   }
               },
               prefillSection() {
