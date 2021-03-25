@@ -215,7 +215,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </template>
               </v-col>
             </v-row> -->
-            <v-expansion-panels v-model="panels" multiple>
+            <v-expansion-panels v-model="panels" multiple flat>
               <v-expansion-panel v-for="e in selected.Events">
                 <v-expansion-panel-header>
                   <template v-if="selected.IsSame || selected.Events.length == 1">
@@ -225,7 +225,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     {{e.EventDate | formatDate}} ({{formatRooms(e.Rooms)}})
                   </template>
                 </v-expansion-panel-header>
-                <v-expansion-panel-content>
+                <v-expansion-panel-content style="color: rgba(0,0,0,.6);">
                   <v-row v-if="e.StartTime || e.EndTime">
                     <v-col v-if="e.StartTime">
                       <div class="floating-title">Start Time</div>
@@ -259,6 +259,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     </v-col>
                   </v-row>
                   <template v-if="selected.needsSpace">
+                    <h6 class='text--accent text-uppercase'>Space Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Expected Number of Attendees</div>
@@ -295,6 +296,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     </v-row>
                   </template>
                   <template v-if="selected.needsOnline">
+                    <h6 class='text--accent text-uppercase'>Online Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Event Link</div>
@@ -319,6 +321,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     </v-row>
                   </template>
                   <template v-if="selected.needsChildCare">
+                    <h6 class='text--accent text-uppercase'>Childcare Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Childcare Age Groups</div>
@@ -365,6 +368,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     </v-row>
                   </template>
                   <template v-if="selected.needsCatering">
+                    <h6 class='text--accent text-uppercase'>Catering Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Preferred Vendor</div>
@@ -421,7 +425,42 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
+                    <v-row v-if="e.Drinks && e.Drinks.length > 0">
+                      <v-col>
+                        <div class="floating-title">Desired Drinks</div>
+                        <template v-if="e.Changes != null && e.Drinks.join(', ') != e.Changes.Drinks.join(', ')">
+                          <span class='red--text'>{{e.Drinks.join(', ')}}: </span>
+                          <span class='primary--text'>{{e.Changes.Drinks.join(', ')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.Drinks.join(', ')}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.DrinkTime">
+                      <v-col>
+                        <div class="floating-title">Drink Set-up Time</div>
+                        <template v-if="e.Changes != null && e.DrinkTime != e.Changes.DrinkTime">
+                          <span class='red--text'>{{e.DrinkTime}}: </span>
+                          <span class='primary--text'>{{e.Changes.DrinkTime}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.DrinkTime}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Drink Drop off Location</div>
+                        <template v-if="e.Changes != null && e.DrinkDropOff != e.Changes.DrinkDropOff">
+                          <span class='red--text'>{{e.DrinkDropOff}}: </span>
+                          <span class='primary--text'>{{e.Changes.DrinkDropOff}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.DrinkDropOff}}
+                        </template>
+                      </v-col>
+                    </v-row>
                     <template v-if="selected.needsChildCare">
+                      <h6 class='text--accent text-uppercase'>Childcare Catering Information</h6>
                       <v-row>
                         <v-col>
                           <div class="floating-title">
@@ -474,41 +513,89 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-row>
                     </template>
                   </template>
-                  <v-row v-if="e.Drinks && e.Drinks.length > 0">
-                    <v-col>
-                      <div class="floating-title">Desired Drinks</div>
-                      <template v-if="e.Changes != null && e.Drinks.join(', ') != e.Changes.Drinks.join(', ')">
-                        <span class='red--text'>{{e.Drinks.join(', ')}}: </span>
-                        <span class='primary--text'>{{e.Changes.Drinks.join(', ')}}</span>
-                      </template>
-                      <template v-else>
-                        {{e.Drinks.join(', ')}}
-                      </template>
-                    </v-col>
-                  </v-row>
-                  <v-row v-if="e.DrinkTime">
-                    <v-col>
-                      <div class="floating-title">Drink Set-up Time</div>
-                      <template v-if="e.Changes != null && e.DrinkTime != e.Changes.DrinkTime">
-                        <span class='red--text'>{{e.DrinkTime}}: </span>
-                        <span class='primary--text'>{{e.Changes.DrinkTime}}</span>
-                      </template>
-                      <template v-else>
-                        {{e.DrinkTime}}
-                      </template>
-                    </v-col>
-                    <v-col>
-                      <div class="floating-title">Drink Drop off Location</div>
-                      <template v-if="e.Changes != null && e.DrinkDropOff != e.Changes.DrinkDropOff">
-                        <span class='red--text'>{{e.DrinkDropOff}}: </span>
-                        <span class='primary--text'>{{e.Changes.DrinkDropOff}}</span>
-                      </template>
-                      <template v-else>
-                        {{e.DrinkDropOff}}
-                      </template>
-                    </v-col>
-                  </v-row>
+                  <template v-if="selected.needsReg">
+                    <h6 class='text--accent text-uppercase'>Registration Information</h6>
+                    <v-row v-if="e.RegistrationDate">
+                      <v-col>
+                        <div class="floating-title">Registration Date</div>
+                        <template v-if="e.Changes != null && e.RegistrationDate != e.Changes.RegistrationDate">
+                          <span class='red--text'>{{e.RegistrationDate | formatDate}}: </span>
+                          <span class='primary--text'>{{e.Changes.RegistrationDate | formatDate}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.RegistrationDate | formatDate}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.Fee">
+                        <div class="floating-title">Registration Fee</div>
+                        <template v-if="e.Changes != null && e.Fee != e.Changes.Fee">
+                          <span class='red--text'>{{e.Fee | formatCurrency}}: </span>
+                          <span class='primary--text'>{{e.Changes.Fee | formatCurrency}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.Fee | formatCurrency}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.RegistrationEndDate">
+                      <v-col>
+                        <div class="floating-title">Registration Close Date</div>
+                        <template v-if="e.Changes != null && e.RegistrationEndDate != e.Changes.RegistrationEndDate">
+                          <span class='red--text'>{{e.RegistrationEndDate | formatDate}}: </span>
+                          <span class='primary--text'>{{e.Changes.RegistrationEndDate | formatDate}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.RegistrationEndDate | formatDate}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.RegistrationEndTime">
+                        <div class="floating-title">Registration Close Time</div>
+                        <template v-if="e.Changes != null && e.RegistrationEndTime != e.Changes.RegistrationEndTime">
+                          <span class='red--text'>{{e.RegistrationEndTime}}: </span>
+                          <span class='primary--text'>{{e.Changes.RegistrationEndTime}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.RegistrationEndTime}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col v-if="e.ThankYou">
+                        <div class="floating-title">Confirmation Email Thank You</div>
+                        <template v-if="e.Changes != null && e.ThankYou != e.Changes.ThankYou">
+                          <span class='red--text'>{{e.ThankYou}}: </span>
+                          <span class='primary--text'>{{e.Changes.ThankYou}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.ThankYou}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="e.TimeLocation">
+                        <div class="floating-title">Confirmation Email Time and Location</div>
+                        <template v-if="e.Changes != null && e.TimeLocation != e.Changes.TimeLocation">
+                          <span class='red--text'>{{e.TimeLocation}}: </span>
+                          <span class='primary--text'>{{e.Changes.TimeLocation}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.TimeLocation}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.AdditionalDetails">
+                      <v-col>
+                        <div class="floating-title">Confirmation Email Additional Details</div>
+                        <template v-if="e.Changes != null && e.AdditionalDetails != e.Changes.AdditionalDetails">
+                          <span class='red--text'>{{e.AdditionalDetails}}: </span>
+                          <span class='primary--text'>{{e.Changes.AdditionalDetails}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.AdditionalDetails}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                  </template>
                   <template v-if="selected.needsAccom">
+                    <h6 class='text--accent text-uppercase'>Additional Information</h6>
                     <v-row v-if="e.TechNeeds || e.TechDescription">
                       <v-col v-if="e.TechNeeds && e.TechNeeds.length > 0">
                         <div class="floating-title">Tech Needs</div>
@@ -555,50 +642,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.RegistrationDate">
-                      <v-col>
-                        <div class="floating-title">Registration Date</div>
-                        <template v-if="e.Changes != null && e.RegistrationDate != e.Changes.RegistrationDate">
-                          <span class='red--text'>{{e.RegistrationDate | formatDate}}: </span>
-                          <span class='primary--text'>{{e.Changes.RegistrationDate | formatDate}}</span>
-                        </template>
-                        <template v-else>
-                          {{e.RegistrationDate | formatDate}}
-                        </template>
-                      </v-col>
-                      <v-col v-if="e.Fee">
-                        <div class="floating-title">Registration Fee</div>
-                        <template v-if="e.Changes != null && e.Fee != e.Changes.Fee">
-                          <span class='red--text'>{{e.Fee | formatCurrency}}: </span>
-                          <span class='primary--text'>{{e.Changes.Fee | formatCurrency}}</span>
-                        </template>
-                        <template v-else>
-                          {{e.Fee | formatCurrency}}
-                        </template>
-                      </v-col>
-                    </v-row>
-                    <v-row v-if="e.RegistrationEndDate">
-                      <v-col>
-                        <div class="floating-title">Registration Close Date</div>
-                        <template v-if="e.Changes != null && e.RegistrationEndDate != e.Changes.RegistrationEndDate">
-                          <span class='red--text'>{{e.RegistrationEndDate | formatDate}}: </span>
-                          <span class='primary--text'>{{e.Changes.RegistrationEndDate | formatDate}}</span>
-                        </template>
-                        <template v-else>
-                          {{e.RegistrationEndDate | formatDate}}
-                        </template>
-                      </v-col>
-                      <v-col v-if="e.RegistrationEndTime">
-                        <div class="floating-title">Registration Close Time</div>
-                        <template v-if="e.Changes != null && e.RegistrationEndTime != e.Changes.RegistrationEndTime">
-                          <span class='red--text'>{{e.RegistrationEndTime}}: </span>
-                          <span class='primary--text'>{{e.Changes.RegistrationEndTime}}</span>
-                        </template>
-                        <template v-else>
-                          {{e.RegistrationEndTime}}
-                        </template>
-                      </v-col>
-                    </v-row>
                     <v-row v-if="e.SetUp">
                       <v-col>
                         <div class="floating-title">Requested Set-up</div>
@@ -624,6 +667,177 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </v-expansion-panel-content>
               </v-expansion-panel>
             </v-expansion-panels>
+            <template v-if="selected.needsPub">
+              <h6 class='text--accent text-uppercase'>Publicity Information</h6>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Describe Why Someone Should Attend Your Event (450)</div>
+                  <template v-if="selected.Changes != null && selected.WhyAttendSixtyFive != selected.Changes.WhyAttendSixtyFive">
+                    <span class='red--text'>{{selected.WhyAttendSixtyFive}}: </span>
+                    <span class='primary--text'>{{selected.Changes.WhyAttendSixtyFive}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.WhyAttendSixtyFive}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Target Audience</div>
+                  <template v-if="selected.Changes != null && selected.TargetAudience != selected.Changes.TargetAudience">
+                    <span class='red--text'>{{selected.TargetAudience}}: </span>
+                    <span class='primary--text'>{{selected.Changes.TargetAudience}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.TargetAudience}}
+                  </template>
+                </v-col>
+                <v-col>
+                  <div class="floating-title">Event is Sticky</div>
+                  <template v-if="selected.Changes != null && selected.EventIsSticky != selected.Changes.EventIsSticky">
+                    <span class='red--text'>{{boolToYesNo(selected.EventIsSticky)}}: </span>
+                    <span class='primary--text'>{{boolToYesNo(selected.Changes.EventIsSticky)}}</span>
+                  </template>
+                  <template v-else>
+                    {{boolToYesNo(selected.EventIsSticky)}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Publicity Start Date</div>
+                  <template v-if="selected.Changes != null && selected.PublicityStartDate != selected.Changes.PublicityStartDate">
+                    <span class='red--text'>{{selected.PublicityStartDate | formatDate}}: </span>
+                    <span class='primary--text'>{{selected.Changes.PublicityStartDate | formatDate}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.PublicityStartDate | formatDate}}
+                  </template>
+                </v-col>
+                <v-col>
+                  <div class="floating-title">Publicity End Date</div>
+                  <template v-if="selected.Changes != null && selected.PublicityEndDate != selected.Changes.PublicityEndDate">
+                    <span class='red--text'>{{selected.PublicityEndDate | formatDate}}: </span>
+                    <span class='primary--text'>{{selected.Changes.PublicityEndDate | formatDate}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.PublicityEndDate | formatDate}}
+                  </template>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Publicity Strategies</div>
+                  <template v-if="selected.Changes != null && selected.PublicityStrategies != selected.Changes.PublicityStrategies">
+                    <span class='red--text'>{{selected.PublicityStrategies.join(', ')}}: </span>
+                    <span class='primary--text'>{{selected.Changes.PublicityStrategies.join(', ')}}</span>
+                  </template>
+                  <template v-else>
+                    {{selected.PublicityStrategies.join(', ')}}
+                  </template>
+                </v-col>
+              </v-row>
+              <template v-if="selected.PublicityStrategies.includes('Social Media/Google Ads')">
+                <v-row>
+                  <v-col>
+                    <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
+                    <template v-if="selected.Changes != null && selected.WhyAttendNinety != selected.Changes.WhyAttendNinety">
+                      <span class='red--text'>{{selected.WhyAttendNinety}}: </span>
+                      <span class='primary--text'>{{selected.Changes.WhyAttendNinety}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.WhyAttendNinety}}
+                    </template>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <template v-if="selected.Changes != null && selected.GoogleKeys != selected.Changes.GoogleKeys">
+                    <v-col class='red--text'>
+                        <div class="floating-title">Google Keys</div>
+                        <ul>
+                          <li v-for="k in selected.GoogleKeys" :key="k">
+                            {{k}}
+                          </li>
+                        </ul>
+                      </v-col>
+                      <v-col class='primary--text'>
+                        <ul>
+                          <li v-for="k in selected.changes.GoogleKeys" :key="k">
+                            {{k}}
+                          </li>
+                        </ul>
+                      </v-col>
+                    </template>
+                    <template v-else>
+                      <v-col>
+                        <div class="floating-title">Google Keys</div>
+                        <ul>
+                          <li v-for="k in selected.GoogleKeys" :key="k">
+                            {{k}}
+                          </li>
+                        </ul>
+                      </v-col>
+                  </template>
+                </v-row>
+              </template>
+              <template v-if="selected.PublicityStrategies.includes('Mobile Worship Folder')">
+                <v-row>
+                  <v-col>
+                    <div class="floating-title">Describe Why Someone Should Attend Your Event (65)</div>
+                    <template v-if="selected.Changes != null && selected.WhyAttendTen != selected.Changes.WhyAttendTen">
+                      <span class='red--text'>{{selected.WhyAttendTen}}: </span>
+                      <span class='primary--text'>{{selected.Changes.WhyAttendTen}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.WhyAttendTen}}
+                    </template>
+                  </v-col>
+                  <v-col v-if="selected.VisualIdeas != ''">
+                    <div class="floating-title">Visual Ideas for Graphic</div>
+                    <template v-if="selected.Changes != null && selected.VisualIdeas != selected.Changes.VisualIdeas">
+                      <span class='red--text'>{{selected.VisualIdeas}}: </span>
+                      <span class='primary--text'>{{selected.Changes.VisualIdeas}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.VisualIdeas}}
+                    </template>
+                  </v-col>
+                </v-row>
+              </template>
+              <template v-if="selected.PublicityStrategies.includes('Announcement')">
+                <v-row v-for="(s, idx) in selected.Stories" :key="`Story_${idx}`">
+                  <v-col>
+                    <div class="floating-title">Story {{idx+1}}</div>
+                    {{s.Name}}, {{s.Email}} <br/>
+                    {{s.Description}}
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <div class="floating-title">Describe Why Someone Should Attend Your Event (175)</div>
+                    <template v-if="selected.Changes != null && selected.WhyAttendTwenty != selected.Changes.WhyAttendTwenty">
+                      <span class='red--text'>{{selected.WhyAttendTwenty}}: </span>
+                      <span class='primary--text'>{{selected.Changes.WhyAttendTwenty}}</span>
+                    </template>
+                    <template v-else>
+                      {{selected.WhyAttendTwenty}}
+                    </template>
+                  </v-col>
+                </v-row>
+              </template>
+            </template>
+            <v-row v-if="selected.Notes">
+              <v-col>
+                <div class="floating-title">Notes</div>
+                <template v-if="selected.Changes != null && selected.Notes != selected.Changes.Notes">
+                  <span class='red--text'>{{selected.Notes}}: </span>
+                  <span class='primary--text'>{{selected.Changes.Notes}}</span>
+                </template>
+                <template v-else>
+                  {{selected.Notes}}
+                </template>
+              </v-col>
+            </v-row>
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="editRequest">
@@ -994,72 +1208,79 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     }
                 },
                 checkHasConflicts() {
-                    let raw = JSON.parse($('[id$="hfUpcomingRequests"]').val());
-                    let temp = [];
-                    raw.forEach((i) => {
-                        let req = JSON.parse(i.Value);
-                        req.Id = i.Id;
-                        req.CreatedBy = i.CreatedBy;
-                        req.CreatedOn = i.CreatedOn;
-                        req.RequestStatus = i.RequestStatus;
-                        temp.push(req);
-                    });
-                    this.existingRequests = temp;
-
-                    let conflictingDates = [], conflictingRooms = []
-                    let conflictingRequests = this.existingRequests.filter(r => {
-                        let isConflictingRoom = false
-                        let isConflictingDate = false
-                        for (let i = 0; i < this.selected.Rooms.length; i++) {
-                            if (r.Rooms.includes(this.selected.Rooms[i])) {
-                                isConflictingRoom = true
-                                let roomName = this.rooms.filter(room => {
-                                    return room.Id == this.selected.Rooms[i]
-                                })
-                                if (roomName.length > 0) {
-                                    roomName = roomName[0].Value.split(' (')[0]
-                                }
-                                if (!conflictingRooms.includes(roomName)) {
-                                    conflictingRooms.push(roomName)
-                                }
+                    this.existingRequests = JSON.parse(
+                        $('[id$="hfUpcomingRequests"]')[0].value
+                    );
+                    let conflictingMessage = []
+                    let conflictingRequests = this.existingRequests.filter((r) => {
+                        r = JSON.parse(r);
+                        let compareTarget = [], compareSource = []
+                        //Build an object for each date to compare with 
+                        if (r.IsSame || r.Events.length == 1) {
+                            for (let i = 0; i < r.EventDates.length; i++) {
+                                compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                            }
+                        } else {
+                            for (let i = 0; i < r.Events.length; i++) {
+                                compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
                             }
                         }
-                        for (let i = 0; i < this.selected.EventDates.length; i++) {
-                            if (r.EventDates.includes(this.selected.EventDates[i]) && r.Id != this.selected.Id) {
-                                //Dates are the same, check they do not overlap with moment-range
-                                let cd = r.EventDates.filter(ed => { return ed == this.selected.EventDates[i] })[0]
-                                let cdStart = moment(`${cd} ${r.StartTime}`, `yyyy-MM-DD hh:mm A`)
-                                if (r.MinsStartBuffer) {
-                                    cdStart = cdStart.subtract(r.MinsStartBuffer, 'minute')
-                                }
-                                let cdEnd = moment(`${cd} ${r.EndTime}`, `yyyy-MM-DD hh:mm A`)
-                                if (r.MinsStartBuffer) {
-                                    cdEnd = cdEnd.add(r.MinsEndBuffer, 'minute')
-                                }
-                                let cRange = moment.range(cdStart, cdEnd)
-                                let currStart = moment(`${this.selected.EventDates[i]} ${this.selected.StartTime}`, `yyyy-MM-DD hh:mm A`)
-                                if (this.selected.MinsStartBuffer) {
-                                    currStart = currStart.subtract(this.selected.MinsStartBuffer, 'minute')
-                                }
-                                let currEnd = moment(`${this.selected.EventDates[i]} ${this.selected.EndTime}`, `yyyy-MM-DD hh:mm A`)
-                                if (this.selected.MinsEndBuffer) {
-                                    currEnd = currEnd.add(this.selected.MinsEndBuffer, 'minute')
-                                }
-                                let current = moment.range(currStart, currEnd)
-                                if (cRange.overlaps(current)) {
-                                    isConflictingDate = true
-                                    if (!conflictingDates.includes(this.selected.EventDates[i])) {
-                                        conflictingDates.push(this.selected.EventDates[i])
+                        if (this.selected.Events.length == 1 || this.selected.IsSame) {
+                            for (let i = 0; i < this.selected.EventDates.length; i++) {
+                                compareSource.push({ Date: this.selected.EventDates[i], StartTime: this.selected.Events[0].StartTime, EndTime: this.selected.Events[0].EndTime, Rooms: this.selected.Events[0].Rooms, MinsStartBuffer: this.selected.Events[0].MinsStartBuffer, MinsEndBuffer: this.selected.Events[0].MinsEndBuffer })
+                            }
+                        } else {
+                            for (let i = 0; i < this.selected.Events.length; i++) {
+                                compareSource.push({ Date: this.selected.Events[i].EventDate, StartTime: this.selected.Events[i].StartTime, EndTime: this.selected.Events[i].EndTime, Rooms: this.selected.Events[i].Rooms, MinsStartBuffer: this.selected.Events[i].MinsStartBuffer, MinsEndBuffer: this.selected.Events[i].MinsEndBuffer })
+                            }
+                        }
+                        let conflicts = false
+                        for (let x = 0; x < compareTarget.length; x++) {
+                            for (let y = 0; y < compareSource.length; y++) {
+                                if (compareTarget[x].Date == compareSource[y].Date) {
+                                    //On same date
+                                    //Check for conflicting rooms
+                                    let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                    if (conflictingRooms.length > 0) {
+                                        //Check they do not overlap with moment-range
+                                        let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
+                                        if (compareTarget[x].MinsStartBuffer) {
+                                            cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
+                                        }
+                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                                        if (compareTarget[x].MinsEndBuffer) {
+                                            cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
+                                        }
+                                        let cRange = moment.range(cdStart, cdEnd);
+                                        let current = moment.range(
+                                            moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
+                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                        );
+                                        if (cRange.overlaps(current)) {
+                                            conflicts = true
+                                            let roomNames = []
+                                            conflictingRooms.forEach(r => {
+                                                let roomName = this.rooms.filter((room) => {
+                                                    return room.Id == r;
+                                                });
+                                                if (roomName.length > 0) {
+                                                    roomName = roomName[0].Value;
+                                                }
+                                                roomNames.push(roomName)
+                                            })
+                                            conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                                        }
                                     }
                                 }
                             }
                         }
-                        return isConflictingRoom && isConflictingDate
-                    })
+                        return conflicts
+                    });
                     if (conflictingRequests.length > 0) {
                         return true
+                    } else {
+                        return false
                     }
-                    return false
                 },
             },
         });
@@ -1068,6 +1289,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <style>
   .theme--light.v-application {
     background: rgba(0, 0, 0, 0);
+  }
+  .text--accent {
+    color: #8ED2C9;
   }
   .row {
     margin: 0;

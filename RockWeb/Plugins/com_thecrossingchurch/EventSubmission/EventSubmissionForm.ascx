@@ -2226,7 +2226,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   const self = this;
                   reader.onload = function (e) {
                       file.data = e.target.result;
-                      self.request.SetUpImage = file;
+                      self.e.SetUpImage = file;
                   };
                   reader.readAsDataURL(e);
               },
@@ -2415,7 +2415,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   },
                   publicityEndDate(eventDates, endDate, startDate) {
                       let dates = eventDates.map(d => moment(d))
-                      let minDate = moment.min(dates)
+                      let minDate = moment.max(dates).subtract(1, 'days')
                       if (moment(endDate).isAfter(minDate)) {
                           return 'Publicity cannot end after event.'
                       }
@@ -2618,6 +2618,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
                   this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
                   this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
+                  this.request.Events[indexes.currIdx].Fee = this.request.Events[indexes.targetIdx].Fee
                   this.request.Events[indexes.currIdx].Sender = this.request.Events[indexes.targetIdx].Sender
                   this.request.Events[indexes.currIdx].SenderEmail = this.request.Events[indexes.targetIdx].SenderEmail
                   this.request.Events[indexes.currIdx].ThankYou = this.request.Events[indexes.targetIdx].ThankYou
@@ -2742,36 +2743,42 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.afterHoursMsg = ''
                   //Check general 9-9 time rule
                   let meetsTimeRequirements = true
-                  if (this.request.StartTime.includes("AM")) {
-                      let info = this.request.StartTime.split(':')
-                      if (parseInt(info[0]) < 9) {
-                          meetsTimeRequirements = false
-                          this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
-                      }
-                  }
-                  if (this.request.EndTime.includes("PM")) {
-                      let info = this.request.EndTime.split(':')
-                      if (parseInt(info[0]) >= 9) {
-                          meetsTimeRequirements = false
-                          this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
-                      }
-                  }
-                  //Check more specific range for Satuday and Sunday
-                  for (var i = 0; i < this.request.EventDates.length; i++) {
-                      let dt = moment(this.request.EventDates[i])
-                      if (dt.day() == 0) {
-                          //Sunday
-                          if (this.request.StartTime.includes("AM")) {
+                  for (let x = 0; x < this.request.Events.length; x++) {
+                      if (this.request.Events[x].StartTime.includes("AM")) {
+                          let info = this.request.Events[x].StartTime.split(':')
+                          if (parseInt(info[0]) < 9) {
                               meetsTimeRequirements = false
+                              this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
                           }
-                      } else if (dt.day() == 6) {
-                          //Saturday
-                          // if(this.request.StartTime.includes("PM")) {
-                          //   meetsTimeRequirements = false
-                          // }
-                          if (this.request.EndTime.includes("PM") && this.request.EndTime != "12:00 PM") {
+                      }
+                      if (this.request.Events[x].EndTime.includes("PM")) {
+                          let info = this.request.Events[x].EndTime.split(':')
+                          if (parseInt(info[0]) >= 9) {
                               meetsTimeRequirements = false
-                              this.afterHoursMsg = 'On Saturday our facilities close at 12PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+                              this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+                          }
+                      }
+                      //Check more specific range for Satuday and Sunday
+                      for (var i = 0; i < this.request.EventDates.length; i++) {
+                          let idx = i
+                          if (this.request.EventDates.length == 1 || this.request.IsSame) {
+                              idx = 0
+                          }
+                          let dt = moment(this.request.EventDates[i])
+                          if (dt.day() == 0) {
+                              //Sunday
+                              if (this.request.Events[idx].StartTime.includes("AM")) {
+                                  meetsTimeRequirements = false
+                              }
+                          } else if (dt.day() == 6) {
+                              //Saturday
+                              // if(this.request.Events[x].StartTime.includes("PM")) {
+                              //   meetsTimeRequirements = false
+                              // }
+                              if (this.request.Events[idx].EndTime.includes("PM") && this.request.Events[idx].EndTime != "12:00 PM") {
+                                  meetsTimeRequirements = false
+                                  this.afterHoursMsg = 'On Saturday our facilities close at 12PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+                              }
                           }
                       }
                   }
@@ -2818,7 +2825,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                   });
                   this.checkForConflicts()
-                  // this.checkTimeMeetsRequirements()
+                  this.checkTimeMeetsRequirements()
               },
               matchMultiEvent() {
                   this.request.EventDates.forEach((e, idx) => {

@@ -747,8 +747,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         message += "<strong>Tech Description:</strong> " + request.Events[i].TechDescription + "<br/>";
                     }
                     message += "<strong>Add to Public Calendar:</strong> " + ( request.Events[i].ShowOnCalendar == true ? "Yes" : "No" ) + "<br/>";
+                    if ( request.Events[i].ShowOnCalendar && !String.IsNullOrEmpty( request.Events[i].PublicityBlurb ) )
+                    {
+                        message += "<strong>Publicity Blurb:</strong> " + request.Events[i].PublicityBlurb + "<br/>";
+                    }
                 }
-
+                message += "<br/>";
             }
             if ( request.needsPub )
             {
@@ -792,7 +796,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         if ( !String.IsNullOrEmpty( request.WhyAttendTen ) )
                         {
-                            message += "<strong>Describe Why Someone Should Attend Your Event (10):</strong> " + request.WhyAttendTen + "<br/>";
+                            message += "<strong>Describe Why Someone Should Attend Your Event (65):</strong> " + request.WhyAttendTen + "<br/>";
                         }
                         if ( !String.IsNullOrEmpty( request.VisualIdeas ) )
                         {
