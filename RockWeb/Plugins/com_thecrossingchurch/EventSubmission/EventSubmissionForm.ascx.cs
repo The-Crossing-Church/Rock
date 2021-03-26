@@ -1123,7 +1123,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string Contact { get; set; }
             public List<string> EventDates { get; set; }
             public List<EventDetails> Events { get; set; }
-
             public string WhyAttendSixtyFive { get; set; }
             public string TargetAudience { get; set; }
             public bool EventIsSticky { get; set; }

@@ -216,32 +216,44 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               </v-col>
             </v-row> -->
             <v-expansion-panels v-model="panels" multiple flat>
-              <v-expansion-panel v-for="e in selected.Events">
+              <v-expansion-panel v-for="(e, idx) in selected.Events">
                 <v-expansion-panel-header>
                   <template v-if="selected.IsSame || selected.Events.length == 1">
-                    {{formatDates(selected.EventDates)}} ({{formatRooms(e.Rooms)}})
+                    <template v-if="selected.Changes != null && formatDates(selected.EventDates) != formatDates(selected.Changes.EventDates)">
+                      <span class='red--text'>{{formatDates(selected.EventDates)}}: </span>
+                      <span class='primary--text'>{{formatDates(selected.Changes.EventDates)}} ({{formatRooms(e.Rooms)}})</span>
+                    </template>
+                    <template v-else>
+                      {{formatDates(selected.EventDates)}} ({{formatRooms(e.Rooms)}})
+                    </template>
                   </template>
                   <template v-else>
-                    {{e.EventDate | formatDate}} ({{formatRooms(e.Rooms)}})
+                    <template v-if="selected.Changes != null && formatDates(selected.EventDates) != formatDates(selected.Changes.EventDates)">
+                      <span class='red--text'>{{e.EventDate | formatDate}}: </span>
+                      <span class='primary--text'>{{selected.Changes.Events[idx].EventDate | formatDate}} ({{formatRooms(e.Rooms)}})</span>
+                    </template>
+                    <template v-else>
+                      {{e.EventDate | formatDate}} ({{formatRooms(e.Rooms)}})
+                    </template>
                   </template>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content style="color: rgba(0,0,0,.6);">
-                  <v-row v-if="e.StartTime || e.EndTime">
-                    <v-col v-if="e.StartTime">
+                  <v-row v-if="e.StartTime || e.EndTime || selected.Changes.Events[idx].StartTime || selected.Changes.Events[idx].EndTime">
+                    <v-col v-if="e.StartTime || selected.Changes.Events[idx].StartTime">
                       <div class="floating-title">Start Time</div>
-                      <template v-if="e.Changes != null && e.StartTime != e.Changes.StartTime">
-                        <span class='red--text'>{{e.StartTime}}: </span>
-                        <span class='primary--text'>{{e.Changes.StartTime}}</span>
+                      <template v-if="selected.Changes != null && e.StartTime != selected.Changes.Events[idx].StartTime">
+                        <span class='red--text'>{{(e.StartTime ? e.StartTime : 'Empty')}}: </span>
+                        <span class='primary--text'>{{(selected.Changes.Events[idx].StartTime ? selected.Changes.Events[idx].StartTime : 'Empty')}}</span>
                       </template>
                       <template v-else>
                         {{e.StartTime}}
                       </template>
                     </v-col>
-                    <v-col v-if="e.EndTime">
+                    <v-col v-if="e.EndTime || selected.Changes.Events[idx].EndTime">
                       <div class="floating-title">End Time</div>
-                      <template v-if="e.Changes != null && e.EndTime != e.Changes.EndTime">
-                        <span class='red--text'>{{e.EndTime}}: </span>
-                        <span class='primary--text'>{{e.Changes.EndTime}}</span>
+                      <template v-if="selected.Changes != null && e.EndTime != selected.Changes.Events[idx].EndTime">
+                        <span class='red--text'>{{(e.EndTime ? e.EndTime : 'Empty')}}: </span>
+                        <span class='primary--text'>{{(selected.Changes.Events[idx].EndTime ? selected.Changes.Events[idx].EndTime : 'Empty')}}</span>
                       </template>
                       <template v-else>
                         {{e.EndTime}}
@@ -258,14 +270,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       {{e.MinsEndBuffer}} minutes
                     </v-col>
                   </v-row>
-                  <template v-if="selected.needsSpace">
+                  <template v-if="selected.needsSpace || (selected.Changes && selected.Changes.needsSpace)">
                     <h6 class='text--accent text-uppercase'>Space Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Expected Number of Attendees</div>
-                        <template v-if="e.Changes != null && e.ExpectedAttendance != e.Changes.ExpectedAttendance">
-                          <span class='red--text'>{{e.ExpectedAttendance}}: </span>
-                          <span class='primary--text'>{{e.Changes.ExpectedAttendance}}</span>
+                        <template v-if="selected.Changes != null && e.ExpectedAttendance != selected.Changes.Events[idx].ExpectedAttendance">
+                          <span class='red--text'>{{(e.ExpectedAttendance ? e.ExpectedAttendance : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].ExpectedAttendance ? selected.Changes.Events[idx].ExpectedAttendance : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.ExpectedAttendance}}
@@ -273,9 +285,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                       <v-col>
                         <div class="floating-title">Desired Rooms/Spaces</div>
-                        <template v-if="e.Changes != null && formatRooms(e.Rooms) != formatRooms(e.Changes.Rooms)">
-                          <span class='red--text'>{{formatRooms(e.Rooms)}}: </span>
-                          <span class='primary--text'>{{formatRooms(e.Changes.Rooms)}}</span>
+                        <template v-if="selected.Changes != null && formatRooms(e.Rooms) != formatRooms(selected.Changes.Events[idx].Rooms)">
+                          <span class='red--text'>{{(e.Rooms ? formatRooms(e.Rooms) : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].Rooms ? formatRooms(selected.Changes.Events[idx].Rooms) : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{formatRooms(e.Rooms)}}
@@ -285,9 +297,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-row>
                       <v-col>
                         <div class="floating-title">Check-in Requested</div>
-                        <template v-if="e.Changes != null && e.Checkin != e.Changes.Checkin">
-                          <span class='red--text'>{{boolToYesNo(e.Checkin)}}: </span>
-                          <span class='primary--text'>{{boolToYesNo(e.Changes.Checkin)}}</span>
+                        <template v-if="selected.Changes != null && e.Checkin != selected.Changes.Events[idx].Checkin">
+                          <span class='red--text'>{{(e.Checkin != null ? boolToYesNo(e.Checkin) : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].Checkin != null ? boolToYesNo(selected.Changes.Events[idx].Checkin) : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{boolToYesNo(e.Checkin)}}
@@ -295,24 +307,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                   </template>
-                  <template v-if="selected.needsOnline">
+                  <template v-if="selected.needsOnline || (selected.Changes && selected.Changes.needsOnline)">
                     <h6 class='text--accent text-uppercase'>Online Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Event Link</div>
-                        <template v-if="e.Changes != null && e.EventURL != e.Changes.EventURL">
-                          <span class='red--text'>{{e.EventURL}}: </span>
-                          <span class='primary--text'>{{e.Changes.EventURL}}</span>
+                        <template v-if="selected.Changes != null && e.EventURL != selected.Changes.Events[idx].EventURL">
+                          <span class='red--text'>{{(e.EventURL ? e.EventURL : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].EventURL ? selected.Changes.Events[idx].EventURL : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.EventURL}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.ZoomPassword != ''">
+                      <v-col v-if="e.ZoomPassword || selected.Changes.Events[idx].ZoomPassword">
                         <div class="floating-title">Password</div>
-                        <template v-if="e.Changes != null && e.ZoomPassword != e.Changes.ZoomPassword">
-                          <span class='red--text'>{{e.ZoomPassword}}: </span>
-                          <span class='primary--text'>{{e.Changes.ZoomPassword}}</span>
+                        <template v-if="selected.Changes != null && e.ZoomPassword != selected.Changes.Events[idx].ZoomPassword">
+                          <span class='red--text'>{{(e.ZoomPassword ? e.ZoomPassword : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].ZoomPassword ? selected.Changes.Events[idx].ZoomPassword : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.ZoomPassword}}
@@ -320,14 +332,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                   </template>
-                  <template v-if="selected.needsChildCare">
+                  <template v-if="selected.needsChildCare || (selected.Changes && selected.Changes.needsChildCare)">
                     <h6 class='text--accent text-uppercase'>Childcare Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Childcare Age Groups</div>
-                        <template v-if="e.Changes != null && e.ChildCareOptions.join(', ') != e.Changes.ChildCareOptions.join(', ')">
-                          <span class='red--text'>{{e.ChildCareOptions.join(', ')}}: </span>
-                          <span class='primary--text'>{{e.Changes.ChildCareOptions.join(', ')}}</span>
+                        <template v-if="selected.Changes != null && e.ChildCareOptions.join(', ') != selected.Changes.Events[idx].ChildCareOptions.join(', ')">
+                          <span class='red--text'>{{(e.ChildCareOptions ? e.ChildCareOptions.join(', ') : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].ChildCareOptions ? selected.Changes.Events[idx].ChildCareOptions.join(', ') : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.ChildCareOptions.join(', ')}}
@@ -335,9 +347,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                       <v-col>
                         <div class="floating-title">Expected Number of Children</div>
-                        <template v-if="e.Changes != null && e.EstimatedKids != e.Changes.EstimatedKids">
-                          <span class='red--text'>{{e.EstimatedKids}}: </span>
-                          <span class='primary--text'>{{e.Changes.EstimatedKids}}</span>
+                        <template v-if="selected.Changes != null && e.EstimatedKids != selected.Changes.Events[idx].EstimatedKids">
+                          <span class='red--text'>{{(e.EstimatedKids ? e.EstimatedKids : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].EstimatedKids ? selected.Changes.Events[idx].EstimatedKids : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.EstimatedKids}}
@@ -347,9 +359,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-row>
                       <v-col>
                         <div class="floating-title">Childcare Start Time</div>
-                        <template v-if="e.Changes != null && e.CCStartTime != e.Changes.CCStartTime">
-                          <span class='red--text'>{{e.CCStartTime}}: </span>
-                          <span class='primary--text'>{{e.Changes.CCStartTime}}</span>
+                        <template v-if="selected.Changes != null && e.CCStartTime != selected.Changes.Events[idx].CCStartTime">
+                          <span class='red--text'>{{(e.CCStartTime ? e.CCStartTime : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].CCStartTime ? selected.Changes.Events[idx].CCStartTime : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.CCStartTime}}
@@ -357,9 +369,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                       <v-col>
                         <div class="floating-title">Childcare End Time</div>
-                        <template v-if="e.Changes != null && e.CCEndTime != e.Changes.CCEndTime">
-                          <span class='red--text'>{{e.CCEndTime}}: </span>
-                          <span class='primary--text'>{{e.Changes.CCEndTime}}</span>
+                        <template v-if="selected.Changes != null && e.CCEndTime != selected.Changes.Events[idx].CCEndTime">
+                          <span class='red--text'>{{(e.CCEndTime ? e.CCEndTime : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].CCEndTime ? selected.Changes.Events[idx].CCEndTime : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.CCEndTime}}
@@ -367,14 +379,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                   </template>
-                  <template v-if="selected.needsCatering">
+                  <template v-if="selected.needsCatering || (selected.Changes && selected.Changes.needsCatering)">
                     <h6 class='text--accent text-uppercase'>Catering Information</h6>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Preferred Vendor</div>
-                        <template v-if="e.Changes != null && e.Vendor != e.Changes.Vendor">
-                          <span class='red--text'>{{e.Vendor}}: </span>
-                          <span class='primary--text'>{{e.Changes.Vendor}}</span>
+                        <template v-if="selected.Changes != null && e.Vendor != selected.Changes.Events[idx].Vendor">
+                          <span class='red--text'>{{(e.Vendor ? e.Vendor : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].Vendor ? selected.Changes.Events[idx].Vendor : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.Vendor}}
@@ -382,9 +394,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                       <v-col>
                         <div class="floating-title">Budget Line</div>
-                        <template v-if="e.Changes != null && e.BudgetLine != e.Changes.BudgetLine">
-                          <span class='red--text'>{{e.BudgetLine}}: </span>
-                          <span class='primary--text'>{{e.Changes.BudgetLine}}</span>
+                        <template v-if="selected.Changes != null && e.BudgetLine != selected.Changes.Events[idx].BudgetLine">
+                          <span class='red--text'>{{(e.BudgetLine ? e.BudgetLine : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].BudgetLine ? selected.Changes.Events[idx].BudgetLine : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.BudgetLine}}
@@ -394,9 +406,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-row>
                       <v-col>
                         <div class="floating-title">Preferred Menu</div>
-                        <template v-if="e.Changes != null && e.Menu != e.Changes.Menu">
-                          <span class='red--text'>{{e.Menu}}: </span>
-                          <span class='primary--text'>{{e.Changes.Menu}}</span>
+                        <template v-if="selected.Changes != null && e.Menu != selected.Changes.Events[idx].Menu">
+                          <span class='red--text'>{{(e.Menu ? e.Menu : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].Menu ? selected.Changes.Events[idx].Menu : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.Menu}}
@@ -406,43 +418,43 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-row>
                       <v-col>
                         <div class="floating-title">{{foodTimeTitle(e)}}</div>
-                        <template v-if="e.Changes != null && e.FoodTime != e.Changes.FoodTime">
-                          <span class='red--text'>{{e.FoodTime}}: </span>
-                          <span class='primary--text'>{{e.Changes.FoodTime}}</span>
+                        <template v-if="selected.Changes != null && e.FoodTime != selected.Changes.Events[idx].FoodTime">
+                          <span class='red--text'>{{(e.FoodTime ? e.FoodTime : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].FoodTime ? selected.Changes.Events[idx].FoodTime : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.FoodTime}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.FoodDelivery">
+                      <v-col v-if="e.FoodDelivery || selected.Changes.Events[idx].FoodDelivery">
                         <div class="floating-title">Food Drop off Location</div>
-                        <template v-if="e.Changes != null && e.FoodDropOff != e.Changes.FoodDropOff">
-                          <span class='red--text'>{{e.FoodDropOff}}: </span>
-                          <span class='primary--text'>{{e.Changes.FoodDropOff}}</span>
+                        <template v-if="selected.Changes != null && e.FoodDropOff != selected.Changes.Events[idx].FoodDropOff">
+                          <span class='red--text'>{{(e.FoodDropOff ? e.FoodDropOff : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].FoodDropOff ? selected.Changes.Events[idx].FoodDropOff : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.FoodDropOff}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.Drinks && e.Drinks.length > 0">
+                    <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
                       <v-col>
                         <div class="floating-title">Desired Drinks</div>
-                        <template v-if="e.Changes != null && e.Drinks.join(', ') != e.Changes.Drinks.join(', ')">
-                          <span class='red--text'>{{e.Drinks.join(', ')}}: </span>
-                          <span class='primary--text'>{{e.Changes.Drinks.join(', ')}}</span>
+                        <template v-if="selected.Changes != null && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
+                          <span class='red--text'>{{(e.Drinks ? e.Drinks.join(', ') : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].Drinks? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.Drinks.join(', ')}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.DrinkTime">
+                    <v-row v-if="e.DrinkTime || selected.Changes.Events[idx].DrinkTime">
                       <v-col>
                         <div class="floating-title">Drink Set-up Time</div>
-                        <template v-if="e.Changes != null && e.DrinkTime != e.Changes.DrinkTime">
-                          <span class='red--text'>{{e.DrinkTime}}: </span>
-                          <span class='primary--text'>{{e.Changes.DrinkTime}}</span>
+                        <template v-if="selected.Changes != null && e.DrinkTime != selected.Changes.Events[idx].DrinkTime">
+                          <span class='red--text'>{{(e.DrinkTime ? e.DrinkTime : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].DrinkTime ? selected.Changes.Events[idx].DrinkTime : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.DrinkTime}}
@@ -450,25 +462,25 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                       <v-col>
                         <div class="floating-title">Drink Drop off Location</div>
-                        <template v-if="e.Changes != null && e.DrinkDropOff != e.Changes.DrinkDropOff">
-                          <span class='red--text'>{{e.DrinkDropOff}}: </span>
-                          <span class='primary--text'>{{e.Changes.DrinkDropOff}}</span>
+                        <template v-if="selected.Changes != null && e.DrinkDropOff != selected.Changes.Events[idx].DrinkDropOff">
+                          <span class='red--text'>{{(e.DrinkDropOff ? e.DrinkDropOff : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].DrinkDropOff ? selected.Changes.Events[idx].DrinkDropOff : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.DrinkDropOff}}
                         </template>
                       </v-col>
                     </v-row>
-                    <template v-if="selected.needsChildCare">
+                    <template v-if="selected.needsChildCare || (selected.Changes && selected.Changes.needsChildCare)">
                       <h6 class='text--accent text-uppercase'>Childcare Catering Information</h6>
                       <v-row>
                         <v-col>
                           <div class="floating-title">
                             Preferred Vendor for Childcare
                           </div>
-                          <template v-if="e.Changes != null && e.CCVendor != e.Changes.CCVendor">
-                            <span class='red--text'>{{e.CCVendor}}: </span>
-                            <span class='primary--text'>{{e.Changes.CCVendor}}</span>
+                          <template v-if="selected.Changes != null && e.CCVendor != selected.Changes.Events[idx].CCVendor">
+                            <span class='red--text'>{{(e.CCVendor ? e.CCVendor : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].CCVendor ? selected.Changes.Events[idx].CCVendor : 'Empty')}}</span>
                           </template>
                           <template v-else>
                             {{e.CCVendor}}
@@ -476,9 +488,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </v-col>
                         <v-col>
                           <div class="floating-title">Budget Line for Childcare</div>
-                          <template v-if="e.Changes != null && e.CCBudgetLine != e.Changes.CCBudgetLine">
-                            <span class='red--text'>{{e.CCBudgetLine}}: </span>
-                            <span class='primary--text'>{{e.Changes.CCBudgetLine}}</span>
+                          <template v-if="selected.Changes != null && e.CCBudgetLine != selected.Changes.Events[idx].CCBudgetLine">
+                            <span class='red--text'>{{(e.CCBudgetLine ? e.CCBudgetLine : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].CCBudgetLine ? selected.Changes.Events[idx].CCBudgetLine : 'Empty')}}</span>
                           </template>
                           <template v-else>
                             {{e.CCBudgetLine}}
@@ -490,9 +502,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           <div class="floating-title">
                             Preferred Menu for Childcare
                           </div>
-                          <template v-if="e.Changes != null && e.CCMenu != e.Changes.CCMenu">
-                            <span class='red--text'>{{e.CCMenu}}: </span>
-                            <span class='primary--text'>{{e.Changes.CCMenu}}</span>
+                          <template v-if="selected.Changes != null && e.CCMenu != selected.Changes.Events[idx].CCMenu">
+                            <span class='red--text'>{{(e.CCMenu ? e.CCMenu : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].CCMenu ? selected.Changes.Events[idx].CCMenu : 'Empty')}}</span>
                           </template>
                           <template v-else>
                             {{e.CCMenu}}
@@ -502,9 +514,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       <v-row>
                         <v-col>
                           <div class="floating-title">ChildCare Food Set-up time</div>
-                          <template v-if="e.Changes != null && e.CCFoodTime != e.Changes.CCFoodTime">
-                            <span class='red--text'>{{e.CCFoodTime}}: </span>
-                            <span class='primary--text'>{{e.Changes.CCFoodTime}}</span>
+                          <template v-if="selected.Changes != null && e.CCFoodTime != selected.Changes.Events[idx].CCFoodTime">
+                            <span class='red--text'>{{(e.CCFoodTime ? e.CCFoodTime : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].CCFoodTime ? selected.Changes.Events[idx].CCFoodTime : 'Empty')}}</span>
                           </template>
                           <template v-else>
                             {{e.CCFoodTime}}
@@ -513,46 +525,52 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-row>
                     </template>
                   </template>
-                  <template v-if="selected.needsReg">
+                  <template v-if="selected.needsReg || (selected.Changes && selected.Changes.needsReg)">
                     <h6 class='text--accent text-uppercase'>Registration Information</h6>
-                    <v-row v-if="e.RegistrationDate">
+                    <v-row v-if="e.RegistrationDate || selected.Changes.Events[idx].RegistrationDate">
                       <v-col>
                         <div class="floating-title">Registration Date</div>
-                        <template v-if="e.Changes != null && e.RegistrationDate != e.Changes.RegistrationDate">
-                          <span class='red--text'>{{e.RegistrationDate | formatDate}}: </span>
-                          <span class='primary--text'>{{e.Changes.RegistrationDate | formatDate}}</span>
+                        <template v-if="selected.Changes != null && e.RegistrationDate != selected.Changes.Events[idx].RegistrationDate">
+                          <span class='red--text' v-if="e.RegistrationDate">{{e.RegistrationDate | formatDate}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].RegistrationDate">{{selected.Changes.Events[idx].RegistrationDate | formatDate}}</span>
+                          <span class='primary--text' v-else>Empty</span>
                         </template>
                         <template v-else>
                           {{e.RegistrationDate | formatDate}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.Fee">
+                      <v-col v-if="e.Fee || selected.Changes.Events[idx].Fee">
                         <div class="floating-title">Registration Fee</div>
-                        <template v-if="e.Changes != null && e.Fee != e.Changes.Fee">
-                          <span class='red--text'>{{e.Fee | formatCurrency}}: </span>
-                          <span class='primary--text'>{{e.Changes.Fee | formatCurrency}}</span>
+                        <template v-if="selected.Changes != null && e.Fee != selected.Changes.Events[idx].Fee">
+                          <span class='red--text' v-if="e.Fee">{{e.Fee | formatCurrency}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].Fee">{{selected.Changes.Events[idx].Fee | formatCurrency}}</span>
+                          <span class='primary--text' v-else>Empty</span>
                         </template>
                         <template v-else>
                           {{e.Fee | formatCurrency}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.RegistrationEndDate">
+                    <v-row v-if="e.RegistrationEndDate || selected.Changes.Events[idx].RegistrationEndDate">
                       <v-col>
                         <div class="floating-title">Registration Close Date</div>
-                        <template v-if="e.Changes != null && e.RegistrationEndDate != e.Changes.RegistrationEndDate">
-                          <span class='red--text'>{{e.RegistrationEndDate | formatDate}}: </span>
-                          <span class='primary--text'>{{e.Changes.RegistrationEndDate | formatDate}}</span>
+                        <template v-if="selected.Changes != null && e.RegistrationEndDate != selected.Changes.Events[idx].RegistrationEndDate">
+                          <span class='red--text' v-if="e.RegistrationEndDate">{{e.RegistrationEndDate | formatDate}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].RegistrationEndDate">{{selected.Changes.Events[idx].RegistrationEndDate | formatDate}}</span>
+                          <span class='primary--text' v-else>Empty</span>
                         </template>
                         <template v-else>
                           {{e.RegistrationEndDate | formatDate}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.RegistrationEndTime">
+                      <v-col v-if="e.RegistrationEndTime || selected.Changes.Events[idx].RegistrationEndTime">
                         <div class="floating-title">Registration Close Time</div>
-                        <template v-if="e.Changes != null && e.RegistrationEndTime != e.Changes.RegistrationEndTime">
-                          <span class='red--text'>{{e.RegistrationEndTime}}: </span>
-                          <span class='primary--text'>{{e.Changes.RegistrationEndTime}}</span>
+                        <template v-if="selected.Changes != null && e.RegistrationEndTime != selected.Changes.Events[idx].RegistrationEndTime">
+                          <span class='red--text'>{{(e.RegistrationEndTime ? e.RegistrationEndTime : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].RegistrationEndTime ? selected.Changes.Events[idx].RegistrationEndTime : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.RegistrationEndTime}}
@@ -560,33 +578,33 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                     <v-row>
-                      <v-col v-if="e.ThankYou">
+                      <v-col v-if="e.ThankYou || selected.Changes.Events[idx].ThankYou">
                         <div class="floating-title">Confirmation Email Thank You</div>
-                        <template v-if="e.Changes != null && e.ThankYou != e.Changes.ThankYou">
-                          <span class='red--text'>{{e.ThankYou}}: </span>
-                          <span class='primary--text'>{{e.Changes.ThankYou}}</span>
+                        <template v-if="selected.Changes != null && e.ThankYou != selected.Changes.Events[idx].ThankYou">
+                          <span class='red--text'>{{(e.ThankYou ? e.ThankYou : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].ThankYou ? selected.Changes.Events[idx].ThankYou : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.ThankYou}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.TimeLocation">
+                      <v-col v-if="e.TimeLocation || selected.Changes.Events[idx].TimeLocation">
                         <div class="floating-title">Confirmation Email Time and Location</div>
-                        <template v-if="e.Changes != null && e.TimeLocation != e.Changes.TimeLocation">
-                          <span class='red--text'>{{e.TimeLocation}}: </span>
-                          <span class='primary--text'>{{e.Changes.TimeLocation}}</span>
+                        <template v-if="selected.Changes != null && e.TimeLocation != selected.Changes.Events[idx].TimeLocation">
+                          <span class='red--text'>{{(e.TimeLocation ? e.TimeLocation : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].TimeLocation ? selected.Changes.Events[idx].TimeLocation : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.TimeLocation}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.AdditionalDetails">
+                    <v-row v-if="e.AdditionalDetails || selected.Changes.Events[idx].AdditionalDetails">
                       <v-col>
                         <div class="floating-title">Confirmation Email Additional Details</div>
-                        <template v-if="e.Changes != null && e.AdditionalDetails != e.Changes.AdditionalDetails">
-                          <span class='red--text'>{{e.AdditionalDetails}}: </span>
-                          <span class='primary--text'>{{e.Changes.AdditionalDetails}}</span>
+                        <template v-if="selected.Changes != null && e.AdditionalDetails != selected.Changes.Events[idx].AdditionalDetails">
+                          <span class='red--text'>{{(e.AdditionalDetails ? e.AdditionalDetails : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].AdditionalDetails ? selected.Changes.Events[idx].AdditionalDetails : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.AdditionalDetails}}
@@ -594,71 +612,114 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                   </template>
-                  <template v-if="selected.needsAccom">
+                  <template v-if="selected.needsAccom || (selected.Changes && selected.Changes.needsAccom)">
                     <h6 class='text--accent text-uppercase'>Additional Information</h6>
-                    <v-row v-if="e.TechNeeds || e.TechDescription">
+                    <v-row v-if="e.TechNeeds || e.TechDescription || selected.Changes.Events[idx].TechNeeds || selected.Changes.Events[idx].TechDescription">
                       <v-col v-if="e.TechNeeds && e.TechNeeds.length > 0">
                         <div class="floating-title">Tech Needs</div>
-                        <template v-if="e.Changes != null && e.TechNeeds.join(', ') != e.Changes.TechNeeds.join(', ')">
-                          <span class='red--text'>{{e.TechNeeds.join(', ')}}: </span>
-                          <span class='primary--text'>{{e.Changes.TechNeeds.join(', ')}}</span>
+                        <template v-if="selected.Changes != null && e.TechNeeds.join(', ') != selected.Changes.Events[idx].TechNeeds.join(', ')">
+                          <span class='red--text'>{{(e.TechNeeds ? e.TechNeeds.join(', ') : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].TechNeeds ? selected.Changes.Events[idx].TechNeeds.join(', ') : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.TechNeeds.join(', ')}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.TechDescription">
+                      <v-col v-if="e.TechDescription || selected.Changes.Events[idx].TechDescription">
                         <div class="floating-title">Tech Description</div>
-                        <template v-if="e.Changes != null && e.TechDescription != e.Changes.TechDescription">
-                          <span class='red--text'>{{e.TechDescription}}: </span>
-                          <span class='primary--text'>{{e.Changes.TechDescription}}</span>
+                        <template v-if="selected.Changes != null && e.TechDescription != selected.Changes.Events[idx].TechDescription">
+                          <span class='red--text'>{{(e.TechDescription ? e.TechDescription : 'Empty')}}: </span>
+                          <span class='primary--text'>{{selected.Changes.Events[idx].TechDescription}}</span>
                         </template>
                         <template v-else>
                           {{e.TechDescription}}
                         </template>
                       </v-col>
                     </v-row>
+                    <template v-if="!selected.needsCatering">
+                      <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
+                        <v-col>
+                          <div class="floating-title">Desired Drinks</div>
+                          <template v-if="selected.Changes != null && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
+                            <span class='red--text'>{{(e.Drinks ? e.Drinks.join(', ') : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].Drinks ? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.Drinks.join(', ')}}
+                          </template>
+                        </v-col>
+                      </v-row>
+                      <v-row v-if="e.DrinkTime || selected.Changes.Events[idx].DrinkTime">
+                        <v-col>
+                          <div class="floating-title">Drink Set-up Time</div>
+                          <template v-if="selected.Changes != null && e.DrinkTime != selected.Changes.Events[idx].DrinkTime">
+                            <span class='red--text'>{{(e.DrinkTime ? e.DrinkTime : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].DrinkTime ? selected.Changes.Events[idx].DrinkTime : 'Empty')}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.DrinkTime}}
+                          </template>
+                        </v-col>
+                        <v-col>
+                          <div class="floating-title">Drink Drop off Location</div>
+                          <template v-if="selected.Changes != null && e.DrinkDropOff != selected.Changes.Events[idx].DrinkDropOff">
+                            <span class='red--text'>{{(e.DrinkDropOff ? e.DrinkDropOff : 'Empty')}}: </span>
+                            <span class='primary--text'>{{(selected.Changes.Events[idx].DrinkDropOff ? selected.Changes.Events[idx].DrinkDropOff : 'Empty')}}</span>
+                          </template>
+                          <template v-else>
+                            {{e.DrinkDropOff}}
+                          </template>
+                        </v-col>
+                      </v-row>
+                    </template>
                     <v-row>
                       <v-col>
                         <div class="floating-title">Add to public calendar</div>
-                        <template v-if="e.Changes != null && e.ShowOnCalendar != e.Changes.ShowOnCalendar">
-                          <span class='red--text'>{{boolToYesNo(e.ShowOnCalendar)}}: </span>
-                          <span class='primary--text'>{{boolToYesNo(e.Changes.ShowOnCalendar)}}</span>
+                        <template v-if="selected.Changes != null && e.ShowOnCalendar != selected.Changes.Events[idx].ShowOnCalendar">
+                          <span class='red--text'>{{(e.ShowOnCalendar != null ? boolToYesNo(e.ShowOnCalendar) : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].ShowOnCalendar != null ? boolToYesNo(selected.Changes.Events[idx].ShowOnCalendar) : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{boolToYesNo(e.ShowOnCalendar)}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.ShowOnCalendar && e.PublicityBlurb">
+                    <v-row v-if="(e.ShowOnCalendar || selected.Changes.Events[idx].ShowOnCalendar) && (e.PublicityBlurb || selected.Changes.Events[idx].PublicityBlurb)">
                       <v-col>
                         <div class="floating-title">Publicity Blurb</div>
-                        <template v-if="e.Changes != null && e.PublicityBlurb != e.Changes.PublicityBlurb">
-                          <span class='red--text'>{{e.PublicityBlurb}}: </span>
-                          <span class='primary--text'>{{e.Changes.PublicityBlurb}}</span>
+                        <template v-if="selected.Changes != null && e.PublicityBlurb != selected.Changes.Events[idx].PublicityBlurb">
+                          <span class='red--text'>{{(e.PublicityBlurb ? e.PublicityBlurb : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].PublicityBlurb ? selected.Changes.Events[idx].PublicityBlurb : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.PublicityBlurb}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.SetUp">
+                    <v-row v-if="e.SetUp || selected.Changes.Events[idx].SetUp">
                       <v-col>
                         <div class="floating-title">Requested Set-up</div>
-                        <template v-if="e.Changes != null && e.SetUp != e.Changes.SetUp">
-                          <span class='red--text'>{{e.SetUp}}: </span>
-                          <span class='primary--text'>{{e.Changes.SetUp}}</span>
+                        <template v-if="selected.Changes != null && e.SetUp != selected.Changes.Events[idx].SetUp">
+                          <span class='red--text'>{{(e.SetUp ? e.SetUp : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].SetUp ? selected.Changes.Events[idx].SetUp : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.SetUp}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.SetUpImage">
+                    <v-row v-if="e.SetUpImage || selected.Changes.Events[idx].SetUpImage">
                       <v-col>
                         <div class="floating-title">Set-up Image</div>
                         {{e.SetUpImage.name}}
-                        <v-btn icon color="accent" @click="saveFile('setup')">
+                        <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+                          <v-icon color="accent">mdi-download</v-icon>
+                        </v-btn>
+                      </v-col>
+                      <v-col v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
+                        <div class="floating-title">Set-up Image</div>
+                        {{selected.Changes.Events[idx].SetUpImage.name}}
+                        <v-btn icon color="accent" @click="saveFile(idx, 'new')">
                           <v-icon color="accent">mdi-download</v-icon>
                         </v-btn>
                       </v-col>
@@ -667,14 +728,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </v-expansion-panel-content>
               </v-expansion-panel>
             </v-expansion-panels>
-            <template v-if="selected.needsPub">
+            <template v-if="selected.needsPub || (selected.Changes && selected.Changes.needsPub)">
               <h6 class='text--accent text-uppercase'>Publicity Information</h6>
               <v-row>
                 <v-col>
                   <div class="floating-title">Describe Why Someone Should Attend Your Event (450)</div>
                   <template v-if="selected.Changes != null && selected.WhyAttendSixtyFive != selected.Changes.WhyAttendSixtyFive">
-                    <span class='red--text'>{{selected.WhyAttendSixtyFive}}: </span>
-                    <span class='primary--text'>{{selected.Changes.WhyAttendSixtyFive}}</span>
+                    <span class='red--text'>{{(selected.WhyAttendSixtyFive ? selected.WhyAttendSixtyFive : 'Empty' )}}: </span>
+                    <span class='primary--text'>{{(selected.Changes.WhyAttendSixtyFive ? selected.Changes.WhyAttendSixtyFive : 'Empty')}}</span>
                   </template>
                   <template v-else>
                     {{selected.WhyAttendSixtyFive}}
@@ -685,8 +746,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <div class="floating-title">Target Audience</div>
                   <template v-if="selected.Changes != null && selected.TargetAudience != selected.Changes.TargetAudience">
-                    <span class='red--text'>{{selected.TargetAudience}}: </span>
-                    <span class='primary--text'>{{selected.Changes.TargetAudience}}</span>
+                    <span class='red--text'>{{(selected.TargetAudience ? selected.TargetAudience : 'Empty')}}: </span>
+                    <span class='primary--text'>{{(selected.Changes.TargetAudience ? selected.Changes.TargetAudience : 'Empty')}}</span>
                   </template>
                   <template v-else>
                     {{selected.TargetAudience}}
@@ -695,8 +756,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <div class="floating-title">Event is Sticky</div>
                   <template v-if="selected.Changes != null && selected.EventIsSticky != selected.Changes.EventIsSticky">
-                    <span class='red--text'>{{boolToYesNo(selected.EventIsSticky)}}: </span>
-                    <span class='primary--text'>{{boolToYesNo(selected.Changes.EventIsSticky)}}</span>
+                    <span class='red--text'>{{(selected.EventIsSticky != null ? boolToYesNo(selected.EventIsSticky) : 'Empty')}}: </span>
+                    <span class='primary--text'>{{(selected.Changes.EventIsSticky ? boolToYesNo(selected.Changes.EventIsSticky) : 'Empty')}}</span>
                   </template>
                   <template v-else>
                     {{boolToYesNo(selected.EventIsSticky)}}
@@ -707,8 +768,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <div class="floating-title">Publicity Start Date</div>
                   <template v-if="selected.Changes != null && selected.PublicityStartDate != selected.Changes.PublicityStartDate">
-                    <span class='red--text'>{{selected.PublicityStartDate | formatDate}}: </span>
-                    <span class='primary--text'>{{selected.Changes.PublicityStartDate | formatDate}}</span>
+                    <span class='red--text' v-if="selected.PublicityStartDate">{{selected.PublicityStartDate | formatDate}}: </span>
+                    <span class='red--text' v-else>Empty: </span>
+                    <span class='primary--text' v-if="selected.Changes.PublicityStartDate">{{selected.Changes.PublicityStartDate | formatDate}}</span>
+                    <span class='primary--text' v-else>Empty</span>
                   </template>
                   <template v-else>
                     {{selected.PublicityStartDate | formatDate}}
@@ -717,8 +780,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <div class="floating-title">Publicity End Date</div>
                   <template v-if="selected.Changes != null && selected.PublicityEndDate != selected.Changes.PublicityEndDate">
-                    <span class='red--text'>{{selected.PublicityEndDate | formatDate}}: </span>
-                    <span class='primary--text'>{{selected.Changes.PublicityEndDate | formatDate}}</span>
+                    <span class='red--text' v-if="selected.PublicityEndDate">{{selected.PublicityEndDate | formatDate}}: </span>
+                    <span class='red--text' v-else>Empty: </span>
+                    <span class='primary--text' v-if="selected.Changes.PublicityEndDate">{{selected.Changes.PublicityEndDate | formatDate}}</span>
+                    <span class='primary--text' v-else>Empty</span>
                   </template>
                   <template v-else>
                     {{selected.PublicityEndDate | formatDate}}
@@ -729,8 +794,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <div class="floating-title">Publicity Strategies</div>
                   <template v-if="selected.Changes != null && selected.PublicityStrategies != selected.Changes.PublicityStrategies">
-                    <span class='red--text'>{{selected.PublicityStrategies.join(', ')}}: </span>
-                    <span class='primary--text'>{{selected.Changes.PublicityStrategies.join(', ')}}</span>
+                    <span class='red--text'>{{(selected.PublicityStrategies ? selected.PublicityStrategies.join(', ') : 'Empty')}}: </span>
+                    <span class='primary--text'>{{(selected.Changes.PublicityStrategies ? selected.Changes.PublicityStrategies.join(', ') : 'Empty')}}</span>
                   </template>
                   <template v-else>
                     {{selected.PublicityStrategies.join(', ')}}
@@ -742,8 +807,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   <v-col>
                     <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
                     <template v-if="selected.Changes != null && selected.WhyAttendNinety != selected.Changes.WhyAttendNinety">
-                      <span class='red--text'>{{selected.WhyAttendNinety}}: </span>
-                      <span class='primary--text'>{{selected.Changes.WhyAttendNinety}}</span>
+                      <span class='red--text'>{{(selected.WhyAttendNinety ? selected.WhyAttendNinety : 'Empty')}}: </span>
+                      <span class='primary--text'>{{(selected.Changes.WhyAttendNinety ? selected.Changes.WhyAttendNinety : 'Empty')}}</span>
                     </template>
                     <template v-else>
                       {{selected.WhyAttendNinety}}
@@ -785,8 +850,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   <v-col>
                     <div class="floating-title">Describe Why Someone Should Attend Your Event (65)</div>
                     <template v-if="selected.Changes != null && selected.WhyAttendTen != selected.Changes.WhyAttendTen">
-                      <span class='red--text'>{{selected.WhyAttendTen}}: </span>
-                      <span class='primary--text'>{{selected.Changes.WhyAttendTen}}</span>
+                      <span class='red--text'>{{(selected.WhyAttendTen ? selected.WhyAttendTen : 'Empty')}}: </span>
+                      <span class='primary--text'>{{(selected.Changes.WhyAttendTen ? selected.Changes.WhyAttendTen : 'Empty')}}</span>
                     </template>
                     <template v-else>
                       {{selected.WhyAttendTen}}
@@ -795,8 +860,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   <v-col v-if="selected.VisualIdeas != ''">
                     <div class="floating-title">Visual Ideas for Graphic</div>
                     <template v-if="selected.Changes != null && selected.VisualIdeas != selected.Changes.VisualIdeas">
-                      <span class='red--text'>{{selected.VisualIdeas}}: </span>
-                      <span class='primary--text'>{{selected.Changes.VisualIdeas}}</span>
+                      <span class='red--text'>{{(selected.VisualIdeas ? selected.VisualIdeas : 'Empty')}}: </span>
+                      <span class='primary--text'>{{(selected.Changes.VisualIdeas ? selected.Changes.VisualIdeas : 'Empty')}}</span>
                     </template>
                     <template v-else>
                       {{selected.VisualIdeas}}
@@ -805,19 +870,33 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </v-row>
               </template>
               <template v-if="selected.PublicityStrategies.includes('Announcement')">
-                <v-row v-for="(s, idx) in selected.Stories" :key="`Story_${idx}`">
-                  <v-col>
-                    <div class="floating-title">Story {{idx+1}}</div>
-                    {{s.Name}}, {{s.Email}} <br/>
-                    {{s.Description}}
-                  </v-col>
+                <v-row v-for="(s, sidx) in selected.Stories" :key="`Story_${sidx}`">
+                  <template v-if="selected.Changes != null && selected.Stories != selected.Changes.Stories">
+                    <v-col class='red--text'>
+                      <div class="floating-title">Story {{sidx+1}}</div>
+                      {{s.Name}}, {{s.Email}} <br/>
+                      {{s.Description}}
+                    </v-col>
+                    <v-col class='primary--text'>
+                      <div class="floating-title">Story {{sidx+1}}</div>
+                      {{selected.Changes.Events[idx].Stories[sidx].Name}}, {{selected.Changes.Events[idx].Stories[sidx].Email}} <br/>
+                      {{selected.Changes.Events[idx].Stories[sidx].Description}}
+                    </v-col>
+                  </template>
+                  <template v-else>
+                    <v-col>
+                      <div class="floating-title">Story {{sidx+1}}</div>
+                      {{s.Name}}, {{s.Email}} <br/>
+                      {{s.Description}}
+                    </v-col>
+                  </template>
                 </v-row>
                 <v-row>
                   <v-col>
                     <div class="floating-title">Describe Why Someone Should Attend Your Event (175)</div>
                     <template v-if="selected.Changes != null && selected.WhyAttendTwenty != selected.Changes.WhyAttendTwenty">
-                      <span class='red--text'>{{selected.WhyAttendTwenty}}: </span>
-                      <span class='primary--text'>{{selected.Changes.WhyAttendTwenty}}</span>
+                      <span class='red--text'>{{(selected.WhyAttendTwenty ? selected.WhyAttendTwenty : 'Empty')}}: </span>
+                      <span class='primary--text'>{{(selected.Changes.WhyAttendTwenty ? selected.Changes.WhyAttendTwenty : 'Empty')}}</span>
                     </template>
                     <template v-else>
                       {{selected.WhyAttendTwenty}}
@@ -830,8 +909,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               <v-col>
                 <div class="floating-title">Notes</div>
                 <template v-if="selected.Changes != null && selected.Notes != selected.Changes.Notes">
-                  <span class='red--text'>{{selected.Notes}}: </span>
-                  <span class='primary--text'>{{selected.Changes.Notes}}</span>
+                  <span class='red--text'>{{(selected.Notes ? selected.Notes : 'Empty')}}: </span>
+                  <span class='primary--text'>{{(selected.Changes.Notes ? selected.Changes.Notes : 'Empty')}}</span>
                 </template>
                 <template v-else>
                   {{selected.Notes}}
@@ -1179,16 +1258,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     let url = $('[id$="hfHistoryURL"]').val();
                     window.location = url
                 },
-                saveFile(type) {
+                saveFile(idx, type) {
                     var a = document.createElement("a");
                     a.style = "display: none";
                     document.body.appendChild(a);
-                    if (type == 'pub') {
-                        a.href = this.selected.PubImage.data;
-                        a.download = this.selected.PubImage.name;
-                    } else if (type == 'setup') {
-                        a.href = this.selected.SetUpImage.data;
-                        a.download = this.selected.SetUpImage.name;
+                    if (type == 'existing') {
+                        a.href = this.selected.Events[idx].SetUpImage.data;
+                        a.download = this.selected.Events[idx].SetUpImage.name;
+                    } else if (type == 'new') {
+                        a.href = this.selected.Changes.Events[idx].SetUpImage.data;
+                        a.download = this.selected.Changes.Events[idx].SetUpImage.name;
                     }
                     a.click();
                 },

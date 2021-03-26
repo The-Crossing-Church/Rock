@@ -197,6 +197,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-tabs v-model="tab">
                 <v-tab>I have specific dates(s) and times</v-tab>
                 <v-tab-item>
+                  <v-row v-if="canChangeDates">
+                    <v-col>
+                      While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
+                    </v-col>
+                  </v-row>
                   <v-row>
                     <v-col>
                       <strong>Please select the date(s) of your event</strong>
@@ -207,9 +212,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       <v-date-picker
                         label="Event Dates"
                         v-model="request.EventDates"
+                        :rules="[rules.required(request.EventDates, 'Event Date')]"
                         multiple
                         class="elevation-1"
                         :min="earliestDate"
+                        :disabled="canChangeDates"
                       ></v-date-picker>
                     </v-col>
                     <v-col cols="12" md="6">
@@ -223,6 +230,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         item-text="text"
                         item-value="val"
                         v-model="request.EventDates"
+                        :disabled="canChangeDates"
                       ></v-select>
                     </v-col>
                   </v-row>
@@ -231,6 +239,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       <v-switch
                         :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
                         v-model="request.IsSame"
+                        :disabled="canChangeDates || request.Id > 0"
                       ></v-switch>
                     </v-col>
                   </v-row>
@@ -283,6 +292,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-tabs>
             </template>
             <template v-else>
+              <v-row v-if="canChangeDates">
+                <v-col>
+                  While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
+                </v-col>
+              </v-row>
               <v-row>
                 <v-col>
                   <strong>Please select the date(s) of your event</strong>
@@ -297,6 +311,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     class="elevation-1"
                     :min="earliestDate"
                     :rules="[rules.required(request.EventDates, 'Event Date')]"
+                    :disabled="canChangeDates"
                   ></v-date-picker>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -310,6 +325,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     item-text="text"
                     item-value="val"
                     v-model="request.EventDates"
+                    :disabled="canChangeDates"
                   ></v-select>
                 </v-col>
               </v-row>
@@ -318,6 +334,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-switch
                     :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
                     v-model="request.IsSame"
+                    :disabled="canChangeDates || request.Id > 0"
                   ></v-switch>
                 </v-col>
               </v-row>
@@ -2551,6 +2568,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   }
                   return false
               },
+              canChangeDates() {
+                  if (this.request.Id > 0) {
+                      if (!this.request.IsSame || this.request.Events.length > 1) {
+                          return true
+                      }
+                  }
+                  return false
+              },
               canEdit() {
                   if (this.request.canEdit != null) {
                       return this.request.canEdit
@@ -2871,6 +2896,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   if (!this.request.IsSame) {
                       if (val.length == 1) {
                           this.request.Events.length = 1
+                          this.request.IsSame = true
                       } else if (val.length != oval.length) {
                           this.matchMultiEvent()
                       }
@@ -2878,6 +2904,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       if (this.request.Events.length > 1) {
                           //remove the rest because they said everything will be the same
                           this.request.Events.length = 1
+                          this.request.IsSame = true
                       }
                   }
               },
@@ -2888,6 +2915,102 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       if (this.request.Events.length > 1) {
                           //remove the rest because they said everything will be the same
                           this.request.Events.length = 1
+                      }
+                  }
+              },
+              'request.needsSpace'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.Events[i].Rooms = []
+                          this.request.Events[i].ExpectedAttendance = null
+                          this.request.Events[i].Checkin = null
+                      }
+                  }
+              },
+              'request.needsOnline'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.Events[i].EventURL = ''
+                          this.request.Events[i].ZoomPassword = ''
+                      }
+                  }
+              },
+              'request.needsReg'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.Events[i].RegistrationDate = ''
+                          this.request.Events[i].RegistrationEndDate = ''
+                          this.request.Events[i].RegistrationEndTime = ''
+                          this.request.Events[i].Fee = ''
+                          this.request.Events[i].Sender = ''
+                          this.request.Events[i].SenderEmail = ''
+                          this.request.Events[i].ThankYou = ''
+                          this.request.Events[i].TimeLocation = ''
+                          this.request.Events[i].AdditionalDetails = ''
+                      }
+                  }
+              },
+              'request.needsCatering'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.Events[i].Vendor = ''
+                          this.request.Events[i].BudgetLine = ''
+                          this.request.Events[i].Menu = ''
+                          this.request.Events[i].FoodDelivery = ''
+                          this.request.Events[i].FoodTime = ''
+                          this.request.Events[i].FoodDropOff = ''
+                          this.request.Events[i].Drinks = []
+                          this.request.Events[i].DrinkTime = ''
+                          this.request.Events[i].ServingTeamAgree = ''
+                          this.request.Events[i].DrinkDropOff = ''
+                          this.request.Events[i].CCVendor = ''
+                          this.request.Events[i].CCBudgetLine = ''
+                          this.request.Events[i].CCMenu = ''
+                          this.request.Events[i].CCFoodTime = ''
+                      }
+                  }
+              },
+              'request.needsChildcare'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.Events[i].CCStartTime = ''
+                          this.request.Events[i].CCEndTime = ''
+                          this.request.Events[i].ChildCareOptions = []
+                          this.request.Events[i].EstimatedKids = ''
+                      }
+                  }
+              },
+              'request.needsAccom'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.Events[i].TechNeeds = []
+                          this.request.Events[i].TechDescription = ''
+                          this.request.Events[i].Drinks = []
+                          this.request.Events[i].DrinkTime = ''
+                          this.request.Events[i].ServingTeamAgree = null
+                          this.request.Events[i].DrinkDropOff = ''
+                          this.request.Events[i].ShowOnCalendar = null
+                          this.request.Events[i].PublicityBlurb = ''
+                          this.request.Events[i].SetUp = ''
+                          this.request.Events[i].SetUpImage = null
+                      }
+                  }
+              },
+              'request.needsPub'(val) {
+                  if (!val) {
+                      for (var i = 0; i < this.request.Events.length; i++) {
+                          this.request.WhyAttendSixtyFive = ""
+                          this.request.TargetAudience = ""
+                          this.request.EventIsSticky = false
+                          this.request.PublicityStartDate = ""
+                          this.request.PublicityEndDate = ""
+                          this.request.PublicityStrategies = ""
+                          this.request.WhyAttendNinety = ""
+                          this.request.GoogleKeys = []
+                          this.request.WhyAttendTen = ""
+                          this.request.VisualIdeas = ""
+                          this.request.Stories = [{ Name: "", Email: "", Description: "" }]
+                          this.request.WhyAttendTwenty = ""
                       }
                   }
               },
