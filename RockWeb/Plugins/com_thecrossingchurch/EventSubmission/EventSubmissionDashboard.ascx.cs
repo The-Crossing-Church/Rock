@@ -155,10 +155,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         break;
                     default:
                         item.SetAttributeValue( "RequestStatus", "Approved" );
-                        if(string.IsNullOrEmpty(item.AttributeValues["MicrosoftCalendarEvents"].Value))
-                        {
-                            AddToCalendar( item, JsonConvert.DeserializeObject<EventRequest>( item.AttributeValues["RequestJSON"].Value ) );
-                        }
                         break;
                 }
                 item.SaveAttributeValues( context );
@@ -289,117 +285,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 return occursInWeek;
             } );
             hfCurrent.Value = JsonConvert.SerializeObject( current );
-        }
-
-        /// <summary>
-        /// Add the newly approved Event Request to the associated Microsoft calendars
-        /// </summary>
-        /// <param name="item">The approved request</param>
-        private void AddToCalendar( ContentChannelItem item, EventRequest request )
-        {
-            //string tennant = GetAttributeValue( "MicrosoftTennant" );
-            //string clientId = GetAttributeValue( "MicrosoftClientID" );
-            //string clientSecret = GetAttributeValue( "MicrosoftClientSecret" );
-            //IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
-            //.Create( clientId )
-            //.WithTenantId( tennant )
-            //.WithClientSecret( clientSecret )
-            //.Build();
-
-            //ClientCredentialProvider authProvider = new ClientCredentialProvider( confidentialClientApplication );
-            //GraphServiceClient graphClient = new GraphServiceClient( authProvider );
-
-            //List<CalendarRoomLink> Calendars = new List<CalendarRoomLink>();
-            //for ( int i = 0; i < request.Rooms.Count(); i++ )
-            //{
-            //    string roomType = Rooms.FirstOrDefault( r => r.Id == Int32.Parse( request.Rooms[i] ) ).AttributeValues["Type"].Value;
-            //    string cal = LocationCalendarLink[roomType];
-            //    if ( !Calendars.Select( c => c.Calendar ).Contains( cal ) )
-            //    {
-            //        CalendarRoomLink link = new CalendarRoomLink();
-            //        link.Calendar = cal;
-            //        link.Rooms = new List<string>() { Rooms.FirstOrDefault(r => r.Id.ToString() == request.Rooms[i]).Value };
-            //        link.Events = new Dictionary<string, string>();
-            //        Calendars.Add( link );
-            //    }
-            //    else
-            //    {
-            //        CalendarRoomLink link = Calendars.FirstOrDefault( c => c.Calendar == cal );
-            //        link.Rooms.Add( Rooms.FirstOrDefault( r => r.Id.ToString() == request.Rooms[i] ).Value );
-            //    }
-            //}
-            ////For Testing
-            //Calendars = new List<CalendarRoomLink>() { new CalendarRoomLink { Calendar = "AAMkADg5NmRlYmYzLWE3ODMtNDUyNC1iNmNjLWYyMjA1NDJlZDNlNgBGAAAAAACQHiszpEjLQ5ANTXBsyjz-BwCYFW-pxglGTbnCnhARG3dbAAAAAAEGAACYFW-pxglGTbnCnhARG3dbAAAAAEEVAAA=", Rooms = request.Rooms, Events = new Dictionary<string, string>() } };
-
-            //string adjustedStartTime = request.StartTime.Split(' ')[0];
-            //if( request.StartTime.Split( ' ' )[1] == "PM" && !request.StartTime.Contains("12") )
-            //{
-            //    int hour = Int32.Parse( adjustedStartTime.Split( ':' )[0] ) + 12;
-            //    adjustedStartTime = hour + ":" + adjustedStartTime.Split( ':' )[1];
-            //}
-            //string adjustedEndTime = request.EndTime.Split( ' ' )[0];
-            //if ( request.EndTime.Split( ' ' )[1] == "PM" && !request.EndTime.Contains( "12" ) )
-            //{
-            //    int hour = Int32.Parse( adjustedEndTime.Split( ':' )[0] ) + 12;
-            //    adjustedEndTime = hour + ":" + adjustedEndTime.Split( ':' )[1];
-            //}
-
-            ////Add events to each calendar
-            //for ( int i = 0; i < Calendars.Count(); i++ )
-            //{
-            //    //Create event for each date
-            //    for ( int k = 0; k < request.EventDates.Count(); k++ )
-            //    {
-            //        DateTime start = new DateTime();
-            //        if (request.MinsStartBuffer.HasValue)
-            //        {
-            //            double startBuffer = request.MinsStartBuffer.Value * -1;
-            //            start = DateTime.Parse( request.EventDates[k] + "T" + adjustedStartTime ).AddMinutes( startBuffer );
-            //        }
-            //        DateTime end = new DateTime();
-            //        if (request.MinsEndBuffer.HasValue)
-            //        {
-            //            double endBuffer = request.MinsEndBuffer.Value * -1;
-            //            end = DateTime.Parse( request.EventDates[k] + "T" + adjustedEndTime ).AddMinutes( endBuffer );
-            //        }
-            //        Event e = new Event()
-            //        {
-            //            Subject = item.Title,
-            //            Body = new ItemBody() {
-            //                Content = "Ministry: " + Ministries.FirstOrDefault(m => m.Id.ToString() == request.Ministry).Value + "<br/>Contact: " + request.Contact,
-            //                ContentType = BodyType.Html
-            //            },
-            //            Start = new DateTimeTimeZone
-            //            {
-            //                DateTime = start.ToString("s"),
-            //                TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //            },
-            //            End = new DateTimeTimeZone
-            //            {
-            //                DateTime = end.ToString("s"),
-            //                TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //            },
-            //            Location = new Microsoft.Graph.Location
-            //            {
-            //                DisplayName = String.Join( ", ", Calendars[i].Rooms )
-            //            },
-            //        };
-            //        var graphTask = Task.Run( async () =>
-            //        {
-            //            //return await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events
-            //            //.Request()
-            //            //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-            //            //.GetAsync();
-            //            return await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[Calendars[i].Calendar].Events
-            //            .Request()
-            //            .AddAsync( e );
-            //        } );
-            //        var result = graphTask.Result;
-            //        Calendars[i].Events.Add( request.EventDates[k] , result.Id );
-            //    }
-            //}
-            //item.SetAttributeValue( "MicrosoftCalendarEvents", JsonConvert.SerializeObject( Calendars ) );
-            //item.SaveAttributeValues( context );
         }
 
         protected void SendDeniedChangesEmail( ContentChannelItem item )
