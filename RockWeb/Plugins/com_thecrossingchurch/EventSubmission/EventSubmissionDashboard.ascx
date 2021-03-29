@@ -203,20 +203,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 {{requestType(this.selected)}}
               </v-col>
             </v-row>
-            <!-- <v-row>
-              <v-col>
-                <div class="floating-title">Request Dates</div>
-                <template v-if="selected.Changes != null && formatDates(selected.EventDates) != formatDates(selected.Changes.EventDates)">
-                  <span class='red--text'>{{formatDates(selected.EventDates)}}: </span>
-                  <span class='primary--text'>{{formatDates(selected.Changes.EventDates)}}</span>
-                </template>
-                <template v-else>
-                  {{formatDates(selected.EventDates)}}
-                </template>
-              </v-col>
-            </v-row> -->
             <v-expansion-panels v-model="panels" multiple flat>
-              <v-expansion-panel v-for="(e, idx) in selected.Events">
+              <v-expansion-panel v-for="(e, idx) in selected.Events" :key="`panel_${idx}`">
                 <v-expansion-panel-header>
                   <template v-if="selected.IsSame || selected.Events.length == 1">
                     <template v-if="selected.Changes != null && formatDates(selected.EventDates) != formatDates(selected.Changes.EventDates)">
@@ -238,8 +226,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   </template>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content style="color: rgba(0,0,0,.6);">
-                  <v-row v-if="e.StartTime || e.EndTime || selected.Changes.Events[idx].StartTime || selected.Changes.Events[idx].EndTime">
-                    <v-col v-if="e.StartTime || selected.Changes.Events[idx].StartTime">
+                  <v-row v-if="e.StartTime || e.EndTime || ( selected.Changes && (selected.Changes.Events[idx].StartTime || selected.Changes.Events[idx].EndTime) )">
+                    <v-col v-if="e.StartTime || (selected.Changes && selected.Changes.Events[idx].StartTime)">
                       <div class="floating-title">Start Time</div>
                       <template v-if="selected.Changes != null && e.StartTime != selected.Changes.Events[idx].StartTime">
                         <span class='red--text'>{{(e.StartTime ? e.StartTime : 'Empty')}}: </span>
@@ -249,7 +237,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         {{e.StartTime}}
                       </template>
                     </v-col>
-                    <v-col v-if="e.EndTime || selected.Changes.Events[idx].EndTime">
+                    <v-col v-if="e.EndTime || (selected.Changes && selected.Changes.Events[idx].EndTime)">
                       <div class="floating-title">End Time</div>
                       <template v-if="selected.Changes != null && e.EndTime != selected.Changes.Events[idx].EndTime">
                         <span class='red--text'>{{(e.EndTime ? e.EndTime : 'Empty')}}: </span>
@@ -320,7 +308,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           {{e.EventURL}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.ZoomPassword || selected.Changes.Events[idx].ZoomPassword">
+                      <v-col v-if="e.ZoomPassword || (selected.Changes && selected.Changes.Events[idx].ZoomPassword)">
                         <div class="floating-title">Password</div>
                         <template v-if="selected.Changes != null && e.ZoomPassword != selected.Changes.Events[idx].ZoomPassword">
                           <span class='red--text'>{{(e.ZoomPassword ? e.ZoomPassword : 'Empty')}}: </span>
@@ -426,7 +414,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           {{e.FoodTime}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.FoodDelivery || selected.Changes.Events[idx].FoodDelivery">
+                      <v-col v-if="e.FoodDelivery || (selected.Changes && selected.Changes.Events[idx].FoodDelivery)">
                         <div class="floating-title">Food Drop off Location</div>
                         <template v-if="selected.Changes != null && e.FoodDropOff != selected.Changes.Events[idx].FoodDropOff">
                           <span class='red--text'>{{(e.FoodDropOff ? e.FoodDropOff : 'Empty')}}: </span>
@@ -437,7 +425,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
+                    <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes && selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
                       <v-col>
                         <div class="floating-title">Desired Drinks</div>
                         <template v-if="selected.Changes != null && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
@@ -449,7 +437,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.DrinkTime || selected.Changes.Events[idx].DrinkTime">
+                    <v-row v-if="e.DrinkTime || (selected.Changes && selected.Changes.Events[idx].DrinkTime)">
                       <v-col>
                         <div class="floating-title">Drink Set-up Time</div>
                         <template v-if="selected.Changes != null && e.DrinkTime != selected.Changes.Events[idx].DrinkTime">
@@ -527,7 +515,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   </template>
                   <template v-if="selected.needsReg || (selected.Changes && selected.Changes.needsReg)">
                     <h6 class='text--accent text-uppercase'>Registration Information</h6>
-                    <v-row v-if="e.RegistrationDate || selected.Changes.Events[idx].RegistrationDate">
+                    <v-row v-if="e.RegistrationDate || (selected.Changes && selected.Changes.Events[idx].RegistrationDate)">
                       <v-col>
                         <div class="floating-title">Registration Date</div>
                         <template v-if="selected.Changes != null && e.RegistrationDate != selected.Changes.Events[idx].RegistrationDate">
@@ -540,7 +528,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           {{e.RegistrationDate | formatDate}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.Fee || selected.Changes.Events[idx].Fee">
+                      <v-col v-if="e.Fee || (selected.Changes && selected.Changes.Events[idx].Fee)">
                         <div class="floating-title">Registration Fee</div>
                         <template v-if="selected.Changes != null && e.Fee != selected.Changes.Events[idx].Fee">
                           <span class='red--text' v-if="e.Fee">{{e.Fee | formatCurrency}}: </span>
@@ -553,7 +541,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.RegistrationEndDate || selected.Changes.Events[idx].RegistrationEndDate">
+                    <v-row v-if="e.RegistrationEndDate || (selected.Changes && selected.Changes.Events[idx].RegistrationEndDate)">
                       <v-col>
                         <div class="floating-title">Registration Close Date</div>
                         <template v-if="selected.Changes != null && e.RegistrationEndDate != selected.Changes.Events[idx].RegistrationEndDate">
@@ -566,7 +554,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           {{e.RegistrationEndDate | formatDate}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.RegistrationEndTime || selected.Changes.Events[idx].RegistrationEndTime">
+                      <v-col v-if="e.RegistrationEndTime || (selected.Changes && selected.Changes.Events[idx].RegistrationEndTime)">
                         <div class="floating-title">Registration Close Time</div>
                         <template v-if="selected.Changes != null && e.RegistrationEndTime != selected.Changes.Events[idx].RegistrationEndTime">
                           <span class='red--text'>{{(e.RegistrationEndTime ? e.RegistrationEndTime : 'Empty')}}: </span>
@@ -578,7 +566,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                     <v-row>
-                      <v-col v-if="e.ThankYou || selected.Changes.Events[idx].ThankYou">
+                      <v-col v-if="e.ThankYou || (selected.Changes && selected.Changes.Events[idx].ThankYou)">
                         <div class="floating-title">Confirmation Email Thank You</div>
                         <template v-if="selected.Changes != null && e.ThankYou != selected.Changes.Events[idx].ThankYou">
                           <span class='red--text'>{{(e.ThankYou ? e.ThankYou : 'Empty')}}: </span>
@@ -588,7 +576,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           {{e.ThankYou}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.TimeLocation || selected.Changes.Events[idx].TimeLocation">
+                      <v-col v-if="e.TimeLocation || (selected.Changes && selected.Changes.Events[idx].TimeLocation)">
                         <div class="floating-title">Confirmation Email Time and Location</div>
                         <template v-if="selected.Changes != null && e.TimeLocation != selected.Changes.Events[idx].TimeLocation">
                           <span class='red--text'>{{(e.TimeLocation ? e.TimeLocation : 'Empty')}}: </span>
@@ -599,7 +587,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.AdditionalDetails || selected.Changes.Events[idx].AdditionalDetails">
+                    <v-row v-if="e.AdditionalDetails || (selected.Changes && selected.Changes.Events[idx].AdditionalDetails)">
                       <v-col>
                         <div class="floating-title">Confirmation Email Additional Details</div>
                         <template v-if="selected.Changes != null && e.AdditionalDetails != selected.Changes.Events[idx].AdditionalDetails">
@@ -614,7 +602,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   </template>
                   <template v-if="selected.needsAccom || (selected.Changes && selected.Changes.needsAccom)">
                     <h6 class='text--accent text-uppercase'>Additional Information</h6>
-                    <v-row v-if="e.TechNeeds || e.TechDescription || selected.Changes.Events[idx].TechNeeds || selected.Changes.Events[idx].TechDescription">
+                    <v-row v-if="e.TechNeeds || e.TechDescription || (selected.Changes && (selected.Changes.Events[idx].TechNeeds || selected.Changes.Events[idx].TechDescription))">
                       <v-col v-if="e.TechNeeds && e.TechNeeds.length > 0">
                         <div class="floating-title">Tech Needs</div>
                         <template v-if="selected.Changes != null && e.TechNeeds.join(', ') != selected.Changes.Events[idx].TechNeeds.join(', ')">
@@ -625,7 +613,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           {{e.TechNeeds.join(', ')}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.TechDescription || selected.Changes.Events[idx].TechDescription">
+                      <v-col v-if="e.TechDescription || (selected.Changes && selected.Changes.Events[idx].TechDescription)">
                         <div class="floating-title">Tech Description</div>
                         <template v-if="selected.Changes != null && e.TechDescription != selected.Changes.Events[idx].TechDescription">
                           <span class='red--text'>{{(e.TechDescription ? e.TechDescription : 'Empty')}}: </span>
@@ -637,7 +625,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                     <template v-if="!selected.needsCatering">
-                      <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
+                      <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes && selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
                         <v-col>
                           <div class="floating-title">Desired Drinks</div>
                           <template v-if="selected.Changes != null && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
@@ -649,7 +637,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                           </template>
                         </v-col>
                       </v-row>
-                      <v-row v-if="e.DrinkTime || selected.Changes.Events[idx].DrinkTime">
+                      <v-row v-if="e.DrinkTime || (selected.Changes && selected.Changes.Events[idx].DrinkTime)">
                         <v-col>
                           <div class="floating-title">Drink Set-up Time</div>
                           <template v-if="selected.Changes != null && e.DrinkTime != selected.Changes.Events[idx].DrinkTime">
@@ -684,7 +672,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="(e.ShowOnCalendar || selected.Changes.Events[idx].ShowOnCalendar) && (e.PublicityBlurb || selected.Changes.Events[idx].PublicityBlurb)">
+                    <v-row v-if="(e.ShowOnCalendar || (selected.Changes && selected.Changes.Events[idx].ShowOnCalendar)) && (e.PublicityBlurb || (selected.Changes && selected.Changes.Events[idx].PublicityBlurb))">
                       <v-col>
                         <div class="floating-title">Publicity Blurb</div>
                         <template v-if="selected.Changes != null && e.PublicityBlurb != selected.Changes.Events[idx].PublicityBlurb">
@@ -696,7 +684,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.SetUp || selected.Changes.Events[idx].SetUp">
+                    <v-row v-if="e.SetUp || (selected.Changes && selected.Changes.Events[idx].SetUp)">
                       <v-col>
                         <div class="floating-title">Requested Set-up</div>
                         <template v-if="selected.Changes != null && e.SetUp != selected.Changes.Events[idx].SetUp">
@@ -708,7 +696,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.SetUpImage || selected.Changes.Events[idx].SetUpImage">
+                    <v-row v-if="e.SetUpImage || (selected.Changes && selected.Changes.Events[idx].SetUpImage)">
                       <v-col>
                         <div class="floating-title">Set-up Image</div>
                         {{e.SetUpImage.name}}
@@ -879,8 +867,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     </v-col>
                     <v-col class='primary--text'>
                       <div class="floating-title">Story {{sidx+1}}</div>
-                      {{selected.Changes.Events[idx].Stories[sidx].Name}}, {{selected.Changes.Events[idx].Stories[sidx].Email}} <br/>
-                      {{selected.Changes.Events[idx].Stories[sidx].Description}}
+                      {{selected.Changes.Stories[sidx].Name}}, {{selected.Changes.Stories[sidx].Email}} <br/>
+                      {{selected.Changes.Stories[sidx].Description}}
                     </v-col>
                   </template>
                   <template v-else>
