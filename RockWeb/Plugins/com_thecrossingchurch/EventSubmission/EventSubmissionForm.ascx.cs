@@ -113,6 +113,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             DashboardPageId = GetAttributeValue( "DashboardPageId" );
             var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
             var EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
+            hfIsAdmin.Value = "False";
             if ( RoomSRGuid.HasValue )
             {
                 RoomOnlySR = new GroupService( context ).Get( RoomSRGuid.Value );
@@ -120,6 +121,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( EventSRGuid.HasValue )
             {
                 EventSR = new GroupService( context ).Get( EventSRGuid.Value );
+                if ( CurrentPersonId.HasValue && EventSR.Members.Where( m => m.GroupMemberStatus == GroupMemberStatus.Active ).Select( m => m.PersonId ).ToList().Contains( CurrentPersonId.Value ) )
+                {
+                    hfIsAdmin.Value = "True";
+                }
             }
             Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
             Rooms.LoadAttributes();
@@ -357,6 +362,59 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             NavigateToPage( Guid.Parse( GetAttributeValue( "PageGuid" ) ), query );
         }
 
+
+
+        /// <summary>
+        /// Submit Date Change Request
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void btnChangeRequest_Click( object sender, EventArgs e )
+        { 
+            int id = 0;
+            ContentChannelItem item = new ContentChannelItem();
+            ContentChannelItemService svc = new ContentChannelItemService( context );
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
+            {
+                id = Int32.Parse( PageParameter( PageParameterKey.Id ) );
+                item = svc.Get( id );
+            }
+            //Email Events Director
+            string subject = CurrentPerson.FullName + " is Requesting a Date Change to " + item.Title;
+            string message = CurrentPerson.FullName + " is requesting the following change to their event: <br/>";
+            message += "<blockquote>" + hfChangeRequest.Value + "</blockquote>";
+            List<GroupMember> groupMembers = EventSR.Members.ToList();
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
+            message += "<br/>" +
+                "<table style='width: 100%;'>" +
+                    "<tr>" +
+                        "<td></td>" +
+                        "<td style='text-align:center;'>" +
+                            "<a href='" + BaseURL + DashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
+                        "</td>" +
+                        "<td></td>" +
+                    "</tr>" +
+                "</table>";
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            for ( var i = 0; i < groupMembers.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( groupMembers[i].Person, new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            var output = email.Send();
+
+            //Redirect
+            Dictionary<string, string> query = new Dictionary<string, string>();
+            query.Add( "ShowSuccess", "true" );
+            query.Add( "Id", id.ToString() );
+            NavigateToPage( Guid.Parse( GetAttributeValue( "PageGuid" ) ), query );
+        }
         #endregion
 
         #region Methods
@@ -374,18 +432,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( item.CreatedByPersonId == CurrentPersonId )
             {
                 string status = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value;
-                if ( status != "Denied" && status != "Cancelled" )
+                if ( status == "Submitted" || status == "Approved" )
                 {
                     canEdit = true;
                 }
             }
             else
             {
-                if ( RoomOnlySR.Members.Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
+                if ( RoomOnlySR.Members.Where(m => m.GroupMemberStatus == GroupMemberStatus.Active).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
                 {
                     canEdit = true;
                 }
-                if ( EventSR.Members.Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
+                if ( EventSR.Members.Where( m => m.GroupMemberStatus == GroupMemberStatus.Active ).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
                 {
                     canEdit = true;
                 }

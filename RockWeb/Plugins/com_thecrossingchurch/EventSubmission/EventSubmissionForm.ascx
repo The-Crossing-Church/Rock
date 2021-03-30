@@ -34,13 +34,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 <asp:HiddenField ID="hfRequest" runat="server" />
 <asp:HiddenField ID="hfUpcomingRequests" runat="server" />
 <asp:HiddenField ID="hfThisWeeksRequests" runat="server" />
+<asp:HiddenField ID="hfIsAdmin" runat="server" />
+<asp:HiddenField ID="hfChangeRequest" runat="server" />
 
 <div id="app">
   <v-app>
     <div>
       <v-card v-if="panel == 0">
         <v-card-text>
-          <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it has been {{request.Status}}.</v-alert>
+          <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it is currently {{request.Status}}.</v-alert>
           <v-alert v-if="canEdit && request.Status && request.Status != 'Submitted'" type="warning">Any changes made to this request will need to be approved.</v-alert>
           <v-layout>
             <h3>Let's Design Your Event</h3>
@@ -137,7 +139,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       </v-card>
       <v-card v-if="panel == 1">
         <v-card-text>
-          <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it has been {{request.Status}}.</v-alert>
+          <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it is currently {{request.Status}}.</v-alert>
           <v-alert v-if="canEdit && request.Status && request.Status != 'Submitted'" type="warning">Any changes made to this request will need to be approved.</v-alert>
           <v-form ref="form" v-model="formValid">
             <v-alert type="error" v-if="!isValid && triedSubmit">
@@ -197,9 +199,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-tabs v-model="tab">
                 <v-tab>I have specific dates(s) and times</v-tab>
                 <v-tab-item>
-                  <v-row v-if="canChangeDates">
-                    <v-col>
+                  <v-row v-if="cannotChangeDates">
+                    <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
                       While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
+                    </v-col>
+                    <v-col cols="12">
+                      <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
                     </v-col>
                   </v-row>
                   <v-row>
@@ -216,7 +221,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         multiple
                         class="elevation-1"
                         :min="earliestDate"
-                        :disabled="canChangeDates"
+                        :disabled="cannotChangeDates"
                       ></v-date-picker>
                     </v-col>
                     <v-col cols="12" md="6">
@@ -230,7 +235,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         item-text="text"
                         item-value="val"
                         v-model="request.EventDates"
-                        :disabled="canChangeDates"
+                        :disabled="cannotChangeDates"
                       ></v-select>
                     </v-col>
                   </v-row>
@@ -239,7 +244,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       <v-switch
                         :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
                         v-model="request.IsSame"
-                        :disabled="canChangeDates || request.Id > 0"
+                        :disabled="cannotChangeToggle"
                       ></v-switch>
                     </v-col>
                   </v-row>
@@ -292,9 +297,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-tabs>
             </template>
             <template v-else>
-              <v-row v-if="canChangeDates">
-                <v-col>
+              <v-row v-if="cannotChangeDates">
+                <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
                   While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
+                </v-col>
+                <v-col cols="12">
+                  <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
                 </v-col>
               </v-row>
               <v-row>
@@ -311,7 +319,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     class="elevation-1"
                     :min="earliestDate"
                     :rules="[rules.required(request.EventDates, 'Event Date')]"
-                    :disabled="canChangeDates"
+                    :disabled="cannotChangeDates"
                   ></v-date-picker>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -325,7 +333,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     item-text="text"
                     item-value="val"
                     v-model="request.EventDates"
-                    :disabled="canChangeDates"
+                    :disabled="cannotChangeDates"
                   ></v-select>
                 </v-col>
               </v-row>
@@ -334,7 +342,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-switch
                     :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
                     v-model="request.IsSame"
-                    :disabled="canChangeDates || request.Id > 0"
+                    :disabled="cannotChangeToggle"
                   ></v-switch>
                 </v-col>
               </v-row>
@@ -724,6 +732,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-btn color="secondary" @click="dialog = false;">Cancel</v-btn>
             <v-spacer></v-spacer>
             <v-btn color="primary" @click="submit">Submit</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-dialog
+        v-model="changeDialog"
+        v-if="changeDialog"
+        max-width="850px"
+      >
+        <v-card>
+          <v-card-title></v-card-title>
+          <v-card-text>
+            <v-textarea
+              label="Describe the changes you would like to make about the dates of your event."
+              v-model="dateChangeMessage"
+            ></v-textarea>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="accent" @click="sendDateChangeRequest">Submit Change Request</v-btn>
+            <Rock:BootstrapButton
+              runat="server"
+              ID="btnChangeRequest"
+              CssClass="btn-hidden"
+              OnClick="btnChangeRequest_Click"
+            />
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -2451,10 +2483,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               afterHoursMsg: "",
               triedSubmit: false,
               tab: 0,
+              isAdmin: false,
+              dateChangeMessage: '',
+              changeDialog: false
           },
           created() {
               this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
               this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
+              let val = $('[id$="hfIsAdmin"]')[0].value;
+              if (val == 'True') {
+                  this.isAdmin = true
+              }
               let req = $('[id$="hfRequest"]')[0].value;
               if (req) {
                   let parsed = JSON.parse(req)
@@ -2473,7 +2512,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   if (success == "true") {
                       this.panel = 2;
                       let id = query.get('Id');
-                      if (id) {
+                      if (id && this.isAdmin) {
                           window.history.go(-2)
                       }
                   }
@@ -2568,15 +2607,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   }
                   return false
               },
-              canChangeDates() {
-                  if (this.request.Id > 0) {
+              cannotChangeDates() {
+                  if (this.isAdmin) {
+                      return false
+                  }
+                  if (this.request.Id > 0 && this.request.Status != 'Submitted') {
                       if (!this.request.IsSame || this.request.Events.length > 1) {
                           return true
                       }
                   }
                   return false
               },
+              cannotChangeToggle() {
+                  if (this.isAdmin) {
+                      return false
+                  }
+                  if (this.request.Id > 0 && this.request.Status != 'Submitted') {
+                      return true
+                  }
+                  return false
+              },
               canEdit() {
+                  if (this.isAdmin) {
+                      return true
+                  }
                   if (this.request.canEdit != null) {
                       return this.request.canEdit
                   }
@@ -2619,9 +2673,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   window.scrollTo(0, 0);
               },
               submit() {
-                  console.log(this.request)
                   $('[id$="hfRequest"]').val(JSON.stringify(this.request));
                   $('[id$="btnSubmit"')[0].click();
+              },
+              sendDateChangeRequest() {
+                  this.changeDialog = false
+                  $('[id$="hfChangeRequest"]').val(this.dateChangeMessage)
+                  $('[id$="btnChangeRequest"')[0].click();
               },
               setDate(val) {
                   this.request.Rooms = [val.room];
