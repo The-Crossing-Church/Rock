@@ -303,15 +303,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                                 let arr = this.rooms.filter(r => { return r.Id == e.Events[0].Rooms[0] })
                                 let type = arr[0].Type
                                 color = this.colors[this.roomTypes.indexOf(type)]
+                                let st = moment(`${d} ${e.Events[0].StartTime}`, 'YYYY-MM-DD hh:mm a')
+                                if (e.Events[0].MinsStartBuffer) {
+                                    st = st.subtract(e.Events[0].MinsStartBuffer, 'minute')
+                                }
+                                let et = moment(`${d} ${e.Events[0].EndTime}`, 'YYYY-MM-DD hh:mm a')
+                                if (e.Events[0].MinsEndBuffer) {
+                                    et = et.subtract(e.Events[0].MinsEndBuffer, 'minute')
+                                }
                                 let obj = {
-                                    name: e.Name,
-                                    start: moment(`${d} ${e.Events[0].StartTime}`, 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
-                                    end: moment(`${d} ${e.Events[0].EndTime}`, 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
+                                    name: this.formatRooms(e.Events[0].Rooms) + ' - ' + e.Name,
+                                    start: moment(st).format('YYYY-MM-DDTHH:mm'),
+                                    end: moment(et).format('YYYY-MM-DDTHH:mm'),
                                     ministry: e.Ministry,
                                     contact: e.Contact,
                                     rooms: e.Events[0].Rooms,
-                                    starttime: e.Events[0].StartTime,
-                                    endtime: e.Events[0].EndTime,
+                                    starttime: moment(st).format('hh:mm A'),
+                                    endtime: moment(et).format('hh:mm A'),
                                     date: moment(d).format('MM/DD/YYYY'),
                                     color: color
                                 }
@@ -323,15 +331,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                                 let arr = this.rooms.filter(r => { return r.Id == d.Rooms[0] })
                                 let type = arr[0].Type
                                 color = this.colors[this.roomTypes.indexOf(type)]
+                                let st = moment(`${d.EventDate} ${d.StartTime}`, 'YYYY-MM-DD hh:mm a')
+                                if (d.MinsStartBuffer) {
+                                    st = st.subtract(d.MinsStartBuffer, 'minute')
+                                }
+                                let et = moment(`${d.EventDate} ${d.EndTime}`, 'YYYY-MM-DD hh:mm a')
+                                if (d.MinsEndBuffer) {
+                                    et = et.subtract(d.MinsEndBuffer, 'minute')
+                                }
                                 let obj = {
-                                    name: e.Name,
-                                    start: moment(`${d.EventDate} ${d.StartTime}`, 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
-                                    end: moment(`${d.EventDate} ${d.EndTime}`, 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
+                                    name: this.formatRooms(d.Rooms) + ' - ' + e.Name,
+                                    start: moment(st).format('YYYY-MM-DDTHH:mm'),
+                                    end: moment(et).format('YYYY-MM-DDTHH:mm'),
                                     ministry: e.Ministry,
                                     contact: e.Contact,
                                     rooms: d.Rooms,
-                                    starttime: d.StartTime,
-                                    endtime: d.EndTime,
+                                    starttime: moment(st).format('hh:mm A'),
+                                    endtime: moment(et).format('hh:mm A'),
                                     date: moment(d.EventDate).format('MM/DD/YYYY'),
                                     color: color
                                 }

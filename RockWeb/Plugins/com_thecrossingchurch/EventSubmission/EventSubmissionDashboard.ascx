@@ -979,15 +979,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           </v-card-title>
           <v-card-text>
             <v-alert v-if="bufferErrMsg != ''">{{bufferErrMsg}}</v-alert>
-            <div>
-              {{formatDates(selected.EventDates)}} <br/>
-              {{selected.StartTime}} - {{selected.EndTime}}
-            </div>
-            <v-row>
+            <v-row v-for="(e, idx) in selected.Events" :key="`row_${idx}`">
+              <v-col cols="12">
+                <template v-if="selected.IsSame || selected.Events.length == 1">
+                  {{formatDates(selected.EventDates)}} <br/>
+                </template>
+                <template v-else>
+                  {{e.EventDate | formatDate}}
+                </template>
+                {{e.StartTime}} - {{e.EndTime}}
+              </v-col>
               <v-col>
                 <v-autocomplete
                   label="Set-up Buffer"
-                  v-model="selected.MinsStartBuffer"
+                  v-model="e.MinsStartBuffer"
                   :items="[{text: '15 Mins', value:'15'}, {text: '30 Mins', value:'30'}, {text: '45 Mins', value:'45'}, {text: '1 Hour', value:'60'}]"
                   clearable
                   ></v-autocomplete>
@@ -995,7 +1000,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <v-col>
                   <v-autocomplete
                   label="Tear-down Buffer"
-                  v-model="selected.MinsEndBuffer"
+                  v-model="e.MinsEndBuffer"
                   :items="[{text: '15 Mins', value:'15'}, {text: '30 Mins', value:'30'}, {text: '45 Mins', value:'45'}, {text: '1 Hour', value:'60'}]"
                   clearable
                 ></v-autocomplete>
@@ -1280,7 +1285,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     );
                     let conflictingMessage = []
                     let conflictingRequests = this.existingRequests.filter((r) => {
-                        r = JSON.parse(r);
+                        if (r.Id == this.selected.Id) {
+                            return false
+                        }
+                        r = JSON.parse(r.Value);
                         let compareTarget = [], compareSource = []
                         //Build an object for each date to compare with 
                         if (r.IsSame || r.Events.length == 1) {
