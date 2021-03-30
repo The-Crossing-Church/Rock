@@ -815,7 +815,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                       <v-col class='primary--text'>
                         <ul>
-                          <li v-for="k in selected.changes.GoogleKeys" :key="k">
+                          <li v-for="k in selected.Changes.GoogleKeys" :key="k">
                             {{k}}
                           </li>
                         </ul>
