@@ -1081,7 +1081,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
-              <v-autocomplete
+              <!--<v-autocomplete
                 label="What are your preferred rooms/spaces?"
                 chips
                 multiple
@@ -1094,6 +1094,29 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               >
                 <template v-slot:item="{ item }">
                   {{item.Value}} ({{item.Capacity}})
+                </template>
+              </v-autocomplete>-->
+              
+              <v-autocomplete
+                label="What are your preferred rooms/spaces?"
+                :items="groupedRooms"
+                item-text="Value"
+                item-value="Id"
+                v-model="e.Rooms"
+                chips
+                multiple
+                attach
+                :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
+              >
+                <template v-slot:item="data">
+                  <template v-if="typeof data.item !== 'object'">
+                    <v-list-item-content v-text="data.item"></v-list-item-content>
+                  </template>
+                  <template v-else>
+                    <v-list-item-content>
+                      <v-list-item-title>{{data.item.Value}} ({{data.item.Capacity}})</v-list-item-title>
+                    </v-list-item-content>
+                  </template>
                 </template>
               </v-autocomplete>
             </v-col>
@@ -1197,7 +1220,53 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 prefillOptions() {
                     return this.request.EventDates.filter(i => i != this.e.EventDate)
-                }
+                },
+                groupedRooms() {
+                    let loc = []
+                    this.rooms.forEach(l => {
+                        let idx = -1
+                        loc.forEach((i, x) => {
+                            if (i.Type == l.Type) {
+                                idx = x
+                            }
+                        })
+                        if (idx > -1) {
+                            loc[idx].locations.push(l)
+                        } else {
+                            loc.push({ Type: l.Type, locations: [l] })
+                        }
+                    })
+                    loc.forEach(l => {
+                        l.locations = l.locations.sort((a, b) => {
+                            if (a.Value < b.Value) {
+                                return -1
+                            } else if (a.Value > b.Value) {
+                                return 1
+                            } else {
+                                return 0
+                            }
+                        })
+                    })
+                    loc = loc.sort((a, b) => {
+                        if (a.Type < b.Type) {
+                            return -1
+                        } else if (a.Type > b.Type) {
+                            return 1
+                        } else {
+                            return 0
+                        }
+                    })
+                    let arr = []
+                    loc.forEach(l => {
+                        arr.push({ header: l.Type })
+                        l.locations.forEach(i => {
+                            arr.push((i))
+                        })
+                        arr.push({ divider: true })
+                    })
+                    arr.splice(arr.length - 1, 1)
+                    return arr
+                },
             },
             methods: {
                 prefillSection() {

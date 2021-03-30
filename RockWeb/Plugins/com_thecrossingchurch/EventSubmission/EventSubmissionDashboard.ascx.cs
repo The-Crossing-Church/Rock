@@ -50,9 +50,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 0 )]
     [IntegerField( "PageId", "The id of the page for editing requests.", true, 0, "", 0 )]
     [IntegerField( "HistoryPageId", "The id of the page for viewing all requests.", true, 0, "", 0 )]
-    [TextField( "MicrosoftTennant", "MS Tennant for Graph API", true )]
-    [TextField( "MicrosoftClientID", "MS Client ID for Graph API", true )]
-    [TextField( "MicrosoftClientSecret", "MS Client Secret for Graph API", true )]
     [WorkflowTypeField( "Request Workflow", "Workflow to launch when request is approved or denied to send email" )]
     [LinkedPage( "Workflow Entry Page" )]
     [TextField( "Denied ChangesURL", "URL for the User Action Workflow Entry" )]
@@ -409,25 +406,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string PublicityBlurb { get; set; }
             public string TechDescription { get; set; }
             public string SetUp { get; set; }
-        }
-        private Dictionary<string, string> LocationCalendarLink
-        {
-            get
-            {
-                return new Dictionary<string, string>()
-                {
-                    { "Main Building", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAARNgxcAAA=" },
-                    { "Auditorium", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAA8aNryAAA=" },
-                    { "Student Center", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAARNgxfAAA=" },
-                    { "Gym", "AAMkADg4MDQ5ZWI2LWNiZDctNDhjNS1iN2E3LTdiZGY0NjlhM2Y3YQBGAAAAAACTvbFMzsQkTJoAHKXKm6KiBwAkIvEoPoD3TKdG3RiCVJj-AAAAAAEGAAAkIvEoPoD3TKdG3RiCVJj-AAARNgxbAAA=" }
-                };
-            }
-        }
-        private class CalendarRoomLink
-        {
-            public string Calendar { get; set; }
-            public List<string> Rooms { get; set; }
-            public Dictionary<string, string> Events { get; set; }
         }
     }
 }

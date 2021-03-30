@@ -55,9 +55,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [TextField( "Dashboard Page Id", "Page Id of the Request Dashboard", true, "", "", 7 )]
     [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true )]
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true )]
-    [TextField( "MicrosoftTennant", "MS Tennant for Graph API", true )]
-    [TextField( "MicrosoftClientID", "MS Client ID for Graph API", true )]
-    [TextField( "MicrosoftClientSecret", "MS Client Secret for Graph API", true )]
 
     public partial class EventSubmissionForm : Rock.Web.UI.RockBlock
     {
@@ -320,14 +317,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             else
             {
-                //If the event is existing and date or time has changed, update the calendar events
-                if ( item.Id > 0 )
-                {
-                    if ( !String.IsNullOrEmpty( item.AttributeValues["MicrosoftCalendarEvents"].Value ) )
-                    {
-                        //SyncCalendar( item, request );
-                    }
-                }
                 item.SetAttributeValue( "RequestJSON", raw );
                 item.SetAttributeValue( "ProposedChangesJSON", "" );
             }
