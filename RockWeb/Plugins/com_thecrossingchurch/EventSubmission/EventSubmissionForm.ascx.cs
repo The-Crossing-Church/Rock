@@ -311,7 +311,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             item.SetAttributeValue( "RequestStatus", status );
             //Changes are proposed if the event isn't pre-approved, is existing, and the requestor isn't in the Event Admin Role
-            if ( item.Id > 0 && status != "Approved" && status != "Submitted" && !EventSR.Members.Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
+            if ( item.Id > 0 && status != "Approved" && status != "Submitted" && !EventSR.Members.Where(gm => gm.GroupMemberStatus == GroupMemberStatus.Active).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
             {
                 item.SetAttributeValue( "ProposedChangesJSON", raw );
             }
@@ -372,7 +372,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             string subject = CurrentPerson.FullName + " is Requesting a Date Change to " + item.Title;
             string message = CurrentPerson.FullName + " is requesting the following change to their event: <br/>";
             message += "<blockquote>" + hfChangeRequest.Value + "</blockquote>";
-            List<GroupMember> groupMembers = EventSR.Members.ToList();
+            List<GroupMember> groupMembers = EventSR.Members.Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Active ).ToList();
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
             message += "<br/>" +
@@ -532,7 +532,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     subject = "New Room Request from " + CurrentPerson.FullName;
                 }
-                groupMembers = RoomOnlySR.Members.ToList();
+                groupMembers = RoomOnlySR.Members.Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Active ).ToList();
                 if ( isRequestingChanges )
                 {
                     message = CurrentPerson.FullName + " is requesting changes to the reservation for " + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + ".<br/>";
@@ -573,7 +573,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     subject = "New Event Request from " + CurrentPerson.FullName;
                 }
-                groupMembers = EventSR.Members.ToList();
+                groupMembers = EventSR.Members.Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Active ).ToList();
                 message = GenerateEmailDetails( item, request );
             }
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header

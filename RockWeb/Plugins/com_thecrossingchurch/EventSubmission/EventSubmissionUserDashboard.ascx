@@ -597,8 +597,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                           {{e.RegistrationDate | formatDate}}
                         </template>
                       </v-col>
-                      <v-col v-if="e.Fee || (selected.Changes && selected.Changes.Events[idx].Fee)">
-                        <div class="floating-title">Registration Fee</div>
+                      <v-col v-if="e.FeeType || (selected.Changes && selected.Changes.Events[idx].FeeType)">
+                        <div class="floating-title">Registration Fee Types</div>
+                        <template v-if="selected.Changes != null && e.FeeType.toString() != selected.Changes.Events[idx].FeeType.toString()">
+                          <span class='red--text' v-if="e.FeeType">{{e.FeeType.join(', ')}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].FeeType">{{selected.Changes.Events[idx].FeeType.join(', ')}}</span>
+                          <span class='primary--text' v-else>Empty</span>
+                        </template>
+                        <template v-else>
+                          {{e.FeeType.join(', ')}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12" md="6" v-if="e.Fee || (selected.Changes && selected.Changes.Events[idx].Fee)">
+                        <div class="floating-title">Individual Registration Fee</div>
                         <template v-if="selected.Changes != null && e.Fee != selected.Changes.Events[idx].Fee">
                           <span class='red--text' v-if="e.Fee">{{e.Fee | formatCurrency}}: </span>
                           <span class='red--text' v-else>Empty: </span>
@@ -607,6 +621,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         </template>
                         <template v-else>
                           {{e.Fee | formatCurrency}}
+                        </template>
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.CoupleFee || (selected.Changes && selected.Changes.Events[idx].CoupleFee)">
+                        <div class="floating-title">Couple Registration Fee</div>
+                        <template v-if="selected.Changes != null && e.CoupleFee != selected.Changes.Events[idx].CoupleFee">
+                          <span class='red--text' v-if="e.CoupleFee">{{e.CoupleFee | formatCurrency}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].CoupleFee">{{selected.Changes.Events[idx].CoupleFee | formatCurrency}}</span>
+                          <span class='primary--text' v-else>Empty</span>
+                        </template>
+                        <template v-else>
+                          {{e.CoupleFee | formatCurrency}}
+                        </template>
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.OnlineFee || (selected.Changes && selected.Changes.Events[idx].OnlineFee)">
+                        <div class="floating-title">Online Registration Fee</div>
+                        <template v-if="selected.Changes != null && e.OnlineFee != selected.Changes.Events[idx].OnlineFee">
+                          <span class='red--text' v-if="e.OnlineFee">{{e.OnlineFee | formatCurrency}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].OnlineFee">{{selected.Changes.Events[idx].OnlineFee | formatCurrency}}</span>
+                          <span class='primary--text' v-else>Empty</span>
+                        </template>
+                        <template v-else>
+                          {{e.OnlineFee | formatCurrency}}
                         </template>
                       </v-col>
                     </v-row>
@@ -850,7 +888,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
               <v-row>
                 <v-col>
                   <div class="floating-title">Publicity Strategies</div>
-                  <template v-if="selected.Changes != null && selected.PublicityStrategies != selected.Changes.PublicityStrategies">
+                  <template v-if="selected.Changes != null && selected.PublicityStrategies.toString() != selected.Changes.PublicityStrategies.toString()">
                     <span class='red--text'>{{(selected.PublicityStrategies ? selected.PublicityStrategies.join(', ') : 'Empty')}}: </span>
                     <span class='primary--text'>{{(selected.Changes.PublicityStrategies ? selected.Changes.PublicityStrategies.join(', ') : 'Empty')}}</span>
                   </template>
@@ -873,7 +911,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                   </v-col>
                 </v-row>
                 <v-row>
-                  <template v-if="selected.Changes != null && selected.GoogleKeys != selected.Changes.GoogleKeys">
+                  <template v-if="selected.Changes != null && selected.GoogleKeys.toString() != selected.Changes.GoogleKeys.toString()">
                     <v-col class='red--text'>
                         <div class="floating-title">Google Keys</div>
                         <ul>
@@ -928,7 +966,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
               </template>
               <template v-if="selected.PublicityStrategies.includes('Announcement')">
                 <v-row v-for="(s, sidx) in selected.Stories" :key="`Story_${sidx}`">
-                  <template v-if="selected.Changes != null && selected.Stories != selected.Changes.Stories">
+                  <template v-if="selected.Changes != null && selected.Stories.toString() != selected.Changes.Stories.toString()">
                     <v-col class='red--text'>
                       <div class="floating-title">Story {{sidx+1}}</div>
                       {{s.Name}}, {{s.Email}} <br/>
@@ -972,6 +1010,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                 <template v-else>
                   {{selected.Notes}}
                 </template>
+              </v-col>
+            </v-row>
+            <v-row v-if="selected.HistoricData">
+              <v-col>
+                <div class="floating-title">Non-Transferrable Data</div>
+                {{selected.HistoricData}}
               </v-col>
             </v-row>
           </v-card-text>
@@ -1097,6 +1141,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         req.CreatedBy = i.CreatedBy;
                         req.CreatedOn = i.CreatedOn;
                         req.RequestStatus = i.RequestStatus;
+                        req.HistoricData = i.HistoricData;
                         req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
                         temp.push(req);
                     });

@@ -1322,11 +1322,38 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-menu>
             </v-col>
             <v-col cols="12" md="6">
+              <v-autocomplete
+                label="Types of Registration Fees"
+                :items="feeOptions"
+                v-model="e.FeeType"
+                multiple
+                attach
+              ></v-autocomplete>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual')">
               <v-text-field
-                label="If there is a registration fee for this event, how much is it?"
+                label="How much is the individual registration fee for this event?"
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.Fee"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Couple')">
+              <v-text-field
+                label="How much is the couple registration fee for this event?"
+                type="number"
+                prepend-inner-icon="mdi-currency-usd"
+                v-model="e.CoupleFee"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6" v-if="e.FeeType.includes('Online Fee')">
+              <v-text-field
+                label="How much is the online registration fee for this event?"
+                type="number"
+                prepend-inner-icon="mdi-currency-usd"
+                v-model="e.OnlineFee"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -1598,6 +1625,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 prefillOptions() {
                     return this.request.EventDates.filter(i => i != this.e.EventDate)
+                },
+                feeOptions() {
+                    if (this.request.needsOnline) {
+                        return ['Fee per Individual', 'Fee per Couple', 'Online Fee']
+                    }
+                    return ['Fee per Individual', 'Fee per Couple']
                 }
             },
             watch: {
@@ -1622,6 +1655,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 defaultTimeLocation(val) {
                     if (val) {
                         this.e.TimeLocation = val
+                    }
+                },
+                'e.FeeType'(val) {
+                    if (!val.includes('Fee per Individual')) {
+                        this.e.Fee = null
+                    }
+                    if (!val.includes('Fee per Couple')) {
+                        this.e.CoupleFee = null
+                    }
+                    if (!val.includes('Online Fee')) {
+                        this.e.OnlineFee = null
                     }
                 }
             },
@@ -2407,7 +2451,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           RegistrationDate: "",
                           RegistrationEndDate: "",
                           RegistrationEndTime: "",
+                          FeeType: [],
                           Fee: null,
+                          CoupleFee: null,
+                          OnlineFee: null,
                           Vendor: "",
                           Menu: "",
                           FoodDelivery: true,
@@ -2770,7 +2817,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
                   this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
                   this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
+                  this.request.Events[indexes.currIdx].FeeType = this.request.Events[indexes.targetIdx].FeeType
                   this.request.Events[indexes.currIdx].Fee = this.request.Events[indexes.targetIdx].Fee
+                  this.request.Events[indexes.currIdx].CoupleFee = this.request.Events[indexes.targetIdx].CoupleFee
+                  this.request.Events[indexes.currIdx].OnlineFee = this.request.Events[indexes.targetIdx].OnlineFee
                   this.request.Events[indexes.currIdx].Sender = this.request.Events[indexes.targetIdx].Sender
                   this.request.Events[indexes.currIdx].SenderEmail = this.request.Events[indexes.targetIdx].SenderEmail
                   this.request.Events[indexes.currIdx].ThankYou = this.request.Events[indexes.targetIdx].ThankYou
@@ -3059,6 +3109,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       for (var i = 0; i < this.request.Events.length; i++) {
                           this.request.Events[i].EventURL = ''
                           this.request.Events[i].ZoomPassword = ''
+                          this.request.Events[i].OnlineFee = ''
+                          let idx = this.request.Events[i].FeeType.indexOf('Online Fee')
+                          this.request.Events[i].FeeType.splice(idx, 1)
                       }
                   }
               },
@@ -3068,7 +3121,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].RegistrationDate = ''
                           this.request.Events[i].RegistrationEndDate = ''
                           this.request.Events[i].RegistrationEndTime = ''
+                          this.request.Events[i].FeeType = []
                           this.request.Events[i].Fee = ''
+                          this.request.Events[i].CoupleFee = ''
+                          this.request.Events[i].OnlineFee = ''
                           this.request.Events[i].Sender = ''
                           this.request.Events[i].SenderEmail = ''
                           this.request.Events[i].ThankYou = ''

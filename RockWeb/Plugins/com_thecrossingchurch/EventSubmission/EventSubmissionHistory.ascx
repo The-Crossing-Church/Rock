@@ -344,9 +344,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         <div class="floating-title">Registration Date</div>
                         {{e.RegistrationDate | formatDate}}
                       </v-col>
-                      <v-col v-if="e.Fee">
+                      <v-col>
+                        <div class="floating-title">Registration Fee Types</div>
+                        {{e.FeeType.join(', ')}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12" md="6" v-if="e.Fee">
                         <div class="floating-title">Registration Fee</div>
                         {{e.Fee | formatCurrency}}
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.CoupleFee">
+                        <div class="floating-title">Couple Registration Fee</div>
+                        {{e.CoupleFee | formatCurrency}}
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.OnlineFee">
+                        <div class="floating-title">Online Registration Fee</div>
+                        {{e.OnlineFee | formatCurrency}}
                       </v-col>
                     </v-row>
                     <v-row v-if="e.RegistrationEndDate">
@@ -354,7 +368,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         <div class="floating-title">Registration Close Date</div>
                         {{e.RegistrationEndDate | formatDate}}
                       </v-col>
-                      <v-col v-if="e.Fee">
+                      <v-col v-if="e.RegistrationEndTime">
                         <div class="floating-title">Registration Close Time</div>
                         {{e.RegistrationEndTime}}
                       </v-col>
@@ -523,6 +537,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 {{selected.Notes}}
               </v-col>
             </v-row>
+            <v-row v-if="selected.HistoricData">
+              <v-col>
+                <div class="floating-title">Non-Transferrable Data</div>
+                {{selected.HistoricData}}
+              </v-col>
+            </v-row>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -613,6 +633,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         req.CreatedBy = i.CreatedBy;
                         req.CreatedOn = i.CreatedOn;
                         req.RequestStatus = i.RequestStatus;
+                        req.HistoricData = i.HistoricData;
                         temp.push(req);
                     });
                     this.allrequests = temp;
@@ -690,7 +711,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         val.forEach((i) => {
                             this.rooms.forEach((r) => {
                                 if (i == r.Id) {
-                                    rms.push(r.Value.split(` (`)[0]);
+                                    rms.push(r.Value);
                                 }
                             });
                         });
