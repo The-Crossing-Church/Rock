@@ -1512,6 +1512,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 }
             },
+            created: function () {
+                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+            },
             methods: {
                 formatRooms(val) {
                     if (val) {
