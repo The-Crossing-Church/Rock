@@ -1,4 +1,4 @@
-<%@ Control Language="C#" AutoEventWireup="true"
+ï»¿<%@ Control Language="C#" AutoEventWireup="true"
 CodeFile="EventSubmissionForm.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionForm"
 %> <%-- Add Vue and Vuetify CDN --%>
@@ -176,7 +176,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-row>
               <v-col cols="12" md="6">
                 <v-autocomplete
-                  label="What ministry is sponsoring this event?"
+                  label="Which ministry is sponsoring this event?"
                   :items="ministries"
                   item-text="Value"
                   item-value="Id"
@@ -419,8 +419,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-textarea
                     label="In 450 characters or less, describe why someone should attend your event and what they will learn/receive."
                     v-model="request.WhyAttendSixtyFive"
-                    :hint="`Be sure to write in the second person. Using rhetorical questions that elicit interest, or touch on a felt need. (${request.WhyAttendSixtyFive.length}/450)`"
-                    :rules="[rules.required(request.WhyAttendSixtyFive, 'Copy'), rules.publicityCharacterLimit(request.WhyAttendSixtyFive, 450)]"
+                    :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. (${request.WhyAttendSixtyFive.length}/450)`"
+                    :rules="[rules.required(request.WhyAttendSixtyFive, 'This field'), rules.publicityCharacterLimit(request.WhyAttendSixtyFive, 450)]"
                   ></v-textarea>
                 </v-col>
               </v-row>
@@ -443,12 +443,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </v-select>
                 </v-col>
                 <v-col>
-                  <v-checkbox
-                    label="Is your event a “sticky” event?"
+                  <v-switch
+                    :label="`Is your event a â€œstickyâ€ event? (${boolToYesNo(request.EventIsSticky)})`"
                     hint="i.e. NewComers, Small Group Preview, Discovery Class or Serving at Church"
                     persistent-hint
                     v-model="request.EventIsSticky"
-                  ></v-checkbox>
+                  ></v-switch>
                 </v-col>
               </v-row>
               <v-row>
@@ -507,6 +507,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       v-model="request.PublicityEndDate"
                       @input="pubEndMenu = false"
                       :min="earliestPubDate"
+                      :max="latestPubDate"
                     ></v-date-picker>
                   </v-menu>
                 </v-col>
@@ -534,8 +535,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-textarea
                       label="In 90 characters or less, describe why someone should attend your event."
                       v-model="request.WhyAttendNinety"
-                      :rules="[rules.required(request.WhyAttendNinety, 'Copy'), rules.publicityCharacterLimit(request.WhyAttendNinety, 90)]"
-                      :hint="`${request.WhyAttendNinety.length}/90`"
+                      :rules="[rules.required(request.WhyAttendNinety, 'This field'), rules.publicityCharacterLimit(request.WhyAttendNinety, 90)]"
+                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. ${request.WhyAttendNinety.length}/90`"
                     ></v-textarea>
                   </v-col>
                 </v-row>
@@ -575,15 +576,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-text-field
                       label="In 65 characters or less, describe why someone should attend your event."
                       v-model="request.WhyAttendTen"
-                      :hint="`${request.WhyAttendTen.length}/65`"
-                      :rules="[rules.required(request.WhyAttendTen, 'Copy'), rules.publicityCharacterLimit(request.WhyAttendTen, 65)]"
+                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. ${request.WhyAttendTen.length}/65`"
+                      :rules="[rules.required(request.WhyAttendTen, 'This field'), rules.publicityCharacterLimit(request.WhyAttendTen, 65)]"
                     ></v-text-field>
                   </v-col>
                 </v-row>
                 <v-row>
                   <v-col>
                     <v-textarea
-                      label="Offer the graphic designer any idea you have about visuals, symbols or imagery that might compliment your event well."
+                      label="In terms of graphic design, do you have any specific ideas regarding imagery, symbols, or any other visual elements to help guide our graphic designer?"
                       v-model="request.VisualIdeas"
                       :hint="`${request.VisualIdeas.length}/300`"
                       :rules="[rules.publicityCharacterLimit(request.VisualIdeas, 300)]"
@@ -628,7 +629,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       label="In 175 characters or less, describe why someone should attend your event."
                       v-model="request.WhyAttendTwenty"
                       :rules="[rules.publicityCharacterLimit(request.WhyAttendTwenty, 175)]"
-                      :hint="`Be sure to write in the second person. Using rhetorical questions that elicit interest, or touch on a felt need. (${request.WhyAttendTwenty.length}/175)`"
+                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. (${request.WhyAttendTwenty.length}/175)`"
                     ></v-textarea>
                   </v-col>
                 </v-row>
@@ -1375,6 +1376,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       <v-text-field
                         v-model="e.RegistrationEndDate"
                         label="What date should registration close?"
+                        hint="We always default to 24 hours before your event if you have no reason to close registration earlier."
+                        persistent-hint
                         prepend-inner-icon="mdi-calendar"
                         readonly
                         v-bind="attrs"
@@ -1404,14 +1407,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-row>
           <v-row>
             <v-col>
-              <h4 class="primary--text">Confirmation Email</h4>
+              <h4 class="primary--text">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
             </v-col>
           </v-row>
           <v-row>
             <v-col>
               <v-text-field
-                label="Sender"
+                label="When your registrants receive their confirmation email, who should this email come from?"
                 v-model="e.Sender"
+                :rules="[rules.required(e.Sender, 'Sender')]"
               ></v-text-field>
               <v-text-field
                 label="Sender Email"
@@ -1702,25 +1706,25 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </span>
                 </template>
                 <v-list>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Chick-fil-A'">
                     Chick-fil-A
                   </v-list-item>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Como Smoke and Fire'">
                     Como Smoke and Fire
                   </v-list-item>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Honey Baked Ham'">
                     Honey Baked Ham
                   </v-list-item>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Panera'">
                     Panera
                   </v-list-item>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Picklemans'">
                     Pickleman's
                   </v-list-item>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Tropical Smoothie Cafe'">
                     Tropical Smoothie Cafe
                   </v-list-item>
-                  <v-list-item>
+                  <v-list-item @click="e.Vendor = 'Word of Mouth Catering'">
                     Word of Mouth Catering
                   </v-list-item>
                 </v-list>
@@ -1802,8 +1806,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-autocomplete
                     label="What drinks would you like to have?"
                     :items="['Coffee', 'Soda', 'Water']"
-                    :hint="drinkHint"
-                    persistent-hint
                     v-model="e.Drinks"
                     multiple
                     chips
@@ -1821,7 +1823,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               ></time-picker>
             </v-col>
           </v-row>
-          <v-row v-if="e.Drinks.includes('Coffee')">
+          <!--<v-row v-if="e.Drinks.includes('Coffee')">
             <v-col cols="12" md="6">
               <v-checkbox
                 label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
@@ -1829,7 +1831,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 v-model="e.ServingTeamAgree"
               ></v-checkbox>
             </v-col>
-          </v-row>
+          </v-row> -->
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
@@ -1840,7 +1842,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col cols="12" md="6">
               <v-checkbox
                 v-if="e.FoodDropOff != ''"
-                label="Set-up drinks with food"
+                label="Set up my drinks in the same location as my food please!"
                 v-model="sameFoodDrinkDropOff"
                 dense
               ></v-checkbox>
@@ -1955,7 +1957,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 return `Would you like your food to be delivered? ${this.e.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`
             },
             drinkHint() {
-                return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+                return ''
+                // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
             },
             defaultFoodTime() {
                 if (this.e.StartTime && !this.e.StartTime.includes('null')) {
@@ -2186,7 +2189,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col cols="12">
               <v-autocomplete
                 label="What tech needs do you have?"
-                :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Basic Live Stream', 'Advanced Live Stream', 'Pipe and Drape', 'BOSE System']"
+                :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Basic Live Stream ($)', 'Advanced Live Stream ($)', 'Pipe and Drape', 'BOSE System']"
                 v-model="e.TechNeeds"
                 :hint="techHint"
                 persistent-hint
@@ -2199,7 +2202,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-row>
             <v-col cols="12">
               <v-textarea
-                label="Please describe what you are envisioning regarding your tech needs. For example, We'd like to play videos in the gym."
+                label='Please describe what you are envisioning regarding your tech needs. For example, "We would like to play videos in the gym."'
                 v-model="e.TechDescription"
               ></v-textarea>
             </v-col>
@@ -2213,8 +2216,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-autocomplete
                       label="What drinks would you like to have?"
                       :items="['Coffee', 'Soda', 'Water']"
-                      :hint="drinkHint"
-                      persistent-hint
                       v-model="e.Drinks"
                       multiple
                       chips
@@ -2234,13 +2235,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-col>
             </v-row>
             <v-row v-if="e.Drinks.length > 0">
-              <v-col cols="12" md="6" v-if="e.Drinks.includes('Coffee')">
+              <!--<v-col cols="12" md="6" v-if="e.Drinks.includes('Coffee')">
                 <v-checkbox
                   label="I agree to provide a coffee serving team in compliance with COVID-19 policy."
                   :rules="[rules.required(e.ServingTeamAgree, 'Agreement to provide a serving team')]"
                   v-model="e.ServingTeamAgree"
                 ></v-checkbox>
-              </v-col>
+              </v-col> -->
               <v-col cols="12" md="6">
                 <v-text-field
                   label="Where would you like your drinks delivered?"
@@ -2368,7 +2369,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
               },
               drinkHint() {
-                  return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+                  return ''
+                  // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
               },
               defaultFoodTime() {
                   if (this.e.StartTime && !this.e.StartTime.includes('null')) {
@@ -2697,7 +2699,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               latestPubDate() {
                   let sortedDates = this.request.EventDates.sort((a, b) => a.diff(b))
                   let eDate = new moment(sortedDates[0]);
-                  eDate = moment(eDate).subtract(21, "days");
+                  eDate = moment(eDate).subtract(7, "days");
                   return moment(eDate).format("yyyy-MM-DD");
               },
               pubStrategyOptions() {
@@ -2958,7 +2960,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                       if (this.request.Events[x].EndTime.includes("PM")) {
                           let info = this.request.Events[x].EndTime.split(':')
-                          if (parseInt(info[0]) >= 9) {
+                          if (parseInt(info[0]) > 9 || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00")) {
                               meetsTimeRequirements = false
                               this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
                           }
@@ -2976,10 +2978,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                                   meetsTimeRequirements = false
                               }
                           } else if (dt.day() == 6) {
-                              //Saturday
-                              // if(this.request.Events[x].StartTime.includes("PM")) {
-                              //   meetsTimeRequirements = false
-                              // }
                               if (this.request.Events[idx].EndTime.includes("PM") && this.request.Events[idx].EndTime != "12:00 PM") {
                                   meetsTimeRequirements = false
                                   this.afterHoursMsg = 'On Saturday our facilities close at 12PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'

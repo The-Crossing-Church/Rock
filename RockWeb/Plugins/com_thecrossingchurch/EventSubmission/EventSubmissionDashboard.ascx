@@ -144,11 +144,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
         </v-col>
         <v-col> </v-col>
       </v-row>
-      <v-overlay :value="overlay">
+      <v-dialog 
+        v-if="overlay" 
+        v-model="overlay" 
+        max-width="85%"
+        style="margin-top: 100px !important; max-height: 80vh;"
+      >
         <v-card
           light
           width="100%"
-          style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
           <v-card-title>
             <template v-if="selected.Changes != null && selected.Name != selected.Changes.Name">
@@ -1011,7 +1015,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-overlay>
+      </v-dialog>
       <v-dialog
         v-model="dialog"
         v-if="dialog"
@@ -1445,6 +1449,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   }
   .v-overlay__content {
     width: 60%;
+  }
+  .v-dialog:not(.v-dialog--fullscreen) {
+    max-height: 80vh !important;
+  }
+  .v-dialog {
+    margin-top: 100px !important;
   }
   .floating-title {
     text-transform: uppercase;

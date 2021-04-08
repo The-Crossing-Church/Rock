@@ -11,7 +11,10 @@ using Newtonsoft.Json;
 using System.Configuration;
 using Rock.Data;
 using System.Collections.ObjectModel;
+using TheArtOfDev.HtmlRenderer;
 using System.Collections;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -71,6 +74,70 @@ namespace com_thecrossingchurch.LavaFilters
         }
 
         /// <summary>
+        /// Generate QR Code from Person.
+        /// </summary>
+        /// <param name="input">The input to turn into a qr.</param>
+        /// <returns></returns>
+        public static string QRCodeAsImage( object input )
+        {
+            if ( input == null )
+            {
+                return null;
+            }
+            QREncoder Encoder = new QREncoder();
+            string url = input.ToString();
+            var qrCode = Encoder.Encode( ErrorCorrection.M, url );
+
+            string html = @"
+            <style>
+                .qr {
+                    width: 3px;
+                    height: 3px;
+                }
+                .qr-fill {
+                    background-color: black;
+                }
+                table {
+                    border-spacing: 0px;
+                }
+            </style>
+            <table>";
+            int x = qrCode.GetLength( 0 );
+            int y = qrCode.GetLength( 1 ); 
+            for ( int i = 0; i < qrCode.GetLength( 0 ); i++ )
+            {
+                html += "<tr>";
+                for ( int k = 0; k < qrCode.GetLength( 1 ); k++ )
+                {
+                    if(qrCode[i,k])
+                    {
+                        html += "<td class='qr qr-fill'></td>";
+                    }
+                    else
+                    {
+                        html += "<td class='qr'></td>";
+                    }
+                }
+                html += "</tr>";
+            }
+            html += "</table>";
+            Bitmap m_Bitmap = new Bitmap( qrCode.GetLength(0)*3, qrCode.GetLength(1)*3 );
+            PointF point = new PointF( 0, 0 );
+            SizeF maxSize = new System.Drawing.SizeF( 500, 500 );
+            TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.Render( Graphics.FromImage( m_Bitmap ), html, point, maxSize );
+            string dataUrl = "";
+            using ( MemoryStream ms = new MemoryStream() )
+            {
+                m_Bitmap.Save( ms, ImageFormat.Png );
+                byte[] byteArr = ms.ToArray();
+                string b64Txt = Convert.ToBase64String( byteArr );
+                dataUrl = "data:image/png;base64," + b64Txt;
+            }
+            Console.WriteLine( "x" );
+            return dataUrl;
+        }
+
+        /// <summary>
         /// Array Pop Functionality.
         /// </summary>
         /// <param name="input">The input.</param>
@@ -87,8 +154,8 @@ namespace com_thecrossingchurch.LavaFilters
             else if ( type.FullName.Contains( "Collection" ) )
             {
                 Type listType = typeof( List<> ).MakeGenericType( new[] { type } );
-                IList list = (IList)Activator.CreateInstance( listType );
-                list = (IList)input;
+                IList list = ( IList ) Activator.CreateInstance( listType );
+                list = ( IList ) input;
                 list.RemoveAt( 0 );
                 return list;
             }
