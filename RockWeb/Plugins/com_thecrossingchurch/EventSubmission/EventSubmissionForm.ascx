@@ -419,7 +419,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-textarea
                     label="In 450 characters or less, describe why someone should attend your event and what they will learn/receive."
                     v-model="request.WhyAttendSixtyFive"
-                    :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. (${request.WhyAttendSixtyFive.length}/450)`"
+                    :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. For example, “Have you ever wondered how Jesus would have dealt with depression and anxiety?” (${request.WhyAttendSixtyFive.length}/450)`"
                     :rules="[rules.required(request.WhyAttendSixtyFive, 'This field'), rules.publicityCharacterLimit(request.WhyAttendSixtyFive, 450)]"
                   ></v-textarea>
                 </v-col>
@@ -536,13 +536,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       label="In 90 characters or less, describe why someone should attend your event."
                       v-model="request.WhyAttendNinety"
                       :rules="[rules.required(request.WhyAttendNinety, 'This field'), rules.publicityCharacterLimit(request.WhyAttendNinety, 90)]"
-                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. ${request.WhyAttendNinety.length}/90`"
+                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. For example, “Have you ever wondered how Jesus would have dealt with depression and anxiety?” ${request.WhyAttendNinety.length}/90`"
                     ></v-textarea>
                   </v-col>
                 </v-row>
                 <v-row>
                   <v-col>
-                    <label class="v-label theme--light">Words, phrases, or questions you want your event to appear under when someone searches on Google</label>
+                    <label class="v-label theme--light">Which words, phrases, and questions would you like your event to trigger when someone searches on Google?</label>
                     <v-chip-group>
                       <v-chip
                         v-for="(key, idx) in request.GoogleKeys"
@@ -576,7 +576,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-text-field
                       label="In 65 characters or less, describe why someone should attend your event."
                       v-model="request.WhyAttendTen"
-                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. ${request.WhyAttendTen.length}/65`"
+                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. For example, “Have you ever wondered how Jesus would have dealt with depression and anxiety?” ${request.WhyAttendTen.length}/65`"
                       :rules="[rules.required(request.WhyAttendTen, 'This field'), rules.publicityCharacterLimit(request.WhyAttendTen, 65)]"
                     ></v-text-field>
                   </v-col>
@@ -629,7 +629,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       label="In 175 characters or less, describe why someone should attend your event."
                       v-model="request.WhyAttendTwenty"
                       :rules="[rules.publicityCharacterLimit(request.WhyAttendTwenty, 175)]"
-                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. (${request.WhyAttendTwenty.length}/175)`"
+                      :hint="`Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. For example, “Have you ever wondered how Jesus would have dealt with depression and anxiety?” (${request.WhyAttendTwenty.length}/175)`"
                     ></v-textarea>
                   </v-col>
                 </v-row>
@@ -1129,6 +1129,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 v-model="e.Checkin"
               ></v-switch>
             </v-col>
+            <v-col cols="12" md="6" v-if="e.Checkin && e.ExpectedAttendance >= 100">
+              <v-switch
+                label="Since your event is estimated to support more than 100 people, would you like the database team to provide a team to work your event in-person?"
+                v-model="e.SupportTeam"
+              ></v-switch>
+            </v-col>
           </v-row>
           <v-dialog
             v-if="dialog"
@@ -1382,7 +1388,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         readonly
                         v-bind="attrs"
                         v-on="on"
-                        :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.RegistrationEndDate, request.needsChildCare)]"
+                        :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.EventDate, e.RegistrationEndDate, request.needsChildCare)]"
                         clearable
                       ></v-text-field>
                     </template>
@@ -1413,7 +1419,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-row>
             <v-col>
               <v-text-field
-                label="When your registrants receive their confirmation email, who should this email come from?"
+                label="Who should this email come from?"
                 v-model="e.Sender"
                 :rules="[rules.required(e.Sender, 'Sender')]"
               ></v-text-field>
@@ -1482,9 +1488,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         required(val, field) {
                             return !!val || `${field} is required`;
                         },
-                        registrationCloseDate(eventDates, closeDate, needsChildCare) {
+                        registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare) {
                             let dates = eventDates.map(d => moment(d))
                             let minDate = moment.min(dates)
+                            if (eventDate) {
+                                minDate = moment(eventDate)
+                            }
                             if (needsChildCare) {
                                 minDate = minDate.subtract(1, "day")
                             }
@@ -1880,7 +1889,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-row>
               <v-col cols="12" md="6">
                 <strong>
-                  What time would you like food to be set up and ready for childcare?
+                  What time would you like your childcare food delivered?
                 </strong>
                 <time-picker
                   v-model="e.CCFoodTime"
@@ -2446,6 +2455,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           ExpectedAttendance: "",
                           Rooms: "",
                           Checkin: false,
+                          SupportTeam: false,
                           EventURL: "",
                           ZoomPassword: "",
                           ThankYou: "",
@@ -2666,20 +2676,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               earliestDate() {
                   let eDate = new moment();
                   if (
-                      this.request.needsOnline ||
-                      this.request.needsCatering ||
-                      this.request.needsReg ||
-                      this.request.needsAccom
-                  ) {
+                      !this.request.needsPub && !this.request.needsChildCare && (
+                          this.request.needsOnline ||
+                          this.request.needsCatering ||
+                          this.request.needsReg ||
+                          this.request.needsAccom
+                      )) {
                       eDate = moment(eDate).add(14, "days");
                   }
                   if (this.request.needsPub) {
-                      eDate = moment(eDate).add(6, "weeks");
+                      eDate = moment(eDate).add(6, "weeks").add(1, "day");
                   }
                   if (
-                      this.request.needsChildCare ||
-                      this.request.ExpectedAttendance > 250
-                  ) {
+                      !this.request.needsPub && (
+                          this.request.needsChildCare ||
+                          this.request.ExpectedAttendance > 250
+                      )) {
                       eDate = moment().add(30, "days");
                       this.request.EventDates.forEach((itm, i) => {
                           if (
@@ -2697,9 +2709,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   return moment(eDate).format("yyyy-MM-DD");
               },
               latestPubDate() {
-                  let sortedDates = this.request.EventDates.sort((a, b) => a.diff(b))
-                  let eDate = new moment(sortedDates[0]);
-                  eDate = moment(eDate).subtract(7, "days");
+                  let sortedDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
+                  let eDate = new moment(sortedDates[sortedDates.length - 1]);
+                  eDate = moment(eDate).subtract(1, "days");
                   return moment(eDate).format("yyyy-MM-DD");
               },
               pubStrategyOptions() {
@@ -2836,6 +2848,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].Rooms = this.request.Events[indexes.targetIdx].Rooms
                   this.request.Events[indexes.currIdx].ExpectedAttendance = this.request.Events[indexes.targetIdx].ExpectedAttendance
                   this.request.Events[indexes.currIdx].Checkin = this.request.Events[indexes.targetIdx].Checkin
+                  this.request.Events[indexes.currIdx].SupportTeam = this.request.Events[indexes.targetIdx].SupportTeam
               },
               updateCatering(indexes) {
                   this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
@@ -3101,7 +3114,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       for (var i = 0; i < this.request.Events.length; i++) {
                           this.request.Events[i].Rooms = []
                           this.request.Events[i].ExpectedAttendance = null
-                          this.request.Events[i].Checkin = null
+                          this.request.Events[i].Checkin = false
+                          this.request.Events[i].SupportTeam = false
                       }
                   }
               },
@@ -3140,12 +3154,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].Vendor = ''
                           this.request.Events[i].BudgetLine = ''
                           this.request.Events[i].Menu = ''
-                          this.request.Events[i].FoodDelivery = ''
+                          this.request.Events[i].FoodDelivery = true
                           this.request.Events[i].FoodTime = ''
                           this.request.Events[i].FoodDropOff = ''
                           this.request.Events[i].Drinks = []
                           this.request.Events[i].DrinkTime = ''
-                          this.request.Events[i].ServingTeamAgree = ''
+                          this.request.Events[i].ServingTeamAgree = false
                           this.request.Events[i].DrinkDropOff = ''
                           this.request.Events[i].CCVendor = ''
                           this.request.Events[i].CCBudgetLine = ''
@@ -3169,11 +3183,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       for (var i = 0; i < this.request.Events.length; i++) {
                           this.request.Events[i].TechNeeds = []
                           this.request.Events[i].TechDescription = ''
-                          this.request.Events[i].Drinks = []
-                          this.request.Events[i].DrinkTime = ''
-                          this.request.Events[i].ServingTeamAgree = null
-                          this.request.Events[i].DrinkDropOff = ''
-                          this.request.Events[i].ShowOnCalendar = null
+                          if (!this.request.needsCatering) {
+                              this.request.Events[i].Drinks = []
+                              this.request.Events[i].DrinkTime = ''
+                              this.request.Events[i].ServingTeamAgree = false
+                              this.request.Events[i].DrinkDropOff = ''
+                          }
+                          this.request.Events[i].ShowOnCalendar = false
                           this.request.Events[i].PublicityBlurb = ''
                           this.request.Events[i].SetUp = ''
                           this.request.Events[i].SetUpImage = null

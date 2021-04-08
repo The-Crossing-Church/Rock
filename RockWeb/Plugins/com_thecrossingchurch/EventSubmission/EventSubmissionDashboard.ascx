@@ -286,7 +286,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row>
+                    <v-row v-if="selected.needsReg">
                       <v-col>
                         <div class="floating-title">Check-in Requested</div>
                         <template v-if="selected.Changes != null && e.Checkin != selected.Changes.Events[idx].Checkin">
@@ -295,6 +295,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                         <template v-else>
                           {{boolToYesNo(e.Checkin)}}
+                        </template>
+                      </v-col>
+                      <v-col v-if="(e.Checkin || (selected.Changes && selected.Changes.Events[idx].Checkin)) && (e.ExpectedAttendance >= 100 || (selected.Changes && selected.Changes.Events[idx].ExpectedAttendance >= 100))">
+                        <div class="floating-title">Database Team Support Requested</div>
+                        <template v-if="selected.Changes != null && e.SupportTeam != selected.Changes.Events[idx].SupportTeam">
+                          <span class='red--text'>{{(e.SupportTeam != null ? boolToYesNo(e.SupportTeam) : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].SupportTeam != null ? boolToYesNo(selected.Changes.Events[idx].SupportTeam) : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{boolToYesNo(e.SupportTeam)}}
                         </template>
                       </v-col>
                     </v-row>

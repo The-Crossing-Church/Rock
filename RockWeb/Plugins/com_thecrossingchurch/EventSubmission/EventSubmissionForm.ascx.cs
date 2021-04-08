@@ -311,7 +311,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             item.SetAttributeValue( "RequestStatus", status );
             //Changes are proposed if the event isn't pre-approved, is existing, and the requestor isn't in the Event Admin Role
-            if ( item.Id > 0 && status != "Approved" && status != "Submitted" && !EventSR.Members.Where(gm => gm.GroupMemberStatus == GroupMemberStatus.Active).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
+            if ( item.Id > 0 && status != "Approved" && status != "Submitted" && !EventSR.Members.Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Active ).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
             {
                 item.SetAttributeValue( "ProposedChangesJSON", raw );
             }
@@ -359,7 +359,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         /// <param name="sender"></param>
         /// <param name="e"></param>
         protected void btnChangeRequest_Click( object sender, EventArgs e )
-        { 
+        {
             int id = 0;
             ContentChannelItem item = new ContentChannelItem();
             ContentChannelItemService svc = new ContentChannelItemService( context );
@@ -428,7 +428,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             else
             {
-                if ( RoomOnlySR.Members.Where(m => m.GroupMemberStatus == GroupMemberStatus.Active).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
+                if ( RoomOnlySR.Members.Where( m => m.GroupMemberStatus == GroupMemberStatus.Active ).Select( m => m.PersonId ).Contains( CurrentPersonId.Value ) )
                 {
                     canEdit = true;
                 }
@@ -660,19 +660,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
         private string GenerateEmailDetails( ContentChannelItem item, EventRequest request )
         {
-            string message = "";
-            message += "<strong>Ministry:</strong> " + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + "<br/>";
-            message += "<strong>Ministry Contact:</strong> " + request.Contact + "<br/>";
-            message += "<strong>Requested Resources:</strong> " + item.AttributeValues["RequestType"].Value + "<br/>";
+            string message = "<br/>";
+            message += "<strong style='font-size: 16px;'>Ministry:</strong> <span style='font-size: 16px;'>" + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + "</span><br/>";
+            message += "<strong style='font-size: 16px;'>Event Name:</strong> <span style='font-size: 16px;'>" + request.Name + "</span><br/>";
+            message += "<strong style='font-size: 16px;'>Ministry Contact:</strong> <span style='font-size: 16px;'>" + request.Contact + "</span><br/><br/>";
+
+            message += "<strong>Requested Resources:</strong> " + item.AttributeValues["RequestType"].Value + "<br/><br/>";
+
             for ( int i = 0; i < request.Events.Count(); i++ )
             {
+                message += "<strong style='color: #6485b3;'>Date Information</strong><br/>";
                 if ( request.Events.Count() == 1 || request.IsSame )
                 {
-                    message += "<strong>Event Dates:</strong> " + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "<br/>";
+                    message += "<strong style='font-size: 14px;'>Event Dates:</strong> <span style='font-size: 14px;'>" + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "</span><br/>";
                 }
                 else
                 {
-                    message += "<strong>Date:</strong> " + DateTime.Parse( request.Events[i].EventDate ).ToString( "MM/dd/yyyy" ) + "<br/>";
+                    message += "<strong style='font-size: 14px;'>Date:</strong> <span style='font-size: 14px;'>" + DateTime.Parse( request.Events[i].EventDate ).ToString( "MM/dd/yyyy" ) + "</span><br/>";
                 }
                 if ( !String.IsNullOrEmpty( request.Events[i].StartTime ) )
                 {
@@ -682,36 +686,29 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     message += "<strong>End Time:</strong> " + request.Events[i].EndTime + "<br/>";
                 }
+
                 if ( request.needsSpace )
                 {
+                    message += "<br/><strong style='color: #6485b3;'>Room Information</strong><br/>";
                     message += "<strong>Requested Rooms:</strong> " + String.Join( ", ", Rooms.Where( dv => request.Events[i].Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
-                    message += "<strong>Needs Check-in:</strong> " + ( request.Events[i].Checkin.Value == true ? "Yes" : "No" ) + "<br/>";
+                    message += "<strong>Needs In-Person Check-in:</strong> " + ( request.Events[i].Checkin.Value == true ? "Yes" : "No" ) + "<br/>";
                     message += "<strong>Expected Attendance:</strong> " + request.Events[i].ExpectedAttendance + "<br/>";
-                }
-                if ( request.needsOnline )
-                {
-                    message += "<strong>Event Link:</strong> " + request.Events[i].EventURL + "<br/>";
-                    if ( !String.IsNullOrEmpty( request.Events[i].ZoomPassword ) )
+                    if ( request.Events[i].Checkin.Value == true && request.Events[i].ExpectedAttendance >= 100 )
                     {
-                        message += "<strong>Zoom Password:</strong> " + request.Events[i].ZoomPassword + "<br/>";
+                        message += "<strong>Requested Database Team Support:</strong> " + ( request.Events[i].SupportTeam.Value == true ? "Yes" : "No" ) + "<br/>";
                     }
                 }
-                if ( request.needsChildCare )
-                {
-                    message += "<strong>Childcare Age Groups:</strong> " + String.Join( ", ", request.Events[i].ChildCareOptions ) + "<br/>";
-                    message += "<strong>Expected Number of Children:</strong> " + request.Events[i].EstimatedKids + "<br/>";
-                    message += "<strong>Childcare Start Time:</strong> " + request.Events[i].CCStartTime + "<br/>";
-                    message += "<strong>Childcare End Time:</strong> " + request.Events[i].CCEndTime + "<br/>";
-                }
+
                 if ( request.needsCatering )
                 {
+                    message += "<br/><strong style='color: #6485b3;'>Food/Drink Information</strong><br/>";
                     message += "<strong>Preferred Vendor:</strong> " + request.Events[i].Vendor + "<br/>";
-                    message += "<strong>Budget Line:</strong> " + request.Events[i].BudgetLine + "<br/>";
                     message += "<strong>Preferred Menu:</strong> " + request.Events[i].Menu + "<br/>";
+                    message += "<strong>Budget Line:</strong> " + request.Events[i].BudgetLine + "<br/>";
                     if ( request.Events[i].FoodDelivery )
                     {
-                        message += "<strong>Food Set-up Time:</strong> " + request.Events[i].FoodTime + "<br/>";
-                        message += "<strong>Food Drop off Location:</strong> " + request.Events[i].FoodDropOff + "<br/>";
+                        message += "<strong>Food Set-Up Time:</strong> " + request.Events[i].FoodTime + "<br/>";
+                        message += "<strong>Food Set-Up Location:</strong> " + request.Events[i].FoodDropOff + "<br/>";
                     }
                     else
                     {
@@ -723,29 +720,46 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].DrinkTime ) )
                     {
-                        message += "<strong>Drink Set-up Time:</strong> " + request.Events[i].DrinkTime + "<br/>";
+                        message += "<strong>Drink Set-Up Time:</strong> " + request.Events[i].DrinkTime + "<br/>";
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].DrinkDropOff ) )
                     {
-                        message += "<strong>Drink Drop off Location:</strong> " + request.Events[i].DrinkDropOff + "<br/>";
+                        message += "<strong>Drink Set-Up Location:</strong> " + request.Events[i].DrinkDropOff + "<br/>";
                     }
-                    if ( request.needsChildCare )
+                }
+
+                if ( request.needsOnline )
+                {
+                    message += "<br/><strong style='color: #6485b3;'>Online Information</strong><br/>";
+                    message += "<strong>Event Link:</strong> " + request.Events[i].EventURL + "<br/>";
+                    if ( !String.IsNullOrEmpty( request.Events[i].ZoomPassword ) )
+                    {
+                        message += "<strong>Zoom Password:</strong> " + request.Events[i].ZoomPassword + "<br/>";
+                    }
+                }
+
+                if ( request.needsChildCare )
+                {
+                    message += "<br/><strong style='color: #6485b3;'>Childcare Information</strong><br/>";
+                    message += "<strong>Childcare Age Groups:</strong> " + String.Join( ", ", request.Events[i].ChildCareOptions ) + "<br/>";
+                    message += "<strong>Expected Number of Children:</strong> " + request.Events[i].EstimatedKids + "<br/>";
+                    message += "<strong>Childcare Start Time:</strong> " + request.Events[i].CCStartTime + "<br/>";
+                    message += "<strong>Childcare End Time:</strong> " + request.Events[i].CCEndTime + "<br/>";
+                    if ( request.needsCatering )
                     {
                         message += "<strong>Preferred Vendor for Childcare:</strong> " + request.Events[i].CCVendor + "<br/>";
                         message += "<strong>Budget Line for Childcare:</strong> " + request.Events[i].CCBudgetLine + "<br/>";
                         message += "<strong>Preferred Menu for Childcare:</strong> " + request.Events[i].CCMenu + "<br/>";
-                        message += "<strong>ChildCare Food Set-up Time:</strong> " + request.Events[i].CCFoodTime + "<br/>";
+                        message += "<strong>ChildCare Food Set-Up Time:</strong> " + request.Events[i].CCFoodTime + "<br/>";
                     }
                 }
+
                 if ( request.needsReg )
                 {
+                    message += "<br/><strong style='color: #6485b3;'>Registration Information</strong><br/>";
                     if ( request.Events[i].RegistrationDate.HasValue )
                     {
                         message += "<strong>Registration Date:</strong> " + request.Events[i].RegistrationDate.Value.ToString( "MM/dd/yyyy" ) + "<br/>";
-                    }
-                    if ( !String.IsNullOrEmpty( request.Events[i].Fee ) )
-                    {
-                        message += "<strong>Registration Fee:</strong> " + request.Events[i].Fee + "<br/>";
                     }
                     if ( request.Events[i].RegistrationEndDate.HasValue )
                     {
@@ -754,6 +768,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     if ( !String.IsNullOrEmpty( request.Events[i].RegistrationEndTime ) )
                     {
                         message += "<strong>Registration Close Time:</strong> " + request.Events[i].RegistrationEndTime + "<br/>";
+                    }
+                    if ( request.Events[i].FeeType.Count() > 0 )
+                    {
+                        message += "<strong>Registration Fee Types:</strong> " + String.Join( ", ", request.Events[i].FeeType ) + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].Fee ) )
+                    {
+                        message += "<strong>Registration Fee Per Individual:</strong> " + request.Events[i].Fee + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].CoupleFee ) )
+                    {
+                        message += "<strong>Registration Fee Per Couple:</strong> " + request.Events[i].CoupleFee + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].OnlineFee ) )
+                    {
+                        message += "<strong>Registration Online Fee:</strong> " + request.Events[i].OnlineFee + "<br/>";
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].ThankYou ) )
                     {
@@ -768,10 +798,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         message += "<strong>Confirmation Email Additional Details:</strong> " + request.Events[i].AdditionalDetails + "<br/>";
                     }
                 }
+
                 if ( request.needsAccom )
                 {
+                    message += "<br/><strong style='color: #6485b3;'>Tech Information</strong><br/>";
+                    if ( request.Events[i].TechNeeds != null && request.Events[i].TechNeeds.Count() > 0 )
+                    {
+                        message += "<strong>Tech Needs:</strong> " + String.Join( ", ", request.Events[i].TechNeeds ) + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].TechDescription ) )
+                    {
+                        message += "<strong>Tech Description:</strong> " + request.Events[i].TechDescription + "<br/>";
+                    }
+
+                    if ( !String.IsNullOrEmpty( request.Events[i].SetUp ) )
+                    {
+                        message += "<br/><strong style='color: #6485b3;'>Set-Up Information</strong><br/>";
+                        message += "<strong>Room Set-Up:</strong> " + request.Events[i].SetUp + "<br/>";
+                    }
+
                     if ( !request.needsCatering )
                     {
+                        message += "<br/><strong style='color: #6485b3;'>Drink Information</strong><br/>";
                         if ( request.Events[i].Drinks != null && request.Events[i].Drinks.Count() > 0 )
                         {
                             message += "<strong>Drinks:</strong> " + String.Join( ", ", request.Events[i].Drinks ) + "<br/>";
@@ -785,24 +833,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                             message += "<strong>Drink Drop off Location:</strong> " + request.Events[i].DrinkDropOff + "<br/>";
                         }
                     }
-                    if ( request.Events[i].TechNeeds != null && request.Events[i].TechNeeds.Count() > 0 )
-                    {
-                        message += "<strong>Tech Needs:</strong> " + String.Join( ", ", request.Events[i].TechNeeds ) + "<br/>";
-                    }
-                    if ( !String.IsNullOrEmpty( request.Events[i].TechDescription ) )
-                    {
-                        message += "<strong>Tech Description:</strong> " + request.Events[i].TechDescription + "<br/>";
-                    }
+
+                    message += "<br/><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
                     message += "<strong>Add to Public Calendar:</strong> " + ( request.Events[i].ShowOnCalendar == true ? "Yes" : "No" ) + "<br/>";
                     if ( request.Events[i].ShowOnCalendar && !String.IsNullOrEmpty( request.Events[i].PublicityBlurb ) )
                     {
                         message += "<strong>Publicity Blurb:</strong> " + request.Events[i].PublicityBlurb + "<br/>";
                     }
                 }
-                message += "<br/>";
+                message += "<hr/>";
             }
+
             if ( request.needsPub )
             {
+                message += "<br/><strong style='color: #6485b3;'>Publicity Information</strong><br/>";
                 if ( !String.IsNullOrEmpty( request.WhyAttendSixtyFive ) )
                 {
                     message += "<strong>Describe Why Someone Should Attend Your Event (450):</strong> " + request.WhyAttendSixtyFive + "<br/>";
@@ -823,8 +867,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.PublicityStrategies != null && request.PublicityStrategies.Count() > 0 )
                 {
                     message += "<strong>Publicity Strategies:</strong> " + String.Join( ", ", request.PublicityStrategies ) + "<br/>";
+
                     if ( request.PublicityStrategies.Contains( "Social Media/Google Ads" ) )
                     {
+                        message += "<br/><strong style='color: #6485b3;'>Social Media/Google Information</strong><br/>";
                         if ( !String.IsNullOrEmpty( request.WhyAttendNinety ) )
                         {
                             message += "<strong>Describe Why Someone Should Attend Your Event (90):</strong> " + request.WhyAttendNinety + "<br/>";
@@ -839,8 +885,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                             message += "</ul>";
                         }
                     }
+
                     if ( request.PublicityStrategies.Contains( "Mobile Worship Folder" ) )
                     {
+                        message += "<br/><strong style='color: #6485b3;'>Mobile Worship Folder Information</strong><br/>";
                         if ( !String.IsNullOrEmpty( request.WhyAttendTen ) )
                         {
                             message += "<strong>Describe Why Someone Should Attend Your Event (65):</strong> " + request.WhyAttendTen + "<br/>";
@@ -850,8 +898,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                             message += "<strong>Visual Ideas for Graphic:</strong> " + request.VisualIdeas + "<br/>";
                         }
                     }
+
                     if ( request.PublicityStrategies.Contains( "Announcement" ) )
                     {
+                        message += "<br/><strong style='color: #6485b3;'>Announcement Information</strong><br/>";
                         if ( request.Stories != null && request.Stories.Count() > 0 )
                         {
                             for ( int i = 0; i < request.Stories.Count(); i++ )
@@ -870,287 +920,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                 }
             }
+
             if ( !String.IsNullOrEmpty( request.Notes ) )
             {
+                message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";
                 message += "<strong>Notes:</strong> " + request.Notes + "<br/>";
             }
 
             return message;
-        }
-
-        private void SyncCalendar( ContentChannelItem item, EventRequest request )
-        {
-            string tennant = GetAttributeValue( "MicrosoftTennant" );
-            string clientId = GetAttributeValue( "MicrosoftClientID" );
-            string clientSecret = GetAttributeValue( "MicrosoftClientSecret" );
-            IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
-            .Create( clientId )
-            .WithTenantId( tennant )
-            .WithClientSecret( clientSecret )
-            .Build();
-
-            ClientCredentialProvider authProvider = new ClientCredentialProvider( confidentialClientApplication );
-            GraphServiceClient graphClient = new GraphServiceClient( authProvider );
-
-            List<CalendarRoomLink> calendars = JsonConvert.DeserializeObject<List<CalendarRoomLink>>( item.AttributeValues["MicrosoftCalendarEvents"].Value );
-            EventRequest previousRequest = JsonConvert.DeserializeObject<EventRequest>( item.AttributeValues["RequestJSON"].Value );
-
-            //for ( int x = 0; x < request.Events.Count(); x++ )
-            //{
-            //    bool startChange = false, endChange = false;
-            //    if ( previousRequest.StartTime != request.StartTime )
-            //    {
-            //        startChange = true;
-            //    }
-            //    if ( previousRequest.EndTime != request.EndTime )
-            //    {
-            //        startChange = true;
-            //    }
-            //    var removeDates = previousRequest.EventDates.Where( pD => !request.EventDates.Any( cD => cD == pD ) ).ToList();
-            //    var addDates = request.EventDates.Where( pD => !previousRequest.EventDates.Any( cD => cD == pD ) ).ToList();
-            //    var prevRoomTypes = Rooms.Where( r => previousRequest.Rooms.Contains( r.Id.ToString() ) ).Select( r => r.AttributeValues["Type"].Value ).Distinct().ToList();
-            //    var currRoomTypes = Rooms.Where( r => request.Rooms.Contains( r.Id.ToString() ) ).Select( r => r.AttributeValues["Type"].Value ).Distinct().ToList();
-            //    var removeTypes = prevRoomTypes.Where( pR => !currRoomTypes.Any( cR => pR == cR ) );
-            //    var addTypes = currRoomTypes.Where( cR => !prevRoomTypes.Any( pR => pR == cR ) );
-            //    var removeCals = removeTypes.Select( e => LocationCalendarLink[e] ).ToList();
-            //    //var addCals = addTypes.Select( e => LocationCalendarLink[e] ).ToList();
-            //    var addCals = addTypes.Select( e => "AAMkADg5NmRlYmYzLWE3ODMtNDUyNC1iNmNjLWYyMjA1NDJlZDNlNgBGAAAAAACQHiszpEjLQ5ANTXBsyjz-BwCYFW-pxglGTbnCnhARG3dbAAAAAAEGAACYFW-pxglGTbnCnhARG3dbAAAAAEEVAAA=" ).ToList();
-
-            //    //Request start and end times
-            //    string adjustedStartTime = request.StartTime.Split( ' ' )[0];
-            //    if ( request.StartTime.Split( ' ' )[1] == "PM" && !request.StartTime.Contains( "12" ) )
-            //    {
-            //        int hour = Int32.Parse( adjustedStartTime.Split( ':' )[0] ) + 12;
-            //        adjustedStartTime = hour + ":" + adjustedStartTime.Split( ':' )[1];
-            //    }
-            //    string adjustedEndTime = request.EndTime.Split( ' ' )[0];
-            //    if ( request.EndTime.Split( ' ' )[1] == "PM" && !request.EndTime.Contains( "12" ) )
-            //    {
-            //        int hour = Int32.Parse( adjustedEndTime.Split( ':' )[0] ) + 12;
-            //        adjustedEndTime = hour + ":" + adjustedEndTime.Split( ':' )[1];
-            //    }
-
-            //    //Remove or Recitify Existing Events
-            //    for ( int i = 0; i < calendars.Count(); i++ )
-            //    {
-            //        string calType = LocationCalendarLink.FirstOrDefault( kv => kv.Value == calendars[i].Calendar ).Key;
-            //        calendars[i].Rooms = Rooms.Where( r => request.Rooms.Contains( r.Id.ToString() ) && r.AttributeValues["Type"].Value == calType ).Select( r => r.Value ).ToList();
-            //        if ( removeCals.Contains( calendars[i].Calendar ) )
-            //        {
-            //            //Remove all events
-            //            foreach ( var eventItem in calendars[i].Events )
-            //            {
-            //                var graphTask = Task.Run( async () =>
-            //                {
-            //                    //await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events[calendars[i].Events[eventItem.Value]]
-            //                    //.Request()
-            //                    //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-            //                    //.DeleteAsync();
-            //                    await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[calendars[i].Calendar].Events[calendars[i].Events[eventItem.Value]]
-            //                    .Request()
-            //                    .DeleteAsync();
-            //                } );
-            //                calendars[i].Events.Remove( eventItem.Key );
-            //            }
-            //        }
-            //        if ( removeDates.Count() > 0 || startChange || endChange )
-            //        {
-            //            //We need to loop through every date
-            //            foreach ( var eventItem in calendars[i].Events )
-            //            {
-            //                if ( removeDates.Contains( eventItem.Key ) )
-            //                {
-            //                    //Delete Event 
-            //                    var graphTask = Task.Run( async () =>
-            //                    {
-            //                        //await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events[calendars[i].Events[eventItem.Value]]
-            //                        //.Request()
-            //                        //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-            //                        //.DeleteAsync();
-            //                        await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[calendars[i].Calendar].Events[calendars[i].Events[eventItem.Value]]
-            //                        .Request()
-            //                        .DeleteAsync();
-            //                    } );
-            //                    calendars[i].Events.Remove( eventItem.Key );
-            //                }
-            //                else if ( startChange || endChange )
-            //                {
-            //                    DateTime start = new DateTime();
-            //                    if ( request.MinsStartBuffer.HasValue )
-            //                    {
-            //                        double startBuffer = request.MinsStartBuffer.Value * -1;
-            //                        start = DateTime.Parse( eventItem.Key + "T" + adjustedStartTime ).AddMinutes( startBuffer );
-            //                    }
-            //                    DateTime end = new DateTime();
-            //                    if ( request.MinsEndBuffer.HasValue )
-            //                    {
-            //                        double endBuffer = request.MinsEndBuffer.Value * -1;
-            //                        end = DateTime.Parse( eventItem.Key + "T" + adjustedEndTime ).AddMinutes( endBuffer );
-            //                    }
-            //                    Event e = new Event()
-            //                    {
-            //                        Subject = item.Title,
-            //                        Body = new ItemBody()
-            //                        {
-            //                            Content = "Ministry: " + Ministries.FirstOrDefault( m => m.Id.ToString() == request.Ministry ).Value + "<br/>Contact: " + request.Contact,
-            //                            ContentType = BodyType.Html
-            //                        },
-            //                        Start = new DateTimeTimeZone
-            //                        {
-            //                            DateTime = start.ToString( "s" ),
-            //                            TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //                        },
-            //                        End = new DateTimeTimeZone
-            //                        {
-            //                            DateTime = end.ToString( "s" ),
-            //                            TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //                        },
-            //                        Location = new Microsoft.Graph.Location
-            //                        {
-            //                            DisplayName = String.Join( ", ", calendars[i].Rooms )
-            //                        },
-            //                    };
-            //                    var graphTask = Task.Run( async () =>
-            //                    {
-            //                        //return await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events[calendars[i].Events[eventItem.Value]]
-            //                        //.Request()
-            //                        //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-            //                        //.UpdateAsync(e);
-            //                        return await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[calendars[i].Calendar].Events[calendars[i].Events[eventItem.Value]]
-            //                        .Request()
-            //                        .UpdateAsync( e );
-            //                    } );
-            //                }
-            //            }
-            //        }
-            //    }
-
-            //    //Add new Calendars
-            //    for ( int i = 0; i < addCals.Count(); i++ )
-            //    {
-            //        var type = LocationCalendarLink.FirstOrDefault( l => l.Value == addCals[i] ).Key;
-            //        var link = new CalendarRoomLink()
-            //        {
-            //            Calendar = addCals[i],
-            //            Rooms = Rooms.Where( r => request.Rooms.Contains( r.Id.ToString() ) && r.AttributeValues["Type"].Value == type ).Select( r => r.Value ).ToList(),
-            //            Events = new Dictionary<string, string>()
-            //        };
-            //        //Create event for each date
-            //        for ( int k = 0; k < request.EventDates.Count(); k++ )
-            //        {
-            //            DateTime start = new DateTime();
-            //            if ( request.MinsStartBuffer.HasValue )
-            //            {
-            //                double startBuffer = request.MinsStartBuffer.Value * -1;
-            //                start = DateTime.Parse( request.EventDates[k] + "T" + adjustedStartTime ).AddMinutes( startBuffer );
-            //            }
-            //            DateTime end = new DateTime();
-            //            if ( request.MinsEndBuffer.HasValue )
-            //            {
-            //                double endBuffer = request.MinsEndBuffer.Value * -1;
-            //                end = DateTime.Parse( request.EventDates[k] + "T" + adjustedEndTime ).AddMinutes( endBuffer );
-            //            }
-            //            Event e = new Event()
-            //            {
-            //                Subject = item.Title,
-            //                Body = new ItemBody()
-            //                {
-            //                    Content = "Ministry: " + Ministries.FirstOrDefault( m => m.Id.ToString() == request.Ministry ).Value + "<br/>Contact: " + request.Contact,
-            //                    ContentType = BodyType.Html
-            //                },
-            //                Start = new DateTimeTimeZone
-            //                {
-            //                    DateTime = start.ToString( "s" ),
-            //                    TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //                },
-            //                End = new DateTimeTimeZone
-            //                {
-            //                    DateTime = end.ToString( "s" ),
-            //                    TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //                },
-            //                Location = new Microsoft.Graph.Location
-            //                {
-            //                    DisplayName = String.Join( ", ", calendars[i].Rooms )
-            //                },
-            //            };
-            //            var graphTask = Task.Run( async () =>
-            //            {
-            //                //return await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events
-            //                //.Request()
-            //                //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-            //                //.GetAsync();
-            //                return await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[addCals[i]].Events
-            //                .Request()
-            //                .AddAsync( e );
-            //            } );
-            //            var result = graphTask.Result;
-            //            link.Events.Add( request.EventDates[k], result.Id );
-            //        }
-            //        calendars.Add( link );
-            //    }
-            //    //Add new events
-            //    for ( int i = 0; i < addDates.Count(); i++ )
-            //    {
-            //        for ( int k = 0; k < calendars.Count(); k++ )
-            //        {
-            //            if ( !calendars[k].Events.ContainsKey( addDates[i] ) )
-            //            {
-            //                //We need to add this date to the calendar
-            //                DateTime start = new DateTime();
-            //                if ( request.MinsStartBuffer.HasValue )
-            //                {
-            //                    double startBuffer = request.MinsStartBuffer.Value * -1;
-            //                    start = DateTime.Parse( addDates[i] + "T" + adjustedStartTime ).AddMinutes( startBuffer );
-            //                }
-            //                DateTime end = new DateTime();
-            //                if ( request.MinsEndBuffer.HasValue )
-            //                {
-            //                    double endBuffer = request.MinsEndBuffer.Value * -1;
-            //                    end = DateTime.Parse( addDates[i] + "T" + adjustedEndTime ).AddMinutes( endBuffer );
-            //                }
-            //                Event e = new Event()
-            //                {
-            //                    Subject = item.Title,
-            //                    Body = new ItemBody()
-            //                    {
-            //                        Content = "Ministry: " + Ministries.FirstOrDefault( m => m.Id.ToString() == request.Ministry ).Value + "<br/>Contact: " + request.Contact,
-            //                        ContentType = BodyType.Html
-            //                    },
-            //                    Start = new DateTimeTimeZone
-            //                    {
-            //                        DateTime = start.ToString( "s" ),
-            //                        TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //                    },
-            //                    End = new DateTimeTimeZone
-            //                    {
-            //                        DateTime = end.ToString( "s" ),
-            //                        TimeZone = RockDateTime.OrgTimeZoneInfo.StandardName
-            //                    },
-            //                    Location = new Microsoft.Graph.Location
-            //                    {
-            //                        DisplayName = String.Join( ", ", calendars[k].Rooms )
-            //                    },
-            //                };
-            //                var graphTask = Task.Run( async () =>
-            //                {
-            //                    //return await graphClient.Users["400c361c-8563-454e-88bb-aa9e106fb80a"].Calendars[Calendars[i].Calendar].Events
-            //                    //.Request()
-            //                    //.Select( "subject,body,bodyPreview,organizer,attendees,start,end,location" )
-            //                    //.GetAsync();
-            //                    return await graphClient.Users["8a7c4579-cdf1-4bb6-917c-4ce7b5eab238"].Calendars[calendars[k].Calendar].Events
-            //                    .Request()
-            //                    .AddAsync( e );
-            //                } );
-            //                var result = graphTask.Result;
-            //                calendars[k].Events.Add( addDates[i], result.Id );
-            //            }
-            //        }
-            //    }
-
-            //}
-
-            item.SetAttributeValue( "MicrosoftCalendarEvents", JsonConvert.SerializeObject( calendars ) );
-            item.SaveAttributeValues( context );
         }
 
         #endregion
@@ -1200,12 +977,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
             public bool? Checkin { get; set; }
+            public bool? SupportTeam { get; set; }
             public string EventURL { get; set; }
             public string ZoomPassword { get; set; }
             public DateTime? RegistrationDate { get; set; }
             public DateTime? RegistrationEndDate { get; set; }
             public string RegistrationEndTime { get; set; }
+            public List<string> FeeType { get; set; }
             public string Fee { get; set; }
+            public string CoupleFee { get; set; }
+            public string OnlineFee { get; set; }
             public string Sender { get; set; }
             public string SenderEmail { get; set; }
             public string ThankYou { get; set; }
