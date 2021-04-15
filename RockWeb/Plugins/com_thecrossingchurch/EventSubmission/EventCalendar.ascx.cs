@@ -36,24 +36,24 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     /// <summary>
     /// Request form for Event Submissions
     /// </summary>
-    [DisplayName( "Event Submission History" )]
+    [DisplayName( "Event Calendar" )]
     [Category( "com_thecrossingchurch > Event Submission" )]
-    [Description( "All Event Submissions" )]
+    [Description( "Calendar of Events" )]
 
     [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
     [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 0 )]
     [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 0 )]
 
-    public partial class EventSubmissionHistory : Rock.Web.UI.RockBlock
+    public partial class EventCalendar : Rock.Web.UI.RockBlock
     {
         #region Variables
         public RockContext context { get; set; }
         private int DefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
-        private int PageId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
         private List<DefinedValue> Ministries { get; set; }
+        private DateTime SelectedMonthStart { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -88,6 +88,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger() } ) );
             Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
             hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
+            if( !String.IsNullOrEmpty( hfFocusDate.Value ) )
+            {
+                SelectedMonthStart = DateTime.Parse( hfFocusDate.Value );
+            }
+            else
+            {
+                SelectedMonthStart = DateTime.Now;
+                SelectedMonthStart = new DateTime( SelectedMonthStart.Year, SelectedMonthStart.Month, 1 );
+            }
             GetAllRequests();
             if ( !Page.IsPostBack )
             {
@@ -98,19 +107,50 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         #endregion
 
         #region Methods
+        /// <summary>
+        /// Update the Request List based on focus
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void btnSwitchFocus_Click( object sender, EventArgs e )
+        {
+            if ( !String.IsNullOrEmpty( hfFocusDate.Value ) )
+            {
+                SelectedMonthStart = DateTime.Parse( hfFocusDate.Value );
+            }
+            GetAllRequests();
+        }
 
         /// <summary>
         /// Get all requests
         /// </summary>
         protected void GetAllRequests()
         {
+            DateTime NextMonthStart = SelectedMonthStart.AddMonths( 1 );
             ContentChannelItemService svc = new ContentChannelItemService( context );
-            DateTime oneweekago = DateTime.Now.AddDays( -7 );
-            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).OrderByDescending( i => i.CreatedDateTime ).ToList();
+            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
             items.LoadAttributes();
-            hfRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } ) );
+            items = items.Where( i => {
+                var status = i.AttributeValues["RequestStatus"].Value;
+                if(status != "Submitted" && status != "Cancelled" && status != "Denied" )
+                {
+                    var dateStr = i.AttributeValues["EventDates"];
+                    var dates = dateStr.Value.Split( ',' );
+                    foreach ( var d in dates )
+                    {
+                        DateTime dt = DateTime.Parse( d );
+                        if ( DateTime.Compare( dt, SelectedMonthStart ) >= 1 && DateTime.Compare( dt, NextMonthStart ) < 1 )
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            } ).ToList();
+            hfRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } ) );
         }
 
         #endregion
+
     }
 }

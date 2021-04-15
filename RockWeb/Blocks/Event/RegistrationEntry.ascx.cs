@@ -5353,46 +5353,6 @@ namespace RockWeb.Blocks.Event
                     lUpdateEmailWarning.Visible = true;
                 }
 
-                // Build Discount info
-                if ( ShowDiscountCode() )
-                {
-                    divDiscountCode.Visible = true;
-
-                    string discountCode = RegistrationState.DiscountCode;
-                    if ( !string.IsNullOrWhiteSpace( discountCode ) )
-                    {
-                        var discount = RegistrationTemplate.Discounts
-                            .Where( d => d.Code.Equals( discountCode, StringComparison.OrdinalIgnoreCase ) )
-                            .FirstOrDefault();
-
-                        if ( discount == null )
-                        {
-                            nbDiscountCode.Text = string.Format( "'{1}' is not a valid {1}.", discountCode, DiscountCodeTerm );
-                            nbDiscountCode.Visible = true;
-                        }
-                        else
-                        {
-                            ShowDiscountAppliedNotificationBox( discount );
-                        }
-                    }
-
-                    tbDiscountCode.Text = tbDiscountCode.Text.IsNotNullOrWhiteSpace() ? tbDiscountCode.Text : RegistrationState.DiscountCode;
-
-                    if ( !AllowDiscountCodeEntry() )
-                    {
-                        tbDiscountCode.Enabled = false;
-
-                        // If we cannot edit and there is no existing value then just hide the discount div.
-                        divDiscountCode.Visible = tbDiscountCode.Text.IsNotNullOrWhiteSpace();
-                        lbDiscountApply.Visible = false;
-                    }
-                }
-                else
-                {
-                    divDiscountCode.Visible = false;
-                    tbDiscountCode.Text = RegistrationState.DiscountCode;
-                }
-
                 decimal? minimumInitialPaymentPerRegistrant = RegistrationTemplate.MinimumInitialPayment;
                 if ( RegistrationTemplate.SetCostOnInstance ?? false )
                 {
@@ -5733,6 +5693,50 @@ namespace RockWeb.Blocks.Event
                     pnlCostAndFees.Visible = false;
                     pnlPaymentInfo.Visible = false;
                 }
+
+                // Build Discount info
+                if ( ShowDiscountCode() )
+                {
+                    divDiscountCode.Visible = true;
+                    tbDiscountCode.Enabled = true;
+                    lbDiscountApply.Visible = true;
+
+                    string discountCode = RegistrationState.DiscountCode;
+                    if ( !string.IsNullOrWhiteSpace( discountCode ) )
+                    {
+                        var discount = RegistrationTemplate.Discounts
+                            .Where( d => d.Code.Equals( discountCode, StringComparison.OrdinalIgnoreCase ) )
+                            .FirstOrDefault();
+
+                        if ( discount == null )
+                        {
+                            nbDiscountCode.Text = string.Format( "'{1}' is not a valid {1}.", discountCode, DiscountCodeTerm );
+                            nbDiscountCode.Visible = true;
+                        }
+                        else
+                        {
+                            ShowDiscountAppliedNotificationBox( discount );
+                        }
+                    }
+
+                    tbDiscountCode.Text = tbDiscountCode.Text.IsNotNullOrWhiteSpace() ? tbDiscountCode.Text : RegistrationState.DiscountCode;
+
+                    if ( !AllowDiscountCodeEntry() )
+                    {
+                        tbDiscountCode.Enabled = false;
+
+                        // If we cannot edit and there is no existing value then just hide the discount div.
+                        divDiscountCode.Visible = tbDiscountCode.Text.IsNotNullOrWhiteSpace();
+                        lbDiscountApply.Visible = false;
+                    }
+                }
+                else
+                {
+                    divDiscountCode.Visible = false;
+                    tbDiscountCode.Text = RegistrationState.DiscountCode;
+                }
+
+
             }
         }
 

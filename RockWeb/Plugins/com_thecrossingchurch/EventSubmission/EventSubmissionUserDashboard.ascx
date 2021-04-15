@@ -1,6 +1,6 @@
 <%@ Control Language="C#" AutoEventWireup="true"
-CodeFile="EventSubmissionDashboard.ascx.cs"
-Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionDashboard"
+CodeFile="EventSubmissionUserDashboard.ascx.cs"
+Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionUserDashboard"
 %> <%-- Add Vue and Vuetify CDN --%>
 <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
@@ -32,27 +32,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <asp:HiddenField ID="hfRooms" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
-<asp:HiddenField ID="hfUpcomingRequests" runat="server" />
-<asp:HiddenField ID="hfCurrent" runat="server" />
 <asp:HiddenField ID="hfRequestURL" runat="server" />
-<asp:HiddenField ID="hfHistoryURL" runat="server" />
-<asp:HiddenField ID="hfRequestID" runat="server" />
-<asp:HiddenField ID="hfAction" runat="server" />
-<asp:HiddenField ID="hfUpdatedItem" runat="server" />
-<asp:HiddenField ID="hfApprovedEmail" runat="server" />
-<asp:HiddenField ID="hfDeniedEmail" runat="server" />
-<Rock:BootstrapButton
-  ID="btnChangeStatus"
-  CssClass="btn-hidden"
-  runat="server"
-  OnClick="ChangeStatus_Click"
-/>
-<Rock:BootstrapButton
-  ID="btnAddBuffer"
-  CssClass="btn-hidden"
-  runat="server"
-  OnClick="AddBuffer_Click"
-/>
+<asp:HiddenField ID="hfWorkflowURL" runat="server" />
 
 <div id="app">
   <v-app>
@@ -61,98 +42,182 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
         <v-col>
           <v-card>
             <v-card-text>
+              <v-expansion-panels v-model="expansion" flat>
+                <v-expansion-panel>
+                  <v-expansion-panel-header><h5><i class='fa fa-filter'></i> Filter Requests</h5></v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <v-row>
+                      <v-col>
+                        <v-text-field
+                          label="Request Title"
+                          v-model="filters.title"
+                          clearable
+                        ></v-text-field>
+                      </v-col>
+                      <v-col>
+                        <v-autocomplete
+                          label="Request Status"
+                          v-model="filters.status"
+                          :items="['Submitted','Approved','Denied','Cancelled','Pending Changes','Proposed Changes Denied','Changes Accepted by User','Cancelled by User']"
+                          multiple
+                          attach
+                          clearable
+                        ></v-autocomplete>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <v-menu
+                          v-model="eventStartMenu"
+                          :close-on-content-click="false"
+                          :nudge-right="40"
+                          transition="scale-transition"
+                          offset-y
+                          min-width="290px"
+                          attach
+                        >
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="filters.eventStart"
+                              label="Requests with an event date after..."
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              clearable
+                            ></v-text-field>
+                          </template>
+                          <v-date-picker
+                            v-model="filters.eventStart"
+                            @input="eventStartMenu = false"
+                          ></v-date-picker>
+                        </v-menu>
+                      </v-col>
+                      <v-col>
+                        <v-menu
+                          v-model="eventEndMenu"
+                          :close-on-content-click="false"
+                          :nudge-right="40"
+                          transition="scale-transition"
+                          offset-y
+                          min-width="290px"
+                          attach
+                        >
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="filters.eventEnd"
+                              label="Requests with an event date before..."
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              clearable
+                            ></v-text-field>
+                          </template>
+                          <v-date-picker
+                            v-model="filters.eventEnd"
+                            @input="eventEndMenu = false"
+                          ></v-date-picker>
+                        </v-menu>
+                      </v-col>
+                      <v-col>
+                        <v-menu
+                          v-model="createStartMenu"
+                          :close-on-content-click="false"
+                          :nudge-right="40"
+                          transition="scale-transition"
+                          offset-y
+                          min-width="290px"
+                          attach
+                        >
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="filters.createStart"
+                              label="Requests created after..."
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              clearable
+                            ></v-text-field>
+                          </template>
+                          <v-date-picker
+                            v-model="filters.createStart"
+                            @input="createStartMenu = false"
+                          ></v-date-picker>
+                        </v-menu>
+                      </v-col>
+                      <v-col>
+                        <v-menu
+                          v-model="createEndMenu"
+                          :close-on-content-click="false"
+                          :nudge-right="40"
+                          transition="scale-transition"
+                          offset-y
+                          min-width="290px"
+                          attach
+                        >
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="filters.createEnd"
+                              label="Requests created before..."
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              clearable
+                            ></v-text-field>
+                          </template>
+                          <v-date-picker
+                            v-model="filters.createEnd"
+                            @input="createEndMenu = false"
+                          ></v-date-picker>
+                        </v-menu>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col align="right">
+                        <v-btn color="primary" @click="filter">Filter</v-btn>
+                      </v-col>
+                    </v-row>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
               <v-list>
                 <v-list-item class="list-with-border">
                   <v-row>
                     <v-col><strong>Request</strong></v-col>
-                    <v-col><strong>Submitted By</strong></v-col>
                     <v-col><strong>Submitted On</strong></v-col>
                     <v-col><strong>Event Dates</strong></v-col>
                     <v-col><strong>Requested Resources</strong></v-col>
-                    <v-col cols="3"><strong>Status</strong></v-col>
-                    <v-col cols="1"><strong>Add Buffer</strong></v-col>
+                    <v-col><strong>Status</strong></v-col>
                   </v-row>
                 </v-list-item>
                 <v-list-item
-                  v-for="(r, idx) in requests"
+                  v-for="(r, idx) in filteredRequests"
                   :key="r.Id"
                   :class="getClass(idx)"
                 >
                   <v-row align="center">
-                    <v-col @click="selected = r; overlay = true;"
-                      ><div class="hover">{{ r.Name }}</div></v-col
-                    >
-                    <v-col>{{ r.CreatedBy }}</v-col>
+                    <v-col @click="selected = r; overlay = true;">
+                      <div class="hover">{{ r.Name }}</div>
+                    </v-col>
                     <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
                     <v-col>{{ requestType(r) }}</v-col>
-                    <v-col cols="3">
-                      <v-row align="center">
-                        <v-col cols="6" :class="getStatusPillClass(r.RequestStatus)">{{ r.RequestStatus }}</v-col>
-                        <v-col cols="6" class="no-top-pad">
-                          <v-btn
-                            v-if="r.RequestStatus == 'Submitted' || r.RequestStatus == 'Pending Changes'"
-                            color="accent"
-                            @click="changeStatus('Approved', r.Id)"
-                          >Approve</v-btn>
-                        </v-col>
-                      </v-row>
-                    </v-col>
-                    <v-col cols="1" class='d-flex justify-center'>
-                      <v-btn v-if="r.RequestStatus != 'Approved'" color="primary" @click="selected = r; bufferErrMsg = ''; dialog = true;" fab>
-                        <v-icon>mdi-clock-outline</v-icon>
-                      </v-btn>
-                    </v-col>
+                    <v-col :class="getStatusPillClass(r.RequestStatus)">{{ r.RequestStatus }}</v-col>
                   </v-row>
                 </v-list-item>
               </v-list>
             </v-card-text>
-            <v-card-actions>
-              <v-btn color="primary" @click="openHistory">
-                <v-icon>mdi-history</v-icon> View Request History
-              </v-btn>
-            </v-card-actions>
           </v-card>
         </v-col>
       </v-row>
-      <v-row>
-        <v-col>
-          <v-card>
-            <v-card-text>
-              <template v-if="sortedCurrent.length > 0">
-                <v-row v-for="d in sortedCurrent" :key="d.Timeframe">
-                  <v-col>
-                    <v-list dense>
-                      <v-list-item><strong>{{d.Timeframe}}</strong></v-list-item>
-                      <v-list-item
-                        v-for="(i, idx) in d.Events"
-                        :key="`event_${idx}`"
-                        class="event-pill hover"
-                        @click="selected = i.Full; overlay = true;"
-                      >
-                        {{i.Name}} {{i.StartTime}} - {{formatRooms(i.Rooms)}}
-                      </v-list-item>
-                    </v-list>
-                  </v-col>
-                </v-row>
-              </template>
-              <template v-else>
-                There are no approved events this week.
-              </template>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col> </v-col>
-      </v-row>
-      <v-dialog 
-        v-if="overlay" 
-        v-model="overlay" 
-        max-width="85%"
-        style="margin-top: 100px !important; max-height: 80vh;"
-      >
+      <v-overlay :value="overlay">
         <v-card
           light
           width="100%"
+          style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
           <v-card-title>
             <template v-if="selected.Changes != null && selected.Name != selected.Changes.Name">
@@ -965,59 +1030,32 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" @click="editRequest">
+            <v-btn color="primary" @click="editRequest"
+              v-if="selected.RequestStatus == 'Submitted' || selected.RequestStatus == 'Approved'"
+            >
               <v-icon>mdi-pencil</v-icon> Edit
             </v-btn>
-            <v-btn
-              v-if="selected.RequestStatus != 'Approved'"
+            <!-- <v-btn
+              v-if="selected.RequestStatus == 'Proposed Changes Denied'"
               color="accent"
-              @click="changeStatus('Approved', selected.Id)"
+              @click="changeStatus('ChangesAccepted', selected.Id)"
             >
-              <v-icon>mdi-check</v-icon> Approve
+              <v-icon>mdi-check</v-icon> Accept Event Director's Suggestion
+            </v-btn> -->
+            <v-btn
+              v-if="selected.RequestStatus == 'Proposed Changes Denied'"
+              color="primary"
+              @click="changeStatus('Original', selected.Id)"
+            >
+              <v-icon>mdi-check</v-icon> Use Originally Approved Request
             </v-btn>
-            <v-speed-dial
-              v-model="fab"
-              open-on-hover
-              style="margin-left: 8px;"
-            >
-              <template v-slot:activator>
-                <v-btn
-                  v-if="selected.RequestStatus != 'Denied'"
-                  color="red"
-                  v-model="fab"
-                >
-                  <v-icon>mdi-close</v-icon> Deny
-                </v-btn>
-              </template>
-              <v-btn
-                v-if="selected.RequestStatus != 'Denied'"
-                color="red"
-                @click="changeStatus('Deny', selected.Id)"
-              >
-                <v-icon>mdi-close</v-icon> Request
-              </v-btn>
-              <v-btn
-                v-if="selected.RequestStatus == 'Pending Changes'"
-                color="red"
-                @click="changeStatus('DenyUser', selected.Id)"
-              >
-                <v-icon>mdi-close</v-icon> Changes
-              </v-btn>
-              <v-btn
-                v-if="selected.RequestStatus == 'Pending Changes'"
-                color="red"
-                @click="changeStatus('DenyUserComments', selected.Id)"
-              >
-                <v-icon>mdi-close</v-icon> Changes w/ Comment
-              </v-btn>
-            </v-speed-dial>
             <v-btn
               v-if="selected.RequestStatus != 'Cancelled'"
               color="grey"
               @click="changeStatus('Cancel', selected.Id)"
               style="margin-left: 8px;"
             >
-              <v-icon>mdi-cancel</v-icon> Cancel
+              <v-icon>mdi-cancel</v-icon> Cancel Request
             </v-btn>
             <v-spacer></v-spacer>
             <v-btn color="secondary" @click="overlay = false; selected = {}">
@@ -1025,51 +1063,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-dialog>
-      <v-dialog
-        v-model="dialog"
-        v-if="dialog"
-        max-width="50%"
-      >
-        <v-card>
-          <v-card-title>
-            {{selected.Name}}
-          </v-card-title>
-          <v-card-text>
-            <v-alert v-if="bufferErrMsg != ''">{{bufferErrMsg}}</v-alert>
-            <v-row v-for="(e, idx) in selected.Events" :key="`row_${idx}`">
-              <v-col cols="12">
-                <template v-if="selected.IsSame || selected.Events.length == 1">
-                  {{formatDates(selected.EventDates)}} <br/>
-                </template>
-                <template v-else>
-                  {{e.EventDate | formatDate}}
-                </template>
-                {{e.StartTime}} - {{e.EndTime}}
-              </v-col>
-              <v-col>
-                <v-autocomplete
-                  label="Set-up Buffer"
-                  v-model="e.MinsStartBuffer"
-                  :items="[{text: '15 Mins', value:'15'}, {text: '30 Mins', value:'30'}, {text: '45 Mins', value:'45'}, {text: '1 Hour', value:'60'}]"
-                  clearable
-                  ></v-autocomplete>
-                </v-col>
-                <v-col>
-                  <v-autocomplete
-                  label="Tear-down Buffer"
-                  v-model="e.MinsEndBuffer"
-                  :items="[{text: '15 Mins', value:'15'}, {text: '30 Mins', value:'30'}, {text: '45 Mins', value:'45'}, {text: '1 Hour', value:'60'}]"
-                  clearable
-                ></v-autocomplete>
-              </v-col>
-            </v-row>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" @click="addBuffer">Add Buffer</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+      </v-overlay>
     </div>
   </v-app>
 </div>
@@ -1094,19 +1088,28 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             },
             data: {
                 requests: [],
-                current: [],
+                filteredRequests: [],
                 selected: {},
                 overlay: false,
-                dialog: false,
                 panels: [0],
                 rooms: [],
                 ministries: [],
-                bufferErrMsg: '',
-                fab: false
+                filters: {
+                    status: [],
+                    title: '',
+                    eventStart: '',
+                    eventEnd: '',
+                    createStart: '',
+                    createEnd: '',
+                },
+                expansion: [],
+                eventStartMenu: false,
+                eventEndMenu: false,
+                createStartMenu: false,
+                createEndMenu: false,
             },
             created() {
                 this.getRecent();
-                this.getCurrent();
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
                 this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
                 window['moment-range'].extendMoment(moment)
@@ -1119,6 +1122,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     })[0]
                     this.overlay = true
                 }
+                this.filter()
             },
             filters: {
                 formatDateTime(val) {
@@ -1136,51 +1140,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 },
             },
             computed: {
-                sortedCurrent() {
-                    let ordered = [
-                        { Timeframe: "Today", Events: [] },
-                        { Timeframe: "Tomorrow", Events: [] },
-                        { Timeframe: moment().add(2, "days").format("dddd"), Events: [] },
-                        { Timeframe: moment().add(3, "days").format("dddd"), Events: [] },
-                        { Timeframe: moment().add(4, "days").format("dddd"), Events: [] },
-                        { Timeframe: moment().add(5, "days").format("dddd"), Events: [] },
-                        { Timeframe: moment().add(6, "days").format("dddd"), Events: [] },
-                    ];
-                    this.current.forEach((i) => {
-                        let dates = i.EventDates;
-                        dates.forEach((d) => {
-                            let timeframe = [];
-                            if (d == moment().format("yyyy-MM-DD")) {
-                                timeframe.push("Today");
-                            }
-                            if (d == moment().add(1, "days").format("yyyy-MM-DD")) {
-                                timeframe.push("Tomorrow");
-                            }
-                            if (
-                                d == moment().add(2, "days").format("yyyy-MM-DD") ||
-                                d == moment().add(3, "days").format("yyyy-MM-DD") ||
-                                d == moment().add(4, "days").format("yyyy-MM-DD") ||
-                                d == moment().add(5, "days").format("yyyy-MM-DD") ||
-                                d == moment().add(6, "days").format("yyyy-MM-DD")
-                            ) {
-                                timeframe.push(moment(d).format("dddd"));
-                            }
-                            ordered.forEach((o) => {
-                                if (timeframe.includes(o.Timeframe)) {
-                                    if (i.IsSame || i.Events.length == 1) {
-                                        o.Events.push({ Name: i.Name, Rooms: i.Events[0].Rooms, Full: i });
-                                    } else {
-                                        let idx = i.EventDates.indexOf(d)
-                                        o.Events.push({ Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i })
-                                    }
-                                }
-                            });
-                        });
-                    });
-                    return ordered.filter((o) => {
-                        return o.Events.length > 0;
-                    });
-                },
             },
             methods: {
                 getRecent() {
@@ -1197,20 +1156,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         temp.push(req);
                     });
                     this.requests = temp;
-                },
-                getCurrent() {
-                    let raw = JSON.parse($('[id$="hfCurrent"]').val());
-                    let temp = [];
-                    raw.forEach((i) => {
-                        let req = i.Request;
-                        req.Id = i.Id;
-                        req.CreatedBy = i.CreatedBy;
-                        req.CreatedOn = i.CreatedOn;
-                        req.RequestStatus = i.RequestStatus;
-                        req.HistoricData = i.HistoricData;
-                        temp.push(req);
-                    });
-                    this.current = temp;
                 },
                 boolToYesNo(val) {
                     if (val) {
@@ -1307,10 +1252,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     let url = $('[id$="hfRequestURL"]').val();
                     window.location = url + `?Id=${this.selected.Id}`;
                 },
-                openHistory() {
-                    let url = $('[id$="hfHistoryURL"]').val();
-                    window.location = url
-                },
                 saveFile(idx, type) {
                     var a = document.createElement("a");
                     a.style = "display: none";
@@ -1325,98 +1266,59 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     a.click();
                 },
                 changeStatus(status, id) {
-                    $('[id$="hfRequestID"]').val(id);
-                    $('[id$="hfAction"]').val(status);
-                    $('[id$="btnChangeStatus"]')[0].click();
+                    let url = $('[id$="hfWorkflowURL"]').val();
+                    url += '&ItemId=' + id
+                    url += '&Action=' + status
+                    window.location = url
                 },
-                addBuffer() {
-                    this.bufferErrMsg = ''
-                    if (!this.checkHasConflicts()) {
-                        $('[id$="hfRequestID"]').val(this.selected.Id);
-                        $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
-                        $('[id$="btnAddBuffer"]')[0].click();
-                    } else {
-                        this.bufferErrMsg = 'The buffer you have chosen will conflict with another event'
+                filter() {
+                    let temp = JSON.parse(JSON.stringify(this.requests))
+                    if (this.filters.title) {
+                        temp = temp.filter(r => {
+                            return r.Name.toLowerCase().includes(this.filters.title.toLowerCase())
+                        })
                     }
-                },
-                checkHasConflicts() {
-                    this.existingRequests = JSON.parse(
-                        $('[id$="hfUpcomingRequests"]')[0].value
-                    );
-                    let conflictingMessage = []
-                    let conflictingRequests = this.existingRequests.filter((r) => {
-                        if (r.Id == this.selected.Id) {
-                            return false
-                        }
-                        r = JSON.parse(r.Value);
-                        let compareTarget = [], compareSource = []
-                        //Build an object for each date to compare with 
-                        if (r.IsSame || r.Events.length == 1) {
-                            for (let i = 0; i < r.EventDates.length; i++) {
-                                compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
-                            }
-                        } else {
-                            for (let i = 0; i < r.Events.length; i++) {
-                                compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
-                            }
-                        }
-                        if (this.selected.Events.length == 1 || this.selected.IsSame) {
-                            for (let i = 0; i < this.selected.EventDates.length; i++) {
-                                compareSource.push({ Date: this.selected.EventDates[i], StartTime: this.selected.Events[0].StartTime, EndTime: this.selected.Events[0].EndTime, Rooms: this.selected.Events[0].Rooms, MinsStartBuffer: this.selected.Events[0].MinsStartBuffer, MinsEndBuffer: this.selected.Events[0].MinsEndBuffer })
-                            }
-                        } else {
-                            for (let i = 0; i < this.selected.Events.length; i++) {
-                                compareSource.push({ Date: this.selected.Events[i].EventDate, StartTime: this.selected.Events[i].StartTime, EndTime: this.selected.Events[i].EndTime, Rooms: this.selected.Events[i].Rooms, MinsStartBuffer: this.selected.Events[i].MinsStartBuffer, MinsEndBuffer: this.selected.Events[i].MinsEndBuffer })
-                            }
-                        }
-                        let conflicts = false
-                        for (let x = 0; x < compareTarget.length; x++) {
-                            for (let y = 0; y < compareSource.length; y++) {
-                                if (compareTarget[x].Date == compareSource[y].Date) {
-                                    //On same date
-                                    //Check for conflicting rooms
-                                    let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
-                                    if (conflictingRooms.length > 0) {
-                                        //Check they do not overlap with moment-range
-                                        let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
-                                        if (compareTarget[x].MinsStartBuffer) {
-                                            cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
-                                        }
-                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
-                                        if (compareTarget[x].MinsEndBuffer) {
-                                            cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
-                                        }
-                                        let cRange = moment.range(cdStart, cdEnd);
-                                        let current = moment.range(
-                                            moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
-                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
-                                        );
-                                        if (cRange.overlaps(current)) {
-                                            conflicts = true
-                                            let roomNames = []
-                                            conflictingRooms.forEach(r => {
-                                                let roomName = this.rooms.filter((room) => {
-                                                    return room.Id == r;
-                                                });
-                                                if (roomName.length > 0) {
-                                                    roomName = roomName[0].Value;
-                                                }
-                                                roomNames.push(roomName)
-                                            })
-                                            conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
-                                        }
-                                    }
+                    if (this.filters.status && this.filters.status.length > 0) {
+                        temp = temp.filter(r => {
+                            return this.filters.status.includes(r.Status)
+                        })
+                    }
+                    if (this.filters.createStart) {
+                        temp = temp.filter(r => {
+                            let eod = moment(`${this.filters.createStart} 23:59`, 'yyyy-MM-DD hh:mm')
+                            return moment(r.CreatedOn).isAfter(eod)
+                        })
+                    }
+                    if (this.filters.createEnd) {
+                        temp = temp.filter(r => {
+                            return moment(this.filters.createEnd).isAfter(moment(r.CreatedOn))
+                        })
+                    }
+                    if (this.filters.eventStart) {
+                        temp = temp.filter(r => {
+                            let hasMatch = false
+                            r.EventDates.forEach(d => {
+                                let eod = moment(`${this.filters.eventStart} 23:59`, 'yyyy-MM-DD hh:mm')
+                                if (moment(d).isAfter(eod)) {
+                                    hasMatch = true
                                 }
-                            }
-                        }
-                        return conflicts
-                    });
-                    if (conflictingRequests.length > 0) {
-                        return true
-                    } else {
-                        return false
+                            })
+                            return hasMatch
+                        })
                     }
-                },
+                    if (this.filters.eventEnd) {
+                        temp = temp.filter(r => {
+                            let hasMatch = false
+                            r.EventDates.forEach(d => {
+                                if (moment(this.filters.eventEnd).isAfter(d)) {
+                                    hasMatch = true
+                                }
+                            })
+                            return hasMatch
+                        })
+                    }
+                    this.filteredRequests = temp
+                }
             },
         });
     });
@@ -1459,12 +1361,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   }
   .v-overlay__content {
     width: 60%;
-  }
-  .v-dialog:not(.v-dialog--fullscreen) {
-    max-height: 80vh !important;
-  }
-  .v-dialog {
-    margin-top: 100px !important;
   }
   .floating-title {
     text-transform: uppercase;

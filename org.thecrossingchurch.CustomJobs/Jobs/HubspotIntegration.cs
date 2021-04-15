@@ -175,8 +175,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     if ( matches.Count() == 1 )
                     {
                         //1:1 Email match so we want to check other information, start by checking for a name match 
-                        if ( ( CustomEquals( matches.First().NickName, contacts_with_email[i].FirstName ) ||
-                            CustomEquals( matches.First().FirstName, contacts_with_email[i].FirstName ) ) &&
+                        if ( CustomEquals( matches.First().NickName, contacts_with_email[i].FirstName ) ||
+                            CustomEquals( matches.First().FirstName, contacts_with_email[i].FirstName ) ||
                             CustomEquals( matches.First().LastName, contacts_with_email[i].LastName ) )
                         {
                             person = matches.First();
@@ -244,6 +244,24 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                         row++;
                                     }
                                 }
+                            }
+                            else
+                            {
+                                //Save email only matches to the excel sheet since Hubspot has a lot of data that has no name
+                                var email_matches = personService.Queryable().ToList().Where( p =>
+                                {
+                                    return CustomEquals( p.Email, contact.Email );
+                                } ).ToList();
+                                if ( email_matches.Count() > 0 )
+                                {
+                                    for ( var j = 0; j < email_matches.Count(); j++ )
+                                    {
+                                        //Save this information in the excel sheet....
+                                        SaveData( worksheet, row, email_matches[j], contact );
+                                        row++;
+                                    }
+                                }
+
                             }
                         }
                     }
@@ -493,6 +511,24 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                         }
 
+                        //If the Hubspot Contact does not have FirstName, LastName, or Phone Number we want to update those...
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].FirstName ) )
+                        {
+                            properties.Add( new HubspotPropertyUpdate() { property = "firstname", value = person.NickName } );
+                        }
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        {
+                            properties.Add( new HubspotPropertyUpdate() { property = "lastname", value = person.LastName } );
+                        }
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].Phone ) )
+                        {
+                            PhoneNumber mobile = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == 12 );
+                            if ( mobile != null && !mobile.IsUnlisted )
+                            {
+                                properties.Add( new HubspotPropertyUpdate() { property = "phone", value = mobile.NumberFormatted } );
+                            }
+                        }
+
                         //Update the Hubspot Contact
                         try
                         {
@@ -527,7 +563,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     var jsonResponse = reader.ReadToEnd();
                                     Console.WriteLine( $"Hubspot: {jsonResponse}" );
                                     HttpContext context2 = HttpContext.Current;
-                                    ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Response:{jsonResponse} " ), context2 );
+                                    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                                    ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Response:{Environment.NewLine}{jsonResponse}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ), context2 );
                                 }
                             }
                         }

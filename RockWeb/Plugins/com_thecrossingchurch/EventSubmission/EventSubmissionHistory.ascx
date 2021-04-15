@@ -25,6 +25,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 ></script>
 
 <asp:HiddenField ID="hfRooms" runat="server" />
+<asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 
 <div id="app">
@@ -43,18 +44,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         prepend-inner-icon="mdi-magnify"
                         v-model="filters.query"
                         clearable
-                        ></v-text-field>
-                      </v-col>
-                      <v-col>
-                        <v-text-field
+                      ></v-text-field>
+                    </v-col>
+                    <v-col>
+                      <v-text-field
                         label="Submitter"
                         prepend-inner-icon="mdi-account"
                         v-model="filters.submitter"
                         clearable
-                        ></v-text-field>
-                      </v-col>
-                      <v-col>
-                        <v-autocomplete
+                      ></v-text-field>
+                    </v-col>
+                    <v-col>
+                      <v-autocomplete
                         label="Status"
                         :items="['Submitted', 'Approved', 'Denied', 'Cancelled']"
                         v-model="filters.status"
@@ -63,8 +64,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         clearable
                       ></v-autocomplete>
                     </v-col>
+                    <v-col>
+                      <v-autocomplete
+                        label="Resources"
+                        :items="['Room', 'Online', 'Publicity', 'Childcare', 'Catering', 'Extra Resources']"
+                        v-model="filters.resources"
+                        multiple
+                        attach
+                        clearable
+                      ></v-autocomplete>
+                    </v-col>
                     <v-col cols="2">
-                      <v-btn color="primary" class='pull-right' @click="filter">Filter</v-btn>
+                      <v-btn color="primary" class="pull-right" @click="filter"
+                        >Filter</v-btn
+                      >
                     </v-col>
                   </v-row>
                 </v-list-item>
@@ -74,6 +87,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     <v-col><strong>Submitted By</strong></v-col>
                     <v-col><strong>Submitted On</strong></v-col>
                     <v-col><strong>Event Dates</strong></v-col>
+                    <v-col><strong>Requested Resources</strong></v-col>
                     <v-col><strong>Status</strong></v-col>
                   </v-row>
                 </v-list-item>
@@ -89,14 +103,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     <v-col>{{ r.CreatedBy }}</v-col>
                     <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
-                    <v-col :class="getStatusPillClass(r.RequestStatus)">{{ r.RequestStatus }}</v-col>
+                    <v-col>{{ requestType(r) }}</v-col>
+                    <v-col :class="getStatusPillClass(r.RequestStatus)"
+                      >{{ r.RequestStatus }}</v-col
+                    >
                   </v-row>
                 </v-list-item>
               </v-list>
             </v-card-text>
             <v-card-actions>
               <v-row align="center">
-                <v-col cols="10"></v-col>
+                <v-col cols="9"></v-col>
                 <v-col cols="1">
                   <v-select
                     label="Rows"
@@ -105,7 +122,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     attach
                   ></v-select>
                 </v-col>
-                <v-col cols="1">
+                <v-col cols="2">
                   <v-btn icon @click='paginate("prev")'>
                     <v-icon>mdi-chevron-left</v-icon>
                   </v-btn>
@@ -125,10 +142,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
           width="100%"
           style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
-          <v-card-title> 
-            {{selected.Name}} 
+          <v-card-title>
+            {{selected.Name}}
             <v-spacer></v-spacer>
-            <div :class="getStatusPillClass(selected.RequestStatus)">{{selected.RequestStatus}}</div>
+            <div :class="getStatusPillClass(selected.RequestStatus)">
+              {{selected.RequestStatus}}
+            </div>
           </v-card-title>
           <v-card-text>
             <v-row>
@@ -145,7 +164,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row>
               <v-col>
                 <div class="floating-title">Ministry</div>
-                {{selected.Ministry}}
+                {{formatMinistry(selected.Ministry)}}
               </v-col>
               <v-col>
                 <div class="floating-title">Contact</div>
@@ -155,179 +174,379 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row>
               <v-col>
                 <div class="floating-title">Requested Resources</div>
-                {{requestType}}
+                {{requestType(this.selected)}}
               </v-col>
             </v-row>
-            <v-row>
-              <v-col>
-                <div class="floating-title">Request Dates</div>
-                {{formatDates(selected.EventDates)}}
-              </v-col>
-            </v-row>
-            <v-row v-if="selected.StartTime || selected.EndTime">
-              <v-col v-if="selected.StartTime">
-                <div class="floating-title">Start Time</div>
-                {{selected.StartTime}}
-              </v-col>
-              <v-col v-if="selected.EndTime">
-                <div class="floating-title">End Time</div>
-                {{selected.EndTime}}
-              </v-col>
-            </v-row>
-            <template v-if="selected.needsSpace">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Expected Number of Attendees</div>
-                  {{selected.ExpectedAttendance}}
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Desired Rooms/Spaces</div>
-                  {{formatRooms(selected.Rooms)}}
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsOnline">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Event Link</div>
-                  {{selected.EventURL}}
-                </v-col>
-                <v-col v-if="selected.ZoomPassword != ''">
-                  <div class="floating-title">Password</div>
-                  {{selected.ZoomPassword}}
-                </v-col>
-              </v-row>
-            </template>
+            <v-expansion-panels v-model="panels" multiple flat>
+              <v-expansion-panel v-for="(e, idx) in selected.Events" :key="`panel_${idx}`">
+                <v-expansion-panel-header>
+                  <template v-if="selected.IsSame || selected.Events.length == 1">
+                    {{formatDates(selected.EventDates)}} ({{formatRooms(e.Rooms)}})
+                  </template>
+                  <template v-else>
+                    {{e.EventDate | formatDate}} ({{formatRooms(e.Rooms)}})
+                  </template>
+                </v-expansion-panel-header>
+                <v-expansion-panel-content>
+                  <v-row v-if="e.StartTime || e.EndTime">
+                    <v-col v-if="e.StartTime">
+                      <div class="floating-title">Start Time</div>
+                      {{e.StartTime}}
+                    </v-col>
+                    <v-col v-if="e.EndTime">
+                      <div class="floating-title">End Time</div>
+                      {{e.EndTime}}
+                    </v-col>
+                  </v-row>
+                  <v-row v-if="e.MinsStartBuffer || e.MinsEndBuffer">
+                    <v-col v-if="e.MinsStartBuffer">
+                      <div class="floating-title">Set-up Buffer</div>
+                      {{e.MinsStartBuffer}} minutes
+                    </v-col>
+                    <v-col v-if="e.MinsEndBuffer">
+                      <div class="floating-title">Tear-down Buffer</div>
+                      {{e.MinsEndBuffer}} minutes
+                    </v-col>
+                  </v-row>
+                  <template v-if="selected.needsSpace">
+                    <h6 class='text--accent text-uppercase'>Space Information</h6>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Expected Number of Attendees</div>
+                        {{e.ExpectedAttendance}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Desired Rooms/Spaces</div>
+                        {{formatRooms(e.Rooms)}}
+                      </v-col>
+                    </v-row>
+                    <v-row vif="selected.needsReg">
+                      <v-col>
+                        <div class="floating-title">Check-in Requested</div>
+                        {{boolToYesNo(e.Checkin)}}
+                      </v-col>
+                    </v-row>
+                  </template>
+                  <template v-if="selected.needsOnline">
+                    <h6 class='text--accent text-uppercase'>Online Information</h6>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Event Link</div>
+                        {{e.EventURL}}
+                      </v-col>
+                      <v-col v-if="e.ZoomPassword != ''">
+                        <div class="floating-title">Password</div>
+                        {{e.ZoomPassword}}
+                      </v-col>
+                    </v-row>
+                  </template>
+                  <template v-if="selected.needsChildCare">
+                    <h6 class='text--accent text-uppercase'>Childcare Information</h6>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Childcare Age Groups</div>
+                        {{e.ChildCareOptions.join(', ')}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Expected Number of Children</div>
+                        {{e.EstimatedKids}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Childcare Start Time</div>
+                        {{e.CCStartTime}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Childcare End Time</div>
+                        {{e.CCEndTime}}
+                      </v-col>
+                    </v-row>
+                  </template>
+                  <template v-if="selected.needsCatering">
+                    <h6 class='text--accent text-uppercase'>Catering Information</h6>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Preferred Vendor</div>
+                        {{e.Vendor}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Budget Line</div>
+                        {{e.BudgetLine}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Preferred Menu</div>
+                        {{e.Menu}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">{{foodTimeTitle}}</div>
+                        {{e.FoodTime}}
+                      </v-col>
+                      <v-col v-if="e.FoodDelivery">
+                        <div class="floating-title">Food Drop off Location</div>
+                        {{e.FoodDropOff}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.Drinks">
+                      <v-col>
+                        <div class="floating-title">Desired Drinks</div>
+                        {{e.Drinks.join(', ')}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.Drinks">
+                      <v-col>
+                        <div class="floating-title">Drink Set-up Time</div>
+                        {{e.DrinkTime}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Drink Drop off Location</div>
+                        {{e.DrinkDropOff}}
+                      </v-col>
+                    </v-row>
+                    <template v-if="selected.needsChildCare">
+                      <h6 class='text--accent text-uppercase'>Childcare Catering Information</h6>
+                      <v-row>
+                        <v-col>
+                          <div class="floating-title">
+                            Preferred Vendor for Childcare
+                          </div>
+                          {{e.CCVendor}}
+                        </v-col>
+                        <v-col>
+                          <div class="floating-title">Budget Line for Childcare</div>
+                          {{e.CCBudgetLine}}
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <div class="floating-title">
+                            Preferred Menu for Childcare
+                          </div>
+                          {{e.CCMenu}}
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <div class="floating-title">ChildCare Food Set-up time</div>
+                          {{e.CCFoodTime}}
+                        </v-col>
+                      </v-row>
+                    </template>
+                  </template>
+                  <template v-if="selected.needsReg">
+                    <h6 class='text--accent text-uppercase'>Registration Information</h6>
+                    <v-row>
+                      <v-col v-if="e.RegistrationDate">
+                        <div class="floating-title">Registration Date</div>
+                        {{e.RegistrationDate | formatDate}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Registration Fee Types</div>
+                        {{e.FeeType.join(', ')}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12" md="6" v-if="e.Fee">
+                        <div class="floating-title">Registration Fee</div>
+                        {{e.Fee | formatCurrency}}
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.CoupleFee">
+                        <div class="floating-title">Couple Registration Fee</div>
+                        {{e.CoupleFee | formatCurrency}}
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.OnlineFee">
+                        <div class="floating-title">Online Registration Fee</div>
+                        {{e.OnlineFee | formatCurrency}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.RegistrationEndDate">
+                      <v-col>
+                        <div class="floating-title">Registration Close Date</div>
+                        {{e.RegistrationEndDate | formatDate}}
+                      </v-col>
+                      <v-col v-if="e.RegistrationEndTime">
+                        <div class="floating-title">Registration Close Time</div>
+                        {{e.RegistrationEndTime}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col v-if="e.ThankYou">
+                        <div class="floating-title">Confirmation Email Thank You</div>
+                        {{e.ThankYou}}
+                      </v-col>
+                      <v-col v-if="e.TimeLocation">
+                        <div class="floating-title">Confirmation Email Time and Location</div>
+                        {{e.TimeLocation}}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col v-if="e.AdditionalDetails">
+                        <div class="floating-title">Confirmation Email Additional Details</div>
+                        {{e.AdditionalDetails}}
+                      </v-col>
+                    </v-row>
+                  </template>
+                  <template v-if="selected.needsAccom">
+                    <h6 class='text--accent text-uppercase'>Additional Information</h6>
+                    <v-row v-if="selected.TechNeeds">
+                      <v-col>
+                        <div class="floating-title">Tech Needs</div>
+                        {{selected.TechNeeds.join(', ')}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Tech Description</div>
+                        {{selected.TechDescription}}
+                      </v-col>
+                    </v-row>
+                    <template v-if="!selected.needsCatering">
+                      <v-row v-if="e.Drinks">
+                        <v-col>
+                          <div class="floating-title">Desired Drinks</div>
+                          {{e.Drinks.join(', ')}}
+                        </v-col>
+                      </v-row>
+                      <v-row v-if="e.Drinks">
+                        <v-col>
+                          <div class="floating-title">Drink Set-up Time</div>
+                          {{e.DrinkTime}}
+                        </v-col>
+                        <v-col>
+                          <div class="floating-title">Drink Drop off Location</div>
+                          {{e.DrinkDropOff}}
+                        </v-col>
+                      </v-row>
+                    </template>
+                    <v-row>
+                      <v-col>
+                        <div class="floating-title">Add to public calendar</div>
+                        {{boolToYesNo(e.ShowOnCalendar)}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.ShowOnCalendar && e.PublicityBlurb">
+                      <v-col>
+                        <div class="floating-title">Publicity Blurb</div>
+                        {{e.PublicityBlurb}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.SetUp">
+                      <v-col>
+                        <div class="floating-title">Requested Set-up</div>
+                        {{e.SetUp}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.SetUpImage">
+                      <v-col>
+                        <div class="floating-title">Set-up Image</div>
+                        {{e.SetUpImage.name}}
+                        <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+                          <v-icon color="accent">mdi-download</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                  </template>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+            </v-expansion-panels>
             <template v-if="selected.needsPub">
-              <v-row v-for="(p, idx) in selected.Publicity" :key="`pub_${idx}`">
-                <v-col>
-                  <div class="floating-title">Publicity Date</div>
-                  {{p.Date | formatDate}}
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Publicity Need</div>
-                  {{p.Needs.join(', ')}}
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.PublicityBlurb">
-                <v-col>
-                  <div class="floating-title">Publicity Blurb</div>
-                  {{selected.PublicityBlurb}}
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col v-if="selected.PubImage">
-                  <div class="floating-title">Publicity Image</div>
-                  {{selected.PubImage.name}}
-                  <v-btn icon color="accent" @click="saveFile"
-                    ><v-icon color="accent">mdi-download</v-icon></v-btn
-                  >
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Add to public calendar</div>
-                  {{boolToYesNo(selected.ShowOnCalendar)}}
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsChildCare">
+              <h6 class='text--accent text-uppercase'>Publicity Information</h6>
               <v-row>
                 <v-col>
-                  <div class="floating-title">Childcare Ages Groups</div>
-                  {{selected.ChildCareOptions.join(', ')}}
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Expected Number of Children</div>
-                  {{selected.EstimatedKids}}
-                </v-col>
-              </v-row>
-            </template>
-            <template v-if="selected.needsCatering">
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Preferred Vendor</div>
-                  {{selected.Vendor}}
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Budget Line</div>
-                  {{selected.BudgetLine}}
+                  <div class="floating-title">Describe Why Someone Should Attend Your Event (450)</div>
+                  {{selected.WhyAttendSixtyFive}}
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
-                  <div class="floating-title">Preferred Menu</div>
-                  {{selected.Menu}}
+                  <div class="floating-title">Target Audience</div>
+                  {{selected.TargetAudience}}
+                </v-col>
+                <v-col>
+                  <div class="floating-title">Event is Sticky</div>
+                  {{boolToYesNo(selected.EventIsSticky)}}
                 </v-col>
               </v-row>
               <v-row>
                 <v-col>
-                  <div class="floating-title">{{foodTimeTitle}}</div>
-                  {{selected.FoodTime}}
+                  <div class="floating-title">Publicity Start Date</div>
+                  {{selected.PublicityStartDate | formatDate}}
                 </v-col>
-                <v-col v-if="selected.FoodDelivery">
-                  <div class="floating-title">Food Drop off Location</div>
-                  {{selected.FoodDropOff}}
+                <v-col>
+                  <div class="floating-title">Publicity End Date</div>
+                  {{selected.PublicityEndDate | formatDate}}
                 </v-col>
               </v-row>
-              <template v-if="selected.needsChildCare">
+              <v-row>
+                <v-col>
+                  <div class="floating-title">Publicity Strategies</div>
+                  {{selected.PublicityStrategies.join(', ')}}
+                </v-col>
+              </v-row>
+              <template v-if="selected.PublicityStrategies.includes('Social Media/Google Ads')">
                 <v-row>
                   <v-col>
-                    <div class="floating-title">
-                      Preferred Vendor for Childcare
-                    </div>
-                    {{selected.CCVendor}}
-                  </v-col>
-                  <v-col>
-                    <div class="floating-title">Budget Line for Childcare</div>
-                    {{selected.CCBudgetLine}}
+                    <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
+                    {{selected.WhyAttendNinety}}
                   </v-col>
                 </v-row>
                 <v-row>
                   <v-col>
-                    <div class="floating-title">
-                      Preferred Menu for Childcare
-                    </div>
-                    {{selected.CCMenu}}
+                    <div class="floating-title">Google Keys</div>
+                    <ul>
+                      <li v-for="k in selected.GoogleKeys" :key="k">
+                        {{k}}
+                      </li>
+                    </ul>
+                  </v-col>
+                </v-row>
+              </template>
+              <template v-if="selected.PublicityStrategies.includes('Mobile Worship Folder')">
+                <v-row>
+                  <v-col>
+                    <div class="floating-title">Describe Why Someone Should Attend Your Event (65)</div>
+                    {{selected.WhyAttendTen}}
+                  </v-col>
+                  <v-col v-if="selected.VisualIdeas != ''">
+                    <div class="floating-title">Visual Ideas for Graphic</div>
+                    {{selected.VisualIdeas}}
+                  </v-col>
+                </v-row>
+              </template>
+              <template v-if="selected.PublicityStrategies.includes('Announcement')">
+                <v-row v-for="(s, sidx) in selected.Stories" :key="`Story_${sidx}`">
+                  <v-col>
+                    <div class="floating-title">Story {{sidx+1}}</div>
+                    {{s.Name}}, {{s.Email}} <br/>
+                    {{s.Description}}
                   </v-col>
                 </v-row>
                 <v-row>
                   <v-col>
-                    <div class="floating-title">ChildCare Food Set-up time</div>
-                    {{selected.CCFoodTime}}
+                    <div class="floating-title">Describe Why Someone Should Attend Your Event (175)</div>
+                    {{selected.WhyAttendTwenty}}
                   </v-col>
                 </v-row>
               </template>
             </template>
-            <template v-if="selected.needsAccom">
-              <v-row v-if="selected.Drinks">
-                <v-col>
-                  <div class="floating-title">Desired Drinks</div>
-                  {{selected.Drinks.join(', ')}}
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.TechNeeds">
-                <v-col>
-                  <div class="floating-title">Tech Needs</div>
-                  {{selected.TechNeeds.join(', ')}}
-                </v-col>
-              </v-row>
-              <v-row v-if="selected.RegistrationDate">
-                <v-col>
-                  <div class="floating-title">Registration Date</div>
-                  {{selected.RegistrationDate | formatDate}}
-                </v-col>
-                <v-col v-if="selected.Fee">
-                  <div class="floating-title">Registration Fee</div>
-                  {{selected.Fee | formatCurrency}}
-                </v-col>
-              </v-row>
-            </template>
+            <v-row v-if="selected.Notes">
+              <v-col>
+                <div class="floating-title">Notes</div>
+                {{selected.Notes}}
+              </v-col>
+            </v-row>
+            <v-row v-if="selected.HistoricData">
+              <v-col>
+                <div class="floating-title">Non-Transferrable Data</div>
+                {{selected.HistoricData}}
+              </v-col>
+            </v-row>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn 
-              color="secondary" 
-              @click="overlay = false; selected = {}"
-            >
+            <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
             </v-btn>
           </v-card-actions>
@@ -360,18 +579,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 allrequests: [],
                 selected: {},
                 overlay: false,
+                panels: [0],
                 rooms: [],
+                ministries: [],
                 page: 0,
                 rows: 15,
                 filters: {
-                    query: '',
-                    submitter: '',
-                    status: []
+                    query: "",
+                    submitter: "",
+                    status: [],
+                    resources: []
                 },
             },
             created() {
                 this.getRequests();
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
             },
             filters: {
                 formatDateTime(val) {
@@ -389,31 +612,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 },
             },
             computed: {
-                requestType() {
-                    if (this.selected) {
-                        let resoures = [];
-                        if (this.selected.needsSpace) {
-                            resoures.push("Room");
-                        }
-                        if (this.selected.needsOnline) {
-                            resoures.push("Online");
-                        }
-                        if (this.selected.needsPub) {
-                            resoures.push("Publicity");
-                        }
-                        if (this.selected.needsChildCare) {
-                            resoures.push("Childcare");
-                        }
-                        if (this.selected.needsCatering) {
-                            resoures.push("Catering");
-                        }
-                        if (this.selected.needsAccom) {
-                            resoures.push("Extra Resources");
-                        }
-                        return resoures.join(", ");
-                    }
-                    return "";
-                },
                 foodTimeTitle() {
                     if (this.selected) {
                         if (this.selected.FoodDelivery) {
@@ -435,39 +633,59 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         req.CreatedBy = i.CreatedBy;
                         req.CreatedOn = i.CreatedOn;
                         req.RequestStatus = i.RequestStatus;
+                        req.HistoricData = i.HistoricData;
                         temp.push(req);
                     });
                     this.allrequests = temp;
-                    this.requests = temp.slice(0, this.rows)
+                    this.requests = temp.slice(0, this.rows);
                 },
                 filter() {
-                    let temp = this.allrequests
-                    if (this.filters.submitter != '' && this.filters.submitter != null) {
-                        temp = temp.filter(i => {
-                            return i.CreatedBy.toLowerCase().includes(this.filters.submitter.toLowerCase())
-                        })
+                    let temp = this.allrequests;
+                    if (this.filters.submitter != "" && this.filters.submitter != null) {
+                        temp = temp.filter((i) => {
+                            return i.CreatedBy.toLowerCase().includes(
+                                this.filters.submitter.toLowerCase()
+                            );
+                        });
                     }
                     if (this.filters.status.length > 0) {
-                        temp = temp.filter(i => {
-                            return this.filters.status.includes(i.RequestStatus)
+                        temp = temp.filter((i) => {
+                            return this.filters.status.includes(i.RequestStatus);
+                        });
+                    }
+                    if (this.filters.resources.length > 0) {
+                        temp = temp.filter((i) => {
+                            let iRR = this.requestType(i).split(',')
+                            let intersects = false
+                            this.filters.resources.forEach(r => {
+                                if (iRR.includes(r)) {
+                                    intersects = true
+                                }
+                            })
+                            return intersects
                         })
                     }
-                    if (this.filters.query != '' && this.filters.query != null) {
-                        temp = temp.filter(i => {
-                            return i.Name.toLowerCase().includes(this.filters.query.toLowerCase())
-                        })
+                    if (this.filters.query != "" && this.filters.query != null) {
+                        temp = temp.filter((i) => {
+                            return i.Name.toLowerCase().includes(
+                                this.filters.query.toLowerCase()
+                            );
+                        });
                     }
-                    this.requests = temp.slice(this.page * this.rows, (this.page * this.rows) + this.rows)
+                    this.requests = temp.slice(
+                        this.page * this.rows,
+                        this.page * this.rows + this.rows
+                    );
                 },
                 paginate(val) {
-                    if (val == 'next') {
-                        let total = this.requests.length
-                        if ((total / this.rows) > this.page) {
-                            this.page++
+                    if (val == "next") {
+                        let total = this.requests.length;
+                        if (total / this.rows > this.page) {
+                            this.page++;
                         }
                     } else {
                         if (this.page > 0) {
-                            this.page--
+                            this.page--;
                         }
                     }
                 },
@@ -493,11 +711,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         val.forEach((i) => {
                             this.rooms.forEach((r) => {
                                 if (i == r.Id) {
-                                    rms.push(r.Value.split(` (`)[0]);
+                                    rms.push(r.Value);
                                 }
                             });
                         });
                         return rms.join(", ");
+                    }
+                    return "";
+                },
+                formatMinistry(val) {
+                    if (val) {
+                        let formattedVal = this.ministries.filter(m => {
+                            return m.Id == val
+                        })
+                        return formattedVal[0].Value
                     }
                     return "";
                 },
@@ -508,35 +735,65 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     return "";
                 },
                 getStatusPillClass(status) {
-                    if (status == 'Approved') {
-                        return 'no-top-pad status-pill approved'
+                    if (status == "Approved") {
+                        return "no-top-pad status-pill approved";
                     }
-                    if (status == 'Submitted') {
-                        return 'no-top-pad status-pill submitted'
+                    if (status == "Submitted") {
+                        return "no-top-pad status-pill submitted";
                     }
-                    if (status == 'Cancelled') {
-                        return 'no-top-pad status-pill cancelled'
+                    if (status == "Cancelled") {
+                        return "no-top-pad status-pill cancelled";
                     }
-                    if (status == 'Denied') {
-                        return 'no-top-pad status-pill denied'
+                    if (status == "Denied") {
+                        return "no-top-pad status-pill denied";
                     }
                 },
-                saveFile() {
+                requestType(itm) {
+                    if (itm) {
+                        let resources = [];
+                        if (itm.needsSpace) {
+                            resources.push("Room");
+                        }
+                        if (itm.needsOnline) {
+                            resources.push("Online");
+                        }
+                        if (itm.needsPub) {
+                            resources.push("Publicity");
+                        }
+                        if (itm.needsChildCare) {
+                            resources.push("Childcare");
+                        }
+                        if (itm.needsCatering) {
+                            resources.push("Catering");
+                        }
+                        if (itm.needsAccom) {
+                            resources.push("Extra Resources");
+                        }
+                        return resources.join(", ");
+                    }
+                    return "";
+                },
+                saveFile(idx, type) {
                     var a = document.createElement("a");
                     a.style = "display: none";
                     document.body.appendChild(a);
-                    a.href = this.selected.PubImage.data;
-                    a.download = this.selected.PubImage.name;
+                    if (type == 'existing') {
+                        a.href = this.selected.Events[idx].SetUpImage.data;
+                        a.download = this.selected.Events[idx].SetUpImage.name;
+                    } else if (type == 'new') {
+                        a.href = this.selected.Changes.Events[idx].SetUpImage.data;
+                        a.download = this.selected.Changes.Events[idx].SetUpImage.name;
+                    }
                     a.click();
                 },
             },
             watch: {
                 page(val) {
-                    this.filter()
+                    this.filter();
                 },
                 rows(val) {
-                    this.filter()
-                }
+                    this.filter();
+                },
             },
         });
     });
@@ -544,6 +801,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 <style>
   .theme--light.v-application {
     background: rgba(0, 0, 0, 0);
+  }
+  .text--accent {
+    color: #8ED2C9;
+  }
+  .row {
+    margin: 0;
   }
   .col {
     padding: 4px 12px !important;
@@ -590,16 +853,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
     justify-content: center;
   }
   .status-pill.submitted {
-    border: 2px solid #347689; 
+    border: 2px solid #347689;
   }
   .status-pill.approved {
-    border: 2px solid #8ed2c9; 
+    border: 2px solid #8ed2c9;
   }
   .status-pill.denied {
-    border: 2px solid #f44336; 
+    border: 2px solid #f44336;
   }
   .status-pill.cancelled {
-    border: 2px solid #9e9e9e; 
+    border: 2px solid #9e9e9e;
   }
   ::-webkit-scrollbar {
     width: 5px;
@@ -619,5 +882,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
   ::-webkit-scrollbar-thumb:active {
     background: #888;
     -webkit-box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .v-expansion-panel--active>.v-expansion-panel-header {
+    border-bottom: 1px solid #e2e2e2;
   }
 </style>

@@ -247,7 +247,7 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return HttpUtility.UrlDecode(  _hfValue.Value );
+                return HttpUtility.UrlDecode( _hfValue.Value );
             }
             set
             {
@@ -495,6 +495,11 @@ onChange: function() {{
                         }
                         break;
                     default:
+                        //Handle custom elements using the html field
+                        if ( !String.IsNullOrEmpty( item.data.html ) )
+                        {
+                            html.Append( item.data.html );
+                        }
                         break;
                 }
             }
@@ -515,6 +520,7 @@ onChange: function() {{
             public List<string> items { get; set; }
             public List<List<string>> content { get; set; }
             public string url { get; set; }
+            public string html { get; set; }
         }
 
         private class Block

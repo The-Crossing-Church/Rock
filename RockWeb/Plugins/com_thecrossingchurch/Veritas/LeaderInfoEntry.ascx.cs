@@ -42,6 +42,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
     [Description( "Custom block for entering leader info for the dashboard" )]
 
     [IntegerField( "ContentChannelId", "The id of the content channel.", true, 0, "", 0 )]
+    [IntegerField( "ContentChannelTypeId", "The id of the content channel type.", true, 0, "", 0 )]
     [IntegerField( "Veritas Small Group TypeId", "The id of the Veritas Small Group, Group Type.", true, 0, "", 0 )]
 
     public partial class LeaderInfoEntry : Rock.Web.UI.RockBlock
@@ -54,6 +55,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
         public Person Leader { get; set; }
         public int? GroupTypeId { get; set; }
         public int? ContentChannelId { get; set; }
+        public int? ContentChannelTypeId { get; set; }
         public List<Person> members { get; set; }
         public RockContext context { get; set; }
         public GroupService groupSvc { get; set; }
@@ -96,6 +98,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
             groupMemSvc = new GroupMemberService( context );
             GroupTypeId = GetAttributeValue( "VeritasSmallGroupTypeId" ).AsInteger();
             ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
+            ContentChannelTypeId = GetAttributeValue( "ContentChannelTypeId" ).AsInteger();
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 Id = Int32.Parse( PageParameter( PageParameterKey.Id ) );
@@ -169,6 +172,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
             else
             {
                 item.ContentChannelId = ContentChannelId.Value;
+                item.ContentChannelTypeId = ContentChannelTypeId.Value;
                 item.LoadAttributes();
                 item.CreatedByPersonAliasId = CurrentPersonAliasId;
                 item.CreatedDateTime = RockDateTime.Now;
@@ -279,6 +283,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Veritas
             else
             {
                 item.ContentChannelId = ContentChannelId.Value;
+                item.ContentChannelTypeId = ContentChannelTypeId.Value;
                 item.LoadAttributes();
             }
             var feels = item.Attributes.FirstOrDefault( av => av.Key == "GeneralFeelings" );
