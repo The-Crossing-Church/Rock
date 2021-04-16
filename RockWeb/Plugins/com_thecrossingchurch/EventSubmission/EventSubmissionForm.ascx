@@ -2911,7 +2911,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[0].Rooms = [val.room];
                   this.request.Events[0].StartTime = val.startTime;
                   this.request.Events[0].EndTime = val.endTime;
-                  this.request.Events[0].EventDate = [val.eventDate];
+                  this.request.Events[0].EventDate = val.eventDate;
                   this.request.Events[0].ExpectedAttendance = val.att;
                   this.request.EventDates = [val.eventDate];
               },
