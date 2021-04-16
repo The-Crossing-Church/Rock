@@ -748,8 +748,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     if ( request.needsCatering )
                     {
                         message += "<strong>Preferred Vendor for Childcare:</strong> " + request.Events[i].CCVendor + "<br/>";
-                        message += "<strong>Budget Line for Childcare:</strong> " + request.Events[i].CCBudgetLine + "<br/>";
                         message += "<strong>Preferred Menu for Childcare:</strong> " + request.Events[i].CCMenu + "<br/>";
+                        message += "<strong>Budget Line for Childcare:</strong> " + request.Events[i].CCBudgetLine + "<br/>";
                         message += "<strong>ChildCare Food Set-Up Time:</strong> " + request.Events[i].CCFoodTime + "<br/>";
                     }
                 }

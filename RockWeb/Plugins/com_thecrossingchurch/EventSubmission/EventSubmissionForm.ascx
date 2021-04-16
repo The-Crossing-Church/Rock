@@ -75,29 +75,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsOnline"
-                :label="`An online event`"
+                :label="`Zoom`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsOnline"
-              ></v-switch>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-switch
-                v-model="request.needsPub"
-                :label="`Publicity`"
-                hint="Requests involving publicity must be made at least 6 weeks in advance"
-                :persistent-hint="request.needsPub"
-              ></v-switch>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-switch
-                v-model="request.needsReg"
-                :label="`Registration`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
-                :persistent-hint="request.needsReg"
               ></v-switch>
             </v-col>
           </v-row>
@@ -128,6 +108,26 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 :label="`Special Accommodations (tech, drinks, web calendar, extensive set-up, etc.)`"
                 hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
                 :persistent-hint="request.needsAccom"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-switch
+                v-model="request.needsReg"
+                :label="`Registration`"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                :persistent-hint="request.needsReg"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-switch
+                v-model="request.needsPub"
+                :label="`Publicity`"
+                hint="Requests involving publicity must be made at least 6 weeks in advance"
+                :persistent-hint="request.needsPub"
               ></v-switch>
             </v-col>
           </v-row>
@@ -386,8 +386,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <template v-for="e in request.Events">
                 <v-row>
                   <v-col>
-                    <h3 class="primary--text" v-if="request.Events.length == 1">Online Information</h3>
-                    <h3 class="primary--text" v-else>Online Information for {{e.EventDate | formatDate}}</h3>
+                    <h3 class="primary--text" v-if="request.Events.length == 1">Zoom Information</h3>
+                    <h3 class="primary--text" v-else>Zoom Information for {{e.EventDate | formatDate}}</h3>
                   </v-col>
                 </v-row>
                 <v-row>
@@ -407,6 +407,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     ></v-text-field>
                   </v-col>
                 </v-row>
+              </template>
+            </template>
+            <%-- Catering Information --%>
+            <template v-if="request.needsCatering">
+              <template v-for="e in request.Events">
+                <catering :e="e" :request="request" ref="cateringloop" v-on:updatecatering="updateCatering"></catering>
+              </template>
+            </template>
+            <%-- Childcare Info --%>
+            <template v-if="request.needsChildCare">
+              <template v-for="e in request.Events">
+                <childcare :e="e" :request="request" ref="childcareloop" v-on:updatechildcare="updateChildcare"></childcare>
+              </template>
+            </template>
+            <%-- Special Accommodations Info --%>
+            <template v-if="request.needsAccom">
+              <template v-for="e in request.Events">
+                <accom :e="e" :request="request" ref="accomloop" v-on:updateaccom="updateAccom"></accom>
+              </template>
+            </template>
+            <%-- Registration Information --%>
+            <template v-if="request.needsReg">
+              <template v-for="e in request.Events">
+                <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" ref="regloop" v-on:updatereg="updateReg"></registration>
               </template>
             </template>
             <%-- Publicity Information --%>
@@ -642,30 +666,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     ></v-textarea>
                   </v-col>
                 </v-row>
-              </template>
-            </template>
-            <%-- Registration Information --%>
-            <template v-if="request.needsReg">
-              <template v-for="e in request.Events">
-                <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" ref="regloop" v-on:updatereg="updateReg"></registration>
-              </template>
-            </template>
-            <%-- Catering Information --%>
-            <template v-if="request.needsCatering">
-              <template v-for="e in request.Events">
-                <catering :e="e" :request="request" ref="cateringloop" v-on:updatecatering="updateCatering"></catering>
-              </template>
-            </template>
-            <%-- Childcare Info --%>
-            <template v-if="request.needsChildCare">
-              <template v-for="e in request.Events">
-                <childcare :e="e" :request="request" ref="childcareloop" v-on:updatechildcare="updateChildcare"></childcare>
-              </template>
-            </template>
-            <%-- Special Accommodations Info --%>
-            <template v-if="request.needsAccom">
-              <template v-for="e in request.Events">
-                <accom :e="e" :request="request" ref="accomloop" v-on:updateaccom="updateAccom"></accom>
               </template>
             </template>
             <%-- Notes --%>
@@ -1155,10 +1155,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 item-text="Value"
                 item-value="Id"
                 v-model="e.Rooms"
+                prepend-inner-icon="mdi-map"
+                @click:prepend-inner="openMap"
                 chips
                 multiple
                 attach
                 :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
+                hint="Click the map icon to view campus map"
+                persistent-hint
               >
                 <template v-slot:item="data">
                   <template v-if="typeof data.item !== 'object'">
@@ -1176,7 +1180,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-row v-if="request.needsReg">
             <v-col cols="12" md="6">
               <v-switch
-                label="Do you need in-person check-in on the day of the event?"
+                :label="CheckinLabel"
                 v-model="e.Checkin"
               ></v-switch>
             </v-col>
@@ -1216,12 +1220,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-card-actions>  
             </v-card>
           </v-dialog>
+          <v-dialog
+            v-if="map"
+            v-model="map"
+            max-width="850px"
+          >
+            <v-card>
+              <v-card-text>
+                <v-img src="https://rock.thecrossingchurch.com/Content/Operations/Campus%20Map.png"/>  
+              </v-card-text>  
+            </v-card>
+          </v-dialog>
         </v-form>
       `,
             props: ["e", "request"],
             data: function () {
                 return {
                     dialog: false,
+                    map: false,
                     valid: true,
                     rooms: [],
                     prefillDate: '',
@@ -1327,6 +1343,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     arr.splice(arr.length - 1, 1)
                     return arr
                 },
+                CheckinLabel() {
+                    return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+                }
             },
             methods: {
                 prefillSection() {
@@ -1334,6 +1353,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     let idx = this.request.EventDates.indexOf(this.prefillDate)
                     let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
                     this.$emit('updatespace', { targetIdx: idx, currIdx: currIdx })
+                },
+                boolToYesNo(val) {
+                    if (val) {
+                        return "Yes";
+                    }
+                    return "No";
+                },
+                openMap() {
+                    this.map = true
                 }
             }
         });
@@ -1699,9 +1727,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 feeOptions() {
                     if (this.request.needsOnline) {
-                        return ['Fee per Individual', 'Fee per Couple', 'Online Fee']
+                        return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
                     }
-                    return ['Fee per Individual', 'Fee per Couple']
+                    return ['Fee per Individual', 'Fee per Couple', 'No Fees']
                 }
             },
             watch: {
@@ -1897,19 +1925,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-col>
           </v-row> -->
           <v-row>
+            <v-col cols="12" md="6" v-if="e.FoodDropOff != ''">
+              <v-checkbox
+                label="Set up my drinks in the same location as my food please!"
+                v-model="sameFoodDrinkDropOff"
+                dense
+              ></v-checkbox>
+            </v-col>
             <v-col cols="12" md="6">
               <v-text-field
                 label="Where would you like your drinks delivered?"
                 v-model="e.DrinkDropOff"
               ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-checkbox
-                v-if="e.FoodDropOff != ''"
-                label="Set up my drinks in the same location as my food please!"
-                v-model="sameFoodDrinkDropOff"
-                dense
-              ></v-checkbox>
             </v-col>
           </v-row>
           <%-- Childcare Catering --%>
@@ -3309,6 +3336,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   }
   .v-window {
     overflow: visible !important;
+  }
+  .v-dialog:not(.v-dialog--fullscreen) {
+    max-height: 80vh !important;
+  }
+  .v-dialog {
+    margin-top: 100px !important;
   }
   .btn-hidden {
     visibility: hidden;
