@@ -4,7 +4,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
 %> <%-- Add Vue and Vuetify CDN --%>
 <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.4.2/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
   href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
@@ -37,7 +37,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
 
 <div id="app">
   <v-app>
-    <div>
+    <v-main>
       <v-card>
         <v-card-text>
           <v-expansion-panels v-model="panels" flat>
@@ -87,12 +87,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
             </v-expansion-panel>
           </v-expansion-panels>
           <br/>
-          <v-calendar
-            ref="calendar"
-            v-model="value"
-            :events="requests"
-            @click:event="showEvent"
-          ></v-calendar>
+          <h3 style='text-align: center'>{{currentMonth}}</h3>
+          <v-sheet height="500">
+            <v-calendar
+              ref="calendar"
+              v-model="value"
+              :events="requests"
+              @click:event="showEvent"
+              @click:more="showDayEvents"
+            ></v-calendar>
+          </v-sheet>
         </v-card-text>
       </v-card>
       <br/>
@@ -142,36 +146,77 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
         max-width="850px"
       >
         <v-card>
-          <v-toolbar color="accent">
-            <h4 style="font-weight: bold;">{{selected.name}} {{selected.date}}</h4>
-          </v-toolbar>
-          <v-card-text>
-            <br/>
-            <v-row>
-              <v-col>
-                <strong>Ministry:</strong> {{formatMinistry(selected.ministry)}} <br/>
-              </v-col>
-              <v-col>
-                <strong>Contact:</strong> {{selected.contact}} <br/>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <strong>Start:</strong> {{selected.starttime}} <br/>
-              </v-col>
-              <v-col>
-                <strong>End:</strong> {{selected.endtime}} <br/>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <strong>Rooms:</strong> {{formatRooms(selected.rooms)}} <br/>
-              </v-col>
-            </v-row>
-          </v-card-text>
+          <template v-if="selected">
+            <v-toolbar color="accent">
+              <h4 style="font-weight: bold;">{{selected.name}} {{selected.date}}</h4>
+            </v-toolbar>
+            <v-card-text>
+              <br/>
+              <v-row>
+                <v-col>
+                  <strong>Ministry:</strong> {{formatMinistry(selected.ministry)}} <br/>
+                </v-col>
+                <v-col>
+                  <strong>Contact:</strong> {{selected.contact}} <br/>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <strong>Start:</strong> {{selected.starttime}} <br/>
+                </v-col>
+                <v-col>
+                  <strong>End:</strong> {{selected.endtime}} <br/>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <strong>Rooms:</strong> {{formatRooms(selected.rooms)}} <br/>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </template>
+          <template v-else>
+            <v-card-text>
+              <br/>
+              <v-expansion-panels>
+                <v-expansion-panel v-for="(e, idx) in focusedEvents" :key="idx">
+                  <v-expansion-panel-header color="accent">
+                    <h4 style="font-weight: bold;">{{e.name}} {{e.date}}</h4>
+                  </v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <v-row>
+                      <v-col>
+                        <strong>Ministry:</strong> {{formatMinistry(e.ministry)}} <br/>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <strong>Contact:</strong> {{e.contact}} <br/>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <strong>Start:</strong> {{e.starttime}} <br/>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <strong>End:</strong> {{e.endtime}} <br/>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <strong>Rooms:</strong> {{formatRooms(e.rooms)}} <br/>
+                      </v-col>
+                    </v-row>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
+            </v-card-text>
+          </template>
         </v-card>
       </v-dialog>
-    </div>
+    </v-main>
   </v-app>
 </div>
 <script>
@@ -213,7 +258,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                     '#99B6C4',
                     '#A499BE',
                     '#D28E8F',
-                ]
+                ],
             },
             created() {
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
@@ -248,6 +293,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                         })
                     }
                     return []
+                },
+                currentMonth() {
+                    if (this.value) {
+                        return moment(this.value).format("MMMM")
+                    } else {
+                        return moment().format("MMMM")
+                    }
                 }
             },
             methods: {
@@ -383,6 +435,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                         this.dialog = true
                     }
                     this.value = moment(event.date).format('YYYY-MM-DD')
+                },
+                showDayEvents(event) {
+                    this.selected = null
+                    this.value = event.date
+                    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                        // true for mobile device
+                        // don't show the dialog
+                    } else {
+                        // false for not mobile device
+                        // show the dialog
+                        this.dialog = true
+                    }
                 }
             },
             watch: {
@@ -436,6 +500,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
   }
   .v-overlay__content {
     width: 60%;
+  }
+  .v-expansion-panels {
+    z-index: 2;
+  }
+  .v-dialog:not(.v-dialog--fullscreen) {
+    max-height: 80vh !important;
+  }
+  .v-dialog {
+    margin-top: 100px !important;
   }
   .floating-title {
     text-transform: uppercase;
