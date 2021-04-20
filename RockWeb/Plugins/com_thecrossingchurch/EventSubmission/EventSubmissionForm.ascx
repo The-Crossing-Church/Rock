@@ -773,9 +773,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        Vue.component("time-picker", {
-            template: `
+  document.addEventListener("DOMContentLoaded", function () {
+    Vue.component("time-picker", {
+      template: `
             <v-row>
                 <v-col>
                     <v-select label="Hour" :items="hours" v-model="hour" attach :error-messages="errorMessage" clearable></v-select>
@@ -788,88 +788,88 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 </v-col>
             </v-row>
         `,
-            props: ["value", "default", "rules"],
-            data: function () {
-                return {
-                    hour: null,
-                    minute: "00",
-                    ap: null,
-                    hours: [
-                        "01",
-                        "02",
-                        "03",
-                        "04",
-                        "05",
-                        "06",
-                        "07",
-                        "08",
-                        "09",
-                        "10",
-                        "11",
-                        "12",
-                    ],
-                    mins: ["00", "15", "30", "45"],
-                    aps: ["AM", "PM"],
-                    originalValue: "",
-                    errorMessage: "",
-                };
-            },
-            created: function () {
-                this.originalValue = this.value;
-                if (this.value) {
-                    this.hour = this.value.split(":")[0];
-                    this.minute = this.value.split(":")[1].split(" ")[0];
-                    this.ap = this.value.split(" ")[1];
-                } else {
-                    if (this.default) {
-                        this.hour = this.default.split(":")[0];
-                        this.minute = this.default.split(":")[1].split(" ")[0];
-                        this.ap = this.default.split(" ")[1];
-                    }
-                }
-            },
-            computed: {
-                time() {
-                    if (`${this.hour}:${this.minute} ${this.ap}` == 'null:null null') {
-                        return ''
-                    }
-                    return `${this.hour}:${this.minute} ${this.ap}`;
-                },
-            },
-            watch: {
-                time(val) {
-                    this.$emit("input", val);
-                },
-                default(val) {
-                    if (!this.originalValue && (!this.value || this.value.includes('null'))) {
-                        this.hour = val.split(":")[0];
-                        this.minute = val.split(":")[1].split(" ")[0];
-                        this.ap = val.split(" ")[1];
-                    }
-                },
-                value(val) {
-                    if (val) {
-                        this.hour = val.split(":")[0];
-                        this.minute = val.split(":")[1].split(" ")[0];
-                        this.ap = val.split(" ")[1];
-                    }
-                },
-                rules(val) {
-                    let allTrue = true;
-                    val.forEach((i) => {
-                        if (i != true) {
-                            this.errorMessage = i;
-                            allTrue = false;
-                        }
-                    });
-                    if (allTrue) {
-                        this.errorMessage = "";
-                    }
-                },
-            },
-        });
-        Vue.component("room-picker", {
-            template: `
+      props: ["value", "default", "rules"],
+      data: function () {
+        return {
+          hour: null,
+          minute: "00",
+          ap: null,
+          hours: [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "11",
+            "12",
+          ],
+          mins: ["00", "15", "30", "45"],
+          aps: ["AM", "PM"],
+          originalValue: "",
+          errorMessage: "",
+        };
+      },
+      created: function () {
+        this.originalValue = this.value;
+        if (this.value) {
+          this.hour = this.value.split(":")[0];
+          this.minute = this.value.split(":")[1].split(" ")[0];
+          this.ap = this.value.split(" ")[1];
+        } else {
+          if (this.default) {
+            this.hour = this.default.split(":")[0];
+            this.minute = this.default.split(":")[1].split(" ")[0];
+            this.ap = this.default.split(" ")[1];
+          }
+        }
+      },
+      computed: {
+        time() {
+          if(`${this.hour}:${this.minute} ${this.ap}` == 'null:null null'){
+            return ''
+          }
+          return `${this.hour}:${this.minute} ${this.ap}`;
+        },
+      },
+      watch: {
+        time(val) {
+          this.$emit("input", val);
+        },
+        default(val) {
+          if (!this.originalValue && (!this.value || this.value.includes('null'))) {
+            this.hour = val.split(":")[0];
+            this.minute = val.split(":")[1].split(" ")[0];
+            this.ap = val.split(" ")[1];
+          }
+        },
+        value(val) {
+          if(val){
+            this.hour = val.split(":")[0];
+            this.minute = val.split(":")[1].split(" ")[0];
+            this.ap = val.split(" ")[1];
+          }
+        },
+        rules(val) {
+          let allTrue = true;
+          val.forEach((i) => {
+            if (i != true) {
+              this.errorMessage = i;
+              allTrue = false;
+            }
+          });
+          if (allTrue) {
+            this.errorMessage = "";
+          }
+        },
+      },
+    });
+    Vue.component("room-picker", {
+      template: `
         <v-form ref="roomform" v-model="valid">
           <v-row>
             <v-col>
@@ -959,173 +959,173 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </template>
         </v-form>
       `,
-            props: ["rules", "request"],
-            data: function () {
-                return {
-                    today: moment().format("yyyy-MM-DD"),
-                    valid: true,
-                    allEvents: [],
-                    page: 0,
-                    selected: this.request.Events[0].Rooms[0],
-                    rooms: [],
-                    eventDate: this.request.Events[0].EventDate,
-                    startTime: this.request.Events[0].StartTime,
-                    endTime: this.request.Events[0].EndTime,
-                    att: this.request.Events[0].ExpectedAttendance,
-                };
-            },
-            mounted: function () {
-                this.$refs.calendar.scrollToTime("08:00");
-            },
-            created() {
-                this.allEvents = [];
-                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-                let rawEvents = JSON.parse($('[id$="hfThisWeeksRequests"]')[0].value);
-                let oneWeek = moment().add(6, 'days')
-                for (i = 0; i < rawEvents.length; i++) {
-                    let event = JSON.parse(rawEvents[i])
-                    for (k = 0; k < event.EventDates.length; k++) {
-                        let inRange = moment(event.EventDates[k]).isBetween(moment(), oneWeek, 'days', '[]')
-                        if (inRange) {
-                            this.allEvents.push({
-                                name: event.Name,
-                                start: moment(`${event.EventDates[k]} ${event.StartTime}`).format("yyyy-MM-DD HH:mm"),
-                                end: moment(`${event.EventDates[k]} ${event.EndTime}`).format("yyyy-MM-DD HH:mm"),
-                                loc: event.Rooms,
-                            });
-                        }
-                    }
-                }
-            },
-            computed: {
-                weekdays() {
-                    let dow = moment().day();
-                    let arr = [];
-                    for (i = dow; i < 7; i++) {
-                        arr.push(i);
-                    }
-                    for (i = 0; i < dow; i++) {
-                        arr.push(i);
-                    }
-                    return arr;
-                },
-                events() {
-                    if (this.selected) {
-                        return this.allEvents.filter((i) => {
-                            return i.loc.includes(this.selected);
-                        });
-                    } else {
-                        return [];
-                    }
-                },
-                groupedRooms() {
-                    let loc = []
-                    this.rooms.forEach(l => {
-                        let idx = -1
-                        loc.forEach((i, x) => {
-                            if (i.Type == l.Type) {
-                                idx = x
-                            }
-                        })
-                        if (idx > -1) {
-                            loc[idx].locations.push(l)
-                        } else {
-                            loc.push({ Type: l.Type, locations: [l] })
-                        }
-                    })
-                    loc.forEach(l => {
-                        l.locations = l.locations.sort((a, b) => {
-                            if (a.Value < b.Value) {
-                                return -1
-                            } else if (a.Value > b.Value) {
-                                return 1
-                            } else {
-                                return 0
-                            }
-                        })
-                    })
-                    loc = loc.sort((a, b) => {
-                        if (a.Type < b.Type) {
-                            return -1
-                        } else if (a.Type > b.Type) {
-                            return 1
-                        } else {
-                            return 0
-                        }
-                    })
-                    let arr = []
-                    loc.forEach(l => {
-                        arr.push({ header: l.Type })
-                        l.locations.forEach(i => {
-                            arr.push((i))
-                        })
-                        arr.push({ divider: true })
-                    })
-                    arr.splice(arr.length - 1, 1)
-                    return arr
-                },
-            },
-            methods: {
-                calendarClick(val) {
-                    this.eventDate = val.date;
-                    let hour = val.hour;
-                    let min = val.minute;
-                    let apm = "AM";
-                    if (hour >= 12) {
-                        if (hour > 12) {
-                            hour -= 12;
-                        }
-                        apm = "PM";
-                    }
-                    if (hour.toString().length < 2) {
-                        hour = "0" + hour;
-                    }
-                    if (min < 15) {
-                        min = "00";
-                    } else if (min < 30) {
-                        min = "15";
-                    } else if (min < 45) {
-                        min = "30";
-                    } else {
-                        min = "45";
-                    }
-                    this.startTime = hour + ":" + min + " " + apm;
-                    this.page = 1;
-                },
-                emitChanges() {
-                    this.$emit("update", {
-                        eventDate: this.eventDate,
-                        startTime: this.startTime,
-                        endTime: this.endTime,
-                        room: this.selected,
-                        att: this.att,
-                    });
-                },
-                formatDate(val) {
-                    return moment(val).format("dddd, MMMM Do yyyy");
-                },
-            },
-            watch: {
-                selected(val) {
-                    this.emitChanges();
-                },
-                startTime(val) {
-                    this.emitChanges();
-                },
-                endTime(val) {
-                    this.emitChanges();
-                },
-                att(val) {
-                    this.emitChanges();
-                },
-                request: {
-                    handler(val) { },
-                    deep: true,
-                },
-            },
-        });
-        Vue.component("space", {
-            template: `
+      props: ["rules", "request"],
+      data: function () {
+        return {
+          today: moment().format("yyyy-MM-DD"),
+          valid: true,
+          allEvents: [],
+          page: 0,
+          selected: this.request.Events[0].Rooms[0],
+          rooms: [],
+          eventDate: this.request.Events[0].EventDate,
+          startTime: this.request.Events[0].StartTime,
+          endTime: this.request.Events[0].EndTime,
+          att: this.request.Events[0].ExpectedAttendance,
+        };
+      },
+      mounted: function () {
+        this.$refs.calendar.scrollToTime("08:00");
+      },
+      created() {
+        this.allEvents = [];
+        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+        let rawEvents = JSON.parse($('[id$="hfThisWeeksRequests"]')[0].value);
+        let oneWeek = moment().add(6, 'days')
+        for (i = 0; i < rawEvents.length; i++) {
+          let event = JSON.parse(rawEvents[i])
+          for(k=0; k< event.EventDates.length; k++) {
+            let inRange = moment(event.EventDates[k]).isBetween(moment(), oneWeek, 'days', '[]')
+            if(inRange){
+              this.allEvents.push({
+                name: event.Name,
+                start: moment(`${event.EventDates[k]} ${event.StartTime}`).format("yyyy-MM-DD HH:mm"),
+                end: moment(`${event.EventDates[k]} ${event.EndTime}`).format("yyyy-MM-DD HH:mm"),
+                loc: event.Rooms,
+              });
+            }
+          }
+        }
+      },
+      computed: {
+        weekdays() {
+          let dow = moment().day();
+          let arr = [];
+          for (i = dow; i < 7; i++) {
+            arr.push(i);
+          }
+          for (i = 0; i < dow; i++) {
+            arr.push(i);
+          }
+          return arr;
+        },
+        events() {
+          if (this.selected) {
+            return this.allEvents.filter((i) => {
+              return i.loc.includes(this.selected);
+            });
+          } else {
+            return [];
+          }
+        },
+        groupedRooms(){
+          let loc = []
+          this.rooms.forEach(l => {
+            let idx = -1
+            loc.forEach( (i, x) => {
+              if(i.Type == l.Type){
+                idx = x
+              }
+            })
+            if(idx > -1) {
+              loc[idx].locations.push(l)
+            } else {
+              loc.push({Type: l.Type, locations: [l]})
+            }
+          })
+          loc.forEach(l => {
+            l.locations = l.locations.sort((a,b) => {
+              if(a.Value < b.Value) {
+                return -1
+              } else if(a.Value > b.Value) {
+                return 1
+              } else {
+                return 0
+              }
+            })
+          })
+          loc = loc.sort((a,b) => {
+            if(a.Type < b.Type) {
+              return -1
+            } else if(a.Type > b.Type) {
+              return 1
+            } else {
+              return 0
+            }
+          })
+          let arr = []
+          loc.forEach(l => {
+            arr.push({ header: l.Type })
+            l.locations.forEach(i => {
+              arr.push((i))
+            })
+            arr.push({ divider: true })
+          })
+          arr.splice(arr.length - 1, 1)
+          return arr
+        },
+      },
+      methods: {
+        calendarClick(val) {
+          this.eventDate = val.date;
+          let hour = val.hour;
+          let min = val.minute;
+          let apm = "AM";
+          if (hour >= 12) {
+            if (hour > 12) {
+              hour -= 12;
+            }
+            apm = "PM";
+          }
+          if (hour.toString().length < 2) {
+            hour = "0" + hour;
+          }
+          if (min < 15) {
+            min = "00";
+          } else if (min < 30) {
+            min = "15";
+          } else if (min < 45) {
+            min = "30";
+          } else {
+            min = "45";
+          }
+          this.startTime = hour + ":" + min + " " + apm;
+          this.page = 1;
+        },
+        emitChanges() {
+          this.$emit("update", {
+            eventDate: this.eventDate,
+            startTime: this.startTime,
+            endTime: this.endTime,
+            room: this.selected,
+            att: this.att,
+          });
+        },
+        formatDate(val) {
+          return moment(val).format("dddd, MMMM Do yyyy");
+        },
+      },
+      watch: {
+        selected(val) {
+          this.emitChanges();
+        },
+        startTime(val) {
+          this.emitChanges();
+        },
+        endTime(val) {
+          this.emitChanges();
+        },
+        att(val) {
+          this.emitChanges();
+        },
+        request: {
+          handler(val) {},
+          deep: true,
+        },
+      },
+    });
+    Vue.component("space", {
+      template: `
         <v-form ref="spaceForm" v-model="valid">
           <v-row>
             <v-col>
@@ -1233,140 +1233,141 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-dialog>
         </v-form>
       `,
-            props: ["e", "request"],
-            data: function () {
-                return {
-                    dialog: false,
-                    map: false,
-                    valid: true,
-                    rooms: [],
-                    prefillDate: '',
-                    rules: {
-                        required(val, field) {
-                            return !!val || `${field} is required`;
-                        },
-                        requiredArr(val, field) {
-                            return val.length > 0 || `${field} is required`;
-                        },
-                        exceedsSelected(val, selected, rooms) {
-                            if (val && selected) {
-                                let room = rooms.filter((i) => {
-                                    return i.Id == selected;
-                                })[0];
-                                let cap = room.Capacity;
-                                if (val > cap) {
-                                    return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
-                                        } in the selected space`;
-                                }
-                            }
-                            return true;
-                        },
-                        roomCapacity(allRooms, rooms, attendance) {
-                            if (attendance) {
-                                let selectedRooms = allRooms.filter((r) => {
-                                    return rooms.includes(r.Id);
-                                });
-                                let maxCapacity = 0;
-                                selectedRooms.forEach((r) => {
-                                    maxCapacity += r.Capacity;
-                                });
-                                if (attendance <= maxCapacity) {
-                                    return true;
-                                } else {
-                                    return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
-                                }
-                            }
-                            return true;
-                        },
-                    }
+      props: ["e", "request"],
+      data: function() {
+        return {
+          dialog: false,
+          map: false,
+          valid: true,
+          rooms: [],
+          prefillDate: '',
+          rules: {
+            required(val, field) {
+              return !!val || `${field} is required`;
+            },
+            requiredArr(val, field) {
+              return val.length > 0 || `${field} is required`;
+            },
+            exceedsSelected(val, selected, rooms) {
+              if(val && selected) {
+                let room = rooms.filter((i) => {
+                  return i.Id == selected;
+                })[0];
+                let cap = room.Capacity;
+                if (val > cap) {
+                  return `You cannot have more than ${cap} ${
+                    cap == 1 ? "person" : "people"
+                  } in the selected space`;
                 }
+              }
+              return true;
             },
-            created: function () {
-                this.allEvents = [];
-                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-            },
-            filters: {
-                formatDate(val) {
-                    return moment(val).format("MM/DD/yyyy");
-                },
-            },
-            computed: {
-                attHint() {
-                    return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
-                },
-                prefillOptions() {
-                    return this.request.EventDates.filter(i => i != this.e.EventDate)
-                },
-                groupedRooms() {
-                    let loc = []
-                    this.rooms.forEach(l => {
-                        let idx = -1
-                        loc.forEach((i, x) => {
-                            if (i.Type == l.Type) {
-                                idx = x
-                            }
-                        })
-                        if (idx > -1) {
-                            loc[idx].locations.push(l)
-                        } else {
-                            loc.push({ Type: l.Type, locations: [l] })
-                        }
-                    })
-                    loc.forEach(l => {
-                        l.locations = l.locations.sort((a, b) => {
-                            if (a.Value < b.Value) {
-                                return -1
-                            } else if (a.Value > b.Value) {
-                                return 1
-                            } else {
-                                return 0
-                            }
-                        })
-                    })
-                    loc = loc.sort((a, b) => {
-                        if (a.Type < b.Type) {
-                            return -1
-                        } else if (a.Type > b.Type) {
-                            return 1
-                        } else {
-                            return 0
-                        }
-                    })
-                    let arr = []
-                    loc.forEach(l => {
-                        arr.push({ header: l.Type })
-                        l.locations.forEach(i => {
-                            arr.push((i))
-                        })
-                        arr.push({ divider: true })
-                    })
-                    arr.splice(arr.length - 1, 1)
-                    return arr
-                },
-                CheckinLabel() {
-                    return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+            roomCapacity(allRooms, rooms, attendance) {
+              if (attendance) {
+                let selectedRooms = allRooms.filter((r) => {
+                  return rooms.includes(r.Id);
+                });
+                let maxCapacity = 0;
+                selectedRooms.forEach((r) => {
+                  maxCapacity += r.Capacity;
+                });
+                if (attendance <= maxCapacity) {
+                  return true;
+                } else {
+                  return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
                 }
+              }
+              return true;
             },
-            methods: {
-                prefillSection() {
-                    this.dialog = false
-                    let idx = this.request.EventDates.indexOf(this.prefillDate)
-                    let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-                    this.$emit('updatespace', { targetIdx: idx, currIdx: currIdx })
-                },
-                boolToYesNo(val) {
-                    if (val) {
-                        return "Yes";
-                    }
-                    return "No";
-                },
-                openMap() {
-                    this.map = true
-                }
+          }
+        }
+      },
+      created: function() {
+        this.allEvents = [];
+        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+      },
+      filters: {
+        formatDate(val) {
+          return moment(val).format("MM/DD/yyyy");
+        },
+      },
+      computed: {
+        attHint() {
+          return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
+        },
+        prefillOptions(){
+          return this.request.EventDates.filter(i => i != this.e.EventDate)
+        },
+        groupedRooms(){
+          let loc = []
+          this.rooms.forEach(l => {
+            let idx = -1
+            loc.forEach( (i, x) => {
+              if(i.Type == l.Type){
+                idx = x
+              }
+            })
+            if(idx > -1) {
+              loc[idx].locations.push(l)
+            } else {
+              loc.push({Type: l.Type, locations: [l]})
             }
-        });
-        Vue.component("registration", {
-            template: `
+          })
+          loc.forEach(l => {
+            l.locations = l.locations.sort((a,b) => {
+              if(a.Value < b.Value) {
+                return -1
+              } else if(a.Value > b.Value) {
+                return 1
+              } else {
+                return 0
+              }
+            })
+          })
+          loc = loc.sort((a,b) => {
+            if(a.Type < b.Type) {
+              return -1
+            } else if(a.Type > b.Type) {
+              return 1
+            } else {
+              return 0
+            }
+          })
+          let arr = []
+          loc.forEach(l => {
+            arr.push({ header: l.Type })
+            l.locations.forEach(i => {
+              arr.push((i))
+            })
+            arr.push({ divider: true })
+          })
+          arr.splice(arr.length - 1, 1)
+          return arr
+        },
+        CheckinLabel(){
+          return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+        }
+      },
+      methods: {
+        prefillSection() {
+          this.dialog = false
+          let idx = this.request.EventDates.indexOf(this.prefillDate)
+          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+          this.$emit('updatespace', {targetIdx: idx, currIdx: currIdx})
+        },
+        boolToYesNo(val) {
+          if (val) {
+            return "Yes";
+          }
+          return "No";
+        },
+        openMap(){
+          this.map = true
+        }
+      }
+    });
+    Vue.component("registration", {
+      template: `
         <v-form ref="regForm" v-model="valid">
           <v-row>
             <v-col>
@@ -1559,223 +1560,223 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-dialog>
         </v-form>
       `,
-            props: ["e", "request", "earliestPubDate"],
-            data: function () {
-                return {
-                    menu: false,
-                    menu2: false,
-                    dialog: false,
-                    prefillDate: '',
-                    valid: true,
-                    rules: {
-                        required(val, field) {
-                            return !!val || `${field} is required`;
-                        },
-                        registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare) {
-                            let dates = eventDates.map(d => moment(d))
-                            let minDate = moment.min(dates)
-                            if (eventDate) {
-                                minDate = moment(eventDate)
-                            }
-                            if (needsChildCare) {
-                                minDate = minDate.subtract(1, "day")
-                            }
-                            if (moment(closeDate).isAfter(minDate)) {
-                                if (needsChildCare) {
-                                    return 'When requesting childcare, registration must close 24 hours before the start of your event'
-                                }
-                                return 'Registration cannot end after your event'
-                            }
-                            return true
-                        },
-                        registrationCloseTime(eventDate, closeDate, needsChildCare, startTime, endtime, closeTime) {
-                            let minDate = moment(eventDate)
-                            let actualDate = moment(`${closeDate} ${closeTime}`)
-                            if (needsChildCare) {
-                                minDate = minDate.subtract(1, "day")
-                                minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
-                            } else {
-                                minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
-                            }
-                            if (moment(actualDate).isAfter(minDate)) {
-                                if (needsChildCare) {
-                                    return 'When requesting childcare, registration must close 24 hours before the start of your event'
-                                }
-                                return 'Registration cannot end after your event'
-                            }
-                            return true
-                        }
-                    }
+      props: ["e", "request", "earliestPubDate"],
+      data: function (){
+        return {
+          menu: false,
+          menu2: false,
+          dialog: false,
+          prefillDate: '',
+          valid: true,
+          rules: {
+            required(val, field) {
+              return !!val || `${field} is required`;
+            },
+            registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare){
+              let dates = eventDates.map(d => moment(d))
+              let minDate = moment.min(dates)
+              if(eventDate) {
+                minDate = moment(eventDate)
+              }
+              if(needsChildCare){
+                minDate = minDate.subtract(1, "day")
+              }
+              if(moment(closeDate).isAfter(minDate)){
+                if(needsChildCare){
+                  return 'When requesting childcare, registration must close 24 hours before the start of your event'
                 }
+                return 'Registration cannot end after your event'
+              }
+              return true
             },
-            created: function () {
-                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-            },
-            methods: {
-                formatRooms(val) {
-                    if (val) {
-                        let rms = [];
-                        val.forEach((i) => {
-                            this.rooms.forEach((r) => {
-                                if (i == r.Id) {
-                                    rms.push(r.Value);
-                                }
-                            });
-                        });
-                        return rms.join(", ");
-                    }
-                    return "";
-                },
-                prefillSection() {
-                    this.dialog = false
-                    let idx = this.request.EventDates.indexOf(this.prefillDate)
-                    let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-                    this.$emit('updatereg', { targetIdx: idx, currIdx: currIdx })
+            registrationCloseTime(eventDate, closeDate, needsChildCare, startTime, endtime, closeTime){
+              let minDate = moment(eventDate)
+              let actualDate = moment(`${closeDate} ${closeTime}`)
+              if(needsChildCare){
+                minDate = minDate.subtract(1, "day")
+                minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
+              } else {
+                minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
+              }
+              if(moment(actualDate).isAfter(minDate)){
+                if(needsChildCare){
+                  return 'When requesting childcare, registration must close 24 hours before the start of your event'
                 }
-            },
-            computed: {
-                defaultRegistraionStart() {
-                    if (this.request.needsReg) {
-                        if (this.e.RegistrationDate) {
-                            return this.e.RegistrationDate
-                        }
-                        if (this.request.PublicityStartDate) {
-                            return moment(this.request.PublicityStartDate).subtract(3, 'days').format("yyyy-MM-DD")
-                        }
-                    }
-                    return ""
-                },
-                defaultRegistraionEnd() {
-                    if (this.request.needsReg) {
-                        if (this.e.RegistrationEndDate) {
-                            return this.e.RegistrationEndDate
-                        }
-                        if (this.request.EventDates) {
-                            if (this.e.EventDate) {
-                                return moment(this.e.EventDate).subtract(1, "day").format("yyyy-MM-DD")
-                            } else {
-                                let eventDates = this.request.EventDates.map(p => moment(p))
-                                let firstDate = moment.min(eventDates)
-                                return moment(firstDate).subtract(1, "day").format("yyyy-MM-DD")
-                            }
-                        }
-                    }
-                    return ""
-                },
-                defaultThankYou() {
-                    if (this.request.needsReg) {
-                        if (this.request.Id > 0 && this.e.ThankYou) {
-                            return this.e.ThankYou
-                        }
-                        if (this.request.Name) {
-                            return "Thank you for registering for " + this.request.Name
-                        }
-                        return ""
-                    }
-                    return ""
-                },
-                defaultTimeLocation() {
-                    if (this.request.needsReg) {
-                        if (this.request.Id > 0 && this.e.TimeLocation) {
-                            return this.e.TimeLocation
-                        }
-                        if (this.request.Name && this.e.StartTime) {
-                            return this.request.Name + " will take place at " + this.e.StartTime + " in " + this.formatRooms(this.e.Rooms)
-                        }
-                        return ""
-                    }
-                    return ""
-                },
-                emailPreview() {
-                    let preview =
-                        "<div style='background-color: #F2F2F2;'>" +
-                        "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
-                        "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
-                        "</div>" +
-                        "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
-                        "<h1>" + this.request.Name + "</h1><br/>" +
-                        this.e.ThankYou + "<br/>" +
-                        this.e.TimeLocation + "<br/><br/>" +
-                        "<p>The following people have been registered for " + this.request.Name + ":</p>" +
-                        "<ul>" +
-                        "<li>First Registrant</li>" +
-                        "<li>Second Registrant</li>" +
-                        "</ul>"
-                    if (this.e.Fee) {
-                        preview +=
-                            "<p>" +
-                            "Total Cost: $" + this.e.Fee + "<br/>" +
-                            "Total Paid: $" + this.e.Fee + "<br/>" +
-                            "Balance Due: $0.00<br/>" +
-                            "</p>"
-                    }
-                    preview += this.e.AdditionalDetails
-                    preview += "</div>"
-                    preview +=
-                        "<div style='text-align:center;'><br/>" +
-                        "<b>The Crossing</b><br/>" +
-                        "3615 Southland Dr.<br/>" +
-                        "Columbia, MO 65201<br/>" +
-                        "(573) 256-4410<br/>" +
-                        "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
-                        "</div>"
-                    preview += "</div>"
-                    return preview
-                },
-                prefillOptions() {
-                    return this.request.EventDates.filter(i => i != this.e.EventDate)
-                },
-                feeOptions() {
-                    if (this.request.needsOnline) {
-                        return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
-                    }
-                    return ['Fee per Individual', 'Fee per Couple', 'No Fees']
+                return 'Registration cannot end after your event'
+              }
+              return true
+            }
+          }
+        }
+      },
+      created: function() {
+        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+      },
+      methods: {
+        formatRooms(val) {
+          if (val) {
+            let rms = [];
+            val.forEach((i) => {
+              this.rooms.forEach((r) => {
+                if (i == r.Id) {
+                  rms.push(r.Value);
                 }
-            },
-            watch: {
-                e(val) {
-                    this.$emit('change', val)
-                },
-                defaultRegistraionEnd(val) {
-                    if (val) {
-                        this.e.RegistrationEndDate = val
-                    }
-                },
-                defaultRegistraionStart(val) {
-                    if (val) {
-                        this.e.RegistrationDate = val
-                    }
-                },
-                defaultThankYou(val) {
-                    if (val) {
-                        this.e.ThankYou = val
-                    }
-                },
-                defaultTimeLocation(val) {
-                    if (val) {
-                        this.e.TimeLocation = val
-                    }
-                },
-                'e.FeeType'(val) {
-                    if (!val.includes('Fee per Individual')) {
-                        this.e.Fee = null
-                    }
-                    if (!val.includes('Fee per Couple')) {
-                        this.e.CoupleFee = null
-                    }
-                    if (!val.includes('Online Fee')) {
-                        this.e.OnlineFee = null
-                    }
-                }
-            },
-            filters: {
-                formatDate(val) {
-                    return moment(val).format("MM/DD/yyyy");
-                },
-            },
-        });
-        Vue.component("catering", {
-            template: `
+              });
+            });
+            return rms.join(", ");
+          }
+          return "";
+        },
+        prefillSection() {
+          this.dialog = false
+          let idx = this.request.EventDates.indexOf(this.prefillDate)
+          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+          this.$emit('updatereg', {targetIdx: idx, currIdx: currIdx})
+        }
+      },
+      computed: {
+        defaultRegistraionStart(){
+          if(this.request.needsReg){
+            if(this.e.RegistrationDate){
+              return this.e.RegistrationDate
+            }
+            if(this.request.PublicityStartDate){
+              return moment(this.request.PublicityStartDate).subtract(3, 'days').format("yyyy-MM-DD")
+            }
+          }
+          return ""
+        },
+        defaultRegistraionEnd(){
+          if(this.request.needsReg){
+            if(this.e.RegistrationEndDate){
+              return this.e.RegistrationEndDate
+            }
+            if(this.request.EventDates){
+              if(this.e.EventDate){ 
+                return moment(this.e.EventDate).subtract(1, "day").format("yyyy-MM-DD")
+              } else {
+                let eventDates = this.request.EventDates.map(p => moment(p))
+                let firstDate = moment.min(eventDates)
+                return moment(firstDate).subtract(1, "day").format("yyyy-MM-DD")
+              }
+            }
+          }
+          return ""
+        },
+        defaultThankYou(){
+          if(this.request.needsReg) {
+            if(this.request.Id > 0 && this.e.ThankYou) {
+              return this.e.ThankYou
+            }
+            if(this.request.Name) {
+              return "Thank you for registering for " + this.request.Name
+            }
+            return ""
+          }
+          return ""
+        },
+        defaultTimeLocation(){
+          if(this.request.needsReg) {
+            if(this.request.Id > 0 && this.e.TimeLocation) {
+              return this.e.TimeLocation
+            }
+            if(this.request.Name && this.e.StartTime) {
+              return this.request.Name + " will take place at " + this.e.StartTime + " in " + this.formatRooms(this.e.Rooms)
+            }
+            return ""
+          }
+          return ""
+        },
+        emailPreview(){
+          let preview = 
+            "<div style='background-color: #F2F2F2;'>" +
+              "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
+                "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
+              "</div>" + 
+              "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
+                "<h1>" + this.request.Name + "</h1><br/>" + 
+                this.e.ThankYou + "<br/>" + 
+                this.e.TimeLocation + "<br/><br/>" + 
+                "<p>The following people have been registered for " + this.request.Name + ":</p>" +
+                "<ul>" + 
+                  "<li>First Registrant</li>" + 
+                  "<li>Second Registrant</li>" + 
+                "</ul>"
+          if(this.e.Fee) {
+            preview +=
+              "<p>" + 
+                "Total Cost: $" + this.e.Fee + "<br/>" +
+                "Total Paid: $" + this.e.Fee + "<br/>" +
+                "Balance Due: $0.00<br/>" +
+              "</p>"
+          }
+          preview += this.e.AdditionalDetails
+          preview += "</div>"
+          preview += 
+            "<div style='text-align:center;'><br/>" +
+              "<b>The Crossing</b><br/>" +
+              "3615 Southland Dr.<br/>" +
+              "Columbia, MO 65201<br/>" +
+              "(573) 256-4410<br/>" +
+              "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
+            "</div>"
+          preview += "</div>"
+          return preview
+        },
+        prefillOptions(){
+          return this.request.EventDates.filter(i => i != this.e.EventDate)
+        },
+        feeOptions() {
+          if(this.request.needsOnline) {
+            return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
+          }
+          return ['Fee per Individual', 'Fee per Couple', 'No Fees']
+        }
+      },
+      watch: {
+        e(val) {
+          this.$emit('change', val)
+        },
+        defaultRegistraionEnd(val) {
+          if(val){
+            this.e.RegistrationEndDate = val
+          }
+        },
+        defaultRegistraionStart(val){
+          if(val){
+            this.e.RegistrationDate = val
+          }
+        },
+        defaultThankYou(val) {
+          if(val) {
+            this.e.ThankYou = val
+          }
+        },
+        defaultTimeLocation(val) {
+          if(val) {
+            this.e.TimeLocation = val
+          }
+        }, 
+        'e.FeeType'(val) {
+          if(!val.includes('Fee per Individual')) {
+            this.e.Fee = null
+          }
+          if(!val.includes('Fee per Couple')) {
+            this.e.CoupleFee = null
+          }
+          if(!val.includes('Online Fee')) {
+            this.e.OnlineFee = null
+          }
+        }
+      },
+      filters: {
+        formatDate(val) {
+          return moment(val).format("MM/DD/yyyy");
+        },
+      },
+    });
+    Vue.component("catering", {
+      template: `
         <v-form ref="cateringForm" v-model="valid">
           <v-row>
             <v-col>
@@ -1790,11 +1791,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-row>
           <v-row>
             <v-col cols="12" style='font-weight: bold;'>
-              If you want to avoid a serving team, be sure to choose a vendor that is currently offering individually boxed meals. 
+              Although buffets are now permissible, keep in mind that some of your attendees may still appreciate the precautionary measures of an individually packaged meal. For a list of vendors providing boxed options, 
               <v-menu attach>
                 <template v-slot:activator="{ on, attrs }">
                   <span v-bind="attrs" v-on="on" class='accent-text'>
-                    Click here to see that list.
+                    please click here. 
                   </span>
                 </template>
                 <v-list>
@@ -1990,7 +1991,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-card>
               <v-card-title>
                 Pre-fill this section with information from another date
-              </v-card-title>
+              </v-card-title>  
               <v-card-text>
                 <v-select
                   :items="prefillOptions"
@@ -2002,81 +2003,81 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <template v-slot:item="data">
                     {{data.item | formatDate}}
                   </template>
-                </v-select>
-              </v-card-text>
+                </v-select>  
+              </v-card-text>  
               <v-card-actions>
-                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn>
-                <v-spacer></v-spacer>
-                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>
-              </v-card-actions>
+                <v-btn color="secondary" @click="dialog = false; prefillDate = '';">Cancel</v-btn> 
+                <v-spacer></v-spacer> 
+                <v-btn color="primary" @click="prefillSection">Pre-fill Section</v-btn>  
+              </v-card-actions>  
             </v-card>
           </v-dialog>
         </v-form>
       `,
-        props: ["e", "request"],
-        data: function () {
-            return {
-                dialog: false,
-                valid: true,
-                rooms: [],
-                prefillDate: '',
-                sameFoodDrinkDropOff: false,
-                rules: {
-                    required(val, field) {
-                        return !!val || `${field} is required`;
-                    },
-                    requiredArr(val, field) {
-                        return val.length > 0 || `${field} is required`;
-                    },
-                }
-            }
-        },
-        created: function () {
-            this.allEvents = [];
-            this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-        },
-        filters: {
-            formatDate(val) {
-                return moment(val).format("MM/DD/yyyy");
+      props: ["e", "request"],
+      data: function() {
+        return {
+          dialog: false,
+          valid: true,
+          rooms: [],
+          prefillDate: '',
+          sameFoodDrinkDropOff: false,
+          rules: {
+            required(val, field) {
+              return !!val || `${field} is required`;
             },
-        },
-        computed: {
-            prefillOptions() {
-                return this.request.EventDates.filter(i => i != this.e.EventDate)
+            requiredArr(val, field) {
+              return val.length > 0 || `${field} is required`;
             },
-            deliveryLabel() {
-                return `Would you like your food to be delivered? ${this.e.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`
-            },
-            drinkHint() {
-                return ''
-                // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
-            },
-            defaultFoodTime() {
-                if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-                    let time = moment(this.e.StartTime, "hh:mm A");
-                    return time.subtract(30, "minutes").format("hh:mm A");
-                }
-                return null;
-            },
-        },
-        methods: {
-            prefillSection() {
-                this.dialog = false
-                let idx = this.request.EventDates.indexOf(this.prefillDate)
-                let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-                this.$emit('updatecatering', { targetIdx: idx, currIdx: currIdx })
-            }
-        },
-        watch: {
-            sameFoodDrinkDropOff(val) {
-                if (val) {
-                    this.e.DrinkDropOff = this.e.FoodDropOff
-                }
-            },
+          }
         }
+      },
+      created: function() {
+        this.allEvents = [];
+        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+      },
+      filters: {
+        formatDate(val) {
+          return moment(val).format("MM/DD/yyyy");
+        },
+      },
+      computed: {
+        prefillOptions(){
+          return this.request.EventDates.filter(i => i != this.e.EventDate)
+        },
+        deliveryLabel(){
+          return `Would you like your food to be delivered? ${this.e.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`
+        },
+        drinkHint(){
+          return ''
+          // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+        },
+        defaultFoodTime() {
+          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+            let time = moment(this.e.StartTime, "hh:mm A");
+            return time.subtract(30, "minutes").format("hh:mm A");
+          }
+          return null;
+        },
+      },
+      methods: {
+        prefillSection() {
+          this.dialog = false
+          let idx = this.request.EventDates.indexOf(this.prefillDate)
+          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+          this.$emit('updatecatering', {targetIdx: idx, currIdx: currIdx})
+        }
+      },
+      watch: {
+        sameFoodDrinkDropOff(val) {
+          if(val) {
+            this.e.DrinkDropOff = this.e.FoodDropOff
+          }
+        },
+      }
     });
-      Vue.component("childcare", {
-          template: `
+    Vue.component("childcare", {
+      template: `
         <v-form ref="childForm" v-model="valid">
           <v-row>
             <v-col>
@@ -2204,66 +2205,66 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-dialog>
         </v-form>
       `,
-          props: ["e", "request"],
-          data: function () {
-              return {
-                  dialog: false,
-                  valid: true,
-                  prefillDate: '',
-                  childCareSelectAll: false,
-                  rules: {
-                      required(val, field) {
-                          return !!val || `${field} is required`;
-                      },
-                      requiredArr(val, field) {
-                          return val.length > 0 || `${field} is required`;
-                      },
-                  }
-              }
-          },
-          created: function () {
-          },
-          filters: {
-              formatDate(val) {
-                  return moment(val).format("MM/DD/yyyy");
-              },
-          },
-          computed: {
-              prefillOptions() {
-                  return this.request.EventDates.filter(i => i != this.e.EventDate)
-              },
-              defaultFoodTime() {
-                  if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-                      let time = moment(this.e.StartTime, "hh:mm A");
-                      return time.subtract(30, "minutes").format("hh:mm A");
-                  }
-                  return null;
-              },
-          },
-          methods: {
-              toggleChildCareOptions() {
-                  this.childCareSelectAll = !this.childCareSelectAll;
-                  if (this.childCareSelectAll) {
-                      this.e.ChildCareOptions = [
-                          "Infant/Toddler",
-                          "Preschool",
-                          "K-2nd",
-                          "3-5th",
-                      ];
-                  } else {
-                      this.e.ChildCareOptions = [];
-                  }
-              },
-              prefillSection() {
-                  this.dialog = false
-                  let idx = this.request.EventDates.indexOf(this.prefillDate)
-                  let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-                  this.$emit('updatechildcare', { targetIdx: idx, currIdx: currIdx })
-              }
+      props: ["e", "request"],
+      data: function() {
+        return {
+          dialog: false,
+          valid: true,
+          prefillDate: '',
+          childCareSelectAll: false,
+          rules: {
+            required(val, field) {
+              return !!val || `${field} is required`;
+            },
+            requiredArr(val, field) {
+              return val.length > 0 || `${field} is required`;
+            },
           }
-      });
-      Vue.component("accom", {
-          template: `
+        }
+      },
+      created: function() {
+      },
+      filters: {
+        formatDate(val) {
+          return moment(val).format("MM/DD/yyyy");
+        },
+      },
+      computed: {
+        prefillOptions(){
+          return this.request.EventDates.filter(i => i != this.e.EventDate)
+        },
+        defaultFoodTime() {
+          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+            let time = moment(this.e.StartTime, "hh:mm A");
+            return time.subtract(30, "minutes").format("hh:mm A");
+          }
+          return null;
+        },
+      },
+      methods: {
+        toggleChildCareOptions() {
+          this.childCareSelectAll = !this.childCareSelectAll;
+          if (this.childCareSelectAll) {
+            this.e.ChildCareOptions = [
+              "Infant/Toddler",
+              "Preschool",
+              "K-2nd",
+              "3-5th",
+            ];
+          } else {
+            this.e.ChildCareOptions = [];
+          }
+        },
+        prefillSection() {
+          this.dialog = false
+          let idx = this.request.EventDates.indexOf(this.prefillDate)
+          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+          this.$emit('updatechildcare', {targetIdx: idx, currIdx: currIdx})
+        }
+      }
+    });
+    Vue.component("accom", {
+      template: `
         <v-form ref="accomForm" v-model="valid">
           <v-row>
             <v-col>
@@ -2411,905 +2412,907 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-dialog>
         </v-form>
       `,
-          props: ["e", "request"],
-          data: function () {
-              return {
-                  dialog: false,
-                  valid: true,
-                  prefillDate: '',
-                  setupImage: {},
-                  rules: {
-                      required(val, field) {
-                          return !!val || `${field} is required`;
-                      },
-                      requiredArr(val, field) {
-                          return val.length > 0 || `${field} is required`;
-                      },
-                      blurbValidation(value, pubDate) {
-                          let daysUntil = moment(pubDate).diff(moment(), "days");
-                          if (daysUntil <= 30) {
-                              return (
-                                  value.length >= 100 ||
-                                  "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
-                              );
-                          } else {
-                              return true;
-                          }
-                      },
-                  }
-              }
+      props: ["e", "request"],
+      data: function() {
+        return {
+          dialog: false,
+          valid: true,
+          prefillDate: '',
+          setupImage: {},
+          rules: {
+            required(val, field) {
+              return !!val || `${field} is required`;
+            },
+            requiredArr(val, field) {
+              return val.length > 0 || `${field} is required`;
+            },
+          blurbValidation(value, pubDate) {
+            let daysUntil = moment(pubDate).diff(moment(), "days");
+            if (daysUntil <= 30) {
+              return (
+                value.length >= 100 ||
+                "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
+              );
+            } else {
+              return true;
+            }
           },
-          created: function () {
-              if (this.e.SetUpImage) {
-                  this.setupImage = this.e.SetUpImage;
-              }
-          },
-          filters: {
-              formatDate(val) {
-                  return moment(val).format("MM/DD/yyyy");
-              },
-          },
-          computed: {
-              prefillOptions() {
-                  return this.request.EventDates.filter(i => i != this.e.EventDate)
-              },
-              techHint() {
-                  return `${this.e.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`
-              },
-              calLabel() {
-                  return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
-              },
-              drinkHint() {
-                  return ''
-                  // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
-              },
-              defaultFoodTime() {
-                  if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-                      let time = moment(this.e.StartTime, "hh:mm A");
-                      return time.subtract(30, "minutes").format("hh:mm A");
-                  }
-                  return null;
-              },
-          },
-          methods: {
-              prefillSection() {
-                  this.dialog = false
-                  let idx = this.request.EventDates.indexOf(this.prefillDate)
-                  let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-                  this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
-              },
-              handleSetUpFile(e) {
-                  let file = { name: e.name, type: e.type };
-                  var reader = new FileReader();
-                  const self = this;
-                  reader.onload = function (e) {
-                      file.data = e.target.result;
-                      self.e.SetUpImage = file;
-                  };
-                  reader.readAsDataURL(e);
-              },
-              boolToYesNo(val) {
-                  if (val) {
-                      return "Yes";
-                  }
-                  return "No";
-              },
           }
-      });
-      new Vue({
-          el: "#app",
-          vuetify: new Vuetify({
-              theme: {
-                  themes: {
-                      light: {
-                          primary: "#347689",
-                          secondary: "#3D3D3D",
-                          accent: "#8ED2C9",
-                      },
-                  },
-              },
-              iconfont: "mdi",
-          }),
-          config: {
-              devtools: true,
-          },
-          data: {
-              panel: 0,
-              request: {
-                  needsSpace: false,
-                  needsOnline: false,
-                  needsPub: false,
-                  needsReg: false,
-                  needsCatering: false,
-                  needsChildCare: false,
-                  needsAccom: false,
-                  IsSame: true,
-                  Name: "",
-                  Ministry: "",
-                  Contact: "",
-                  Events: [
-                      {
-                          EventDate: "",
-                          StartTime: "",
-                          EndTime: "",
-                          MinsStartBuffer: 0,
-                          MinsEndBuffer: 0,
-                          ExpectedAttendance: "",
-                          Rooms: "",
-                          Checkin: false,
-                          SupportTeam: false,
-                          EventURL: "",
-                          ZoomPassword: "",
-                          ThankYou: "",
-                          TimeLocation: "",
-                          AdditionalDetails: "",
-                          Sender: "",
-                          SenderEmail: "",
-                          RegistrationDate: "",
-                          RegistrationEndDate: "",
-                          RegistrationEndTime: "",
-                          FeeType: [],
-                          Fee: null,
-                          CoupleFee: null,
-                          OnlineFee: null,
-                          Vendor: "",
-                          Menu: "",
-                          FoodDelivery: true,
-                          FoodTime: "",
-                          FoodDropOff: "",
-                          Drinks: "",
-                          DinkTime: "",
-                          ServingTeamAgree: false,
-                          DrinkDropOff: "",
-                          BudgetLine: "",
-                          CCVendor: "",
-                          CCMenu: "",
-                          CCFoodTime: "",
-                          CCBudgetLine: "",
-                          ChildCareOptions: "",
-                          EstimatedKids: null,
-                          CCStartTime: '',
-                          CCEndTime: '',
-                          TechNeeds: "",
-                          TechDescription: "",
-                          ShowOnCalendar: false,
-                          PublicityBlurb: "",
-                          SetUp: "",
-                          SetUpImage: null,
-                      }
-                  ],
-                  EventDates: [],
-                  WhyAttendSixtyFive: "",
-                  TargetAudience: "",
-                  EventIsSticky: false,
-                  PublicityStartDate: "",
-                  PublicityEndDate: "",
-                  PublicityStrategies: "",
-                  WhyAttendNinety: "",
-                  GoogleKeys: [],
-                  WhyAttendTen: "",
-                  VisualIdeas: "",
-                  Stories: [{ Name: "", Email: "", Description: "" }],
-                  WhyAttendTwenty: "",
-                  Notes: "",
-              },
-              existingRequests: [],
-              rooms: [],
-              ministries: [],
-              pubStartMenu: false,
-              pubEndMenu: false,
-              googleCurrentKey: "",
-              rules: {
-                  required(val, field) {
-                      return !!val || `${field} is required`;
-                  },
-                  requiredArr(val, field) {
-                      return val.length > 0 || `${field} is required`;
-                  },
-                  exceedsSelected(val, selected, rooms) {
-                      if (val && selected) {
-                          let room = rooms.filter((i) => {
-                              return i.Id == selected;
-                          })[0];
-                          let cap = room.Capacity;
-                          if (val > cap) {
-                              return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
-                                  } in the selected space`;
-                          }
-                      }
-                      return true;
-                  },
-                  validTime(val, compareVal, isStart) {
-                      if (
-                          !!val &&
-                          !!compareVal &&
-                          !val.includes("null") &&
-                          !compareVal.includes("null")
-                      ) {
-                          let startTime = isStart ? val : compareVal;
-                          let endTime = isStart ? compareVal : val;
-                          let momentStart = moment(startTime, "hh:mm A");
-                          let momentEnd = moment(endTime, "hh:mm A");
-                          let isAfter = momentEnd.isAfter(momentStart);
-                          return (
-                              isAfter ||
-                              `${isStart
-                                  ? "Start time must come before end time"
-                                  : "End time must come after start time"
-                              }`
-                          );
-                      } else if (val.includes("null")) {
-                          return "Please fill out all time information";
-                      }
-                      return true;
-                  },
-                  roomCapacity(allRooms, rooms, attendance) {
-                      if (attendance) {
-                          let selectedRooms = allRooms.filter((r) => {
-                              return rooms.includes(r.Id);
-                          });
-                          let maxCapacity = 0;
-                          selectedRooms.forEach((r) => {
-                              maxCapacity += r.Capacity;
-                          });
-                          if (attendance <= maxCapacity) {
-                              return true;
-                          } else {
-                              return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
-                          }
-                      }
-                      return true;
-                  },
-                  publicityWordLimit(text, limit) {
-                      if (text) {
-                          let arr = text.split(' ')
-                          if (arr.length > limit) {
-                              return `Please limit yourself to ${limit} words`
-                          }
-                      }
-                      return true
-                  },
-                  publicityCharacterLimit(text, limit) {
-                      if (text) {
-                          if (text.length > limit) {
-                              return `Please limit yourself to ${limit} characters`
-                          }
-                      }
-                      return true
-                  },
-                  publicityEndDate(eventDates, endDate, startDate) {
-                      let dates = eventDates.map(d => moment(d))
-                      let minDate = moment.max(dates).subtract(1, 'days')
-                      if (moment(endDate).isAfter(minDate)) {
-                          return 'Publicity cannot end after event.'
-                      }
-                      let span = moment(endDate).diff(moment(startDate), 'days')
-                      if (span < 21) {
-                          return 'Publicity end date must be at least 21 days after publicity start.'
-                      }
-                      return true
-                  },
-              },
-              valid: true,
-              formValid: true,
-              dialog: false,
-              conflictingRequestMsg: "",
-              beforeHoursMsg: "",
-              afterHoursMsg: "",
-              triedSubmit: false,
-              tab: 0,
-              isAdmin: false,
-              dateChangeMessage: '',
-              changeDialog: false
-          },
-          created() {
-              this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-              this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
-              let val = $('[id$="hfIsAdmin"]')[0].value;
-              if (val == 'True') {
-                  this.isAdmin = true
-              }
-              let req = $('[id$="hfRequest"]')[0].value;
-              if (req) {
-                  let parsed = JSON.parse(req)
-                  this.request = JSON.parse(parsed.Value)
-                  this.request.Id = parsed.Id
-                  this.request.Status = parsed.RequestStatus
-                  this.request.CreatedBy = parsed.CreatedBy
-                  this.request.canEdit = parsed.CanEdit
-              }
-              window["moment-range"].extendMoment(moment);
-          },
-          mounted() {
-              let query = new URLSearchParams(window.location.search);
-              let success = query.get('ShowSuccess');
-              if (success) {
-                  if (success == "true") {
-                      this.panel = 2;
-                      let id = query.get('Id');
-                      if (id && this.isAdmin) {
-                          window.history.go(-2)
-                      }
-                  }
-              }
-          },
-          computed: {
-              requestedResources() {
-                  let items = []
-                  if (this.request.needsSpace) {
-                      items.push('rooms')
-                  }
-                  if (this.request.needsOnline) {
-                      items.push('online resources')
-                  }
-                  if (this.request.needsReg) {
-                      items.push('registration')
-                  }
-                  if (this.request.needsChildCare) {
-                      items.push('childcare')
-                  }
-                  if (this.request.needsCatering) {
-                      items.push('catering')
-                  }
-                  if (this.request.needsAccom) {
-                      items.push('accommodations')
-                  }
-                  items[items.length - 1] = "and " + items[items.length - 1]
-                  return items.join(", ");
-              },
-              earliestDate() {
-                  let eDate = new moment();
-                  if (
-                      !this.request.needsPub && !this.request.needsChildCare && (
-                          this.request.needsOnline ||
-                          this.request.needsCatering ||
-                          this.request.needsReg ||
-                          this.request.needsAccom
-                      )) {
-                      eDate = moment(eDate).add(14, "days");
-                  }
-                  if (this.request.needsPub) {
-                      eDate = moment(eDate).add(6, "weeks").add(1, "day");
-                  }
-                  if (
-                      !this.request.needsPub && (
-                          this.request.needsChildCare ||
-                          this.request.ExpectedAttendance > 250
-                      )) {
-                      eDate = moment().add(30, "days");
-                      this.request.EventDates.forEach((itm, i) => {
-                          if (
-                              !moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))
-                          ) {
-                              this.request.EventDates.splice(i, 1);
-                          }
-                      });
-                  }
-                  return moment(eDate).format("yyyy-MM-DD");
-              },
-              earliestPubDate() {
-                  let eDate = new moment();
-                  eDate = moment(eDate).add(21, "days");
-                  return moment(eDate).format("yyyy-MM-DD");
-              },
-              earliestEndPubDate() {
-                  let eDate = new moment();
-                  if (this.request.PublicityStartDate) {
-                      eDate = moment(this.request.PublicityStartDate).add(21, "days");
-                  } else {
-                      eDate = moment(this.earliestPubDate).add(21, "days");
-                  }
-                  return moment(eDate).format("yyyy-MM-DD");
-              },
-              latestPubDate() {
-                  let sortedDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
-                  let eDate = new moment(sortedDates[sortedDates.length - 1]);
-                  eDate = moment(eDate).subtract(1, "days");
-                  return moment(eDate).format("yyyy-MM-DD");
-              },
-              pubStrategyOptions() {
-                  let ops = ['Social Media/Google Ads', 'Mobile Worship Folder']
-                  if (this.request.EventIsSticky) {
-                      ops.push('Announcement')
-                  }
-                  return ops
-              },
-              longDates() {
-                  return this.request.EventDates.map((i) => {
-                      return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
-                  });
-              },
-              isValid() {
-                  if (this.$refs.roompckr && this.tab == 1) {
-                      return this.valid && this.formValid && this.$refs.roompckr.valid;
-                  }
-                  return this.valid && this.formValid;
-              },
-              isExistingRequest() {
-                  let urlParams = new URLSearchParams(window.location.search);
-                  let id = urlParams.get('Id');
-                  if (id) {
-                      return true
-                  }
-                  return false
-              },
-              cannotChangeDates() {
-                  if (this.isAdmin) {
-                      return false
-                  }
-                  if (this.request.Id > 0 && this.request.Status != 'Submitted') {
-                      if (!this.request.IsSame || this.request.Events.length > 1) {
-                          return true
-                      }
-                  }
-                  return false
-              },
-              cannotChangeToggle() {
-                  if (this.isAdmin) {
-                      return false
-                  }
-                  if (this.request.Id > 0 && this.request.Status != 'Submitted') {
-                      return true
-                  }
-                  return false
-              },
-              canEdit() {
-                  if (this.isAdmin) {
-                      return true
-                  }
-                  if (this.request.canEdit != null) {
-                      return this.request.canEdit
-                  }
-                  return true
-              }
-          },
-          methods: {
-              boolToYesNo(val) {
-                  if (val) {
-                      return "Yes";
-                  }
-                  return "No";
-              },
-              next() {
-                  if (this.panel == 1) {
-                      this.validate();
-                      if (this.isValid) {
-                          this.submit()
-                      } else {
-                          let formIsValid = this.formValid
-                          if (this.$refs.roompckr && this.tab == 1) {
-                              formIsValid = this.formValid && this.$refs.roompckr.valid;
-                          }
-                          if (formIsValid) {
-                              this.dialog = true
-                          }
-                      }
-                  } else {
-                      this.panel += 1;
-                  }
-                  window.scrollTo(0, 0);
-              },
-              prev() {
-                  let tab = this.panel;
-                  tab -= 1;
-                  if (tab < 0) {
-                      tab = 0;
-                  }
-                  this.panel = tab;
-                  window.scrollTo(0, 0);
-              },
-              submit() {
-                  $('[id$="hfRequest"]').val(JSON.stringify(this.request));
-                  $('[id$="btnSubmit"')[0].click();
-              },
-              sendDateChangeRequest() {
-                  this.changeDialog = false
-                  $('[id$="hfChangeRequest"]').val(this.dateChangeMessage)
-                  $('[id$="btnChangeRequest"')[0].click();
-              },
-              setDate(val) {
-                  this.request.Events[0].Rooms = [val.room];
-                  this.request.Events[0].StartTime = val.startTime;
-                  this.request.Events[0].EndTime = val.endTime;
-                  this.request.Events[0].EventDate = val.eventDate;
-                  this.request.Events[0].ExpectedAttendance = val.att;
-                  this.request.EventDates = [val.eventDate];
-              },
-              addGoogleKey(key) {
-                  if (this.googleCurrentKey) {
-                      this.request.GoogleKeys.push(this.googleCurrentKey)
-                      this.googleCurrentKey = ''
-                  }
-              },
-              removeGoogleKey(idx) {
-                  this.request.GoogleKeys.splice(idx, 1)
-              },
-              updateReg(indexes) {
-                  this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
-                  this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
-                  this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
-                  this.request.Events[indexes.currIdx].FeeType = this.request.Events[indexes.targetIdx].FeeType
-                  this.request.Events[indexes.currIdx].Fee = this.request.Events[indexes.targetIdx].Fee
-                  this.request.Events[indexes.currIdx].CoupleFee = this.request.Events[indexes.targetIdx].CoupleFee
-                  this.request.Events[indexes.currIdx].OnlineFee = this.request.Events[indexes.targetIdx].OnlineFee
-                  this.request.Events[indexes.currIdx].Sender = this.request.Events[indexes.targetIdx].Sender
-                  this.request.Events[indexes.currIdx].SenderEmail = this.request.Events[indexes.targetIdx].SenderEmail
-                  this.request.Events[indexes.currIdx].ThankYou = this.request.Events[indexes.targetIdx].ThankYou
-                  this.request.Events[indexes.currIdx].TimeLocation = this.request.Events[indexes.targetIdx].TimeLocation
-                  this.request.Events[indexes.currIdx].AdditionalDetails = this.request.Events[indexes.targetIdx].AdditionalDetails
-              },
-              updateSpace(indexes) {
-                  this.request.Events[indexes.currIdx].Rooms = this.request.Events[indexes.targetIdx].Rooms
-                  this.request.Events[indexes.currIdx].ExpectedAttendance = this.request.Events[indexes.targetIdx].ExpectedAttendance
-                  this.request.Events[indexes.currIdx].Checkin = this.request.Events[indexes.targetIdx].Checkin
-                  this.request.Events[indexes.currIdx].SupportTeam = this.request.Events[indexes.targetIdx].SupportTeam
-              },
-              updateCatering(indexes) {
-                  this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
-                  this.request.Events[indexes.currIdx].BudgetLine = this.request.Events[indexes.targetIdx].BudgetLine
-                  this.request.Events[indexes.currIdx].Menu = this.request.Events[indexes.targetIdx].Menu
-                  this.request.Events[indexes.currIdx].FoodDelivery = this.request.Events[indexes.targetIdx].FoodDelivery
-                  this.request.Events[indexes.currIdx].FoodTime = this.request.Events[indexes.targetIdx].FoodTime
-                  this.request.Events[indexes.currIdx].FoodDropOff = this.request.Events[indexes.targetIdx].FoodDropOff
-                  this.request.Events[indexes.currIdx].Drinks = this.request.Events[indexes.targetIdx].Drinks
-                  this.request.Events[indexes.currIdx].DrinkTime = this.request.Events[indexes.targetIdx].DrinkTime
-                  this.request.Events[indexes.currIdx].ServingTeamAgree = this.request.Events[indexes.targetIdx].ServingTeamAgree
-                  this.request.Events[indexes.currIdx].DrinkDropOff = this.request.Events[indexes.targetIdx].DrinkDropOff
-                  this.request.Events[indexes.currIdx].CCVendor = this.request.Events[indexes.targetIdx].CCVendor
-                  this.request.Events[indexes.currIdx].CCBudgetLine = this.request.Events[indexes.targetIdx].CCBudgetLine
-                  this.request.Events[indexes.currIdx].CCMenu = this.request.Events[indexes.targetIdx].CCMenu
-                  this.request.Events[indexes.currIdx].CCFoodTime = this.request.Events[indexes.targetIdx].CCFoodTime
-              },
-              updateChildcare(indexes) {
-                  this.request.Events[indexes.currIdx].CCStartTime = this.request.Events[indexes.targetIdx].CCStartTime
-                  this.request.Events[indexes.currIdx].CCEndTime = this.request.Events[indexes.targetIdx].CCEndTime
-                  this.request.Events[indexes.currIdx].ChildCareOptions = this.request.Events[indexes.targetIdx].ChildCareOptions
-                  this.request.Events[indexes.currIdx].EstimatedKids = this.request.Events[indexes.targetIdx].EstimatedKids
-              },
-              updateAccom(indexes) {
-                  this.request.Events[indexes.currIdx].TechNeeds = this.request.Events[indexes.targetIdx].TechNeeds
-                  this.request.Events[indexes.currIdx].TechDescription = this.request.Events[indexes.targetIdx].TechDescription
-                  this.request.Events[indexes.currIdx].Drinks = this.request.Events[indexes.targetIdx].Drinks
-                  this.request.Events[indexes.currIdx].DrinkTime = this.request.Events[indexes.targetIdx].DrinkTime
-                  this.request.Events[indexes.currIdx].ServingTeamAgree = this.request.Events[indexes.targetIdx].ServingTeamAgree
-                  this.request.Events[indexes.currIdx].DrinkDropOff = this.request.Events[indexes.targetIdx].DrinkDropOff
-                  this.request.Events[indexes.currIdx].ShowOnCalendar = this.request.Events[indexes.targetIdx].ShowOnCalendar
-                  this.request.Events[indexes.currIdx].PublicityBlurb = this.request.Events[indexes.targetIdx].PublicityBlurb
-                  this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
-                  this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
-              },
-              checkForConflicts() {
-                  this.existingRequests = JSON.parse(
-                      $('[id$="hfUpcomingRequests"]')[0].value
-                  );
-                  let conflictingMessage = []
-                  let conflictingRequests = this.existingRequests.filter((r) => {
-                      r = JSON.parse(r);
-                      let compareTarget = [], compareSource = []
-                      //Build an object for each date to compare with 
-                      if (r.IsSame || r.Events.length == 1) {
-                          for (let i = 0; i < r.EventDates.length; i++) {
-                              compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
-                          }
-                      } else {
-                          for (let i = 0; i < r.Events.length; i++) {
-                              compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
-                          }
-                      }
-                      if (this.request.Events.length == 1 || this.request.IsSame) {
-                          for (let i = 0; i < this.request.EventDates.length; i++) {
-                              compareSource.push({ Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer })
-                          }
-                      } else {
-                          for (let i = 0; i < this.request.Events.length; i++) {
-                              compareSource.push({ Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer })
-                          }
-                      }
-                      let conflicts = false
-                      for (let x = 0; x < compareTarget.length; x++) {
-                          for (let y = 0; y < compareSource.length; y++) {
-                              if (compareTarget[x].Date == compareSource[y].Date) {
-                                  //On same date
-                                  //Check for conflicting rooms
-                                  let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
-                                  if (conflictingRooms.length > 0) {
-                                      //Check they do not overlap with moment-range
-                                      let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
-                                      if (compareTarget[x].MinsStartBuffer) {
-                                          cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
-                                      }
-                                      let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
-                                      if (compareTarget[x].MinsEndBuffer) {
-                                          cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
-                                      }
-                                      let cRange = moment.range(cdStart, cdEnd);
-                                      let current = moment.range(
-                                          moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
-                                          moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
-                                      );
-                                      if (cRange.overlaps(current)) {
-                                          conflicts = true
-                                          let roomNames = []
-                                          conflictingRooms.forEach(r => {
-                                              let roomName = this.rooms.filter((room) => {
-                                                  return room.Id == r;
-                                              });
-                                              if (roomName.length > 0) {
-                                                  roomName = roomName[0].Value;
-                                              }
-                                              roomNames.push(roomName)
-                                          })
-                                          conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                      return conflicts
-                  });
-                  if (conflictingRequests.length > 0) {
-                      this.valid = false;
-                      this.conflictingRequestMsg = "There are conflicts with the following dates and rooms: " + conflictingMessage.join(", ")
-                  }
-              },
-              checkTimeMeetsRequirements() {
-                  this.beforeHoursMsg = ''
-                  this.afterHoursMsg = ''
-                  //Check general 9-9 time rule
-                  let meetsTimeRequirements = true
-                  for (let x = 0; x < this.request.Events.length; x++) {
-                      if (this.request.Events[x].StartTime.includes("AM")) {
-                          let info = this.request.Events[x].StartTime.split(':')
-                          if (parseInt(info[0]) < 9) {
-                              meetsTimeRequirements = false
-                              this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
-                          }
-                      }
-                      if (this.request.Events[x].EndTime.includes("PM")) {
-                          let info = this.request.Events[x].EndTime.split(':')
-                          if (parseInt(info[0]) > 9 || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00")) {
-                              meetsTimeRequirements = false
-                              this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
-                          }
-                      }
-                      //Check more specific range for Satuday and Sunday
-                      for (var i = 0; i < this.request.EventDates.length; i++) {
-                          let idx = i
-                          if (this.request.EventDates.length == 1 || this.request.IsSame) {
-                              idx = 0
-                          }
-                          let dt = moment(this.request.EventDates[i])
-                          if (dt.day() == 0) {
-                              //Sunday
-                              if (this.request.Events[idx].StartTime.includes("AM")) {
-                                  meetsTimeRequirements = false
-                              }
-                          } else if (dt.day() == 6) {
-                              if (this.request.Events[idx].EndTime.includes("PM") && this.request.Events[idx].EndTime != "12:00 PM") {
-                                  meetsTimeRequirements = false
-                                  this.afterHoursMsg = 'On Saturday our facilities close at 12PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
-                              }
-                          }
-                      }
-                  }
-                  if (!meetsTimeRequirements) {
-                      this.valid = false
-                  }
-              },
-              validate() {
-                  this.valid = true
-                  this.triedSubmit = true
-                  this.$refs.form.validate()
-                  if (this.$refs.roompckr && this.tab == 1) {
-                      this.$refs.roompckr.$refs.roomform.validate()
-                  }
-                  if (this.$refs.spaceloop) {
-                      this.$refs.spaceloop.forEach(i => {
-                          i.$refs.spaceForm.validate()
-                      })
-                  }
-                  if (this.$refs.regloop) {
-                      this.$refs.regloop.forEach(i => {
-                          i.$refs.regForm.validate()
-                      })
-                  }
-                  if (this.$refs.cateringloop) {
-                      this.$refs.cateringloop.forEach(i => {
-                          i.$refs.cateringForm.validate()
-                      })
-                  }
-                  if (this.$refs.childcareloop) {
-                      this.$refs.childcareloop.forEach(i => {
-                          i.$refs.childForm.validate()
-                      })
-                  }
-                  if (this.$refs.accomloop) {
-                      this.$refs.accomloop.forEach(i => {
-                          i.$refs.accomForm.validate()
-                      })
-                  }
-                  const errors = [];
-                  this.$refs.form.inputs.forEach((e) => {
-                      if (e.errorBucket && e.errorBucket.length) {
-                          errors.push(...e.errorBucket)
-                      }
-                  });
-                  this.checkForConflicts()
-                  this.checkTimeMeetsRequirements()
-              },
-              matchMultiEvent() {
-                  this.request.EventDates.forEach((e, idx) => {
-                      if (this.request.Events[idx]) {
-                          if (this.request.Events[idx].EventDate) {
-                              if (this.request.Events[idx].EventDate != e) {
-                                  if (this.request.Events.length > this.request.EventDates.length) {
-                                      this.request.Events.splice(idx, 1)
-                                  }
-                              }
-                          } else {
-                              this.request.Events[idx].EventDate = e
-                          }
-                      } else {
-                          let t = JSON.parse(JSON.stringify(this.request.Events[0]))
-                          t.EventDate = e
-                          t.RegistrationDate = ""
-                          t.RegistrationEndDate = ""
-                          this.request.Events.push(t)
-                      }
-                  })
-                  this.request.EventDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
-                  this.request.Events = this.request.Events.sort((a, b) => moment(a.EventDate).diff(moment(b.EventDate)))
-              }
-          },
-          filters: {
-              formatDateTime(val) {
-                  return moment(val).format("MM/DD/yyyy hh:mm A");
-              },
-              formatDate(val) {
-                  return moment(val).format("MM/DD/yyyy");
-              },
-              formatCurrency(val) {
-                  var formatter = new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                  });
-                  return formatter.format(val);
-              },
-          },
-          watch: {
-              'request.EventDates'(val, oval) {
-                  if (!this.request.IsSame) {
-                      if (val.length == 1) {
-                          this.request.Events.length = 1
-                          this.request.IsSame = true
-                      } else if (val.length != oval.length) {
-                          this.matchMultiEvent()
-                      }
-                  } else {
-                      if (this.request.Events.length > 1) {
-                          //remove the rest because they said everything will be the same
-                          this.request.Events.length = 1
-                          this.request.IsSame = true
-                      }
-                  }
-              },
-              'request.IsSame'(val) {
-                  if (!val) {
-                      this.matchMultiEvent()
-                  } else {
-                      if (this.request.Events.length > 1) {
-                          //remove the rest because they said everything will be the same
-                          this.request.Events.length = 1
-                      }
-                  }
-              },
-              'request.needsSpace'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.Events[i].Rooms = []
-                          this.request.Events[i].ExpectedAttendance = null
-                          this.request.Events[i].Checkin = false
-                          this.request.Events[i].SupportTeam = false
-                      }
-                  }
-              },
-              'request.needsOnline'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.Events[i].EventURL = ''
-                          this.request.Events[i].ZoomPassword = ''
-                          this.request.Events[i].OnlineFee = ''
-                          let idx = this.request.Events[i].FeeType.indexOf('Online Fee')
-                          this.request.Events[i].FeeType.splice(idx, 1)
-                      }
-                  }
-              },
-              'request.needsReg'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.Events[i].RegistrationDate = ''
-                          this.request.Events[i].RegistrationEndDate = ''
-                          this.request.Events[i].RegistrationEndTime = ''
-                          this.request.Events[i].FeeType = []
-                          this.request.Events[i].Fee = ''
-                          this.request.Events[i].CoupleFee = ''
-                          this.request.Events[i].OnlineFee = ''
-                          this.request.Events[i].Sender = ''
-                          this.request.Events[i].SenderEmail = ''
-                          this.request.Events[i].ThankYou = ''
-                          this.request.Events[i].TimeLocation = ''
-                          this.request.Events[i].AdditionalDetails = ''
-                      }
-                  }
-              },
-              'request.needsCatering'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.Events[i].Vendor = ''
-                          this.request.Events[i].BudgetLine = ''
-                          this.request.Events[i].Menu = ''
-                          this.request.Events[i].FoodDelivery = true
-                          this.request.Events[i].FoodTime = ''
-                          this.request.Events[i].FoodDropOff = ''
-                          this.request.Events[i].Drinks = []
-                          this.request.Events[i].DrinkTime = ''
-                          this.request.Events[i].ServingTeamAgree = false
-                          this.request.Events[i].DrinkDropOff = ''
-                          this.request.Events[i].CCVendor = ''
-                          this.request.Events[i].CCBudgetLine = ''
-                          this.request.Events[i].CCMenu = ''
-                          this.request.Events[i].CCFoodTime = ''
-                      }
-                  }
-              },
-              'request.needsChildcare'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.Events[i].CCStartTime = ''
-                          this.request.Events[i].CCEndTime = ''
-                          this.request.Events[i].ChildCareOptions = []
-                          this.request.Events[i].EstimatedKids = ''
-                      }
-                  }
-              },
-              'request.needsAccom'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.Events[i].TechNeeds = []
-                          this.request.Events[i].TechDescription = ''
-                          if (!this.request.needsCatering) {
-                              this.request.Events[i].Drinks = []
-                              this.request.Events[i].DrinkTime = ''
-                              this.request.Events[i].ServingTeamAgree = false
-                              this.request.Events[i].DrinkDropOff = ''
-                          }
-                          this.request.Events[i].ShowOnCalendar = false
-                          this.request.Events[i].PublicityBlurb = ''
-                          this.request.Events[i].SetUp = ''
-                          this.request.Events[i].SetUpImage = null
-                      }
-                  }
-              },
-              'request.needsPub'(val) {
-                  if (!val) {
-                      for (var i = 0; i < this.request.Events.length; i++) {
-                          this.request.WhyAttendSixtyFive = ""
-                          this.request.TargetAudience = ""
-                          this.request.EventIsSticky = false
-                          this.request.PublicityStartDate = ""
-                          this.request.PublicityEndDate = ""
-                          this.request.PublicityStrategies = ""
-                          this.request.WhyAttendNinety = ""
-                          this.request.GoogleKeys = []
-                          this.request.WhyAttendTen = ""
-                          this.request.VisualIdeas = ""
-                          this.request.Stories = [{ Name: "", Email: "", Description: "" }]
-                          this.request.WhyAttendTwenty = ""
-                      }
-                  }
-              },
+        }
+      },
+      created: function() {
+        if(this.e.SetUpImage) {
+          this.setupImage = this.e.SetUpImage;
+        }
+      },
+      filters: {
+        formatDate(val) {
+          return moment(val).format("MM/DD/yyyy");
+        },
+      },
+      computed: {
+        prefillOptions(){
+          return this.request.EventDates.filter(i => i != this.e.EventDate)
+        },
+        techHint(){
+          return `${this.e.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`
+        },
+        calLabel(){
+          return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
+        },
+        drinkHint(){
+          return ''
+          // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+        },
+        defaultFoodTime() {
+          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+            let time = moment(this.e.StartTime, "hh:mm A");
+            return time.subtract(30, "minutes").format("hh:mm A");
           }
-      });
+          return null;
+        },
+      },
+      methods: {
+        prefillSection() {
+          this.dialog = false
+          let idx = this.request.EventDates.indexOf(this.prefillDate)
+          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+          this.$emit('updateaccom', {targetIdx: idx, currIdx: currIdx})
+        },
+        handleSetUpFile(e) {
+          let file = { name: e.name, type: e.type };
+          var reader = new FileReader();
+          const self = this;
+          reader.onload = function (e) {
+            file.data = e.target.result;
+            self.e.SetUpImage = file;
+          };
+          reader.readAsDataURL(e);
+        },
+        boolToYesNo(val) {
+          if (val) {
+            return "Yes";
+          }
+          return "No";
+        },
+      }
+    });
+    new Vue({
+      el: "#app",
+      vuetify: new Vuetify({
+        theme: {
+          themes: {
+            light: {
+              primary: "#347689",
+              secondary: "#3D3D3D",
+              accent: "#8ED2C9",
+            },
+          },
+        },
+        iconfont: "mdi",
+      }),
+      config: {
+        devtools: true,
+      },
+      data: {
+        panel: 0,
+        request: {
+          needsSpace: false,
+          needsOnline: false,
+          needsPub: false,
+          needsReg: false,
+          needsCatering: false,
+          needsChildCare: false,
+          needsAccom: false,
+          IsSame: true,
+          Name: "",
+          Ministry: "",
+          Contact: "",
+          Events: [
+            {
+              EventDate: "",
+              StartTime: "",
+              EndTime: "",
+              MinsStartBuffer: 0,
+              MinsEndBuffer: 0,
+              ExpectedAttendance: "",
+              Rooms: "",
+              Checkin: false,
+              SupportTeam: false,
+              EventURL: "",
+              ZoomPassword: "",
+              ThankYou: "",
+              TimeLocation: "",
+              AdditionalDetails: "",
+              Sender: "",
+              SenderEmail: "",
+              RegistrationDate: "",
+              RegistrationEndDate: "",
+              RegistrationEndTime: "",
+              FeeType: [],
+              Fee: null,
+              CoupleFee: null,
+              OnlineFee: null,
+              Vendor: "",
+              Menu: "",
+              FoodDelivery: true,
+              FoodTime: "",
+              FoodDropOff: "",
+              Drinks: "",
+              DinkTime: "",
+              ServingTeamAgree: false,
+              DrinkDropOff: "",
+              BudgetLine: "",
+              CCVendor: "",
+              CCMenu: "",
+              CCFoodTime: "",
+              CCBudgetLine: "",
+              ChildCareOptions: "",
+              EstimatedKids: null,
+              CCStartTime: '',
+              CCEndTime: '',
+              TechNeeds: "",
+              TechDescription: "",
+              ShowOnCalendar: false,
+              PublicityBlurb: "",
+              SetUp: "",
+              SetUpImage: null,
+            }
+          ],
+          EventDates: [],
+          WhyAttendSixtyFive: "",
+          TargetAudience: "",
+          EventIsSticky: false,
+          PublicityStartDate: "",
+          PublicityEndDate: "",
+          PublicityStrategies: "",
+          WhyAttendNinety: "",
+          GoogleKeys: [],
+          WhyAttendTen: "",
+          VisualIdeas: "",
+          Stories: [{Name: "", Email: "", Description: ""}],
+          WhyAttendTwenty: "",
+          Notes: "",
+        },
+        existingRequests: [],
+        rooms: [],
+        ministries: [],
+        pubStartMenu: false,
+        pubEndMenu: false,
+        googleCurrentKey: "",
+        rules: {
+          required(val, field) {
+            return !!val || `${field} is required`;
+          },
+          requiredArr(val, field) {
+            return val.length > 0 || `${field} is required`;
+          },
+          exceedsSelected(val, selected, rooms) {
+            if(val && selected) {
+              let room = rooms.filter((i) => {
+                return i.Id == selected;
+              })[0];
+              let cap = room.Capacity;
+              if (val > cap) {
+                return `You cannot have more than ${cap} ${
+                  cap == 1 ? "person" : "people"
+                } in the selected space`;
+              }
+            }
+            return true;
+          },
+          validTime(val, compareVal, isStart) {
+            if (
+              !!val &&
+              !!compareVal &&
+              !val.includes("null") &&
+              !compareVal.includes("null")
+            ) {
+              let startTime = isStart ? val : compareVal;
+              let endTime = isStart ? compareVal : val;
+              let momentStart = moment(startTime, "hh:mm A");
+              let momentEnd = moment(endTime, "hh:mm A");
+              let isAfter = momentEnd.isAfter(momentStart);
+              return (
+                isAfter ||
+                `${
+                  isStart
+                    ? "Start time must come before end time"
+                    : "End time must come after start time"
+                }`
+              );
+            } else if (val.includes("null")) {
+              return "Please fill out all time information";
+            }
+            return true;
+          },
+          roomCapacity(allRooms, rooms, attendance) {
+            if (attendance) {
+              let selectedRooms = allRooms.filter((r) => {
+                return rooms.includes(r.Id);
+              });
+              let maxCapacity = 0;
+              selectedRooms.forEach((r) => {
+                maxCapacity += r.Capacity;
+              });
+              if (attendance <= maxCapacity) {
+                return true;
+              } else {
+                return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
+              }
+            }
+            return true;
+          },
+          publicityWordLimit(text, limit) {
+            if(text) {
+              let arr = text.split(' ')
+              if(arr.length > limit) {
+                return `Please limit yourself to ${limit} words`
+              }
+            }
+            return true
+          },
+          publicityCharacterLimit(text, limit) {
+            if(text) {
+              if(text.length > limit) {
+                return `Please limit yourself to ${limit} characters`
+              }
+            }
+            return true
+          },
+          publicityEndDate(eventDates, endDate, startDate) {
+            let dates = eventDates.map(d => moment(d))
+            let minDate = moment.max(dates).subtract(1, 'days')
+            if(moment(endDate).isAfter(minDate)) {
+              return 'Publicity cannot end after event.'
+            }
+            let span = moment(endDate).diff(moment(startDate), 'days')
+            if(span < 21) {
+              return 'Publicity end date must be at least 21 days after publicity start.'
+            }
+            return true
+          },
+        },
+        valid: true,
+        formValid: true,
+        dialog: false,
+        conflictingRequestMsg: "",
+        beforeHoursMsg: "",
+        afterHoursMsg: "",
+        triedSubmit: false,
+        tab: 0,
+        isAdmin: false,
+        dateChangeMessage: '',
+        changeDialog: false
+      },
+      created() {
+        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+        this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
+        let val = $('[id$="hfIsAdmin"]')[0].value;
+        if(val == 'True') {
+          this.isAdmin = true
+        } 
+        let req = $('[id$="hfRequest"]')[0].value;
+        if (req) {
+          let parsed = JSON.parse(req)
+          this.request = JSON.parse(parsed.Value)
+          this.request.Id = parsed.Id
+          this.request.Status = parsed.RequestStatus
+          this.request.CreatedBy = parsed.CreatedBy
+          this.request.canEdit = parsed.CanEdit
+        }
+        window["moment-range"].extendMoment(moment);
+      },
+      mounted() {
+        let query = new URLSearchParams(window.location.search);
+        let success = query.get('ShowSuccess');
+        if (success) {
+          if (success == "true") {
+            this.panel = 2;
+            let id = query.get('Id');
+            if(id && this.isAdmin) {
+              window.history.go(-2)
+            }
+          }
+        }
+      },
+      computed: {
+        requestedResources(){
+          let items = []
+          if(this.request.needsSpace) {
+            items.push('rooms')
+          }
+          if(this.request.needsOnline) {
+            items.push('online resources')
+          }
+          if(this.request.needsReg) {
+            items.push('registration')
+          }
+          if(this.request.needsChildCare) {
+            items.push('childcare')
+          }
+          if(this.request.needsCatering) {
+            items.push('catering')
+          }
+          if(this.request.needsAccom) {
+            items.push('accommodations')
+          }
+          items[items.length-1] = "and " + items[items.length-1]
+          return items.join(", ");
+        },
+        earliestDate() {
+          let eDate = new moment();
+          if (
+            !this.request.needsPub && !this.request.needsChildCare && (
+            this.request.needsOnline ||
+            this.request.needsCatering ||
+            this.request.needsReg ||
+            this.request.needsAccom
+          ) ) {
+            eDate = moment(eDate).add(14, "days");
+          }
+          if (this.request.needsPub) {
+            eDate = moment(eDate).add(6, "weeks").add(1, "day");
+          }
+          if (
+            !this.request.needsPub && (
+            this.request.needsChildCare ||
+            this.request.ExpectedAttendance > 250
+          ) ) {
+            eDate = moment().add(30, "days");
+            this.request.EventDates.forEach((itm, i) => {
+              if (
+                !moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))
+              ) {
+                this.request.EventDates.splice(i, 1);
+              }
+            });
+          }
+          return moment(eDate).format("yyyy-MM-DD");
+        },
+        earliestPubDate() {
+          let eDate = new moment();
+          eDate = moment(eDate).add(21, "days");
+          return moment(eDate).format("yyyy-MM-DD");
+        },
+        earliestEndPubDate() {
+          let eDate = new moment();
+          if(this.request.PublicityStartDate) {
+            eDate = moment(this.request.PublicityStartDate).add(21, "days");
+          } else {
+            eDate = moment(this.earliestPubDate).add(21, "days");
+          }
+          return moment(eDate).format("yyyy-MM-DD");
+        },
+        latestPubDate() {
+          let sortedDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
+          let eDate = new moment(sortedDates[sortedDates.length-1]);
+          eDate = moment(eDate).subtract(1, "days");
+          return moment(eDate).format("yyyy-MM-DD");
+        },
+        pubStrategyOptions(){
+          let ops = ['Social Media/Google Ads', 'Mobile Worship Folder']
+          if(this.request.EventIsSticky) {
+            ops.push('Announcement') 
+          }
+          return ops
+        },
+        longDates() {
+          return this.request.EventDates.map((i) => {
+            return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
+          });
+        },
+        isValid() {
+          if (this.$refs.roompckr && this.tab == 1) {
+            return this.valid && this.formValid && this.$refs.roompckr.valid;
+          }
+          return this.valid && this.formValid;
+        },
+        isExistingRequest(){
+          let urlParams = new URLSearchParams(window.location.search);
+          let id = urlParams.get('Id');
+          if( id ){
+            return true
+          }
+          return false
+        },
+        cannotChangeDates(){
+          if(this.isAdmin) {
+            return false
+          }
+          if(this.request.Id > 0 && this.request.Status != 'Submitted') {
+            if(!this.request.IsSame || this.request.Events.length > 1) {
+              return true
+            }
+          }
+          return false
+        },
+        cannotChangeToggle(){
+          if(this.isAdmin) {
+            return false
+          }
+          if(this.request.Id > 0 && this.request.Status != 'Submitted') {
+            return true
+          }
+          return false
+        },
+        canEdit(){
+          if(this.isAdmin) {
+            return true
+          }
+          if(this.request.canEdit != null){
+            return this.request.canEdit
+          }
+          return true
+        }
+      },
+      methods: {
+        boolToYesNo(val) {
+          if (val) {
+            return "Yes";
+          }
+          return "No";
+        },
+        next() {
+          if (this.panel == 1) {
+            this.validate();
+            if (this.isValid) {
+              this.submit()
+            } else {
+              let formIsValid = this.formValid
+              if (this.$refs.roompckr && this.tab == 1) {
+                formIsValid = this.formValid && this.$refs.roompckr.valid;
+              }
+              if(formIsValid){
+                this.dialog = true
+              }
+            }
+          } else {
+            this.panel += 1;
+          }
+          window.scrollTo(0, 0);
+        },
+        prev() {
+          let tab = this.panel;
+          tab -= 1;
+          if (tab < 0) {
+            tab = 0;
+          }
+          this.panel = tab;
+          window.scrollTo(0, 0);
+        },
+        submit(){
+          $('[id$="hfRequest"]').val(JSON.stringify(this.request));
+          $('[id$="btnSubmit"')[0].click();
+        },
+        sendDateChangeRequest() {
+          this.changeDialog = false
+          $('[id$="hfChangeRequest"]').val(this.dateChangeMessage)
+          $('[id$="btnChangeRequest"')[0].click();
+        },
+        setDate(val) {
+          this.request.Events[0].Rooms = [val.room];
+          this.request.Events[0].StartTime = val.startTime;
+          this.request.Events[0].EndTime = val.endTime;
+          this.request.Events[0].EventDate = val.eventDate;
+          this.request.Events[0].ExpectedAttendance = val.att;
+          this.request.EventDates = [val.eventDate];
+        },
+        addGoogleKey(key) {
+          if(this.googleCurrentKey) {
+            this.request.GoogleKeys.push(this.googleCurrentKey)
+            this.googleCurrentKey = ''
+          }
+        },
+        removeGoogleKey(idx) {
+          this.request.GoogleKeys.splice(idx, 1)
+        },
+        updateReg(indexes){
+          this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
+          this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
+          this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
+          this.request.Events[indexes.currIdx].FeeType = this.request.Events[indexes.targetIdx].FeeType
+          this.request.Events[indexes.currIdx].Fee = this.request.Events[indexes.targetIdx].Fee
+          this.request.Events[indexes.currIdx].CoupleFee = this.request.Events[indexes.targetIdx].CoupleFee
+          this.request.Events[indexes.currIdx].OnlineFee = this.request.Events[indexes.targetIdx].OnlineFee
+          this.request.Events[indexes.currIdx].Sender = this.request.Events[indexes.targetIdx].Sender
+          this.request.Events[indexes.currIdx].SenderEmail = this.request.Events[indexes.targetIdx].SenderEmail
+          this.request.Events[indexes.currIdx].ThankYou = this.request.Events[indexes.targetIdx].ThankYou
+          this.request.Events[indexes.currIdx].TimeLocation = this.request.Events[indexes.targetIdx].TimeLocation
+          this.request.Events[indexes.currIdx].AdditionalDetails = this.request.Events[indexes.targetIdx].AdditionalDetails
+        },
+        updateSpace(indexes) {
+          this.request.Events[indexes.currIdx].Rooms = this.request.Events[indexes.targetIdx].Rooms
+          this.request.Events[indexes.currIdx].ExpectedAttendance = this.request.Events[indexes.targetIdx].ExpectedAttendance
+          this.request.Events[indexes.currIdx].Checkin = this.request.Events[indexes.targetIdx].Checkin
+          this.request.Events[indexes.currIdx].SupportTeam = this.request.Events[indexes.targetIdx].SupportTeam
+        },
+        updateCatering(indexes) {
+          this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
+          this.request.Events[indexes.currIdx].BudgetLine = this.request.Events[indexes.targetIdx].BudgetLine
+          this.request.Events[indexes.currIdx].Menu = this.request.Events[indexes.targetIdx].Menu
+          this.request.Events[indexes.currIdx].FoodDelivery = this.request.Events[indexes.targetIdx].FoodDelivery
+          this.request.Events[indexes.currIdx].FoodTime = this.request.Events[indexes.targetIdx].FoodTime
+          this.request.Events[indexes.currIdx].FoodDropOff = this.request.Events[indexes.targetIdx].FoodDropOff
+          this.request.Events[indexes.currIdx].Drinks = this.request.Events[indexes.targetIdx].Drinks
+          this.request.Events[indexes.currIdx].DrinkTime = this.request.Events[indexes.targetIdx].DrinkTime
+          this.request.Events[indexes.currIdx].ServingTeamAgree = this.request.Events[indexes.targetIdx].ServingTeamAgree
+          this.request.Events[indexes.currIdx].DrinkDropOff = this.request.Events[indexes.targetIdx].DrinkDropOff
+          this.request.Events[indexes.currIdx].CCVendor = this.request.Events[indexes.targetIdx].CCVendor
+          this.request.Events[indexes.currIdx].CCBudgetLine = this.request.Events[indexes.targetIdx].CCBudgetLine
+          this.request.Events[indexes.currIdx].CCMenu = this.request.Events[indexes.targetIdx].CCMenu
+          this.request.Events[indexes.currIdx].CCFoodTime = this.request.Events[indexes.targetIdx].CCFoodTime
+        },
+        updateChildcare(indexes){
+          this.request.Events[indexes.currIdx].CCStartTime = this.request.Events[indexes.targetIdx].CCStartTime
+          this.request.Events[indexes.currIdx].CCEndTime = this.request.Events[indexes.targetIdx].CCEndTime
+          this.request.Events[indexes.currIdx].ChildCareOptions = this.request.Events[indexes.targetIdx].ChildCareOptions
+          this.request.Events[indexes.currIdx].EstimatedKids = this.request.Events[indexes.targetIdx].EstimatedKids
+        },
+        updateAccom(indexes){
+          this.request.Events[indexes.currIdx].TechNeeds = this.request.Events[indexes.targetIdx].TechNeeds
+          this.request.Events[indexes.currIdx].TechDescription = this.request.Events[indexes.targetIdx].TechDescription
+          this.request.Events[indexes.currIdx].Drinks = this.request.Events[indexes.targetIdx].Drinks
+          this.request.Events[indexes.currIdx].DrinkTime = this.request.Events[indexes.targetIdx].DrinkTime
+          this.request.Events[indexes.currIdx].ServingTeamAgree = this.request.Events[indexes.targetIdx].ServingTeamAgree
+          this.request.Events[indexes.currIdx].DrinkDropOff = this.request.Events[indexes.targetIdx].DrinkDropOff
+          this.request.Events[indexes.currIdx].ShowOnCalendar = this.request.Events[indexes.targetIdx].ShowOnCalendar
+          this.request.Events[indexes.currIdx].PublicityBlurb = this.request.Events[indexes.targetIdx].PublicityBlurb
+          this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
+          this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
+        },
+        checkForConflicts() {
+          this.existingRequests = JSON.parse(
+            $('[id$="hfUpcomingRequests"]')[0].value
+          );
+          let conflictingMessage = []
+          let conflictingRequests = this.existingRequests.filter((r) => {
+            r = JSON.parse(r);
+            let compareTarget = [], compareSource = []
+            //Build an object for each date to compare with 
+            if(r.IsSame || r.Events.length == 1) {
+              for(let i = 0; i < r.EventDates.length; i++) {
+                compareTarget.push({Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer});
+              }
+            } else {
+              for(let i = 0; i < r.Events.length; i++) {
+                compareTarget.push({Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer});
+              }
+            }
+            if(this.request.Events.length == 1 || this.request.IsSame) {
+              for(let i = 0; i < this.request.EventDates.length; i++) {
+                compareSource.push({Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer})
+              }
+            } else {
+              for(let i = 0; i < this.request.Events.length; i++){
+                compareSource.push({Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer})
+              }
+            }
+            let conflicts = false
+            for(let x=0; x<compareTarget.length; x++){
+              for(let y=0; y<compareSource.length; y++) {
+                if(compareTarget[x].Date == compareSource[y].Date) {
+                  //On same date
+                  //Check for conflicting rooms
+                  let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                  if(conflictingRooms.length > 0) {
+                    //Check they do not overlap with moment-range
+                    let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
+                    if (compareTarget[x].MinsStartBuffer) {
+                      cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
+                    }
+                    let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                    if (compareTarget[x].MinsEndBuffer) {
+                      cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
+                    }
+                    let cRange = moment.range(cdStart, cdEnd);
+                    let current = moment.range(
+                      moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
+                      moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                    );
+                    if (cRange.overlaps(current)) {
+                      conflicts = true
+                      let roomNames = []
+                      conflictingRooms.forEach(r => {
+                        let roomName = this.rooms.filter((room) => {
+                          return room.Id == r;
+                        });
+                        if (roomName.length > 0) {
+                          roomName = roomName[0].Value;
+                        }
+                        roomNames.push(roomName)
+                      })
+                      conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                    }
+                  }
+                }
+              }
+            }
+            return conflicts
+          });
+          if (conflictingRequests.length > 0) {
+            this.valid = false;
+            this.conflictingRequestMsg = "There are conflicts with the following dates and rooms: " + conflictingMessage.join(", ")
+          }
+        },
+        checkTimeMeetsRequirements(){
+          this.beforeHoursMsg = ''
+          this.afterHoursMsg = ''
+          //Check general 9-9 time rule
+          let meetsTimeRequirements = true
+          for(let x=0; x<this.request.Events.length; x++) {
+            if( this.request.Events[x].StartTime.includes("AM") ){
+              let info = this.request.Events[x].StartTime.split(':')
+              if( parseInt(info[0]) < 9 ){
+                meetsTimeRequirements = false
+                this.beforeHoursMsg = 'Operations support staff do not provide any resources or unlock doors before 9AM. If this is a staff-only event, you will be responsible for providing all of your own resources and managing your own doors. Non-staff-only event requests with starting times before 9AM will not be accepted without special consideration.'
+              }
+            } 
+            if( this.request.Events[x].EndTime.includes("PM") ) {
+              let info = this.request.Events[x].EndTime.split(':')
+              if( parseInt(info[0]) > 9 || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00") ){
+                meetsTimeRequirements = false
+                this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+              }
+            }
+            //Check more specific range for Satuday and Sunday
+            for(var i=0; i<this.request.EventDates.length; i++){
+              let idx = i
+              if(this.request.EventDates.length == 1 || this.request.IsSame) {
+                idx = 0
+              }
+              let dt = moment(this.request.EventDates[i])
+              if(dt.day() == 0){
+                //Sunday
+                if(this.request.Events[idx].StartTime.includes("AM")) {
+                  meetsTimeRequirements = false
+                }
+              } else if(dt.day() == 6) {
+                if(this.request.Events[idx].EndTime.includes("PM") && this.request.Events[idx].EndTime != "12:00 PM") {
+                  meetsTimeRequirements = false
+                this.afterHoursMsg = 'On Saturday our facilities close at 12PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
+                }
+              }
+            }
+          }
+          if(!meetsTimeRequirements) {
+            this.valid = false
+          }
+        },
+        validate() {
+          this.valid = true
+          this.triedSubmit = true
+          this.$refs.form.validate()
+          if (this.$refs.roompckr && this.tab == 1) {
+            this.$refs.roompckr.$refs.roomform.validate()
+          }
+          if(this.$refs.spaceloop) {
+            this.$refs.spaceloop.forEach(i => {
+              i.$refs.spaceForm.validate()
+            })
+          }
+          if(this.$refs.regloop) {
+            this.$refs.regloop.forEach(i => {
+              i.$refs.regForm.validate()
+            })
+          }
+          if(this.$refs.cateringloop) {
+            this.$refs.cateringloop.forEach(i => {
+              i.$refs.cateringForm.validate()
+            })
+          }
+          if(this.$refs.childcareloop) {
+            this.$refs.childcareloop.forEach(i => {
+              i.$refs.childForm.validate()
+            })
+          }
+          if(this.$refs.accomloop) {
+            this.$refs.accomloop.forEach(i => {
+              i.$refs.accomForm.validate()
+            })
+          }
+          const errors = [];
+          this.$refs.form.inputs.forEach((e) => {
+            if (e.errorBucket && e.errorBucket.length) {
+              errors.push(...e.errorBucket)
+            }
+          });
+          this.checkForConflicts()
+          this.checkTimeMeetsRequirements()
+        },
+        matchMultiEvent(){
+          this.request.EventDates.forEach((e, idx) => {
+            if(this.request.Events[idx]) {
+              if(this.request.Events[idx].EventDate) {
+                if(this.request.Events[idx].EventDate != e) {
+                  if(this.request.Events.length > this.request.EventDates.length) {
+                    this.request.Events.splice(idx, 1)
+                  }
+                }
+              } else {
+                this.request.Events[idx].EventDate = e
+              }
+            } else {
+              let t = JSON.parse(JSON.stringify(this.request.Events[0]))
+              t.EventDate = e
+              t.RegistrationDate = ""
+              t.RegistrationEndDate = ""
+              this.request.Events.push(t)
+            }
+          })
+          this.request.EventDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
+          this.request.Events = this.request.Events.sort((a,b) => moment(a.EventDate).diff(moment(b.EventDate)))
+        }
+      },
+      filters: {
+        formatDateTime(val) {
+          return moment(val).format("MM/DD/yyyy hh:mm A");
+        },
+        formatDate(val) {
+          return moment(val).format("MM/DD/yyyy");
+        },
+        formatCurrency(val) {
+          var formatter = new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+          });
+          return formatter.format(val);
+        },
+      },
+      watch: {
+        'request.EventDates'(val, oval) {
+          if(!this.request.IsSame) {
+            if(val.length == 1){
+              this.request.Events.length = 1
+              this.request.IsSame = true
+            } else if (val.length != oval.length) {
+              this.matchMultiEvent()
+            }
+          } else {
+            if(this.request.Events.length > 1) {
+              //remove the rest because they said everything will be the same
+              this.request.Events.length = 1
+              this.request.IsSame = true
+            }
+          }
+        },
+        'request.IsSame'(val) {
+          if(!val) {
+            this.matchMultiEvent()
+          } else {
+            if(this.request.Events.length > 1) {
+              //remove the rest because they said everything will be the same
+              this.request.Events.length = 1
+            }
+          }
+        },
+        'request.needsSpace'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.Events[i].Rooms = []
+              this.request.Events[i].ExpectedAttendance = null
+              this.request.Events[i].Checkin = false
+              this.request.Events[i].SupportTeam = false
+            }
+          }
+        },
+        'request.needsOnline'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.Events[i].EventURL = ''
+              this.request.Events[i].ZoomPassword = ''
+              this.request.Events[i].OnlineFee = ''
+              let idx = this.request.Events[i].FeeType.indexOf('Online Fee')
+              this.request.Events[i].FeeType.splice(idx, 1)
+            }
+          }
+        },
+        'request.needsReg'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.Events[i].RegistrationDate = ''
+              this.request.Events[i].RegistrationEndDate = ''
+              this.request.Events[i].RegistrationEndTime = ''
+              this.request.Events[i].FeeType = []
+              this.request.Events[i].Fee = ''
+              this.request.Events[i].CoupleFee = ''
+              this.request.Events[i].OnlineFee = ''
+              this.request.Events[i].Sender = ''
+              this.request.Events[i].SenderEmail = ''
+              this.request.Events[i].ThankYou = ''
+              this.request.Events[i].TimeLocation = ''
+              this.request.Events[i].AdditionalDetails = ''
+            }
+          }
+        },
+        'request.needsCatering'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.Events[i].Vendor = ''
+              this.request.Events[i].BudgetLine = ''
+              this.request.Events[i].Menu = ''
+              this.request.Events[i].FoodDelivery = true
+              this.request.Events[i].FoodTime = ''
+              this.request.Events[i].FoodDropOff = ''
+              this.request.Events[i].Drinks = []
+              this.request.Events[i].DrinkTime = ''
+              this.request.Events[i].ServingTeamAgree = false
+              this.request.Events[i].DrinkDropOff = ''
+              this.request.Events[i].CCVendor = ''
+              this.request.Events[i].CCBudgetLine = ''
+              this.request.Events[i].CCMenu = ''
+              this.request.Events[i].CCFoodTime = ''
+            }
+          }
+        },
+        'request.needsChildcare'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.Events[i].CCStartTime = ''
+              this.request.Events[i].CCEndTime = ''
+              this.request.Events[i].ChildCareOptions = []
+              this.request.Events[i].EstimatedKids = ''
+            }
+          }
+        },
+        'request.needsAccom'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.Events[i].TechNeeds = []
+              this.request.Events[i].TechDescription = ''
+              if(!this.request.needsCatering) {
+                this.request.Events[i].Drinks = []
+                this.request.Events[i].DrinkTime = ''
+                this.request.Events[i].ServingTeamAgree = false
+                this.request.Events[i].DrinkDropOff = ''
+              }
+              this.request.Events[i].ShowOnCalendar = false
+              this.request.Events[i].PublicityBlurb = ''
+              this.request.Events[i].SetUp = ''
+              this.request.Events[i].SetUpImage = null
+            }
+          }
+        },
+        'request.needsPub'(val) {
+          if(!val) {
+            for(var i = 0; i < this.request.Events.length; i++) {
+              this.request.WhyAttendSixtyFive = ""
+              this.request.TargetAudience = ""
+              this.request.EventIsSticky = false
+              this.request.PublicityStartDate = ""
+              this.request.PublicityEndDate = ""
+              this.request.PublicityStrategies = ""
+              this.request.WhyAttendNinety = ""
+              this.request.GoogleKeys = []
+              this.request.WhyAttendTen = ""
+              this.request.VisualIdeas = ""
+              this.request.Stories = [{Name: "", Email: "", Description: ""}]
+              this.request.WhyAttendTwenty = ""
+            }
+          }
+        },
+      }
+    });
   });
 </script>
 <style>
