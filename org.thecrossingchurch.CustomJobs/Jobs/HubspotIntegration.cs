@@ -189,8 +189,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 person = matches.First();
                             }
                         }
+                        //If 1:1 Email match and Hubspot has no other info, make it a match
+                        if ( person == null && String.IsNullOrEmpty( contacts_with_email[i].FirstName ) && String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        {
+                            person = matches.First();
+                        }
                     }
                 }
+
 
                 //Try to mark people that are potential matches
                 if ( person == null )
