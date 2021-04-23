@@ -212,7 +212,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
-            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
+            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
+            items.LoadAttributes();
+            items = items.Where( i => ( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Approved" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Cancelled" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Denied" ) || DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );
@@ -221,7 +223,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     items.Add( item );
                 }
             }
-            items.LoadAttributes();
             var requests = items.OrderByDescending( i => i.CreatedDateTime ).Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } );
             hfRequests.Value = JsonConvert.SerializeObject( requests );
         }

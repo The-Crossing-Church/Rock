@@ -134,7 +134,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="next">Next</v-btn>
+          <v-btn color="primary" :disabled="!(request.needsSpace || request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub)" @click="next">Next</v-btn>
         </v-card-actions>
       </v-card>
       <v-card v-if="panel == 1">
@@ -1158,7 +1158,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 label="How many people are you expecting to attend?"
                 type="number"
                 v-model="e.ExpectedAttendance"
-                :rules="[rules.required(e.ExpectedAttendance, 'Expected Attendance')]"
+                :rules="[rules.required(e.ExpectedAttendance, 'Expected Attendance'), rules.isInt(e.ExpectedAttendance, 'Expected Attendance')]"
                 :hint="attHint"
               ></v-text-field>
             </v-col>
@@ -1261,6 +1261,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         },
                         requiredArr(val, field) {
                             return val.length > 0 || `${field} is required`;
+                        },
+                        isInt(val, field) {
+                            if (val) {
+                                return !(val.includes('.') || val.includes('-')) || `${field} must be a whole number`
+                            }
+                            return true
                         },
                         exceedsSelected(val, selected, rooms) {
                             if (val && selected) {
@@ -1539,6 +1545,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               ></v-textarea>
             </v-col>
             <v-col>
+              <div style="font-weight: bold; font-style: italic; text-align: center;">This preview is just to give you a general idea about placement within the email, it is not the final product.</div>
               <div v-html="emailPreview"></div>
             </v-col>
           </v-row>
@@ -1708,7 +1715,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         "</div>" +
                         "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
                         "<h1>" + this.request.Name + "</h1><br/>" +
-                        this.e.ThankYou + "<br/>" +
+                        this.e.ThankYou + "<br/><br/>" +
                         this.e.TimeLocation + "<br/><br/>" +
                         "<p>The following people have been registered for " + this.request.Name + ":</p>" +
                         "<ul>" +
@@ -2497,6 +2504,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   var reader = new FileReader();
                   const self = this;
                   reader.onload = function (e) {
+                      console.log(e)
                       file.data = e.target.result;
                       self.e.SetUpImage = file;
                   };
