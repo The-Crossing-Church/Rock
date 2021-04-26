@@ -2923,6 +2923,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               submit() {
                   $('[id$="hfRequest"]').val(JSON.stringify(this.request));
                   $('[id$="btnSubmit"')[0].click();
+                  $('#updateProgress').show();
               },
               sendDateChangeRequest() {
                   this.changeDialog = false
