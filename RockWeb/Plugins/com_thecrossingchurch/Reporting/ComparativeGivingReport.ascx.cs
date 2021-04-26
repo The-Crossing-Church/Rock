@@ -309,10 +309,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 }
                 d.MostRecentGift = mostRecentFundGiftBeforeStart;
                 //Determine Type of Donor
-                if ( DateTime.Compare( firstFundGift.Value, start.Value ) < 0 && mostRecentFundGiftBeforeStart.HasValue && mostRecentFundGiftBeforeStart.Value.Year >= ( RockDateTime.Now.Year - 8 ) )
+                if ( DateTime.Compare( firstFundGift.Value, start.Value ) < 0 && mostRecentFundGiftBeforeStart.HasValue && mostRecentFundGiftBeforeStart.Value.Year >= ( start.Value.Year - 8 ) )
                 {
                     //They have donated before this timeframe
-                    if ( mostRecentFundGiftBeforeStart.Value.Year > ( RockDateTime.Now.Year - 3 ) )
+                    if ( mostRecentFundGiftBeforeStart.Value.Year > ( start.Value.Year - 3 ) )
                     {
                         d.DonorType = "Existing";
                     }
