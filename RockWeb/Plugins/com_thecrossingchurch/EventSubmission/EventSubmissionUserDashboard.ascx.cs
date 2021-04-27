@@ -184,6 +184,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public int? MinsEndBuffer { get; set; }
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
+            public List<string> TableType { get; set; }
+            public int? NumTablesRound { get; set; }
+            public int? NumTablesRect { get; set; }
+            public int? NumChairsRound { get; set; }
+            public int? NumChairsRect { get; set; }
             public bool? Checkin { get; set; }
             public string EventURL { get; set; }
             public string ZoomPassword { get; set; }

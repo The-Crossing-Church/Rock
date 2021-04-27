@@ -396,6 +396,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             email.Message = message;
             email.FromEmail = "system@thecrossingchurch.com";
             email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
             var output = email.Send();
 
             //Redirect
@@ -599,6 +600,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             email.Message = message;
             email.FromEmail = "system@thecrossingchurch.com";
             email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
             var output = email.Send();
         }
 
@@ -655,6 +657,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             email.Message = message;
             email.FromEmail = "system@thecrossingchurch.com";
             email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
             var output = email.Send();
         }
 
@@ -691,6 +694,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     message += "<br/><strong style='color: #6485b3;'>Room Information</strong><br/>";
                     message += "<strong>Requested Rooms:</strong> " + String.Join( ", ", Rooms.Where( dv => request.Events[i].Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
+                    message += "<strong>Requested Tables:</strong> " + String.Join( ", ", request.Events[i].TableType ) + "<br/>";
+                    if ( request.Events[i].TableType.Contains( "Round" ) )
+                    {
+                        message += "<strong>Number of Round Tables:</strong> " + request.Events[i].NumTablesRound + "<br/>";
+                        message += "<strong>Number of Chairs Per Round Table:</strong> " + request.Events[i].NumChairsRound + "<br/>";
+                    }
+                    if ( request.Events[i].TableType.Contains( "Rectangular" ) )
+                    {
+                        message += "<strong>Number of Rectangular Tables:</strong> " + request.Events[i].NumTablesRect + "<br/>";
+                        message += "<strong>Number of Chairs Per Rectangular Table:</strong> " + request.Events[i].NumChairsRect + "<br/>";
+                    }
                     message += "<strong>Needs In-Person Check-in:</strong> " + ( request.Events[i].Checkin.Value == true ? "Yes" : "No" ) + "<br/>";
                     message += "<strong>Expected Attendance:</strong> " + request.Events[i].ExpectedAttendance + "<br/>";
                     if ( request.Events[i].Checkin.Value == true && request.Events[i].ExpectedAttendance >= 100 )
@@ -976,6 +990,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public int? MinsEndBuffer { get; set; }
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
+            public List<string> TableType { get; set; }
+            public int? NumTablesRound { get; set; }
+            public int? NumTablesRect { get; set; }
+            public int? NumChairsRound { get; set; }
+            public int? NumChairsRect { get; set; }
             public bool? Checkin { get; set; }
             public bool? SupportTeam { get; set; }
             public string EventURL { get; set; }

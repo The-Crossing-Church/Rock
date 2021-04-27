@@ -1191,6 +1191,53 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-autocomplete>
             </v-col>
           </v-row>
+          <v-row v-if="canRequestTables && !request.needsAccom">
+            <v-col cols="12" md="6">
+              <v-select
+                label="What kinds of tables would you like?"
+                :items="['Round', 'Rectangular']"
+                multiple
+                attach
+                v-model="e.TableType"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row v-if="canRequestTables && !request.needsAccom && e.TableType.includes('Round')">
+            <v-col>
+              <v-text-field
+                label="How many round tables do you need?"
+                type="number"
+                v-model="e.NumTablesRound"
+                :rules="[rules.isInt(e.NumTablesRound, 'Number of tables')]"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-text-field
+                label="How many chairs should each round table have?"
+                type="number"
+                v-model="e.NumChairsRound"
+                :rules="[rules.isInt(e.NumChairsRound, 'Number of chairs')]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <v-row v-if="canRequestTables && !request.needsAccom && e.TableType.includes('Rectangular')">
+            <v-col>
+              <v-text-field
+                label="How many rectangular tables do you need?"
+                type="number"
+                v-model="e.NumTablesRect"
+                :rules="[rules.isInt(e.NumTablesRect, 'Number of tables')]"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-text-field
+                label="How many chairs should each rectangular table have?"
+                type="number"
+                v-model="e.NumChairsRect"
+                :rules="[rules.isInt(e.NumChairsRect, 'Number of chairs')]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
           <v-row v-if="request.needsReg">
             <v-col cols="12" md="6">
               <v-switch
@@ -1365,6 +1412,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 CheckinLabel() {
                     return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+                },
+                canRequestTables() {
+                    let dates = this.request.EventDates.map(d => moment(d))
+                    let minDate = moment.min(dates)
+                    let oneWeek = moment(new Date()).add(7, 'days')
+                    if (!this.request.IsSame || this.request.Events.length > 1) {
+                        minDate = moment(this.e.EventDate)
+                    }
+                    if (oneWeek.isAfter(minDate)) {
+                        return false
+                    }
+                    return true
                 }
             },
             methods: {
@@ -2558,6 +2617,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           MinsEndBuffer: 0,
                           ExpectedAttendance: "",
                           Rooms: "",
+                          NumTablesRound: null,
+                          NumTablesRect: null,
+                          TableType: [],
+                          NumChairsRound: null,
+                          NumChairsRect: null,
                           Checkin: false,
                           SupportTeam: false,
                           EventURL: "",
@@ -3106,6 +3170,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                               //Sunday
                               if (this.request.Events[idx].StartTime.includes("AM")) {
                                   meetsTimeRequirements = false
+                                  this.afterHoursMsg = 'Due to the busyness of Sundays, please keep in mind that all events requested during church hours will need to be approved with special consideration from the Events Director.'
                               }
                           } else if (dt.day() == 6) {
                               if (this.request.Events[idx].EndTime.includes("PM") && this.request.Events[idx].EndTime != "12:00 PM") {
