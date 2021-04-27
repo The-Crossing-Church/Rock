@@ -351,7 +351,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.length > 0">
+                    <v-row v-if="e.TableType && e.TableType.length > 0">
                       <v-col>
                         <div class="floating-title">Requested Tables</div>
                         <template v-if="selected.Changes != null && e.TableType.toString() != selected.Changes.Events[idx].TableType.toString()">
