@@ -220,6 +220,32 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         {{formatRooms(e.Rooms)}}
                       </v-col>
                     </v-row>
+                    <v-row v-if="e.TableType.length > 0">
+                      <v-col>
+                        <div class="floating-title">Requested Tables</div>
+                        {{e.TableType.join(', ')}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType.includes('Round')">
+                      <v-col>
+                        <div class="floating-title">Number of Round Tables</div>
+                        {{e.NumTablesRound}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Number of Chairs per Round Table</div>
+                        {{e.NumChairsRound}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType.includes('Rectangular')">
+                      <v-col>
+                        <div class="floating-title">Number of Rectangular Tables</div>
+                        {{e.NumTablesRect}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Number of Chairs per Rectangular Table</div>
+                        {{e.NumChairsRect}}
+                      </v-col>
+                    </v-row>
                     <v-row vif="selected.needsReg">
                       <v-col>
                         <div class="floating-title">Check-in Requested</div>

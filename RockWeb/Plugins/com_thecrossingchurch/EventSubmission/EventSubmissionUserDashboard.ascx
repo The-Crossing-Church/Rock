@@ -351,6 +351,62 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         </template>
                       </v-col>
                     </v-row>
+                    <v-row v-if="e.TableType.length > 0">
+                      <v-col>
+                        <div class="floating-title">Requested Tables</div>
+                        <template v-if="selected.Changes != null && e.TableType.toString() != selected.Changes.Events[idx].TableType.toString()">
+                          <span class='red--text'>{{(e.TableType ? e.TableType.join(', ')  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.TableType  ? selected.Changes.Events[idx].e.TableType.join(', ') : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.TableType.join(', ')}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType.includes('Round')">
+                      <v-col>
+                        <div class="floating-title">Number of Round Tables</div>
+                        <template v-if="selected.Changes != null && e.NumTablesRound != selected.Changes.Events[idx].NumTablesRound">
+                          <span class='red--text'>{{(e.TableType ? e.NumTablesRound  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumTablesRound ? selected.Changes.Events[idx].e.NumTablesRound : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.NumTablesRound}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Number of Chairs per Round Table</div>
+                        <template v-if="selected.Changes != null && e.NumChairsRound != selected.Changes.Events[idx].NumChairsRound">
+                          <span class='red--text'>{{(e.TableType ? e.NumChairsRound  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumChairsRound ? selected.Changes.Events[idx].e.NumChairsRound : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.NumChairsRound}}
+                        </template>
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType.includes('Rectangular')">
+                      <v-col>
+                        <div class="floating-title">Number of Rectangular Tables</div>
+                        <template v-if="selected.Changes != null && e.NumTablesRect != selected.Changes.Events[idx].NumTablesRect">
+                          <span class='red--text'>{{(e.TableType ? e.NumTablesRect  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumTablesRect ? selected.Changes.Events[idx].e.NumTablesRect : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.NumTablesRect}}
+                        </template>
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Number of Chairs per Rectangular Table</div>
+                        <template v-if="selected.Changes != null && e.NumChairsRect != selected.Changes.Events[idx].NumChairsRect">
+                          <span class='red--text'>{{(e.TableType ? e.NumChairsRect  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumChairsRect ? selected.Changes.Events[idx].e.NumChairsRect : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{e.NumChairsRect}}
+                        </template>
+                      </v-col>
+                    </v-row>
                     <v-row v-if="selected.needsReg">
                       <v-col>
                         <div class="floating-title">Check-in Requested</div>

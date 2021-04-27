@@ -556,6 +556,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     message += "<strong>Start Time:</strong> " + request.Events[i].StartTime + "<br/>";
                     message += "<strong>End Time:</strong> " + request.Events[i].EndTime + "<br/>";
                     message += "<strong>Requested Rooms:</strong> " + String.Join( ", ", Rooms.Where( dv => request.Events[i].Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
+                    if ( request.Events[i].TableType.Count() > 0 )
+                    {
+                        message += "<strong>Requested Tables:</strong> " + String.Join( ", ", request.Events[i].TableType ) + "<br/>";
+                    }
+                    if ( request.Events[i].TableType.Contains( "Round" ) )
+                    {
+                        message += "<strong>Number of Round Tables:</strong> " + request.Events[i].NumTablesRound + "<br/>";
+                        message += "<strong>Number of Chairs Per Round Table:</strong> " + request.Events[i].NumChairsRound + "<br/>";
+                    }
+                    if ( request.Events[i].TableType.Contains( "Rectangular" ) )
+                    {
+                        message += "<strong>Number of Rectangular Tables:</strong> " + request.Events[i].NumTablesRect + "<br/>";
+                        message += "<strong>Number of Chairs Per Rectangular Table:</strong> " + request.Events[i].NumChairsRect + "<br/>";
+                    }
                     message += "<strong>Expected Attendance:</strong> " + request.Events[i].ExpectedAttendance + "<br/>";
                 }
                 if ( isPreApproved == "Yes" )
@@ -694,7 +708,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     message += "<br/><strong style='color: #6485b3;'>Room Information</strong><br/>";
                     message += "<strong>Requested Rooms:</strong> " + String.Join( ", ", Rooms.Where( dv => request.Events[i].Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
-                    message += "<strong>Requested Tables:</strong> " + String.Join( ", ", request.Events[i].TableType ) + "<br/>";
+                    if ( request.Events[i].TableType.Count() > 0 )
+                    {
+                        message += "<strong>Requested Tables:</strong> " + String.Join( ", ", request.Events[i].TableType ) + "<br/>";
+                    }
                     if ( request.Events[i].TableType.Contains( "Round" ) )
                     {
                         message += "<strong>Number of Round Tables:</strong> " + request.Events[i].NumTablesRound + "<br/>";
