@@ -226,7 +226,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         {{e.TableType.join(', ')}}
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.includes('Round')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Round')">
                       <v-col>
                         <div class="floating-title">Number of Round Tables</div>
                         {{e.NumTablesRound}}
@@ -236,7 +236,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         {{e.NumChairsRound}}
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.includes('Rectangular')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular')">
                       <v-col>
                         <div class="floating-title">Number of Rectangular Tables</div>
                         {{e.NumTablesRect}}

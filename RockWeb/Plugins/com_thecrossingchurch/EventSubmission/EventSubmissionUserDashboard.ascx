@@ -363,7 +363,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.includes('Round')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Round')">
                       <v-col>
                         <div class="floating-title">Number of Round Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRound != selected.Changes.Events[idx].NumTablesRound">
@@ -385,7 +385,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.includes('Rectangular')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular')">
                       <v-col>
                         <div class="floating-title">Number of Rectangular Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRect != selected.Changes.Events[idx].NumTablesRect">

@@ -298,7 +298,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.includes('Round')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Round')">
                       <v-col>
                         <div class="floating-title">Number of Round Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRound != selected.Changes.Events[idx].NumTablesRound">
@@ -320,7 +320,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType.includes('Rectangular')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular')">
                       <v-col>
                         <div class="floating-title">Number of Rectangular Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRect != selected.Changes.Events[idx].NumTablesRect">
@@ -1130,352 +1130,352 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   </v-app>
 </div>
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    new Vue({
-      el: "#app",
-      vuetify: new Vuetify({
-        theme: {
-          themes: {
-            light: {
-              primary: "#347689",
-              secondary: "#3D3D3D",
-              accent: "#8ED2C9",
+    document.addEventListener("DOMContentLoaded", function () {
+        new Vue({
+            el: "#app",
+            vuetify: new Vuetify({
+                theme: {
+                    themes: {
+                        light: {
+                            primary: "#347689",
+                            secondary: "#3D3D3D",
+                            accent: "#8ED2C9",
+                        },
+                    },
+                },
+                iconfont: "mdi",
+            }),
+            config: {
+                devtools: true,
             },
-          },
-        },
-        iconfont: "mdi",
-      }),
-      config: {
-        devtools: true,
-      },
-      data: {
-        requests: [],
-        current: [],
-        selected: {},
-        overlay: false,
-        dialog: false,
-        panels: [0],
-        rooms: [],
-        ministries: [],
-        bufferErrMsg: '', 
-        fab: false
-      },
-      created() {
-        this.getRecent();
-        this.getCurrent();
-        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-        this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
-        window['moment-range'].extendMoment(moment)
-        let query = new URLSearchParams(window.location.search);
-        if(query.get('Id')){
-          this.selected = this.requests.filter(i => {
-            if(i.Id == query.get('Id')){
-              return i
-            }
-          })[0]
-          this.overlay = true
-        }
-      },
-      filters: {
-        formatDateTime(val) {
-          return moment(val).format("MM/DD/yyyy hh:mm A");
-        },
-        formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-        },
-        formatCurrency(val) {
-          var formatter = new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-          });
-          return formatter.format(val);
-        },
-      },
-      computed: {
-        sortedCurrent() {
-          let ordered = [
-            { Timeframe: "Today", Events: [] },
-            { Timeframe: "Tomorrow", Events: [] },
-            { Timeframe: moment().add(2, "days").format("dddd"), Events: [] },
-            { Timeframe: moment().add(3, "days").format("dddd"), Events: [] },
-            { Timeframe: moment().add(4, "days").format("dddd"), Events: [] },
-            { Timeframe: moment().add(5, "days").format("dddd"), Events: [] },
-            { Timeframe: moment().add(6, "days").format("dddd"), Events: [] },
-          ];
-          this.current.forEach((i) => {
-            let dates = i.EventDates;
-            dates.forEach((d) => {
-              let timeframe = [];
-              if (d == moment().format("yyyy-MM-DD")) {
-                timeframe.push("Today");
-              }
-              if (d == moment().add(1, "days").format("yyyy-MM-DD")) {
-                timeframe.push("Tomorrow");
-              }
-              if (
-                d == moment().add(2, "days").format("yyyy-MM-DD") ||
-                d == moment().add(3, "days").format("yyyy-MM-DD") ||
-                d == moment().add(4, "days").format("yyyy-MM-DD") ||
-                d == moment().add(5, "days").format("yyyy-MM-DD") ||
-                d == moment().add(6, "days").format("yyyy-MM-DD")
-              ) {
-                timeframe.push(moment(d).format("dddd"));
-              }
-              ordered.forEach((o) => {
-                if (timeframe.includes(o.Timeframe)) {
-                  if(i.IsSame || i.Events.length == 1) {
-                    o.Events.push({Name: i.Name, Rooms: i.Events[0].Rooms, Full: i});
-                  } else {
-                    let idx = i.EventDates.indexOf(d)
-                    o.Events.push({Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i})
-                  }
-                }
-              });
-            });
-          });
-          return ordered.filter((o) => {
-            return o.Events.length > 0;
-          });
-        },
-      },
-      methods: {
-        getRecent() {
-          let raw = JSON.parse($('[id$="hfRequests"]').val());
-          let temp = [];
-          raw.forEach((i) => {
-            let req = JSON.parse(i.Value);
-            req.Id = i.Id;
-            req.CreatedBy = i.CreatedBy;
-            req.CreatedOn = i.CreatedOn;
-            req.RequestStatus = i.RequestStatus;
-            req.HistoricData = i.HistoricData;
-            req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
-            temp.push(req);
-          });
-          this.requests = temp;
-        },
-        getCurrent() {
-          let raw = JSON.parse($('[id$="hfCurrent"]').val());
-          let temp = [];
-          raw.forEach((i) => {
-            let req = i.Request;
-            req.Id = i.Id;
-            req.CreatedBy = i.CreatedBy;
-            req.CreatedOn = i.CreatedOn;
-            req.RequestStatus = i.RequestStatus;
-            req.HistoricData = i.HistoricData;
-            temp.push(req);
-          });
-          this.current = temp;
-        },
-        boolToYesNo(val) {
-          if (val) {
-            return "Yes";
-          }
-          return "No";
-        },
-        formatDates(val) {
-          if (val) {
-            let dates = [];
-            val.forEach((i) => {
-              dates.push(moment(i).format("MM/DD/yyyy"));
-            });
-            return dates.join(", ");
-          }
-          return "";
-        },
-        formatRooms(val) {
-          if (val) {
-            let rms = [];
-            val.forEach((i) => {
-              this.rooms.forEach((r) => {
-                if (i == r.Id) {
-                  rms.push(r.Value);
-                }
-              });
-            });
-            return rms.join(", ");
-          }
-          return "";
-        },
-        formatMinistry(val) {
-          if (val) {
-            let formattedVal = this.ministries.filter(m => {
-              return m.Id == val
-            })
-            return formattedVal[0].Value
-          }
-          return "";
-        },
-        requestType(itm) {
-          if (itm) {
-            let resoures = [];
-            if (itm.needsSpace) {
-              resoures.push("Room");
-            }
-            if (itm.needsOnline) {
-              resoures.push("Online");
-            }
-            if (itm.needsPub) {
-              resoures.push("Publicity");
-            }
-            if (itm.needsChildCare) {
-              resoures.push("Childcare");
-            }
-            if (itm.needsCatering) {
-              resoures.push("Catering");
-            }
-            if (itm.needsAccom) {
-              resoures.push("Extra Resources");
-            }
-            return resoures.join(", ");
-          }
-          return "";
-        },
-        getClass(idx) {
-          if (idx < this.requests.length - 1) {
-            return "list-with-border";
-          }
-          return "";
-        },
-        getStatusPillClass(status) {
-          if (status == "Approved") {
-            return "no-top-pad status-pill approved";
-          }
-          if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
-            return "no-top-pad status-pill submitted";
-          }
-          if (status == "Cancelled" || status == "Cancelled by User") {
-            return "no-top-pad status-pill cancelled";
-          }
-          if (status == "Denied" || status == "Proposed Changes Denied") {
-            return "no-top-pad status-pill denied";
-          }
-        },
-        foodTimeTitle(e) {
-          if (e.FoodDelivery) {
-            return "Food Set-up time";
-          } else {
-            return "Desired Pick-up time from Vendor";
-          }
-        },
-        editRequest() {
-          let url = $('[id$="hfRequestURL"]').val();
-          window.location = url + `?Id=${this.selected.Id}`;
-        },
-        openHistory(){
-          let url = $('[id$="hfHistoryURL"]').val();
-          window.location = url
-        },
-        saveFile(idx, type) {
-          var a = document.createElement("a");
-          a.style = "display: none";
-          document.body.appendChild(a);
-          if(type == 'existing') {
-            a.href = this.selected.Events[idx].SetUpImage.data;
-            a.download = this.selected.Events[idx].SetUpImage.name;
-          } else if (type == 'new') {
-            a.href = this.selected.Changes.Events[idx].SetUpImage.data;
-            a.download = this.selected.Changes.Events[idx].SetUpImage.name;
-          }
-          a.click();
-        },
-        changeStatus(status, id) {
-          $('[id$="hfRequestID"]').val(id);
-          $('[id$="hfAction"]').val(status);
-          $('[id$="btnChangeStatus"]')[0].click();
-        },
-        addBuffer() {
-          this.bufferErrMsg = ''
-          if( !this.checkHasConflicts() ) {
-            $('[id$="hfRequestID"]').val(this.selected.Id);
-            $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
-            $('[id$="btnAddBuffer"]')[0].click();
-          } else {
-            this.bufferErrMsg = 'The buffer you have chosen will conflict with another event'
-          }
-        },
-        checkHasConflicts(){        
-          this.existingRequests = JSON.parse(
-            $('[id$="hfUpcomingRequests"]')[0].value
-          );
-          let conflictingMessage = []
-          let conflictingRequests = this.existingRequests.filter((r) => {
-            if(r.Id == this.selected.Id) {
-              return false
-            }
-            r = JSON.parse(r.Value);
-            let compareTarget = [], compareSource = []
-            //Build an object for each date to compare with 
-            if(r.IsSame || r.Events.length == 1) {
-              for(let i = 0; i < r.EventDates.length; i++) {
-                compareTarget.push({Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer});
-              }
-            } else {
-              for(let i = 0; i < r.Events.length; i++) {
-                compareTarget.push({Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer});
-              }
-            }
-            if(this.selected.Events.length == 1 || this.selected.IsSame) {
-              for(let i = 0; i < this.selected.EventDates.length; i++) {
-                compareSource.push({Date: this.selected.EventDates[i], StartTime: this.selected.Events[0].StartTime, EndTime: this.selected.Events[0].EndTime, Rooms: this.selected.Events[0].Rooms, MinsStartBuffer: this.selected.Events[0].MinsStartBuffer, MinsEndBuffer: this.selected.Events[0].MinsEndBuffer})
-              }
-            } else {
-              for(let i = 0; i < this.selected.Events.length; i++){
-                compareSource.push({Date: this.selected.Events[i].EventDate, StartTime: this.selected.Events[i].StartTime, EndTime: this.selected.Events[i].EndTime, Rooms: this.selected.Events[i].Rooms, MinsStartBuffer: this.selected.Events[i].MinsStartBuffer, MinsEndBuffer: this.selected.Events[i].MinsEndBuffer})
-              }
-            }
-            let conflicts = false
-            for(let x=0; x<compareTarget.length; x++){
-              for(let y=0; y<compareSource.length; y++) {
-                if(compareTarget[x].Date == compareSource[y].Date) {
-                  //On same date
-                  //Check for conflicting rooms
-                  let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
-                  if(conflictingRooms.length > 0) {
-                    //Check they do not overlap with moment-range
-                    let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
-                    if (compareTarget[x].MinsStartBuffer) {
-                      cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
-                    }
-                    let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
-                    if (compareTarget[x].MinsEndBuffer) {
-                      cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
-                    }
-                    let cRange = moment.range(cdStart, cdEnd);
-                    let current = moment.range(
-                      moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
-                      moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
-                    );
-                    if (cRange.overlaps(current)) {
-                      conflicts = true
-                      let roomNames = []
-                      conflictingRooms.forEach(r => {
-                        let roomName = this.rooms.filter((room) => {
-                          return room.Id == r;
-                        });
-                        if (roomName.length > 0) {
-                          roomName = roomName[0].Value;
+            data: {
+                requests: [],
+                current: [],
+                selected: {},
+                overlay: false,
+                dialog: false,
+                panels: [0],
+                rooms: [],
+                ministries: [],
+                bufferErrMsg: '',
+                fab: false
+            },
+            created() {
+                this.getRecent();
+                this.getCurrent();
+                this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+                this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+                window['moment-range'].extendMoment(moment)
+                let query = new URLSearchParams(window.location.search);
+                if (query.get('Id')) {
+                    this.selected = this.requests.filter(i => {
+                        if (i.Id == query.get('Id')) {
+                            return i
                         }
-                        roomNames.push(roomName)
-                      })
-                      conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
-                    }
-                  }
+                    })[0]
+                    this.overlay = true
                 }
-              }
-            }
-            return conflicts
-          });
-          if (conflictingRequests.length > 0) {
-            return true
-          } else {
-            return false
-          }
-        },
-      },
+            },
+            filters: {
+                formatDateTime(val) {
+                    return moment(val).format("MM/DD/yyyy hh:mm A");
+                },
+                formatDate(val) {
+                    return moment(val).format("MM/DD/yyyy");
+                },
+                formatCurrency(val) {
+                    var formatter = new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                    });
+                    return formatter.format(val);
+                },
+            },
+            computed: {
+                sortedCurrent() {
+                    let ordered = [
+                        { Timeframe: "Today", Events: [] },
+                        { Timeframe: "Tomorrow", Events: [] },
+                        { Timeframe: moment().add(2, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(3, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(4, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(5, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(6, "days").format("dddd"), Events: [] },
+                    ];
+                    this.current.forEach((i) => {
+                        let dates = i.EventDates;
+                        dates.forEach((d) => {
+                            let timeframe = [];
+                            if (d == moment().format("yyyy-MM-DD")) {
+                                timeframe.push("Today");
+                            }
+                            if (d == moment().add(1, "days").format("yyyy-MM-DD")) {
+                                timeframe.push("Tomorrow");
+                            }
+                            if (
+                                d == moment().add(2, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(3, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(4, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(5, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(6, "days").format("yyyy-MM-DD")
+                            ) {
+                                timeframe.push(moment(d).format("dddd"));
+                            }
+                            ordered.forEach((o) => {
+                                if (timeframe.includes(o.Timeframe)) {
+                                    if (i.IsSame || i.Events.length == 1) {
+                                        o.Events.push({ Name: i.Name, Rooms: i.Events[0].Rooms, Full: i });
+                                    } else {
+                                        let idx = i.EventDates.indexOf(d)
+                                        o.Events.push({ Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i })
+                                    }
+                                }
+                            });
+                        });
+                    });
+                    return ordered.filter((o) => {
+                        return o.Events.length > 0;
+                    });
+                },
+            },
+            methods: {
+                getRecent() {
+                    let raw = JSON.parse($('[id$="hfRequests"]').val());
+                    let temp = [];
+                    raw.forEach((i) => {
+                        let req = JSON.parse(i.Value);
+                        req.Id = i.Id;
+                        req.CreatedBy = i.CreatedBy;
+                        req.CreatedOn = i.CreatedOn;
+                        req.RequestStatus = i.RequestStatus;
+                        req.HistoricData = i.HistoricData;
+                        req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
+                        temp.push(req);
+                    });
+                    this.requests = temp;
+                },
+                getCurrent() {
+                    let raw = JSON.parse($('[id$="hfCurrent"]').val());
+                    let temp = [];
+                    raw.forEach((i) => {
+                        let req = i.Request;
+                        req.Id = i.Id;
+                        req.CreatedBy = i.CreatedBy;
+                        req.CreatedOn = i.CreatedOn;
+                        req.RequestStatus = i.RequestStatus;
+                        req.HistoricData = i.HistoricData;
+                        temp.push(req);
+                    });
+                    this.current = temp;
+                },
+                boolToYesNo(val) {
+                    if (val) {
+                        return "Yes";
+                    }
+                    return "No";
+                },
+                formatDates(val) {
+                    if (val) {
+                        let dates = [];
+                        val.forEach((i) => {
+                            dates.push(moment(i).format("MM/DD/yyyy"));
+                        });
+                        return dates.join(", ");
+                    }
+                    return "";
+                },
+                formatRooms(val) {
+                    if (val) {
+                        let rms = [];
+                        val.forEach((i) => {
+                            this.rooms.forEach((r) => {
+                                if (i == r.Id) {
+                                    rms.push(r.Value);
+                                }
+                            });
+                        });
+                        return rms.join(", ");
+                    }
+                    return "";
+                },
+                formatMinistry(val) {
+                    if (val) {
+                        let formattedVal = this.ministries.filter(m => {
+                            return m.Id == val
+                        })
+                        return formattedVal[0].Value
+                    }
+                    return "";
+                },
+                requestType(itm) {
+                    if (itm) {
+                        let resoures = [];
+                        if (itm.needsSpace) {
+                            resoures.push("Room");
+                        }
+                        if (itm.needsOnline) {
+                            resoures.push("Online");
+                        }
+                        if (itm.needsPub) {
+                            resoures.push("Publicity");
+                        }
+                        if (itm.needsChildCare) {
+                            resoures.push("Childcare");
+                        }
+                        if (itm.needsCatering) {
+                            resoures.push("Catering");
+                        }
+                        if (itm.needsAccom) {
+                            resoures.push("Extra Resources");
+                        }
+                        return resoures.join(", ");
+                    }
+                    return "";
+                },
+                getClass(idx) {
+                    if (idx < this.requests.length - 1) {
+                        return "list-with-border";
+                    }
+                    return "";
+                },
+                getStatusPillClass(status) {
+                    if (status == "Approved") {
+                        return "no-top-pad status-pill approved";
+                    }
+                    if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
+                        return "no-top-pad status-pill submitted";
+                    }
+                    if (status == "Cancelled" || status == "Cancelled by User") {
+                        return "no-top-pad status-pill cancelled";
+                    }
+                    if (status == "Denied" || status == "Proposed Changes Denied") {
+                        return "no-top-pad status-pill denied";
+                    }
+                },
+                foodTimeTitle(e) {
+                    if (e.FoodDelivery) {
+                        return "Food Set-up time";
+                    } else {
+                        return "Desired Pick-up time from Vendor";
+                    }
+                },
+                editRequest() {
+                    let url = $('[id$="hfRequestURL"]').val();
+                    window.location = url + `?Id=${this.selected.Id}`;
+                },
+                openHistory() {
+                    let url = $('[id$="hfHistoryURL"]').val();
+                    window.location = url
+                },
+                saveFile(idx, type) {
+                    var a = document.createElement("a");
+                    a.style = "display: none";
+                    document.body.appendChild(a);
+                    if (type == 'existing') {
+                        a.href = this.selected.Events[idx].SetUpImage.data;
+                        a.download = this.selected.Events[idx].SetUpImage.name;
+                    } else if (type == 'new') {
+                        a.href = this.selected.Changes.Events[idx].SetUpImage.data;
+                        a.download = this.selected.Changes.Events[idx].SetUpImage.name;
+                    }
+                    a.click();
+                },
+                changeStatus(status, id) {
+                    $('[id$="hfRequestID"]').val(id);
+                    $('[id$="hfAction"]').val(status);
+                    $('[id$="btnChangeStatus"]')[0].click();
+                },
+                addBuffer() {
+                    this.bufferErrMsg = ''
+                    if (!this.checkHasConflicts()) {
+                        $('[id$="hfRequestID"]').val(this.selected.Id);
+                        $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
+                        $('[id$="btnAddBuffer"]')[0].click();
+                    } else {
+                        this.bufferErrMsg = 'The buffer you have chosen will conflict with another event'
+                    }
+                },
+                checkHasConflicts() {
+                    this.existingRequests = JSON.parse(
+                        $('[id$="hfUpcomingRequests"]')[0].value
+                    );
+                    let conflictingMessage = []
+                    let conflictingRequests = this.existingRequests.filter((r) => {
+                        if (r.Id == this.selected.Id) {
+                            return false
+                        }
+                        r = JSON.parse(r.Value);
+                        let compareTarget = [], compareSource = []
+                        //Build an object for each date to compare with 
+                        if (r.IsSame || r.Events.length == 1) {
+                            for (let i = 0; i < r.EventDates.length; i++) {
+                                compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                            }
+                        } else {
+                            for (let i = 0; i < r.Events.length; i++) {
+                                compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
+                            }
+                        }
+                        if (this.selected.Events.length == 1 || this.selected.IsSame) {
+                            for (let i = 0; i < this.selected.EventDates.length; i++) {
+                                compareSource.push({ Date: this.selected.EventDates[i], StartTime: this.selected.Events[0].StartTime, EndTime: this.selected.Events[0].EndTime, Rooms: this.selected.Events[0].Rooms, MinsStartBuffer: this.selected.Events[0].MinsStartBuffer, MinsEndBuffer: this.selected.Events[0].MinsEndBuffer })
+                            }
+                        } else {
+                            for (let i = 0; i < this.selected.Events.length; i++) {
+                                compareSource.push({ Date: this.selected.Events[i].EventDate, StartTime: this.selected.Events[i].StartTime, EndTime: this.selected.Events[i].EndTime, Rooms: this.selected.Events[i].Rooms, MinsStartBuffer: this.selected.Events[i].MinsStartBuffer, MinsEndBuffer: this.selected.Events[i].MinsEndBuffer })
+                            }
+                        }
+                        let conflicts = false
+                        for (let x = 0; x < compareTarget.length; x++) {
+                            for (let y = 0; y < compareSource.length; y++) {
+                                if (compareTarget[x].Date == compareSource[y].Date) {
+                                    //On same date
+                                    //Check for conflicting rooms
+                                    let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                    if (conflictingRooms.length > 0) {
+                                        //Check they do not overlap with moment-range
+                                        let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
+                                        if (compareTarget[x].MinsStartBuffer) {
+                                            cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
+                                        }
+                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                                        if (compareTarget[x].MinsEndBuffer) {
+                                            cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
+                                        }
+                                        let cRange = moment.range(cdStart, cdEnd);
+                                        let current = moment.range(
+                                            moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
+                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                        );
+                                        if (cRange.overlaps(current)) {
+                                            conflicts = true
+                                            let roomNames = []
+                                            conflictingRooms.forEach(r => {
+                                                let roomName = this.rooms.filter((room) => {
+                                                    return room.Id == r;
+                                                });
+                                                if (roomName.length > 0) {
+                                                    roomName = roomName[0].Value;
+                                                }
+                                                roomNames.push(roomName)
+                                            })
+                                            conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return conflicts
+                    });
+                    if (conflictingRequests.length > 0) {
+                        return true
+                    } else {
+                        return false
+                    }
+                },
+            },
+        });
     });
-  });
 </script>
 <style>
   .theme--light.v-application {
