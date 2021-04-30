@@ -748,13 +748,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     if (status == "Approved") {
                         return "no-top-pad status-pill approved";
                     }
-                    if (status == "Submitted") {
+                    if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
                         return "no-top-pad status-pill submitted";
                     }
-                    if (status == "Cancelled") {
+                    if (status == "Cancelled" || status == "Cancelled by User") {
                         return "no-top-pad status-pill cancelled";
                     }
-                    if (status == "Denied") {
+                    if (status == "Denied" || status == "Proposed Changes Denied") {
                         return "no-top-pad status-pill denied";
                     }
                 },
