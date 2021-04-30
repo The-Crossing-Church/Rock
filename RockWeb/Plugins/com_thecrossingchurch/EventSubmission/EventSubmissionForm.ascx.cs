@@ -125,9 +125,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
             Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger() } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
+            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive, IsDisabled = !dv.IsActive } ) );
+            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
+            Ministries.LoadAttributes();
+            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive, IsDisabled = !dv.IsActive } ) );
             ThisWeekRequests();
             if ( !Page.IsPostBack )
             {
@@ -804,6 +805,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Registration Fee Types:</strong> " + String.Join( ", ", request.Events[i].FeeType ) + "<br/>";
                     }
+                    if ( !String.IsNullOrEmpty( request.Events[i].FeeBudgetLine ) )
+                    {
+                        message += "<strong>Registration Fee Budget Line:</strong> " + request.Events[i].FeeBudgetLine + "<br/>";
+                    }
                     if ( !String.IsNullOrEmpty( request.Events[i].Fee ) )
                     {
                         message += "<strong>Registration Fee Per Individual:</strong> " + request.Events[i].Fee + "<br/>";
@@ -1020,6 +1025,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public DateTime? RegistrationEndDate { get; set; }
             public string RegistrationEndTime { get; set; }
             public List<string> FeeType { get; set; }
+            public string FeeBudgetLine { get; set; }
             public string Fee { get; set; }
             public string CoupleFee { get; set; }
             public string OnlineFee { get; set; }

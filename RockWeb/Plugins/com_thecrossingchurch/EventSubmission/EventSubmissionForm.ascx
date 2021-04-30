@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionForm.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionForm"
 %> <%-- Add Vue and Vuetify CDN --%>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
@@ -180,9 +180,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   :items="ministries"
                   item-text="Value"
                   item-value="Id"
+                  item-disabled="IsDisabled"
                   attach
                   v-model="request.Ministry"
                   :rules="[rules.required(request.Ministry, 'Ministry')]"
+                  :hint="ministryHint"
+                  persistent-hint
                 ></v-autocomplete>
               </v-col>
               <v-col cols="12" md="6">
@@ -879,6 +882,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 :items="groupedRooms"
                 item-text="Value"
                 item-value="Id"
+                item-disabled="IsDisabled"
                 v-model="selected"
                 attach
                 :rules="[rules.required(selected, 'Room/Space')]"
@@ -1168,6 +1172,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 :items="groupedRooms"
                 item-text="Value"
                 item-value="Id"
+                item-disabled="IsDisabled"
                 v-model="e.Rooms"
                 prepend-inner-icon="mdi-map"
                 @click:prepend-inner="openMap"
@@ -1500,12 +1505,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-col>
           </v-row>
           <v-row>
+            <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual') || e.FeeType.includes('Fee per Couple') || e.FeeType.includes('Online Fee')">
+              <v-text-field
+                label="Which budget should registration fees go to?"
+                v-model="e.FeeBudgetLine"
+                :rules="[rules.requiredBL(e.FeeType, e.FeeBudgetLine, 'Budget line')]"
+              ></v-text-field>
+            </v-col>
             <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual')">
               <v-text-field
                 label="How much is the individual registration fee for this event?"
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.Fee"
+                :rules="[rules.required(e.Fee, 'Amount')]"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Couple')">
@@ -1514,6 +1527,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.CoupleFee"
+                :rules="[rules.required(e.CoupleFee, 'Amount')]"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6" v-if="e.FeeType.includes('Online Fee')">
@@ -1522,6 +1536,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.OnlineFee"
+                :rules="[rules.required(e.OnlineFee, 'Amount')]"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -1650,6 +1665,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     rules: {
                         required(val, field) {
                             return !!val || `${field} is required`;
+                        },
+                        requiredBL(fees, val, field) {
+                            if (fees.length > 0) {
+                                if (fees.length == 1 && fees.includes('No Fees')) {
+                                    return true
+                                }
+                                return !!val || `${field} is required`;
+                            }
+                            return true
                         },
                         registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare) {
                             let dates = eventDates.map(d => moment(d))
@@ -2635,6 +2659,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           RegistrationEndDate: "",
                           RegistrationEndTime: "",
                           FeeType: [],
+                          FeeBudgetLine: "",
                           Fee: null,
                           CoupleFee: null,
                           OnlineFee: null,
@@ -2947,6 +2972,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       return this.request.canEdit
                   }
                   return true
+              },
+              ministryHint() {
+                  let min = this.ministries.filter(m => {
+                      return m.Id == this.request.Ministry
+                  })
+                  if (min.length > 0) {
+                      if (min[0].IsPersonal) {
+                          return 'Personal requests are for spaces only, the Operations team provides no resources.'
+                      }
+                  }
+                  return ''
               }
           },
           methods: {
@@ -3016,6 +3052,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
                   this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
                   this.request.Events[indexes.currIdx].FeeType = this.request.Events[indexes.targetIdx].FeeType
+                  this.request.Events[indexes.currIdx].FeeBudgetLine = this.request.Events[indexes.targetIdx].FeeBudgetLine
                   this.request.Events[indexes.currIdx].Fee = this.request.Events[indexes.targetIdx].Fee
                   this.request.Events[indexes.currIdx].CoupleFee = this.request.Events[indexes.targetIdx].CoupleFee
                   this.request.Events[indexes.currIdx].OnlineFee = this.request.Events[indexes.targetIdx].OnlineFee
@@ -3296,6 +3333,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                   }
               },
+              'request.Ministry'(val) {
+                  let min = this.ministries.filter(m => {
+                      return m.Id == this.request.Ministry
+                  })
+                  if (min.length > 0) {
+                      if (min[0].IsPersonal) {
+                          //Remove options if Personal Request, only allow space
+                          this.request.needsOnline = false
+                          this.request.needsReg = false
+                          this.request.needsCatering = false
+                          this.request.needsChildCare = false
+                          this.request.needsAccom = false
+                          this.request.needsPub = false
+                      }
+                  }
+              },
               'request.needsSpace'(val) {
                   if (!val) {
                       for (var i = 0; i < this.request.Events.length; i++) {
@@ -3329,6 +3382,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].RegistrationEndDate = ''
                           this.request.Events[i].RegistrationEndTime = ''
                           this.request.Events[i].FeeType = []
+                          this.request.Events[i].FeeBudgetLine = ''
                           this.request.Events[i].Fee = ''
                           this.request.Events[i].CoupleFee = ''
                           this.request.Events[i].OnlineFee = ''
@@ -3360,7 +3414,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                   }
               },
-              'request.needsChildcare'(val) {
+              'request.needsChildCare'(val) {
                   if (!val) {
                       for (var i = 0; i < this.request.Events.length; i++) {
                           this.request.Events[i].CCStartTime = ''

@@ -612,6 +612,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       </v-col>
                     </v-row>
                     <v-row>
+                      <v-col cols="12" md="6" v-if="e.FeeBudgetLine || (selected.Changes && selected.Changes.Events[idx].FeeBudgetLine)">
+                        <div class="floating-title">Registration Fee Budget Line</div>
+                        <template v-if="selected.Changes != null && e.FeeBudgetLine != selected.Changes.Events[idx].FeeBudgetLine">
+                          <span class='red--text' v-if="e.FeeBudgetLine">{{e.FeeBudgetLine}}: </span>
+                          <span class='red--text' v-else>Empty: </span>
+                          <span class='primary--text' v-if="selected.Changes.Events[idx].FeeBudgetLine">{{selected.Changes.Events[idx].FeeBudgetLine}}</span>
+                          <span class='primary--text' v-else>Empty</span>
+                        </template>
+                        <template v-else>
+                          {{e.FeeBudgetLine}}
+                        </template>
+                      </v-col>
                       <v-col cols="12" md="6" v-if="e.Fee || (selected.Changes && selected.Changes.Events[idx].Fee)">
                         <div class="floating-title">Individual Registration Fee</div>
                         <template v-if="selected.Changes != null && e.Fee != selected.Changes.Events[idx].Fee">
@@ -1016,7 +1028,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row v-if="selected.HistoricData">
               <v-col>
                 <div class="floating-title">Non-Transferrable Data</div>
-                {{selected.HistoricData}}
+                <div v-html="selected.HistoricData"></div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -1309,26 +1321,29 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 },
                 requestType(itm) {
                     if (itm) {
-                        let resoures = [];
+                        let resources = [];
                         if (itm.needsSpace) {
-                            resoures.push("Room");
+                            resources.push("Room");
                         }
                         if (itm.needsOnline) {
-                            resoures.push("Online");
+                            resources.push("Online");
                         }
                         if (itm.needsPub) {
-                            resoures.push("Publicity");
+                            resources.push("Publicity");
+                        }
+                        if (itm.needsReg) {
+                            resources.push("Registration");
                         }
                         if (itm.needsChildCare) {
-                            resoures.push("Childcare");
+                            resources.push("Childcare");
                         }
                         if (itm.needsCatering) {
-                            resoures.push("Catering");
+                            resources.push("Catering");
                         }
                         if (itm.needsAccom) {
-                            resoures.push("Extra Resources");
+                            resources.push("Extra Resources");
                         }
-                        return resoures.join(", ");
+                        return resources.join(", ");
                     }
                     return "";
                 },

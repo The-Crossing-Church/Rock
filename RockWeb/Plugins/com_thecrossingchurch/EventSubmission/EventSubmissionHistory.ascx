@@ -65,7 +65,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 <v-col>
                   <v-autocomplete
                     label="Resources"
-                    :items="['Room', 'Online', 'Publicity', 'Childcare', 'Catering', 'Extra Resources']"
+                    :items="['Room', 'Catering', 'Childcare', 'Extra Resources', 'Online', 'Publicity', 'Registration']"
                     v-model="filters.resources"
                     multiple
                     attach
@@ -356,6 +356,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     </v-row>
                     <v-row>
                       <v-col cols="12" md="6" v-if="e.Fee">
+                        <div class="floating-title">Registration Fee Budget Line</div>
+                        {{e.FeeBudgetLine}}
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.Fee">
                         <div class="floating-title">Registration Fee</div>
                         {{e.Fee | formatCurrency}}
                       </v-col>
@@ -545,7 +549,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row v-if="selected.HistoricData">
               <v-col>
                 <div class="floating-title">Non-Transferrable Data</div>
-                {{selected.HistoricData}}
+                <div v-html="selected.HistoricData"></div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -769,6 +773,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         }
                         if (itm.needsPub) {
                             resources.push("Publicity");
+                        }
+                        if (itm.needsReg) {
+                            resources.push("Registration");
                         }
                         if (itm.needsChildCare) {
                             resources.push("Childcare");
