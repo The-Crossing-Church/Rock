@@ -97,7 +97,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     <td>
                       {{item.CreatedOn | formatDateTime}}
                     </td>
-                    <td>
+                    <td style="max-width: 300px;">
                       {{formatDates(item.EventDates)}}
                     </td>
                     <td>
