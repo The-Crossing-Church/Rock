@@ -2,8 +2,8 @@
 CodeFile="EventCalendar.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
 %> <%-- Add Vue and Vuetify CDN --%>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.4.2/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
@@ -87,7 +87,19 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
             </v-expansion-panel>
           </v-expansion-panels>
           <br/>
-          <h3 style='text-align: center'>{{currentMonth}}</h3>
+          <v-row>
+            <v-col style="display:flex; align-items:center;">
+              <v-btn icon @click="value = moment(value).subtract(1, 'month')">
+                <v-icon>mdi-chevron-left</v-icon>
+              </v-btn>
+            </v-col>
+            <v-col cols="6"><h3 style='text-align: center'>{{currentMonth}}</h3></v-col>
+            <v-col style="display:flex; align-items:center; justify-content: flex-end;">
+              <v-btn icon @click="value = moment(value).add(1, 'month')">
+                <v-icon>mdi-chevron-right</v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
           <v-sheet height="500">
             <v-calendar
               ref="calendar"
@@ -104,7 +116,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
         <template v-if="focusedEvents.length > 0">
           <v-carousel cycle :show-arrows="false" hide-delimiter-background light height="fit-content">
             <v-carousel-item v-for="(e, idx) in focusedEvents" :key="idx">
-              <v-toolbar color="accent">
+              <v-toolbar height="auto" color="accent">
                 <h4 style="font-weight: bold;">{{e.name}} {{e.date}}</h4>
               </v-toolbar>
               <v-row>
@@ -253,6 +265,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                 },
                 value: '',
                 colors: [
+                    '#818F95',
                     '#347689',
                     '#8ED2C9',
                     '#99B6C4',
@@ -284,7 +297,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
             computed: {
                 roomTypes() {
                     let temp = this.rooms.map(r => r.Type)
-                    return [...new Set(temp)]
+                    return ["None", ...new Set(temp)]
                 },
                 focusedEvents() {
                     if (this.value) {
@@ -353,7 +366,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                             e.EventDates.forEach(d => {
                                 let color = ''
                                 let arr = this.rooms.filter(r => { return r.Id == e.Events[0].Rooms[0] })
-                                let type = arr[0].Type
+                                let type = "None"
+                                if (arr.length > 0) {
+                                    type = arr[0].Type
+                                }
                                 color = this.colors[this.roomTypes.indexOf(type)]
                                 let st = moment(`${d} ${e.Events[0].StartTime}`, 'YYYY-MM-DD hh:mm a')
                                 if (e.Events[0].MinsStartBuffer) {
@@ -381,7 +397,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                             e.Events.forEach(d => {
                                 let color = ''
                                 let arr = this.rooms.filter(r => { return r.Id == d.Rooms[0] })
-                                let type = arr[0].Type
+                                let type = "None"
+                                if (arr.length > 0) {
+                                    type = arr[0].Type
+                                }
                                 color = this.colors[this.roomTypes.indexOf(type)]
                                 let st = moment(`${d.EventDate} ${d.StartTime}`, 'YYYY-MM-DD hh:mm a')
                                 if (d.MinsStartBuffer) {
@@ -415,7 +434,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                     } else {
                         if (this.filters.RoomType && this.filters.RoomType.length > 0) {
                             indv = indv.filter(e => {
-                                let types = this.rooms.filter(value => e.rooms.includes(value.Id)).map(value => value.Type)
+                                let types = ["None"]
+                                if (e.rooms.length > 0) {
+                                    types = this.rooms.filter(value => e.rooms.includes(value.Id)).map(value => value.Type)
+                                }
                                 let intersection = types.filter(value => this.filters.RoomType.includes(value))
                                 return intersection.length > 0
                             })

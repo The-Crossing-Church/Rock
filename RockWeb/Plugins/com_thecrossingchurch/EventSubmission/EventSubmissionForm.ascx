@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionForm.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionForm"
 %> <%-- Add Vue and Vuetify CDN --%>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
@@ -3030,6 +3030,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].ExpectedAttendance = this.request.Events[indexes.targetIdx].ExpectedAttendance
                   this.request.Events[indexes.currIdx].Checkin = this.request.Events[indexes.targetIdx].Checkin
                   this.request.Events[indexes.currIdx].SupportTeam = this.request.Events[indexes.targetIdx].SupportTeam
+                  this.request.Events[indexes.currIdx].NumTablesRound = this.request.Events[indexes.targetIdx].NumTablesRound
+                  this.request.Events[indexes.currIdx].NumTablesRect = this.request.Events[indexes.targetIdx].NumTablesRect
+                  this.request.Events[indexes.currIdx].TableType = this.request.Events[indexes.targetIdx].TableType
+                  this.request.Events[indexes.currIdx].NumChairsRound = this.request.Events[indexes.targetIdx].NumChairsRound
+                  this.request.Events[indexes.currIdx].NumChairsRect = this.request.Events[indexes.targetIdx].NumChairsRect
               },
               updateCatering(indexes) {
                   this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
@@ -3298,6 +3303,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].ExpectedAttendance = null
                           this.request.Events[i].Checkin = false
                           this.request.Events[i].SupportTeam = false
+                          this.request.Events[i].NumTablesRound = null
+                          this.request.Events[i].NumTablesRect = null
+                          this.request.Events[i].TableType = []
+                          this.request.Events[i].NumChairsRound = null
+                          this.request.Events[i].NumChairsRect = null
                       }
                   }
               },

@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionDashboard.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionDashboard"
 %> <%-- Add Vue and Vuetify CDN --%>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
