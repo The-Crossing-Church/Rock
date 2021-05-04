@@ -118,12 +118,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             public List<BlogPost> results { get; set; }
         }
 
-        [DotLiquid.LiquidType( "name", "authorName", "url", "publishDate" )]
+        [DotLiquid.LiquidType( "name", "authorName", "url", "publishDate", "featuredImage" )]
         public class BlogPost
         {
             public string name { get; set; }
             public string authorName { get; set; }
             public string url { get; set; }
+            public string featuredImage { get; set; }
             public DateTime? publishDate { get; set; }
         }
     }

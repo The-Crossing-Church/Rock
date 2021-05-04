@@ -5,11 +5,15 @@
             <div class="MultiCarousel-inner">
                 {% for post in Posts %}
                     <div class="item">
-                        <div style="padding: 8px">
+                        <div style="padding: 8px; text-align: left;">
                             <a href="{{ post.url }}">
-                                <img class="d-block w-100" src="http://placekitten.com/200/100" alt="{{ post.name }}">
+                                {% if post.featuredImage != '' %}
+                                    <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}">
+                                {% else %}
+                                    <img class="d-block w-100" src="http://placekitten.com/200/100" alt="{{ post.name }}">
+                                {% endif %}
                                 <h4>{{ post.name }}</h4>
-                                <span>{{ post.authorName }}, {{ post.publishDate | Date:'MM/dd/yyyy' }}</span>
+                                <span>{{ post.authorName }}, {{ post.publishDate | Date:'MMMM dd, yyyy' }}</span>
                             </a>
                         </div>
                     </div>
