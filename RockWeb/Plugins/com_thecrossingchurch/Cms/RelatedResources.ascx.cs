@@ -120,9 +120,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private void GetContent()
         {
             List<Post> content = new List<Post>();
-            List<BlogPost> read = null;
-            List<ContentChannelItem> watch = null;
-            List<ContentChannelItem> listen = null;
+            List<Post> read = new List<Post>();
+            List<Post> watch = new List<Post>();
+            List<Post> listen = new List<Post>();
             if ( !String.IsNullOrEmpty( apiKey ) )
             {
                 read = GetBlogPosts();
@@ -167,9 +167,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 numListen += ( diff / 2 );
             }
 
-            content.AddRange( read.OrderByDescending( e => e.publishDate ).Take( numRead ).Select( e => new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, PublishDate = e.publishDate.Value } ) );
-            content.AddRange( watch.OrderByDescending( e => e.StartDateTime ).Take( numWatch ).Select( e => new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey } ) );
-            content.AddRange( listen.OrderByDescending( e => e.StartDateTime ).Take( numListen ).Select( e => new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey } ) );
+            content.AddRange( read.OrderByDescending( e => e.PublishDate ).Take( numRead ) );
+            content.AddRange( watch.OrderByDescending( e => e.PublishDate ).Take( numWatch ) );
+            content.AddRange( listen.OrderByDescending( e => e.PublishDate ).Take( numListen ) );
 
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Posts", content );
@@ -177,7 +177,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }
 
-        private List<ContentChannelItem> GetWatch()
+        private List<Post> GetWatch()
         {
             var items = new ContentChannelItemService( _context ).Queryable().Where( i => i.ContentChannelId == ccWatch.Id ).ToList();
             items.LoadAttributes();
@@ -194,10 +194,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 }
                 return false;
             } ).ToList();
-            return items;
+            return items.Select( e =>
+            {
+                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, ContentChannelId = e.ContentChannelId };
+                var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var intersect = tags.Intersect( itemTag );
+                p.MatchingTags = intersect.ToList();
+                return p;
+            } ).ToList();
         }
 
-        private List<ContentChannelItem> GetListen()
+        private List<Post> GetListen()
         {
             var items = new ContentChannelItemService( _context ).Queryable().Where( i => i.ContentChannelId == ccListen.Id ).ToList();
             items.LoadAttributes();
@@ -214,13 +221,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 }
                 return false;
             } ).ToList();
-            return items;
+            return items.Select( e =>
+            {
+                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, ContentChannelId = e.ContentChannelId };
+                var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var intersect = tags.Intersect( itemTag );
+                p.MatchingTags = intersect.ToList();
+                return p;
+            } ).ToList();
         }
 
-        private List<BlogPost> GetBlogPosts()
+        private List<Post> GetBlogPosts()
         {
             //Get the Hubspot Tags
             List<string> tag_ids = new List<string>();
+            Dictionary<string, string> tagDict = new Dictionary<string, string>();
             for ( int i = 0; i < tags.Count(); i++ )
             {
                 WebRequest tagrequest = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/tags?hapikey=" + apiKey + "&name=" + tags[i] );
@@ -235,6 +250,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                         if ( tagResponse.results.Count() > 0 )
                         {
                             tag_ids.Add( tagResponse.results[0].id );
+                            tagDict.Add( tagResponse.results[0].id, tags[i] );
                         }
                     }
                 }
@@ -257,15 +273,29 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     {
                         var jsonResponse = reader.ReadToEnd();
                         blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
-                        return blogResponse.results;
+                        var posts = blogResponse.results.Select( e =>
+                        {
+                            var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, PublishDate = e.publishDate.Value };
+                            List<string> matchingTags = new List<string>();
+                            for ( var k = 0; k < e.tagIds.Count(); k++ )
+                            {
+                                if ( tagDict.ContainsKey( e.tagIds[k] ) )
+                                {
+                                    matchingTags.Add( tagDict[e.tagIds[k]] );
+                                }
+                            }
+                            p.MatchingTags = matchingTags;
+                            return p;
+                        } );
+                        return posts.ToList();
                     }
                 }
             }
-            return new List<BlogPost>();
+            return new List<Post>();
         }
         #endregion
 
-        [DotLiquid.LiquidType( "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey" )]
+        [DotLiquid.LiquidType( "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "MatchingTags", "ContentChannelId" )]
         private class Post
         {
             public string Title { get; set; }
@@ -274,6 +304,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             public string Image { get; set; }
             public string Url { get; set; }
             public string ItemGlobalKey { get; set; }
+            public List<string> MatchingTags { get; set; }
+            public int ContentChannelId { get; set; }
         }
 
         private class HubspotBlogResponse
@@ -295,6 +327,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             public string url { get; set; }
             public string featuredImage { get; set; }
             public DateTime? publishDate { get; set; }
+            public List<string> tagIds { get; set; }
         }
 
         private class BlogTag
