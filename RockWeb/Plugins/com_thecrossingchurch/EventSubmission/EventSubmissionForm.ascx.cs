@@ -690,11 +690,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 message += "<strong style='color: #6485b3;'>Date Information</strong><br/>";
                 if ( request.Events.Count() == 1 || request.IsSame )
                 {
-                    message += "<strong style='font-size: 14px;'>Event Dates:</strong> <span style='font-size: 14px;'>" + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "</span><br/>";
+                    message += "<strong>Event Dates:</strong> <span style='font-size: 14px;'>" + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "</span><br/>";
                 }
                 else
                 {
-                    message += "<strong style='font-size: 14px;'>Date:</strong> <span style='font-size: 14px;'>" + DateTime.Parse( request.Events[i].EventDate ).ToString( "MM/dd/yyyy" ) + "</span><br/>";
+                    message += "<strong>Date:</strong> <span style='font-size: 14px;'>" + DateTime.Parse( request.Events[i].EventDate ).ToString( "MM/dd/yyyy" ) + "</span><br/>";
                 }
                 if ( !String.IsNullOrEmpty( request.Events[i].StartTime ) )
                 {

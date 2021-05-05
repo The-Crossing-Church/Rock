@@ -1028,7 +1028,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row v-if="selected.HistoricData">
               <v-col>
                 <div class="floating-title">Non-Transferrable Data</div>
-                <div v-html="selected.HistoricData"></div>
+                <div v-html="nonTransferable(selected.HistoricData)"></div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -1395,10 +1395,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     }
                     a.click();
                 },
+                nonTransferable(val) {
+                    val = val.replace(/(?:\\[rn])+/g, '<br/>')
+                    return val
+                },
                 changeStatus(status, id) {
                     $('[id$="hfRequestID"]').val(id);
                     $('[id$="hfAction"]').val(status);
                     $('[id$="btnChangeStatus"]')[0].click();
+                    $('#updateProgress').show();
                 },
                 addBuffer() {
                     this.bufferErrMsg = ''
@@ -1406,6 +1411,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         $('[id$="hfRequestID"]').val(this.selected.Id);
                         $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
                         $('[id$="btnAddBuffer"]')[0].click();
+                        $('#updateProgress').show();
                     } else {
                         this.bufferErrMsg = 'The buffer you have chosen will conflict with another event'
                     }
