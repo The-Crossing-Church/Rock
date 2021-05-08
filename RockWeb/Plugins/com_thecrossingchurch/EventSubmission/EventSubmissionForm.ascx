@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionForm.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionForm"
 %> <%-- Add Vue and Vuetify CDN --%>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
@@ -3229,7 +3229,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               validate() {
                   this.valid = true
                   this.triedSubmit = true
-                  this.$refs.form.validate()
+                  if (this.$refs.form) {
+                      this.$refs.form.validate()
+                  }
                   if (this.$refs.roompckr && this.tab == 1) {
                       this.$refs.roompckr.$refs.roomform.validate()
                   }
@@ -3259,11 +3261,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       })
                   }
                   const errors = [];
-                  this.$refs.form.inputs.forEach((e) => {
-                      if (e.errorBucket && e.errorBucket.length) {
-                          errors.push(...e.errorBucket)
-                      }
-                  });
+                  if (this.$refs.form) {
+                      this.$refs.form.inputs.forEach((e) => {
+                          if (e.errorBucket && e.errorBucket.length) {
+                              errors.push(...e.errorBucket)
+                          }
+                      });
+                  }
                   this.checkForConflicts()
                   this.checkTimeMeetsRequirements()
               },
