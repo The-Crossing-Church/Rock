@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionUserDashboard.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionUserDashboard"
 %> <%-- Add Vue and Vuetify CDN --%>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
@@ -44,17 +44,19 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
             <v-card-text>
               <v-expansion-panels v-model="expansion" flat>
                 <v-expansion-panel>
-                  <v-expansion-panel-header><h5><i class='fa fa-filter'></i> Filter Requests</h5></v-expansion-panel-header>
+                  <v-expansion-panel-header>
+                    <h5 style="width:100%;"><i class='fa fa-filter'></i> Filter Requests</h5>
+                  </v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
-                      <v-col>
+                      <v-col cols="12" md="6">
                         <v-text-field
                           label="Request Title"
                           v-model="filters.title"
                           clearable
                         ></v-text-field>
                       </v-col>
-                      <v-col>
+                      <v-col cols="12" md="6">
                         <v-autocomplete
                           label="Request Status"
                           v-model="filters.status"
@@ -66,7 +68,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                       </v-col>
                     </v-row>
                     <v-row>
-                      <v-col>
+                      <v-col cols="12" md="3">
                         <v-menu
                           v-model="eventStartMenu"
                           :close-on-content-click="false"
@@ -93,7 +95,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                           ></v-date-picker>
                         </v-menu>
                       </v-col>
-                      <v-col>
+                      <v-col cols="12" md="3">
                         <v-menu
                           v-model="eventEndMenu"
                           :close-on-content-click="false"
@@ -120,7 +122,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                           ></v-date-picker>
                         </v-menu>
                       </v-col>
-                      <v-col>
+                      <v-col cols="12" md="3">
                         <v-menu
                           v-model="createStartMenu"
                           :close-on-content-click="false"
@@ -147,7 +149,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                           ></v-date-picker>
                         </v-menu>
                       </v-col>
-                      <v-col>
+                      <v-col cols="12" md="3">
                         <v-menu
                           v-model="createEndMenu"
                           :close-on-content-click="false"
@@ -209,6 +211,36 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                   </v-row>
                 </v-list-item>
               </v-list>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-card>
+            <v-card-text>
+              <h5>Your Upcoming Events</h5>
+              <hr/>
+              <template v-if="sortedCurrent.length > 0">
+                <v-row v-for="d in sortedCurrent" :key="d.Timeframe">
+                  <v-col>
+                    <v-list dense>
+                      <v-list-item><strong>{{d.Timeframe}}</strong></v-list-item>
+                      <v-list-item
+                        v-for="(i, idx) in d.Events"
+                        :key="`event_${idx}`"
+                        class="event-pill hover"
+                        @click="selected = i.Full; overlay = true;"
+                      >
+                        {{i.Name}} {{i.StartTime}} - {{formatRooms(i.Rooms)}}
+                      </v-list-item>
+                    </v-list>
+                  </v-col>
+                </v-row>
+              </template>
+              <template v-else>
+                You have no approved events this week.
+              </template>
             </v-card-text>
           </v-card>
         </v-col>
@@ -1167,7 +1199,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                     title: '',
                     eventStart: '',
                     eventEnd: '',
-                    createStart: '',
+                    createStart: moment().subtract(3, 'weeks').format('YYYY-MM-DD'),
                     createEnd: '',
                 },
                 expansion: [],
@@ -1208,6 +1240,51 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                 },
             },
             computed: {
+                sortedCurrent() {
+                    let ordered = [
+                        { Timeframe: "Today", Events: [] },
+                        { Timeframe: "Tomorrow", Events: [] },
+                        { Timeframe: moment().add(2, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(3, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(4, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(5, "days").format("dddd"), Events: [] },
+                        { Timeframe: moment().add(6, "days").format("dddd"), Events: [] },
+                    ];
+                    this.requests.forEach((i) => {
+                        let dates = i.EventDates;
+                        dates.forEach((d) => {
+                            let timeframe = [];
+                            if (d == moment().format("yyyy-MM-DD")) {
+                                timeframe.push("Today");
+                            }
+                            if (d == moment().add(1, "days").format("yyyy-MM-DD")) {
+                                timeframe.push("Tomorrow");
+                            }
+                            if (
+                                d == moment().add(2, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(3, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(4, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(5, "days").format("yyyy-MM-DD") ||
+                                d == moment().add(6, "days").format("yyyy-MM-DD")
+                            ) {
+                                timeframe.push(moment(d).format("dddd"));
+                            }
+                            ordered.forEach((o) => {
+                                if (timeframe.includes(o.Timeframe)) {
+                                    if (i.IsSame || i.Events.length == 1) {
+                                        o.Events.push({ Name: i.Name, Rooms: i.Events[0].Rooms, Full: i });
+                                    } else {
+                                        let idx = i.EventDates.indexOf(d)
+                                        o.Events.push({ Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i })
+                                    }
+                                }
+                            });
+                        });
+                    });
+                    return ordered.filter((o) => {
+                        return o.Events.length > 0;
+                    });
+                },
             },
             methods: {
                 getRecent() {
