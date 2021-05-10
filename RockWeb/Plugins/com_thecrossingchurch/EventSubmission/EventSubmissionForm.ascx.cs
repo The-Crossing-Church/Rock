@@ -870,6 +870,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         }
                     }
 
+                    message += "<br/><strong style='color: #6485b3;'>Door Information</strong><br/>";
+                    message += "<strong>Needs Doors Unlocked:</strong> " + ( request.Events[i].NeedsDoorsUnlocked == true ? "Yes" : "No" ) + "<br/>";
+
                     message += "<br/><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
                     message += "<strong>Add to Public Calendar:</strong> " + ( request.Events[i].ShowOnCalendar == true ? "Yes" : "No" ) + "<br/>";
                     if ( request.Events[i].ShowOnCalendar && !String.IsNullOrEmpty( request.Events[i].PublicityBlurb ) )
@@ -1056,6 +1059,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string PublicityBlurb { get; set; }
             public string TechDescription { get; set; }
             public string SetUp { get; set; }
+            public bool? NeedsDoorsUnlocked { get; set; }
         }
         private Dictionary<string, string> LocationCalendarLink
         {

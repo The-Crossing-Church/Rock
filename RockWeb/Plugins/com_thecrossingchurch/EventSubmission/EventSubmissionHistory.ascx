@@ -431,6 +431,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     </template>
                     <v-row>
                       <v-col>
+                        <div class="floating-title">Needs doors unlocked</div>
+                        {{boolToYesNo(e.NeedsDoorsUnlocked)}}
+                      </v-col>
+                      <v-col>
                         <div class="floating-title">Add to public calendar</div>
                         {{boolToYesNo(e.ShowOnCalendar)}}
                       </v-col>

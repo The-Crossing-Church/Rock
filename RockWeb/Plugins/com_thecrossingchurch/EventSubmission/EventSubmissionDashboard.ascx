@@ -782,6 +782,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     </template>
                     <v-row>
                       <v-col>
+                        <div class="floating-title">Needs doors unlocked</div>
+                        <template v-if="selected.Changes != null && e.NeedsDoorsUnlocked != selected.Changes.Events[idx].NeedsDoorsUnlocked">
+                          <span class='red--text'>{{(e.NeedsDoorsUnlocked != null ? boolToYesNo(e.NeedsDoorsUnlocked) : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsDoorsUnlocked != null ? boolToYesNo(selected.Changes.Events[idx].NeedsDoorsUnlocked) : 'Empty')}}</span>
+                        </template>
+                        <template v-else>
+                          {{boolToYesNo(e.NeedsDoorsUnlocked)}}
+                        </template>
+                      </v-col>
+                      <v-col>
                         <div class="floating-title">Add to public calendar</div>
                         <template v-if="selected.Changes != null && e.ShowOnCalendar != selected.Changes.Events[idx].ShowOnCalendar">
                           <span class='red--text'>{{(e.ShowOnCalendar != null ? boolToYesNo(e.ShowOnCalendar) : 'Empty')}}: </span>

@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionForm.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionForm"
 %> <%-- Add Vue and Vuetify CDN --%>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
@@ -68,6 +68,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsSpace"
                 :label="`A physical space for an event`"
+                hint="If you need any doors unlocked for this event, please be sure to include Special Accommodations below. Selecting a physical space does not assume unlocked doors."
+                :persistent-hint="request.needsSpace"
               ></v-switch>
             </v-col>
           </v-row>
@@ -76,7 +78,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsOnline"
                 :label="`Zoom`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsOnline"
               ></v-switch>
             </v-col>
@@ -86,7 +88,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsCatering"
                 :label="`Food Request`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsCatering"
               ></v-switch>
             </v-col>
@@ -96,7 +98,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsChildCare"
                 :label="`Childcare`"
-                hint="Requests involving childcare must be made at least 30 days in advance"
+                hint="Requests involving childcare must be made at least 30 days in advance."
                 :persistent-hint="request.needsChildCare"
               ></v-switch>
             </v-col>
@@ -105,8 +107,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsAccom"
-                :label="`Special Accommodations (tech, drinks, web calendar, extensive set-up, etc.)`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                :label="`Special Accommodations (tech, drinks, web calendar, extensive set-up, doors unlocked)`"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsAccom"
               ></v-switch>
             </v-col>
@@ -116,7 +118,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsReg"
                 :label="`Registration`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsReg"
               ></v-switch>
             </v-col>
@@ -126,7 +128,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsPub"
                 :label="`Publicity`"
-                hint="Requests involving publicity must be made at least 6 weeks in advance"
+                hint="Requests involving publicity must be made at least 6 weeks in advance."
                 :persistent-hint="request.needsPub"
               ></v-switch>
             </v-col>
@@ -2449,6 +2451,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-row>
             <v-col cols="12" md="6">
               <v-switch
+                :label="doorLabel"
+                v-model="e.NeedsDoorsUnlocked"
+              ></v-switch>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-switch
                 :label="calLabel"
                 v-model="e.ShowOnCalendar"
               ></v-switch>
@@ -2562,6 +2570,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               },
               calLabel() {
                   return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
+              },
+              doorLabel() {
+                  return `Will you need doors unlocked for this event? (${this.boolToYesNo(this.e.NeedsDoorsUnlocked)})`
               },
               drinkHint() {
                   return ''
@@ -2687,6 +2698,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           PublicityBlurb: "",
                           SetUp: "",
                           SetUpImage: null,
+                          NeedsDoorsUnlocked: false
                       }
                   ],
                   EventDates: [],
@@ -3106,6 +3118,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].PublicityBlurb = this.request.Events[indexes.targetIdx].PublicityBlurb
                   this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
                   this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
+                  this.request.Events[indexes.currIdx].NeedsDoorsUnlocked = this.request.Events[indexes.targetIdx].NeedsDoorsUnlocked
               },
               checkForConflicts() {
                   this.existingRequests = JSON.parse(
@@ -3443,6 +3456,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].PublicityBlurb = ''
                           this.request.Events[i].SetUp = ''
                           this.request.Events[i].SetUpImage = null
+                          this.request.Events[i].NeedsDoorsUnlocked = false
                       }
                   }
               },
