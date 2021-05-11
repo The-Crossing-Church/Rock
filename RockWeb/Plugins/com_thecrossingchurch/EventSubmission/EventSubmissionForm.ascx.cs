@@ -175,6 +175,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 requestType += ",Childcare";
             }
+            if( request.needsReg )
+            {
+                requestType += ",Registration";
+            }
             if ( request.needsAccom )
             {
                 requestType += ",Extra Resources";
@@ -184,7 +188,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             //Pre-Approval Check
             //Requests for only a space, between 9am and 9pm (Mon-Fri) 1pm and 9pm (Sun) or 9am and 12pm (Sat), within the next 7 days, not in Gym or Auditorium, and no more than 12 people attending can be pre-approved
-            if ( requestType == "Room" ) //Room only
+            if ( requestType == "Room" && !request.HasConflicts ) //Room only, no conflicts found
             {
                 var allDatesInNextWeek = true;
                 for ( var i = 0; i < request.EventDates.Count(); i++ )
@@ -999,6 +1003,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public List<StoryItem> Stories { get; set; }
             public string WhyAttendTwenty { get; set; }
             public string Notes { get; set; }
+            public bool HasConflicts { get; set; }
         }
         private class StoryItem
         {

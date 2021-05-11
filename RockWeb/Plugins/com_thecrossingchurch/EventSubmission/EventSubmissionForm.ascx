@@ -3121,6 +3121,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].NeedsDoorsUnlocked = this.request.Events[indexes.targetIdx].NeedsDoorsUnlocked
               },
               checkForConflicts() {
+                  this.request.HasConflicts = false
                   this.existingRequests = JSON.parse(
                       $('[id$="hfUpcomingRequests"]')[0].value
                   );
@@ -3129,22 +3130,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       r = JSON.parse(r);
                       let compareTarget = [], compareSource = []
                       //Build an object for each date to compare with 
-                      if (r.IsSame || r.Events.length == 1) {
-                          for (let i = 0; i < r.EventDates.length; i++) {
-                              compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                      if (r.Events[0].Rooms && r.Events[0].Rooms.length > 0) {
+                          if (r.IsSame || r.Events.length == 1) {
+                              for (let i = 0; i < r.EventDates.length; i++) {
+                                  compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                              }
+                          } else {
+                              for (let i = 0; i < r.Events.length; i++) {
+                                  compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
+                              }
                           }
-                      } else {
-                          for (let i = 0; i < r.Events.length; i++) {
-                              compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
-                          }
-                      }
-                      if (this.request.Events.length == 1 || this.request.IsSame) {
-                          for (let i = 0; i < this.request.EventDates.length; i++) {
-                              compareSource.push({ Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer })
-                          }
-                      } else {
-                          for (let i = 0; i < this.request.Events.length; i++) {
-                              compareSource.push({ Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer })
+                          if (this.request.Events.length == 1 || this.request.IsSame) {
+                              for (let i = 0; i < this.request.EventDates.length; i++) {
+                                  compareSource.push({ Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer })
+                              }
+                          } else {
+                              for (let i = 0; i < this.request.Events.length; i++) {
+                                  compareSource.push({ Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer })
+                              }
                           }
                       }
                       let conflicts = false
@@ -3153,7 +3156,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                               if (compareTarget[x].Date == compareSource[y].Date) {
                                   //On same date
                                   //Check for conflicting rooms
-                                  let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                  let conflictingRooms = []
+                                  if (compareSource[y].Rooms && compareSource[y].Rooms.length > 0) {
+                                      conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                  }
                                   if (conflictingRooms.length > 0) {
                                       //Check they do not overlap with moment-range
                                       let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
@@ -3182,6 +3188,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                                               roomNames.push(roomName)
                                           })
                                           conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                                          this.request.HasConflicts = true
                                       }
                                   }
                               }
@@ -3192,6 +3199,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   if (conflictingRequests.length > 0) {
                       this.valid = false;
                       this.conflictingRequestMsg = "There are conflicts with the following dates and rooms: " + conflictingMessage.join(", ")
+                      this.request.HasConflicts = true
                   }
               },
               checkTimeMeetsRequirements() {
