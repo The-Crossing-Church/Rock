@@ -142,7 +142,7 @@
                     </div>
                     <ul id="menu-left" class="main-navigation desktop-menu">
                         <li class="menu-item main-nav-item">
-                            <a>I'm New</a>
+                            <a href="/im-new">I'm New</a>
                         </li>
                         <li class="menu-item main-nav-item">
                             <a href="/Events">Events</a>
@@ -154,17 +154,17 @@
                                         <a href="/Resources" class="text-white">Watch, Listen, Read</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">Small Group Resources</a>
+                                        <a href="/small-group-resources" class="text-white">Small Group Resources</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">Women's Bible Study Studies</a>
+                                        <a href="/Ministry/Adults/Women/womens-bible-studies" class="text-white">Women's Bible Study Studies</a>
                                     </div>
                                 </div>
                         </li>
                     </ul>
                 </div>
 				<div class="website-logo">
-					<a href="https://www.thecrossingchurch.com/" >
+					<a href="/Home" >
 						<img src="/Themes/TheCrossing/Assets/Logos/logo.png" class="header-image img-responsive" />
 					</a>
 				</div>
@@ -178,16 +178,16 @@
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">Contact Us</a>
+                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">FAQs</a>
+                                        <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">Serving</a>
+                                        <a href="/Serving" class="text-white">Serving</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">Staff</a>
+                                        <a href="/Staff" class="text-white">Staff</a>
                                     </div>
                                 </div>
                             </li>
@@ -201,15 +201,18 @@
                                         <a href="/Ministry/Students" class="text-white">Students</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">College</a>
+                                        <a href="/Ministry/College" class="text-white">College</a>
                                     </div>
                                     <div>
-                                        <a class="text-white">Adults</a>
+                                        <a href="/Ministry/Adults" class="text-white">Adults</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Care" class="text-white">Care</a>
                                     </div>
                                 </div>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a>Give</a>
+                                <a href="/Online-Giving">Give</a>
                             </li>
                             <li class="menu-item main-nav-item">
                                 <a href="/Livestream" class="btn btn-accent">Live Stream</a>
@@ -223,13 +226,13 @@
                         </div>
                         <ul class="main-navigation" id="menu-mobile-menu">
                             <li class="menu-item">
-                                <a class="text-white">I'm New</a>
+                                <a href="/im-new" class="text-white">I'm New</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Events" class="text-white">Events</a>
                             </li>
                             <li class="menu-item">
-                                <a class="text-white">Watch, Listen, Read</a>
+                                <a href="/Resources" class="text-white">Watch, Listen, Read</a>
                             </li>
                             <li class="menu-item">
                                 <a class="text-white" id="about-menu-open">
@@ -247,16 +250,16 @@
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a class="text-white">Contact Us</a>
+                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a class="text-white">FAQs</a>
+                                        <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a class="text-white">Serving</a>
+                                        <a href="/Serving" class="text-white">Serving</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a class="text-white">Staff</a>
+                                        <a href="/Staff" class="text-white">Staff</a>
                                     </div>
                                 </div>
                             </li>
@@ -279,15 +282,18 @@
                                         <a href="/Ministry/Students" class="text-white">Students</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a class="text-white">College</a>
+                                        <a href="/Ministry/College" class="text-white">College</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a class="text-white">Adults</a>
+                                        <a href="/Ministry/Adults" class="text-white">Adults</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Care" class="text-white">Care</a>
                                     </div>
                                 </div>
                             </li>
                             <li class="menu-item">
-                                <a class="text-white">Give Now</a>
+                                <a href="/Online-Giving" class="text-white">Give Now</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Livestream" class="text-white">Watch Live Stream</a>
