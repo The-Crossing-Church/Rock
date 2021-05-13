@@ -148,13 +148,22 @@ namespace RockWeb.Blocks.CheckIn
         Category = "Manager Settings",
         Order = 20 )]
 
+
+    [BooleanField(
+        "Show Location Counts on Room List",
+        Key = AttributeKey.ShowLocationCounts,
+        Description = "Determines if the location counts should be displayed when showing list of locations to open/close.",
+        DefaultBooleanValue = true,
+        Category = "Manager Settings",
+        Order = 21)]
+
     [BooleanField(
         "Allow Label Reprinting",
         Key = AttributeKey.AllowLabelReprinting,
         Description = " Determines if reprinting labels should be allowed.",
         DefaultBooleanValue = true,
         Category = "Manager Settings",
-        Order = 21 )]
+        Order = 22 )]
 
     public partial class Welcome : CheckInBlock
     {
@@ -177,6 +186,7 @@ namespace RockWeb.Blocks.CheckIn
             public const string ScanButtonText = "ScanButtonText";
             public const string NoOptionCaption = "NoOptionCaption";
             public const string AllowOpeningAndClosingRooms = "AllowOpeningAndClosingRooms";
+            public const string ShowLocationCounts = "ShowLocationCounts";
             public const string AllowLabelReprinting = "AllowLabelReprinting";
         }
 
@@ -965,6 +975,7 @@ namespace RockWeb.Blocks.CheckIn
         {
             // Do this only once for efficiency sake vs in the repeater's ItemDataBound
             hfAllowOpenClose.Value = GetAttributeValue( AttributeKey.AllowOpeningAndClosingRooms );
+            hfShowLocationCounts.Value = GetAttributeValue( AttributeKey.ShowLocationCounts );
 
             var rockContext = new RockContext();
             if ( this.LocalDeviceConfig.CurrentKioskId.HasValue )
@@ -1087,8 +1098,17 @@ namespace RockWeb.Blocks.CheckIn
                 var lLocationName = e.Item.FindControl( "lLocationName" ) as Literal;
                 lLocationName.Text = locationGridItem.Name;
 
-                var lLocationCount = e.Item.FindControl( "lLocationCount" ) as Literal;
-                lLocationCount.Text = KioskLocationAttendance.Get( locationGridItem.LocationId ).CurrentCount.ToString();
+                var pnlLocationCount = e.Item.FindControl("pnlLocationCount") as Panel;
+                if (hfShowLocationCounts.Value.AsBoolean())
+                {
+                    pnlLocationCount.Visible = true;
+                    var lLocationCount = e.Item.FindControl("lLocationCount") as Literal;
+                    lLocationCount.Text = KioskLocationAttendance.Get(locationGridItem.LocationId).CurrentCount.ToString();
+                }
+                else
+                {
+                    pnlLocationCount.Visible = false;
+                }
             }
         }
 
