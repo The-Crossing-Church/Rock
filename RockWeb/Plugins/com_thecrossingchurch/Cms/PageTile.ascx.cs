@@ -68,8 +68,30 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         #region Methods
         private void LoadItems( Guid guid )
         {
-            int id = _ccSvc.Get( guid ).Id;
-            var items = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && i.Status == ContentChannelItemStatus.Approved ).OrderBy( i => i.Order ).ToList();
+            ContentChannel channel = _ccSvc.Get( guid );
+            int id = channel.Id;
+            List<ContentChannelItem> items = new List<ContentChannelItem>();
+
+            //Filter Content
+            if ( channel.RequiresApproval )
+            {
+                items = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) >= 0 ) && i.Status == ContentChannelItemStatus.Approved ).ToList();
+            }
+            else
+            {
+                items = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) >= 0 ) ).ToList();
+            }
+
+            //Order Content
+            if ( channel.ItemsManuallyOrdered )
+            {
+                items = items.OrderBy( i => i.Order ).ToList();
+            }
+            else
+            {
+                items = items.OrderBy( i => i.StartDateTime ).ToList();
+            }
+
             items.LoadAttributes();
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Items", items );

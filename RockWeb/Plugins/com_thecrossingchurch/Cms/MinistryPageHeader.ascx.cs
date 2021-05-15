@@ -68,8 +68,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         #region Methods
         private void LoadItem( Guid guid )
         {
-            int id = _ccSvc.Get( guid ).Id;
-            var item = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && i.Status == ContentChannelItemStatus.Approved ).OrderByDescending( i => i.StartDateTime ).First();
+            ContentChannel channel = _ccSvc.Get( guid );
+            int id = channel.Id;
+            ContentChannelItem item;
+            if ( channel.RequiresApproval )
+            {
+                item = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) >= 0 ) && i.Status == ContentChannelItemStatus.Approved ).OrderByDescending( i => i.StartDateTime ).First();
+            }
+            else
+            {
+                item = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) >= 0 ) ).OrderByDescending( i => i.StartDateTime ).First();
+            }
             item.LoadAttributes();
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Item", item );
