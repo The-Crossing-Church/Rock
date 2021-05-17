@@ -1,6 +1,6 @@
  {% comment %} Add Vue and Vuetify CDN {% endcomment %}
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
@@ -73,7 +73,7 @@
         width="100%"
       >
         <template v-slot:event="{event}">
-          {% raw %}<strong @mouseover="showEvent(event)" @mouseleave="hideEvent" @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
+          {% raw %}<strong data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" :title="event.name" data-trigger="hover" :data-content="summary(event.description)" @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
         </template> 
       </v-calendar>
       <div class='d-none d-md-block' style="position: relative;">
@@ -190,7 +190,7 @@
                     let events = []
                     {% for eventItemOccurrence in EventItemOccurrences %}
                     events.push({
-                        name: '{{ eventItemOccurrence.Name }}',
+                        name: `{{ eventItemOccurrence.Name }}`,
                         start: moment("{{ eventItemOccurrence.Date | Date: 'yyyy-MM-dd' }} {{ eventItemOccurrence.Time }}", 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
                         end: moment("{{ eventItemOccurrence.Date | Date: 'yyyy-MM-dd' }} {{ eventItemOccurrence.EndTime }}", 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
                         link: '{{ DetailsPage }}?EventOccurrenceId={{ eventItemOccurrence.EventItemOccurrence.Id }}',
@@ -244,6 +244,7 @@
                 }
             }
         });
+        $('[data-toggle="popover"]').popover();
     });
 </script>
 <style>

@@ -111,11 +111,11 @@
               <img src="/Content/ExternalSite/Icons/default_email.png" style="width: 40px;"/>
             </a>
           </li>
-          <li>
+          <!--<li>
             <a href="http://twitter.com/home?status={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Instagram">
               <img src="/Content/ExternalSite/Icons/default_instagram.png" style="width: 40px;"/>
             </a>
-          </li>
+          </li> -->
           <li>
             <a href="" onclick="return ics_click()" title="" data-original-title="Download Event">
               <img src="/Content/ExternalSite/Icons/default_calendar.png" style="width: 40px;"/>
