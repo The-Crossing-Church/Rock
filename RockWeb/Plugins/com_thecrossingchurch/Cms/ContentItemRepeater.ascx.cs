@@ -19,6 +19,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Gets all active and approved content for the specified channel and returns it to a list for display" )]
     [ContentChannelField( "Content Channel", required: true )]
+    [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "" )]
 
@@ -28,6 +29,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private RockContext _context { get; set; }
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
+        private int? _limit { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -55,6 +57,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             base.OnLoad( e );
             _context = new RockContext();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+            _limit = GetAttributeValue( "ItemLimit" ).AsIntegerOrNull();
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
             if ( ContentChannelGuid.HasValue )
@@ -83,13 +86,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             }
 
             //Order Content
-            if( channel.ItemsManuallyOrdered )
+            if ( channel.ItemsManuallyOrdered )
             {
                 items = items.OrderBy( i => i.Order ).ToList();
             }
             else
             {
-                items = items.OrderBy( i => i.StartDateTime ).ToList(); 
+                items = items.OrderBy( i => i.StartDateTime ).ToList();
+            }
+
+            if ( _limit.HasValue )
+            {
+                items = items.Take( _limit.Value ).ToList();
             }
 
             items.LoadAttributes();

@@ -40,6 +40,12 @@
   .slides {
     left: -300px;
   }
+  {% assign ct = Items | Size %}
+  {% if ct == 1 %}
+    .control {
+      display: none !important; 
+    }
+  {% endif %}
 }
 @media (min-width: 375px) {
   .slider, .wrapper {
@@ -51,6 +57,12 @@
   .slides {
     left: -350px;
   }
+  {% assign ct = Items | Size %}
+  {% if ct == 1 %}
+    .control {
+      display: none !important; 
+    }
+  {% endif %}
 }
 @media (min-width: 768px) {
   .slider, .wrapper {
@@ -62,6 +74,12 @@
   .slides {
     left: -720px;
   }
+  {% assign ct = Items | Size %}
+  {% if ct < 2 %}
+    .control {
+      display: none !important; 
+    }
+  {% endif %}
 }
 @media (min-width: 992px) {
   .slider, .wrapper {
@@ -73,6 +91,12 @@
   .slides {
     left: -626.6px;
   }
+  {% assign ct = Items | Size %}
+  {% if ct < 3 %}
+    .control {
+      display: none !important; 
+    }
+  {% endif %}
 }
 @media (min-width: 1200px) {
   .slider, .wrapper {
@@ -84,6 +108,12 @@
   .slides {
     left: -760px;
   }
+  {% assign ct = Items | Size %}
+  {% if ct < 3 %}
+    .control {
+      display: none !important; 
+    }
+  {% endif %}
 }
 
 .carousel-wrapper {
