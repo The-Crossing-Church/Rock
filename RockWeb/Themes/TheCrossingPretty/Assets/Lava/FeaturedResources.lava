@@ -6,16 +6,17 @@
         <div id="featured-slider" class="slider">
             <div class="wrapper">
                 <div id="featured-slides" class="slides">
-                    {% for eventItemOccurrence in EventItems %}
+                    {% for i in Items %}
                         <div class="slide">
-                            <a href="{{DetailsPage}}?EventOccurrenceId={{ eventItemOccurrence[0].EventItemOccurrence.Id }}">
-                                <div style="padding: 8px">
-                                    <div class='img-wrapper'>
-                                        <img class="d-block w-100" src="{{eventItemOccurrence[0].PhotoPath}}" alt="{{eventItemOccurrence[0].Name}}">
-                                    </div>
-                                    <span>{{eventItemOccurrence[0].Name}}</span>
-                                </div>
-                            </a>
+                          <a href="{{i | Attribute:'Link' }}">
+                            <div style="padding: 8px">
+                              <div class='img-wrapper'>
+                                <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                              </div>
+                              <h4>{{i.Title}}</h4>
+                              <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                            </div>
+                          </a>
                         </div>
                     {% endfor %}
                 </div>

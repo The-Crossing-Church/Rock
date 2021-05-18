@@ -39,7 +39,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Description( "Watch Resource Viewer" )]
     [ContentChannelField( "Content Channel", required: true )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/Calendar.lava' %}", "" )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/Watch.lava' %}", "" )]
 
     public partial class Watch : Rock.Web.UI.RockBlock
     {

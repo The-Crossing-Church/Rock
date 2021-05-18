@@ -1,32 +1,44 @@
-<div class='background--grey full-width'>
-  <div class='container'>
-    <br/>
-    <h2>Featured</h2>
-    <div class='carousel-wrapper'>
-        <div id="featured-slider" class="slider">
-            <div class="wrapper">
-                <div id="featured-slides" class="slides">
-                    {% for eventItemOccurrence in EventItems %}
-                        <div class="slide">
-                            <a href="{{DetailsPage}}?EventOccurrenceId={{ eventItemOccurrence[0].EventItemOccurrence.Id }}">
-                                <div style="padding: 8px">
-                                    <div class='img-wrapper'>
-                                        <img class="d-block w-100" src="{{eventItemOccurrence[0].PhotoPath}}" alt="{{eventItemOccurrence[0].Name}}">
-                                    </div>
-                                    <span>{{eventItemOccurrence[0].Name}}</span>
+{% for s in Items %}
+    {% assign classname = '' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey full-width' %}
+    {% endif %}
+    <div class='{{classname}}'>
+        <div class='container'>
+            <br/>
+            <h2>{{s.Series}}</h2>
+            <div class='carousel-wrapper'>
+                <div id="watch-{{forloop.index0}}-slider" class="slider">
+                    <div class="wrapper">
+                        <div id="watch-{{forloop.index0}}-slides" class="slides">
+                            {% for i in s.Items %}
+                                <div class="slide">
+                                    <a href="/Resource/Watch?Slug={{i.ItemGlobalKey}}">
+                                        <div style="padding: 8px">
+                                            <div class='img-wrapper'>
+                                                <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                                            </div>
+                                            <h4>{{i.Title}}</h4>
+                                            <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                                        </div>
+                                    </a>
                                 </div>
-                            </a>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
+                        <a id="watch-{{forloop.index0}}-prev" class="control prev ctrl-{{forloop.index0}}"><i class='fa fa-chevron-left'></i></a>
+                        <a id="watch-{{forloop.index0}}-next" class="control next ctrl-{{forloop.index0}}"><i class='fa fa-chevron-right'></i></a>
+                    </div>
                 </div>
             </div>
-            <a id="featured-prev" class="control prev"><i class='fa fa-chevron-left'></i></a>
-            <a id="featured-next" class="control next"><i class='fa fa-chevron-right'></i></a>
+            <br/>
+            <div style='text-align: center;'>
+                <a class='btn btn-primary' href="/Resources/Watch/Series?Series={{s.Series}}">Explore All</a>
+            </div>
+            <br/>
         </div>
     </div>
-  </div>
-  <br/>
-</div>
+{% endfor %}
 
 {% stylesheet compile:'less' %}
 @media (max-width: 374px) {
@@ -39,6 +51,14 @@
   .slides {
     left: -300px;
   }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct == 1 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important; 
+      }
+    {% endif %}
+  {% endfor %}
 }
 @media (min-width: 375px) {
   .slider, .wrapper {
@@ -50,6 +70,14 @@
   .slides {
     left: -350px;
   }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct == 1 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important; 
+      }
+    {% endif %}
+  {% endfor %}
 }
 @media (min-width: 768px) {
   .slider, .wrapper {
@@ -61,6 +89,14 @@
   .slides {
     left: -720px;
   }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct < 2 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important; 
+      }
+    {% endif %}
+  {% endfor %}
 }
 @media (min-width: 992px) {
   .slider, .wrapper {
@@ -72,6 +108,14 @@
   .slides {
     left: -626.6px;
   }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct < 3 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important; 
+      }
+    {% endif %}
+  {% endfor %}
 }
 @media (min-width: 1200px) {
   .slider, .wrapper {
@@ -83,6 +127,14 @@
   .slides {
     left: -760px;
   }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct < 3 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important; 
+      }
+    {% endif %}
+  {% endfor %}
 }
 
 .carousel-wrapper {
@@ -178,10 +230,12 @@
 {% endstylesheet %}
 <script>
 $(document).ready(function () {
-  var slider = document.getElementById("featured-slider"),
-    sliderItems = document.getElementById("featured-slides"),
-    prev = document.getElementById("featured-prev"),
-    next = document.getElementById("featured-next");
+  {% for s in Items %}
+    var slider{{forloop.index0}} = document.getElementById("watch-{{forloop.index0}}-slider"),
+      sliderItems{{forloop.index0}} = document.getElementById("watch-{{forloop.index0}}-slides"),
+      prev{{forloop.index0}} = document.getElementById("watch-{{forloop.index0}}-prev"),
+      next{{forloop.index0}} = document.getElementById("watch-{{forloop.index0}}-next");
+  {% endfor %}
 
   function slide(wrapper, items, prev, next) {
     var posX1 = 0,
@@ -197,16 +251,20 @@ $(document).ready(function () {
       seclastSlide = slides[slidesLength - 2],
       lastSlide = slides[slidesLength - 1],
       cloneFirst = firstSlide.cloneNode(true),
-      cloneSecond = secondSlide.cloneNode(true),
-      cloneSecLast = seclastSlide.cloneNode(true),
+      cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+      cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
       cloneLast = lastSlide.cloneNode(true),
       index = 0,
       allowShift = true;
 
     // Clone first and last slide
     items.appendChild(cloneFirst);
-    items.appendChild(cloneSecond);
-    items.insertBefore(cloneSecLast, firstSlide);
+    if(cloneSecond) {
+      items.appendChild(cloneSecond);
+    }
+    if(cloneSecLast) {
+      items.insertBefore(cloneSecLast, firstSlide);
+    }
     items.insertBefore(cloneLast, firstSlide);
     wrapper.classList.add("loaded");
 
@@ -301,7 +359,7 @@ $(document).ready(function () {
       }
 
       if (index == slidesLength) {
-        if(window.screen.width >= 1200) {
+        if(window.screen.width >= 1200 && items.length > 1) {
           items.style.left = -(2 * slideSize) + "px";
         } else {
           items.style.left = -(1 * slideSize) + "px";
@@ -313,6 +371,8 @@ $(document).ready(function () {
     }
   }
 
-  slide(slider, sliderItems, prev, next);
+  {% for s in Items %}
+    slide(slider{{forloop.index0}}, sliderItems{{forloop.index0}}, prev{{forloop.index0}}, next{{forloop.index0}});
+  {% endfor %}
 });
 </script>

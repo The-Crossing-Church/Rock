@@ -1,29 +1,34 @@
 <div class='background--grey full-width'>
   <div class='container'>
     <br/>
-    <h2>Featured</h2>
+    <h2>Listen</h2>
     <div class='carousel-wrapper'>
-        <div id="featured-slider" class="slider">
+        <div id="listen-slider" class="slider">
             <div class="wrapper">
-                <div id="featured-slides" class="slides">
-                    {% for eventItemOccurrence in EventItems %}
+                <div id="listen-slides" class="slides">
+                    {% for i in Items %}
                         <div class="slide">
-                            <a href="{{DetailsPage}}?EventOccurrenceId={{ eventItemOccurrence[0].EventItemOccurrence.Id }}">
-                                <div style="padding: 8px">
-                                    <div class='img-wrapper'>
-                                        <img class="d-block w-100" src="{{eventItemOccurrence[0].PhotoPath}}" alt="{{eventItemOccurrence[0].Name}}">
-                                    </div>
-                                    <span>{{eventItemOccurrence[0].Name}}</span>
-                                </div>
-                            </a>
+                          <a href="/Resource/Listen?Slug={{i.ItemGlobalKey}}">
+                            <div style="padding: 8px">
+                              <div class='img-wrapper'>
+                                <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                              </div>
+                              <h4>{{i.Title}}</h4>
+                              <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                            </div>
+                          </a>
                         </div>
                     {% endfor %}
                 </div>
             </div>
-            <a id="featured-prev" class="control prev"><i class='fa fa-chevron-left'></i></a>
-            <a id="featured-next" class="control next"><i class='fa fa-chevron-right'></i></a>
+            <a id="listen-prev" class="control prev"><i class='fa fa-chevron-left'></i></a>
+            <a id="listen-next" class="control next"><i class='fa fa-chevron-right'></i></a>
         </div>
     </div>
+  </div>
+  <br/>
+  <div style='text-align: center;'>
+    <a class='btn btn-primary' href="/Resources/Listen">Explore All</a>
   </div>
   <br/>
 </div>
@@ -178,10 +183,10 @@
 {% endstylesheet %}
 <script>
 $(document).ready(function () {
-  var slider = document.getElementById("featured-slider"),
-    sliderItems = document.getElementById("featured-slides"),
-    prev = document.getElementById("featured-prev"),
-    next = document.getElementById("featured-next");
+  var slider = document.getElementById("listen-slider"),
+    sliderItems = document.getElementById("listen-slides"),
+    prev = document.getElementById("listen-prev"),
+    next = document.getElementById("listen-next");
 
   function slide(wrapper, items, prev, next) {
     var posX1 = 0,

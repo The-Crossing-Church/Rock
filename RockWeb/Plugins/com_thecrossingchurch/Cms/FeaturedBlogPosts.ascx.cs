@@ -44,7 +44,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [TextField( "HubSpot API Key", required: true, order: 0 )]
     [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 2 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 3 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/Read.lava' %}", "", 3 )]
 
     public partial class FeaturedBlogPosts : Rock.Web.UI.RockBlock
     {
