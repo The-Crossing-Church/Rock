@@ -78,7 +78,7 @@ namespace com_thecrossingchurch.LavaFilters
         /// </summary>
         /// <param name="input">The input to turn into a qr.</param>
         /// <returns></returns>
-        public static string QRCodeAsImage( object input )
+        public static string QRCodeAsImage( object input, int? size = 3 )
         {
             if ( input == null )
             {
@@ -91,8 +91,8 @@ namespace com_thecrossingchurch.LavaFilters
             string html = @"
             <style>
                 .qr {
-                    width: 3px;
-                    height: 3px;
+                    width: " + size + @"px;
+                    height: " + size + @"px;
                 }
                 .qr-fill {
                     background-color: black;
@@ -103,13 +103,13 @@ namespace com_thecrossingchurch.LavaFilters
             </style>
             <table>";
             int x = qrCode.GetLength( 0 );
-            int y = qrCode.GetLength( 1 ); 
+            int y = qrCode.GetLength( 1 );
             for ( int i = 0; i < qrCode.GetLength( 0 ); i++ )
             {
                 html += "<tr>";
                 for ( int k = 0; k < qrCode.GetLength( 1 ); k++ )
                 {
-                    if(qrCode[i,k])
+                    if ( qrCode[i, k] )
                     {
                         html += "<td class='qr qr-fill'></td>";
                     }
@@ -121,7 +121,7 @@ namespace com_thecrossingchurch.LavaFilters
                 html += "</tr>";
             }
             html += "</table>";
-            Bitmap m_Bitmap = new Bitmap( qrCode.GetLength(0)*3, qrCode.GetLength(1)*3 );
+            Bitmap m_Bitmap = new Bitmap( qrCode.GetLength( 0 ) * size.Value, qrCode.GetLength( 1 ) * size.Value );
             PointF point = new PointF( 0, 0 );
             SizeF maxSize = new System.Drawing.SizeF( 500, 500 );
             TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.Render( Graphics.FromImage( m_Bitmap ), html, point, maxSize );
