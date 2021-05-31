@@ -16,15 +16,7 @@
     3. Theme Styling
     4. Helper Classes
     5. Responsive Overrides
-
 */
-
-// Variables
-// -------------------------
-@color-light-blue: #A2C3CC;
-@color-medium-blue: #5F9BAC;
-@color-dark-blue: #1B3142;
-@color-dark-teal: #054557;
 
 
 // 1. HTML Overrides
@@ -34,9 +26,9 @@ html {
   -webkit-font-smoothing: antialiased;
 }
 
-main {
+main:not(.container-fluid) {
   display: block;
-  padding-top: 160px !important;
+  padding-top: 145px !important;
 }
 
 @font-face {

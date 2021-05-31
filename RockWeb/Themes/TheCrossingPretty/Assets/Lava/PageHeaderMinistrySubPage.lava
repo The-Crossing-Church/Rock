@@ -2,6 +2,7 @@
 {% assign subtitle = Item | Attribute:'Subtitle' %}
 {% assign sliderOne = Item | Attribute:'ImageOneURL' %}
 {% assign sliderTwo = Item | Attribute:'ImageTwoURL' %}
+{% assign ministry = Item.ContentChannel | Attribute:'Ministry' %}
 <br/>
 <div class='row'>
   <div class='col col-xs-12' style='text-align: center;'>
@@ -9,7 +10,7 @@
       <img style='max-width:80px;' src="{{logo}}"/>
     {% endif %}
     <h1>{{'Global' | Page:'Title'}}</h1>
-    <h2 class='text--upper'>{{subtitle}}</h2>
+    <h2 class='text--upper'>{{subtitle}}/{{ministry}}</h2>
   </div>
 </div>
 {% if sliderOne != '' and sliderTwo != '' %}

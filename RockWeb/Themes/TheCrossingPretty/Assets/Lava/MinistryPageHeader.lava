@@ -3,6 +3,7 @@
 {% assign sliderOne = Item | Attribute:'ImageOneURL' %}
 {% assign sliderTwo = Item | Attribute:'ImageTwoURL' %}
 {% assign ministry = Item.ContentChannel | Attribute:'Ministry' %}
+<br/>
 <div class='row'>
   <div class='col col-xs-12' style='text-align: center;'>
     {% if logo != '' %}
@@ -35,7 +36,7 @@
       <img src="{{sliderOne}}" />
     </div>
   {% endif %}
-  {% if sliderTwp != '' %}
+  {% if sliderTwo != '' %}
     <br/><br/>
     <div class='wide-img' >
       <img src="{{sliderTwo}}" />

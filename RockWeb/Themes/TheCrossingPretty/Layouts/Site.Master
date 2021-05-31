@@ -147,7 +147,10 @@
                         <li class="menu-item main-nav-item">
                             <a href="/Events">Events</a>
                         </li>
-                        <li class="menu-item main-nav-item dropdown">
+                        <li class="menu-item main-nav-item">
+                            <a href="/Resources">Watch, Listen, Read</a>
+                        </li>
+                        <!-- <li class="menu-item main-nav-item dropdown">
                             <a class="resource-nav dropdown-toggle" data-toggle="dropdon">Resources</a>
                                 <div class="resource-menu dropdown-menu">
                                     <div>
@@ -160,7 +163,7 @@
                                         <a href="/Ministry/Adults/Women/womens-bible-studies" class="text-white">Women's Bible Study Studies</a>
                                     </div>
                                 </div>
-                        </li>
+                        </li> -->
                     </ul>
                 </div>
 				<div class="website-logo">
@@ -174,9 +177,9 @@
                             <li class="menu-item main-nav-item about-nav dropdown">
                                 <a href="/About" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
                                 <div class="about-menu dropdown-menu">
-                                    <div>
+                                    <!--<div>
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
-                                    </div>
+                                    </div>-->
                                     <div>
                                         <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>
@@ -246,9 +249,9 @@
                                     <div>
                                         <a href="/About">About</a>
                                     </div>
-                                    <div class="sub-menu-item">
+                                    <!--<div class="sub-menu-item">
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
-                                    </div>
+                                    </div>-->
                                     <div class="sub-menu-item">
                                         <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>
