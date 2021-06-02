@@ -54,6 +54,7 @@
         $(document).ready(function () {
             $('#txtSearch').bind("enterKey", function (e) {
                 console.log('The Search content is: ' + $('#txtSearch').val())
+                window.location.href = "/Search?q=" + $('#txtSearch').val()
             });
             $('#txtSearch').keyup(function (e) {
                 if (e.keyCode == 13) {
@@ -112,6 +113,9 @@
                         menu.removeClass('visible')
                     }, 20)
                 } 
+            })
+            $('#desktop-about').click(function () {
+                window.location.href = "/About"
             })
         })
     </script>
@@ -175,7 +179,7 @@
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
                             <li class="menu-item main-nav-item about-nav dropdown">
-                                <a href="/About" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
+                                <a href="/About" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
                                 <div class="about-menu dropdown-menu">
                                     <!--<div>
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
@@ -198,7 +202,7 @@
                                 <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Ministries</a>
                                 <div class="ministry-menu dropdown-menu">
                                     <div>
-                                        <a href="/Ministry/Children" class="text-white">Children</a>
+                                        <a href="/Ministry/Children" class="text-white">Kids</a>
                                     </div>
                                     <div>
                                         <a href="/Ministry/Students" class="text-white">Students</a>
@@ -211,6 +215,9 @@
                                     </div>
                                     <div>
                                         <a href="/Ministry/Care" class="text-white">Care</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
                                     </div>
                                 </div>
                             </li>
@@ -279,7 +286,7 @@
                                         <a>Ministries</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="/Ministry/Children" class="text-white">Children</a>
+                                        <a href="/Ministry/Children" class="text-white">Kids</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Ministry/Students" class="text-white">Students</a>
@@ -292,6 +299,9 @@
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Ministry/Care" class="text-white">Care</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
                                     </div>
                                 </div>
                             </li>
