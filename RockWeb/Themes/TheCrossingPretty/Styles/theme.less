@@ -140,7 +140,7 @@ a:hover {
   color: @color-medium-blue !important;
 }
 
-.btn {
+.btn:not(.btn-default) {
   text-decoration: none !important;
   cursor: pointer;
   /*min-width: 100px;*/
@@ -192,17 +192,17 @@ a:hover {
 
   .btn {
     padding: 4px;
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
+    width: 25px;
+    height: 25px;
     border-radius: 30px;
     text-align: center;
     background-color: @color-dark-blue;
     color: @color-light-blue;
     border-color: @color-dark-blue;
+    position: relative;
 
     i {
-      position: relative;
+      position: absolute;
       top: 50%;
       transform: translateY(-50%) translateX(-50%);
       left: 50%;
@@ -219,7 +219,7 @@ a:hover {
 .btn-sm {
   padding: 4px 8px !important;
   font-size: 12px !important;
-  line-height: 1.5 !important;
+  /*line-height: 1.5 !important;*/
 }
 
 .btn-toggle {
