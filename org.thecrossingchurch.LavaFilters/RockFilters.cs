@@ -15,6 +15,7 @@ using TheArtOfDev.HtmlRenderer;
 using System.Collections;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Rock.Lava;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -163,6 +164,66 @@ namespace com_thecrossingchurch.LavaFilters
             {
                 throw new Exception( "Invalid Input: input must be of type string or Collection" );
             }
+        }
+
+        /// <summary>
+        /// Return true if the date is within the provided range, false if outside of range
+        /// </summary>
+        /// <param name="input">The input date.</param>
+        /// <param name="start">The range start date.</param>
+        /// <param name="end">The range end date.</param>
+        /// <returns></returns>
+        public static bool DateIsBetween( object input, object start, object end )
+        {
+            var type = input.GetType();
+            DateTime? target = null;
+            DateTime? rangeStart = null;
+            DateTime? rangeEnd = null;
+            if ( input.GetType() == typeof( string ) )
+            {
+                target = DateTime.Parse( input.ToString() );
+            }
+            else if ( type.FullName.Contains( "Date" ) )
+            {
+                target = ( DateTime ) input;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string or date" );
+            }
+            if ( start.GetType() == typeof( string ) )
+            {
+                rangeStart = DateTime.Parse( start.ToString() );
+            }
+            else if ( start.GetType().FullName.Contains( "Date" ) )
+            {
+                rangeStart = ( DateTime ) start;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: start of range must be of type string or date" );
+            }
+            if ( end.GetType() == typeof( string ) )
+            {
+                rangeEnd = DateTime.Parse( end.ToString() );
+            }
+            else if ( end.GetType().FullName.Contains( "Date" ) )
+            {
+                rangeEnd = ( DateTime ) end;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: end of range must be of type string or date" );
+            }
+            if ( target.HasValue && rangeEnd.HasValue && rangeStart.HasValue )
+            {
+                if ( DateTime.Compare( target.Value, rangeStart.Value ) >= 0 && DateTime.Compare( target.Value, rangeEnd.Value ) <= 0 )
+                {
+                    return true;
+                }
+                return false;
+            }
+            throw new Exception( "Unable to parse input, start, and end" );
         }
     }
 }
