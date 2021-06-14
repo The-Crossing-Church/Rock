@@ -178,7 +178,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
             return items.Select( e =>
             {
-                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
+                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
                 var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
@@ -217,7 +217,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         #endregion
 
-        [DotLiquid.LiquidType( "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "MatchingTags", "ContentChannelId", "Type" )]
+        [DotLiquid.LiquidType( "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "Slug", "MatchingTags", "ContentChannelId", "Type" )]
         private class Post
         {
             public string Title { get; set; }
@@ -226,6 +226,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             public string Image { get; set; }
             public string Url { get; set; }
             public string ItemGlobalKey { get; set; }
+            public string Slug { get; set; }
             public List<string> MatchingTags { get; set; }
             public int ContentChannelId { get; set; }
             public string Type { get; set; }
