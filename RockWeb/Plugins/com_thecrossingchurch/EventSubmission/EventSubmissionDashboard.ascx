@@ -2,7 +2,7 @@
 CodeFile="EventSubmissionDashboard.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionDashboard"
 %> <%-- Add Vue and Vuetify CDN --%>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> 
 <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
@@ -286,24 +286,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType && e.TableType.length > 0">
+                    <v-row v-if="e.TableType && e.TableType.length > 0 || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length > 0)">
                       <v-col>
                         <div class="floating-title">Requested Tables</div>
                         <template v-if="selected.Changes != null && e.TableType.toString() != selected.Changes.Events[idx].TableType.toString()">
                           <span class='red--text'>{{(e.TableType ? e.TableType.join(', ')  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.TableType  ? selected.Changes.Events[idx].e.TableType.join(', ') : 'Empty')}}</span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].TableType  ? selected.Changes.Events[idx].TableType.join(', ') : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.TableType.join(', ')}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType && e.TableType.includes('Round')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Round') || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.includes('Round'))">
                       <v-col>
                         <div class="floating-title">Number of Round Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRound != selected.Changes.Events[idx].NumTablesRound">
-                          <span class='red--text'>{{(e.TableType ? e.NumTablesRound  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumTablesRound ? selected.Changes.Events[idx].e.NumTablesRound : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumTablesRound ? e.NumTablesRound  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumTablesRound ? selected.Changes.Events[idx].NumTablesRound : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumTablesRound}}
@@ -312,20 +312,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       <v-col>
                         <div class="floating-title">Number of Chairs per Round Table</div>
                         <template v-if="selected.Changes != null && e.NumChairsRound != selected.Changes.Events[idx].NumChairsRound">
-                          <span class='red--text'>{{(e.TableType ? e.NumChairsRound  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumChairsRound ? selected.Changes.Events[idx].e.NumChairsRound : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumChairsRound ? e.NumChairsRound  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumChairsRound ? selected.Changes.Events[idx].NumChairsRound : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumChairsRound}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular') || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.includes('Rectangular'))">
                       <v-col>
                         <div class="floating-title">Number of Rectangular Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRect != selected.Changes.Events[idx].NumTablesRect">
-                          <span class='red--text'>{{(e.TableType ? e.NumTablesRect  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumTablesRect ? selected.Changes.Events[idx].e.NumTablesRect : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumTablesRect ? e.NumTablesRect  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumTablesRect ? selected.Changes.Events[idx].NumTablesRect : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumTablesRect}}
@@ -334,8 +334,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                       <v-col>
                         <div class="floating-title">Number of Chairs per Rectangular Table</div>
                         <template v-if="selected.Changes != null && e.NumChairsRect != selected.Changes.Events[idx].NumChairsRect">
-                          <span class='red--text'>{{(e.TableType ? e.NumChairsRect  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumChairsRect ? selected.Changes.Events[idx].e.NumChairsRect : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumChairsRect ? e.NumChairsRect  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumChairsRect ? selected.Changes.Events[idx].NumChairsRect : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumChairsRect}}
