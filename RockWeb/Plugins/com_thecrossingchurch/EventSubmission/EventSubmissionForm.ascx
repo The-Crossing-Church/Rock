@@ -600,7 +600,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </v-list-item>
                 </v-list>
               </v-menu>
-              
             </template>
           </v-form>
         </v-card-text>
@@ -3160,7 +3159,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                       if (this.request.Events[x].EndTime.includes("PM")) {
                           let info = this.request.Events[x].EndTime.split(':')
-                          if (parseInt(info[0]) > 9 || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00")) {
+                          if ((parseInt(info[0]) > 9 && parseInt(info[0]) != 12) || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00")) {
                               meetsTimeRequirements = false
                               this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
                           }
