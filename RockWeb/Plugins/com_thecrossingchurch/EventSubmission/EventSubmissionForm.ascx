@@ -35,6 +35,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 <asp:HiddenField ID="hfUpcomingRequests" runat="server" />
 <asp:HiddenField ID="hfThisWeeksRequests" runat="server" />
 <asp:HiddenField ID="hfIsAdmin" runat="server" />
+<asp:HiddenField ID="hfPersonName" runat="server" />
 <asp:HiddenField ID="hfChangeRequest" runat="server" />
 
 <div id="app">
@@ -169,7 +170,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-row>
               <v-col>
                 <v-text-field
-                  label="What should we call your event?"
+                  :label="eventNameLabel"
                   v-model="request.Name"
                   :rules="[rules.required(request.Name, 'Event Name')]"
                 ></v-text-field>
@@ -178,7 +179,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-row>
               <v-col cols="12" md="6">
                 <v-autocomplete
-                  label="Which ministry is sponsoring this event?"
+                  :label="eventMinistryLabel"
                   :items="ministries"
                   item-text="Value"
                   item-value="Id"
@@ -192,203 +193,95 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  label="Who is the ministry contact for this event?"
+                  :label="eventContactLabel"
                   v-model="request.Contact"
                   :rules="[rules.required(request.Contact, 'Contact')]"
                 ></v-text-field>
               </v-col>
             </v-row>
-            <template
-              v-if="request.needsSpace && !request.needsOnline && !request.needsPub && !request.needsReg && !request.needsCatering && !request.needsChildCare && !request.needsAccom"
-            >
-              <v-tabs v-model="tab">
-                <v-tab>I have specific dates(s) and times</v-tab>
-                <v-tab-item>
-                  <v-row v-if="cannotChangeDates">
-                    <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
-                      While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
-                    </v-col>
-                    <v-col cols="12">
-                      <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <strong>Please select the date(s) of your event</strong>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <v-date-picker
-                        label="Event Dates"
-                        v-model="request.EventDates"
-                        :rules="[rules.required(request.EventDates, 'Event Date')]"
-                        multiple
-                        class="elevation-1"
-                        :min="earliestDate"
-                        :show-current="earliestDate"
-                        :disabled="cannotChangeDates"
-                      ></v-date-picker>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                      <v-select
-                        label="Selected Dates"
-                        chips
-                        attach
-                        multiple
-                        :rules="[rules.requiredArr(request.EventDates, 'Event Date')]"
-                        :items="longDates"
-                        item-text="text"
-                        item-value="val"
-                        v-model="request.EventDates"
-                        :disabled="cannotChangeDates"
-                      ></v-select>
-                    </v-col>
-                  </v-row>
-                  <v-row v-if="request.EventDates.length > 1">
-                    <v-col>
-                      <v-switch
-                        :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
-                        v-model="request.IsSame"
-                        :disabled="cannotChangeToggle"
-                      ></v-switch>
-                    </v-col>
-                  </v-row>
-                  <template v-for="e in request.Events">
-                    <v-row>
-                      <v-col>
-                        <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
-                        <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12" md="6">
-                        <strong>Start Time</strong>
-                        <time-picker
-                          v-model="e.StartTime"
-                          :value="e.StartTime"
-                          :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
-                        ></time-picker>
-                      </v-col>
-                      <v-col cols="12" md="6">
-                        <strong>End Time</strong>
-                        <time-picker
-                          v-model="e.EndTime"
-                          :value="e.EndTime"
-                          :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
-                        ></time-picker>
-                      </v-col>
-                    </v-row>
-                  </template>
-                  <%-- Space Information --%>
-                  <template v-if="request.needsSpace">
-                    <template v-for="e in request.Events">
-                      <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
-                    </template>
-                  </template>
-                </v-tab-item>
-                <v-tab>I want to search for something quick</v-tab>
-                <v-tab-item>
-                  <v-row v-if="tab == 1">
-                    <v-col>
-                      <room-picker
-                        v-on:update="setDate"
-                        :rules="rules"
-                        :request="request"
-                        ref="roompckr"
-                      ></room-picker>
-                    </v-col>
-                  </v-row>
-                </v-tab-item>
-              </v-tabs>
-            </template>
-            <template v-else>
-              <v-row v-if="cannotChangeDates">
-                <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
-                  While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
-                </v-col>
-                <v-col cols="12">
-                  <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
-                </v-col>
-              </v-row>
+            <v-row v-if="cannotChangeDates">
+              <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
+                While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
+              </v-col>
+              <v-col cols="12">
+                <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <strong>Please select the date(s) of your event</strong>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-date-picker
+                  label="Event Dates"
+                  v-model="request.EventDates"
+                  multiple
+                  class="elevation-1"
+                  :min="earliestDate"
+                  :show-current="earliestDate"
+                  :rules="[rules.required(request.EventDates, 'Event Date')]"
+                  :disabled="cannotChangeDates"
+                ></v-date-picker>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-autocomplete
+                  label="Selected Dates"
+                  chips
+                  attach
+                  multiple
+                  clearable
+                  :rules="[rules.requiredArr(request.EventDates, 'Event Date')]"
+                  :items="longDates"
+                  item-text="text"
+                  item-value="val"
+                  v-model="request.EventDates"
+                  :disabled="cannotChangeDates"
+                ></v-autocomplete>
+              </v-col>
+            </v-row>
+            <v-row v-if="request.EventDates.length > 1">
+              <v-col>
+                <v-switch
+                  :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
+                  v-model="request.IsSame"
+                  :disabled="cannotChangeToggle"
+                ></v-switch>
+              </v-col>
+            </v-row>
+            <template v-for="e in request.Events">
+              <h3 v-if="request.Events.length > 1 && e.EventDate" class="accent--text" style="font-weight: bold;">{{e.EventDate | formatDate}}</h3>
               <v-row>
                 <v-col>
-                  <strong>Please select the date(s) of your event</strong>
+                  <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
+                  <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-date-picker
-                    label="Event Dates"
-                    v-model="request.EventDates"
-                    multiple
-                    class="elevation-1"
-                    :min="earliestDate"
-                    :show-current="earliestDate"
-                    :rules="[rules.required(request.EventDates, 'Event Date')]"
-                    :disabled="cannotChangeDates"
-                  ></v-date-picker>
+                  <strong>Start Time</strong>
+                  <time-picker
+                    v-model="e.StartTime"
+                    :value="e.StartTime"
+                    :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
+                  ></time-picker>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-select
-                    label="Selected Dates"
-                    chips
-                    attach
-                    multiple
-                    :rules="[rules.requiredArr(request.EventDates, 'Event Date')]"
-                    :items="longDates"
-                    item-text="text"
-                    item-value="val"
-                    v-model="request.EventDates"
-                    :disabled="cannotChangeDates"
-                  ></v-select>
+                  <strong>End Time</strong>
+                  <time-picker
+                    v-model="e.EndTime"
+                    :value="e.EndTime"
+                    :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
+                  ></time-picker>
                 </v-col>
               </v-row>
-              <v-row v-if="request.EventDates.length > 1">
-                <v-col>
-                  <v-switch
-                    :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
-                    v-model="request.IsSame"
-                    :disabled="cannotChangeToggle"
-                  ></v-switch>
-                </v-col>
-              </v-row>
-              <template v-for="e in request.Events">
-                <v-row>
-                  <v-col>
-                    <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
-                    <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <strong>Start Time</strong>
-                    <time-picker
-                      v-model="e.StartTime"
-                      :value="e.StartTime"
-                      :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
-                    ></time-picker>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <strong>End Time</strong>
-                    <time-picker
-                      v-model="e.EndTime"
-                      :value="e.EndTime"
-                      :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
-                    ></time-picker>
-                  </v-col>
-                </v-row>
-              </template>
               <%-- Space Information --%>
               <template v-if="request.needsSpace">
-                <template v-for="e in request.Events">
-                  <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
-                </template>
+                <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
               </template>
-            </template>
-            <%-- Online Information --%>
-            <template v-if="request.needsOnline">
-              <template v-for="e in request.Events">
+              <%-- Online Information --%>
+              <template v-if="request.needsOnline">
                 <v-row>
                   <v-col>
                     <h3 class="primary--text" v-if="request.Events.length == 1">Zoom Information</h3>
@@ -413,28 +306,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </v-col>
                 </v-row>
               </template>
-            </template>
-            <%-- Catering Information --%>
-            <template v-if="request.needsCatering">
-              <template v-for="e in request.Events">
+              <%-- Catering Information --%>
+              <template v-if="request.needsCatering">
                 <catering :e="e" :request="request" ref="cateringloop" v-on:updatecatering="updateCatering"></catering>
               </template>
-            </template>
-            <%-- Childcare Info --%>
-            <template v-if="request.needsChildCare">
-              <template v-for="e in request.Events">
+              <%-- Childcare Info --%>
+              <template v-if="request.needsChildCare">
                 <childcare :e="e" :request="request" ref="childcareloop" v-on:updatechildcare="updateChildcare"></childcare>
               </template>
-            </template>
-            <%-- Special Accommodations Info --%>
-            <template v-if="request.needsAccom">
-              <template v-for="e in request.Events">
+              <%-- Special Accommodations Info --%>
+              <template v-if="request.needsAccom">
                 <accom :e="e" :request="request" ref="accomloop" v-on:updateaccom="updateAccom"></accom>
               </template>
-            </template>
-            <%-- Registration Information --%>
-            <template v-if="request.needsReg">
-              <template v-for="e in request.Events">
+              <%-- Registration Information --%>
+              <template v-if="request.needsReg">
                 <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" ref="regloop" v-on:updatereg="updateReg"></registration>
               </template>
             </template>
@@ -674,19 +559,49 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </template>
             </template>
             <%-- Notes --%>
-            <v-row>
-              <v-col>
-                <h3 class="primary--text">Additional Info</h3>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <v-textarea
+            <template v-if="request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub">
+              <v-row>
+                <v-col>
+                  <h3 class="primary--text">Additional Info</h3>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-textarea
                   label="Is there anything else we should know about this request?"
                   v-model="request.Notes"
-                ></v-textarea>
-              </v-col>
-            </v-row>
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+            </template>
+            <%-- Pre-Approval Notice --%>
+            <template v-if="request.needsSpace && !(request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub)">
+              <strong>*Your request may be pre-approved. </strong>
+              <v-menu attach>
+                <template v-slot:activator="{ on, attrs }">
+                  <div style="display: inline-block;" v-bind="attrs" v-on="on" class='accent-text'>
+                    <strong>Click here to view requirements for pre-approval.</strong>
+                  </div>
+                </template>
+                <v-list>
+                  <v-list-item>
+                    <ul>
+                      <li>
+                        The meeting dates are all within the next 14 days. <br/>
+                        Before {{ preApprovalDate | formatDate }}
+                      </li>
+                      <li>
+                        The meetings take place during regular business hours. <br/>
+                        Mon-Fri: 9am-9pm, Sunday: 1pm-9pm
+                      </li>
+                      <li>The meetings involve no more than 30 people.</li>
+                      <li>The meetings are not in the Auditorium or Gym.</li>
+                    </ul>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+              
+            </template>
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -1170,7 +1085,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-col>
             <v-col cols="12" md="6">
               <v-autocomplete
-                label="What are your preferred rooms/spaces?"
+                label="What room(s) would you like to reserve"
                 :items="groupedRooms"
                 item-text="Value"
                 item-value="Id"
@@ -1181,19 +1096,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 chips
                 multiple
                 attach
+                dense
                 :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
                 hint="Click the map icon to view campus map"
                 persistent-hint
               >
+                <template v-slot:prepend-item>
+                  <v-toolbar dense color="primary">Room (Capacity)</v-toolbar>
+                </template>
                 <template v-slot:item="data">
-                  <template v-if="typeof data.item !== 'object'">
-                    <v-list-item-content v-text="data.item"></v-list-item-content>
-                  </template>
-                  <template v-else>
+                  <v-list-item v-bind="data.attrs" v-on="data.on">
+                    <v-list-item-action style="margin: 0px; margin-right: 32px;">
+                      <v-checkbox :value="data.attrs.inputValue" @change="data.parent.$emit('select')" ></v-checkbox>
+                    </v-list-item-action>
                     <v-list-item-content>
                       <v-list-item-title>{{data.item.Value}} ({{data.item.Capacity}})</v-list-item-title>
                     </v-list-item-content>
-                  </template>
+                  </v-list-item>
                 </template>
               </v-autocomplete>
             </v-col>
@@ -2832,6 +2751,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               if (val == 'True') {
                   this.isAdmin = true
               }
+              this.request.Contact = $('[id$="hfPersonName"]')[0].value;
               let req = $('[id$="hfRequest"]')[0].value;
               if (req) {
                   let parsed = JSON.parse(req)
@@ -2877,7 +2797,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   if (this.request.needsAccom) {
                       items.push('accommodations')
                   }
-                  items[items.length - 1] = "and " + items[items.length - 1]
+                  if (items.length > 1) {
+                      items[items.length - 1] = "and " + items[items.length - 1]
+                  }
                   return items.join(", ");
               },
               earliestDate() {
@@ -2995,6 +2917,27 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                   }
                   return ''
+              },
+              eventNameLabel() {
+                  if (this.requestedResources == "rooms") {
+                      return "Meeting name on calendar"
+                  }
+                  return "Event name on calendar"
+              },
+              eventMinistryLabel() {
+                  if (this.requestedResources == "rooms") {
+                      return "Which Ministry is sponsoring this meeting?"
+                  }
+                  return "Which ministry is sponsoring this event?"
+              },
+              eventContactLabel() {
+                  if (this.requestedResources == "rooms") {
+                      return "Who is the ministry contact for this meeting?"
+                  }
+                  return "Who is the ministry contact for this event?"
+              },
+              preApprovalDate() {
+                  return moment().add(14, 'days')
               }
           },
           methods: {
@@ -3491,6 +3434,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   });
 </script>
 <style>
+  .v-list--dense .v-subheader {
+    font-size: .95rem;
+    font-weight: bold;
+  }
   .theme--light.v-application {
     background: rgba(0, 0, 0, 0);
   }
@@ -3541,7 +3488,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   .btn-pub-del:hover .tooltip {
     opacity: 1;
   }
-  .accent-text {
+  .accent-text, .v-list--dense .v-subheader {
     color: #8ED2C9;
   }
 </style>

@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionDashboard.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionDashboard"
 %> <%-- Add Vue and Vuetify CDN --%>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> 
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>  -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
@@ -41,6 +41,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <asp:HiddenField ID="hfUpdatedItem" runat="server" />
 <asp:HiddenField ID="hfApprovedEmail" runat="server" />
 <asp:HiddenField ID="hfDeniedEmail" runat="server" />
+<asp:HiddenField ID="hfComment" runat="server" />
 <Rock:BootstrapButton
   ID="btnChangeStatus"
   CssClass="btn-hidden"
@@ -52,6 +53,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   CssClass="btn-hidden"
   runat="server"
   OnClick="AddBuffer_Click"
+/>
+<Rock:BootstrapButton
+  ID="btnAddComment"
+  CssClass="btn-hidden"
+  runat="server"
+  OnClick="AddComment_Click"
 />
 
 <div id="app">
@@ -1035,6 +1042,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </template>
               </v-col>
             </v-row>
+            <v-row v-if="selected.Comments && selected.Comments.length > 0">
+              <v-col>
+                <div class="floating-title">Comments</div>
+                <div class='comment-viewer'>
+                  <div v-for="(c,idx) in selected.Comments" :key="idx" class='comment'>
+                    <strong>{{c.CreatedBy}}</strong> - {{c.CreatedOn | formatDateTime}}<br/>
+                    {{c.Message}}
+                  </div>
+                </div>
+              </v-col>
+            </v-row>
             <v-row v-if="selected.HistoricData">
               <v-col>
                 <div class="floating-title">Non-Transferrable Data</div>
@@ -1097,6 +1115,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             >
               <v-icon>mdi-cancel</v-icon> Cancel
             </v-btn>
+            <v-btn 
+              @click="commentDialog = true"
+              style="margin-left: 8px;"
+              color="accent"
+            >
+              <v-icon>mdi-comment-edit</v-icon> Add Comment
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
@@ -1148,6 +1173,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog v-if="commentDialog" v-model="commentDialog" max-width="80%">
+        <v-card>
+          <v-card-title></v-card-title>
+          <v-card-text>
+            <v-textarea label="New Comment" v-model="comment"></v-textarea>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="saveComment">Add Comment</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -1180,7 +1217,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 rooms: [],
                 ministries: [],
                 bufferErrMsg: '',
-                fab: false
+                fab: false,
+                commentDialog: false,
+                comment: ''
             },
             created() {
                 this.getRecent();
@@ -1272,6 +1311,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         req.RequestStatus = i.RequestStatus;
                         req.HistoricData = i.HistoricData;
                         req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
+                        req.Comments = i.Comments;
                         temp.push(req);
                     });
                     this.requests = temp;
@@ -1425,6 +1465,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     } else {
                         this.bufferErrMsg = 'The buffer you have chosen will conflict with another event'
                     }
+                },
+                saveComment() {
+                    $('[id$="hfRequestID"]').val(this.selected.Id);
+                    $('[id$="hfComment"]').val(this.comment);
+                    $('[id$="btnAddComment"')[0].click();
+                    $('#updateProgress').show();
                 },
                 checkHasConflicts() {
                     this.existingRequests = JSON.parse(
@@ -1601,5 +1647,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   }
   .v-expansion-panel--active>.v-expansion-panel-header {
     border-bottom: 1px solid #e2e2e2;
+  }
+  .comment {
+    background-color: lightgrey;
+    padding: 8px;
+    border-radius: 6px;
+    margin: 4px 0px;
   }
 </style>

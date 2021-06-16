@@ -34,6 +34,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
 <asp:HiddenField ID="hfRequests" runat="server" />
 <asp:HiddenField ID="hfRequestURL" runat="server" />
 <asp:HiddenField ID="hfWorkflowURL" runat="server" />
+<asp:HiddenField ID="hfRequestID" runat="server" />
+<asp:HiddenField ID="hfComment" runat="server" />
+<Rock:BootstrapButton
+  ID="btnAddComment"
+  CssClass="btn-hidden"
+  runat="server"
+  OnClick="AddComment_Click"
+/>
 
 <div id="app">
   <v-app>
@@ -383,24 +391,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType && e.TableType.length > 0">
+                    <v-row v-if="e.TableType && e.TableType.length > 0 || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length > 0)">
                       <v-col>
                         <div class="floating-title">Requested Tables</div>
                         <template v-if="selected.Changes != null && e.TableType.toString() != selected.Changes.Events[idx].TableType.toString()">
                           <span class='red--text'>{{(e.TableType ? e.TableType.join(', ')  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.TableType  ? selected.Changes.Events[idx].e.TableType.join(', ') : 'Empty')}}</span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].TableType  ? selected.Changes.Events[idx].TableType.join(', ') : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.TableType.join(', ')}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType && e.TableType.includes('Round')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Round') || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.includes('Round'))">
                       <v-col>
                         <div class="floating-title">Number of Round Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRound != selected.Changes.Events[idx].NumTablesRound">
-                          <span class='red--text'>{{(e.TableType ? e.NumTablesRound  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumTablesRound ? selected.Changes.Events[idx].e.NumTablesRound : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumTablesRound ? e.NumTablesRound  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumTablesRound ? selected.Changes.Events[idx].NumTablesRound : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumTablesRound}}
@@ -409,20 +417,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                       <v-col>
                         <div class="floating-title">Number of Chairs per Round Table</div>
                         <template v-if="selected.Changes != null && e.NumChairsRound != selected.Changes.Events[idx].NumChairsRound">
-                          <span class='red--text'>{{(e.TableType ? e.NumChairsRound  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumChairsRound ? selected.Changes.Events[idx].e.NumChairsRound : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumChairsRound ? e.NumChairsRound  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumChairsRound ? selected.Changes.Events[idx].NumChairsRound : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumChairsRound}}
                         </template>
                       </v-col>
                     </v-row>
-                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular')">
+                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular') || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.includes('Rectangular'))">
                       <v-col>
                         <div class="floating-title">Number of Rectangular Tables</div>
                         <template v-if="selected.Changes != null && e.NumTablesRect != selected.Changes.Events[idx].NumTablesRect">
-                          <span class='red--text'>{{(e.TableType ? e.NumTablesRect  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumTablesRect ? selected.Changes.Events[idx].e.NumTablesRect : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumTablesRect ? e.NumTablesRect  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumTablesRect ? selected.Changes.Events[idx].NumTablesRect : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumTablesRect}}
@@ -431,8 +439,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                       <v-col>
                         <div class="floating-title">Number of Chairs per Rectangular Table</div>
                         <template v-if="selected.Changes != null && e.NumChairsRect != selected.Changes.Events[idx].NumChairsRect">
-                          <span class='red--text'>{{(e.TableType ? e.NumChairsRect  : 'Empty')}}: </span>
-                          <span class='primary--text'>{{(selected.Changes.Events[idx].e.NumChairsRect ? selected.Changes.Events[idx].e.NumChairsRect : 'Empty')}}</span>
+                          <span class='red--text'>{{(e.NumChairsRect ? e.NumChairsRect  : 'Empty')}}: </span>
+                          <span class='primary--text'>{{(selected.Changes.Events[idx].NumChairsRect ? selected.Changes.Events[idx].NumChairsRect : 'Empty')}}</span>
                         </template>
                         <template v-else>
                           {{e.NumChairsRect}}
@@ -1132,6 +1140,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                 </template>
               </v-col>
             </v-row>
+            <v-row v-if="selected.Comments && selected.Comments.length > 0">
+              <v-col>
+                <div class="floating-title">Comments</div>
+                <div class='comment-viewer'>
+                  <div v-for="(c,idx) in selected.Comments" :key="idx" class='comment'>
+                    <strong>{{c.CreatedBy}}</strong> - {{c.CreatedOn | formatDateTime}}<br/>
+                    {{c.Message}}
+                  </div>
+                </div>
+              </v-col>
+            </v-row>
             <v-row v-if="selected.HistoricData">
               <v-col>
                 <div class="floating-title">Non-Transferrable Data</div>
@@ -1167,6 +1186,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
             >
               <v-icon>mdi-cancel</v-icon> Cancel Request
             </v-btn>
+            <v-btn 
+              @click="commentDialog = true"
+              style="margin-left: 8px;"
+              color="accent"
+            >
+              <v-icon>mdi-comment-edit</v-icon> Add Comment
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
@@ -1174,6 +1200,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card-actions>
         </v-card>
       </v-overlay>
+      <v-dialog v-if="commentDialog" v-model="commentDialog" max-width="80%">
+        <v-card>
+          <v-card-title></v-card-title>
+          <v-card-text>
+            <v-textarea label="New Comment" v-model="comment"></v-textarea>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="saveComment">Add Comment</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -1217,6 +1255,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                 eventEndMenu: false,
                 createStartMenu: false,
                 createEndMenu: false,
+                commentDialog: false,
+                comment: ''
             },
             created() {
                 this.getRecent();
@@ -1308,6 +1348,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         req.RequestStatus = i.RequestStatus;
                         req.HistoricData = i.HistoricData;
                         req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
+                        req.Comments = i.Comments;
                         temp.push(req);
                     });
                     this.requests = temp;
@@ -1409,6 +1450,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                 editRequest() {
                     let url = $('[id$="hfRequestURL"]').val();
                     window.location = url + `?Id=${this.selected.Id}`;
+                },
+                saveComment() {
+                    $('[id$="hfRequestID"]').val(this.selected.Id);
+                    $('[id$="hfComment"]').val(this.comment);
+                    $('[id$="btnAddComment"')[0].click();
+                    $('#updateProgress').show();
                 },
                 saveFile(idx, type) {
                     var a = document.createElement("a");
@@ -1568,5 +1615,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
   }
   .v-expansion-panel--active>.v-expansion-panel-header {
     border-bottom: 1px solid #e2e2e2;
+  }
+  .comment {
+    background-color: lightgrey;
+    padding: 8px;
+    border-radius: 6px;
+    margin: 4px 0px;
   }
 </style>
