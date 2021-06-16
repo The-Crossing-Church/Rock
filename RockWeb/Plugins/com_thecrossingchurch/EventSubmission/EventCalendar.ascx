@@ -89,13 +89,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
           <br/>
           <v-row>
             <v-col style="display:flex; align-items:center;">
-              <v-btn icon @click="value = moment(value).subtract(1, 'month')">
+              <v-btn icon @click="changeDate(-1)">
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
             </v-col>
             <v-col cols="6"><h3 style='text-align: center'>{{currentMonth}}</h3></v-col>
             <v-col style="display:flex; align-items:center; justify-content: flex-end;">
-              <v-btn icon @click="value = moment(value).add(1, 'month')">
+              <v-btn icon @click="changeDate(1)">
                 <v-icon>mdi-chevron-right</v-icon>
               </v-btn>
             </v-col>
@@ -469,6 +469,23 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                         // show the dialog
                         this.dialog = true
                     }
+                },
+                changeDate(changeVal) {
+                    let callChange = false
+                    if (!this.value) {
+                        this.value = new Date()
+                        callChange = true
+                    }
+                    if (changeVal > 0) {
+                        this.value = moment(this.value).add(1, 'month')
+                    } else {
+                        this.value = moment(this.value).subtract(1, 'month')
+                    }
+                    if (callChange) {
+                        $('[id$="hfFocusDate"]').val(moment(this.value).format('YYYY-MM-01'));
+                        $('[id$="btnSwitchFocus"')[0].click();
+                        $('#updateProgress').show();
+                    }
                 }
             },
             watch: {
@@ -477,6 +494,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
                         if (moment(newValue).format('MM') != moment(oldValue).format('MM')) {
                             $('[id$="hfFocusDate"]').val(moment(newValue).format('YYYY-MM-01'));
                             $('[id$="btnSwitchFocus"')[0].click();
+                            $('#updateProgress').show();
                         }
                     }
                 },
