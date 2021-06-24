@@ -2121,7 +2121,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <time-picker
                 v-model="e.CCStartTime"
                 :value="e.CCStartTime"
-                :default="defaultFoodTime"
+                :default="defaultChildcareTime"
                 :rules="[rules.required(e.CCStartTime, 'Time')]"
               ></time-picker>
             </v-col> 
@@ -2256,10 +2256,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               prefillOptions() {
                   return this.request.EventDates.filter(i => i != this.e.EventDate)
               },
-              defaultFoodTime() {
+              defaultChildcareTime() {
                   if (this.e.StartTime && !this.e.StartTime.includes('null')) {
                       let time = moment(this.e.StartTime, "hh:mm A");
-                      return time.subtract(30, "minutes").format("hh:mm A");
+                      return time.subtract(15, "minutes").format("hh:mm A");
                   }
                   return null;
               },
@@ -2925,7 +2925,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               },
               eventMinistryLabel() {
                   if (this.requestedResources == "rooms") {
-                      return "Which Ministry is sponsoring this meeting?"
+                      return "Which ministry is sponsoring this meeting?"
                   }
                   return "Which ministry is sponsoring this event?"
               },

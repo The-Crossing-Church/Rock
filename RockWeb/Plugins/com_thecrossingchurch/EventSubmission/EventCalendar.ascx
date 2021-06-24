@@ -160,7 +160,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
         <v-card>
           <template v-if="selected">
             <v-toolbar color="accent">
-              <h4 style="font-weight: bold;">{{selected.name}} {{selected.date}}</h4>
+              <h4 style="font-weight: bold;">{{selected.name}} {{selected.starttime}} - {{selected.endtime}}</h4>
             </v-toolbar>
             <v-card-text>
               <br/>
@@ -193,7 +193,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
               <v-expansion-panels>
                 <v-expansion-panel v-for="(e, idx) in focusedEvents" :key="idx">
                   <v-expansion-panel-header color="accent">
-                    <h4 style="font-weight: bold;">{{e.name}} {{e.date}}</h4>
+                    <h4 style="font-weight: bold;">{{e.name}} {{e.starttime}} - {{e.endtime}}</h4>
                   </v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
