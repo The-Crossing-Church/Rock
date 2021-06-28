@@ -115,7 +115,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             items = items.Where( i =>
             {
                 bool meetsRec = true;
-                var itemTag = i.AttributeValues["Tags"].Value.ToLower().Split( ',' ).ToList();
+                //var itemTag = i.AttributeValues["Tags"].Value.ToLower().Split( ',' ).ToList();
+                TaggedItemService _tiSvc = new TaggedItemService( _context );
+                var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var itemSeries = i.AttributeValues["Series"].Value.ToLower();
                 var itemAuthor = i.AttributeValues["Author"].ValueFormatted.ToLower();
                 var itemDesc = i.AttributeValues["Description"].Value.ToLower();
@@ -131,6 +133,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
                 if ( tags.Count() > 0 )
                 {
+
                     var intersect = tags.Intersect( itemTag );
                     if ( intersect.Count() == 0 )
                     {
@@ -200,7 +203,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
                     var posts = blogResponse.results.Select( e =>
                     {
-                            var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, Type = "Read" };
+                        var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, Type = "Read" };
                         if ( e.publishDate.HasValue )
                         {
                             p.PublishDate = e.publishDate.Value;

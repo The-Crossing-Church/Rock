@@ -41,7 +41,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Related Resources" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Pulls Watch, Listen, Read Content with similar tags" )]
-    [TextField( "HubSpot API Key", required: true, order: 0 )]
+    [TextField( "HubSpot API Key", required: false, order: 0 )]
     [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
     [ContentChannelField( "Watch Content Channel", required: true, order: 2 )]
     [ContentChannelField( "Listen Content Channel", required: true, order: 3 )]
@@ -56,6 +56,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private int numPosts { get; set; }
         private ContentChannel ccWatch { get; set; }
         private ContentChannel ccListen { get; set; }
+        private TaggedItemService _tiSvc { get; set; }
         private List<string> tags { get; set; }
         private int itemId { get; set; }
         #endregion
@@ -102,15 +103,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 item.LoadAttributes();
                 itemId = item.Id;
-                var attrVal = item.AttributeValues.FirstOrDefault( av => av.Key == "Tags" );
-                if ( attrVal.Value != null )
+                _tiSvc = new TaggedItemService( _context );
+                tags = _tiSvc.Get( 0, "", "", null, item.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
+                if ( tags.Count() > 0 )
                 {
-                    tags = attrVal.Value.Value.Split( ',' ).ToList();
-                    if ( tags.Count() > 0 )
-                    {
-                        GetContent();
-                    }
+                    GetContent();
                 }
+                //var attrVal = item.AttributeValues.FirstOrDefault( av => av.Key == "Tags" );
+                //if ( attrVal.Value != null )
+                //{
+                //    tags = attrVal.Value.Value.Split( ',' ).ToList();
+                //}
             }
         }
 
@@ -185,7 +188,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 if ( i.Id != itemId )
                 {
-                    var itemTag = i.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                    //var itemTag = i.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                    var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                     var intersect = tags.Intersect( itemTag );
                     if ( intersect.Count() > 0 )
                     {
@@ -197,7 +201,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             return items.Select( e =>
             {
                 var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, ContentChannelId = e.ContentChannelId };
-                var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
                 return p;
@@ -212,7 +217,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 if ( i.Id != itemId )
                 {
-                    var itemTag = i.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                    //var itemTag = i.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                    var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                     var intersect = tags.Intersect( itemTag );
                     if ( intersect.Count() > 0 )
                     {
@@ -224,7 +230,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             return items.Select( e =>
             {
                 var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId };
-                var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
                 return p;

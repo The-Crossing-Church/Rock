@@ -14,7 +14,7 @@
                         <div id="listen-{{forloop.index0}}-slides" class="slides">
                             {% for i in s.Items %}
                                 <div class="slide">
-                                    <a href="/Resource/Listen?Slug={{i.ItemGlobalKey}}">
+                                    <a href="/Resource/Listen/{{i.PrimarySlug}}">
                                         <div style="padding: 8px">
                                             <div class='img-wrapper'>
                                                 <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />

@@ -33,6 +33,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private RockContext _context { get; set; }
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
+        private TaggedItemService _tiSvc { get; set; }
         private string query { get; set; }
         #endregion
 
@@ -65,6 +66,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             string idsRaw = GetAttributeValue( "PageIds" );
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
+            _tiSvc = new TaggedItemService( _context );
             query = PageParameter( "q" ).ToLower();
 
             List<EventItemOccurrence> events = new List<EventItemOccurrence>();
@@ -99,14 +101,32 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private List<EventItemOccurrence> SearchEvents( Guid guid )
         {
             EventCalendar calendar = new EventCalendarService( _context ).Get( guid );
-            List<EventItemOccurrence> events = new EventItemOccurrenceService( _context ).Queryable().Where( e => e.EventItem.EventCalendarItems.Select( eci => eci.EventCalendarId ).Contains( calendar.Id ) && ( e.EventItem.Name.ToLower().Contains( query ) || e.EventItem.Description.ToLower().Contains( query ) ) ).ToList().Where( e => e.NextStartDateTime.HasValue && DateTime.Compare( e.NextStartDateTime.Value, RockDateTime.Now ) >= 0 ).ToList();
+            List<EventItemOccurrence> events = new EventItemOccurrenceService( _context ).Queryable().ToList().Where( e =>
+            {
+                bool isMatch = false;
+                var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
+                if ( e.EventItem.EventCalendarItems.Select( eci => eci.EventCalendarId ).Contains( calendar.Id ) && ( e.EventItem.Name.ToLower().Contains( query ) || e.EventItem.Description.ToLower().Contains( query ) || itemTag.Contains( query ) ) )
+                {
+                    isMatch = true;
+                }
+                return isMatch;
+            } ).ToList().Where( e => e.NextStartDateTime.HasValue && DateTime.Compare( e.NextStartDateTime.Value, RockDateTime.Now ) >= 0 ).ToList();
             return events;
         }
 
         private List<ContentChannelItem> SearchStaff( Guid guid )
         {
             ContentChannel channel = _ccSvc.Get( guid );
-            List<ContentChannelItem> items = _cciSvc.Queryable().Where( i => i.ContentChannelId == channel.Id && ( !channel.RequiresApproval || i.Status == ContentChannelItemStatus.Approved ) && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) > 0 ) && ( i.Title.ToLower().Contains( query ) || i.Content.ToLower().Contains( query ) ) ).ToList();
+            List<ContentChannelItem> items = _cciSvc.Queryable().Where( i => i.ContentChannelId == channel.Id && ( !channel.RequiresApproval || i.Status == ContentChannelItemStatus.Approved ) && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) > 0 ) ).ToList().Where( i =>
+            {
+                bool isMatch = false;
+                var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
+                if ( i.Title.ToLower().Contains( query ) || i.Content.ToLower().Contains( query ) || itemTag.Contains( query ) )
+                {
+                    isMatch = true;
+                }
+                return isMatch;
+            } ).ToList();
             items.LoadAttributes();
             return items;
         }
@@ -132,13 +152,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                                 {
                                     //Html block contains search query
                                     PageResult r = new PageResult() { Id = p.Id, Title = p.PageTitle, Description = p.Description };
-                                    p.LoadAttributes();
-                                    r.Tags = p.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                                    r.Tags = _tiSvc.Get( 0, "", "", null, p.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
+                                    //p.LoadAttributes();
+                                    //r.Tags = p.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                                     if ( html.Content.Length > ( 150 + idx ) )
                                     {
                                         r.Matched = html.Content.Substring( idx, 150 );
                                     }
-                                    else {
+                                    else
+                                    {
                                         r.Matched = html.Content.Substring( idx );
                                     }
                                     results.Add( r );
@@ -152,8 +174,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 {
                     //Check for matching tags
                     PageResult r = new PageResult() { Id = p.Id, Title = p.PageTitle, Description = p.Description };
-                    p.LoadAttributes();
-                    r.Tags = p.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                    //p.LoadAttributes();
+                    //r.Tags = p.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                    r.Tags = _tiSvc.Get( 0, "", "", null, p.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                     if ( r.Tags.Select( t => t.ToLower() ).Contains( query ) )
                     {
                         results.Add( r );

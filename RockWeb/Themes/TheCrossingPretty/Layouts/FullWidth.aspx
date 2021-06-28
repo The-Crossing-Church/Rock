@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row row-equal-height">
             <div class="col col-xs-12 col-md-6">
                 <Rock:Zone Name="Half 1" runat="server" />
             </div>
@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row row-equal-height">
             <div class="col-md-4">
                 <Rock:Zone Name="Section B" runat="server" />
             </div>
