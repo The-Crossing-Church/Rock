@@ -1,6 +1,11 @@
-﻿{% assign logo = Item | Attribute:'Logo' %}
+﻿{% comment %}
+{% include '~~/Assets/Lava/MinistryPageHeader.lava' %}
+{% endcomment %}
+
+{% assign logo = Item | Attribute:'Logo' %}
 {% assign subtitle = Item | Attribute:'Subtitle' %}
 {% assign images = Item | Attribute:'Image' | Split:',' %}
+{% assign titles = Item | Attribute:'HeroTitle' | Split: ',' %}
 {% assign imageSize = images | Size %}
 {% assign ministry = Item.ContentChannel | Attribute:'Ministry' %}
 <br/>
@@ -10,7 +15,7 @@
       <img style='max-width:80px;' src="{{logo}}"/>
     {% endif %}
     <h1>{{ministry}}</h1>
-    <h2 class='text--upper'>{{subtitle}}</h2>
+    <h2 class='text--upper subtitle'>{{subtitle}}</h2>
   </div>
 </div>
 {% if imageSize > 0 %}
@@ -26,6 +31,12 @@
         {% for i in images %}
           <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
             <img class="d-block w-100" src="{{i}}" />
+            <div class='hero-overlay text--centered'>
+                {% assign check = titles[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
+                {% if check != 'na' %}
+                    <h2>{{titles[forloop.index0]}}</h2>
+                {% endif %}
+            </div>
           </div>
         {% endfor %}
       </div>
@@ -59,8 +70,11 @@
 .wide-img img {
   width: 100%;
 }
-h2 {
+h2.subtitle {
   font-size: 1.5em;
   line-height: 1.20833em;
+}
+.hero-overlay {
+    position: absolute; 
 }
 </style>

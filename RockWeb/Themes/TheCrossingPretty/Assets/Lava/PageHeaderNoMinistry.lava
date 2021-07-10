@@ -9,7 +9,7 @@
       <img style='max-width:80px;' src="{{logo}}"/>
     {% endif %}
     <h1>{{'Global' | Page:'Title'}}</h1>
-    <h2 class='text--upper'>{{subtitle}}</h2>
+    <h2 class='text--upper subtitle'>{{subtitle}}</h2>
   </div>
 </div>
 {% if imageSize > 0 %}
@@ -58,7 +58,7 @@
 .wide-img img {
   width: 100%;
 }
-h2 {
+h2.subtitle {
   font-size: 1.5em;
   line-height: 1.20833em;
 }
