@@ -544,7 +544,7 @@ header:not(.panel-heading) {
             }
           }
 
-          .about-menu-mobile, .ministry-menu-mobile {
+          .about-menu-mobile, .ministry-menu-mobile, .adult-menu-mobile, .care-menu-mobile {
             background-color: @color-dark-blue;
             z-index: 1010;
             position: absolute;
@@ -557,6 +557,7 @@ header:not(.panel-heading) {
             transition: transform .16s ease-in;
 
             div {
+              background-color: @color-dark-blue;
               height: 48px;
               display: flex;
               align-items: center;
@@ -566,13 +567,13 @@ header:not(.panel-heading) {
               a {
                 text-transform: capitalize;
                 position: relative;
-                display: flex;
+                /*display: flex;*/
                 height: 100%;
                 align-items: center;
-                padding-left: 50px;
+                width: 100%;
+                /*padding-left: 50px;*/
               }
-
-              a:before {
+              /*a:before {
                 content: '';
                 position: absolute;
                 top: 24px;
@@ -583,23 +584,31 @@ header:not(.panel-heading) {
                 background: #fff;
                 vertical-align: middle;
                 margin-right: 12px;
-              }
+              }*/
             }
           }
 
-          .ministry-menu-mobile {
+          .ministry-menu-mobile, .adult-menu-mobile {
             transform: translate3d(100%, -225px, 0);
+          }
+
+          .care-menu-mobile {
+            transform: translate3d(100%, -275px, 0);
           }
 
           .about-menu-mobile.active {
             transform: translate3d(0, -175px, 0);
           }
 
-          .ministry-menu-mobile.active {
+          .ministry-menu-mobile.active, .adult-menu-mobile.active {
             transform: translate3d(0, -225px, 0);
           }
 
-          .about-menu-mobile.visible, .ministry-menu-mobile.visible {
+          .care-menu-mobile.active {
+            transform: translate3d(0, -275px, 0);
+          }
+
+          .about-menu-mobile.visible, .ministry-menu-mobile.visible, .adult-menu-mobile.visible, .care-menu-mobile.visible {
             display: block;
           }
         }
@@ -1056,10 +1065,10 @@ footer {
 }
 
 .text--upper {
-    text-transform: uppercase;
+    text-transform: uppercase !important;
 }
 .text--centered {
-    text-align: center; 
+    text-align: center !important; 
 }
 
 .full-width {

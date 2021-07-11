@@ -122,6 +122,42 @@
                     }, 20)
                 }
             })
+            $('#adult-menu-open').click(function () {
+                let menu = $('.adult-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#adult-menu-return').click(function () {
+                let menu = $('.adult-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                }
+            })
+            $('#care-menu-open').click(function () {
+                let menu = $('.care-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#care-menu-return').click(function () {
+                let menu = $('.care-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                }
+            })
             $('#desktop-about').click(function () {
                 window.location.href = "/About"
             })
@@ -216,7 +252,7 @@
                                         <a href="/Ministry/Students" class="text-white">Students</a>
                                     </div>
                                     <div>
-                                        <a href="/Ministry/College" class="text-white">College</a>
+                                        <a href="/Veritas" class="text-white">College</a>
                                     </div>
                                     <div>
                                         <a href="/Ministry/Adults" class="text-white">Adults</a>
@@ -298,13 +334,50 @@
                                         <a href="/Ministry/Students" class="text-white">Students</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="/Ministry/College" class="text-white">College</a>
+                                        <a href="/Veritas" class="text-white">College</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="/Ministry/Adults" class="text-white">Adults</a>
+                                        <a id="adult-menu-open" class="text-white">Adults
+                                            <i class="fa fa-chevron-right pull-right"></i>
+                                        </a>
+                                        <div class="adult-menu-mobile">
+                                            <div>
+                                                <a class="text-white text--upper" id="adult-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
+                                            </div>
+                                            <div>
+                                                <a href="/Ministry/Adults" class="text--upper">Adults</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Women" class="text-white">Women</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Men" class="text-white">Men</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Twenties" class="text-white">Twenties</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Small-Groups" class="text-white">Small Groups</a>
+                                            </div>
+                                            <div style="height: 100px;"></div>
+                                        </div>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="/Ministry/Care" class="text-white">Care</a>
+                                        <a id="care-menu-open" class="text-white">Care
+                                            <i class="fa fa-chevron-right pull-right"></i>
+                                        </a>
+                                        <div class="care-menu-mobile">
+                                            <div>
+                                                <a class="text-white text--upper" id="care-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
+                                            </div>
+                                            <div>
+                                                <a href="/Ministry/Care" class="text--upper">Care</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Care/Counseling" class="text-white">Professional Counseling</a>
+                                            </div>
+                                            <div style="height:200px;"></div>
+                                        </div>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
