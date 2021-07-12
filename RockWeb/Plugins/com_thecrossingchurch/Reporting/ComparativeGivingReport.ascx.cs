@@ -223,10 +223,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
                 d.NumberOfGifts = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Count() : 0;
                 d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round( ( d.AmountGiven / d.NumberOfGifts ), 2 ) : 0;
-                var prevAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
+                d.PreviousAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
                 d.PreviousNumberOfGifts = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Count() : 0;
-                d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( ( prevAmountGiven / d.PreviousNumberOfGifts.Value ), 2 ) : 0;
-                d.AmountChange = d.AmountGiven - prevAmountGiven;
+                d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( ( d.PreviousAmountGiven / d.PreviousNumberOfGifts.Value ), 2 ) : 0;
+                d.AmountChange = d.AmountGiven - d.PreviousAmountGiven;
                 d.Source = joinedData[i].CurrentTransactions != null ? string.Join( ",", joinedData[i].CurrentTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : "";
                 var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) && ft.TransactionTypeValueId == 53 ).Select( ft => new { Id = ft.Id, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue, TransactionDetails = ft.TransactionDetails } ).OrderBy( ft => ft.TransactionDateTime ).ToList();
                 // Calculate Giving Zone Based on previous year or current year
@@ -349,7 +349,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     d.MostRecentFund = fund.Name;
                     d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount );
                 }
-                if( prevAmountGiven > 0 || d.AmountGiven > 0 )
+                if( d.PreviousAmountGiven > 0 || d.AmountGiven > 0 )
                 {
                     donorData.Add( d );
                 }
@@ -386,6 +386,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public decimal AverageGiftAmount { get; set; }
             public int? PreviousNumberOfGifts { get; set; }
             public decimal? PreviousAverageGiftAmount { get; set; }
+            public decimal PreviousAmountGiven { get; set; }
             public decimal AmountChange { get; set; }
             public DateTime? FirstGiftEver { get; set; }
             public DateTime? MostRecentGift { get; set; }
@@ -443,7 +444,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 worksheet.PrinterSettings.TopMargin = .5m;
                 worksheet.PrinterSettings.BottomMargin = .5m;
 
-                var headers = new List<string> { "Household", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
+                var headers = new List<string> { "Household", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Amount Given", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
                 var h = 1;
                 var row = 2;
                 foreach ( var header in headers )
@@ -458,18 +459,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     worksheet.Cells[row, 2].Value = data[i].AmountGiven;
                     worksheet.Cells[row, 3].Value = data[i].NumberOfGifts;
                     worksheet.Cells[row, 4].Value = data[i].AverageGiftAmount;
-                    worksheet.Cells[row, 5].Value = data[i].PreviousNumberOfGifts;
-                    worksheet.Cells[row, 6].Value = data[i].PreviousAverageGiftAmount;
-                    worksheet.Cells[row, 7].Value = data[i].AmountChange;
-                    worksheet.Cells[row, 8].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
-                    worksheet.Cells[row, 9].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
-                    worksheet.Cells[row, 10].Value = data[i].MostRecentFund;
-                    worksheet.Cells[row, 11].Value = data[i].MostRecentFundAmount;
-                    worksheet.Cells[row, 12].Value = data[i].GivingZone;
-                    worksheet.Cells[row, 13].Value = data[i].DonorType;
-                    worksheet.Cells[row, 14].Value = data[i].Average;
-                    worksheet.Cells[row, 15].Value = data[i].StdDev;
-                    worksheet.Cells[row, 16].Value = data[i].Source;
+                    worksheet.Cells[row, 5].Value = data[i].PreviousAmountGiven;
+                    worksheet.Cells[row, 6].Value = data[i].PreviousNumberOfGifts;
+                    worksheet.Cells[row, 7].Value = data[i].PreviousAverageGiftAmount;
+                    worksheet.Cells[row, 8].Value = data[i].AmountChange;
+                    worksheet.Cells[row, 9].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
+                    worksheet.Cells[row, 10].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
+                    worksheet.Cells[row, 11].Value = data[i].MostRecentFund;
+                    worksheet.Cells[row, 12].Value = data[i].MostRecentFundAmount;
+                    worksheet.Cells[row, 13].Value = data[i].GivingZone;
+                    worksheet.Cells[row, 14].Value = data[i].DonorType;
+                    worksheet.Cells[row, 15].Value = data[i].Average;
+                    worksheet.Cells[row, 16].Value = data[i].StdDev;
+                    worksheet.Cells[row, 17].Value = data[i].Source;
                     row++;
                 }
                 byte[] byteArray;
