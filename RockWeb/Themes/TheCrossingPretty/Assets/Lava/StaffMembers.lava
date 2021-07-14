@@ -1,4 +1,5 @@
 ﻿{% assign title = 'Global' | Page:'Title' %}
+{% assign id = 'Global' | PageParameter:'Person' %}
 <div class='row'>
     {% for i in Items %}
         {% assign ministry = i | Attribute:'Ministry' %}
@@ -40,6 +41,13 @@
         {% endif %}
     {% endfor %}
 </div>
+{% if id != '' %}
+<script>
+    $(document).ready(() => {
+        $('#modal_{{id}}').modal('show')
+    })
+</script>
+{% endif %}
 <style>
     @media screen and (min-width: 1024px) {
         .modal {

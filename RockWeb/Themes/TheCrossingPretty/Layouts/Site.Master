@@ -258,6 +258,9 @@
                                         <a href="/Ministry/Adults" class="text-white">Adults</a>
                                     </div>
                                     <div>
+                                        <a href="/Music" class="text-white">Music</a>
+                                    </div>
+                                    <div>
                                         <a href="/Ministry/Care" class="text-white">Care</a>
                                     </div>
                                     <div>
@@ -361,6 +364,9 @@
                                             </div>
                                             <div style="height: 100px;"></div>
                                         </div>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Music" class="text-white">Music</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a id="care-menu-open" class="text-white">Care
