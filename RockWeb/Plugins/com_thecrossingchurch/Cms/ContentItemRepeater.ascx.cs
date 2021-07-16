@@ -92,7 +92,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             }
             else
             {
-                items = items.OrderBy( i => i.StartDateTime ).ToList();
+                items = items.OrderByDescending( i => i.StartDateTime ).ToList();
             }
 
             if ( _limit.HasValue )

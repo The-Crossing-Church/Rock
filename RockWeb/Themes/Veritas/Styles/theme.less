@@ -137,7 +137,7 @@ a:hover i.fs, a, a:hover, .btn-link {
 }
 
 a:hover {
-  color: @color-medium-teal !important;
+  color: @color-dark-teal !important;
 }
 
 .btn:not(.btn-default) {
@@ -148,8 +148,8 @@ a:hover {
   padding: 0.625em 1.125em;
   display: inline-block;
   border-radius: 30px;
-  border: 2px solid @color-light-blue;
-  background-color: @color-light-blue;
+  border: 2px solid @color-dark-teal;
+  background-color: @color-dark-teal;
   color: #fff;
   text-align: center;
   transition: all 0.16s ease-in;
@@ -164,9 +164,9 @@ a:hover {
 }
 
 .btn-accent {
-  background-color: @color-dark-blue !important;
-  color: @color-light-blue !important;
-  border-color: @color-dark-blue !important;
+  background-color: @color-light-blue !important;
+  color: @color-dark-teal !important;
+  border-color: @color-light-blue !important;
 }
 
 .btn:active,
@@ -176,15 +176,15 @@ a:hover {
 }
 
 .btn:hover {
-  background-color: @color-dark-blue;
-  color: @color-light-blue;
-  border-color: @color-light-blue;
+  background-color: @color-light-blue;
+  color: @color-dark-teal;
+  border-color: @color-dark-teal;
 }
 
 .btn-accent:hover {
-  background-color: @color-light-blue !important;
-  color: @color-dark-blue !important;
-  border-color: @color-dark-blue !important;
+  background-color: @color-dark-teal !important;
+  color: @color-light-blue !important;
+  border-color: @color-light-blue !important;
 }
 
 .grid-actions {
@@ -196,9 +196,9 @@ a:hover {
     height: 25px;
     border-radius: 30px;
     text-align: center;
-    background-color: @color-light-blue;
-    color: @color-dark-blue;
-    border-color: @color-light-blue;
+    background-color: @color-dark-teal;
+    color: @color-light-blue;
+    border-color: @color-dark-teal;
     position: relative;
 
     i {
@@ -210,9 +210,9 @@ a:hover {
   }
 
   .btn:hover {
-    background-color: @color-dark-blue;
-    color: @color-light-blue;
-    border-color: @color-light-blue;
+    background-color: @color-light-blue;
+    color: @color-dark-teal;
+    border-color: @color-dark-teal;
   }
 }
 
@@ -340,7 +340,7 @@ h1.pagetitle:empty {
 }
 
 header:not(.panel-heading) {
-  background-color: @color-light-blue;
+  background-color: @color-dark-teal;
   position: fixed;
   left: 0;
   right: 0;
@@ -366,8 +366,8 @@ header:not(.panel-heading) {
   }
 
   .header-inset {
-    background-color: @color-light-blue !important;
-    color: @color-dark-blue !important;
+    background-color: @color-dark-teal !important;
+    color: @color-light-blue !important;
     padding: 0 15px;
     display: block;
     width: 100%;
@@ -407,7 +407,7 @@ header:not(.panel-heading) {
         }
 
         .search-icon-wrap.active {
-          background-color: @color-medium-teal;
+          background-color: @color-dark-teal;
           color: #fff;
         }
 
@@ -466,11 +466,11 @@ header:not(.panel-heading) {
           }
 
           a:not(.btn):not(.text-white) {
-            color: @color-dark-blue;
+            color: @color-light-blue;
           }
 
           a:hover {
-            color: @color-medium-teal !important;
+            color: @color-medium-blue !important;
             text-decoration: none;
           }
         }
@@ -524,7 +524,7 @@ header:not(.panel-heading) {
           height: 100vh;
           transform: translate3d(0, 80px, 0);
           padding: 15px 0 0;
-          background-color: @color-light-blue;
+          background-color: @color-dark-teal;
           z-index: 1000;
           transition: .16s ease-in;
 
@@ -545,7 +545,7 @@ header:not(.panel-heading) {
           }
 
           .about-menu-mobile, .ministry-menu-mobile {
-            background-color: @color-light-blue;
+            background-color: @color-dark-teal;
             z-index: 1010;
             position: absolute;
             height: 100vh;
@@ -553,7 +553,7 @@ header:not(.panel-heading) {
             right: 0;
             padding: 0px 16px;
             display: none;
-            transform: translate3d(100%, -175px, 0);
+            transform: translate3d(100%, -30px, 0);
             transition: transform .16s ease-in;
 
             div {
@@ -566,13 +566,13 @@ header:not(.panel-heading) {
               a {
                 text-transform: capitalize;
                 position: relative;
-                display: flex;
+                /*display: flex;*/
                 height: 100%;
                 align-items: center;
-                padding-left: 50px;
+                /*padding-left: 50px;*/
               }
 
-              a:before {
+              /*a:before {
                 content: '';
                 position: absolute;
                 top: 24px;
@@ -583,20 +583,20 @@ header:not(.panel-heading) {
                 background: #fff;
                 vertical-align: middle;
                 margin-right: 12px;
-              }
+              }*/
             }
           }
 
           .ministry-menu-mobile {
-            transform: translate3d(100%, -225px, 0);
+            transform: translate3d(100%, -85px, 0);
           }
 
           .about-menu-mobile.active {
-            transform: translate3d(0, -175px, 0);
+            transform: translate3d(0, -30px, 0);
           }
 
           .ministry-menu-mobile.active {
-            transform: translate3d(0, -225px, 0);
+            transform: translate3d(0, -85px, 0);
           }
 
           .about-menu-mobile.visible, .ministry-menu-mobile.visible {
@@ -677,12 +677,12 @@ header:not(.panel-heading) {
   }
 
   .about-menu, .ministry-menu, .resource-menu {
-    background-color: @color-light-blue;
+    background-color: @color-dark-teal;
     position: absolute;
     min-width: 200px;
     z-index: 1000;
     text-align: center;
-    border-bottom: 10px solid @color-dark-blue;
+    border-bottom: 10px solid @color-light-blue;
     left: 50%;
     transform: translate3d(-50%, 0, 0);
     padding: 32px 0px 10px 0px;
@@ -710,7 +710,7 @@ header:not(.panel-heading) {
     text-align: center;
 }
 h1, h2, h3, h4, h5, h6 {
-    color: @color-light-blue; 
+    color: @color-dark-teal; 
 }
 h1 {
   font-size: 3em;
@@ -809,8 +809,8 @@ footer {
               width: 40px;
               height: 40px;
               border-radius: 50%;
-              background: @color-dark-blue;
-              color: @color-light-blue;
+              background: @color-light-blue;
+              color: @color-dark-teal;
               text-decoration: none;
               position: relative;
               transition: all .16s ease-in;
@@ -831,7 +831,7 @@ footer {
             }
 
             a:hover {
-              color: @color-dark-blue;
+              color: @color-light-blue;
               background: @color-dark-teal;
             }
           }
@@ -844,7 +844,7 @@ footer {
     }
 
     .contact {
-      color: @color-dark-blue !important;
+      color: @color-light-blue !important;
       font-size: 20px;
       font-weight: 300;
 
@@ -857,7 +857,7 @@ footer {
       }
 
       a {
-        color: @color-dark-blue !important;
+        color: @color-light-blue !important;
       }
     }
   }
@@ -980,20 +980,28 @@ footer {
 // 4. Helper Classes
 // -------------------------
 
-.background--dark-blue, .background--accent {
+.background--dark-blue {
   background-color: @color-dark-blue !important;
+}
+
+.background--brand-blue {
+  background-color: @color-brand-blue !important;
+}
+
+.background--dark-teal, .background--primary {
+  background-color: @color-dark-teal !important;
 }
 
 .background--medium-teal {
   background-color: @color-medium-teal !important;
 }
 
-.background--light-blue, .background--primary {
-  background-color: @color-light-blue !important;
+.background--medium-blue {
+  background-color: @color-medium-blue !important;
 }
 
-.background--dark-teal {
-  background-color: @color-dark-teal !important;
+.background--light-blue, .background--accent {
+  background-color: @color-light-blue !important;
 }
 
 .background--grey {
@@ -1004,20 +1012,20 @@ footer {
   color: #fff !important;
 }
 
-.text--dark-blue, .text--accent {
+.text--dark-blue {
   color: @color-dark-blue !important;
+}
+
+.text--dark-teal, .text--primary {
+  color: @color-dark-teal !important;
+}
+
+.text--light-blue, .text--accent {
+  color: @color-light-blue !important;
 }
 
 .text--medium-teal {
   color: @color-medium-teal !important;
-}
-
-.text--light-blue, .text--primary {
-  color: @color-light-blue !important;
-}
-
-.text--dark-teal {
-  color: @color-dark-teal !important;
 }
 
 .text--upper {
@@ -1071,15 +1079,16 @@ footer {
 @media only screen and (min-width: 769px) {
   .row-equal-height {
     display: flex;
+    flex-wrap: wrap;
   }
 }
 
 .border--top {
-  border-top: 8px solid @color-medium-teal;
+  border-top: 8px solid @color-dark-teal;
 }
 
 .border--bottom {
-  border-bottom: 8px solid @color-medium-teal;
+  border-bottom: 8px solid @color-dark-teal;
 }
 
 // 5. Responsive Overrides

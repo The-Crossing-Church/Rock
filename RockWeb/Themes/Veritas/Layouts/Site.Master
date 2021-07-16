@@ -130,9 +130,9 @@
         <!-- Page Header -->
         <header>
             <div class="triple-bar">
-                <div class="col-xs-4 background--accent"></div>
-                <div class="col-xs-4 background--medium-teal"></div>
-                <div class="col-xs-4 background--dark-teal"></div>
+                <div class="col-xs-4 background--light-blue"></div>
+                <div class="col-xs-4 background--medium-blue"></div>
+                <div class="col-xs-4 background--dark-blue"></div>
             </div>
 			<div class="header-inset">
                 <div class="nav-menu left">
@@ -145,14 +145,33 @@
                         </div>
                     </div>
                     <ul id="menu-left" class="main-navigation desktop-menu">
-                        <li class="menu-item main-nav-item">
-                            <a href="/Veritas/im-new">I'm New</a>
+                        <li class="menu-item main-nav-item about-nav dropdown">
+                            <a href="/Veritas/what-we-do" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">What We Do</a>
+                            <div class="about-menu dropdown-menu">
+                                <div>
+                                    <a href="/Veritas/Tuesday-Nights" class="text-white">Tuesday Nights</a>
+                                </div>
+                                <div>
+                                    <a href="/Veritas/Small-Groups" class="text-white">Small Groups</a>
+                                </div>
+                                <div>
+                                    <a href="/Veritas/Fall-Retreat" class="text-white">Fall Retreat</a>
+                                </div>
+                                <div>
+                                    <a href="/Veritas/Serving" class="text-white">Serving</a>
+                                </div>
+                            </div>
                         </li>
-                        <li class="menu-item main-nav-item">
-                            <a href="/Events?search=veritas">Events</a>
-                        </li>
-                        <li class="menu-item main-nav-item">
-                            <a href="/Veritas/Resources">Watch, Listen, Read</a>
+                        <li class="menu-item main-nav-item ministry-nav dropdown">
+                            <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Get to Know Us</a>
+                            <div class="ministry-menu dropdown-menu">
+                                <div>
+                                    <a href="/Staff/Veritas" class="text-white">Staff</a>
+                                </div>
+                                <div>
+                                    <a href="/Home" class="text-white">The Crossing</a>
+                                </div>
+                            </div>
                         </li>
                     </ul>
                 </div>
@@ -164,37 +183,18 @@
                 <div class="nav-menu right">
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
-                            <li class="menu-item main-nav-item about-nav dropdown">
-                                <a href="/Veritas/what-we-do" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">What We Do</a>
-                                <div class="about-menu dropdown-menu">
-                                    <div>
-                                        <a href="/Veritas/Tuesday-Nights" class="text-white">Tuesday Nights</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Veritas/Small-Groups" class="text-white">Small Groups</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Veritas/Fall-Retreat" class="text-white">Fall Retreat</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Veritas/Serving" class="text-white">Serving</a>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="menu-item main-nav-item ministry-nav dropdown">
-                                <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Get to Know Us</a>
-                                <div class="ministry-menu dropdown-menu">
-                                    <div>
-                                        <a href="/Staff/Veritas" class="text-white">Staff</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Home" class="text-white">The Crossing</a>
-                                    </div>
-                                </div>
+                            <li class="menu-item main-nav-item">
+                                <a href="/Veritas/Resources">Message</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Give/veritas">Give</a>
+                                <a href="/Veritas/im-new">I'm New</a>
                             </li>
+                            <li class="menu-item main-nav-item">
+                                <a class="btn btn-accent" href="/Events?search=veritas">Events</a>
+                            </li>
+                            <%--<li class="menu-item main-nav-item">
+                                <a href="/Give/veritas">Give</a>
+                            </li>--%>
                             <%--<li class="menu-item main-nav-item">
                                 <a href="/Livestream" class="btn btn-accent">Live Stream</a>
                             </li>--%>
@@ -206,15 +206,6 @@
                             <i class="fa fa-times"></i>
                         </div>
                         <ul class="main-navigation" id="menu-mobile-menu">
-                            <li class="menu-item">
-                                <a href="/Veritas/im-new" class="text-white">I'm New</a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="/Veritas/Events?Search=veritas" class="text-white">Events</a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="/Veritas/Resources" class="text-white">Watch, Listen, Read</a>
-                            </li>
                             <li class="menu-item">
                                 <a class="text-white" id="about-menu-open">
                                     What We Do
@@ -262,7 +253,16 @@
                                 </div>
                             </li>
                             <li class="menu-item">
-                                <a href="/Give/veritas" class="text-white">Give Now</a>
+                                <a href="/Veritas/Resources" class="text-white">Message</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Veritas/im-new" class="text-white">I'm New</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Veritas/Events?Search=veritas" class="text-white">Events</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Give/Veritas" class="text-white">Support Our Staff</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Home" class="text-white">
@@ -272,9 +272,6 @@
                                     </div>
                                 </a>
                             </li>
-                            <%--<li class="menu-item">
-                                <a href="/Livestream" class="text-white">Watch Live Stream</a>
-                            </li>--%>
                         </ul>
                     </div>
                 </div>
