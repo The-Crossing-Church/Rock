@@ -1,4 +1,4 @@
-<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Watch.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.Cms.Watch" %>
+<%@ Control Language="C#" AutoEventWireup="true" CodeFile="GroupedItemRepeater.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.Cms.GroupedItemRepeater" %>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>

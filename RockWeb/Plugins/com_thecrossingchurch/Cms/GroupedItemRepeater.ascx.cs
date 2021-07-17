@@ -34,19 +34,20 @@ using Z.EntityFramework.Plus;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
-    [DisplayName( "Watch" )]
+    [DisplayName( "Grouped Item Repeater" )]
     [Category( "com_thecrossingchurch > Cms" )]
-    [Description( "Watch Resource Viewer" )]
+    [Description( "Similar to Content Item Repeater but Groups Items" )]
     [ContentChannelField( "Content Channel", required: true )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/Watch.lava' %}", "" )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "" )]
 
-    public partial class Watch : Rock.Web.UI.RockBlock
+    public partial class GroupedItemRepeater : Rock.Web.UI.RockBlock
     {
         #region Variables
         private RockContext _context { get; set; }
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
+        private ContentChannel channel { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -78,6 +79,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _ccSvc = new ContentChannelService( _context );
             if ( ContentChannelGuid.HasValue )
             {
+                channel = _ccSvc.Get( ContentChannelGuid.Value );
                 LoadItems( ContentChannelGuid.Value );
             }
             if ( !Page.IsPostBack )
@@ -93,7 +95,36 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             int id = _ccSvc.Get( guid ).Id;
             var items = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 ).ToList();
             items.LoadAttributes();
-            var groupedItems = items.GroupBy( i => i.AttributeValues.First(av => av.Key == "Series").Value.Value ).Select( g => new WatchGroup { Series = g.Key, Items = g.ToList() } );
+            List<ItemGroup> groupedItems = new List<ItemGroup>();
+            for ( int i = 0; i < items.Count(); i++ )
+            {
+                var series = items[i].AttributeValues["Series"].Value.Split( ',' );
+                for ( int k = 0; k < series.Length; k++ )
+                {
+                    var idx = groupedItems.Select( gi => gi.Series ).ToList().IndexOf( series[k] );
+                    if ( idx >= 0 )
+                    {
+                        groupedItems[idx].Items.Add( items[i] );
+                    }
+                    else
+                    {
+                        groupedItems.Add( new ItemGroup { Series = series[k], Items = new List<ContentChannelItem>() { items[i] } } );
+                    }
+                }
+            }
+            //Sort items
+            for ( int i = 0; i < groupedItems.Count(); i++ )
+            {
+                if ( channel.ItemsManuallyOrdered )
+                {
+                    groupedItems[i].Items = groupedItems[i].Items.OrderBy( itm => itm.Order ).ToList();
+                }
+                else
+                {
+                    groupedItems[i].Items = groupedItems[i].Items.OrderByDescending( itm => itm.StartDateTime ).ToList();
+                }
+            }
+            //var groupedItems = items.GroupBy( i => i.AttributeValues.First( av => av.Key == "Series" ).Value.Value ).Select( g => new WatchGroup { Series = g.Key, Items = g.ToList() } );
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Items", groupedItems );
 
@@ -106,8 +137,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         #endregion
     }
 
-    [DotLiquid.LiquidType( "Series", "Items")]
-    public class WatchGroup
+    [DotLiquid.LiquidType( "Series", "Items" )]
+    public class ItemGroup
     {
         public string Series { get; set; }
         public List<ContentChannelItem> Items { get; set; }
