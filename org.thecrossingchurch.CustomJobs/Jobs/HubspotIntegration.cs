@@ -40,6 +40,7 @@ using System.Reflection;
 using OfficeOpenXml;
 using System.Drawing;
 using OfficeOpenXml.Style;
+using System.Threading;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -122,12 +123,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             var hasmore = true;
             while ( hasmore )
             {
-                var list = api.Contact.List<HubSpotContact>( new ListRequestOptions
-                {
-                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email", "which_best_describes_your_involvement_with_the_crossing_", "createdate", "lastmodifieddate" },
-                    Limit = 100,
-                    Offset = offset
-                } );
+                var list = GetContacts( api, offset, 0 );
                 hasmore = list.MoreResultsAvailable;
                 offset = list.ContinuationOffset;
                 contacts.AddRange( list.Contacts );
@@ -167,6 +163,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     person = personService.FindPerson( query, false );
                 }
 
+                bool hasMultiEmail = false;
                 //Attempt to match on email and one other piece of info if we are still null
                 if ( person == null )
                 {
@@ -189,9 +186,35 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 person = matches.First();
                             }
                         }
+                        //If 1:1 Email match and Hubspot has no other info, make it a match
+                        if ( person == null && String.IsNullOrEmpty( contacts_with_email[i].FirstName ) && String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        {
+                            person = matches.First();
+                        }
+                    }
+                    else
+                    {
+                        hasMultiEmail = true;
                     }
                 }
 
+                //Atempt to match 1:1 based on email history making sure we exclude emails with multiple matches in the person table
+                if ( person == null && !hasMultiEmail )
+                {
+                    string email = contacts_with_email[i].Email.ToLower();
+                    var history = new HistoryService( new RockContext() ).Queryable().Where( hist => hist.EntityTypeId == 15 && hist.ValueName == "Email" );
+                    var matches = history.Where( hist => hist.NewValue.ToLower() == email ).ToList();
+                    if ( matches.Count() == 1 )
+                    {
+                        //If 1:1 Email match and Hubspot has no other info, make it a match
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].FirstName ) && String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        {
+                            person = personService.Get( matches.First().EntityId );
+                        }
+                    }
+                }
+
+                bool inBucket = false;
                 //Try to mark people that are potential matches
                 if ( person == null )
                 {
@@ -208,6 +231,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         {
                             //Save this information in the excel sheet....
                             SaveData( worksheet, row, fname_matches[j], contact );
+                            inBucket = true;
                             row++;
                         }
                     }
@@ -225,6 +249,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             {
                                 //Save this information in the excel sheet....
                                 SaveData( worksheet, row, lname_matches[j], contact );
+                                inBucket = true;
                                 row++;
                             }
                         }
@@ -241,6 +266,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     {
                                         //Save this information in the excel sheet....
                                         SaveData( worksheet, row, phone_matches[j], contact );
+                                        inBucket = true;
                                         row++;
                                     }
                                 }
@@ -258,6 +284,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     {
                                         //Save this information in the excel sheet....
                                         SaveData( worksheet, row, email_matches[j], contact );
+                                        inBucket = true;
                                         row++;
                                     }
                                 }
@@ -529,63 +556,125 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                         }
 
-                        //Update the Hubspot Contact
-                        try
+                        //Update the Contact in Hubspot
+                        var alreadyKnown = contacts_with_email[i].has_potential_rock_match;
+                        if(alreadyKnown == "True")
                         {
-                            var webrequest = WebRequest.Create( url );
-                            webrequest.Method = "POST";
-                            webrequest.ContentType = "application/json";
-                            using ( Stream requestStream = webrequest.GetRequestStream() )
-                            {
-                                var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                                byte[] bytes = Encoding.ASCII.GetBytes( json );
-                                requestStream.Write( bytes, 0, bytes.Length );
-                            }
-                            using ( WebResponse webResponse = webrequest.GetResponse() )
-                            {
-                                using ( Stream responseStream = webResponse.GetResponseStream() )
-                                {
-                                    using ( StreamReader reader = new StreamReader( responseStream ) )
-                                    {
-                                        var jsonResponse = reader.ReadToEnd();
-                                        Console.WriteLine( jsonResponse );
-                                    }
-                                }
-                            }
-
+                            //Update the bucket prop to false since they are no longer in the potential matches, but actually matched.
+                            var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
+                            properties.Add( new HubspotPropertyUpdate() { property = bucket_prop.name, value = "False" } );
                         }
-                        catch ( WebException ex )
-                        {
-                            using ( Stream responseStream = ex.Response.GetResponseStream() )
-                            {
-                                using ( StreamReader reader = new StreamReader( responseStream ) )
-                                {
-                                    var jsonResponse = reader.ReadToEnd();
-                                    Console.WriteLine( $"Hubspot: {jsonResponse}" );
-                                    HttpContext context2 = HttpContext.Current;
-                                    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                                    ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Response:{Environment.NewLine}{jsonResponse}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ), context2 );
-                                }
-                            }
-                        }
-                        catch ( Exception e )
-                        {
-                            Console.WriteLine( $"Other: {e.Message}" );
-                            HttpContext context2 = HttpContext.Current;
-                            ExceptionLogService.LogException( e, context2 );
-                        }
+                        MakeRequest( current_id, url, properties, 0 );
 
                     }
                     catch ( Exception err )
                     {
                         HttpContext context2 = HttpContext.Current;
-                        ExceptionLogService.LogException( err, context2 );
+                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{err}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Job:{Environment.NewLine}{err.Message}{Environment.NewLine}" ), context2 );
+                    }
+                }
+                else
+                {
+                    if ( inBucket )
+                    {
+                        var alreadyKnown = contacts_with_email[i].has_potential_rock_match;
+                        if(alreadyKnown != "True")
+                        {
+                            //We don't have an exact match but we have guesses, so update Hubspot to reflect that.
+                            var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
+                            var properties = new List<HubspotPropertyUpdate>() { new HubspotPropertyUpdate() { property = bucket_prop.name, value = "True" } };
+                            var url = $"https://api.hubapi.com/contacts/v1/contact/vid/{contacts_with_email[i].Id}/profile?hapikey={key}";
+                            MakeRequest( current_id, url, properties, 0 );
+                        }
+                        //If it is already known, do nothing
                     }
                 }
             }
             byte[] sheetbytes = excel.GetAsByteArray();
             string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Potential_Matches.xlsx";
             System.IO.File.WriteAllBytes( path, sheetbytes );
+        }
+
+        private ContactListHubSpotModel<HubSpotContact> GetContacts( HubSpotApi api, long offset, int attempt)
+        {
+            ContactListHubSpotModel<HubSpotContact> list = new ContactListHubSpotModel<HubSpotContact>(); 
+            try
+            {
+                list = api.Contact.List<HubSpotContact>( new ListRequestOptions
+                {
+                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email", "which_best_describes_your_involvement_with_the_crossing_", "createdate", "lastmodifieddate", "has_potential_rock_match" },
+                    Limit = 100,
+                    Offset = offset
+                } );
+            }
+            catch(Exception e)
+            {
+                HttpContext context2 = HttpContext.Current;
+                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Exception from Library:{Environment.NewLine}{e.Message}{Environment.NewLine}" ), context2 );
+                if(attempt < 5)
+                {
+                    Thread.Sleep( 60000 );
+                    GetContacts( api, offset, attempt + 1 );
+                }
+                else
+                {
+                    throw new Exception( "Hubspot Sync Error: Failed to get Hubspot Contacts", e );
+                }
+            }
+            return list;
+        }
+
+        private void MakeRequest( int current_id, string url, List<HubspotPropertyUpdate> properties, int attempt )
+        {
+            //Update the Hubspot Contact
+            try
+            {
+                var webrequest = WebRequest.Create( url );
+                webrequest.Method = "POST";
+                webrequest.ContentType = "application/json";
+                using ( Stream requestStream = webrequest.GetRequestStream() )
+                {
+                    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                    byte[] bytes = Encoding.ASCII.GetBytes( json );
+                    requestStream.Write( bytes, 0, bytes.Length );
+                }
+                using ( WebResponse webResponse = webrequest.GetResponse() )
+                {
+                    using ( Stream responseStream = webResponse.GetResponseStream() )
+                    {
+                        using ( StreamReader reader = new StreamReader( responseStream ) )
+                        {
+                            var jsonResponse = reader.ReadToEnd();
+                        }
+                    }
+                }
+
+            }
+            catch ( WebException ex )
+            {
+                using ( Stream responseStream = ex.Response.GetResponseStream() )
+                {
+                    using ( StreamReader reader = new StreamReader( responseStream ) )
+                    {
+                        var jsonResponse = reader.ReadToEnd();
+                        HttpContext context2 = HttpContext.Current;
+                        var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Response:{Environment.NewLine}{jsonResponse}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ), context2 );
+                        //Retry the request
+                        if ( attempt < 5 )
+                        {
+                            Thread.Sleep( 60000 );
+                            MakeRequest( current_id, url, properties, attempt + 1 );
+                        }
+                    }
+                }
+            }
+            catch ( Exception e )
+            {
+                HttpContext context2 = HttpContext.Current;
+                var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
+                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Request:{Environment.NewLine}{e.Message}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ), context2 );
+            }
         }
 
         private bool FindGroup( List<Group> groups, Person per, bool subOfYear )
@@ -760,6 +849,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         public string rock_email { get; set; }
         public string rock_id { get; set; }
         public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
+        public string has_potential_rock_match { get; set; }
         public string lastmodifieddate { get; set; }
         public string createdate { get; set; }
     }

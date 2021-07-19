@@ -16,15 +16,7 @@
     3. Theme Styling
     4. Helper Classes
     5. Responsive Overrides
-
 */
-
-// Variables
-// -------------------------
-@color-light-blue: #A2C3CC;
-@color-medium-blue: #5F9BAC;
-@color-dark-blue: #1B3142;
-@color-dark-teal: #054557;
 
 
 // 1. HTML Overrides
@@ -34,9 +26,9 @@ html {
   -webkit-font-smoothing: antialiased;
 }
 
-main {
+main:not(.container-fluid) {
   display: block;
-  padding-top: 160px !important;
+  padding-top: 145px !important;
 }
 
 @font-face {
@@ -121,6 +113,7 @@ main {
 
 body {
   font-family: "museo-sans";
+  overflow-x: hidden;
 }
 
 // 2. Bootstrap Overrides
@@ -140,9 +133,14 @@ body {
 
 a:hover i.fs, a, a:hover, .btn-link {
   text-decoration: none !important;
+  font-weight: 600;
 }
 
-.btn {
+a:hover {
+  color: @color-medium-blue !important;
+}
+
+.btn:not(.btn-default) {
   text-decoration: none !important;
   cursor: pointer;
   /*min-width: 100px;*/
@@ -166,9 +164,9 @@ a:hover i.fs, a, a:hover, .btn-link {
 }
 
 .btn-accent {
-  background-color: @color-light-blue;
+  background-color: @color-light-blue !important;
   color: @color-dark-blue !important;
-  border-color: @color-light-blue;
+  border-color: @color-light-blue !important;
 }
 
 .btn:active,
@@ -184,9 +182,9 @@ a:hover i.fs, a, a:hover, .btn-link {
 }
 
 .btn-accent:hover {
-  background-color: @color-dark-blue;
+  background-color: @color-dark-blue !important;
   color: @color-light-blue !important;
-  border-color: @color-light-blue;
+  border-color: @color-light-blue !important;
 }
 
 .grid-actions {
@@ -194,17 +192,17 @@ a:hover i.fs, a, a:hover, .btn-link {
 
   .btn {
     padding: 4px;
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
+    width: 25px;
+    height: 25px;
     border-radius: 30px;
     text-align: center;
     background-color: @color-dark-blue;
     color: @color-light-blue;
     border-color: @color-dark-blue;
+    position: relative;
 
     i {
-      position: relative;
+      position: absolute;
       top: 50%;
       transform: translateY(-50%) translateX(-50%);
       left: 50%;
@@ -221,7 +219,7 @@ a:hover i.fs, a, a:hover, .btn-link {
 .btn-sm {
   padding: 4px 8px !important;
   font-size: 12px !important;
-  line-height: 1.5 !important;
+  /*line-height: 1.5 !important;*/
 }
 
 .btn-toggle {
@@ -322,8 +320,12 @@ a:hover i.fs, a, a:hover, .btn-link {
   float: left;
 }
 .rockcheckboxlist .checkbox-inline .label-text {
-    margin-top: 2px;
-    padding-left: 6px;
+  margin-top: 2px;
+  padding-left: 6px;
+}
+
+body {
+  font-size: 1.125em;
 }
 
 // 3. Theme Styling
@@ -516,6 +518,7 @@ header:not(.panel-heading) {
           width: 100%;
           max-width: 100%;
           bottom: 0;
+          top: 0;
           left: 0;
           right: 0;
           height: 100vh;
@@ -541,7 +544,7 @@ header:not(.panel-heading) {
             }
           }
 
-          .about-menu-mobile, .ministry-menu-mobile {
+          .about-menu-mobile, .ministry-menu-mobile, .adult-menu-mobile, .care-menu-mobile {
             background-color: @color-dark-blue;
             z-index: 1010;
             position: absolute;
@@ -554,6 +557,7 @@ header:not(.panel-heading) {
             transition: transform .16s ease-in;
 
             div {
+              background-color: @color-dark-blue;
               height: 48px;
               display: flex;
               align-items: center;
@@ -563,13 +567,13 @@ header:not(.panel-heading) {
               a {
                 text-transform: capitalize;
                 position: relative;
-                display: flex;
+                /*display: flex;*/
                 height: 100%;
                 align-items: center;
-                padding-left: 50px;
+                width: 100%;
+                /*padding-left: 50px;*/
               }
-
-              a:before {
+              /*a:before {
                 content: '';
                 position: absolute;
                 top: 24px;
@@ -580,23 +584,31 @@ header:not(.panel-heading) {
                 background: #fff;
                 vertical-align: middle;
                 margin-right: 12px;
-              }
+              }*/
             }
           }
 
-          .ministry-menu-mobile {
+          .ministry-menu-mobile, .adult-menu-mobile {
             transform: translate3d(100%, -225px, 0);
+          }
+
+          .care-menu-mobile {
+            transform: translate3d(100%, -275px, 0);
           }
 
           .about-menu-mobile.active {
             transform: translate3d(0, -175px, 0);
           }
 
-          .ministry-menu-mobile.active {
+          .ministry-menu-mobile.active, .adult-menu-mobile.active {
             transform: translate3d(0, -225px, 0);
           }
 
-          .about-menu-mobile.visible, .ministry-menu-mobile.visible {
+          .care-menu-mobile.active {
+            transform: translate3d(0, -275px, 0);
+          }
+
+          .about-menu-mobile.visible, .ministry-menu-mobile.visible, .adult-menu-mobile.visible, .care-menu-mobile.visible {
             display: block;
           }
         }
@@ -755,6 +767,41 @@ h5 {
     font-size: 1.25em;
   }
 }
+
+//Social Media Links
+.social-media .links {
+  display: block;
+  padding: 0;
+  list-style: none;
+}
+
+.social-media .links li {
+  display: inline-block;
+  margin: 0 15px;
+}
+
+.social-media .links li a {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1b3142;
+  color: #fff;
+  text-decoration: none;
+  position: relative;
+  font-size: 30px;
+  text-align: center;
+}
+
+.social-media .links li a i, .social-media .links li a img {
+  font-size: 25px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
 //Footer
 footer {
   .inset {
@@ -812,13 +859,18 @@ footer {
               position: relative;
               transition: all .16s ease-in;
 
-              i {
+              i, img {
                 font-size: 25px;
                 position: absolute;
                 top: 50%;
                 left: 50%;
                 -ms-transform: translate(-50%, -50%);
                 transform: translate(-50%, -50%);
+              }
+
+              img {
+                  width: 100%;
+                  height: 100%;
               }
             }
 
@@ -992,8 +1044,31 @@ footer {
   background-color: #F5F5F5;
 }
 
+.text--white {
+  color: #fff !important;
+}
+
+.text--light-blue, .text--accent {
+  color: @color-light-blue !important;
+}
+
+.text--medium-blue {
+  color: @color-medium-blue !important;
+}
+
+.text--dark-blue, .text--primary {
+  color: @color-dark-blue !important;
+}
+
+.text--dark-teal {
+  color: @color-dark-teal !important;
+}
+
 .text--upper {
-    text-transform: uppercase;
+    text-transform: uppercase !important;
+}
+.text--centered {
+    text-align: center !important; 
 }
 
 .full-width {
@@ -1014,6 +1089,56 @@ footer {
 .justify-right {
   display: flex;
   justify-content: flex-end;
+}
+
+.align-center {
+    display: flex;
+    align-items: center;
+}
+
+.margin-auto {
+    display: block;
+    margin: auto;
+}
+
+.hover {
+    cursor: pointer;
+}
+
+.card--custom {
+  padding: 45px;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.card-with-button {
+  padding: 0px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.card-with-button + .link-wrapper {
+  transform: translate(0, -50%);
+}
+
+.card-with-button img {
+  width: 100%;
+}
+
+@media only screen and (min-width: 769px) {
+  .row-equal-height {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+.border--top {
+  border-top: 8px solid @color-medium-blue;
+}
+
+.border--bottom {
+  border-bottom: 8px solid @color-medium-blue;
 }
 
 // 5. Responsive Overrides

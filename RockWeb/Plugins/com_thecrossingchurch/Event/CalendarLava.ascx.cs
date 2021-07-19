@@ -57,10 +57,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         private DateTime? EndDate { get; set; }
         private string Search { get; set; }
         private int CalendarId { get; set; }
+        private RockContext rockContext { get; set; }
+        private List<Guid> Audiences { get; set; }
         private static class PageParameterKey
         {
             public const string Search = "Search";
             public const string Start = "Start";
+            public const string Audience = "Aud";
         }
 
         #endregion
@@ -83,6 +86,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+            rockContext = new RockContext();
             DateTime today = RockDateTime.Now;
             StartDate = new DateTime( today.Year, today.Month, 1, 0, 0, 0 );
             EndDate = new DateTime( today.Year, ( today.Month + 1 ), 1, 0, 0, 0 );
@@ -97,6 +101,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                 Search = PageParameter( PageParameterKey.Search );
             }
             var eventCalendar = new EventCalendarService( new RockContext() ).Get( GetAttributeValue( "EventCalendar" ).AsGuid() );
+            List<string> auds = PageParameter( PageParameterKey.Audience ).Split( ',' ).ToList();
+            DefinedType audienceDT = new DefinedTypeService( rockContext ).Get( Guid.Parse( Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE ) );
+            Audiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && auds.Contains( dv.Value ) ).Select( dv => dv.Guid ).ToList();
             if ( eventCalendar != null )
             {
                 CalendarId = eventCalendar.Id;
@@ -119,7 +126,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         /// </summary>
         private void LoadAllInRange()
         {
-            var rockContext = new RockContext();
             var eventItemOccurrenceService = new EventItemOccurrenceService( rockContext );
 
             // Grab events
@@ -128,7 +134,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                     .Where( m =>
                         m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
                         m.EventItem.IsActive &&
-                        m.EventItem.IsApproved );
+                        m.EventItem.IsApproved &&
+                        ( Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ) ) );
 
             // Get the occurrences
             var occurrences = qry.ToList();

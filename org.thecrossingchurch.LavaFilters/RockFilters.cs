@@ -16,6 +16,7 @@ using System.Collections;
 using Rock.Model;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Rock.Lava;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -79,7 +80,7 @@ namespace com_thecrossingchurch.LavaFilters
         /// </summary>
         /// <param name="input">The input to turn into a qr.</param>
         /// <returns></returns>
-        public static string QRCodeAsImage( object input )
+        public static string QRCodeAsImage( object input, int? size = 3 )
         {
             if ( input == null )
             {
@@ -92,8 +93,8 @@ namespace com_thecrossingchurch.LavaFilters
             string html = @"
             <style>
                 .qr {
-                    width: 3px;
-                    height: 3px;
+                    width: " + size + @"px;
+                    height: " + size + @"px;
                 }
                 .qr-fill {
                     background-color: black;
@@ -104,13 +105,13 @@ namespace com_thecrossingchurch.LavaFilters
             </style>
             <table>";
             int x = qrCode.GetLength( 0 );
-            int y = qrCode.GetLength( 1 ); 
+            int y = qrCode.GetLength( 1 );
             for ( int i = 0; i < qrCode.GetLength( 0 ); i++ )
             {
                 html += "<tr>";
                 for ( int k = 0; k < qrCode.GetLength( 1 ); k++ )
                 {
-                    if(qrCode[i,k])
+                    if ( qrCode[i, k] )
                     {
                         html += "<td class='qr qr-fill'></td>";
                     }
@@ -122,7 +123,7 @@ namespace com_thecrossingchurch.LavaFilters
                 html += "</tr>";
             }
             html += "</table>";
-            Bitmap m_Bitmap = new Bitmap( qrCode.GetLength(0)*3, qrCode.GetLength(1)*3 );
+            Bitmap m_Bitmap = new Bitmap( qrCode.GetLength( 0 ) * size.Value, qrCode.GetLength( 1 ) * size.Value );
             PointF point = new PointF( 0, 0 );
             SizeF maxSize = new System.Drawing.SizeF( 500, 500 );
             TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.Render( Graphics.FromImage( m_Bitmap ), html, point, maxSize );
@@ -196,6 +197,65 @@ namespace com_thecrossingchurch.LavaFilters
             {
                 throw new Exception( "Invalid Input: input must be of type string" );
             }
+        }
+        
+        /// Return true if the date is within the provided range, false if outside of range
+        /// </summary>
+        /// <param name="input">The input date.</param>
+        /// <param name="start">The range start date.</param>
+        /// <param name="end">The range end date.</param>
+        /// <returns></returns>
+        public static bool DateIsBetween( object input, object start, object end )
+        {
+            var type = input.GetType();
+            DateTime? target = null;
+            DateTime? rangeStart = null;
+            DateTime? rangeEnd = null;
+            if ( input.GetType() == typeof( string ) )
+            {
+                target = DateTime.Parse( input.ToString() );
+            }
+            else if ( type.FullName.Contains( "Date" ) )
+            {
+                target = ( DateTime ) input;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string or date" );
+            }
+            if ( start.GetType() == typeof( string ) )
+            {
+                rangeStart = DateTime.Parse( start.ToString() );
+            }
+            else if ( start.GetType().FullName.Contains( "Date" ) )
+            {
+                rangeStart = ( DateTime ) start;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: start of range must be of type string or date" );
+            }
+            if ( end.GetType() == typeof( string ) )
+            {
+                rangeEnd = DateTime.Parse( end.ToString() );
+            }
+            else if ( end.GetType().FullName.Contains( "Date" ) )
+            {
+                rangeEnd = ( DateTime ) end;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: end of range must be of type string or date" );
+            }
+            if ( target.HasValue && rangeEnd.HasValue && rangeStart.HasValue )
+            {
+                if ( DateTime.Compare( target.Value, rangeStart.Value ) >= 0 && DateTime.Compare( target.Value, rangeEnd.Value ) <= 0 )
+                {
+                    return true;
+                }
+                return false;
+            }
+            throw new Exception( "Unable to parse input, start, and end" );
         }
     }
 }

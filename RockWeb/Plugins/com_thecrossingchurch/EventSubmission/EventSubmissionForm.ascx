@@ -35,6 +35,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 <asp:HiddenField ID="hfUpcomingRequests" runat="server" />
 <asp:HiddenField ID="hfThisWeeksRequests" runat="server" />
 <asp:HiddenField ID="hfIsAdmin" runat="server" />
+<asp:HiddenField ID="hfPersonName" runat="server" />
 <asp:HiddenField ID="hfChangeRequest" runat="server" />
 
 <div id="app">
@@ -68,6 +69,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsSpace"
                 :label="`A physical space for an event`"
+                hint="If you need any doors unlocked for this event, please be sure to include Special Accommodations below. Selecting a physical space does not assume unlocked doors."
+                :persistent-hint="request.needsSpace"
               ></v-switch>
             </v-col>
           </v-row>
@@ -75,29 +78,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsOnline"
-                :label="`An online event`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                :label="`Zoom`"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsOnline"
-              ></v-switch>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-switch
-                v-model="request.needsPub"
-                :label="`Publicity`"
-                hint="Requests involving publicity must be made at least 6 weeks in advance"
-                :persistent-hint="request.needsPub"
-              ></v-switch>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-switch
-                v-model="request.needsReg"
-                :label="`Registration`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
-                :persistent-hint="request.needsReg"
               ></v-switch>
             </v-col>
           </v-row>
@@ -106,7 +89,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsCatering"
                 :label="`Food Request`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsCatering"
               ></v-switch>
             </v-col>
@@ -116,7 +99,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <v-switch
                 v-model="request.needsChildCare"
                 :label="`Childcare`"
-                hint="Requests involving childcare must be made at least 30 days in advance"
+                hint="Requests involving childcare must be made at least 30 days in advance."
                 :persistent-hint="request.needsChildCare"
               ></v-switch>
             </v-col>
@@ -125,16 +108,36 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-col>
               <v-switch
                 v-model="request.needsAccom"
-                :label="`Special Accommodations (tech, drinks, web calendar, extensive set-up, etc.)`"
-                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance"
+                :label="`Special Accommodations (tech, drinks, web calendar, extensive set-up, doors unlocked)`"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                 :persistent-hint="request.needsAccom"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-switch
+                v-model="request.needsReg"
+                :label="`Registration`"
+                hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
+                :persistent-hint="request.needsReg"
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-switch
+                v-model="request.needsPub"
+                :label="`Publicity`"
+                hint="Requests involving publicity must be made at least 6 weeks in advance."
+                :persistent-hint="request.needsPub"
               ></v-switch>
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="next">Next</v-btn>
+          <v-btn color="primary" :disabled="!(request.needsSpace || request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub)" @click="next">Next</v-btn>
         </v-card-actions>
       </v-card>
       <v-card v-if="panel == 1">
@@ -167,7 +170,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-row>
               <v-col>
                 <v-text-field
-                  label="What should we call your event?"
+                  :label="eventNameLabel"
                   v-model="request.Name"
                   :rules="[rules.required(request.Name, 'Event Name')]"
                 ></v-text-field>
@@ -176,216 +179,113 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <v-row>
               <v-col cols="12" md="6">
                 <v-autocomplete
-                  label="Which ministry is sponsoring this event?"
+                  :label="eventMinistryLabel"
                   :items="ministries"
                   item-text="Value"
                   item-value="Id"
+                  item-disabled="IsDisabled"
                   attach
                   v-model="request.Ministry"
                   :rules="[rules.required(request.Ministry, 'Ministry')]"
+                  :hint="ministryHint"
+                  persistent-hint
                 ></v-autocomplete>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  label="Who is the ministry contact for this event?"
+                  :label="eventContactLabel"
                   v-model="request.Contact"
                   :rules="[rules.required(request.Contact, 'Contact')]"
                 ></v-text-field>
               </v-col>
             </v-row>
-            <template
-              v-if="request.needsSpace && !request.needsOnline && !request.needsPub && !request.needsReg && !request.needsCatering && !request.needsChildCare && !request.needsAccom"
-            >
-              <v-tabs v-model="tab">
-                <v-tab>I have specific dates(s) and times</v-tab>
-                <v-tab-item>
-                  <v-row v-if="cannotChangeDates">
-                    <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
-                      While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
-                    </v-col>
-                    <v-col cols="12">
-                      <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <strong>Please select the date(s) of your event</strong>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <v-date-picker
-                        label="Event Dates"
-                        v-model="request.EventDates"
-                        :rules="[rules.required(request.EventDates, 'Event Date')]"
-                        multiple
-                        class="elevation-1"
-                        :min="earliestDate"
-                        :disabled="cannotChangeDates"
-                      ></v-date-picker>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                      <v-select
-                        label="Selected Dates"
-                        chips
-                        attach
-                        multiple
-                        :rules="[rules.requiredArr(request.EventDates, 'Event Date')]"
-                        :items="longDates"
-                        item-text="text"
-                        item-value="val"
-                        v-model="request.EventDates"
-                        :disabled="cannotChangeDates"
-                      ></v-select>
-                    </v-col>
-                  </v-row>
-                  <v-row v-if="request.EventDates.length > 1">
-                    <v-col>
-                      <v-switch
-                        :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
-                        v-model="request.IsSame"
-                        :disabled="cannotChangeToggle"
-                      ></v-switch>
-                    </v-col>
-                  </v-row>
-                  <template v-for="e in request.Events">
-                    <v-row>
-                      <v-col>
-                        <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
-                        <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12" md="6">
-                        <strong>Start Time</strong>
-                        <time-picker
-                          v-model="e.StartTime"
-                          :value="e.StartTime"
-                          :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
-                        ></time-picker>
-                      </v-col>
-                      <v-col cols="12" md="6">
-                        <strong>End Time</strong>
-                        <time-picker
-                          v-model="e.EndTime"
-                          :value="e.EndTime"
-                          :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
-                        ></time-picker>
-                      </v-col>
-                    </v-row>
-                  </template>
-                  <%-- Space Information --%>
-                  <template v-if="request.needsSpace">
-                    <template v-for="e in request.Events">
-                      <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
-                    </template>
-                  </template>
-                </v-tab-item>
-                <v-tab>I want to search for something quick</v-tab>
-                <v-tab-item>
-                  <v-row v-if="tab == 1">
-                    <v-col>
-                      <room-picker
-                        v-on:update="setDate"
-                        :rules="rules"
-                        :request="request"
-                        ref="roompckr"
-                      ></room-picker>
-                    </v-col>
-                  </v-row>
-                </v-tab-item>
-              </v-tabs>
-            </template>
-            <template v-else>
-              <v-row v-if="cannotChangeDates">
-                <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
-                  While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
-                </v-col>
-                <v-col cols="12">
-                  <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
-                </v-col>
-              </v-row>
+            <v-row v-if="cannotChangeDates">
+              <v-col class='primary--text' style="font-weight: bold; font-style: italic;">
+                While you may request other changes to your event through the form if you need to change the dates of your request you will need to contact the Events Director.
+              </v-col>
+              <v-col cols="12">
+                <v-btn color="accent" rounded @click="dateChangeMessage = ''; changeDialog = true;">Contact Events Director</v-btn>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <strong>Please select the date(s) of your event</strong>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-date-picker
+                  label="Event Dates"
+                  v-model="request.EventDates"
+                  multiple
+                  class="elevation-1"
+                  :min="earliestDate"
+                  :show-current="earliestDate"
+                  :rules="[rules.required(request.EventDates, 'Event Date')]"
+                  :disabled="cannotChangeDates"
+                ></v-date-picker>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-autocomplete
+                  label="Selected Dates"
+                  chips
+                  attach
+                  multiple
+                  clearable
+                  :rules="[rules.requiredArr(request.EventDates, 'Event Date')]"
+                  :items="longDates"
+                  item-text="text"
+                  item-value="val"
+                  v-model="request.EventDates"
+                  :disabled="cannotChangeDates"
+                ></v-autocomplete>
+              </v-col>
+            </v-row>
+            <v-row v-if="request.EventDates.length > 1">
+              <v-col>
+                <v-switch
+                  :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
+                  v-model="request.IsSame"
+                  :disabled="cannotChangeToggle"
+                ></v-switch>
+              </v-col>
+            </v-row>
+            <template v-for="e in request.Events">
+              <h3 v-if="request.Events.length > 1 && e.EventDate" class="accent--text" style="font-weight: bold;">{{e.EventDate | formatDate}}</h3>
               <v-row>
                 <v-col>
-                  <strong>Please select the date(s) of your event</strong>
+                  <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
+                  <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-date-picker
-                    label="Event Dates"
-                    v-model="request.EventDates"
-                    multiple
-                    class="elevation-1"
-                    :min="earliestDate"
-                    :rules="[rules.required(request.EventDates, 'Event Date')]"
-                    :disabled="cannotChangeDates"
-                  ></v-date-picker>
+                  <strong>Start Time</strong>
+                  <time-picker
+                    v-model="e.StartTime"
+                    :value="e.StartTime"
+                    :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
+                  ></time-picker>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-select
-                    label="Selected Dates"
-                    chips
-                    attach
-                    multiple
-                    :rules="[rules.requiredArr(request.EventDates, 'Event Date')]"
-                    :items="longDates"
-                    item-text="text"
-                    item-value="val"
-                    v-model="request.EventDates"
-                    :disabled="cannotChangeDates"
-                  ></v-select>
+                  <strong>End Time</strong>
+                  <time-picker
+                    v-model="e.EndTime"
+                    :value="e.EndTime"
+                    :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
+                  ></time-picker>
                 </v-col>
               </v-row>
-              <v-row v-if="request.EventDates.length > 1">
-                <v-col>
-                  <v-switch
-                    :label="`Will each occurrence of your event have the exact same start time, end time, ${requestedResources}? (${boolToYesNo(request.IsSame)})`"
-                    v-model="request.IsSame"
-                    :disabled="cannotChangeToggle"
-                  ></v-switch>
-                </v-col>
-              </v-row>
-              <template v-for="e in request.Events">
-                <v-row>
-                  <v-col>
-                    <strong v-if="request.Events.length == 1">What time will your event begin and end?</strong>
-                    <strong v-else>What time will your event begin and end on {{e.EventDate | formatDate}}?</strong>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <strong>Start Time</strong>
-                    <time-picker
-                      v-model="e.StartTime"
-                      :value="e.StartTime"
-                      :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
-                    ></time-picker>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <strong>End Time</strong>
-                    <time-picker
-                      v-model="e.EndTime"
-                      :value="e.EndTime"
-                      :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
-                    ></time-picker>
-                  </v-col>
-                </v-row>
-              </template>
               <%-- Space Information --%>
               <template v-if="request.needsSpace">
-                <template v-for="e in request.Events">
-                  <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
-                </template>
+                <space :e="e" :request="request" ref="spaceloop" v-on:updatespace="updateSpace"></space>
               </template>
-            </template>
-            <%-- Online Information --%>
-            <template v-if="request.needsOnline">
-              <template v-for="e in request.Events">
+              <%-- Online Information --%>
+              <template v-if="request.needsOnline">
                 <v-row>
                   <v-col>
-                    <h3 class="primary--text" v-if="request.Events.length == 1">Online Information</h3>
-                    <h3 class="primary--text" v-else>Online Information for {{e.EventDate | formatDate}}</h3>
+                    <h3 class="primary--text" v-if="request.Events.length == 1">Zoom Information</h3>
+                    <h3 class="primary--text" v-else>Zoom Information for {{e.EventDate | formatDate}}</h3>
                   </v-col>
                 </v-row>
                 <v-row>
@@ -405,6 +305,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     ></v-text-field>
                   </v-col>
                 </v-row>
+              </template>
+              <%-- Catering Information --%>
+              <template v-if="request.needsCatering">
+                <catering :e="e" :request="request" ref="cateringloop" v-on:updatecatering="updateCatering"></catering>
+              </template>
+              <%-- Childcare Info --%>
+              <template v-if="request.needsChildCare">
+                <childcare :e="e" :request="request" ref="childcareloop" v-on:updatechildcare="updateChildcare"></childcare>
+              </template>
+              <%-- Special Accommodations Info --%>
+              <template v-if="request.needsAccom">
+                <accom :e="e" :request="request" ref="accomloop" v-on:updateaccom="updateAccom"></accom>
+              </template>
+              <%-- Registration Information --%>
+              <template v-if="request.needsReg">
+                <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" ref="regloop" v-on:updatereg="updateReg"></registration>
               </template>
             </template>
             <%-- Publicity Information --%>
@@ -478,6 +394,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       v-model="request.PublicityStartDate"
                       @input="pubStartMenu = false"
                       :min="earliestPubDate"
+                      :show-current="earliestPubDate"
+                      :from-date="earliestPubDate"
                     ></v-date-picker>
                   </v-menu>
                 </v-col>
@@ -506,9 +424,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-date-picker
                       v-model="request.PublicityEndDate"
                       @input="pubEndMenu = false"
-                      :min="earliestPubDate"
+                      :min="earliestEndPubDate"
+                      :show-current="earliestEndPubDate"
                       :max="latestPubDate"
-                    ></v-date-picker>
+                    >
+                      <span style="width: 290px; text-align: center; font-size: 12px;" v-if="!request.EventDates || request.EventDates.length == 0">
+                        Please select dates for your event to calculate the possible end dates
+                      </span>
+                    </v-date-picker>
                   </v-menu>
                 </v-col>
               </v-row>
@@ -635,44 +558,49 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 </v-row>
               </template>
             </template>
-            <%-- Registration Information --%>
-            <template v-if="request.needsReg">
-              <template v-for="e in request.Events">
-                <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" ref="regloop" v-on:updatereg="updateReg"></registration>
-              </template>
-            </template>
-            <%-- Catering Information --%>
-            <template v-if="request.needsCatering">
-              <template v-for="e in request.Events">
-                <catering :e="e" :request="request" ref="cateringloop" v-on:updatecatering="updateCatering"></catering>
-              </template>
-            </template>
-            <%-- Childcare Info --%>
-            <template v-if="request.needsChildCare">
-              <template v-for="e in request.Events">
-                <childcare :e="e" :request="request" ref="childcareloop" v-on:updatechildcare="updateChildcare"></childcare>
-              </template>
-            </template>
-            <%-- Special Accommodations Info --%>
-            <template v-if="request.needsAccom">
-              <template v-for="e in request.Events">
-                <accom :e="e" :request="request" ref="accomloop" v-on:updateaccom="updateAccom"></accom>
-              </template>
-            </template>
             <%-- Notes --%>
-            <v-row>
-              <v-col>
-                <h3 class="primary--text">Additional Info</h3>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
-                <v-textarea
+            <template v-if="request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub">
+              <v-row>
+                <v-col>
+                  <h3 class="primary--text">Additional Info</h3>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-textarea
                   label="Is there anything else we should know about this request?"
                   v-model="request.Notes"
-                ></v-textarea>
-              </v-col>
-            </v-row>
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+            </template>
+            <%-- Pre-Approval Notice --%>
+            <template v-if="request.needsSpace && !(request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub)">
+              <strong>*Your request may be pre-approved. </strong>
+              <v-menu attach>
+                <template v-slot:activator="{ on, attrs }">
+                  <div style="display: inline-block;" v-bind="attrs" v-on="on" class='accent-text'>
+                    <strong>Click here to view requirements for pre-approval.</strong>
+                  </div>
+                </template>
+                <v-list>
+                  <v-list-item>
+                    <ul>
+                      <li>
+                        The meeting dates are all within the next 14 days. <br/>
+                        Before {{ preApprovalDate | formatDate }}
+                      </li>
+                      <li>
+                        The meetings take place during regular business hours. <br/>
+                        Mon-Fri: 9am-9pm, Sunday: 1pm-9pm
+                      </li>
+                      <li>The meetings involve no more than 30 people.</li>
+                      <li>The meetings are not in the Auditorium or Gym.</li>
+                    </ul>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </template>
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -864,22 +792,35 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-form ref="roomform" v-model="valid">
           <v-row>
             <v-col>
+              <br/>
               <v-autocomplete
                 label="Select a Room/Space to view availability"
-                v-model="selected"
-                :items="rooms"
-                item-value="Id"
+                :items="groupedRooms"
                 item-text="Value"
+                item-value="Id"
+                item-disabled="IsDisabled"
+                v-model="selected"
                 attach
                 :rules="[rules.required(selected, 'Room/Space')]"
-                :value="request.Rooms"
+                :value="request.Events[0].Rooms"
               >
-                <template v-slot:item="{ item }">
-                  {{item.Value}} ({{item.Capacity}})
+                <template v-slot:selection="data">
+                  {{data.item.Value}} ({{data.item.Capacity}})
                 </template>
-              </v-autocomplete>  
+                <template v-slot:item="data">
+                  <template v-if="typeof data.item !== 'object'">
+                    <v-list-item-content v-text="data.item"></v-list-item-content>
+                  </template>
+                  <template v-else>
+                    <v-list-item-content>
+                      <v-list-item-title>{{data.item.Value}} ({{data.item.Capacity}})</v-list-item-title>
+                    </v-list-item-content>
+                  </template>
+                </template>
+              </v-autocomplete>
             </v-col>  
           </v-row>
+          <br/>
           <template v-if="page == 0">
             <v-sheet height="600">
               <v-calendar
@@ -925,7 +866,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="How many people are you expecting to attend?"
                   type="number"
                   v-model="att"
-                  :value="request.ExpectedAttendance"
+                  :value="request.Events[0].ExpectedAttendance"
                   :rules="[rules.required(att, 'Expected Attendance'), rules.exceedsSelected(att, selected, rooms)]"
                 ></v-text-field>
               </v-col>  
@@ -945,12 +886,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     valid: true,
                     allEvents: [],
                     page: 0,
-                    selected: null,
+                    selected: this.request.Events[0].Rooms[0],
                     rooms: [],
-                    eventDate: "",
-                    startTime: "",
-                    endTime: "",
-                    att: "",
+                    eventDate: this.request.Events[0].EventDate,
+                    startTime: this.request.Events[0].StartTime,
+                    endTime: this.request.Events[0].EndTime,
+                    att: this.request.Events[0].ExpectedAttendance,
                 };
             },
             mounted: function () {
@@ -963,16 +904,30 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 let oneWeek = moment().add(6, 'days')
                 for (i = 0; i < rawEvents.length; i++) {
                     let event = JSON.parse(rawEvents[i])
-                    for (k = 0; k < event.EventDates.length; k++) {
-                        let inRange = moment(event.EventDates[k]).isBetween(moment(), oneWeek, 'days', '[]')
-                        if (inRange) {
-                            this.allEvents.push({
-                                name: event.Name,
-                                start: moment(`${event.EventDates[k]} ${event.StartTime}`).format("yyyy-MM-DD HH:mm"),
-                                end: moment(`${event.EventDates[k]} ${event.EndTime}`).format("yyyy-MM-DD HH:mm"),
-                                loc: event.Rooms,
-                            });
+                    if (event.IsSame || event.Events.length == 1) {
+                        for (k = 0; k < event.EventDates.length; k++) {
+                            let inRange = moment(event.EventDates[k]).isBetween(moment(), oneWeek, 'days', '[]')
+                            if (inRange) {
+                                this.allEvents.push({
+                                    name: event.Name,
+                                    start: moment(`${event.EventDates[k]} ${event.Events[0].StartTime}`).format("yyyy-MM-DD HH:mm"),
+                                    end: moment(`${event.EventDates[k]} ${event.Events[0].EndTime}`).format("yyyy-MM-DD HH:mm"),
+                                    loc: event.Events[0].Rooms,
+                                });
+                            }
                         }
+                    } else {
+                        event.Events.forEach(e => {
+                            let inRange = moment(e.EventDate).isBetween(moment(), oneWeek, 'days', '[]')
+                            if (inRange) {
+                                this.allEvents.push({
+                                    name: event.Name,
+                                    start: moment(`${e.EventDate} ${e.StartTime}`).format("yyyy-MM-DD HH:mm"),
+                                    end: moment(`${e.EventDate} ${e.EndTime}`).format("yyyy-MM-DD HH:mm"),
+                                    loc: e.Rooms,
+                                });
+                            }
+                        })
                     }
                 }
             },
@@ -996,6 +951,52 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     } else {
                         return [];
                     }
+                },
+                groupedRooms() {
+                    let loc = []
+                    this.rooms.forEach(l => {
+                        let idx = -1
+                        loc.forEach((i, x) => {
+                            if (i.Type == l.Type) {
+                                idx = x
+                            }
+                        })
+                        if (idx > -1) {
+                            loc[idx].locations.push(l)
+                        } else {
+                            loc.push({ Type: l.Type, locations: [l] })
+                        }
+                    })
+                    loc.forEach(l => {
+                        l.locations = l.locations.sort((a, b) => {
+                            if (a.Value < b.Value) {
+                                return -1
+                            } else if (a.Value > b.Value) {
+                                return 1
+                            } else {
+                                return 0
+                            }
+                        })
+                    })
+                    loc = loc.sort((a, b) => {
+                        if (a.Type < b.Type) {
+                            return -1
+                        } else if (a.Type > b.Type) {
+                            return 1
+                        } else {
+                            return 0
+                        }
+                    })
+                    let arr = []
+                    loc.forEach(l => {
+                        arr.push({ header: l.Type })
+                        l.locations.forEach(i => {
+                            arr.push((i))
+                        })
+                        arr.push({ divider: true })
+                    })
+                    arr.splice(arr.length - 1, 1)
+                    return arr
                 },
             },
             methods: {
@@ -1077,55 +1078,95 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 label="How many people are you expecting to attend?"
                 type="number"
                 v-model="e.ExpectedAttendance"
-                :rules="[rules.required(e.ExpectedAttendance, 'Expected Attendance')]"
+                :rules="[rules.required(e.ExpectedAttendance, 'Expected Attendance'), rules.isInt(e.ExpectedAttendance, 'Expected Attendance')]"
                 :hint="attHint"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
-              <!--<v-autocomplete
-                label="What are your preferred rooms/spaces?"
-                chips
-                multiple
-                :items="rooms"
-                item-text="Value"
-                item-value="Id"
-                v-model="e.Rooms"
-                attach
-                :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
-              >
-                <template v-slot:item="{ item }">
-                  {{item.Value}} ({{item.Capacity}})
-                </template>
-              </v-autocomplete>-->
-              
               <v-autocomplete
-                label="What are your preferred rooms/spaces?"
+                label="What room(s) would you like to reserve"
                 :items="groupedRooms"
                 item-text="Value"
                 item-value="Id"
+                item-disabled="IsDisabled"
                 v-model="e.Rooms"
+                prepend-inner-icon="mdi-map"
+                @click:prepend-inner="openMap"
                 chips
                 multiple
                 attach
+                dense
                 :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
+                hint="Click the map icon to view campus map"
+                persistent-hint
               >
+                <template v-slot:prepend-item>
+                  <v-toolbar dense color="primary">Room (Capacity)</v-toolbar>
+                </template>
                 <template v-slot:item="data">
-                  <template v-if="typeof data.item !== 'object'">
-                    <v-list-item-content v-text="data.item"></v-list-item-content>
-                  </template>
-                  <template v-else>
+                  <v-list-item v-bind="data.attrs" v-on="data.on">
+                    <v-list-item-action style="margin: 0px; margin-right: 32px;">
+                      <v-checkbox :value="data.attrs.inputValue" @change="data.parent.$emit('select')" ></v-checkbox>
+                    </v-list-item-action>
                     <v-list-item-content>
                       <v-list-item-title>{{data.item.Value}} ({{data.item.Capacity}})</v-list-item-title>
                     </v-list-item-content>
-                  </template>
+                  </v-list-item>
                 </template>
               </v-autocomplete>
+            </v-col>
+          </v-row>
+          <v-row v-if="canRequestTables && !request.needsAccom">
+            <v-col cols="12" md="6">
+              <v-select
+                label="What kinds of tables would you like?"
+                :items="['Round', 'Rectangular']"
+                multiple
+                attach
+                v-model="e.TableType"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row v-if="canRequestTables && !request.needsAccom && e.TableType.includes('Round')">
+            <v-col>
+              <v-text-field
+                label="How many round tables do you need?"
+                type="number"
+                v-model="e.NumTablesRound"
+                :rules="[rules.isInt(e.NumTablesRound, 'Number of tables')]"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-text-field
+                label="How many chairs should each round table have?"
+                type="number"
+                v-model="e.NumChairsRound"
+                :rules="[rules.isInt(e.NumChairsRound, 'Number of chairs')]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <v-row v-if="canRequestTables && !request.needsAccom && e.TableType.includes('Rectangular')">
+            <v-col>
+              <v-text-field
+                label="How many rectangular tables do you need?"
+                type="number"
+                v-model="e.NumTablesRect"
+                :rules="[rules.isInt(e.NumTablesRect, 'Number of tables')]"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-text-field
+                label="How many chairs should each rectangular table have?"
+                type="number"
+                v-model="e.NumChairsRect"
+                :rules="[rules.isInt(e.NumChairsRect, 'Number of chairs')]"
+              ></v-text-field>
             </v-col>
           </v-row>
           <v-row v-if="request.needsReg">
             <v-col cols="12" md="6">
               <v-switch
-                label="Do you need in-person check-in on the day of the event?"
+                :label="CheckinLabel"
                 v-model="e.Checkin"
               ></v-switch>
             </v-col>
@@ -1165,12 +1206,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-card-actions>  
             </v-card>
           </v-dialog>
+          <v-dialog
+            v-if="map"
+            v-model="map"
+            max-width="85%"
+          >
+            <v-card>
+              <v-card-text>
+                <v-img src="https://rock.thecrossingchurch.com/Content/Operations/Campus%20Map.png"/>  
+              </v-card-text>  
+            </v-card>
+          </v-dialog>
         </v-form>
       `,
             props: ["e", "request"],
             data: function () {
                 return {
                     dialog: false,
+                    map: false,
                     valid: true,
                     rooms: [],
                     prefillDate: '',
@@ -1181,14 +1234,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         requiredArr(val, field) {
                             return val.length > 0 || `${field} is required`;
                         },
+                        isInt(val, field) {
+                            if (val) {
+                                return !(val.includes('.') || val.includes('-')) || `${field} must be a whole number`
+                            }
+                            return true
+                        },
                         exceedsSelected(val, selected, rooms) {
-                            let room = rooms.filter((i) => {
-                                return i.Id == selected;
-                            })[0];
-                            let cap = room.Capacity;
-                            if (val > cap) {
-                                return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
-                                    } in the selected space`;
+                            if (val && selected) {
+                                let room = rooms.filter((i) => {
+                                    return i.Id == selected;
+                                })[0];
+                                let cap = room.Capacity;
+                                if (val > cap) {
+                                    return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
+                                        } in the selected space`;
+                                }
                             }
                             return true;
                         },
@@ -1274,6 +1335,21 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     arr.splice(arr.length - 1, 1)
                     return arr
                 },
+                CheckinLabel() {
+                    return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+                },
+                canRequestTables() {
+                    let dates = this.request.EventDates.map(d => moment(d))
+                    let minDate = moment.min(dates)
+                    let oneWeek = moment(new Date()).add(7, 'days')
+                    if (!this.request.IsSame || this.request.Events.length > 1) {
+                        minDate = moment(this.e.EventDate)
+                    }
+                    if (oneWeek.isAfter(minDate)) {
+                        return false
+                    }
+                    return true
+                }
             },
             methods: {
                 prefillSection() {
@@ -1281,6 +1357,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     let idx = this.request.EventDates.indexOf(this.prefillDate)
                     let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
                     this.$emit('updatespace', { targetIdx: idx, currIdx: currIdx })
+                },
+                boolToYesNo(val) {
+                    if (val) {
+                        return "Yes";
+                    }
+                    return "No";
+                },
+                openMap() {
+                    this.map = true
                 }
             }
         });
@@ -1325,6 +1410,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   v-model="e.RegistrationDate"
                   @input="menu = false"
                   :min="earliestPubDate"
+                  :show-current="earliestPubDate"
                 ></v-date-picker>
               </v-menu>
             </v-col>
@@ -1339,12 +1425,20 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-col>
           </v-row>
           <v-row>
+            <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual') || e.FeeType.includes('Fee per Couple') || e.FeeType.includes('Online Fee')">
+              <v-text-field
+                label="Which budget should registration fees go to?"
+                v-model="e.FeeBudgetLine"
+                :rules="[rules.requiredBL(e.FeeType, e.FeeBudgetLine, 'Budget line')]"
+              ></v-text-field>
+            </v-col>
             <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual')">
               <v-text-field
                 label="How much is the individual registration fee for this event?"
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.Fee"
+                :rules="[rules.required(e.Fee, 'Amount')]"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Couple')">
@@ -1353,6 +1447,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.CoupleFee"
+                :rules="[rules.required(e.CoupleFee, 'Amount')]"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6" v-if="e.FeeType.includes('Online Fee')">
@@ -1361,6 +1456,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 type="number"
                 prepend-inner-icon="mdi-currency-usd"
                 v-model="e.OnlineFee"
+                :rules="[rules.required(e.OnlineFee, 'Amount')]"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -1396,6 +1492,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       v-model="e.RegistrationEndDate"
                       @input="menu2 = false"
                       :min="earliestPubDate"
+                      :show-current="earliestPubDate"
                     ></v-date-picker>
                   </v-menu>
                 </v-col>
@@ -1442,6 +1539,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               ></v-textarea>
             </v-col>
             <v-col>
+              <div style="font-weight: bold; font-style: italic; text-align: center;">This preview is just to give you a general idea about placement within the email, it is not the final product.</div>
               <div v-html="emailPreview"></div>
             </v-col>
           </v-row>
@@ -1487,6 +1585,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     rules: {
                         required(val, field) {
                             return !!val || `${field} is required`;
+                        },
+                        requiredBL(fees, val, field) {
+                            if (fees.length > 0) {
+                                if (fees.length == 1 && fees.includes('No Fees')) {
+                                    return true
+                                }
+                                return !!val || `${field} is required`;
+                            }
+                            return true
                         },
                         registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare) {
                             let dates = eventDates.map(d => moment(d))
@@ -1611,7 +1718,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         "</div>" +
                         "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
                         "<h1>" + this.request.Name + "</h1><br/>" +
-                        this.e.ThankYou + "<br/>" +
+                        this.e.ThankYou + "<br/><br/>" +
                         this.e.TimeLocation + "<br/><br/>" +
                         "<p>The following people have been registered for " + this.request.Name + ":</p>" +
                         "<ul>" +
@@ -1644,9 +1751,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 feeOptions() {
                     if (this.request.needsOnline) {
-                        return ['Fee per Individual', 'Fee per Couple', 'Online Fee']
+                        return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
                     }
-                    return ['Fee per Individual', 'Fee per Couple']
+                    return ['Fee per Individual', 'Fee per Couple', 'No Fees']
                 }
             },
             watch: {
@@ -1707,11 +1814,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-row>
           <v-row>
             <v-col cols="12" style='font-weight: bold;'>
-              If you want to avoid a serving team, be sure to choose a vendor that is currently offering individually boxed meals. 
+              Although buffets are now permissible, keep in mind that some of your attendees may still appreciate the precautionary measures of an individually packaged meal. For a list of vendors providing boxed options, 
               <v-menu attach>
                 <template v-slot:activator="{ on, attrs }">
                   <span v-bind="attrs" v-on="on" class='accent-text'>
-                    Click here to see that list.
+                    please click here. 
                   </span>
                 </template>
                 <v-list>
@@ -1842,19 +1949,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-col>
           </v-row> -->
           <v-row>
+            <v-col cols="12" md="6" v-if="e.FoodDropOff != ''">
+              <v-checkbox
+                label="Set up my drinks in the same location as my food please!"
+                v-model="sameFoodDrinkDropOff"
+                dense
+              ></v-checkbox>
+            </v-col>
             <v-col cols="12" md="6">
               <v-text-field
                 label="Where would you like your drinks delivered?"
                 v-model="e.DrinkDropOff"
               ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-checkbox
-                v-if="e.FoodDropOff != ''"
-                label="Set up my drinks in the same location as my food please!"
-                v-model="sameFoodDrinkDropOff"
-                dense
-              ></v-checkbox>
             </v-col>
           </v-row>
           <%-- Childcare Catering --%>
@@ -2015,7 +2121,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               <time-picker
                 v-model="e.CCStartTime"
                 :value="e.CCStartTime"
-                :default="defaultFoodTime"
+                :default="defaultChildcareTime"
                 :rules="[rules.required(e.CCStartTime, 'Time')]"
               ></time-picker>
             </v-col> 
@@ -2150,10 +2256,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               prefillOptions() {
                   return this.request.EventDates.filter(i => i != this.e.EventDate)
               },
-              defaultFoodTime() {
+              defaultChildcareTime() {
                   if (this.e.StartTime && !this.e.StartTime.includes('null')) {
                       let time = moment(this.e.StartTime, "hh:mm A");
-                      return time.subtract(30, "minutes").format("hh:mm A");
+                      return time.subtract(15, "minutes").format("hh:mm A");
                   }
                   return null;
               },
@@ -2261,6 +2367,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             </v-row>
           </template>
           <v-row>
+            <v-col cols="12" md="6">
+              <v-switch
+                :label="doorLabel"
+                v-model="e.NeedsDoorsUnlocked"
+              ></v-switch>
+            </v-col>
             <v-col cols="12" md="6">
               <v-switch
                 :label="calLabel"
@@ -2377,6 +2489,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               calLabel() {
                   return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
               },
+              doorLabel() {
+                  return `Will you need doors unlocked for this event? (${this.boolToYesNo(this.e.NeedsDoorsUnlocked)})`
+              },
               drinkHint() {
                   return ''
                   // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
@@ -2401,6 +2516,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   var reader = new FileReader();
                   const self = this;
                   reader.onload = function (e) {
+                      console.log(e)
                       file.data = e.target.result;
                       self.e.SetUpImage = file;
                   };
@@ -2454,6 +2570,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           MinsEndBuffer: 0,
                           ExpectedAttendance: "",
                           Rooms: "",
+                          NumTablesRound: null,
+                          NumTablesRect: null,
+                          TableType: [],
+                          NumChairsRound: null,
+                          NumChairsRect: null,
                           Checkin: false,
                           SupportTeam: false,
                           EventURL: "",
@@ -2467,6 +2588,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           RegistrationEndDate: "",
                           RegistrationEndTime: "",
                           FeeType: [],
+                          FeeBudgetLine: "",
                           Fee: null,
                           CoupleFee: null,
                           OnlineFee: null,
@@ -2494,6 +2616,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           PublicityBlurb: "",
                           SetUp: "",
                           SetUpImage: null,
+                          NeedsDoorsUnlocked: false
                       }
                   ],
                   EventDates: [],
@@ -2525,13 +2648,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       return val.length > 0 || `${field} is required`;
                   },
                   exceedsSelected(val, selected, rooms) {
-                      let room = rooms.filter((i) => {
-                          return i.Id == selected;
-                      })[0];
-                      let cap = room.Capacity;
-                      if (val > cap) {
-                          return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
-                              } in the selected space`;
+                      if (val && selected) {
+                          let room = rooms.filter((i) => {
+                              return i.Id == selected;
+                          })[0];
+                          let cap = room.Capacity;
+                          if (val > cap) {
+                              return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
+                                  } in the selected space`;
+                          }
                       }
                       return true;
                   },
@@ -2625,6 +2750,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               if (val == 'True') {
                   this.isAdmin = true
               }
+              this.request.Contact = $('[id$="hfPersonName"]')[0].value;
               let req = $('[id$="hfRequest"]')[0].value;
               if (req) {
                   let parsed = JSON.parse(req)
@@ -2670,7 +2796,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   if (this.request.needsAccom) {
                       items.push('accommodations')
                   }
-                  items[items.length - 1] = "and " + items[items.length - 1]
+                  if (items.length > 1) {
+                      items[items.length - 1] = "and " + items[items.length - 1]
+                  }
                   return items.join(", ");
               },
               earliestDate() {
@@ -2706,6 +2834,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               earliestPubDate() {
                   let eDate = new moment();
                   eDate = moment(eDate).add(21, "days");
+                  return moment(eDate).format("yyyy-MM-DD");
+              },
+              earliestEndPubDate() {
+                  let eDate = new moment();
+                  if (this.request.PublicityStartDate) {
+                      eDate = moment(this.request.PublicityStartDate).add(21, "days");
+                  } else {
+                      eDate = moment(this.earliestPubDate).add(21, "days");
+                  }
                   return moment(eDate).format("yyyy-MM-DD");
               },
               latestPubDate() {
@@ -2768,6 +2905,38 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       return this.request.canEdit
                   }
                   return true
+              },
+              ministryHint() {
+                  let min = this.ministries.filter(m => {
+                      return m.Id == this.request.Ministry
+                  })
+                  if (min.length > 0) {
+                      if (min[0].IsPersonal) {
+                          return 'Personal requests are for spaces only, the Operations team provides no resources.'
+                      }
+                  }
+                  return ''
+              },
+              eventNameLabel() {
+                  if (this.requestedResources == "rooms") {
+                      return "Meeting name on calendar"
+                  }
+                  return "Event name on calendar"
+              },
+              eventMinistryLabel() {
+                  if (this.requestedResources == "rooms") {
+                      return "Which ministry is sponsoring this meeting?"
+                  }
+                  return "Which ministry is sponsoring this event?"
+              },
+              eventContactLabel() {
+                  if (this.requestedResources == "rooms") {
+                      return "Who is the ministry contact for this meeting?"
+                  }
+                  return "Who is the ministry contact for this event?"
+              },
+              preApprovalDate() {
+                  return moment().add(14, 'days')
               }
           },
           methods: {
@@ -2808,6 +2977,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               submit() {
                   $('[id$="hfRequest"]').val(JSON.stringify(this.request));
                   $('[id$="btnSubmit"')[0].click();
+                  $('#updateProgress').show();
               },
               sendDateChangeRequest() {
                   this.changeDialog = false
@@ -2815,11 +2985,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   $('[id$="btnChangeRequest"')[0].click();
               },
               setDate(val) {
-                  this.request.Rooms = [val.room];
-                  this.request.StartTime = val.startTime;
-                  this.request.EndTime = val.endTime;
+                  this.request.Events[0].Rooms = [val.room];
+                  this.request.Events[0].StartTime = val.startTime;
+                  this.request.Events[0].EndTime = val.endTime;
+                  this.request.Events[0].EventDate = val.eventDate;
+                  this.request.Events[0].ExpectedAttendance = val.att;
                   this.request.EventDates = [val.eventDate];
-                  this.request.ExpectedAttendance = val.att;
               },
               addGoogleKey(key) {
                   if (this.googleCurrentKey) {
@@ -2835,6 +3006,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].RegistrationEndDate = this.request.Events[indexes.targetIdx].RegistrationEndDate
                   this.request.Events[indexes.currIdx].RegistrationEndTime = this.request.Events[indexes.targetIdx].RegistrationEndTime
                   this.request.Events[indexes.currIdx].FeeType = this.request.Events[indexes.targetIdx].FeeType
+                  this.request.Events[indexes.currIdx].FeeBudgetLine = this.request.Events[indexes.targetIdx].FeeBudgetLine
                   this.request.Events[indexes.currIdx].Fee = this.request.Events[indexes.targetIdx].Fee
                   this.request.Events[indexes.currIdx].CoupleFee = this.request.Events[indexes.targetIdx].CoupleFee
                   this.request.Events[indexes.currIdx].OnlineFee = this.request.Events[indexes.targetIdx].OnlineFee
@@ -2849,6 +3021,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].ExpectedAttendance = this.request.Events[indexes.targetIdx].ExpectedAttendance
                   this.request.Events[indexes.currIdx].Checkin = this.request.Events[indexes.targetIdx].Checkin
                   this.request.Events[indexes.currIdx].SupportTeam = this.request.Events[indexes.targetIdx].SupportTeam
+                  this.request.Events[indexes.currIdx].NumTablesRound = this.request.Events[indexes.targetIdx].NumTablesRound
+                  this.request.Events[indexes.currIdx].NumTablesRect = this.request.Events[indexes.targetIdx].NumTablesRect
+                  this.request.Events[indexes.currIdx].TableType = this.request.Events[indexes.targetIdx].TableType
+                  this.request.Events[indexes.currIdx].NumChairsRound = this.request.Events[indexes.targetIdx].NumChairsRound
+                  this.request.Events[indexes.currIdx].NumChairsRect = this.request.Events[indexes.targetIdx].NumChairsRect
               },
               updateCatering(indexes) {
                   this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
@@ -2883,8 +3060,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   this.request.Events[indexes.currIdx].PublicityBlurb = this.request.Events[indexes.targetIdx].PublicityBlurb
                   this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
                   this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
+                  this.request.Events[indexes.currIdx].NeedsDoorsUnlocked = this.request.Events[indexes.targetIdx].NeedsDoorsUnlocked
               },
               checkForConflicts() {
+                  this.request.HasConflicts = false
                   this.existingRequests = JSON.parse(
                       $('[id$="hfUpcomingRequests"]')[0].value
                   );
@@ -2893,22 +3072,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       r = JSON.parse(r);
                       let compareTarget = [], compareSource = []
                       //Build an object for each date to compare with 
-                      if (r.IsSame || r.Events.length == 1) {
-                          for (let i = 0; i < r.EventDates.length; i++) {
-                              compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                      if (r.Events[0].Rooms && r.Events[0].Rooms.length > 0) {
+                          if (r.IsSame || r.Events.length == 1) {
+                              for (let i = 0; i < r.EventDates.length; i++) {
+                                  compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+                              }
+                          } else {
+                              for (let i = 0; i < r.Events.length; i++) {
+                                  compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
+                              }
                           }
-                      } else {
-                          for (let i = 0; i < r.Events.length; i++) {
-                              compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
-                          }
-                      }
-                      if (this.request.Events.length == 1 || this.request.IsSame) {
-                          for (let i = 0; i < this.request.EventDates.length; i++) {
-                              compareSource.push({ Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer })
-                          }
-                      } else {
-                          for (let i = 0; i < this.request.Events.length; i++) {
-                              compareSource.push({ Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer })
+                          if (this.request.Events.length == 1 || this.request.IsSame) {
+                              for (let i = 0; i < this.request.EventDates.length; i++) {
+                                  compareSource.push({ Date: this.request.EventDates[i], StartTime: this.request.Events[0].StartTime, EndTime: this.request.Events[0].EndTime, Rooms: this.request.Events[0].Rooms, MinsStartBuffer: this.request.Events[0].MinsStartBuffer, MinsEndBuffer: this.request.Events[0].MinsEndBuffer })
+                              }
+                          } else {
+                              for (let i = 0; i < this.request.Events.length; i++) {
+                                  compareSource.push({ Date: this.request.Events[i].EventDate, StartTime: this.request.Events[i].StartTime, EndTime: this.request.Events[i].EndTime, Rooms: this.request.Events[i].Rooms, MinsStartBuffer: this.request.Events[i].MinsStartBuffer, MinsEndBuffer: this.request.Events[i].MinsEndBuffer })
+                              }
                           }
                       }
                       let conflicts = false
@@ -2917,7 +3098,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                               if (compareTarget[x].Date == compareSource[y].Date) {
                                   //On same date
                                   //Check for conflicting rooms
-                                  let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                  let conflictingRooms = []
+                                  if (compareSource[y].Rooms && compareSource[y].Rooms.length > 0) {
+                                      conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
+                                  }
                                   if (conflictingRooms.length > 0) {
                                       //Check they do not overlap with moment-range
                                       let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
@@ -2946,6 +3130,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                                               roomNames.push(roomName)
                                           })
                                           conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                                          this.request.HasConflicts = true
                                       }
                                   }
                               }
@@ -2956,6 +3141,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   if (conflictingRequests.length > 0) {
                       this.valid = false;
                       this.conflictingRequestMsg = "There are conflicts with the following dates and rooms: " + conflictingMessage.join(", ")
+                      this.request.HasConflicts = true
                   }
               },
               checkTimeMeetsRequirements() {
@@ -2973,7 +3159,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                       if (this.request.Events[x].EndTime.includes("PM")) {
                           let info = this.request.Events[x].EndTime.split(':')
-                          if (parseInt(info[0]) > 9 || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00")) {
+                          if ((parseInt(info[0]) > 9 && parseInt(info[0]) != 12) || (parseInt(info[0]) == 9 && info[1].split(' ')[0] != "00")) {
                               meetsTimeRequirements = false
                               this.afterHoursMsg = 'Our facilities close at 9PM. Requesting an ending time past this time will require special approval from the Events Director and should not be expected.'
                           }
@@ -2989,6 +3175,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                               //Sunday
                               if (this.request.Events[idx].StartTime.includes("AM")) {
                                   meetsTimeRequirements = false
+                                  this.afterHoursMsg = 'Due to the busyness of Sundays, please keep in mind that all events requested during church hours will need to be approved with special consideration from the Events Director.'
                               }
                           } else if (dt.day() == 6) {
                               if (this.request.Events[idx].EndTime.includes("PM") && this.request.Events[idx].EndTime != "12:00 PM") {
@@ -3005,7 +3192,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               validate() {
                   this.valid = true
                   this.triedSubmit = true
-                  this.$refs.form.validate()
+                  if (this.$refs.form) {
+                      this.$refs.form.validate()
+                  }
                   if (this.$refs.roompckr && this.tab == 1) {
                       this.$refs.roompckr.$refs.roomform.validate()
                   }
@@ -3035,11 +3224,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       })
                   }
                   const errors = [];
-                  this.$refs.form.inputs.forEach((e) => {
-                      if (e.errorBucket && e.errorBucket.length) {
-                          errors.push(...e.errorBucket)
-                      }
-                  });
+                  if (this.$refs.form) {
+                      this.$refs.form.inputs.forEach((e) => {
+                          if (e.errorBucket && e.errorBucket.length) {
+                              errors.push(...e.errorBucket)
+                          }
+                      });
+                  }
                   this.checkForConflicts()
                   this.checkTimeMeetsRequirements()
               },
@@ -3109,6 +3300,22 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                   }
               },
+              'request.Ministry'(val) {
+                  let min = this.ministries.filter(m => {
+                      return m.Id == this.request.Ministry
+                  })
+                  if (min.length > 0) {
+                      if (min[0].IsPersonal) {
+                          //Remove options if Personal Request, only allow space
+                          this.request.needsOnline = false
+                          this.request.needsReg = false
+                          this.request.needsCatering = false
+                          this.request.needsChildCare = false
+                          this.request.needsAccom = false
+                          this.request.needsPub = false
+                      }
+                  }
+              },
               'request.needsSpace'(val) {
                   if (!val) {
                       for (var i = 0; i < this.request.Events.length; i++) {
@@ -3116,6 +3323,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].ExpectedAttendance = null
                           this.request.Events[i].Checkin = false
                           this.request.Events[i].SupportTeam = false
+                          this.request.Events[i].NumTablesRound = null
+                          this.request.Events[i].NumTablesRect = null
+                          this.request.Events[i].TableType = []
+                          this.request.Events[i].NumChairsRound = null
+                          this.request.Events[i].NumChairsRect = null
                       }
                   }
               },
@@ -3137,6 +3349,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].RegistrationEndDate = ''
                           this.request.Events[i].RegistrationEndTime = ''
                           this.request.Events[i].FeeType = []
+                          this.request.Events[i].FeeBudgetLine = ''
                           this.request.Events[i].Fee = ''
                           this.request.Events[i].CoupleFee = ''
                           this.request.Events[i].OnlineFee = ''
@@ -3168,7 +3381,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                       }
                   }
               },
-              'request.needsChildcare'(val) {
+              'request.needsChildCare'(val) {
                   if (!val) {
                       for (var i = 0; i < this.request.Events.length; i++) {
                           this.request.Events[i].CCStartTime = ''
@@ -3193,6 +3406,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                           this.request.Events[i].PublicityBlurb = ''
                           this.request.Events[i].SetUp = ''
                           this.request.Events[i].SetUpImage = null
+                          this.request.Events[i].NeedsDoorsUnlocked = false
                       }
                   }
               },
@@ -3219,6 +3433,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   });
 </script>
 <style>
+  .v-list--dense .v-subheader {
+    font-size: .95rem;
+    font-weight: bold;
+  }
   .theme--light.v-application {
     background: rgba(0, 0, 0, 0);
   }
@@ -3243,6 +3461,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   .v-window {
     overflow: visible !important;
   }
+  .v-dialog:not(.v-dialog--fullscreen) {
+    max-height: 80vh !important;
+  }
+  .v-dialog {
+    margin-top: 100px !important;
+  }
   .btn-hidden {
     visibility: hidden;
   }
@@ -3263,7 +3487,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   .btn-pub-del:hover .tooltip {
     opacity: 1;
   }
-  .accent-text {
+  .accent-text, .v-list--dense .v-subheader {
     color: #8ED2C9;
   }
 </style>

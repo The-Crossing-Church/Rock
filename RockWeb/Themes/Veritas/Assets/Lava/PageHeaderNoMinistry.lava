@@ -1,0 +1,65 @@
+﻿{% assign logo = Item | Attribute:'Logo' %}
+{% assign subtitle = Item | Attribute:'Subtitle' %}
+{% assign sliderOne = Item | Attribute:'ImageOneURL' %}
+{% assign sliderTwo = Item | Attribute:'ImageTwoURL' %}
+<br/>
+<div class='row'>
+  <div class='col col-xs-12' style='text-align: center;'>
+    {% if logo != '' %}
+      <img style='max-width:80px;' src="{{logo}}"/>
+    {% endif %}
+    <h1>{{'Global' | Page:'Title'}}</h1>
+    <h2 class='text--upper'>{{subtitle}}</h2>
+  </div>
+</div>
+{% if sliderOne != '' and sliderTwo != '' %}
+<br/><br/>
+<div id='ministryCarousel' class='carousel slide'>
+  <ol class="carousel-indicators">
+    <li data-target="#ministryCarousel" data-slide-to="0" class="active"></li>
+    <li data-target="#ministryCarousel" data-slide-to="1"></li>
+  </ol>
+  <div class="carousel-inner">
+    <div class="carousel-item item active">
+      <img class="d-block w-100" src="{{sliderOne}}" alt="Slide One"/>
+    </div>
+    <div class="carousel-item item">
+      <img class="d-block w-100" src="{{sliderTwo}}" alt="Slide Two"/>
+    </div>
+  </div>
+</div>
+{% else %}
+  {% if sliderOne != '' %}
+    <br/><br/>
+    <div class='wide-img' >
+      <img src="{{sliderOne}}" />
+    </div>
+  {% endif %}
+  {% if sliderTwo != '' %}
+    <br/><br/>
+    <div class='wide-img' >
+      <img src="{{sliderTwo}}" />
+    </div>
+  {% endif %}
+{% endif %}
+<br/><br/>
+<script>
+  $(document).ready(()=> {
+    $('#ministryCarousel').carousel();
+  })
+</script>
+<style>
+#ministryCarousel, .wide-img {
+  width: 100vw;
+  margin-left: -50vw;
+  left: 50%;
+  position: relative;
+}
+.wide-img img {
+  width: 100%;
+}
+h2 {
+  font-size: 1.5em;
+  line-height: 1.20833em;
+}
+</style>

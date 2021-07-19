@@ -355,6 +355,7 @@
         <%-- Panel for checkin manager --%>
         <asp:Panel ID="pnlManager" runat="server" Visible="false">
             <asp:HiddenField ID="hfAllowOpenClose" runat="server" />
+            <asp:HiddenField ID="hfShowLocationCounts" runat="server" />
             <div class="checkin-header">
                 <h1>Locations</h1>
             </div>
@@ -373,9 +374,9 @@
                                     <div class="kioskmanager-location-label">
                                         <asp:Literal ID="lLocationName" runat="server" />
                                     </div>
-                                    <div class="badge badge-info kioskmanager-location-count">
+                                    <asp:Panel ID="pnlLocationCount" runat="server" class="badge badge-info kioskmanager-location-count">
                                         <asp:Literal ID="lLocationCount" runat="server" />
-                                    </div>
+                                    </asp:Panel>
                                 </div>
 
                                 <br />

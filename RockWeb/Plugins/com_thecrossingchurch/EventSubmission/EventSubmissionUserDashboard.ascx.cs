@@ -46,11 +46,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Description( "Dashboard for Current User's Event Submissions" )]
 
     [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
-    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 0 )]
-    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 0 )]
-    [IntegerField( "PageId", "The id of the page for editing requests.", true, 0, "", 0 )]
-    [IntegerField( "Workflow Entry Page Id", "The id of the page for workflow entries.", true, 0, "", 0 )]
-    [WorkflowTypeField("User Action Workflow", "The workflow that allows users to accept proposed changes, use original, or cancel request")]
+    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 1)]
+    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 2 )]
+    [TextField( "Rock Base URL", "Base URL for Rock", true, "https://rock.thecrossingchurch.com/page/", "", 3 )]
+    [IntegerField( "Page Id", "The id of the page for editing requests.", true, 0, "", 4 )]
+    [IntegerField( "Admin Dashboard Page Id", "The id of the page for the admin dashboard.", true, 0, "", 5 )]
+    [IntegerField( "Workflow Entry Page Id", "The id of the page for workflow entries.", true, 0, "", 6 )]
+    [WorkflowTypeField( "User Action Workflow", "The workflow that allows users to accept proposed changes, use original, or cancel request", order: 7 )]
+    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, order: 8 )]
+    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, order: 9 )]
 
     public partial class EventSubmissionUserDashboard : Rock.Web.UI.RockBlock
     {
@@ -59,9 +63,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private int DefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
+        public string BaseURL { get; set; }
         private int PageId { get; set; }
+        private int AdminPageId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
         private List<DefinedValue> Ministries { get; set; }
+        private Rock.Model.Group RoomOnlySR { get; set; }
+        private Rock.Model.Group EventSR { get; set; }
         private static class PageParameterKey
         {
             public const string Id = "Id";
@@ -95,21 +103,30 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
             MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
             ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
+            BaseURL = GetAttributeValue( "RockBaseURL" );
             PageId = GetAttributeValue( "PageId" ).AsInteger();
+            AdminPageId = GetAttributeValue( "AdminDashboardPageId" ).AsInteger();
             hfRequestURL.Value = "/page/" + PageId;
             int workflowEntryPageId = GetAttributeValue( "WorkflowEntryPageId" ).AsInteger();
-            int workflowTypeId = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "UserActionWorkflow" ) ) ).Id; 
+            int workflowTypeId = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "UserActionWorkflow" ) ) ).Id;
             hfWorkflowURL.Value = "/page/" + workflowEntryPageId + "?WorkflowTypeId=" + workflowTypeId;
             Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
             Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger() } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
-            LoadMyRequests();
-            if ( !Page.IsPostBack )
+            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
+            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
+            Ministries.LoadAttributes();
+            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+            var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
+            var EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
+            if ( RoomSRGuid.HasValue )
             {
-
+                RoomOnlySR = new GroupService( context ).Get( RoomSRGuid.Value );
             }
+            if ( EventSRGuid.HasValue )
+            {
+                EventSR = new GroupService( context ).Get( EventSRGuid.Value );
+            }
+            LoadMyRequests();
         }
 
         #endregion
@@ -124,8 +141,64 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelItemService svc = new ContentChannelItemService( context );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && i.CreatedByPersonAliasId == CurrentPersonAliasId ).ToList();
             items.LoadAttributes();
-            var requests = items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } );
+            var requests = items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, Comments = JsonConvert.DeserializeObject<List<Comment>>( i.AttributeValues.FirstOrDefault( av => av.Key == "Comments" ).Value.Value ) } );
             hfRequests.Value = JsonConvert.SerializeObject( requests );
+        }
+        protected void AddComment_Click( object sender, EventArgs e )
+        {
+            int? id = hfRequestID.Value.AsIntegerOrNull();
+            if ( id.HasValue )
+            {
+                ContentChannelItem item = new ContentChannelItemService( context ).Get( id.Value );
+                item.LoadAttributes();
+                List<Comment> Comments = JsonConvert.DeserializeObject<List<Comment>>( item.AttributeValues["Comments"].Value );
+                Comment newComment = new Comment();
+                newComment.Message = hfComment.Value;
+                newComment.CreatedBy = CurrentPerson.FullName;
+                newComment.CreatedOn = RockDateTime.Now;
+                Comments.Add( newComment );
+                item.SetAttributeValue( "Comments", JsonConvert.SerializeObject( Comments ) );
+
+                //Notify Admins
+                SendCommentEmail( item, newComment );
+
+                //Save CCI
+                item.SaveAttributeValues( context );
+                hfRequestID.Value = null;
+                Page.Response.Redirect( Page.Request.Url.ToString(), true );
+            }
+        }
+
+        private void SendCommentEmail( ContentChannelItem item, Comment comment )
+        {
+            string subject = CurrentPerson.FullName + " Has Added a Comment to " + item.Title;
+            string message = "<p>" + CurrentPerson.FullName + " has added this comment to their request:</p>" +
+                "<blockquote>" + comment.Message + "</blockquote><br/>" +
+                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + AdminPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            List<GroupMember> groupMembers = new List<GroupMember>();
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            if ( item.AttributeValues["IsPreApproved"].Value == "Yes" )
+            {
+                groupMembers = RoomOnlySR.Members.Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Active ).ToList();
+            }
+            else
+            {
+                groupMembers = EventSR.Members.Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Active ).ToList();
+            }
+            for ( var i = 0; i < groupMembers.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( groupMembers[i].Person, new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
         }
 
         #endregion
@@ -184,13 +257,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public int? MinsEndBuffer { get; set; }
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
+            public List<string> TableType { get; set; }
+            public int? NumTablesRound { get; set; }
+            public int? NumTablesRect { get; set; }
+            public int? NumChairsRound { get; set; }
+            public int? NumChairsRect { get; set; }
             public bool? Checkin { get; set; }
             public string EventURL { get; set; }
             public string ZoomPassword { get; set; }
             public DateTime? RegistrationDate { get; set; }
             public DateTime? RegistrationEndDate { get; set; }
             public string RegistrationEndTime { get; set; }
+            public List<string> FeeType { get; set; }
+            public string FeeBudgetLine { get; set; }
             public string Fee { get; set; }
+            public string CoupleFee { get; set; }
+            public string OnlineFee { get; set; }
             public string Sender { get; set; }
             public string SenderEmail { get; set; }
             public string ThankYou { get; set; }
@@ -218,6 +300,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string PublicityBlurb { get; set; }
             public string TechDescription { get; set; }
             public string SetUp { get; set; }
+        }
+        private class Comment
+        {
+            public string CreatedBy { get; set; }
+            public DateTime? CreatedOn { get; set; }
+            public string Message { get; set; }
         }
     }
 }

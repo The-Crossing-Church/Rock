@@ -41,6 +41,13 @@
                     </ItemTemplate>
                 </Rock:RockTemplateField>
                 <Rock:RockBoundField HeaderText="Average Gift Amount" DataField="AverageGiftAmount" ExcelExportBehavior="AlwaysInclude" Visible="false" />
+                <Rock:RockTemplateField HeaderText="Previous Amount Given" SortExpression="PreviousAmountGiven" ExcelExportBehavior="NeverInclude">
+                    <ItemTemplate>
+                        $<asp:Label ID="lblPreAmtGiven" runat="server"
+                            Text='<%# Bind("PreviousAmountGiven") %>'></asp:Label>
+                    </ItemTemplate>
+                </Rock:RockTemplateField>
+                <Rock:RockBoundField HeaderText="Previous Amount Given" DataField="PreviousAmountGiven" ExcelExportBehavior="AlwaysInclude" Visible="false" />
                 <Rock:RockBoundField HeaderText="Previous Number of Gifts" DataField="PreviousNumberOfGifts" SortExpression="PreviousNumberOfGifts" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockTemplateField HeaderText="Previous Average Gift Amount" SortExpression="PreviousAverageGiftAmount" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>

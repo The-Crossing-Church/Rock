@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionHistory.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionHistory"
 %> <%-- Add Vue and Vuetify CDN --%>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
@@ -35,104 +35,83 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
         <v-col>
           <v-card>
             <v-card-text>
-              <v-list>
-                <v-list-item class="list-with-border">
-                  <v-row align="center">
-                    <v-col>
-                      <v-text-field
-                        label="Search"
-                        prepend-inner-icon="mdi-magnify"
-                        v-model="filters.query"
-                        clearable
-                      ></v-text-field>
-                    </v-col>
-                    <v-col>
-                      <v-text-field
-                        label="Submitter"
-                        prepend-inner-icon="mdi-account"
-                        v-model="filters.submitter"
-                        clearable
-                      ></v-text-field>
-                    </v-col>
-                    <v-col>
-                      <v-autocomplete
-                        label="Status"
-                        :items="['Submitted', 'Approved', 'Denied', 'Cancelled']"
-                        v-model="filters.status"
-                        multiple
-                        attach
-                        clearable
-                      ></v-autocomplete>
-                    </v-col>
-                    <v-col>
-                      <v-autocomplete
-                        label="Resources"
-                        :items="['Room', 'Online', 'Publicity', 'Childcare', 'Catering', 'Extra Resources']"
-                        v-model="filters.resources"
-                        multiple
-                        attach
-                        clearable
-                      ></v-autocomplete>
-                    </v-col>
-                    <v-col cols="2">
-                      <v-btn color="primary" class="pull-right" @click="filter"
-                        >Filter</v-btn
-                      >
-                    </v-col>
-                  </v-row>
-                </v-list-item>
-                <v-list-item class="list-with-border">
-                  <v-row>
-                    <v-col><strong>Request</strong></v-col>
-                    <v-col><strong>Submitted By</strong></v-col>
-                    <v-col><strong>Submitted On</strong></v-col>
-                    <v-col><strong>Event Dates</strong></v-col>
-                    <v-col><strong>Requested Resources</strong></v-col>
-                    <v-col><strong>Status</strong></v-col>
-                  </v-row>
-                </v-list-item>
-                <v-list-item
-                  v-for="(r, idx) in requests"
-                  :key="r.Id"
-                  :class="getClass(idx)"
-                >
-                  <v-row align="center">
-                    <v-col @click="selected = r; overlay = true;"
-                      ><div class="hover">{{ r.Name }}</div></v-col
-                    >
-                    <v-col>{{ r.CreatedBy }}</v-col>
-                    <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
-                    <v-col>{{ formatDates(r.EventDates) }}</v-col>
-                    <v-col>{{ requestType(r) }}</v-col>
-                    <v-col :class="getStatusPillClass(r.RequestStatus)"
-                      >{{ r.RequestStatus }}</v-col
-                    >
-                  </v-row>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-            <v-card-actions>
               <v-row align="center">
-                <v-col cols="9"></v-col>
-                <v-col cols="1">
-                  <v-select
-                    label="Rows"
-                    v-model="rows"
-                    :items="[5,10,15,30]"
+                <v-col>
+                  <v-text-field
+                    label="Search"
+                    prepend-inner-icon="mdi-magnify"
+                    v-model="filters.query"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col>
+                  <v-text-field
+                    label="Submitter"
+                    prepend-inner-icon="mdi-account"
+                    v-model="filters.submitter"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col>
+                  <v-autocomplete
+                    label="Status"
+                    :items="['Submitted', 'Approved', 'Denied', 'Cancelled']"
+                    v-model="filters.status"
+                    multiple
                     attach
-                  ></v-select>
+                    clearable
+                  ></v-autocomplete>
+                </v-col>
+                <v-col>
+                  <v-autocomplete
+                    label="Resources"
+                    :items="['Room', 'Catering', 'Childcare', 'Extra Resources', 'Online', 'Publicity', 'Registration']"
+                    v-model="filters.resources"
+                    multiple
+                    attach
+                    clearable
+                  ></v-autocomplete>
                 </v-col>
                 <v-col cols="2">
-                  <v-btn icon @click='paginate("prev")'>
-                    <v-icon>mdi-chevron-left</v-icon>
-                  </v-btn>
-                  {{(page + 1)}}
-                  <v-btn icon @click='paginate("next")'>
-                    <v-icon>mdi-chevron-right</v-icon>
-                  </v-btn>
+                  <v-btn color="primary" class="pull-right" @click="filter"
+                    >Filter</v-btn
+                  >
                 </v-col>
               </v-row>
-            </v-card-actions>
+              <v-data-table
+                :headers="headers"
+                :items="requests"
+                :items-per-page="15"
+              >
+                <template v-slot:item="{ item, index }">
+                  <tr
+                    @click="selected = item; overlay = true;"
+                    :data-id="item.Id"
+                  >
+                    <td>
+                      {{item.Name}}
+                    </td>
+                    <td>
+                      {{item.CreatedBy}}
+                    </td>
+                    <td>
+                      {{item.CreatedOn | formatDateTime}}
+                    </td>
+                    <td style="max-width: 300px;">
+                      {{formatDates(item.EventDates)}}
+                    </td>
+                    <td>
+                      {{requestType(item)}}
+                    </td>
+                    <td>
+                      <div :class="getStatusPillClass(item.RequestStatus)">
+                        {{item.RequestStatus}}
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </v-data-table>
+            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
@@ -218,6 +197,32 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                       <v-col>
                         <div class="floating-title">Desired Rooms/Spaces</div>
                         {{formatRooms(e.Rooms)}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType && e.TableType.length > 0">
+                      <v-col>
+                        <div class="floating-title">Requested Tables</div>
+                        {{e.TableType.join(', ')}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType && e.TableType.includes('Round')">
+                      <v-col>
+                        <div class="floating-title">Number of Round Tables</div>
+                        {{e.NumTablesRound}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Number of Chairs per Round Table</div>
+                        {{e.NumChairsRound}}
+                      </v-col>
+                    </v-row>
+                    <v-row v-if="e.TableType && e.TableType.includes('Rectangular')">
+                      <v-col>
+                        <div class="floating-title">Number of Rectangular Tables</div>
+                        {{e.NumTablesRect}}
+                      </v-col>
+                      <v-col>
+                        <div class="floating-title">Number of Chairs per Rectangular Table</div>
+                        {{e.NumChairsRect}}
                       </v-col>
                     </v-row>
                     <v-row vif="selected.needsReg">
@@ -351,6 +356,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     </v-row>
                     <v-row>
                       <v-col cols="12" md="6" v-if="e.Fee">
+                        <div class="floating-title">Registration Fee Budget Line</div>
+                        {{e.FeeBudgetLine}}
+                      </v-col>
+                      <v-col cols="12" md="6" v-if="e.Fee">
                         <div class="floating-title">Registration Fee</div>
                         {{e.Fee | formatCurrency}}
                       </v-col>
@@ -421,6 +430,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                       </v-row>
                     </template>
                     <v-row>
+                      <v-col>
+                        <div class="floating-title">Needs doors unlocked</div>
+                        {{boolToYesNo(e.NeedsDoorsUnlocked)}}
+                      </v-col>
                       <v-col>
                         <div class="floating-title">Add to public calendar</div>
                         {{boolToYesNo(e.ShowOnCalendar)}}
@@ -540,7 +553,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             <v-row v-if="selected.HistoricData">
               <v-col>
                 <div class="floating-title">Non-Transferrable Data</div>
-                {{selected.HistoricData}}
+                <div v-html="selected.HistoricData"></div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -590,6 +603,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     status: [],
                     resources: []
                 },
+                headers: [
+                    { text: "Request", value: "Name" },
+                    { text: "Submitted By", value: "CreatedBy" },
+                    { text: "Submitted On", value: "CreatedOn" },
+                    { text: "Event Dates", value: "EventDates" },
+                    { text: "Requested Resources", value: "Id" },
+                    { text: "Status", value: "RequestStatus" },
+                ]
             },
             created() {
                 this.getRequests();
@@ -637,7 +658,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         temp.push(req);
                     });
                     this.allrequests = temp;
-                    this.requests = temp.slice(0, this.rows);
+                    this.requests = temp;
                 },
                 filter() {
                     let temp = this.allrequests;
@@ -672,10 +693,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                             );
                         });
                     }
-                    this.requests = temp.slice(
-                        this.page * this.rows,
-                        this.page * this.rows + this.rows
-                    );
+                    this.requests = temp
                 },
                 paginate(val) {
                     if (val == "next") {
@@ -738,13 +756,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                     if (status == "Approved") {
                         return "no-top-pad status-pill approved";
                     }
-                    if (status == "Submitted") {
+                    if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
                         return "no-top-pad status-pill submitted";
                     }
-                    if (status == "Cancelled") {
+                    if (status == "Cancelled" || status == "Cancelled by User") {
                         return "no-top-pad status-pill cancelled";
                     }
-                    if (status == "Denied") {
+                    if (status == "Denied" || status == "Proposed Changes Denied") {
                         return "no-top-pad status-pill denied";
                     }
                 },
@@ -759,6 +777,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                         }
                         if (itm.needsPub) {
                             resources.push("Publicity");
+                        }
+                        if (itm.needsReg) {
+                            resources.push("Registration");
                         }
                         if (itm.needsChildCare) {
                             resources.push("Childcare");

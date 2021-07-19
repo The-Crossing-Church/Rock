@@ -85,10 +85,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
             Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
             Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger() } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).ToList();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
-            if( !String.IsNullOrEmpty( hfFocusDate.Value ) )
+            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
+            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
+            Ministries.LoadAttributes();
+            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+            if ( !String.IsNullOrEmpty( hfFocusDate.Value ) )
             {
                 SelectedMonthStart = DateTime.Parse( hfFocusDate.Value );
             }
@@ -132,7 +133,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             items.LoadAttributes();
             items = items.Where( i => {
                 var status = i.AttributeValues["RequestStatus"].Value;
-                if(status != "Submitted" && status != "Cancelled" && status != "Denied" )
+                var resources = i.AttributeValues["RequestType"].Value;
+                if(status != "Submitted" && status != "Cancelled" && status != "Denied" && resources.Contains("Room") )
                 {
                     var dateStr = i.AttributeValues["EventDates"];
                     var dates = dateStr.Value.Split( ',' );

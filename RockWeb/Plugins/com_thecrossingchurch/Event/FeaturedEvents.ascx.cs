@@ -80,18 +80,71 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         {
             base.OnLoad( e );
             DateTime today = RockDateTime.Now;
-            StartDate = new DateTime( today.Year, today.Month, 1, 0, 0, 0 ).AddDays(-7);
+            StartDate = new DateTime( today.Year, today.Month, 1, 0, 0, 0 ).AddDays( -7 );
             var eventCalendar = new EventCalendarService( new RockContext() ).Get( GetAttributeValue( "EventCalendar" ).AsGuid() );
             if ( eventCalendar != null )
             {
                 CalendarId = eventCalendar.Id;
             }
-            LoadAllInRange();
+            //LoadAllInRange();
+            LoadFeaturedEvents();
         }
 
         #endregion
 
         #region Methods
+
+        private void LoadFeaturedEvents()
+        {
+            var _context = new RockContext();
+            var eventSvc = new EventItemOccurrenceService( _context );
+            var events = eventSvc.Queryable( "EventItem" ).Where( m =>
+                                         m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
+                                         m.EventItem.IsActive &&
+                                         m.EventItem.IsApproved
+                            ).ToList()
+                            .Where( m =>
+                            {
+                                m.LoadAttributes();
+                                string featured = m.AttributeValues["FeaturedDates"].Value;
+                                DateTime featuredStart;
+                                DateTime featuredEnd;
+                                if ( !String.IsNullOrEmpty( featured ) )
+                                {
+                                    featuredStart = DateTime.Parse( featured.Split( ',' ).First() );
+                                    featuredEnd = DateTime.Parse( featured.Split( ',' ).Last() );
+                                    if ( DateTime.Compare( featuredStart, RockDateTime.Now ) <= 0 && DateTime.Compare( featuredEnd, RockDateTime.Now ) >= 0 )
+                                    {
+                                        return true;
+                                    }
+
+                                }
+                                return false;
+                            }
+                            ).ToList();
+            if ( events.Count() < 8 )
+            {
+                //Add additional upcoming events to this list to fil out the carousel a bit more
+                var ids = events.Select( e => e.Id ).ToList();
+                var addEvents = eventSvc.Queryable( "EventItem" ).Where( m =>
+                                         m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
+                                         m.EventItem.IsActive &&
+                                         m.EventItem.IsApproved &&
+                                         !ids.Contains( m.Id )
+                            ).ToList().Where( m =>
+                                        m.NextStartDateTime.HasValue && 
+                                        DateTime.Compare( m.NextStartDateTime.Value, RockDateTime.Now ) >= 0
+                            ).OrderBy( m => m.NextStartDateTime ).Take( 8 - events.Count() ).ToList();
+                events.AddRange( addEvents );
+            }
+            var mergeFields = new Dictionary<string, object>();
+            mergeFields.Add( "StartDate", StartDate.Value );
+            mergeFields.Add( "DetailsPage", LinkedPageRoute( "DetailsPage" ) );
+            mergeFields.Add( "EventItemOccurrences", events );
+            mergeFields.Add( "CurrentPerson", CurrentPerson );
+
+            lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
+        }
 
         /// <summary>
         /// Load list of events occuring soon
@@ -123,7 +176,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
 
                     if ( o.Schedule != null )
                     {
-                        eventOccurrenceDate.ScheduleOccurrences = o.Schedule.GetOccurrences( StartDate.Value, StartDate.Value.AddMonths(3) ).ToList();
+                        eventOccurrenceDate.ScheduleOccurrences = o.Schedule.GetOccurrences( StartDate.Value, StartDate.Value.AddMonths( 3 ) ).ToList();
                     }
                     else
                     {
