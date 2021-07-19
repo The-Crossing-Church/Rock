@@ -19,12 +19,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
-using System.Net.Mail;
 
 using FCM.Net;
+
 using Rock.Attribute;
 using Rock.Data;
+using Rock.Mobile;
 using Rock.Model;
+using Rock.Utility;
 using Rock.Web.Cache;
 
 namespace Rock.Communication.Transport
@@ -38,6 +40,31 @@ namespace Rock.Communication.Transport
     [TextField( "ServerKey", "The server key for your firebase account", true, "", "", 1 )]
     class RockMobilePush : TransportComponent, IRockMobilePush
     {
+        /// <summary>
+        /// The keys that can be present in the notification payload data.
+        /// </summary>
+        private static class PushKeys
+        {
+            /// <summary>
+            /// The communication identifier that this push notification is for.
+            /// </summary>
+            public const string CommunicationId = "Rock-CommunicationId";
+
+            /// <summary>
+            /// The page unique identifier.
+            /// </summary>
+            public const string PageGuid = "Rock-PageGuid";
+
+            /// <summary>
+            /// The query string parameters.
+            /// </summary>
+            public const string QueryString = "Rock-QueryString";
+
+            /// <summary>
+            /// The recipient identifier that this push notification is for.
+            /// </summary>
+            public const string RecipientId = "Rock-RecipientId";
+        }
 
         /// <summary>
         /// Sends the specified rock message.
@@ -114,6 +141,8 @@ namespace Rock.Communication.Transport
         /// <exception cref="System.NotImplementedException"></exception>
         public override void Send( Model.Communication communication, int mediumEntityTypeId, Dictionary<string, string> mediumAttributes )
         {
+            var pushData = communication.PushData.FromJsonOrNull<PushData>();
+
             using ( var communicationRockContext = new RockContext() )
             {
                 // Requery the Communication
@@ -144,7 +173,7 @@ namespace Rock.Communication.Transport
                 {
                     var currentPerson = communication.CreatedByPersonAlias?.Person;
                     var globalAttributes = GlobalAttributesCache.Get();
-                    string publicAppRoot = globalAttributes.GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash();
+                    string publicAppRoot = globalAttributes.GetValue( "PublicApplicationRoot" );
                     var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, currentPerson );
 
                     string serverKey = GetAttributeValue( "ServerKey" );
@@ -166,15 +195,26 @@ namespace Rock.Communication.Transport
                             {
                                 try
                                 {
-                                    int personAlias = recipient.PersonAliasId;
+                                    var siteId = pushData?.MobileApplicationId;
+                                    List<string> devices = null;
 
-                                    var service = new PersonalDeviceService( recipientRockContext );
-                                    List<string> devices = service.Queryable()
-                                        .Where( p => p.PersonAliasId.HasValue && p.PersonAliasId.Value == personAlias && p.NotificationsEnabled && !string.IsNullOrEmpty( p.DeviceRegistrationId ) )
-                                        .Select( p => p.DeviceRegistrationId )
-                                        .ToList();
+                                    if ( recipient.PersonAliasId.HasValue )
+                                    {
+                                        int personAliasId = recipient.PersonAliasId.Value;
+                                        var service = new PersonalDeviceService( recipientRockContext );
 
-                                    if ( devices.Any() )
+                                        devices = service.Queryable()
+                                            .Where( p => p.PersonAliasId.HasValue && p.PersonAliasId.Value == personAliasId && p.NotificationsEnabled && !string.IsNullOrEmpty( p.DeviceRegistrationId ) )
+                                            .Where( p => !siteId.HasValue || siteId.Value == p.SiteId )
+                                            .Select( p => p.DeviceRegistrationId )
+                                            .ToList();
+                                    }
+                                    else if ( !string.IsNullOrEmpty( recipient.PersonalDevice?.DeviceRegistrationId ) )
+                                    {
+                                        devices = new List<string> { recipient.PersonalDevice?.DeviceRegistrationId };
+                                    }
+
+                                    if ( devices != null && devices.Any() )
                                     {
                                         // Create merge field dictionary
                                         var mergeObjects = recipient.CommunicationMergeValues( mergeFields );
@@ -192,11 +232,12 @@ namespace Rock.Communication.Transport
                                                 Body = message,
                                                 Sound = sound,
                                             },
+                                            Data = GetPushNotificationData( communication.PushOpenAction, pushData, recipient )
                                         };
 
                                         ResponseContent response = Utility.AsyncHelpers.RunSync( () => sender.SendAsync( notification ) );
 
-                                        bool failed = response.MessageResponse.Failure == devices.Count;
+                                        bool failed = response.MessageResponse.Failure == devices.Count || response.MessageResponse.Success == 0;
                                         var status = failed ? CommunicationRecipientStatus.Failed : CommunicationRecipientStatus.Delivered;
 
                                         if ( failed )
@@ -212,29 +253,30 @@ namespace Rock.Communication.Transport
                                         recipient.TransportEntityTypeName = this.GetType().FullName;
                                         recipient.UniqueMessageId = response.MessageResponse.MulticastId;
 
-                                        try
+                                        if ( recipient.PersonAlias != null )
                                         {
-                                            var historyService = new HistoryService( recipientRockContext );
-                                            historyService.Add( new History
+                                            try
                                             {
-                                                CreatedByPersonAliasId = communication.SenderPersonAliasId,
-                                                EntityTypeId = personEntityTypeId,
-                                                CategoryId = communicationCategoryId,
-                                                EntityId = recipient.PersonAlias.PersonId,
-                                                Verb = History.HistoryVerb.Sent.ConvertToString().ToUpper(),
-                                                ChangeType = History.HistoryChangeType.Record.ToString(),
-                                                ValueName = "Push Notification",
-                                                Caption = message.Truncate( 200 ),
-                                                RelatedEntityTypeId = communicationEntityTypeId,
-                                                RelatedEntityId = communication.Id
-                                            } );
+                                                var historyService = new HistoryService( recipientRockContext );
+                                                historyService.Add( new History
+                                                {
+                                                    CreatedByPersonAliasId = communication.SenderPersonAliasId,
+                                                    EntityTypeId = personEntityTypeId,
+                                                    CategoryId = communicationCategoryId,
+                                                    EntityId = recipient.PersonAlias.PersonId,
+                                                    Verb = History.HistoryVerb.Sent.ConvertToString().ToUpper(),
+                                                    ChangeType = History.HistoryChangeType.Record.ToString(),
+                                                    ValueName = "Push Notification",
+                                                    Caption = message.Truncate( 200 ),
+                                                    RelatedEntityTypeId = communicationEntityTypeId,
+                                                    RelatedEntityId = communication.Id
+                                                } );
+                                            }
+                                            catch ( Exception ex )
+                                            {
+                                                ExceptionLogService.LogException( ex, null );
+                                            }
                                         }
-                                        catch ( Exception ex )
-                                        {
-                                            ExceptionLogService.LogException( ex, null );
-                                        }
-
-
                                     }
                                     else
                                     {
@@ -281,10 +323,78 @@ namespace Rock.Communication.Transport
                     Title = title,
                     Body = message,
                     Sound = sound,
-                }
+                },
+                Data = GetPushNotificationData( emailMessage.OpenAction, emailMessage.Data, null )
             };
 
-            Utility.AsyncHelpers.RunSync( () => sender.SendAsync( notification ) );
+            AsyncHelpers.RunSync( () => sender.SendAsync( notification ) );
+        }
+
+        /// <summary>
+        /// URL encodes the dictionary as a query string.
+        /// </summary>
+        /// <param name="dictionary">The dictionary to be encoded.</param>
+        /// <returns>A string that represents the dictionary as a query string.</returns>
+        private static string UrlEncode( Dictionary<string, string> dictionary )
+        {
+            if ( dictionary == null )
+            {
+                return string.Empty;
+            }
+
+            return string.Join( "&", dictionary.Select( a => $"{a.Key.UrlEncode()}={a.Value.UrlEncode()}" ) );
+        }
+
+        /// <summary>
+        /// Gets the push notification data to be sent to FCM.
+        /// </summary>
+        /// <param name="openAction">The open action.</param>
+        /// <param name="pushData">The push data.</param>
+        /// <param name="recipient">The recipient.</param>
+        /// <returns>The data to be included in the <see cref="FCM.Net.Message.Data"/> property.</returns>
+        private static Dictionary<string, string> GetPushNotificationData( PushOpenAction? openAction, PushData pushData, CommunicationRecipient recipient )
+        {
+            var notificationData = new Dictionary<string, string>();
+
+            if ( recipient != null )
+            {
+                notificationData.Add( PushKeys.CommunicationId, recipient.CommunicationId.ToString() );
+                notificationData.Add( PushKeys.RecipientId, recipient.Id.ToString() );
+            };
+
+            if ( !openAction.HasValue || pushData == null )
+            {
+                return notificationData;
+            }
+
+            if ( openAction == PushOpenAction.ShowDetails && pushData.MobileApplicationId.HasValue && recipient != null )
+            {
+                var site = SiteCache.Get( pushData.MobileApplicationId.Value );
+                var additionalSettings = site?.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>();
+
+                if ( additionalSettings?.CommunicationViewPageId != null )
+                {
+                    var page = PageCache.Get( additionalSettings.CommunicationViewPageId.Value );
+
+                    if ( page != null )
+                    {
+                        notificationData.Add( PushKeys.PageGuid, page.Guid.ToString() );
+                        notificationData.Add( PushKeys.QueryString, $"CommunicationRecipientGuid={recipient.Guid}" );
+                    }
+                }
+            }
+            else if ( openAction == PushOpenAction.LinkToMobilePage && pushData.MobilePageId.HasValue )
+            {
+                var page = PageCache.Get( pushData.MobilePageId.Value );
+
+                if ( page != null )
+                {
+                    notificationData.Add( PushKeys.PageGuid, page.Guid.ToString() );
+                    notificationData.Add( PushKeys.QueryString, UrlEncode( pushData.MobilePageQueryString ) );
+                }
+            }
+
+            return notificationData;
         }
     }
 }

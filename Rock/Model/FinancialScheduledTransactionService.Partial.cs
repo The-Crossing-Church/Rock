@@ -382,9 +382,9 @@ namespace Rock.Model
                                 }
 
                                 transaction.FinancialPaymentDetail.AccountNumberMasked = financialPaymentDetail.AccountNumberMasked;
-                                transaction.FinancialPaymentDetail.NameOnCardEncrypted = financialPaymentDetail.NameOnCardEncrypted;
-                                transaction.FinancialPaymentDetail.ExpirationMonthEncrypted = financialPaymentDetail.ExpirationMonthEncrypted;
-                                transaction.FinancialPaymentDetail.ExpirationYearEncrypted = financialPaymentDetail.ExpirationYearEncrypted;
+                                transaction.FinancialPaymentDetail.NameOnCard = financialPaymentDetail.NameOnCard;
+                                transaction.FinancialPaymentDetail.ExpirationMonth = financialPaymentDetail.ExpirationMonth;
+                                transaction.FinancialPaymentDetail.ExpirationYear = financialPaymentDetail.ExpirationYear;
                                 transaction.FinancialPaymentDetail.BillingLocationId = financialPaymentDetail.BillingLocationId;
                                 if ( financialPaymentDetail.GatewayPersonIdentifier.IsNullOrWhiteSpace() )
                                 {
@@ -422,6 +422,7 @@ namespace Rock.Model
                                 transactionDetail.AccountId = detail.AccountId;
                                 transactionDetail.EntityTypeId = detail.EntityTypeId;
                                 transactionDetail.EntityId = detail.EntityId;
+                                transactionDetail.FeeCoverageAmount = detail.FeeCoverageAmount;
 
                                 if ( detail.Amount <= remainingAmount )
                                 {

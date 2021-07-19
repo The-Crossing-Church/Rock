@@ -18,10 +18,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration;
 using System.Runtime.Serialization;
 
 using Rock.Data;
+using Rock.Web.Cache;
 
 namespace Rock.Model
 {
@@ -31,7 +33,7 @@ namespace Rock.Model
     [RockDomain( "CMS" )]
     [Table( "ContentChannelType" )]
     [DataContract]
-    public partial class ContentChannelType : Model<ContentChannelType>
+    public partial class ContentChannelType : Model<ContentChannelType>, ICacheable
     {
 
         #region Entity Properties
@@ -118,7 +120,7 @@ namespace Rock.Model
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the channels.
+        /// Gets or sets the <see cref="Rock.Model.ContentChannel">channels</see>.
         /// </summary>
         /// <value>
         /// The channels.
@@ -172,6 +174,29 @@ namespace Rock.Model
         }
 
         #endregion
+
+        #region ICacheable
+
+        /// <summary>
+        /// Gets the cache object associated with this Entity
+        /// </summary>
+        /// <returns></returns>
+        public IEntityCache GetCacheObject()
+        {
+            return ContentChannelTypeCache.Get( this.Id );
+        }
+
+        /// <summary>
+        /// Updates any Cache Objects that are associated with this entity
+        /// </summary>
+        /// <param name="entityState">State of the entity.</param>
+        /// <param name="dbContext">The database context.</param>
+        public void UpdateCache( EntityState entityState, Rock.Data.DbContext dbContext )
+        {
+            ContentChannelTypeCache.UpdateCachedEntity( Id, entityState );
+        }
+
+        #endregion ICacheable
     }
 
     #region Entity Configuration

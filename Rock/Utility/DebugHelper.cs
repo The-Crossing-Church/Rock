@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.Entity.Infrastructure.Interception;
@@ -21,6 +22,7 @@ using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 using Rock.Data;
 
@@ -39,7 +41,36 @@ namespace Rock
         /// <summary>
         /// The call ms total
         /// </summary>
-        public static double _callMSTotal = 0.00;
+        public static double CallMSTotal => Interlocked.Read( ref _callMicrosecondsTotal ) / 1000.0;
+        private static long _callMicrosecondsTotal = 0;
+
+        /// <summary>
+        /// Just output timings, don't include the SQL or Stack trace
+        /// </summary>
+        public static bool TimingsOnly = false;
+
+        private static string SessionId = null;
+
+        /// <summary>
+        /// Limits Debug Output to the current asp.net SessionId
+        /// </summary>
+        /// <param name="enable">if set to <c>true</c> [enable].</param>
+        public static void LimitToSessionId( bool enable = true)
+        {
+            if ( enable )
+            {
+                SessionId = System.Web.HttpContext.Current?.Session?.SessionID;
+            }
+            else
+            {
+                SessionId = null;
+            }
+        }
+
+        /// <summary>
+        /// The summary only
+        /// </summary>
+        public static bool SummaryOnly = false;
 
         private class DebugHelperUserState
         {
@@ -149,8 +180,35 @@ namespace Rock
                     return;
                 }
 
-                DebugHelper._callCounts++;
+                if ( SessionId.IsNotNullOrWhiteSpace() )
+                {
+                    if ( System.Web.HttpContext.Current?.Session?.SessionID != SessionId )
+                    {
+                        return;
+                    }
+                }
 
+                var incrementedCallCount = Interlocked.Increment( ref DebugHelper._callCounts );
+
+                if ( !TimingsOnly && !SummaryOnly )
+                {
+                    StringBuilder sbDebug = GetSQLBlock( command, incrementedCallCount );
+                    System.Diagnostics.Debug.Write( sbDebug.ToString() );
+                }
+
+                var sqlConnection = command.Connection as System.Data.SqlClient.SqlConnection;
+
+                sqlConnection.StatisticsEnabled = true;
+                sqlConnection.ResetStatistics();
+
+                if ( userState == null )
+                {
+                    userState = new DebugHelperUserState { CallNumber = incrementedCallCount, Stopwatch = Stopwatch.StartNew() };
+                }
+            }
+
+            private static StringBuilder GetSQLBlock( DbCommand command, int incrementedCallCount )
+            {
                 StringBuilder sbDebug = new StringBuilder();
 
                 sbDebug.AppendLine( "\n" );
@@ -158,7 +216,7 @@ namespace Rock
                 StackTrace st = new StackTrace( 2, true );
                 var frames = st.GetFrames().Where( a => a.GetFileName() != null );
 
-                sbDebug.AppendLine( string.Format( "/* Call# {0}*/", DebugHelper._callCounts ) );
+                sbDebug.AppendLine( string.Format( "/* Call# {0}*/", incrementedCallCount ) );
 
                 sbDebug.AppendLine( string.Format( "/*\n{0}*/", frames.ToList().AsDelimited( "" ) ) );
 
@@ -177,7 +235,24 @@ namespace Rock
 
                         if ( p.SqlDbType == System.Data.SqlDbType.Int )
                         {
-                            return string.Format( "@{0} {1} = {2}", p.ParameterName, p.SqlDbType, p.SqlValue ?? "null" );
+                            Type valueType = p.Value?.GetType();
+                            object numericValue;
+
+                            // if this is a nullable enum, we'll have to look at p.Value instead of p.SqlValue to see what is really getting passed to SQL
+                            if ( valueType?.IsEnum == true && p.Value != null )
+                            {
+                                /* If this is an enum (for example GroupMemberStatus.Active), show the numeric 
+                                 * value getting passed to SQL
+                                 * p.Value will be the Enum, so convert it to int;
+                                 */
+                                numericValue = ( int ) p.Value;
+                            }
+                            else
+                            {
+                                numericValue = p.SqlValue;
+                            }
+
+                            return $"@{p.ParameterName} {p.SqlDbType} = {numericValue.ToString() ?? "null" }";
                         }
                         else if ( p.SqlDbType == System.Data.SqlDbType.Udt )
                         {
@@ -205,18 +280,7 @@ namespace Rock
                 sbDebug.AppendLine( command.CommandText );
 
                 sbDebug.AppendLine( "\nEND\nGO\n\n" );
-
-                System.Diagnostics.Debug.Write( sbDebug.ToString() );
-
-                var sqlConnection = command.Connection as System.Data.SqlClient.SqlConnection;
-
-                sqlConnection.StatisticsEnabled = true;
-                sqlConnection.ResetStatistics();
-
-                if ( userState == null )
-                {
-                    userState = new DebugHelperUserState { CallNumber = DebugHelper._callCounts, Stopwatch = Stopwatch.StartNew() };
-                }
+                return sbDebug;
             }
 
             /// <summary>
@@ -232,14 +296,17 @@ namespace Rock
                 {
                     debugHelperUserState.Stopwatch.Stop();
 
-                    var sqlConnection = command.Connection as System.Data.SqlClient.SqlConnection;
+                    if ( !SummaryOnly )
+                    {
+                        var sqlConnection = command.Connection as System.Data.SqlClient.SqlConnection;
+                        var stats = sqlConnection.RetrieveStatistics();
+                        sqlConnection.StatisticsEnabled = false;
+                        var commandExecutionTimeInMs = ( long ) stats["ExecutionTime"];
+                        System.Diagnostics.Debug.Write( $"\n/* Call# {debugHelperUserState.CallNumber}: ElapsedTime [{debugHelperUserState.Stopwatch.Elapsed.TotalMilliseconds}ms], SQLConnection.Statistics['ExecutionTime'] = [{commandExecutionTimeInMs}ms] */\n" );
+                    }
 
-                    var stats = sqlConnection.RetrieveStatistics();
-                    sqlConnection.StatisticsEnabled = false;
-                    var commandExecutionTimeInMs = ( long ) stats["ExecutionTime"];
-
-                    System.Diagnostics.Debug.Write( $"\n/* Call# {debugHelperUserState.CallNumber}: ElapsedTime [{debugHelperUserState.Stopwatch.Elapsed.TotalMilliseconds}ms], SQLConnection.Statistics['ExecutionTime'] = [{commandExecutionTimeInMs}ms] */\n" );
-                    _callMSTotal += debugHelperUserState.Stopwatch.Elapsed.TotalMilliseconds;
+                    var totalMicroSeconds = ( long ) Math.Round( debugHelperUserState.Stopwatch.Elapsed.TotalMilliseconds * 1000 );
+                    Interlocked.Add( ref _callMicrosecondsTotal, totalMicroSeconds );
                 }
             }
         }
@@ -273,7 +340,7 @@ namespace Rock
         public static void SQLLoggingStart( System.Data.Entity.DbContext dbContext )
         {
             _callCounts = 0;
-            _callMSTotal = 0.00;
+            _callMicrosecondsTotal = 0;
             SQLLoggingStop();
 
             if ( dbContext != null )
@@ -295,10 +362,15 @@ namespace Rock
         {
             if ( _callCounts != 0 )
             {
-                Debug.WriteLine( $"####SQLLogging Summary: _callCounts:{_callCounts}, _callMSTotal:{_callMSTotal}, _callMSTotal/_callCounts:{_callMSTotal / _callCounts}####" );
+                Debug.WriteLine( $"/* ####SQLLogging Summary: _callCounts:{_callCounts}, _callMSTotal:{CallMSTotal}, _callMSTotal/_callCounts:{CallMSTotal / _callCounts}#### */" );
             }
 
-            DbInterception.Remove( _debugLoggingDbCommandInterceptor );
+            if ( _debugLoggingDbCommandInterceptor != null )
+            {
+                _debugLoggingDbCommandInterceptor.EnableForAllDbContexts = false;
+                _debugLoggingDbCommandInterceptor.DbContextList.Clear();
+                DbInterception.Remove( _debugLoggingDbCommandInterceptor );
+            }
         }
 
         /// <summary>
@@ -328,7 +400,6 @@ namespace Rock
                     DebugHelper.SQLLoggingStop();
                 }
             }
-
         }
     }
 }

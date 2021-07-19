@@ -34,6 +34,7 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
 using Rock.Rest.Filters;
+using Rock.Web.Cache;
 
 namespace Rock.Rest.Controllers
 {
@@ -53,9 +54,9 @@ namespace Rock.Rest.Controllers
         public List<FinancialScheduledTransaction> GetExpiring( int numberOfDays, int? daysBack = null )
         {
             // qry all ScheduledTransactions that have a FinancialPaymentDetail with an ExpirationMonth and Year
-            var qry = this.Service.Queryable().Include( a => a.FinancialPaymentDetail ).Where( a => a.FinancialPaymentDetail.ExpirationMonthEncrypted != null && a.FinancialPaymentDetail.ExpirationYearEncrypted != null );
+            var qry = this.Service.Queryable().Include( a => a.FinancialPaymentDetail ).Where( a => a.FinancialPaymentDetail.CardExpirationDate != null );
 
-            //  fetch all the ScheduleTransactions into a list since ExpirationYear and ExpirationMonth are the decrypted from ExpirationMonthEncrypted and ExpirationYearEncrypted in C#
+            //  fetch all the ScheduleTransactions into a list since ExpirationYear and ExpirationMonth are come from Expiration Date
             var resultList = qry.ToList();
 
             var currentDate = RockDateTime.Now.Date;
@@ -93,7 +94,7 @@ namespace Rock.Rest.Controllers
         [Authenticate, Secured]
         [HttpPost]
         [System.Web.Http.Route( "api/FinancialScheduledTransactions/Process/{scheduledTransactionId}" )]
-        public virtual System.Net.Http.HttpResponseMessage ProcessPayment( int scheduledTransactionId, [FromUri]bool enableDuplicateChecking = true, [FromUri]bool enableScheduleAdherenceProtection = true, [FromUri]string idempotencyKey = null )
+        public virtual System.Net.Http.HttpResponseMessage ProcessPayment( int scheduledTransactionId, [FromUri] bool enableDuplicateChecking = true, [FromUri] bool enableScheduleAdherenceProtection = true, [FromUri] string idempotencyKey = null )
         {
             var financialScheduledTransactionService = Service as FinancialScheduledTransactionService;
             var financialScheduledTransaction = financialScheduledTransactionService.Queryable()
@@ -121,13 +122,23 @@ namespace Rock.Rest.Controllers
                 }
             ).ToList();
 
+            var sourceGuid = financialScheduledTransaction.SourceTypeValueId.HasValue ?
+                DefinedValueCache.Get( financialScheduledTransaction.SourceTypeValueId.Value ).Guid :
+                ( Guid? ) null;
+
+            var currencyCode = financialScheduledTransaction.ForeignCurrencyCodeValueId.HasValue ?
+                DefinedValueCache.Get( financialScheduledTransaction.ForeignCurrencyCodeValueId.Value ).Value :
+                string.Empty;
+
             var automatedPaymentArgs = new AutomatedPaymentArgs
             {
                 ScheduledTransactionId = scheduledTransactionId,
                 AuthorizedPersonAliasId = financialScheduledTransaction.AuthorizedPersonAliasId,
                 AutomatedGatewayId = financialScheduledTransaction.FinancialGatewayId.Value,
                 AutomatedPaymentDetails = details,
-                IdempotencyKey = idempotencyKey
+                IdempotencyKey = idempotencyKey,
+                FinancialSourceGuid = sourceGuid,
+                AmountCurrencyCode = currencyCode
             };
 
             var errorMessage = string.Empty;
@@ -188,7 +199,7 @@ namespace Rock.Rest.Controllers
         [Authenticate, Secured]
         [HttpGet]
         [System.Web.Http.Route( "api/FinancialScheduledTransactions/WithPreviousTransaction" )]
-        public virtual System.Net.Http.HttpResponseMessage GetWithPreviousTransaction( [FromUri]int skip, [FromUri]int top )
+        public virtual System.Net.Http.HttpResponseMessage GetWithPreviousTransaction( [FromUri] int skip, [FromUri] int top )
         {
             var now = RockDateTime.Now;
 

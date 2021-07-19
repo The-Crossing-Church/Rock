@@ -23,7 +23,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Web;
 using System.Web.UI.WebControls;
-
+using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -311,7 +311,7 @@ namespace Rock
         }
 
         /// <summary>
-        /// Then Orders the list by a a property in descending order.
+        /// Then Orders the list by a property in descending order.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source">The type of object.</param>
@@ -374,8 +374,7 @@ namespace Rock
                     {
                         //Check if Attribute Entity Type is same as Source Entity Type
                         var type = models.First().GetType();
-                        EntityTypeCache modelEntity = EntityTypeCache.Get( type );
-                        //EntityType modelEntity = new EntityTypeService( rockContext ).Queryable().FirstOrDefault( e => e.Name == type.BaseType.FullName );
+                        EntityTypeCache modelEntity = EntityTypeCache.Get( type, false );
                         PropertyInfo modelProperty = null;
                         //Same Entity Type
                         if ( modelEntity != null && modelEntity.Id == attributeCache.EntityTypeId )
@@ -386,9 +385,10 @@ namespace Rock
                         else if ( modelEntity != null )
                         {
                             //Search the entity properties for a matching entity and save the property information and primary key name
-                            foreach ( var propertyInfo in type.GetProperties() )
+                            var propertiesWithAttributes = type.GetProperties().Where( a => typeof( IHasAttributes ).IsAssignableFrom( a.PropertyType ) ).ToList();
+                            foreach ( var propertyInfo in propertiesWithAttributes )
                             {
-                                var propertyEntity = new EntityTypeService( rockContext ).Queryable().FirstOrDefault( e => e.Name == propertyInfo.PropertyType.FullName );
+                                var propertyEntity = EntityTypeCache.Get( propertyInfo.PropertyType, false );
                                 if ( propertyEntity != null && propertyEntity.Id == attributeCache.EntityTypeId )
                                 {
                                     Object obj = models.First().GetPropertyValue( propertyInfo.Name );
@@ -417,12 +417,12 @@ namespace Rock
                             {
                                 //Use the model property and primary key name to get the foreign key EntityId refers to
                                 model = models.FirstOrDefault( m =>
-                                 {
-                                     var obj = m.GetPropertyValue( modelProperty.Name );
-                                     PropertyInfo prop = obj.GetType().GetProperty( "Id" );
-                                     string val = prop.GetValue( obj ).ToString();
-                                     return Int32.Parse( val ) == attributeValue.EntityId.Value;
-                                 } );
+                                {
+                                    var obj = m.GetPropertyValue( modelProperty.Name );
+                                    PropertyInfo prop = obj.GetType().GetProperty( "Id" );
+                                    string val = prop.GetValue( obj ).ToString();
+                                    return Int32.Parse( val ) == attributeValue.EntityId.Value;
+                                } );
                             }
                             else
                             {

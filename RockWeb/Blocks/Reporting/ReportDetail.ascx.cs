@@ -35,15 +35,65 @@ using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.Reporting
 {
+    /// <summary>
+    /// Displays the details of the given report.
+    /// </summary>
+    /// <seealso cref="Rock.Web.UI.RockBlock" />
+    /// <seealso cref="Rock.Web.UI.IDetailBlock" />
     [DisplayName( "Report Detail" )]
     [Category( "Reporting" )]
     [Description( "Displays the details of the given report." )]
 
-    [IntegerField( "Database Timeout", "The number of seconds to wait before reporting a database timeout.", false, 180, "", 0 )]
-    [LinkedPage("Data View Page", "The page to edit data views", true, "", "", 1)]
-    [ReportField( "Report", "Select the report to present to the user.", false, "", "", order: 2 )]
+    [BooleanField( "Add Administrate Security to Item Creator",
+        Key = AttributeKey.AddAdministrateSecurityToItemCreator,
+        Description = "If enabled, the person who creates a new item will be granted 'Administrate' and 'Edit' security rights to the item.  This was the behavior in previous versions of Rock.  If disabled, the item creator will not be able to edit the report, its security settings, or possibly perform other functions without the Rock administrator settings up a role that is allowed to perform such functions.",
+        DefaultBooleanValue = false,
+        Order = 0)]
+
+    [IntegerField( "Database Timeout",
+        Key = AttributeKey.DatabaseTimeout,
+        Description = "The number of seconds to wait before reporting a database timeout.",
+        IsRequired = false,
+        DefaultIntegerValue = 180,
+        Order = 1 )]
+
+    [LinkedPage( "Data View Page",
+        Key = AttributeKey.DataViewPage,
+        Description = "The page to edit data views",
+        IsRequired = true,
+        Order = 2 )]
+
+    [ReportField( "Report",
+        Key = AttributeKey.Report,
+        Description = "Select the report to present to the user.",
+        IsRequired = false,
+        Order = 3 )]
+
     public partial class ReportDetail : RockBlock, IDetailBlock
     {
+        #region Attribute Keys
+
+        private static class AttributeKey
+        {
+            public const string AddAdministrateSecurityToItemCreator = "AddAdministrateSecurityToItemCreator";
+            public const string DatabaseTimeout = "DatabaseTimeout";
+            public const string DataViewPage = "DataViewPage";
+            public const string Report = "Report";
+        }
+
+        #endregion Attribute Keys
+
+        #region PageParameterKey
+
+        private static class PageParameterKey
+        {
+            public const string ParentCategoryId = "ParentCategoryId";
+            public const string ReportId = "ReportId";
+            public const string DataViewId = "DataViewId";
+        }
+
+        #endregion PageParameterKey
+
         #region Properties
 
         /// <summary>
@@ -137,9 +187,8 @@ namespace RockWeb.Blocks.Reporting
             btnDelete.Attributes["onclick"] = string.Format( "javascript: return Rock.dialogs.confirmDelete(event, '{0}');", Report.FriendlyTypeName );
             btnSecurity.EntityTypeId = EntityTypeCache.Get( typeof( Rock.Model.Report ) ).Id;
 
-            //// set postback timeout to whatever the DatabaseTimeout is plus an extra 5 seconds so that page doesn't timeout before the database does
-            //// note: this only makes a difference on Postback, not on the initial page visit
-            int databaseTimeout = GetAttributeValue( "DatabaseTimeout" ).AsIntegerOrNull() ?? 180;
+            //// Set postback timeout and request-timeout to whatever the DatabaseTimeout is plus an extra 5 seconds so that page doesn't timeout before the database does
+            int databaseTimeout = GetAttributeValue( AttributeKey.DatabaseTimeout ).AsIntegerOrNull() ?? 180;
             var sm = ScriptManager.GetCurrent( this.Page );
             if ( sm.AsyncPostBackTimeout < databaseTimeout + 5 )
             {
@@ -158,12 +207,12 @@ namespace RockWeb.Blocks.Reporting
 
             if ( !Page.IsPostBack )
             {
-                this.ShowResults = GetUserPreference( _SettingKeyShowResults ).AsBoolean(true);
+                this.ShowResults = GetUserPreference( _SettingKeyShowResults ).AsBoolean( true );
 
                 var reportId = GetReportId();
                 if ( reportId.HasValue )
                 {
-                    ShowDetail( reportId.Value, PageParameter( "ParentCategoryId" ).AsIntegerOrNull() );
+                    ShowDetail( reportId.Value, PageParameter( PageParameterKey.ParentCategoryId ).AsIntegerOrNull() );
                 }
                 else
                 {
@@ -326,18 +375,56 @@ namespace RockWeb.Blocks.Reporting
                 return;
             }
 
-            int? databaseTimeoutSeconds = GetAttributeValue( "DatabaseTimeout" ).AsIntegerOrNull();
-            string errorMessage;
-            ReportingHelper.BindGrid( report, gReport, this.CurrentPerson, databaseTimeoutSeconds, isCommunication, out errorMessage );
-            if ( !string.IsNullOrWhiteSpace( errorMessage ) )
+            int? databaseTimeoutSeconds = GetAttributeValue( AttributeKey.DatabaseTimeout ).AsIntegerOrNull();
+            ReportingHelper.BindGridOptions bindGridOptions = new ReportingHelper.BindGridOptions()
             {
-                nbEditModeMessage.NotificationBoxType = NotificationBoxType.Warning;
-                nbEditModeMessage.Text = errorMessage;
-                nbEditModeMessage.Visible = true;
+                CurrentPerson = this.CurrentPerson,
+                DatabaseTimeoutSeconds = databaseTimeoutSeconds,
+                IsCommunication = isCommunication
+            };
+
+            nbErrorMessage.Visible = false;
+
+            try
+            {
+                if ( report.EntityTypeId.HasValue )
+                {
+                    var entityType = EntityTypeCache.Get( report.EntityTypeId.Value );
+                    if ( entityType != null )
+                    {
+                        bindGridOptions.ReportDbContext = Reflection.GetDbContextForEntityType( entityType.GetEntityType() );
+                    }
+                }
+
+                ReportingHelper.BindGrid( report, gReport, bindGridOptions );
             }
-            else
+            catch ( Exception ex )
             {
-                nbEditModeMessage.Visible = true;
+                ExceptionLogService.LogException( ex );
+                var sqlTimeoutException = ReportingHelper.FindSqlTimeoutException( ex );
+
+                if ( sqlTimeoutException != null )
+                {
+                    nbErrorMessage.NotificationBoxType = NotificationBoxType.Warning;
+                    nbErrorMessage.Text = "This report did not complete in a timely manner. You can try again or adjust the timeout setting of this block.";
+                }
+                else
+                {
+                    if ( ex is RockDataViewFilterExpressionException )
+                    {
+                        RockDataViewFilterExpressionException rockDataViewFilterExpressionException = ex as RockDataViewFilterExpressionException;
+                        nbErrorMessage.Text = rockDataViewFilterExpressionException.GetFriendlyMessage( report.DataView );
+                    }
+                    else
+                    {
+                        nbErrorMessage.Text = "There was a problem with one of the filters for this report's dataview.";
+                    }
+
+                    nbErrorMessage.NotificationBoxType = NotificationBoxType.Danger;
+
+                    nbErrorMessage.Details = ex.Message;
+                    nbErrorMessage.Visible = true;
+                }
             }
         }
 
@@ -412,7 +499,7 @@ namespace RockWeb.Blocks.Reporting
 
             var newItem = reportService.GetNewFromTemplate( id );
 
-            if (newItem == null)
+            if ( newItem == null )
             {
                 return;
             }
@@ -472,6 +559,17 @@ namespace RockWeb.Blocks.Reporting
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         protected void btnSave_Click( object sender, EventArgs e )
         {
+            cvSecurityError.IsValid = true;
+            var AddAdminToCreator = GetAttributeValue( AttributeKey.AddAdministrateSecurityToItemCreator ).AsBoolean();
+            var rptCategory = CategoryCache.Get( cpCategory.SelectedValueAsInt( false ).Value );
+
+            if ( !AddAdminToCreator && !rptCategory.IsAuthorized( Authorization.EDIT, CurrentPerson ) )
+            {
+                cvSecurityError.IsValid = false;
+                cvSecurityError.ErrorMessage = string.Format( "You are not authorized to create or edit Reports for the Category '{0}'.", rptCategory.Name );
+                return;
+            }
+
             Report report = null;
 
             var rockContext = new RockContext();
@@ -603,9 +701,8 @@ namespace RockWeb.Blocks.Reporting
 
             rockContext.SaveChanges();
 
-            if ( adding )
+            if ( adding && GetAttributeValue( AttributeKey.AddAdministrateSecurityToItemCreator ).AsBoolean())
             {
-                // add EDIT and ADMINISTRATE to the person who added the report 
                 Rock.Security.Authorization.AllowPerson( report, Authorization.EDIT, this.CurrentPerson, rockContext );
                 Rock.Security.Authorization.AllowPerson( report, Authorization.ADMINISTRATE, this.CurrentPerson, rockContext );
             }
@@ -671,15 +768,15 @@ namespace RockWeb.Blocks.Reporting
             // Check if we are editing an existing Report.
             int reportId = hfReportId.Value.AsInteger();
 
-            if (reportId == 0)
+            if ( reportId == 0 )
             {
                 // If not, check if we are editing a new copy of an existing Report.
-                reportId = PageParameter( "ReportId" ).AsInteger();
+                reportId = PageParameter( PageParameterKey.ReportId ).AsInteger();
             }
 
             if ( reportId == 0 )
             {
-                int? parentCategoryId = PageParameter( "ParentCategoryId" ).AsIntegerOrNull();
+                int? parentCategoryId = PageParameter( PageParameterKey.ParentCategoryId ).AsIntegerOrNull();
                 if ( parentCategoryId.HasValue )
                 {
                     // Cancelling on Add, and we know the parentCategoryId, so we are probably in treeview mode, so navigate to the current page
@@ -713,8 +810,8 @@ namespace RockWeb.Blocks.Reporting
         /// </summary>
         public int? GetReportId()
         {
-            int? reportId = PageParameter( "ReportId" ).AsIntegerOrNull();
-            var reportGuid = GetAttributeValue( "Report" ).AsGuidOrNull();
+            int? reportId = PageParameter( PageParameterKey.ReportId ).AsIntegerOrNull();
+            var reportGuid = GetAttributeValue( AttributeKey.Report ).AsGuidOrNull();
 
             if ( reportGuid.HasValue )
             {
@@ -814,7 +911,7 @@ namespace RockWeb.Blocks.Reporting
                         if ( entityField.AttributeGuid.HasValue )
                         {
                             var attribute = AttributeCache.Get( entityField.AttributeGuid.Value );
-                            if (attribute != null )
+                            if ( attribute != null )
                             {
                                 // only show the Attribute field in the drop down if they have VIEW Auth to it
                                 isAuthorizedForField = attribute.IsAuthorized( Rock.Security.Authorization.VIEW, this.CurrentPerson );
@@ -874,7 +971,7 @@ namespace RockWeb.Blocks.Reporting
                 }
 
                 var commonFieldListItems = listItems.Where( a => a.Attributes["optiongroup"] == "Common" ).OrderBy( a => a.Text );
-                foreach ( var item in commonFieldListItems)
+                foreach ( var item in commonFieldListItems )
                 {
                     ddlFields.Items.Add( item );
                     listItems.Remove( item );
@@ -886,14 +983,14 @@ namespace RockWeb.Blocks.Reporting
                     ddlFields.Items.Add( item );
                     listItems.Remove( item );
                 }
-                
+
                 var attributeFieldListItems = listItems.Where( a => a.Attributes["optiongroup"] == string.Format( "{0} Attributes", entityType.Name ) ).OrderBy( a => a.Text );
                 foreach ( var item in attributeFieldListItems )
                 {
                     ddlFields.Items.Add( item );
                     listItems.Remove( item );
                 }
-                
+
                 foreach ( var item in listItems )
                 {
                     ddlFields.Items.Add( item );
@@ -1100,7 +1197,7 @@ namespace RockWeb.Blocks.Reporting
 
             if ( report.Id == default( int ) )
             {
-                dataViewId = PageParameter( "DataViewId" ).AsIntegerOrNull();
+                dataViewId = PageParameter( PageParameterKey.DataViewId ).AsIntegerOrNull();
                 if ( dataViewId.HasValue )
                 {
                     var dataView = new DataViewService( rockContext ).Get( dataViewId.Value );
@@ -1120,7 +1217,7 @@ namespace RockWeb.Blocks.Reporting
             tbQueryHint.Text = report.QueryHint;
 
             ReportFieldsDictionary = new List<ReportFieldInfo>();
-            
+
 
             kvSortFields.CustomKeys = new Dictionary<string, string>();
             kvSortFields.CustomValues = new Dictionary<string, string>();
@@ -1167,13 +1264,17 @@ namespace RockWeb.Blocks.Reporting
             lReadOnlyTitle.Text = report.Name.FormatAsHtmlTitle();
             lReportDescription.Text = report.Description.ConvertMarkdownToHtml();
 
+            SetupTimeToRunLabel( report );
+            SetupNumberOfRuns( report );
+            SetupLastRun( report );
+
             if ( report.DataView != null )
             {
                 lbDataView.Visible = UserCanEdit;
 
                 var queryParams = new Dictionary<string, string>();
-                queryParams.Add("DataViewId", report.DataViewId.ToString());
-                lbDataView.NavigateUrl = LinkedPageUrl("DataViewPage", queryParams);
+                queryParams.Add( "DataViewId", report.DataViewId.ToString() );
+                lbDataView.NavigateUrl = LinkedPageUrl( AttributeKey.DataViewPage, queryParams );
 
                 lbDataView.ToolTip = report.DataView.Name;
             }
@@ -1183,6 +1284,93 @@ namespace RockWeb.Blocks.Reporting
             }
 
             BindGrid( report, false );
+        }
+
+        /// <summary>
+        /// Sets up the last run highlight label
+        /// </summary>
+        /// <param name="report">The report.</param>
+        private void SetupLastRun( Report report )
+        {
+            if ( report.LastRunDateTime == null )
+            {
+                return;
+            }
+
+            hlLastRun.Text = string.Format( "Last Run: {0}", report.LastRunDateTime.ToShortDateString() );
+            hlLastRun.LabelType = LabelType.Default;
+        }
+
+        /// <summary>
+        /// Sets up the number of runs highlight label
+        /// </summary>
+        /// <param name="report">The report.</param>
+        private void SetupNumberOfRuns( Report report )
+        {
+            hlRunSince.Text = "Not Run";
+            hlRunSince.LabelType = LabelType.Info;
+
+            var status = "Since Creation";
+
+            if ( report.RunCount == null || report.RunCount.Value == 0 )
+            {
+                hlRunSince.LabelType = LabelType.Warning;
+                hlRunSince.Text = string.Format( "Not Run {0}", status );
+                return;
+            }
+
+            hlRunSince.Text = string.Format( "{0:0} Runs {1}", report.RunCount, status );
+        }
+
+        /// <summary>
+        /// Sets up the time to run highlight label.
+        /// </summary>
+        /// <param name="report">The report.</param>
+        private void SetupTimeToRunLabel( Report report )
+        {
+            hlTimeToRun.Text = string.Empty;
+            hlTimeToRun.LabelType = LabelType.Default;
+
+            if ( report == null || report.TimeToRunDurationMilliseconds == null )
+            {
+                return;
+            }
+
+            var labelValue = report.TimeToRunDurationMilliseconds.Value;
+            var labelUnit = "ms";
+            var labelType = LabelType.Success;
+            if ( labelValue > 1000 )
+            {
+                labelValue = labelValue / 1000;
+                labelUnit = "s";
+
+                if ( labelValue > 10 )
+                {
+                    labelType = LabelType.Warning;
+                }
+            }
+
+            if ( labelValue > 60 && labelUnit == "s" )
+            {
+                labelValue = labelValue / 60;
+                labelUnit = "m";
+
+                if ( labelValue > 1 )
+                {
+                    labelType = LabelType.Danger;
+                }
+            }
+
+            hlTimeToRun.LabelType = labelType;
+            var isValueAWholeNumber = Math.Abs( labelValue % 1 ) < 0.01;
+            if ( isValueAWholeNumber )
+            {
+                hlTimeToRun.Text = string.Format( "Time To Run: {0:0}{1}", labelValue, labelUnit );
+            }
+            else
+            {
+                hlTimeToRun.Text = string.Format( "Time To Run: {0:0.0}{1}", labelValue, labelUnit );
+            }
         }
 
         /// <summary>

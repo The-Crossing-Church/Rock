@@ -171,7 +171,7 @@ namespace RockWeb.Blocks.CheckIn
 
         #region Attribute Keys
 
-        private static class AttributeKey
+        private new static class AttributeKey
         {
             public const string FamilySelectPage = "FamilySelectPage";
             public const string ScheduledLocationsPage = "ScheduledLocationsPage";
@@ -381,7 +381,7 @@ namespace RockWeb.Blocks.CheckIn
             // Set to null so that object will be recreated with a potentially updated group type cache.
             CurrentCheckInState.CheckInType = null;
 
-            var checkinStatus = CheckinConfigurationHelper.GetCheckinStatus( CurrentCheckInState );
+            var checkinStatus = CheckinConfigurationHelper.GetCheckinStatus( this.CurrentCheckInState );
 
             switch ( checkinStatus )
             {

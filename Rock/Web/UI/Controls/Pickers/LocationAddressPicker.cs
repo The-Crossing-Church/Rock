@@ -15,6 +15,7 @@
 // </copyright>
 //
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -30,6 +31,20 @@ namespace Rock.Web.UI.Controls
     /// </summary>
     public class LocationAddressPicker : Panel, IRockControl, INamingContainer
     {
+        #region Constructors
+
+        /// <summary>
+        /// Initialize a new instance of the control.
+        /// </summary>
+        public LocationAddressPicker() : base()
+        {
+            _addressRequirementsValidator = new CustomValidator();
+        }
+
+        private CustomValidator _addressRequirementsValidator { get; set; }
+
+        #endregion
+
         #region IRockControl implementation
 
         /// <summary>
@@ -103,6 +118,7 @@ namespace Rock.Web.UI.Controls
             {
                 return HelpBlock != null ? HelpBlock.Text : string.Empty;
             }
+
             set
             {
                 if ( HelpBlock != null )
@@ -130,6 +146,7 @@ namespace Rock.Web.UI.Controls
             {
                 return WarningBlock != null ? WarningBlock.Text : string.Empty;
             }
+
             set
             {
                 if ( WarningBlock != null )
@@ -169,6 +186,7 @@ namespace Rock.Web.UI.Controls
             {
                 return RequiredFieldValidator != null ? RequiredFieldValidator.ErrorMessage : string.Empty;
             }
+
             set
             {
                 if ( RequiredFieldValidator != null )
@@ -186,8 +204,25 @@ namespace Rock.Web.UI.Controls
         /// </value>
         public string ValidationGroup
         {
-            get { return ViewState["ValidationGroup"] as string; }
-            set { ViewState["ValidationGroup"] = value; }
+            get
+            {
+                return ViewState["ValidationGroup"] as string;
+            }
+
+            set
+            {
+                ViewState["ValidationGroup"] = value;
+
+                if ( RequiredFieldValidator != null )
+                {
+                    RequiredFieldValidator.ValidationGroup = value;
+                }
+
+                if ( _addressRequirementsValidator != null )
+                {
+                    _addressRequirementsValidator.ValidationGroup = value;
+                }
+            }
         }
 
         /// <summary>
@@ -200,7 +235,7 @@ namespace Rock.Web.UI.Controls
         {
             get
             {
-                return !Required || RequiredFieldValidator == null || RequiredFieldValidator.IsValid;
+                return ( !Required || RequiredFieldValidator == null || RequiredFieldValidator.IsValid ) && _addressRequirementsValidator.IsValid;
             }
         }
 
@@ -250,6 +285,25 @@ namespace Rock.Web.UI.Controls
         #region Properties
 
         /// <summary>
+        /// Gets or sets a value indicating whether the control should be displayed Full-Width
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [enable full width]; otherwise, <c>false</c>.
+        /// </value>
+        public bool EnableFullWidth
+        {
+            get
+            {
+                return ViewState["EnableFullWidth"] as bool? ?? false;
+            }
+
+            set
+            {
+                ViewState["EnableFullWidth"] = value;
+            }
+        }
+
+        /// <summary>
         /// Gets the address summary text.
         /// </summary>
         /// <value>
@@ -281,7 +335,13 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return new LocationService( new RockContext() ).Get( _hfLocationId.ValueAsInt() );
+                var locationId = _hfLocationId.ValueAsInt();
+                if ( locationId > 0 )
+                {
+                    return new LocationService( new RockContext() ).Get( locationId );
+                }
+
+                return null;
             }
 
             private set
@@ -335,6 +395,7 @@ namespace Rock.Web.UI.Controls
                 EnsureChildControls();
                 return _hfPanelIsVisible.Value.AsBooleanOrNull() ?? false;
             }
+
             set
             {
                 EnsureChildControls();
@@ -352,6 +413,7 @@ namespace Rock.Web.UI.Controls
             {
                 return base.Enabled;
             }
+
             set
             {
                 base.Enabled = value;
@@ -399,8 +461,6 @@ namespace Rock.Web.UI.Controls
             base.CreateChildControls();
             Controls.Clear();
 
-            this.CssClass = "picker picker-select rollover-container";
-
             _hfLocationId = new HiddenField { ID = "hfLocationId" };
             this.Controls.Add( _hfLocationId );
 
@@ -445,6 +505,13 @@ namespace Rock.Web.UI.Controls
             _btnCancel = new LinkButton { ID = "btnCancel", CssClass = "btn btn-xs btn-link", Text = "Cancel" };
             _btnCancel.OnClientClick = string.Format( "$('#{0}').hide(); $('#{1}').val('false'); Rock.dialogs.updateModalScrollBar('{2}'); return false;", _pnlPickerMenu.ClientID, _hfPanelIsVisible.ClientID, this.ClientID );
             _pnlPickerActions.Controls.Add( _btnCancel );
+
+            _addressRequirementsValidator.ID = ID + "_addressrequirementsvalidator";
+            _addressRequirementsValidator.CssClass = "validation-error help-inline";
+            _addressRequirementsValidator.Enabled = true;
+            _addressRequirementsValidator.Display = ValidatorDisplay.None;
+            _addressRequirementsValidator.ValidationGroup = ValidationGroup;
+            this.Controls.Add( _addressRequirementsValidator );
         }
 
         /// <summary>
@@ -485,7 +552,19 @@ namespace Rock.Web.UI.Controls
 
             var locationService = new LocationService( new RockContext() );
 
-            var location = locationService.Get( editedLocation.Street1, editedLocation.Street2, editedLocation.City, editedLocation.State, editedLocation.PostalCode, editedLocation.Country );
+            string validationMessage;
+
+            var isValid = locationService.ValidateAddressRequirements( editedLocation, out validationMessage );
+
+            if ( !isValid )
+            {
+                _addressRequirementsValidator.ErrorMessage = validationMessage;
+                _addressRequirementsValidator.IsValid = false;
+
+                return;
+            }
+
+            var location = locationService.Get( editedLocation.Street1, editedLocation.Street2, editedLocation.City, editedLocation.State, editedLocation.County, editedLocation.PostalCode, editedLocation.Country, null );
 
             this.Location = location;
 
@@ -528,8 +607,17 @@ namespace Rock.Web.UI.Controls
         /// <param name="writer">The <see cref="T:System.Web.UI.HtmlTextWriter" /> that receives the rendered output.</param>
         public void RenderBaseControl( HtmlTextWriter writer )
         {
-
             RegisterJavaScript();
+
+            List<string> pickerClasses = new List<string>();
+            pickerClasses.Add( "picker" );
+            if ( EnableFullWidth )
+            {
+                pickerClasses.Add( "picker-fullwidth" );
+            }
+
+            pickerClasses.Add( "picker-select rollover-container" );
+            this.CssClass = pickerClasses.AsDelimited( " " );
 
             _pnlPickerMenu.Style[HtmlTextWriterStyle.Display] = ShowDropDown ? "block" : "none";
             this.Render( writer );
@@ -540,10 +628,11 @@ namespace Rock.Web.UI.Controls
         /// </summary>
         protected virtual void RegisterJavaScript()
         {
-            string script = string.Format( @"
-setTimeout(function () {{
+            string script = string.Format(
+@"setTimeout(function () {{
   Rock.dialogs.updateModalScrollBar('{0}');
-}}, 0);", this.ClientID );
+}}, 0);",
+this.ClientID );
 
             ScriptManager.RegisterStartupScript( this, this.GetType(), "location_address_picker-script_" + this.ID, script, true );
         }

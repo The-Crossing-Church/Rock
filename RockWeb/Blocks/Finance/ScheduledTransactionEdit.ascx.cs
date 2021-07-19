@@ -19,14 +19,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using System.Text;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
+using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
@@ -37,6 +38,7 @@ namespace RockWeb.Blocks.Finance
 
     /// <summary>
     /// Edit an existing scheduled transaction.
+    /// This is the *Public* block for editing scheduled transactions
     /// </summary>
     [DisplayName( "Scheduled Transaction Edit" )]
     [Category( "Finance" )]
@@ -133,6 +135,22 @@ achieve our mission.  We are so grateful for your commitment.
         #endregion
 
         #region Properties
+
+        protected int ForeignCurrencyCodeDefinedValueId { get; set; }
+
+        private RockCurrencyCodeInfo _currencyInfo = null;
+
+        protected RockCurrencyCodeInfo CurrencyCodeInfo
+        {
+            get
+            {
+                if ( _currencyInfo == null || _currencyInfo.CurrencyCodeDefinedValueId != ForeignCurrencyCodeDefinedValueId )
+                {
+                    _currencyInfo = new RockCurrencyCodeInfo( ForeignCurrencyCodeDefinedValueId );
+                }
+                return _currencyInfo;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the gateway.
@@ -238,7 +256,7 @@ achieve our mission.  We are so grateful for your commitment.
             ViewState["ScheduledTransactionId"] = ScheduledTransactionId;
             ViewState["TransactionCode"] = TransactionCode;
             ViewState["ScheduleId"] = ScheduleId;
-
+            ViewState["ForeignCurrencyCodeDefinedValueId"] = ForeignCurrencyCodeDefinedValueId;
             return base.SaveViewState();
         }
 
@@ -253,6 +271,7 @@ achieve our mission.  We are so grateful for your commitment.
             ScheduledTransactionId = ViewState["ScheduledTransactionId"] as int?;
             TransactionCode = ViewState["TransactionCode"] as string ?? string.Empty;
             ScheduleId = ViewState["ScheduleId"] as string ?? string.Empty;
+            ForeignCurrencyCodeDefinedValueId = ( int ) ViewState["ForeignCurrencyCodeDefinedValueId"];
         }
 
         /// <summary>
@@ -265,6 +284,8 @@ achieve our mission.  We are so grateful for your commitment.
 
             if ( !Page.IsPostBack )
             {
+                dvpForeignCurrencyCode.DefinedTypeId = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.FINANCIAL_CURRENCY_CODE.AsGuid() ).Id;
+
                 lPanelTitle.Text = GetAttributeValue( "PanelTitle" );
                 lContributionInfoTitle.Text = GetAttributeValue( "ContributionInfoTitle" );
                 lPaymentInfoTitle.Text = GetAttributeValue( "PaymentInfoTitle" );
@@ -276,12 +297,17 @@ achieve our mission.  We are so grateful for your commitment.
                 {
                     Gateway = scheduledTransaction.FinancialGateway.GetGatewayComponent();
 
+                    ForeignCurrencyCodeDefinedValueId = scheduledTransaction.ForeignCurrencyCodeValueId ?? 0;
+
                     GetAccounts( scheduledTransaction );
                     SetFrequency( scheduledTransaction );
                     SetSavedAccounts( scheduledTransaction );
 
                     dtpStartDate.SelectedDate = scheduledTransaction.NextPaymentDate;
                     tbSummary.Text = scheduledTransaction.Summary;
+
+                    dvpForeignCurrencyCode.SelectedDefinedValueId = scheduledTransaction.ForeignCurrencyCodeValueId;
+                    dvpForeignCurrencyCode.Visible = !new RockCurrencyCodeInfo( scheduledTransaction.ForeignCurrencyCodeValueId ).IsOrganizationCurrency;
 
                     hfCurrentPage.Value = "1";
                     RockPage page = Page as RockPage;
@@ -359,19 +385,19 @@ achieve our mission.  We are so grateful for your commitment.
             foreach ( RepeaterItem item in rptAccountList.Items )
             {
                 var hfAccountId = item.FindControl( "hfAccountId" ) as HiddenField;
-                var txtAccountAmount = item.FindControl( "txtAccountAmount" ) as RockTextBox;
+                var txtAccountAmount = item.FindControl( "txtAccountAmount" ) as CurrencyBox;
                 if ( hfAccountId != null && txtAccountAmount != null )
                 {
                     var selectedAccount = SelectedAccounts.FirstOrDefault( a => a.Id == hfAccountId.ValueAsInt() );
                     if ( selectedAccount != null )
                     {
-                        selectedAccount.Amount = txtAccountAmount.Text.AsDecimal();
+                        selectedAccount.Amount = txtAccountAmount.Value ?? 0.0m;
                     }
                 }
             }
 
             // Update the total amount
-            lblTotalAmount.Text = SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
+            lblTotalAmount.Text = SelectedAccounts.Sum( f => f.Amount ).FormatAsCurrency( ForeignCurrencyCodeDefinedValueId );
 
             liNone.RemoveCssClass( "active" );
             liCreditCard.RemoveCssClass( "active" );
@@ -410,8 +436,14 @@ achieve our mission.  We are so grateful for your commitment.
                     }
             }
 
-            // Show or Hide the Credit card entry panel based on if a saved account exists and it's selected or not.
-            divNewCard.Style[HtmlTextWriterStyle.Display] = ( rblSavedCC.Items.Count == 0 || rblSavedCC.Items[rblSavedCC.Items.Count - 1].Selected ) ? "block" : "none";
+            // Show or Hide the new payment entry panels based on if a saved account exists and it's selected or not.
+            var showNewCard = Gateway.SupportsStandardRockPaymentEntryForm &&
+                ( rblSavedCC.Items.Count == 0 || rblSavedCC.Items[rblSavedCC.Items.Count - 1].Selected );
+            divNewCard.Style[HtmlTextWriterStyle.Display] = showNewCard ? "block" : "none";
+
+            var showNewAch = Gateway.SupportsStandardRockPaymentEntryForm &&
+                ( rblSavedAch.Items.Count == 0 || rblSavedAch.Items[rblSavedAch.Items.Count - 1].Selected );
+            divNewBank.Style[HtmlTextWriterStyle.Display] = showNewAch ? "block" : "none";
 
             if ( !Page.IsPostBack )
             {
@@ -709,71 +741,18 @@ achieve our mission.  We are so grateful for your commitment.
         /// <param name="scheduledTransaction">The scheduled transaction.</param>
         private void SetFrequency( FinancialScheduledTransaction scheduledTransaction )
         {
-            // Enable payment options based on the configured gateways
-            bool ccEnabled = false;
-            bool achEnabled = false;
-
-            if ( scheduledTransaction != null && Gateway != null )
+            if ( scheduledTransaction == null || Gateway == null || !Gateway.SupportedPaymentSchedules.Any() )
             {
-                if ( scheduledTransaction.FinancialPaymentDetail != null &&
-                    scheduledTransaction.FinancialPaymentDetail.CurrencyTypeValueId == DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ).Id )
-                {
-                    ccEnabled = true;
-                    txtCardFirstName.Visible = Gateway.SplitNameOnCard;
-                    var authorizedPerson = scheduledTransaction.AuthorizedPersonAlias.Person;
-                    txtCardFirstName.Text = authorizedPerson.FirstName;
-                    txtCardLastName.Visible = Gateway.SplitNameOnCard;
-                    txtCardLastName.Text = authorizedPerson.LastName;
-                    txtCardName.Visible = !Gateway.SplitNameOnCard;
-                    txtCardName.Text = authorizedPerson.FullName;
-
-                    var groupLocation = new PersonService( new RockContext() ).GetFirstLocation(
-                        authorizedPerson.Id, DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid() ).Id );
-                    if ( groupLocation != null )
-                    {
-                        acBillingAddress.SetValues( groupLocation.Location );
-                    }
-                    else
-                    {
-                        acBillingAddress.SetValues( null );
-                    }
-
-                    mypExpiration.MinimumYear = RockDateTime.Now.Year;
-                }
-
-                if ( scheduledTransaction.FinancialPaymentDetail != null &&
-                    scheduledTransaction.FinancialPaymentDetail.CurrencyTypeValueId == DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ).Id )
-                {
-                    achEnabled = true;
-                }
-
-                if ( Gateway.SupportedPaymentSchedules.Any() )
-                {
-                    var oneTimeFrequency = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME );
-                    divRepeatingPayments.Visible = true;
-
-                    btnFrequency.DataSource = Gateway.SupportedPaymentSchedules;
-                    btnFrequency.DataBind();
-
-                    btnFrequency.SelectedValue = scheduledTransaction.TransactionFrequencyValueId.ToString();
-                }
-
-                liCreditCard.Visible = ccEnabled;
-                divCCPaymentInfo.Visible = ccEnabled;
-
-                liACH.Visible = achEnabled;
-                divACHPaymentInfo.Visible = achEnabled;
-
-                if ( ccEnabled )
-                {
-                    divCCPaymentInfo.AddCssClass( "tab-pane" );
-                }
-
-                if ( achEnabled )
-                {
-                    divACHPaymentInfo.AddCssClass( "tab-pane" );
-                }
+                return;
             }
+
+            var oneTimeFrequency = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_ONE_TIME );
+            divRepeatingPayments.Visible = true;
+
+            btnFrequency.DataSource = Gateway.SupportedPaymentSchedules;
+            btnFrequency.DataBind();
+
+            btnFrequency.SelectedValue = scheduledTransaction.TransactionFrequencyValueId.ToString();
         }
 
         /// <summary>
@@ -782,125 +761,167 @@ achieve our mission.  We are so grateful for your commitment.
         /// <param name="scheduledTransaction"></param>
         private void SetSavedAccounts( FinancialScheduledTransaction scheduledTransaction )
         {
-            rblSavedCC.Items.Clear();
-            rblSavedAch.Items.Clear();
-
-            var isSelf = TargetPersonId.HasValue && CurrentPerson != null && TargetPersonId == CurrentPerson.Id;
-            var savedAccountViewModels = new List<SavedAccountViewModel>();
-
-            if ( isSelf || CanImpersonatorSeeSavedAccounts() )
+            if ( scheduledTransaction == null || Gateway == null || scheduledTransaction.FinancialPaymentDetail == null )
             {
-                // Get the saved accounts for the target person
-                var savedAccountQuery = new FinancialPersonSavedAccountService( new RockContext() )
-                    .GetByPersonId( TargetPersonId.Value );
-
-                if ( Gateway != null && Gateway.SupportsSavedAccount( true ) )
-                {
-                    var ccCurrencyType = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) );
-                    if ( Gateway.SupportsSavedAccount( ccCurrencyType ) )
-                    {
-                        var cards = savedAccountQuery
-                            .Where( a =>
-                                a.FinancialGateway.EntityTypeId == Gateway.TypeId &&
-                                a.FinancialPaymentDetail != null &&
-                                a.FinancialPaymentDetail.CurrencyTypeValueId == ccCurrencyType.Id )
-                            .OrderBy( a => a.Name )
-                            .Select( a => new SavedAccountViewModel
-                            {
-                                Id = a.Id,
-                                Name = "Use " + a.Name + " (" + a.FinancialPaymentDetail.AccountNumberMasked + ")",
-                                GatewayPersonIdentifier = a.GatewayPersonIdentifier,
-                                ReferenceNumber = a.ReferenceNumber,
-                                TransactionCode = a.TransactionCode,
-                                IsCard = true
-                            } ).ToList();
-
-                        savedAccountViewModels.AddRange( cards );
-                        rblSavedCC.DataSource = cards;
-                        rblSavedCC.DataBind();
-
-                        if ( rblSavedCC.Items.Count > 0 )
-                        {
-                            rblSavedCC.Items.Add( new ListItem( "Use a different card", "0" ) );
-                        }
-                    }
-
-                    var achCurrencyType = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) );
-                    if ( Gateway.SupportsSavedAccount( achCurrencyType ) )
-                    {
-                        var bankAccounts = savedAccountQuery
-                            .Where( a =>
-                                a.FinancialGateway.EntityTypeId == Gateway.TypeId &&
-                                a.FinancialPaymentDetail != null &&
-                                a.FinancialPaymentDetail.CurrencyTypeValueId == achCurrencyType.Id )
-                            .OrderBy( a => a.Name )
-                            .Select( a => new SavedAccountViewModel
-                            {
-                                Id = a.Id,
-                                Name = "Use " + a.Name + " (" + a.FinancialPaymentDetail.AccountNumberMasked + ")",
-                                GatewayPersonIdentifier = a.GatewayPersonIdentifier,
-                                ReferenceNumber = a.ReferenceNumber,
-                                TransactionCode = a.TransactionCode,
-                                IsCard = false
-                            } ).ToList();
-
-                        savedAccountViewModels.AddRange( bankAccounts );
-                        rblSavedAch.DataSource = bankAccounts;
-                        rblSavedAch.DataBind();
-
-                        if ( rblSavedAch.Items.Count > 0 )
-                        {
-                            rblSavedAch.Items.Add( new ListItem( "Use a different bank account", "0" ) );
-                        }
-                    }
-                }
+                return;
             }
 
-            if ( rblSavedCC.Items.Count > 0 )
-            {
-                rblSavedCC.Items[0].Selected = true;
-                rblSavedCC.Visible = true;
-                divNewCard.Style[HtmlTextWriterStyle.Display] = "none";
+            BindCurrencyTypeTab(
+                scheduledTransaction,
+                DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ),
+                liCreditCard,
+                divCCPaymentInfo,
+                divNewCard,
+                rblSavedCC );
 
-                var likelyCurrentCard = savedAccountViewModels.FirstOrDefault( sa =>
+            BindCurrencyTypeTab(
+                scheduledTransaction,
+                DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ),
+                liACH,
+                divACHPaymentInfo,
+                divNewBank,
+                rblSavedAch );
+        }
+
+        /// <summary>
+        /// Binds the currency type (ACH or credit card) tab.
+        /// </summary>
+        /// <param name="scheduledTransaction">The scheduled transaction.</param>
+        /// <param name="currencyType">Type of the currency.</param>
+        /// <param name="liTab">The li tab.</param>
+        /// <param name="divTabContent">Content of the div tab.</param>
+        /// <param name="divNewForm">The div new form.</param>
+        /// <param name="rblSavedAccounts">The RBL saved accounts.</param>
+        private void BindCurrencyTypeTab( FinancialScheduledTransaction scheduledTransaction, DefinedValueCache currencyType,
+            HtmlGenericControl liTab, HtmlGenericControl divTabContent, HtmlGenericControl divNewForm, RadioButtonList rblSavedAccounts )
+        {
+            var isCard = currencyType.Guid == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD.AsGuid();
+            var term = isCard ? "card" : "bank account";
+
+            var isCurrentCurrency = scheduledTransaction.FinancialPaymentDetail.CurrencyTypeValueId == currencyType.Id;
+            var tabEnabled = isCurrentCurrency || Gateway.SupportsScheduleCurrencyChange;
+            var newFormEnabled = tabEnabled && Gateway.SupportsStandardRockPaymentEntryForm;
+
+            liTab.Visible = tabEnabled;
+            divTabContent.Visible = tabEnabled;
+
+            if ( !tabEnabled )
+            {
+                // This tab will be hidden, so nothing else to do
+                return;
+            }
+
+            divTabContent.AddCssClass( "tab-pane" );
+            rblSavedAccounts.Items.Clear();
+
+            var isSelf = TargetPersonId.HasValue && CurrentPerson != null && TargetPersonId == CurrentPerson.Id;
+            var canSeeSavedAccounts = isSelf || CanImpersonatorSeeSavedAccounts();
+            var savedAccountViewModels = new List<SavedAccountViewModel>();
+
+            if ( canSeeSavedAccounts && Gateway.SupportsSavedAccount( true ) && Gateway.SupportsSavedAccount( currencyType ) )
+            {
+                // Get the saved accounts for the target person
+                var rockContext = new RockContext();
+                var service = new FinancialPersonSavedAccountService( rockContext );
+
+                savedAccountViewModels = service
+                    .GetByPersonId( TargetPersonId.Value )
+                    .Where( a =>
+                        a.FinancialGateway.EntityTypeId == Gateway.TypeId &&
+                        a.FinancialPaymentDetail.CurrencyTypeValueId == currencyType.Id )
+                    .Select( a => new SavedAccountViewModel
+                    {
+                        Id = a.Id,
+                        Name = "Use " + a.Name + " (" + a.FinancialPaymentDetail.AccountNumberMasked + ")",
+                        GatewayPersonIdentifier = a.GatewayPersonIdentifier,
+                        ReferenceNumber = a.ReferenceNumber,
+                        TransactionCode = a.TransactionCode,
+                        IsCard = isCard
+                    } )
+                    .ToList()
+                    .OrderBy( a => a.Name )
+                    .ToList();
+
+                rblSavedAccounts.DataSource = savedAccountViewModels;
+                rblSavedAccounts.DataBind();
+            }
+
+            if ( savedAccountViewModels.Any() )
+            {
+                // Show the saved account list. The new form is initially hidden, but shows if that radio option is selected
+                rblSavedAccounts.Visible = true;
+                divNewForm.Style[HtmlTextWriterStyle.Display] = "none";
+
+                if ( newFormEnabled )
+                {
+                    rblSavedAccounts.Items.Add( new ListItem( "Use a different " + term, "0" ) );
+                }
+
+                // Try to select the currently used card
+                var likelyCurrentSavedAccount = savedAccountViewModels.FirstOrDefault( sa =>
                     sa.IsCard &&
                     sa.ReferenceNumber == scheduledTransaction.TransactionCode ||
                     sa.TransactionCode == scheduledTransaction.TransactionCode ||
                     sa.GatewayPersonIdentifier == scheduledTransaction.TransactionCode );
 
-                if ( likelyCurrentCard != null )
+                if ( likelyCurrentSavedAccount != null )
                 {
-                    rblSavedCC.SetValue( likelyCurrentCard.Id );
+                    rblSavedAccounts.SetValue( likelyCurrentSavedAccount.Id );
                 }
+                else
+                {
+                    rblSavedAccounts.Items[0].Selected = true;
+                }
+            }
+            else if ( newFormEnabled )
+            {
+                // The form is enabled and there are no saved accounts, so make the form visible immediately when selecting this tab
+                divNewForm.Style[HtmlTextWriterStyle.Display] = "block";
+
+                // The tab will be visible, but only show the new form (no saved account list)
+                rblSavedAccounts.Visible = false;
             }
             else
             {
-                rblSavedCC.Visible = false;
-                divNewCard.Style[HtmlTextWriterStyle.Display] = "block";
+                // The tab could be visible, but it would be blank, so hide it
+                liTab.Visible = false;
+                divTabContent.Visible = false;
+                return;
             }
 
-            if ( rblSavedAch.Items.Count > 0 )
+            // Setup the new form according to the gateway specs if it will be visible
+            if ( newFormEnabled && isCard )
             {
-                rblSavedAch.Items[0].Selected = true;
-                rblSavedAch.Visible = true;
-                divNewBank.Style[HtmlTextWriterStyle.Display] = "none";
+                SetupNewCreditCardForm( scheduledTransaction );
+            }
+        }
 
-                var likelyCurrentBankAccount = savedAccountViewModels.FirstOrDefault( sa =>
-                    !sa.IsCard &&
-                    sa.ReferenceNumber == scheduledTransaction.TransactionCode ||
-                    sa.TransactionCode == scheduledTransaction.TransactionCode ||
-                    sa.GatewayPersonIdentifier == scheduledTransaction.TransactionCode );
+        /// <summary>
+        /// Sets the new credit card form according to the Gateway's specifications.
+        /// </summary>
+        /// <param name="scheduledTransaction">The scheduled transaction.</param>
+        private void SetupNewCreditCardForm( FinancialScheduledTransaction scheduledTransaction )
+        {
+            txtCardFirstName.Visible = Gateway.SplitNameOnCard;
+            var authorizedPerson = scheduledTransaction.AuthorizedPersonAlias.Person;
+            txtCardFirstName.Text = authorizedPerson.FirstName;
+            txtCardLastName.Visible = Gateway.SplitNameOnCard;
+            txtCardLastName.Text = authorizedPerson.LastName;
+            txtCardName.Visible = !Gateway.SplitNameOnCard;
+            txtCardName.Text = authorizedPerson.FullName;
 
-                if ( likelyCurrentBankAccount != null )
-                {
-                    rblSavedAch.SetValue( likelyCurrentBankAccount.Id );
-                }
+            var groupLocation = new PersonService( new RockContext() ).GetFirstLocation(
+                authorizedPerson.Id, DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid() ).Id );
+            if ( groupLocation != null )
+            {
+                acBillingAddress.SetValues( groupLocation.Location );
             }
             else
             {
-                rblSavedAch.Visible = false;
-                divNewCard.Style[HtmlTextWriterStyle.Display] = "block";
+                acBillingAddress.SetValues( null );
             }
+
+            mypExpiration.MinimumYear = RockDateTime.Now.Year;
         }
 
         #endregion
@@ -1032,7 +1053,7 @@ achieve our mission.  We are so grateful for your commitment.
             if ( paymentInfo != null )
             {
                 tdName.Description = paymentInfo.FullName;
-                tdTotal.Description = paymentInfo.Amount.ToString( "C" );
+                tdTotal.Description = paymentInfo.Amount.FormatAsCurrency( ForeignCurrencyCodeDefinedValueId );
 
                 if ( paymentInfo.CurrencyTypeValue != null )
                 {
@@ -1124,6 +1145,8 @@ achieve our mission.  We are so grateful for your commitment.
                 // ProcessPaymentInfo ensures that dtpStartDate.SelectedDate has a value and is after today
                 scheduledTransaction.StartDate = dtpStartDate.SelectedDate.Value;
                 scheduledTransaction.NextPaymentDate = Gateway.CalculateNextPaymentDate( scheduledTransaction, null );
+
+                scheduledTransaction.ForeignCurrencyCodeValueId = dvpForeignCurrencyCode.SelectedDefinedValueId;
 
                 PaymentInfo paymentInfo = GetPaymentInfo( personService, scheduledTransaction );
                 if ( paymentInfo == null )
@@ -1393,7 +1416,7 @@ achieve our mission.  We are so grateful for your commitment.
 
             if ( referencePaymentInfo.ReferenceNumber.IsNullOrWhiteSpace() )
             {
-                string errorMessage; ;
+                string errorMessage;
                 referencePaymentInfo.ReferenceNumber = Gateway.GetReferenceNumber( scheduledTransaction, out errorMessage );
             }
 
@@ -1486,7 +1509,7 @@ achieve our mission.  We are so grateful for your commitment.
         /// <returns></returns>
         public string FormatValueAsCurrency( decimal value )
         {
-            return value.FormatAsCurrency();
+            return value.FormatAsCurrency( ForeignCurrencyCodeDefinedValueId );
         }
 
         /// <summary>
@@ -1503,6 +1526,8 @@ achieve our mission.  We are so grateful for your commitment.
         // As amounts are entered, validate that they are numeric and recalc total
         $('.account-amount').on('change', function() {{
             var totalAmt = Number(0);
+            var symbol = $('#hfCurrencySymbol').val();
+            var decimalPlaces = $('#hfCurrencyDecimals').val();
 
             $('.account-amount .form-control').each(function (index) {{
                 var itemValue = $(this).val();
@@ -1513,7 +1538,7 @@ achieve our mission.  We are so grateful for your commitment.
                     else {{
                         $(this).parents('div.input-group').removeClass('has-error');
                         var num = Number(itemValue);
-                        $(this).val(num.toFixed(2));
+                        $(this).val(num.toFixed(decimalPlaces));
                         totalAmt = totalAmt + num;
                     }}
                 }}
@@ -1521,7 +1546,7 @@ achieve our mission.  We are so grateful for your commitment.
                     $(this).parents('div.input-group').removeClass('has-error');
                 }}
             }});
-            $('.total-amount').html('{4}' + totalAmt.toFixed(2));
+            $('.total-amount').html(symbol + totalAmt.toFixed(decimalPlaces));
             return false;
         }});
 
@@ -1594,12 +1619,12 @@ achieve our mission.  We are so grateful for your commitment.
 ";
             string script = string.Format(
                 scriptFormat,
-                divCCPaymentInfo.ClientID, // {0}
+                divCCPaymentInfo.ClientID,  // {0}
                 divACHPaymentInfo.ClientID, // {1}
-                hfPaymentTab.ClientID, // {2}
-                oneTimeFrequencyId, // {3}
-                GlobalAttributesCache.Value( "CurrencySymbol" ) // {4}
+                hfPaymentTab.ClientID,      // {2}
+                oneTimeFrequencyId         // {3}
                 );
+
             ScriptManager.RegisterStartupScript( upPayment, this.GetType(), "giving-profile", script, true );
         }
 
@@ -1656,14 +1681,6 @@ achieve our mission.  We are so grateful for your commitment.
 
             public string PublicName { get; set; }
 
-            public string AmountFormatted
-            {
-                get
-                {
-                    return Amount > 0 ? Amount.ToString( "F2" ) : string.Empty;
-                }
-            }
-
             public AccountItem( int id, int order, string name, int? campusId, string publicName )
             {
                 Id = id;
@@ -1711,5 +1728,12 @@ achieve our mission.  We are so grateful for your commitment.
         }
 
         #endregion
+
+        protected void dvpForeignCurrencyCode_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            ForeignCurrencyCodeDefinedValueId = dvpForeignCurrencyCode.SelectedDefinedValueId ?? 0;
+            BindAccounts();
+            lblTotalAmount.Text = SelectedAccounts.Sum( f => f.Amount ).FormatAsCurrency( ForeignCurrencyCodeDefinedValueId );
+        }
     }
 }

@@ -58,5 +58,10 @@ namespace RockWeb.Pillars
                 return sb.ToString();
             }
         }
+
+        public object SqlScalar( string sql )
+        {
+            throw new NotImplementedException( "Not Implemented" );
+        }
     }
 }

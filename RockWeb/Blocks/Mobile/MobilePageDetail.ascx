@@ -84,6 +84,30 @@
                                               Label="Body CSS Class"
                                               Help="The CSS class to add to the page." />
                         </div>
+
+                        <div class="col-md-6">
+                            <asp:PlaceHolder ID="phContextPanel" runat="server">
+                                <fieldset>
+                                    <h4>Context Parameters</h4>
+                                    <p>
+                                        There are one or more blocks on this page that can load content based on a 'context' parameter.  
+                                        Please enter the route parameter name or query string parameter name that will contain the id for 
+                                        each of the objects below.
+                                    </p>
+                                    <asp:PlaceHolder ID="phContext" runat="server"></asp:PlaceHolder>
+                                </fieldset>
+                            </asp:PlaceHolder>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <Rock:RockCheckBox ID="cbHideNavigationBar" runat="server" Label="Hide Navigation Bar" Help="Hides the Navigation Bar and makes the Status Bar background color transparent. Page content will reach to the top edge of the screen." />
+                        </div>
+
+                        <div class="col-md-6">
+                            <Rock:RockCheckBox ID="cbShowFullScreen" runat="server" Label="Show Full Screen" Help="When enabled the page will replace the entire shell to prevent the user from navigating via the flyout or tab bar." />
+                        </div>
                     </div>
 
                     <Rock:CodeEditor ID="ceEventHandler" runat="server" Label="Event Handler" Help="The lava to execute on the client whenever a page event is triggered." EditorMode="Lava" />

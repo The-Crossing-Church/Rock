@@ -15,6 +15,7 @@
 // </copyright>
 //
 using System;
+using Rock.Web.Utilities;
 
 namespace Rock.Utility.Settings
 {
@@ -84,8 +85,50 @@ namespace Rock.Utility.Settings
         }
 
         /// <summary>
+        /// Gets the name of the machine.
+        /// </summary>
+        /// <value>
+        /// The name of the machine.
+        /// </value>
+        public string MachineName
+        {
+            get
+            {
+                return System.Environment.MachineName;
+            }
+        }
+
+        /// <summary>
+        /// Gets the ASP net version.
+        /// </summary>
+        /// <value>
+        /// The ASP net version.
+        /// </value>
+        public string AspNetVersion
+        {
+            get
+            {
+                return RockUpdateHelper.GetDotNetVersion();
+            }
+        }
+
+        /// <summary>
         /// Returns the database properties of the Rock application.
         /// </summary>
         public RockInstanceDatabaseConfiguration Database { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether this instance is clustered.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is clustered; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsClustered
+        {
+            get
+            {
+                return Rock.Web.SystemSettings.GetValueFromWebConfig( Rock.SystemKey.SystemSetting.REDIS_ENABLE_CACHE_CLUSTER ).AsBooleanOrNull() ?? false;
+            }
+        }
     }
 }

@@ -163,6 +163,7 @@ namespace Rock.Jobs
                                             foreach( var following in followingService.Queryable( "PersonAlias" ).AsNoTracking()
                                                 .Where( f =>
                                                     f.EntityTypeId == entityTypeId &&
+                                                    string.IsNullOrEmpty( f.PurposeKey ) &&
                                                     followerPersonIds.Contains( f.PersonAlias.PersonId ) ) )
                                             {
                                                 existingFollowings.AddOrIgnore( following.PersonAlias.PersonId, new List<int>() );
@@ -292,8 +293,6 @@ namespace Rock.Jobs
                             .Select( s => s.PersonAlias.PersonId )
                             .Distinct()
                             .ToList();
-
-                        var appRoot = GlobalAttributesCache.Get().GetValue( "PublicApplicationRoot", rockContext );
 
                         foreach ( var person in new PersonService( rockContext )
                             .Queryable().AsNoTracking()

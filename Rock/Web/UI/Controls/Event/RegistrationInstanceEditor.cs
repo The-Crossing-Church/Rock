@@ -94,6 +94,28 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        private bool _showRegistrationTypeSection = true;
+        /// <summary>
+        /// Gets or sets a value indicating whether [show registration type section].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show registration type section]; otherwise, <c>false</c>.
+        /// </value>
+
+        public bool ShowRegistrationTypeSection
+        {
+            get => _showRegistrationTypeSection;
+            set
+            {
+                EnsureChildControls();
+                _showRegistrationTypeSection = value;
+                if ( _tbName.RequiredFieldValidator != null )
+                {
+                    _tbName.RequiredFieldValidator.Enabled = value;
+                }
+            }
+        }
+
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
@@ -120,7 +142,7 @@ namespace Rock.Web.UI.Controls
         /// <value>
         ///   <c>true</c> if active; otherwise, <c>false</c>.
         /// </value>
-        public bool Active 
+        public bool Active
         {
             get
             {
@@ -265,12 +287,12 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _cbCost.Text.AsDecimalOrNull();
+                return _cbCost.Value;
             }
             set
             {
                 EnsureChildControls();
-                _cbCost.Text = value.HasValue ? value.ToString() : string.Empty;
+                _cbCost.Value = value;
             }
         }
 
@@ -285,12 +307,12 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _cbMinimumInitialPayment.Text.AsDecimalOrNull();
+                return _cbMinimumInitialPayment.Value;
             }
             set
             {
                 EnsureChildControls();
-                _cbMinimumInitialPayment.Text = value.HasValue ? value.ToString() : string.Empty;
+                _cbMinimumInitialPayment.Value = value;
             }
         }
 
@@ -305,12 +327,12 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _cbDefaultPaymentAmount.Text.AsDecimalOrNull();
+                return _cbDefaultPaymentAmount.Value;
             }
             set
             {
                 EnsureChildControls();
-                _cbDefaultPaymentAmount.Text = value.HasValue ? value.ToString() : string.Empty;
+                _cbDefaultPaymentAmount.Value = value;
             }
         }
 
@@ -491,12 +513,15 @@ namespace Rock.Web.UI.Controls
         /// <value>
         /// The registration instructions.
         /// </value>
-        public string RegistrationInstructions {
-            get {
+        public string RegistrationInstructions
+        {
+            get
+            {
                 EnsureChildControls();
                 return _htmlRegistrationInstructions.Text;
             }
-            set {
+            set
+            {
                 EnsureChildControls();
                 _htmlRegistrationInstructions.Text = value;
             }
@@ -518,7 +543,7 @@ namespace Rock.Web.UI.Controls
             set
             {
                 EnsureChildControls();
-                _htmlAdditionalReminderDetails.Text = value; 
+                _htmlAdditionalReminderDetails.Text = value;
             }
         }
 
@@ -533,16 +558,15 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _htmlAdditionalConfirmationDetails.Text; 
+                return _htmlAdditionalConfirmationDetails.Text;
             }
             set
             {
                 EnsureChildControls();
-                _htmlAdditionalConfirmationDetails.Text = value; 
+                _htmlAdditionalConfirmationDetails.Text = value;
             }
         }
 
-        
         /// <summary>
         /// Gets or sets the validation group.
         /// </summary>
@@ -554,7 +578,7 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _tbName.ValidationGroup;
+                return _tbUrlSlug.ValidationGroup;
             }
             set
             {
@@ -623,11 +647,11 @@ namespace Rock.Web.UI.Controls
 
                 _pnContactPhone.Text = instance.ContactPhone;
                 _ebContactEmail.Text = instance.ContactEmail;
-                _cbCost.Text = instance.Cost.HasValue ? instance.Cost.Value.ToString() : string.Empty;
+                _cbCost.Value = instance.Cost;
                 _cbCost.Visible = instance.RegistrationTemplate != null && ( instance.RegistrationTemplate.SetCostOnInstance ?? false );
-                _cbMinimumInitialPayment.Text = instance.MinimumInitialPayment.HasValue ? instance.MinimumInitialPayment.Value.ToString() : string.Empty;
+                _cbMinimumInitialPayment.Value = instance.MinimumInitialPayment;
                 _cbMinimumInitialPayment.Visible = instance.RegistrationTemplate != null && ( instance.RegistrationTemplate.SetCostOnInstance ?? false );
-                _cbDefaultPaymentAmount.Text = instance.DefaultPayment.HasValue ? instance.DefaultPayment.Value.ToString() : string.Empty;
+                _cbDefaultPaymentAmount.Value = instance.DefaultPayment;
                 _cbDefaultPaymentAmount.Visible = instance.RegistrationTemplate != null && ( instance.RegistrationTemplate.SetCostOnInstance ?? false );
                 _apAccount.SetValue( instance.AccountId );
                 _apAccount.Visible = instance.RegistrationTemplate != null && instance.RegistrationTemplate.FinancialGatewayId.HasValue;
@@ -649,9 +673,9 @@ namespace Rock.Web.UI.Controls
                 _ppContact.SetValue( null );
                 _pnContactPhone.Text = string.Empty;
                 _ebContactEmail.Text = string.Empty;
-                _cbCost.Text = string.Empty;
-                _cbMinimumInitialPayment.Text = string.Empty;
-                _cbDefaultPaymentAmount.Text = string.Empty;
+                _cbCost.Value = null;
+                _cbMinimumInitialPayment.Value = null;
+                _cbDefaultPaymentAmount.Value = null;
                 _apAccount.SetValue( null );
                 _dtpSendReminder.SelectedDateTime = null;
                 _cbReminderSent.Checked = false;
@@ -672,7 +696,7 @@ namespace Rock.Web.UI.Controls
             if ( instance != null )
             {
                 instance.Name = _tbName.Text;
-                if ( ShowActive )
+                if ( ShowActive && ShowRegistrationTypeSection )
                 {
                     instance.IsActive = _cbIsActive.Checked;
                 }
@@ -684,16 +708,16 @@ namespace Rock.Web.UI.Controls
                 instance.ContactPersonAliasId = _ppContact.PersonAliasId;
                 instance.ContactPhone = _pnContactPhone.Text;
                 instance.ContactEmail = _ebContactEmail.Text;
-                instance.Cost = _cbCost.Text.AsDecimalOrNull();
-                instance.MinimumInitialPayment = _cbMinimumInitialPayment.Text.AsDecimalOrNull();
-                instance.DefaultPayment = _cbDefaultPaymentAmount.Text.AsDecimalOrNull();
+                instance.Cost = _cbCost.Value;
+                instance.MinimumInitialPayment = _cbMinimumInitialPayment.Value;
+                instance.DefaultPayment = _cbDefaultPaymentAmount.Value;
                 int accountId = _apAccount.SelectedValue.AsInteger();
-                instance.AccountId = accountId > 0 ? accountId : (int?)null;
+                instance.AccountId = accountId > 0 ? accountId : ( int? ) null;
                 instance.SendReminderDateTime = _dtpSendReminder.SelectedDateTime;
                 instance.ReminderSent = _cbReminderSent.Checked;
                 instance.RegistrationInstructions = _htmlRegistrationInstructions.Text;
-                instance.AdditionalReminderDetails = _htmlAdditionalReminderDetails.Text; 
-                instance.AdditionalConfirmationDetails = _htmlAdditionalConfirmationDetails.Text; 
+                instance.AdditionalReminderDetails = _htmlAdditionalReminderDetails.Text;
+                instance.AdditionalConfirmationDetails = _htmlAdditionalConfirmationDetails.Text;
             }
         }
 
@@ -734,7 +758,7 @@ namespace Rock.Web.UI.Controls
                 _ceDetails.EditorHeight = "100";
                 _ceDetails.Visible = false; // hiding this out for now. Struggling where we'd even use this, but instead of removing it we'll just comment it out for now.
                 Controls.Add( _ceDetails );
-                 
+
 
                 _dtpStart = new DateTimePicker();
                 _dtpStart.ID = this.ID + "_dtpStart";
@@ -781,6 +805,7 @@ namespace Rock.Web.UI.Controls
                 _apAccount.ID = this.ID + "_apAccount";
                 _apAccount.Label = "Account";
                 _apAccount.Required = true;
+                _apAccount.DisplayActiveOnly = true;
                 Controls.Add( _apAccount );
 
                 _ppContact = new PersonPicker();
@@ -817,7 +842,7 @@ namespace Rock.Web.UI.Controls
                 _htmlRegistrationInstructions.Label = "Registration Instructions";
                 _htmlRegistrationInstructions.Help = "These instructions will appear at the beginning of the registration process. Instructions can be provided on the registration template also. Any instructions here will override the instructions on the template.";
                 _htmlRegistrationInstructions.Height = 200;
-                Controls.Add(_htmlRegistrationInstructions);
+                Controls.Add( _htmlRegistrationInstructions );
 
                 _htmlAdditionalReminderDetails = new HtmlEditor();
                 _htmlAdditionalReminderDetails.ID = this.ID + "_htmlAdditionalReminderDetails";
@@ -883,73 +908,142 @@ namespace Rock.Web.UI.Controls
         /// <param name="writer">An <see cref="T:System.Web.UI.HtmlTextWriter" /> that represents the output stream to render HTML content on the client.</param>
         protected override void Render( HtmlTextWriter writer )
         {
-            writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
-            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            if ( ShowRegistrationTypeSection )
+            {
+                RockControlHelper.RenderSection( "Registration Type", CssClass, writer, ( HtmlTextWriter ) =>
+                {
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div ); // row
 
-            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
-            writer.RenderBeginTag( HtmlTextWriterTag.Div );
-            _tbName.RenderControl( writer );
-            writer.RenderEndTag();  // col-md-6
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    _tbName.RenderControl( writer );
+                    writer.RenderEndTag();  // col-md-6
 
-            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
-            writer.RenderBeginTag( HtmlTextWriterTag.Div );
-            _cbIsActive.RenderControl( writer );
-            _tbUrlSlug.RenderControl( writer );
-            writer.RenderEndTag();  // col-md-6
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    _cbIsActive.RenderControl( writer );
+                    _tbUrlSlug.RenderControl( writer );
+                    writer.RenderEndTag();  // col-md-6
 
-            writer.RenderEndTag();  // row
+                    writer.RenderEndTag(); // row
+                } );
+            }
 
-            _ceDetails.RenderControl( writer );
-
-            writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
-            writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            RockControlHelper.RenderSection( "Registration Details", CssClass, writer, ( HtmlTextWriter ) =>
+            {
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
 
-                    _dtpStart.RenderControl( writer );
-                    _dtpEnd.RenderControl( writer );
-                    _nbMaxAttendees.RenderControl( writer );
-                    _wtpRegistrationWorkflow.RenderControl( writer );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _dtpStart.RenderControl( writer );
+                writer.RenderEndTag();
 
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _dtpEnd.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _nbMaxAttendees.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _wtpRegistrationWorkflow.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _dtpSendReminder.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-8" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.RenderEndTag();  // col-xs-8
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-4" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _cbReminderSent.Visible = _cbReminderSent.Checked;
+                _cbReminderSent.RenderControl( writer );
+                writer.RenderEndTag();  // col-xs-4
+
+                writer.RenderEndTag();  // row
+            } );
+
+            RockControlHelper.RenderSection( "Registration Contact Information", CssClass, writer, ( HtmlTextWriter ) =>
+            {
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _ppContact.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _pnContactPhone.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _ebContactEmail.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.RenderEndTag();
+            } );
+
+            if ( _cbCost.Visible || _cbMinimumInitialPayment.Visible || _cbDefaultPaymentAmount.Visible || _apAccount.Visible )
+            {
+                RockControlHelper.RenderSection( "Registration Financial Information", CssClass, writer, ( HtmlTextWriter ) =>
+                {
                     writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
                     writer.RenderBeginTag( HtmlTextWriterTag.Div );
 
-                        writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-8" );
-                        writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                        _dtpSendReminder.RenderControl( writer );
-                        writer.RenderEndTag();  // col-xs-6
-
-                        writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-4" );
-                        writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                        _cbReminderSent.Visible = _cbReminderSent.Checked;
-                        _cbReminderSent.RenderControl( writer );
-                        writer.RenderEndTag();  // col-xs-6
-
-                    writer.RenderEndTag();  // row
-
-                writer.RenderEndTag();  // col-md-6
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
-
-                    _ppContact.RenderControl( writer );
-                    _pnContactPhone.RenderControl( writer );
-                    _ebContactEmail.RenderControl( writer );
-
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
                     _cbCost.RenderControl( writer );
+                    writer.RenderEndTag();
+
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
                     _cbMinimumInitialPayment.RenderControl( writer );
-                    _cbDefaultPaymentAmount.RenderControl( writer );
+                    writer.RenderEndTag();
+
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
                     _apAccount.RenderControl( writer );
+                    writer.RenderEndTag();
 
-                writer.RenderEndTag();  // col-md-6
-            writer.RenderEndTag();  // row
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    _cbDefaultPaymentAmount.RenderControl( writer );
+                    writer.RenderEndTag();
 
-            _htmlRegistrationInstructions.RenderControl(writer);
+                    writer.RenderEndTag();
+                } );
+            }
 
-            _htmlAdditionalReminderDetails.RenderControl( writer );
+            RockControlHelper.RenderSection( "Registration Messages", CssClass, writer, ( HtmlTextWriter ) =>
+            {
+                _htmlRegistrationInstructions.RenderControl( writer );
 
-            _htmlAdditionalConfirmationDetails.RenderControl( writer );
+                _htmlAdditionalReminderDetails.RenderControl( writer );
 
+                _htmlAdditionalConfirmationDetails.RenderControl( writer );
+            } );
         }
-
     }
 }

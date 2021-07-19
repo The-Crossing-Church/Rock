@@ -29,7 +29,7 @@ using Rock.Web.UI;
 namespace Rock.CheckIn
 {
     /// <summary>
-    /// A RockBlock specific to check-in
+    /// A Parent RockBlock specific to check-in. Attribute keys for blocks that inherit this one should continue from the order of the keys in this class.
     /// </summary>
     [WorkflowTypeField(
         "Workflow Type",
@@ -69,16 +69,90 @@ namespace Rock.CheckIn
     {
         #region Attribute Keys
 
-        private static class AttributeKey
+        /// <summary>
+        /// The attribute keys that can be used by all blocks that inherit this one. In the child class create a new private AttributeKey sub class and point those const to this class.
+        /// e.g.
+        /// private new static class AttributeKey
+        /// {
+        ///     public const string NextPage = CheckinBlock.AttributeKey.NextPage;
+        /// }
+        /// </summary>
+        protected static class AttributeKey
         {
+            /// <summary>
+            /// The workflow type to activate for check-in
+            /// </summary>
             public const string WorkflowType = "WorkflowType";
+
+            /// <summary>
+            /// The name of the workflow activity to run on selection.
+            /// </summary>
             public const string WorkflowActivity = "WorkflowActivity";
+
+            /// <summary>
+            /// The Check-in home page
+            /// </summary>
             public const string HomePage = "HomePage";
+
+            /// <summary>
+            /// The previous page
+            /// </summary>
             public const string PreviousPage = "PreviousPage";
+
+            /// <summary>
+            /// The next page
+            /// </summary>
             public const string NextPage = "NextPage";
         }
 
         #endregion Attribute Keys
+
+        /// <summary>
+        /// The list of lava merge field names for use in check-in lava.
+        /// </summary>
+        protected static class LavaMergeFieldName
+        {
+
+            /// <summary>
+            /// 'CheckinType' is the type of check-in given as a string which will be either 'Family' or 'Individual'
+            /// </summary>
+            public const string CheckinType = "CheckinType";
+
+            /// <summary>
+            /// Lava Merge field 'Family' which is a Group and is the current family.
+            /// </summary>
+            public const string Family = "Family";
+
+            /// <summary>
+            /// Lava Merge field 'Individual' which is a Person and is the current selected person
+            /// </summary>
+            public const string Individual = "Individual";
+
+            /// <summary>
+            /// Lava Merge field 'SelectedArea' 
+            /// </summary>
+            public const string SelectedArea = "SelectedArea";
+
+            /// <summary>
+            /// Lava Merge field 'SelectedGroup' 
+            /// </summary>
+            public const string SelectedGroup = "SelectedGroup";
+
+            /// <summary>
+            /// Lava Merge field 'SelectedIndividuals' is a list of Persons which contain all of the currently selected persons
+            /// </summary>
+            public const string SelectedIndividuals = "SelectedIndividuals";
+
+            /// <summary>
+            /// Lava Merge field 'SelectedSchedule' is a Schedule and is the current selected schedule.
+            /// </summary>
+            public const string SelectedSchedule = "SelectedSchedule";
+
+            /// <summary>
+            /// Lava Merge field 'SelectedLocation' is a Location and is the current selected location.
+            /// </summary>
+            public const string SelectedLocation = "SelectedLocation";
+        }
 
         #region Page Parameter Keys
 
@@ -419,21 +493,30 @@ namespace Rock.CheckIn
                             }
                         }
 
-                        var activityType = workflowType.ActivityTypes.Where( a => a.Name == activityName ).FirstOrDefault();
-                        if ( activityType != null )
+                        WorkflowActivityTypeCache activityType = null;
+                        try
                         {
-                            WorkflowActivity.Activate( activityType, CurrentWorkflow, rockContext );
-                            if ( workflowService.Process( CurrentWorkflow, CurrentCheckInState, out errorMessages ) )
+                            activityType = workflowType.ActivityTypes.Where( a => a.Name == activityName ).FirstOrDefault();
+                            if ( activityType != null )
                             {
-                                // Keep workflow active for continued processing
-                                CurrentWorkflow.CompletedDateTime = null;
+                                WorkflowActivity.Activate( activityType, CurrentWorkflow, rockContext );
+                                if ( workflowService.Process( CurrentWorkflow, CurrentCheckInState, out errorMessages ) )
+                                {
+                                    // Keep workflow active for continued processing
+                                    CurrentWorkflow.CompletedDateTime = null;
 
-                                return true;
+                                    return true;
+                                }
+                            }
+                            else
+                            {
+                                errorMessages.Add( string.Format( "Workflow type does not have a '{0}' activity type", activityName ) );
                             }
                         }
-                        else
+                        catch ( Exception ex )
                         {
-                            errorMessages.Add( string.Format( "Workflow type does not have a '{0}' activity type", activityName ) );
+                            ExceptionLogService.LogException( new Exception( $"An exception occurred when doing the {activityType} checkin workflow activity", ex ) );
+                            errorMessages.Add( $"An error occurred processing {activityType}" );
                         }
                     }
                     else
@@ -529,7 +612,16 @@ namespace Rock.CheckIn
             else
             {
                 string errorMsg = "<ul><li>" + errors.AsDelimited( "</li><li>" ) + "</li></ul>";
-                modalAlert?.Show( errorMsg.Replace( "'", @"\'" ), Rock.Web.UI.Controls.ModalAlertType.Warning );
+                if ( modalAlert != null )
+                {
+                    modalAlert?.Show( errorMsg.Replace( "'", @"\'" ), Rock.Web.UI.Controls.ModalAlertType.Warning );
+                }
+                else
+                {
+                    // if no modalAlert was specified, let the block handle the exception
+                    throw new Exception( errorMsg );
+                }
+
                 return false;
             }
         }
@@ -834,7 +926,8 @@ namespace Rock.CheckIn
         /// </summary>
         protected void SaveState()
         {
-            this.LocalDeviceConfig.SaveToCookie( this.Page );
+            var localDeviceConfigValue = this.LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None );
+            RockPage.AddOrUpdateCookie( CheckInCookieKey.LocalDeviceConfig, localDeviceConfigValue, RockDateTime.Now.AddYears( 1 ) );
 
             Session[SessionKey.CheckInWorkflow] = CurrentWorkflow;
 

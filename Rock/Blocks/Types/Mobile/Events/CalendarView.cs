@@ -112,7 +112,7 @@ namespace Rock.Blocks.Types.Mobile.Events
             public const string EventSummary = "EventSummary";
 
             /// <summary>
-            /// The show filter
+            /// Whether the filter should be shown or not.
             /// </summary>
             public const string ShowFilter = "ShowFilter";
         }
@@ -223,7 +223,8 @@ namespace Rock.Blocks.Types.Mobile.Events
                 } ),
                 SummaryContent = EventSummary,
                 DetailPage,
-                ShowFilter
+                ShowFilter,
+                IncludeCampusFilter = true /* Tell shell we support campus filtering */
             };
         }
 
@@ -266,6 +267,7 @@ namespace Rock.Blocks.Types.Mobile.Events
                 { "StartDateTime", "DateTime" },
                 { "EndDateTime", "EndDateTime" },
                 { "Campus", "Campus" },
+                { "CampusGuid", "CampusGuid" },
                 { "Audiences", "Audiences" }
             };
 
@@ -313,7 +315,7 @@ namespace Rock.Blocks.Types.Mobile.Events
                             .Where( b => b >= beginDate && b < endDate )
                             .Select( b => new
                             {
-                                Date = b,
+                                Date = b.ToRockDateTimeOffset(),
                                 Duration = duration,
                                 AudienceGuids = a.EventItem.EventItemAudiences.Select( c => DefinedValueCache.Get( c.DefinedValueId )?.Guid ).Where( c => c.HasValue ).Select( c => c.Value ).ToList(),
                                 EventItemOccurrence = a
@@ -326,9 +328,10 @@ namespace Rock.Blocks.Types.Mobile.Events
                         a.EventItemOccurrence.Id,
                         a.EventItemOccurrence.EventItem.Name,
                         DateTime = a.Date,
-                        EndDateTime = a.Duration > 0 ? ( DateTime? ) a.Date.AddMinutes( a.Duration ) : null,
-                        Date = a.Date.ToShortDateString(),
-                        Time = a.Date.ToShortTimeString(),
+                        EndDateTime = a.Duration > 0 ? ( DateTimeOffset? ) a.Date.AddMinutes( a.Duration ) : null,
+                        Date = a.Date.ToString( "d" ), // Short date
+                        Time = a.Date.ToString( "t" ), // Short time
+                        CampusGuid = a.EventItemOccurrence.Campus?.Guid,
                         Campus = a.EventItemOccurrence.Campus != null ? a.EventItemOccurrence.Campus.Name : "All Campuses",
                         Location = a.EventItemOccurrence.Campus != null ? a.EventItemOccurrence.Campus.Name : "All Campuses",
                         LocationDescription = a.EventItemOccurrence.Location,

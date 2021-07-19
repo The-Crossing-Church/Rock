@@ -168,7 +168,7 @@ namespace Rock.Mobile
                 RockDateTime.Now,
                 RockDateTime.Now.Add( System.Web.Security.FormsAuthentication.Timeout ),
                 true,
-                false.ToString() );
+                username.StartsWith( "rckipid=" ).ToString() );
 
             return System.Web.Security.FormsAuthentication.Encrypt( ticket );
         }
@@ -308,7 +308,14 @@ namespace Rock.Mobile
             }
 
             // Run Lava on CSS to enable color utilities
-            cssStyles += cssStyles.ResolveMergeFields(Lava.LavaHelper.GetCommonMergeFields(null, null, new Lava.CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false }));
+            cssStyles = cssStyles.ResolveMergeFields(Lava.LavaHelper.GetCommonMergeFields(null, null, new Lava.CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false }));
+
+            // Get the Rock organization time zone. If not found back to the
+            // OS time zone. If not found just use Greenwich.
+            var timeZoneMapping = NodaTime.TimeZones.TzdbDateTimeZoneSource.Default.WindowsMapping.PrimaryMapping;
+            var timeZoneName = timeZoneMapping.GetValueOrNull( RockDateTime.OrgTimeZoneInfo.Id )
+                ?? timeZoneMapping.GetValueOrNull( TimeZoneInfo.Local.Id )
+                ?? "GMT";
 
             //
             // Initialize the base update package settings.
@@ -322,7 +329,10 @@ namespace Rock.Mobile
                 ProfileDetailsPageGuid = additionalSettings.ProfilePageId.HasValue ? PageCache.Get( additionalSettings.ProfilePageId.Value )?.Guid : null,
                 PhoneFormats = phoneFormats,
                 DefinedValues = definedValues,
-                TabsOnBottomOnAndroid = additionalSettings.TabLocation == TabLocation.Bottom
+                TabsOnBottomOnAndroid = additionalSettings.TabLocation == TabLocation.Bottom,
+                HomepageRoutingLogic = additionalSettings.HomepageRoutingLogic,
+                DoNotEnableNotificationsAtLaunch = !additionalSettings.EnableNotificationsAutomatically,
+                TimeZone = timeZoneName
             };
 
             //
@@ -332,6 +342,7 @@ namespace Rock.Mobile
             package.AppearanceSettings.MenuButtonColor = additionalSettings.MenuButtonColor;
             package.AppearanceSettings.ActivityIndicatorColor = additionalSettings.ActivityIndicatorColor;
             package.AppearanceSettings.FlyoutXaml = additionalSettings.FlyoutXaml;
+            package.AppearanceSettings.NavigationBarActionsXaml = additionalSettings.NavigationBarActionXaml;
             package.AppearanceSettings.LockedPhoneOrientation = additionalSettings.LockedPhoneOrientation;
             package.AppearanceSettings.LockedTabletOrientation = additionalSettings.LockedTabletOrientation;
             package.AppearanceSettings.PaletteColors.Add( "app-primary", additionalSettings.DownhillSettings.ApplicationColors.Primary );
@@ -444,6 +455,14 @@ namespace Rock.Mobile
                     }
                 }
 
+                // Get the campus time zone, If not found try the Rock
+                // organization time zone. If not found back to the
+                // OS time zone. If not found just use Greenwich.
+                mobileCampus.TimeZone = timeZoneMapping.GetValueOrNull( campus.TimeZoneId ?? string.Empty )
+                    ?? timeZoneMapping.GetValueOrNull( RockDateTime.OrgTimeZoneInfo.Id )
+                    ?? timeZoneMapping.GetValueOrNull( TimeZoneInfo.Local.Id )
+                    ?? "GMT";
+
                 package.Campuses.Add( mobileCampus );
             }
 
@@ -477,7 +496,9 @@ namespace Rock.Mobile
                     DepthLevel = depth,
                     CssClasses = page.BodyCssClass,
                     CssStyles = additionalPageSettings.CssStyles,
-                    AuthorizationRules = string.Join( ",", GetOrderedExplicitAuthorizationRules( page ) )
+                    AuthorizationRules = string.Join( ",", GetOrderedExplicitAuthorizationRules( page ) ),
+                    HideNavigationBar = additionalPageSettings.HideNavigationBar,
+                    ShowFullScreen = additionalPageSettings.ShowFullScreen
                 };
 
                 package.Pages.Add( mobilePage );

@@ -20,6 +20,7 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
@@ -34,7 +35,6 @@ using Rock.Security;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
-using Attribute = Rock.Model.Attribute;
 
 namespace RockWeb.Blocks.Event
 {
@@ -465,8 +465,8 @@ namespace RockWeb.Blocks.Event
                     History.EvaluateChange( changes, "Discount Percentage", registration.DiscountPercentage, nbDiscountPercentage.Text.AsDecimal() * 0.01m );
                     registration.DiscountPercentage = nbDiscountPercentage.Text.AsDecimal() * 0.01m;
 
-                    History.EvaluateChange( changes, "Discount Amount", registration.DiscountAmount, cbDiscountAmount.Text.AsDecimal() );
-                    registration.DiscountAmount = cbDiscountAmount.Text.AsDecimal();
+                    History.EvaluateChange( changes, "Discount Amount", registration.DiscountAmount, cbDiscountAmount.Value );
+                    registration.DiscountAmount = cbDiscountAmount.Value == null ? 0 : cbDiscountAmount.Value.Value;
 
                     if ( !Page.IsValid )
                     {
@@ -830,15 +830,15 @@ namespace RockWeb.Blocks.Event
             }
 
             nbDiscountPercentage.Text = discount != null && discount.DiscountPercentage != 0.0m ? ( discount.DiscountPercentage * 100.0m ).ToString( "N0" ) : "";
-            cbDiscountAmount.Text = discount != null && discount.DiscountAmount != 0.0m ? discount.DiscountAmount.ToString( "N2" ) : "";
+            cbDiscountAmount.Value = discount != null && discount.DiscountAmount != 0.0m ? discount.DiscountAmount : ( decimal? ) null;
         }
 
         protected void lbResendConfirmation_Click( object sender, EventArgs e )
         {
             if ( RegistrationId.HasValue )
             {
-                string appRoot = ResolveRockUrl( "~/" );
-                string themeRoot = ResolveRockUrl( "~~/" );
+                string appRoot = ResolveRockUrlIncludeRoot( "~/" );
+                string themeRoot = ResolveRockUrlIncludeRoot( "~~/" );
 
                 var confirmation = new Rock.Transactions.SendRegistrationConfirmationTransaction();
                 confirmation.RegistrationId = RegistrationId.Value;
@@ -904,8 +904,7 @@ namespace RockWeb.Blocks.Event
                     txtCardName.Visible = !component.SplitNameOnCard;
                     mypExpiration.MinimumYear = RockDateTime.Now.Year;
 
-                    cbPaymentAmount.Text = string.Empty;
-                    cbPaymentAmount.Text = Registration.BalanceDue.ToString( "N2" );
+                    cbPaymentAmount.Value = Registration.BalanceDue;
 
                     txtCreditCard.Text = string.Empty;
                     mypExpiration.SelectedDate = null;
@@ -957,7 +956,7 @@ namespace RockWeb.Blocks.Event
         {
             int? personAliasId = ppPayee.PersonAliasId;
 
-            decimal pmtAmount = cbPaymentAmount.Text.AsDecimal();
+            decimal pmtAmount = cbPaymentAmount.Value == null ? 0 : cbPaymentAmount.Value.Value;
             if ( Registration != null && Registration.BalanceDue >= pmtAmount && pmtAmount > 0 )
             {
                 if ( !personAliasId.HasValue && Registration.PersonAliasId.HasValue )
@@ -1030,7 +1029,7 @@ namespace RockWeb.Blocks.Event
         {
             int? personAliasId = ppPayee.PersonAliasId;
 
-            decimal pmtAmount = cbPaymentAmount.Text.AsDecimal();
+            decimal pmtAmount = cbPaymentAmount.Value == null ? 0 : cbPaymentAmount.Value.Value;
             if ( Registration != null )
             {
                 if ( !personAliasId.HasValue && Registration.PersonAliasId.HasValue )
@@ -1529,7 +1528,7 @@ namespace RockWeb.Blocks.Event
                 foreach ( var discount in this.RegistrationTemplate.Discounts.OrderBy( d => d.Code ) )
                 {
                     discountCodes.AddOrIgnore( discount.Code, discount.Code + ( string.IsNullOrWhiteSpace( discount.DiscountString ) ? "" :
-                        string.Format( " ({0})", discount.DiscountString ) ) );
+                        string.Format( " ({0})", HttpUtility.HtmlDecode(discount.DiscountString) ) ) );
                 }
             }
 
@@ -1567,7 +1566,7 @@ namespace RockWeb.Blocks.Event
             ddlDiscountCode.SetValue( registration.DiscountCode );
 
             nbDiscountPercentage.Text = registration.DiscountPercentage != 0.0m ? ( registration.DiscountPercentage * 100.0m ).ToString( "N0" ) : "";
-            cbDiscountAmount.Text = registration.DiscountAmount != 0.0m ? registration.DiscountAmount.ToString( "N2" ) : "";
+            cbDiscountAmount.Value = registration.DiscountAmount != 0.0m ? registration.DiscountAmount : ( decimal? ) null;
 
             RegistrantsState = null;
             BuildRegistrationControls( true );
@@ -2120,17 +2119,19 @@ namespace RockWeb.Blocks.Event
 
                     int registrationEntityTypeId = EntityTypeCache.Get( typeof( Rock.Model.Registration ) ).Id;
 
+                    var transactionDetailQuery = new FinancialTransactionDetailService( rockContext )
+                        .Queryable()
+                        .Where( d => d.EntityTypeId.HasValue &&
+                                    d.EntityTypeId.Value == registrationEntityTypeId &&
+                                    d.EntityId.HasValue &&
+                                    d.EntityId.Value == Registration.Id );
+
+                    var transactionIds = transactionDetailQuery.Select( a => a.TransactionId ).ToList();
+
                     // Get all the transactions related to this registration
                     var qry = new FinancialTransactionService( rockContext )
                         .Queryable().AsNoTracking()
-                        .Where( t =>
-                            t.TransactionDateTime.HasValue &&
-                            t.TransactionDetails
-                                .Any( d =>
-                                    d.EntityTypeId.HasValue &&
-                                    d.EntityTypeId.Value == registrationEntityTypeId &&
-                                    d.EntityId.HasValue &&
-                                    d.EntityId.Value == Registration.Id ) );
+                        .Where( t => transactionIds.Contains( t.Id ) );
 
                     SortProperty sortProperty = gPayments.SortProperty;
                     if ( sortProperty != null )
@@ -2156,7 +2157,9 @@ namespace RockWeb.Blocks.Event
                         qry = qry.OrderByDescending( t => t.TransactionDateTime ).ThenByDescending( t => t.Id );
                     }
 
-                    gPayments.DataSource = qry.ToList().Select( p => new
+                    var transactionList = qry.AsNoTracking().ToList();
+
+                    gPayments.DataSource = transactionList.Select( p => new
                     {
                         p.Id,
                         TransactionDateTime = p.TransactionDateTime.Value.ToShortDateString() + "<br/>" +
@@ -2164,6 +2167,7 @@ namespace RockWeb.Blocks.Event
                         Details = FormatDetails( p ),
                         p.TotalAmount
                     } );
+
                     gPayments.DataBind();
                 }
             }
