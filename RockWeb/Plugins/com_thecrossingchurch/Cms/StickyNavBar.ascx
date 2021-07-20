@@ -32,7 +32,7 @@
             top: 132px;;
         }
     }
-    .item {
+    .sticky-nav .item {
         display: flex;
         align-items: center;
         padding: 0px 4px;
