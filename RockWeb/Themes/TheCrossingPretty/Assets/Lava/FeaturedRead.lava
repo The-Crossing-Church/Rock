@@ -236,16 +236,20 @@ $(document).ready(function () {
       seclastSlide = slides[slidesLength - 2],
       lastSlide = slides[slidesLength - 1],
       cloneFirst = firstSlide.cloneNode(true),
-      cloneSecond = secondSlide.cloneNode(true),
-      cloneSecLast = seclastSlide.cloneNode(true),
+      cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+      cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
       cloneLast = lastSlide.cloneNode(true),
       index = 0,
       allowShift = true;
 
     // Clone first and last slide
     items.appendChild(cloneFirst);
-    items.appendChild(cloneSecond);
-    items.insertBefore(cloneSecLast, firstSlide);
+    if(cloneSecond) {
+      items.appendChild(cloneSecond);
+    }
+    if(cloneSecLast) {
+      items.insertBefore(cloneSecLast, firstSlide);
+    }
     items.insertBefore(cloneLast, firstSlide);
     wrapper.classList.add("loaded");
 
@@ -340,7 +344,7 @@ $(document).ready(function () {
       }
 
       if (index == slidesLength) {
-        if(window.screen.width >= 1200) {
+        if(window.screen.width >= 1200 && items.length > 1) {
           items.style.left = -(2 * slideSize) + "px";
         } else {
           items.style.left = -(1 * slideSize) + "px";

@@ -158,9 +158,6 @@
                     }, 20)
                 }
             })
-            $('#desktop-about').click(function () {
-                window.location.href = "/About"
-            })
         })
     </script>
     <!-- Start of HubSpot Embed Code -->
@@ -225,9 +222,9 @@
                             <li class="menu-item main-nav-item about-nav dropdown">
                                 <a href="/About" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
                                 <div class="about-menu dropdown-menu">
-                                    <!--<div>
-                                        <a href="/Blog" class="text-white">The Crossing Blog</a>
-                                    </div>-->
+                                    <div>
+                                        <a href="/About" class="text-white">About The Crossing</a>
+                                    </div>
                                     <div>
                                         <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>

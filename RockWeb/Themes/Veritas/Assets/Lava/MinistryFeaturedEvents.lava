@@ -50,6 +50,6 @@
 
 <script>
   $(document).ready(()=> {
-    $('#eventsCarousel').carousel();
+  $('#eventsCarousel').carousel();
   })
 </script>

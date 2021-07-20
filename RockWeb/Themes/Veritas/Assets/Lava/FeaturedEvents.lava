@@ -11,7 +11,7 @@
               <a href="{{DetailsPage}}?EventOccurrenceId={{ eventItemOccurrence.Id }}">
                 <div style="padding: 8px">
                   <div class='img-wrapper'>
-                    <img class="d-block w-100" src="{{eventItemOccurrence.EventItem.PhotoPath}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{eventItemOccurrence.EventItem.Photo.Guid}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
                   </div>
                   <span>{{eventItemOccurrence.EventItem.Name}}</span>
                 </div>
@@ -31,54 +31,54 @@
   </div>
   <br/>
 </div>
-
+<br/><br/>
 {% stylesheet compile:'less' %}
 @media (max-width: 374px) {
-.slider, .wrapper {
-width: 300px;
-}
-.slide {
-width: 300px;
-}
-.slides {
-left: -300px;
-}
-{% assign ct = EventItemOccurrences | Size %}
-{% if ct == 1 %}
-.control {
-display: none !important;
-}
-{% endif %}
+  .slider, .wrapper {
+    width: 300px;
+  }
+  .slide {
+    width: 300px;
+  }
+  .slides {
+    left: -300px;
+  }
+  {% assign ct = EventItemOccurrences | Size %}
+  {% if ct == 1 %}
+    .control {
+      display: none !important;
+    }
+  {% endif %}
 }
 @media (min-width: 375px) {
-.slider, .wrapper {
-width: 350px;
-}
-.slide {
-width: 350px;
-}
-.slides {
-left: -350px;
-}
-{% assign ct = EventItemOccurrences | Size %}
-{% if ct == 1 %}
-.control {
-display: none !important;
-}
-{% endif %}
+  .slider, .wrapper {
+    width: 350px;
+  }
+  .slide {
+    width: 350px;
+  }
+  .slides {
+    left: -350px;
+  }
+  {% assign ct = EventItemOccurrences | Size %}
+  {% if ct == 1 %}
+    .control {
+      display: none !important;
+    }
+  {% endif %}
 }
 @media (min-width: 768px) {
-.slider, .wrapper {
-width: 720px;
-}
-.slide {
-width: 360px;
-}
-.slides {
-left: -720px;
-}
-{% assign ct = EventItemOccurrences | Size %}
-{% if ct < 2 %}
+  .slider, .wrapper {
+    width: 720px;
+  }
+  .slide {
+    width: 360px;
+  }
+  .slides {
+    left: -720px;
+  }
+  {% assign ct = EventItemOccurrences | Size %}
+  {% if ct < 2 %}
     .control {
       display: none !important; 
     }
@@ -211,88 +211,92 @@ left: -720px;
 }
 {% endstylesheet %}
 <script>
-  $(document).ready(function () {
+$(document).ready(function () {
   var slider = document.getElementById("featured-slider"),
-  sliderItems = document.getElementById("featured-slides"),
-  prev = document.getElementById("featured-prev"),
-  next = document.getElementById("featured-next");
+    sliderItems = document.getElementById("featured-slides"),
+    prev = document.getElementById("featured-prev"),
+    next = document.getElementById("featured-next");
 
   function slide(wrapper, items, prev, next) {
-  var posX1 = 0,
-  posX2 = 0,
-  posInitial,
-  posFinal,
-  threshold = 100,
-  slides = items.getElementsByClassName("slide"),
-  slidesLength = slides.length,
-  slideSize = items.getElementsByClassName("slide")[0].offsetWidth,
-  firstSlide = slides[0],
-  secondSlide = slides[1],
-  seclastSlide = slides[slidesLength - 2],
-  lastSlide = slides[slidesLength - 1],
-  cloneFirst = firstSlide.cloneNode(true),
-  cloneSecond = secondSlide.cloneNode(true),
-  cloneSecLast = seclastSlide.cloneNode(true),
-  cloneLast = lastSlide.cloneNode(true),
-  index = 0,
-  allowShift = true;
+    var posX1 = 0,
+      posX2 = 0,
+      posInitial,
+      posFinal,
+      threshold = 100,
+      slides = items.getElementsByClassName("slide"),
+      slidesLength = slides.length,
+      slideSize = items.getElementsByClassName("slide")[0].offsetWidth,
+      firstSlide = slides[0],
+      secondSlide = slides[1],
+      seclastSlide = slides[slidesLength - 2],
+      lastSlide = slides[slidesLength - 1],
+      cloneFirst = firstSlide.cloneNode(true),
+      cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+      cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
+      cloneLast = lastSlide.cloneNode(true),
+      index = 0,
+      allowShift = true;
 
-  // Clone first and last slide
-  items.appendChild(cloneFirst);
-  items.appendChild(cloneSecond);
-  items.insertBefore(cloneSecLast, firstSlide);
-  items.insertBefore(cloneLast, firstSlide);
-  wrapper.classList.add("loaded");
+    // Clone first and last slide
+    items.appendChild(cloneFirst);
+    if(cloneSecond) {
+      items.appendChild(cloneSecond);
+    }
+    if(cloneSecLast) {
+      items.insertBefore(cloneSecLast, firstSlide);
+    }
+    items.insertBefore(cloneLast, firstSlide);
+    wrapper.classList.add("loaded");
 
-  // Mouse events
-  items.onmousedown = dragStart;
+    // Mouse events
+    items.onmousedown = dragStart;
 
-  // Touch events
-  items.addEventListener("touchstart", dragStart);
-  items.addEventListener("touchend", dragEnd);
-  items.addEventListener("touchmove", dragAction);
+    // Touch events
+    items.addEventListener("touchstart", dragStart);
+    items.addEventListener("touchend", dragEnd);
+    items.addEventListener("touchmove", dragAction);
 
-  // Click events
-  prev.addEventListener("click", function () {
-  shiftSlide(-1);
-  });
-  next.addEventListener("click", function () {
-  shiftSlide(1);
-  });
+    // Click events
+    prev.addEventListener("click", function () {
+      shiftSlide(-1);
+    });
+    next.addEventListener("click", function () {
+      shiftSlide(1);
+    });
 
-  // Transition events
-  items.addEventListener("transitionend", checkIndex);
+    // Transition events
+    items.addEventListener("transitionend", checkIndex);
 
-  function dragStart(e) {
-  e = e || window.event;
-  e.preventDefault();
-  posInitial = items.offsetLeft;
+    function dragStart(e) {
+      e = e || window.event;
+      e.preventDefault();
+      posInitial = items.offsetLeft;
 
-  if (e.type == "touchstart") {
-  posX1 = e.touches[0].clientX;
-  } else {
-  posX1 = e.clientX;
-  document.onmouseup = dragEnd;
-  document.onmousemove = dragAction;
-  }
-  }
+      if (e.type == "touchstart") {
+        posX1 = e.touches[0].clientX;
+      } else {
+        posX1 = e.clientX;
+        document.onmouseup = dragEnd;
+        document.onmousemove = dragAction;
+      }
+    }
 
-  function dragAction(e) {
-  e = e || window.event;
+    function dragAction(e) {
+      e = e || window.event;
 
-  if (e.type == "touchmove") {
-  posX2 = posX1 - e.touches[0].clientX;
-  posX1 = e.touches[0].clientX;
-  } else {
-  posX2 = posX1 - e.clientX;
-  posX1 = e.clientX;
-  }
-  items.style.left = items.offsetLeft - posX2 + "px";
-  }
+      if (e.type == "touchmove") {
+        posX2 = posX1 - e.touches[0].clientX;
+        posX1 = e.touches[0].clientX;
+      } else {
+        posX2 = posX1 - e.clientX;
+        posX1 = e.clientX;
+      }
+      items.style.left = items.offsetLeft - posX2 + "px";
+    }
 
-  function dragEnd(e) {
-  posFinal = items.offsetLeft;
-  if (posFinal - posInitial < -threshold) {
+    function dragEnd(e) {
+      posFinal = items.offsetLeft;
+      if (posFinal - posInitial < -threshold) {
         shiftSlide(1, "drag");
       } else if (posFinal - posInitial > threshold) {
         shiftSlide(-1, "drag");
@@ -335,7 +339,7 @@ left: -720px;
       }
 
       if (index == slidesLength) {
-        if(window.screen.width >= 1200) {
+        if(window.screen.width >= 1200 && items.length > 1) {
           items.style.left = -(2 * slideSize) + "px";
         } else {
           items.style.left = -(1 * slideSize) + "px";

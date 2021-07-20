@@ -54,7 +54,7 @@
         $(document).ready(function () {
             $('#txtSearch').bind("enterKey", function (e) {
                 console.log('The Search content is: ' + $('#txtSearch').val())
-                window.location.href = "/Search?q=" + $('#txtSearch').val()
+                window.location.href = "/Veritas/Search?q=" + $('#txtSearch').val()
             });
             $('#txtSearch').keyup(function (e) {
                 if (e.keyCode == 13) {
@@ -141,7 +141,7 @@
                             <i class="fa fa-search fa-xl"></i>
                         </div>
                         <div class="input-wrap">
-                            <input class="search-input" type="text" placeholder="Search The Crossing..." id="txtSearch" />
+                            <input class="search-input" type="text" placeholder="Search Veritas..." id="txtSearch" />
                         </div>
                     </div>
                     <ul id="menu-left" class="main-navigation desktop-menu">
@@ -176,7 +176,7 @@
                     </ul>
                 </div>
 				<div class="website-logo">
-					<a href="/Ministry/College" >
+					<a href="/Veritas" >
 						<img src="/Themes/Veritas/Assets/Logos/logo.png" class="header-image img-responsive" />
 					</a>
 				</div>
@@ -190,7 +190,7 @@
                                 <a href="/Veritas/im-new">I'm New</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a class="btn btn-accent" href="/Events?search=veritas">Events</a>
+                                <a class="btn btn-accent" href="/Veritas/Events?aud=Veritas">Events</a>
                             </li>
                             <%--<li class="menu-item main-nav-item">
                                 <a href="/Give/veritas">Give</a>
@@ -245,7 +245,7 @@
                                         <a>Get to Know Us</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="/Staff/Veritas" class="text-white">Staff</a>
+                                        <a href="/Veritas/Staff" class="text-white">Staff</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Home" class="text-white">The Crossing</a>
@@ -259,7 +259,7 @@
                                 <a href="/Veritas/im-new" class="text-white">I'm New</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Veritas/Events?Search=veritas" class="text-white">Events</a>
+                                <a href="/Veritas/Events?aud=Veritas" class="text-white">Events</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Give/Veritas" class="text-white">Support Our Staff</a>
