@@ -114,9 +114,6 @@
                     }, 20)
                 } 
             })
-            $('#desktop-about').click(function () {
-                window.location.href = "/About"
-            })
         })
     </script>
     <!-- Start of HubSpot Embed Code -->
