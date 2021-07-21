@@ -169,15 +169,19 @@
   transition: left 0.2s ease-out;
 }
 
-.slide {
+.slide:not(.carousel) {
+  display: block;
   height: 300px;
   cursor: pointer;
-  display: flex;
   flex-direction: column;
   justify-content: center;
   transition: all 1s;
   position: relative;
   padding: 8px;
+}
+
+.slide:not(.carousel) a {
+  vertical-align: top;
 }
 
 .control {
