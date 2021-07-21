@@ -163,7 +163,7 @@
                             <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Get to Know Us</a>
                             <div class="ministry-menu dropdown-menu">
                                 <div>
-                                    <a href="/Staff/Veritas" class="text-white">Staff</a>
+                                    <a href="/Veritas/Staff" class="text-white">Staff</a>
                                 </div>
                                 <div>
                                     <a href="/Home" class="text-white">The Crossing</a>

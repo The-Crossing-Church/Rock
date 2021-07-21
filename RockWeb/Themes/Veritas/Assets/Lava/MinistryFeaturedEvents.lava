@@ -8,7 +8,7 @@
     <div id='eventsCarousel' class='carousel slide'>
       <ol class="carousel-indicators">
         {% for i in EventItemOccurrences %}
-        <li data-target="#eventsCarousel" data-slide-to="{{forloop.index0}}" {% if="" forloop.index0 =""= 0="" %}class="active"{% endif="" %}></li>
+        <li data-target="#eventsCarousel" data-slide-to="{{forloop.index0}}" {% if forloop.index0 == 0 %}class="active"{% endif %}></li>
         {% endfor %}
       </ol>
       <div class="carousel-inner">
@@ -16,7 +16,7 @@
         <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
           <div class='row'>
             <div class='col col-xs-12 d-block d-md-none'>
-              <img class="d-block w-100" src="http://placekitten.com/g/400/300" />
+              <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
             </div>
             <div class='col col-xs-12 col-md-6'>
               <br/>
@@ -50,6 +50,6 @@
 
 <script>
   $(document).ready(()=> {
-  $('#eventsCarousel').carousel();
+    $('#eventsCarousel').carousel();
   })
 </script>

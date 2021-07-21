@@ -1,0 +1,109 @@
+﻿{% assign images = Item | Attribute:'Image' | Split:',' %}
+{% assign titles = Item | Attribute:'HeroTitle' | Split: ',' %}
+{% assign subtitles = Item | Attribute:'HeroSubtitle' | Split: ',' %}
+{% assign ctaText = Item | Attribute:'CTAText' | Split: ',' %}
+{% assign ctaUrl = Item | Attribute:'CTAURL' | Split: ',' %}
+{% assign altText = Item | Attribute:'HeroImageAltText' | Split: ',' %}
+{% assign imageSize = images | Size %}
+{% if imageSize > 0 %}
+    <div id='ministryCarousel' class='carousel slide'>
+      {% if imageSize > 1 %}
+          <ol class="carousel-indicators">
+            {% for i in images limit:4 %}
+              <li data-target="#ministryCarousel" data-slide-to="{{forloop.index0}}" {% if forloop.index0 == 0 %}class="active"{% endif %}></li>
+            {% endfor %}
+          </ol>
+      {% endif %}
+      <div class="carousel-inner">
+        {% for i in images limit:4 %}
+          <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
+            <img class="d-block w-100" src="{{i}}" alt="{{altText[forloop.index0]}}" />
+            {% assign hasTitle = false %}
+            {% assign hasSubtitle = false %}
+            {% assign hasBtn = false %}
+            {% assign sizeCheck = titles | Size %}
+            {% if sizeCheck >= forloop.index %}
+                {% assign check = titles[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
+                {% if check != 'na' and check != '' %}
+                    {% assign hasTitle = true %}
+                    {% assign sizeCheck = subtitles | Size %}
+                    {% if sizeCheck >= forloop.index %}
+                        {% assign  check = subtitles[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
+                        {% if check != 'na' and check != '' %}
+                            {% assign hasSubtitle = true %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            {% assign sizeCheck = ctaText | Size %}
+            {% if sizeCheck >= forloop.index %}
+                {% assign  check = ctaText[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
+                {% if check != 'na' and check != '' %}
+                    {% assign sizeCheck = ctaUrl | Size %}
+                    {% if sizeCheck >= forloop.index %}
+                        {% assign  check = ctaUrl[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
+                        {% if check != 'na' and check != '' %}
+                            {% assign hasBtn = true %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            {% if hasBtn == true or hasTitle == true %}
+                <div class='hero-overlay text--centered align-center justify-center {% if hasTitle == false %}cta--only{% endif %}'>
+                    <div class='text--white'>
+                        {% if hasTitle %}
+                            <h2 class='text--white'>{{titles[forloop.index0]}}</h2>
+                            {% if hasSubtitle %}
+                                <hr/>
+                                {{subtitles[forloop.index0] | Replace:'##SERVICE_TIMES##',times}} 
+                                <br/>
+                                <br/>
+                            {% endif %}
+                        {% endif %}
+                        <a class='btn btn-accent d-none d-md-inline-block' href="{{ctaUrl[forloop.index0]}}">{{ctaText[forloop.index0]}}</a>
+                    </div>
+                </div>
+            {% endif %}
+            {% if hasBtn == true %}
+                <div style='width: 100%; position: relative;' class='d-flex d-md-none justify-center text--centered'>
+                    <a class='btn btn-primary mobile-cta' href="{{ctaUrl[forloop.index0]}}">{{ctaText[forloop.index0]}}</a>
+                </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+{% endif %}
+<script>
+  $(document).ready(()=> {
+    $('#ministryCarousel').carousel();
+  })
+</script>
+<style>
+.carousel-inner {
+    overflow: visible;
+}
+#ministryCarousel, .wide-img {
+  width: 100vw;
+  margin-left: -50vw;
+  left: 50%;
+  position: relative;
+}
+@media only screen and (max-width: 768px) {
+  #ministryCarousel, .wide-img {
+    width: 200vw;
+    margin-left: -100vw;
+  }
+}
+.hero-overlay {
+    position: absolute; 
+    width: 100%;
+    top: 0;
+    height: 100%;
+    background-color: rgba(0,0,0,0.3);
+}
+.mobile-cta {
+    position:absolute; 
+    margin-top: 6px;
+}
+</style>

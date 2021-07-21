@@ -1,11 +1,5 @@
 ﻿{% assign logo = Item | Attribute:'Logo' %}
 {% assign subtitle = Item | Attribute:'Subtitle' %}
-{% assign images = Item | Attribute:'Image' | Split:',' %}
-{% assign titles = Item | Attribute:'HeroTitle' | Split: ',' %}
-{% assign ctaText = Item | Attribute:'CTAText' | Split: ',' %}
-{% assign ctaUrl = Item | Attribute:'CTAURL' | Split: ',' %}
-{% assign altText = Item | Attribute:'HeroImageAltText' | Split: ',' %}
-{% assign imageSize = images | Size %}
 {% assign ministry = Item.ContentChannel | Attribute:'Ministry' %}
 <br/>
 <div class='row'>
@@ -17,96 +11,11 @@
     <h2 class='text--upper subtitle'>{{subtitle}}/{{ministry}}</h2>
   </div>
 </div>
-{% if imageSize > 0 %}
-  {% if imageSize > 1 %}
-    <br/><br/>
-    <div id='ministryCarousel' class='carousel slide'>
-      <ol class="carousel-indicators">
-        {% for i in images limit:4 %}
-          <li data-target="#ministryCarousel" data-slide-to="{{forloop.index0}}" {% if forloop.index0 == 0 %}class="active"{% endif %}></li>
-        {% endfor %}
-      </ol>
-      <div class="carousel-inner">
-        {% for i in images limit:4 %}
-          <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
-            <img class="d-block w-100" src="{{i}}" alt="{{altText[forloop.index0]}}" />
-            {% assign check = titles[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
-            {% assign hasTitle = false %}
-            {% assign hasBtn = false %}
-            {% if check != 'na' %}
-                {% assign hasTitle = true %}
-            {% endif %}
-            {% assign  check = ctaText[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
-            {% if check != 'na' %}
-                {% assign  check = ctaUrl[forloop.index0] | Replace:'/','' | Downcase | Trim | Replace:' ','' %}
-                {% if check != 'na' %}
-                    {% assign hasBtn = true %}
-                {% endif %}
-            {% endif %}
-            {% if hasBtn == true or hasTitle == true %}
-                <div class='hero-overlay text--centered align-center justify-center {% if hasTitle == false %}cta--only{% endif %}'>
-                    <div>
-                        {% if hasTitle %}
-                            <h2>{{titles[forloop.index0]}}</h2>
-                        {% endif %}
-                        <a class='btn btn-primary d-none d-md-inline-block' href="{{ctaUrl[forloop.index0]}}">{{ctaText[forloop.index0]}}</a>
-                    </div>
-                </div>
-            {% endif %}
-            {% if hasBtn == true %}
-                <div style='width: 100%; position: relative;' class='d-flex d-md-none justify-center text--centered'>
-                    <a class='btn btn-primary mobile-cta' href="{{ctaUrl[forloop.index0]}}">{{ctaText[forloop.index0]}}</a>
-                </div>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  {% else %}
-    <br/><br/>
-    <div class='wide-img' >
-      <img src="{{images}}" />
-    </div>
-  {% endif %}
-{% endif %}
+{% include '~~/Assets/Lava/PageHeaderCarousel.lava' %}
 <br/><br/>
-<script>
-  $(document).ready(()=> {
-    $('#ministryCarousel').carousel();
-  })
-</script>
 <style>
-.carousel-inner {
-    overflow: visible;
-}
-#ministryCarousel, .wide-img {
-  width: 100vw;
-  margin-left: -50vw;
-  left: 50%;
-  position: relative;
-}
-@media only screen and (max-width: 768px) {
-  #ministryCarousel, .wide-img {
-    width: 200vw;
-    margin-left: -100vw;
-  }
-}
-.wide-img img {
-  width: 100%;
-}
 h2.subtitle {
   font-size: 1.5em;
   line-height: 1.20833em;
-}
-.hero-overlay {
-    position: absolute; 
-    width: 100%;
-    top: 0;
-    height: 100%;
-    background-color: rgba(255,255,255,0.25);
-}
-.mobile-cta {
-    position:absolute; 
-    margin-top: 6px;
 }
 </style>
