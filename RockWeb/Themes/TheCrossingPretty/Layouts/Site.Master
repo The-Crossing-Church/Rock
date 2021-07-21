@@ -231,9 +231,9 @@
                                     <div>
                                         <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
-                                    <div>
+                                    <%--<div>
                                         <a href="/Serving" class="text-white">Serving</a>
-                                    </div>
+                                    </div>--%>
                                     <div>
                                         <a href="/Staff" class="text-white">Staff</a>
                                     </div>
@@ -252,11 +252,25 @@
                                         <a href="/Veritas" class="text-white">College</a>
                                     </div>
                                     <div>
-                                        <a href="/Ministry/Adults" class="text-white">Adults</a>
+                                        <a data-toggle="collapse" href="#adultsCollapse" role="button" aria-expanded="false" aria-controls="adultsCollapse" class="text-white">Adults</a>
                                     </div>
-                                    <div>
+                                    <div class="collapse" id="adultsCollapse">
+                                        <div>
+                                            <a href="/Ministry/Adults/Women" class="text-white">Women</a>
+                                        </div>
+                                        <div>
+                                            <a href="/Ministry/Adults/Men" class="text-white">Men</a>
+                                        </div>
+                                        <div>
+                                            <a href="/Ministry/Adults/Twenties" class="text-white">Twenties</a>
+                                        </div>
+                                        <div>
+                                            <a href="/Ministry/Adults/Small-Groups" class="text-white">Small Groups</a>
+                                        </div>
+                                    </div>
+                                    <%--<div>
                                         <a href="/Music" class="text-white">Music</a>
-                                    </div>
+                                    </div>--%>
                                     <div>
                                         <a href="/Ministry/Care" class="text-white">Care</a>
                                     </div>
@@ -308,9 +322,9 @@
                                     <div class="sub-menu-item">
                                         <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
-                                    <div class="sub-menu-item">
+                                    <%--<div class="sub-menu-item">
                                         <a href="/Serving" class="text-white">Serving</a>
-                                    </div>
+                                    </div>--%>
                                     <div class="sub-menu-item">
                                         <a href="/Staff" class="text-white">Staff</a>
                                     </div>
@@ -344,9 +358,9 @@
                                             <div>
                                                 <a class="text-white text--upper" id="adult-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
                                             </div>
-                                            <div>
+                                            <%--<div>
                                                 <a href="/Ministry/Adults" class="text--upper">Adults</a>
-                                            </div>
+                                            </div>--%>
                                             <div class="sub-menu-item">
                                                 <a href="/Ministry/Adults/Women" class="text-white">Women</a>
                                             </div>
@@ -359,12 +373,12 @@
                                             <div class="sub-menu-item">
                                                 <a href="/Ministry/Adults/Small-Groups" class="text-white">Small Groups</a>
                                             </div>
-                                            <div style="height: 100px;"></div>
+                                            <div style="height: 150px;"></div>
                                         </div>
                                     </div>
-                                    <div class="sub-menu-item">
+                                    <%--<div class="sub-menu-item">
                                         <a href="/Music" class="text-white">Music</a>
-                                    </div>
+                                    </div>--%>
                                     <div class="sub-menu-item">
                                         <a id="care-menu-open" class="text-white">Care
                                             <i class="fa fa-chevron-right pull-right"></i>
