@@ -120,7 +120,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var itemSeries = i.AttributeValues["Series"].Value.ToLower();
                 var itemAuthor = i.AttributeValues["Author"].ValueFormatted.ToLower();
-                var itemDesc = i.Content.ToLower();
+                var itemDesc = i.Content != null ? i.Content.ToLower() : "";
 
                 if ( channel.RequiresApproval && i.Status != ContentChannelItemStatus.Approved )
                 {
