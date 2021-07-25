@@ -60,7 +60,9 @@
                                 <br/>
                             {% endif %}
                         {% endif %}
-                        <a class='btn btn-accent d-none d-md-inline-block' href="{{ctaUrl[forloop.index0]}}">{{ctaText[forloop.index0]}}</a>
+                        {% if hasBtn == true %}
+                            <a class='btn btn-accent d-none d-md-inline-block' href="{{ctaUrl[forloop.index0]}}">{{ctaText[forloop.index0]}}</a>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}

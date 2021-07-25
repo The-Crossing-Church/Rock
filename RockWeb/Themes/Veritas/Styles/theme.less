@@ -430,6 +430,7 @@ header:not(.panel-heading) {
             color: #585858;
             transition: .16s ease-in;
             padding: 10px 8px;
+            background-color: #fff;
           }
 
           .search-input.active {
@@ -571,7 +572,6 @@ header:not(.panel-heading) {
                 align-items: center;
                 /*padding-left: 50px;*/
               }
-
               /*a:before {
                 content: '';
                 position: absolute;
@@ -1163,6 +1163,14 @@ footer {
 
 // default styling should be for phones 767px or less
 
+//Mobile
+
+@media only screen and (max-width: 768px) {
+  .updateprogress-status .spinner .rect5 {
+      display: none !important;
+  }
+}
+
 // Small devices (tablets, 768px and up)
 @media (min-width: @screen-sm-min) {
   #announcement-rotator {
@@ -1178,4 +1186,4 @@ footer {
 @media (min-width: @screen-lg-min) {
 }
 
-@import "_css-overrides.less";
+  @import "_css-overrides.less";

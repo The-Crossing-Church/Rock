@@ -59,6 +59,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         private int CalendarId { get; set; }
         private RockContext rockContext { get; set; }
         private List<Guid> Audiences { get; set; }
+        private List<DefinedValue> AvailableAudiences { get; set; }
         private static class PageParameterKey
         {
             public const string Search = "Search";
@@ -104,6 +105,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             List<string> auds = PageParameter( PageParameterKey.Audience ).Split( ',' ).ToList();
             DefinedType audienceDT = new DefinedTypeService( rockContext ).Get( Guid.Parse( Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE ) );
             Audiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && auds.Contains( dv.Value ) ).Select( dv => dv.Guid ).ToList();
+            AvailableAudiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && dv.IsActive == true ).ToList();
             if ( eventCalendar != null )
             {
                 CalendarId = eventCalendar.Id;
@@ -218,6 +220,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             mergeFields.Add( "EventItems", eventSummaries );
             mergeFields.Add( "EventItemOccurrences", eventOccurrenceSummaries );
             mergeFields.Add( "CurrentPerson", CurrentPerson );
+            mergeFields.Add( "Audiences", AvailableAudiences.Select( dv => new { Id = dv.Id, Value = dv.Value } ) );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }

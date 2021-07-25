@@ -38,6 +38,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Similar to Content Item Repeater but Groups Items" )]
     [ContentChannelField( "Content Channel", required: true )]
+    [TextField( "Attribute Key", required: true, defaultValue: "Series" )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "" )]
 
@@ -48,6 +49,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
         private ContentChannel channel { get; set; }
+        private string AttributeKey { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -77,6 +79,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
+            AttributeKey = GetAttributeValue( "AttributeKey" );
             if ( ContentChannelGuid.HasValue )
             {
                 channel = _ccSvc.Get( ContentChannelGuid.Value );
@@ -98,7 +101,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             List<ItemGroup> groupedItems = new List<ItemGroup>();
             for ( int i = 0; i < items.Count(); i++ )
             {
-                var series = items[i].AttributeValues["Series"].Value.Split( ',' );
+                var series = items[i].AttributeValues[AttributeKey].Value.Split( ',' );
                 for ( int k = 0; k < series.Length; k++ )
                 {
                     var idx = groupedItems.Select( gi => gi.Series ).ToList().IndexOf( series[k] );
@@ -124,16 +127,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     groupedItems[i].Items = groupedItems[i].Items.OrderByDescending( itm => itm.StartDateTime ).ToList();
                 }
             }
-            //var groupedItems = items.GroupBy( i => i.AttributeValues.First( av => av.Key == "Series" ).Value.Value ).Select( g => new WatchGroup { Series = g.Key, Items = g.ToList() } );
+            groupedItems = groupedItems.OrderByDescending( gi => gi.Items.First().StartDateTime ).ToList();
+            //var groupedItems = items.GroupBy( i => i.AttributeValues.First( av => av.Key == AttributeKey ).Value.Value ).Select( g => new WatchGroup { Series = g.Key, Items = g.ToList() } );
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Items", groupedItems );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }
-        #endregion
-
-        #region Events
-
         #endregion
     }
 

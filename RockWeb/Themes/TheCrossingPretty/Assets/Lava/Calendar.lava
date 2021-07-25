@@ -1,6 +1,6 @@
  {% comment %} Add Vue and Vuetify CDN {% endcomment %}
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
@@ -20,9 +20,35 @@
 <div id="app" style="width: 100%">
   <v-app>
     <div>
-      <v-row class='background--grey' style="margin: 0px;">
-        <v-col cols="12" md="3">
-          <v-menu
+      <v-row>
+        <v-col cols="12" md="6">
+          <div class='search-input pull-md-left'>
+            <v-input dense append-icon="mdi-magnify" @click:append="loadDates(date)" >
+              <input id="txtSearchCal" type="text" v-model="search" placeholder="Search Events..." />
+            </v-input>
+          </div>
+        </v-col>
+        <v-col cols="12" md="6">
+          <div class='audience-input pull-md-right'>
+            <v-select
+              :items='{{Audiences | Sort:'Value' | ToJSON }}'
+              item-text="Value"
+              item-value="Value"
+              clearable
+              label="Audience"
+              v-model="audience"
+            ></v-select>
+          </div>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <v-btn color="primary" class="pull-left" icon @click="prevMonth">
+            <v-icon>mdi-chevron-left</v-icon>
+          </v-btn>
+        </v-col>
+        <v-col class='text--centered'>
+          <v-dialog
             ref="menu"
             v-model="menu"
             :close-on-content-click="false"
@@ -33,13 +59,9 @@
             min-width="auto"
           >
             <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="date"
-                label="EVENTS IN"
-                readonly
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
+              <div v-on="on" v-bind="attrs">
+                {% raw %}<strong>{{date | month}}</strong>{% endraw %}
+              </div>
             </template>
             <v-date-picker
               v-model="date"
@@ -48,20 +70,13 @@
               @input="menu = false"
             >
             </v-date-picker>
-          </v-menu>
+          </v-dialog>
         </v-col>
-        <v-col cols="12" md="6">
-          <v-text-field
-            label="SEARCH"
-            v-model="search"
-          ></v-text-field>
+        <v-col>
+          <v-btn color="primary" class="pull-right" icon @click="nextMonth">
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-btn>
         </v-col>
-        <v-col cols="12" md="3" style="display: flex; justify-content: center; align-items: center;">
-          <v-btn color="#666" class="text-white" @click="loadDates(date)">FIND EVENTS</v-btn>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col></v-col>
       </v-row>
       <v-calendar
         ref="calendar"
@@ -134,6 +149,7 @@
 </div>
 
 <script>
+    
     document.addEventListener("DOMContentLoaded", function () {
         new Vue({
             el: "#app",
@@ -161,13 +177,16 @@
                 date: '',
                 search: '',
                 popover: false,
+                audience: ''
             },
             created() {
+                const self = this
                 this.loadEvents()
                 this.date = moment().format('YYYY-MM')
                 let query = new URLSearchParams(window.location.search);
                 let sd = query.get("Start");
                 let s = query.get("Search")
+                let a = query.get("aud");
                 if(sd) {
                   this.focus = sd
                   this.date = moment(sd).format('YYYY-MM')
@@ -175,6 +194,18 @@
                 if(s) {
                   this.search = s
                 }
+                if(a) {
+                  this.audience = a
+                }
+                window.addEventListener('keyup', function (e) {
+                    if (e.keyCode == 13) {
+                        e.preventDefault()
+                        var search = document.getElementById('txtSearchCal');
+                        if (document.activeElement === search) {
+                            self.loadDates(self.date)
+                        }
+                    }
+                });
             },
             mounted() {
             },
@@ -183,6 +214,11 @@
                   return this.events.filter(e => {
                     return moment(e.start).format('YYYY-MM-DD') == this.focus
                   })
+                },
+                keymap() {
+                  return {
+                    'enter': this.searchKey(this.date)
+                  }
                 }
             },
             methods: {
@@ -219,6 +255,7 @@
                     return ''
                 },
                 loadDates(dt) {
+                  $('#updateProgress').show();
                   if(dt.length < 10) {
                     dt += '-01'
                   }
@@ -226,12 +263,39 @@
                   if(this.search) {
                     params += "&Search=" + this.search
                   }
+                  if(this.audience) {
+                    params += "&aud=" + this.audience
+                  }
                   document.location.search = params
+                },
+                nextMonth() {
+                    let dt = moment()
+                    if(this.focus) {
+                        dt = this.focus
+                    }
+                    this.focus = moment(dt).add(1, 'month').format('yyyy-MM-01')
+                },
+                prevMonth() {
+                    let dt = moment()
+                    if(this.focus) {
+                        dt = this.focus
+                    }
+                    this.focus = moment(dt).subtract(1, 'month').format('yyyy-MM-01')
+                },
+                searchKey(val) {
+                  let query = new URLSearchParams(window.location.search);
+                  let sd = query.get("Start");
+                  if(!sd || sd.substring(0,7) != val.substring(0,7)){
+                    this.loadDates(val)
+                  }
                 }
             },
             filters: {
               longDate(val) {
                 return moment(val).format('MMMM D')
+              },
+              month(val) {
+                return moment(val).format('MMMM')
               }
             },
             watch: {
@@ -240,6 +304,20 @@
                   let sd = query.get("Start");
                   if(!sd || sd.substring(0,7) != val.substring(0,7)){
                     this.loadDates(val)
+                  }
+                },
+                date(val) {
+                  let query = new URLSearchParams(window.location.search);
+                  let sd = query.get("Start");
+                  if(!sd || sd.substring(0,7) != val.substring(0,7)){
+                    this.loadDates(val)
+                  }
+                },
+                audience(val) {
+                  let query = new URLSearchParams(window.location.search);
+                  let sd = query.get("aud");
+                  if(!sd || sd != val){
+                    this.loadDates(this.date)
                   }
                 }
             }
@@ -253,8 +331,55 @@
 }
 .v-application--wrap {
   height: fit-content;
+  min-height: 500px !important;
 }
 .container {
     padding: 0px 15px;
+}
+.search-input {
+    width: 100%;
+    border-radius: 30px;
+    border: 2px solid #1B3142;
+    padding: 6px;
+}
+.search-input input, .search-input input:focus {
+    border: none; 
+    width: 90%;
+    outline:0px !important;
+    -webkit-appearance:none;
+    box-shadow: none !important;
+}
+.search-input .v-input {
+    align-items: center;
+}
+.search-input .v-input .v-input__control .v-input__slot {
+    margin: 0px;
+}
+.search-input .v-input .v-input__control .v-messages {
+    display: none;
+}
+.audience-input {
+    width: 100%;
+    max-width: 350px;
+    margin: auto;
+}
+.audience-input>.v-input>.v-input__control>.v-input__slot:before,
+.audience-input>.v-input>.v-input__control>.v-input__slot:after {
+    border-style: none;
+}
+.audience-input>.v-input>.v-input__control>.v-input__slot label {
+    right: 25px !important;
+    left: auto !important;
+}
+@media (min-width: 1201px) {
+    .search-input {
+        max-width: 300px;
+    }
+    .pull-md-left {
+        float: left;
+    }
+    .pull-md-right {
+        float: right;
+    }
 }
 </style>
