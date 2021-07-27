@@ -142,9 +142,9 @@
                         </div>
                     </div>
                     <ul id="menu-left" class="main-navigation desktop-menu">
-                        <li class="menu-item main-nav-item about-nav dropdown">
-                            <a href="/Veritas/what-we-do" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">What We Do</a>
-                            <div class="about-menu dropdown-menu">
+                        <li class="menu-item main-nav-item">
+                            <a href="/Veritas/what-we-do">What We Do</a>
+                           <%-- <div class="about-menu dropdown-menu">
                                 <div>
                                     <a href="/Veritas/Tuesday-Nights" class="text-white">Tuesday Nights</a>
                                 </div>
@@ -157,18 +157,18 @@
                                 <div>
                                     <a href="/Veritas/Serving" class="text-white">Serving</a>
                                 </div>
-                            </div>
+                            </div>--%>
                         </li>
                         <li class="menu-item main-nav-item ministry-nav dropdown">
-                            <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Get to Know Us</a>
-                            <div class="ministry-menu dropdown-menu">
+                            <a href="/Veritas/Staff">Get to Know Us</a>
+                           <%-- <div class="ministry-menu dropdown-menu">
                                 <div>
                                     <a href="/Veritas/Staff" class="text-white">Staff</a>
                                 </div>
                                 <div>
                                     <a href="/Home" class="text-white">The Crossing</a>
                                 </div>
-                            </div>
+                            </div>--%>
                         </li>
                     </ul>
                 </div>
@@ -204,11 +204,11 @@
                         </div>
                         <ul class="main-navigation" id="menu-mobile-menu">
                             <li class="menu-item">
-                                <a class="text-white" id="about-menu-open">
+                                <a class="text-white" href="/Veritas/what-we-do">
                                     What We Do
-                                    <i class="fa fa-chevron-right pull-right"></i>
+                                    <%--<i class="fa fa-chevron-right pull-right"></i>--%>
                                 </a>
-                                <div class="about-menu-mobile">
+                               <%-- <div class="about-menu-mobile">
                                     <div>
                                         <a class="text-white" id="about-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i> Menu</a>
                                     </div>
@@ -227,14 +227,14 @@
                                     <div class="sub-menu-item">
                                         <a href="/Veritas/Serving" class="text-white">Serving</a>
                                     </div>
-                                </div>
+                                </div>--%>
                             </li>
                             <li class="menu-item">
-                                <a class="text-white" id="ministry-menu-open">
+                                <a class="text-white" href="/Veritas/Staff" >
                                     Get to Know Us
-                                    <i class="fa fa-chevron-right pull-right"></i>
+                                    <%--<i class="fa fa-chevron-right pull-right"></i>--%>
                                 </a>
-                                <div class="ministry-menu-mobile">
+                               <%-- <div class="ministry-menu-mobile">
                                     <div>
                                         <a class="text-white" id="ministry-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i> Menu</a>
                                     </div>
@@ -247,7 +247,7 @@
                                     <div class="sub-menu-item">
                                         <a href="/Home" class="text-white">The Crossing</a>
                                     </div>
-                                </div>
+                                </div>--%>
                             </li>
                             <li class="menu-item">
                                 <a href="/Veritas/Resources" class="text-white">Message</a>
