@@ -167,6 +167,25 @@ namespace com_thecrossingchurch.LavaFilters
         }
 
         /// <summary>
+        /// Escape single quotes in a string for sql.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns></returns>
+        public static dynamic SqlEscapeSingleQuote( object input )
+        {
+            var type = input.GetType();
+            if ( input.GetType() == typeof( string ) )
+            {
+                string value = input.ToString();
+                return value.Replace( "'", "''" );
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string" );
+            }
+        }
+
+        /// <summary>
         /// Return true if the date is within the provided range, false if outside of range
         /// </summary>
         /// <param name="input">The input date.</param>
