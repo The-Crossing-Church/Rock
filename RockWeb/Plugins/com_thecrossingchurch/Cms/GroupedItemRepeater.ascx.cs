@@ -37,10 +37,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Grouped Item Repeater" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Similar to Content Item Repeater but Groups Items" )]
-    [ContentChannelField( "Content Channel", required: true )]
-    [TextField( "Attribute Key", required: true, defaultValue: "Series" )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "" )]
+    [ContentChannelField( "Content Channel", required: true, order: 0 )]
+    [TextField( "Attribute Key", required: true, defaultValue: "Series", order: 1 )]
+    [IntegerField( "Limit", required: false, description: "Limit the number of items in each group to return", order: 2 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 3 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "", order: 4 )]
 
     public partial class GroupedItemRepeater : Rock.Web.UI.RockBlock
     {
@@ -50,6 +51,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private ContentChannelService _ccSvc { get; set; }
         private ContentChannel channel { get; set; }
         private string AttributeKey { get; set; }
+        private int? Limit { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -80,6 +82,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
             AttributeKey = GetAttributeValue( "AttributeKey" );
+            Limit = GetAttributeValue( "Limit" ).AsIntegerOrNull();
             if ( ContentChannelGuid.HasValue )
             {
                 channel = _ccSvc.Get( ContentChannelGuid.Value );
@@ -126,8 +129,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 {
                     groupedItems[i].Items = groupedItems[i].Items.OrderByDescending( itm => itm.StartDateTime ).ToList();
                 }
+                if ( Limit.HasValue && Limit.Value > 0 )
+                {
+                    groupedItems[i].Items = groupedItems[i].Items.Take( Limit.Value ).ToList();
+                }
             }
-            groupedItems = groupedItems.OrderByDescending( gi => gi.Items.First().StartDateTime ).ToList();
+            if ( channel.ItemsManuallyOrdered )
+            {
+                groupedItems = groupedItems.OrderBy( gi => gi.Items.First().Order ).ToList();
+            }
+            else
+            {
+                groupedItems = groupedItems.OrderByDescending( gi => gi.Items.First().StartDateTime ).ToList();
+            }
             //var groupedItems = items.GroupBy( i => i.AttributeValues.First( av => av.Key == AttributeKey ).Value.Value ).Select( g => new WatchGroup { Series = g.Key, Items = g.ToList() } );
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Items", groupedItems );
