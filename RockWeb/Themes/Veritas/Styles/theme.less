@@ -926,6 +926,22 @@ footer {
     }
   }
 }
+//Footer on Desktop
+@media only screen and (min-width: 769px) {
+  footer {
+    .inset {
+      .footer-right {
+        .social-media {
+          .links {
+            li:last-child {
+              margin: 0 0 0 15px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 // homepage items
 #announcement-rotator {
@@ -1138,10 +1154,6 @@ footer {
   top: -175px;
 }
 
-.col {
-  padding: 15px;
-}
-
 .row-equal-height {
     .col {
         .card--custom {
@@ -1175,6 +1187,13 @@ footer {
 @media only screen and (max-width: 768px) {
   .updateprogress-status .spinner .rect5 {
       display: none !important;
+  }
+  main:not(.container-fluid) {
+    display: block;
+    padding-top: 135px !important;
+  }
+  .col {
+    padding: 15px;
   }
 }
 

@@ -187,7 +187,7 @@
                                 <a href="/Veritas/im-new">I'm New</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a class="btn btn-accent" href="/Veritas/Events?aud=Veritas">Events</a>
+                                <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
                             </li>
                             <%--<li class="menu-item main-nav-item">
                                 <a href="/Give/veritas">Give</a>

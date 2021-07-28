@@ -223,10 +223,7 @@
                                 <a href="/About" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
                                 <div class="about-menu dropdown-menu">
                                     <div>
-                                        <a href="/About" class="text-white">About The Crossing</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
+                                        <a href="/About" class="text-white">About Us</a>
                                     </div>
                                     <div>
                                         <a href="/FAQs" class="text-white">FAQs</a>
@@ -236,6 +233,9 @@
                                     </div>--%>
                                     <div>
                                         <a href="/Staff" class="text-white">Staff</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>
                                 </div>
                             </li>
@@ -256,23 +256,23 @@
                                     </div>
                                     <div class="collapse" id="adultsCollapse">
                                         <div>
-                                            <a href="/Ministry/Adults/Women" class="text-white">Women</a>
+                                            <a href="/Ministry/Adults/Women" class="text--accent">Women</a>
                                         </div>
                                         <div>
-                                            <a href="/Ministry/Adults/Men" class="text-white">Men</a>
+                                            <a href="/Ministry/Adults/Men" class="text--accent">Men</a>
                                         </div>
                                         <div>
-                                            <a href="/Ministry/Adults/Twenties" class="text-white">Twenties</a>
+                                            <a href="/Ministry/Adults/Twenties" class="text--accent">Twenties</a>
                                         </div>
                                         <div>
-                                            <a href="/Ministry/Adults/Small-Groups" class="text-white">Small Groups</a>
+                                            <a href="/Ministry/Adults/Small-Groups" class="text--accent">Small Groups</a>
                                         </div>
                                     </div>
                                     <%--<div>
                                         <a href="/Music" class="text-white">Music</a>
                                     </div>--%>
                                     <div>
-                                        <a href="/Ministry/Care" class="text-white">Care</a>
+                                        <a href="/Ministry/Care" class="text-white">Care & Support</a>
                                     </div>
                                     <div>
                                         <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
@@ -311,14 +311,11 @@
                                         <a class="text-white" id="about-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Menu</a>
                                     </div>
                                     <div>
-                                        <a href="/About">About</a>
+                                        <a href="/About">About Us</a>
                                     </div>
                                     <!--<div class="sub-menu-item">
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
                                     </div>-->
-                                    <div class="sub-menu-item">
-                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
-                                    </div>
                                     <div class="sub-menu-item">
                                         <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
@@ -327,6 +324,9 @@
                                     </div>--%>
                                     <div class="sub-menu-item">
                                         <a href="/Staff" class="text-white">Staff</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
                                     </div>
                                 </div>
                             </li>
@@ -380,10 +380,10 @@
                                         <a href="/Music" class="text-white">Music</a>
                                     </div>--%>
                                     <div class="sub-menu-item">
-                                        <a id="care-menu-open" class="text-white">Care
-                                            <i class="fa fa-chevron-right pull-right"></i>
+                                        <a class="text-white">Care & Support
+                                            <%--<i class="fa fa-chevron-right pull-right"></i>--%>
                                         </a>
-                                        <div class="care-menu-mobile">
+                                        <%--<div class="care-menu-mobile">
                                             <div>
                                                 <a class="text-white text--upper" id="care-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
                                             </div>
@@ -394,7 +394,7 @@
                                                 <a href="/Ministry/Care/Counseling" class="text-white">Professional Counseling</a>
                                             </div>
                                             <div style="height:200px;"></div>
-                                        </div>
+                                        </div>--%>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
