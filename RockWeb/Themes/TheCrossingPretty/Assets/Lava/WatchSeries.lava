@@ -45,7 +45,7 @@
   .slider, .wrapper {
     width: 300px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 300px;
   }
   .slides {
@@ -64,7 +64,7 @@
   .slider, .wrapper {
     width: 350px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 350px;
   }
   .slides {
@@ -83,7 +83,7 @@
   .slider, .wrapper {
     width: 720px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 360px;
   }
   .slides {
@@ -102,7 +102,7 @@
   .slider, .wrapper {
     width: 940px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 313.3px;
   }
   .slides {
@@ -121,7 +121,7 @@
   .slider, .wrapper {
     width: 1140px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 380px;
   }
   .slides {

@@ -11,7 +11,12 @@
               <a href="{{DetailsPage}}?EventOccurrenceId={{ eventItemOccurrence.Id }}">
                 <div style="padding: 8px" class='text--centered'>
                   <div class='img-wrapper'>
-                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{eventItemOccurrence.EventItem.Photo.Guid}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    {% assign altImage = eventItemOccurrence.EventItem | Attribute:'AlternateEventCardImage' %}
+                    {% if altImage != '' %}
+                      <img class="d-block w-100" src="{{altImage}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    {% else %}
+                      <img class="d-block w-100" src="/GetImage.ashx?Guid={{eventItemOccurrence.EventItem.Photo.Guid}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    {% endif %}
                   </div>
                   <span>{{eventItemOccurrence.EventItem.Name}}</span>
                 </div>

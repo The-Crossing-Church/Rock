@@ -17,7 +17,12 @@
       <div class="carousel-inner">
         {% for i in images limit:4 %}
           <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
-            <img class="d-block w-100" src="{{i}}" alt="{{altText[forloop.index0]}}" />
+            <div class='hero-image-wrapper'>
+                <div class='hero-image-helper'></div>
+                <div class='hero-image align-center'>
+                    <img class="d-block w-100" src="{{i}}" alt="{{altText[forloop.index0]}}" />
+                </div>
+            </div>
             {% assign hasTitle = false %}
             {% assign hasSubtitle = false %}
             {% assign hasBtn = false %}
@@ -107,5 +112,21 @@
 .mobile-cta {
     position:absolute; 
     margin-top: 6px;
+}
+.hero-image-wrapper {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+}
+.hero-image-helper {
+    margin-top: 25%;
+}
+.hero-image {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden; 
 }
 </style>

@@ -16,7 +16,12 @@
         <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
           <div class='row'>
             <div class='col col-xs-12 d-block d-md-none'>
-              <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
+              {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
+              {% if altImage != '' %}
+                <img class="d-block w-100" src="{{ altImage }}" />
+              {% else %}
+                <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
+              {% endif %}
             </div>
             <div class='col col-xs-12 col-md-6'>
               <br/>

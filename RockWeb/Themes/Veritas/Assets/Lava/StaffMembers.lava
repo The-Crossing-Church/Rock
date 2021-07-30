@@ -1,4 +1,4 @@
-﻿{% assign title = 'Global' | Page:'Title' %}
+﻿{% assign title = 'Veritas' %}
 {% assign id = 'Global' | PageParameter:'Person' %}
 <div class='row'>
     {% for i in Items %}
