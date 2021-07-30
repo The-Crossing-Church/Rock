@@ -22,10 +22,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Display results of search query" )]
     [ContentChannelField( "Staff Content Channel", required: false, order: 1 )]
-    [EventCalendarField( "Calendar", required: false, order: 2 )]
-    [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, order: 3 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 4 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/' %}", "", 5 )]
+    [EventCalendarField( "Calendar", "", false, "8A444668-19AF-4417-9C74-09F842572974", order: 2 )]
+    [LinkedPage( "Event Details Page", "Detail page for events", order: 3 )]
+    [DefinedValueField( "Audiences", Description = "The audiences for this ministry", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, Order = 4 )]
+    [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, order: 5 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 6 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/' %}", "", 7 )]
 
     public partial class ExternalSiteSearch : Rock.Web.UI.RockBlock
     {
@@ -63,6 +65,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _context = new RockContext();
             Guid? StaffContentChannelGuid = GetAttributeValue( "StaffContentChannel" ).AsGuidOrNull();
             Guid? CalendarGuid = GetAttributeValue( "Calendar" ).AsGuidOrNull();
+            List<Guid> Audiences = GetAttributeValue( "Audiences" ).SplitDelimitedValues( true ).AsGuidList();
             string idsRaw = GetAttributeValue( "PageIds" );
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
@@ -81,8 +84,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             }
             if ( CalendarGuid.HasValue )
             {
-                events = SearchEvents( CalendarGuid.Value );
+                events = SearchEvents( CalendarGuid.Value, Audiences );
                 mergeFields.Add( "Events", events );
+                mergeFields.Add( "DetailsPage", LinkedPageRoute( "EventDetailsPage" ) );
             }
             if ( !String.IsNullOrEmpty( idsRaw ) )
             {
@@ -98,14 +102,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         #region Methods
 
-        private List<EventItemOccurrence> SearchEvents( Guid guid )
+        private List<EventItemOccurrence> SearchEvents( Guid guid, List<Guid> audiences )
         {
             EventCalendar calendar = new EventCalendarService( _context ).Get( guid );
             List<EventItemOccurrence> events = new EventItemOccurrenceService( _context ).Queryable().ToList().Where( e =>
             {
                 bool isMatch = false;
                 var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                if ( e.EventItem.EventCalendarItems.Select( eci => eci.EventCalendarId ).Contains( calendar.Id ) && ( e.EventItem.Name.ToLower().Contains( query ) || e.EventItem.Description.ToLower().Contains( query ) || itemTag.Contains( query ) ) )
+                if ( e.EventItem.EventCalendarItems.Select( eci => eci.EventCalendarId ).Contains( calendar.Id ) && ( e.EventItem.Name.ToLower().Contains( query ) || e.EventItem.Description.ToLower().Contains( query ) || itemTag.Contains( query ) ) && ( audiences.Count() == 0 || e.EventItem.EventItemAudiences.Any( a => audiences.Contains( a.DefinedValue.Guid ) ) ) )
                 {
                     isMatch = true;
                 }

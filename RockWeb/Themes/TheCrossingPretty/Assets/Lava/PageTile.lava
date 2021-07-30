@@ -2,7 +2,7 @@
 <div class='row'>
     {% for i in Items %}
         {% assign img = i | Attribute:'Image' %}
-        <div class='col col-xs-12 col-md-6' style="padding-top: 15px; padding-bottom: 15px;">
+        <div class='col col-xs-12 col-md-4' style="padding-top: 15px; padding-bottom: 15px;">
             <a
                 class="ministry-image"
                 style="background: url('{{img}}');"
@@ -19,7 +19,7 @@
     background-size: cover !important;
     background-position: center center !important;
     background-repeat: no-repeat !important;
-    height: 175px;
+    height: 200px;
     display: flex;
     justify-content: center;
     align-items: center;

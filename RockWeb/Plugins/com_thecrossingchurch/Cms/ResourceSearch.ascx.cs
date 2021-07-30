@@ -108,6 +108,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private List<Post> SearchContent( Guid guid )
         {
             ContentChannel channel = _ccSvc.Get( guid );
+            TaggedItemService _tiSvc = new TaggedItemService( _context );
             channel.LoadAttributes();
             //Filter by Content Channel and Title (if present in query) 
             var items = _cciSvc.Queryable().Where( i => i.ContentChannelId == channel.Id && ( String.IsNullOrEmpty( title ) || i.Title.ToLower().Contains( title ) ) ).ToList();
@@ -116,7 +117,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 bool meetsRec = true;
                 //var itemTag = i.AttributeValues["Tags"].Value.ToLower().Split( ',' ).ToList();
-                TaggedItemService _tiSvc = new TaggedItemService( _context );
                 var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var itemSeries = i.AttributeValues["Series"].Value.ToLower();
                 var itemAuthor = i.AttributeValues["Author"].ValueFormatted.ToLower();
@@ -182,7 +182,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             return items.Select( e =>
             {
                 var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
-                var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
                 return p;
