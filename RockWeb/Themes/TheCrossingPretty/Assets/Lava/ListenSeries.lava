@@ -5,7 +5,7 @@
         {% assign classname = 'background--grey full-width' %}
     {% endif %}
     <div class='{{classname}}'>
-        <div class='container'>
+        <div {% if classname != '' %}class='container'{% endif %}>
             <br/>
             <h2>{{s.Series}}</h2>
             <div class='carousel-wrapper'>

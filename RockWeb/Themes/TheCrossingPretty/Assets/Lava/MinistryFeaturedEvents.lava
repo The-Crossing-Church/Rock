@@ -58,3 +58,11 @@
     $('#eventsCarousel').carousel();
   })
 </script>
+{% stylesheet compile:'less' import:'_variables.less' %}
+    .carousel-indicators .active[data-target="#eventsCarousel"] {
+        background-color: @color-light-blue;
+    }
+    .carousel-indicators li[data-target="#eventsCarousel"] {
+        border: 1px solid @color-light-blue; 
+    }
+{% endstylesheet %}

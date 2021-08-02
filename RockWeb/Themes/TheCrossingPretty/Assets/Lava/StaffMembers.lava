@@ -1,6 +1,6 @@
 ﻿{% assign title = 'Global' | Page:'Title' %}
 {% assign id = 'Global' | PageParameter:'Person' %}
-<div class='row'>
+<div class='row row-equal-height'>
     {% for i in Items %}
         {% assign ministry = i | Attribute:'Ministry' %}
         {% if ministry contains title %}
