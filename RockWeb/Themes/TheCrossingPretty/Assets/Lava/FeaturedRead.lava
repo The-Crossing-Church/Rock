@@ -10,17 +10,11 @@
                 {% for post in Posts %}
                   <div class="slide">
                     <a href="{{ post.url }}">
-                      <div style="padding: 8px">
-                        <div class='img-wrapper'>
-                          {% if post.featuredImage != '' %}
-                            <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}" />
-                          {% else %}
-                            <img class="d-block w-100" src="http://placekitten.com/200/200" alt="{{ post.name }}" />
-                          {% endif %}
-                        </div>
-                        <h4>{{ post.name }}</h4>
-                        <span>{{ post.authorName }}, {{ post.publishDate | Date:'MM/dd/yyyy' }}</span>
+                      <div class='img-wrapper'>
+                        <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}" />
                       </div>
+                      <h4>{{ post.name }}</h4>
+                      <span>{{ post.authorName }}, {{ post.publishDate | Date:'MMMM dd, yyyy' }}</span>
                     </a>
                   </div>
                 {% endfor %}

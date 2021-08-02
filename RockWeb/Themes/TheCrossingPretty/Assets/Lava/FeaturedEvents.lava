@@ -18,7 +18,7 @@
                       <img class="d-block w-100" src="/GetImage.ashx?Guid={{eventItemOccurrence.EventItem.Photo.Guid}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
                     {% endif %}
                   </div>
-                  <span>{{eventItemOccurrence.EventItem.Name}}</span>
+                  {% comment %}<span>{{eventItemOccurrence.EventItem.Name}}</span>{% endcomment %}
                 </div>
               </a>
             </div>

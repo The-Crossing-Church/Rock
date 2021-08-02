@@ -60,7 +60,7 @@
                             <h2 class='text--white'>{{titles[forloop.index0]}}</h2>
                             {% if hasSubtitle %}
                                 <hr/>
-                                {{subtitles[forloop.index0] | Replace:'##SERVICE_TIMES##',times}} 
+                                {{subtitles[forloop.index0]}} 
                                 <br/>
                                 <br/>
                             {% endif %}
@@ -108,6 +108,7 @@
     top: 0;
     height: 100%;
     background-color: rgba(0,0,0,0.3);
+    max-height: 25vw;
 }
 .mobile-cta {
     position:absolute; 
