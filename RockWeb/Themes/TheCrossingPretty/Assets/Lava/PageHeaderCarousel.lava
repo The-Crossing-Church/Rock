@@ -5,6 +5,11 @@
 {% assign ctaUrl = Item | Attribute:'CTAURL' | Split: ',' %}
 {% assign altText = Item | Attribute:'HeroImageAltText' | Split: ',' %}
 {% assign imageSize = images | Size %}
+{% if imageSize == 1 %}
+    {% if images[0] == '' %}
+        {% assign imageSize = 0 %}
+    {% endif %}
+{% endif %}
 {% if imageSize > 0 %}
     <div id='ministryCarousel' class='carousel slide'>
       {% if imageSize > 1 %}
