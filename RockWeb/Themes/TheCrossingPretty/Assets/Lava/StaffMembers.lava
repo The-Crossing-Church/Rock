@@ -22,7 +22,7 @@
                         <div class="modal-body">
                             <div class='row'>
                                 <div class='col col-xs-12 col-md-5 justify-center'>
-                                    <img src="{{i | Attribute:'Image'}}" style="width: 100%;" />
+                                    <img src="{{i | Attribute:'Image'}}" style="width: 100%; height: 100%;" />
                                 </div>
                                 <div class='col col-xs-12 col-md-7'>
                                     <h1>{{i | Attribute:'Person','FullName' }}</h1>

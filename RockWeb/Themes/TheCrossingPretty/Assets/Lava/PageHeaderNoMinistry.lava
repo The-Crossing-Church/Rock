@@ -13,7 +13,7 @@
 </div>
 <br/><br class='d-none d-md-block'/>
 {% include '~~/Assets/Lava/PageHeaderCarousel.lava' %}
-<br/><br/>
+<br/><br class='d-none d-md-block'/>
 <style>
 h2.subtitle {
   font-size: 1.5em;
