@@ -18,10 +18,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Content Item Repeater" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Gets all active and approved content for the specified channel and returns it to a list for display" )]
-    [ContentChannelField( "Content Channel", required: true )]
-    [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "" )]
+    [ContentChannelField( "Content Channel", required: true, order: 0 )]
+    [TextField( "Attribute Key", required: true, defaultValue: "Series", order: 1 )]
+    [TextField( "Filter Attribute Key", required: false, order: 2 )]
+    [TextField( "Filter Page Parameter", required: false, order: 3 )]
+    [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false, order: 4 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "", order: 6 )]
 
     public partial class ContentItemRepeater : Rock.Web.UI.RockBlock
     {
@@ -29,6 +32,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private RockContext _context { get; set; }
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
+        private string AttributeKey { get; set; }
+        private string FilterAttributeKey { get; set; }
+        private string FilterPageParameterKey { get; set; }
+        private string FilterPageParameterValue { get; set; }
         private int? _limit { get; set; }
         #endregion
 
@@ -58,6 +65,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _context = new RockContext();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
             _limit = GetAttributeValue( "ItemLimit" ).AsIntegerOrNull();
+            AttributeKey = GetAttributeValue( "AttributeKey" );
+            FilterAttributeKey = GetAttributeValue( "FilterAttributeKey" );
+            FilterPageParameterKey = GetAttributeValue( "FilterPageParameter" );
+            if ( !String.IsNullOrEmpty( FilterPageParameterKey ) )
+            {
+                FilterPageParameterValue = PageParameter( FilterPageParameterKey );
+            }
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
             if ( ContentChannelGuid.HasValue )
@@ -101,6 +115,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             }
 
             items.LoadAttributes();
+            if ( !String.IsNullOrEmpty( FilterAttributeKey ) && !String.IsNullOrEmpty( FilterPageParameterValue ) )
+            {
+                items = items.Where( i => i.AttributeValues.ContainsKey( FilterAttributeKey ) && i.AttributeValues[FilterAttributeKey].Value == FilterPageParameterValue ).ToList();
+            }
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Items", items );
 

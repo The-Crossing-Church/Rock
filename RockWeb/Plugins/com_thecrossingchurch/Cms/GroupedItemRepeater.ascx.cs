@@ -39,9 +39,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Description( "Similar to Content Item Repeater but Groups Items" )]
     [ContentChannelField( "Content Channel", required: true, order: 0 )]
     [TextField( "Attribute Key", required: true, defaultValue: "Series", order: 1 )]
-    [IntegerField( "Limit", required: false, description: "Limit the number of items in each group to return", order: 2 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 3 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "", order: 4 )]
+    [TextField( "Filter Attribute Key", required: false, order: 2 )]
+    [TextField( "Filter Page Parameter", required: false, order: 3 )]
+    [IntegerField( "Limit", required: false, description: "Limit the number of items in each group to return", order: 4 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "", order: 6 )]
 
     public partial class GroupedItemRepeater : Rock.Web.UI.RockBlock
     {
@@ -51,6 +53,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private ContentChannelService _ccSvc { get; set; }
         private ContentChannel channel { get; set; }
         private string AttributeKey { get; set; }
+        private string FilterAttributeKey { get; set; }
+        private string FilterPageParameterKey { get; set; }
+        private string FilterPageParameterValue { get; set; }
         private int? Limit { get; set; }
         #endregion
 
@@ -82,6 +87,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
             AttributeKey = GetAttributeValue( "AttributeKey" );
+            FilterAttributeKey = GetAttributeValue( "FilterAttributeKey" );
+            FilterPageParameterKey = GetAttributeValue( "FilterPageParameter" );
+            if ( !String.IsNullOrEmpty( FilterPageParameterKey ) )
+            {
+                FilterPageParameterValue = PageParameter( FilterPageParameterKey );
+            }
             Limit = GetAttributeValue( "Limit" ).AsIntegerOrNull();
             if ( ContentChannelGuid.HasValue )
             {
@@ -101,6 +112,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             int id = _ccSvc.Get( guid ).Id;
             var items = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 ).ToList();
             items.LoadAttributes();
+            if ( !String.IsNullOrEmpty( FilterAttributeKey ) && !String.IsNullOrEmpty( FilterPageParameterValue ) )
+            {
+                items = items.Where( i => i.AttributeValues.ContainsKey( FilterAttributeKey ) && i.AttributeValues[FilterAttributeKey].Value == FilterPageParameterValue ).ToList();
+            }
             List<ItemGroup> groupedItems = new List<ItemGroup>();
             for ( int i = 0; i < items.Count(); i++ )
             {
