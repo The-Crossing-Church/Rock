@@ -266,7 +266,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             if ( tag_ids.Count() > 0 )
             {
                 //Get blog posts that match
-                string url = "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate";
+                string url = "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED";
                 for ( int i = 0; i < tag_ids.Count(); i++ )
                 {
                     url += "&topic_id__in=" + tag_ids[i];

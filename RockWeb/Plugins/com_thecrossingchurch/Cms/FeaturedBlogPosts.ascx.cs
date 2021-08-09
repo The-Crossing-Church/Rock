@@ -94,7 +94,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private void GetPosts()
         {
             //Get custom contact properties from Hubspot 
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&limit=" + numPosts );
+            WebRequest request = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&limit=" + numPosts );
             var response = request.GetResponse();
             BlogResponse blogResponse = new BlogResponse();
             using ( Stream stream = response.GetResponseStream() )

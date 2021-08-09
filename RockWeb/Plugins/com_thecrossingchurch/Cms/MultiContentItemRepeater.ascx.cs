@@ -15,7 +15,7 @@ using Z.EntityFramework.Plus;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
-    [DisplayName( "Content Item Repeater" )]
+    [DisplayName( "Multi-Content Item Repeater" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Gets all active and approved content for the specified channel and returns it to a list for display" )]
     [ContentChannelsField( "Content Channels", required: true, order: 0 )]
@@ -23,8 +23,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [TextField( "Filter Attribute Key", required: false, order: 2 )]
     [TextField( "Filter Page Parameter", required: false, order: 3 )]
     [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false, order: 4 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "", order: 6 )]
+    [BooleanField( "Order By Date", "Check this box to order by date, otherwise the Order property will be used.", defaultValue: true, order: 5 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 6 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "", order: 7 )]
 
     public partial class MultiContentItemRepeater : Rock.Web.UI.RockBlock
     {
@@ -105,27 +106,27 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     items = _cciSvc.Queryable().Where( i => i.ContentChannelId == id && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) >= 0 ) ).ToList();
                 }
 
-                //Order Content
-                if ( channel.ItemsManuallyOrdered )
-                {
-                    items = items.OrderBy( i => i.Order ).ToList();
-                }
-                else
-                {
-                    items = items.OrderByDescending( i => i.StartDateTime ).ToList();
-                }
-
-                if ( _limit.HasValue )
-                {
-                    items = items.Take( _limit.Value ).ToList();
-                }
-
                 items.LoadAttributes();
                 if ( !String.IsNullOrEmpty( FilterAttributeKey ) && !String.IsNullOrEmpty( FilterPageParameterValue ) )
                 {
                     items = items.Where( i => i.AttributeValues.ContainsKey( FilterAttributeKey ) && i.AttributeValues[FilterAttributeKey].Value == FilterPageParameterValue ).ToList();
                 }
                 ccItems.AddRange( items );
+            }
+
+            //Order Content
+            if ( !GetAttributeValue( "OrderByDate" ).AsBoolean() )
+            {
+                ccItems = ccItems.OrderBy( i => i.Order ).ToList();
+            }
+            else
+            {
+                ccItems = ccItems.OrderByDescending( i => i.StartDateTime ).ToList();
+            }
+
+            if ( _limit.HasValue )
+            {
+                ccItems = ccItems.Take( _limit.Value ).ToList();
             }
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Items", ccItems );
