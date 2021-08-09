@@ -4,7 +4,7 @@
     {% for i in Items %}
         {% assign ministry = i | Attribute:'Ministry' %}
         {% if ministry contains title %}
-            <div class='col col-xs-12 col-md-4 text--centered'>
+            <div class='col col-xs-12 col-md-4 text--centered pb-3'>
                 <img src="{{i | Attribute:'Image'}}" style="width: 100%;" />
                 <br/><br/>
                 <h2>{{i | Attribute:'Person','FullName' }}</h2>
