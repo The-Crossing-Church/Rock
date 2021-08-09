@@ -26,7 +26,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "", order: 6 )]
 
-    public partial class ContentItemRepeater : Rock.Web.UI.RockBlock
+    public partial class MultiContentItemRepeater : Rock.Web.UI.RockBlock
     {
         #region Variables
         private RockContext _context { get; set; }
