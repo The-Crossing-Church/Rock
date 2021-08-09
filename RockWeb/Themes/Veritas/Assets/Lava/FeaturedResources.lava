@@ -34,7 +34,7 @@
   .slider, .wrapper {
     width: 300px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 300px;
   }
   .slides {
@@ -51,7 +51,7 @@
   .slider, .wrapper {
     width: 350px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 350px;
   }
   .slides {
@@ -68,7 +68,7 @@
   .slider, .wrapper {
     width: 720px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 360px;
   }
   .slides {
@@ -85,7 +85,7 @@
   .slider, .wrapper {
     width: 940px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 313.3px;
   }
   .slides {
@@ -102,7 +102,7 @@
   .slider, .wrapper {
     width: 1140px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 380px;
   }
   .slides {
@@ -148,15 +148,19 @@
   transition: left 0.2s ease-out;
 }
 
-.slide {
+.slide:not(.carousel) {
   height: 300px;
   cursor: pointer;
-  display: flex;
+  display: block;
   flex-direction: column;
   justify-content: center;
   transition: all 1s;
   position: relative;
   padding: 8px;
+}
+
+.slide:not(.carousel) a {
+  vertical-align: top;
 }
 
 .control {

@@ -78,42 +78,6 @@
                     }, 20)
                 }
             })
-            $('#about-menu-open').click(function () {
-                let menu = $('.about-menu-mobile')
-                if (!menu.hasClass('active')) {
-                    menu.addClass('visible')
-                    setTimeout(() => {
-                        menu.addClass('active')
-                    },20)
-                } 
-            })
-            $('#about-menu-return').click(function () {
-                let menu = $('.about-menu-mobile')
-                if (menu.hasClass('active')) {
-                    menu.removeClass('active')
-                    setTimeout(() => {
-                        menu.removeClass('visible')
-                    }, 20)
-                } 
-            })
-            $('#ministry-menu-open').click(function () {
-                let menu = $('.ministry-menu-mobile')
-                if (!menu.hasClass('active')) {
-                    menu.addClass('visible')
-                    setTimeout(() => {
-                        menu.addClass('active')
-                    },20)
-                } 
-            })
-            $('#ministry-menu-return').click(function () {
-                let menu = $('.ministry-menu-mobile')
-                if (menu.hasClass('active')) {
-                    menu.removeClass('active')
-                    setTimeout(() => {
-                        menu.removeClass('visible')
-                    }, 20)
-                } 
-            })
         })
     </script>
     <!-- Start of HubSpot Embed Code -->
@@ -144,31 +108,9 @@
                     <ul id="menu-left" class="main-navigation desktop-menu">
                         <li class="menu-item main-nav-item">
                             <a href="/Veritas/what-we-do">What We Do</a>
-                           <%-- <div class="about-menu dropdown-menu">
-                                <div>
-                                    <a href="/Veritas/Tuesday-Nights" class="text-white">Tuesday Nights</a>
-                                </div>
-                                <div>
-                                    <a href="/Veritas/Small-Groups" class="text-white">Small Groups</a>
-                                </div>
-                                <div>
-                                    <a href="/Veritas/Fall-Retreat" class="text-white">Fall Retreat</a>
-                                </div>
-                                <div>
-                                    <a href="/Veritas/Serving" class="text-white">Serving</a>
-                                </div>
-                            </div>--%>
                         </li>
                         <li class="menu-item main-nav-item ministry-nav dropdown">
-                            <a href="/Veritas/Staff">Get to Know Us</a>
-                           <%-- <div class="ministry-menu dropdown-menu">
-                                <div>
-                                    <a href="/Veritas/Staff" class="text-white">Staff</a>
-                                </div>
-                                <div>
-                                    <a href="/Home" class="text-white">The Crossing</a>
-                                </div>
-                            </div>--%>
+                            <a href="/Home">The Crossing</a>
                         </li>
                     </ul>
                 </div>
@@ -180,21 +122,15 @@
                 <div class="nav-menu right">
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
+                            <li class="menu-item main-nav-item ministry-nav dropdown">
+                                <a href="/Veritas/Staff">Get to Know Us</a>
+                            </li>
                             <li class="menu-item main-nav-item">
                                 <a href="/Veritas/Resources">Message</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Veritas/im-new">I'm New</a>
-                            </li>
-                            <li class="menu-item main-nav-item">
                                 <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
                             </li>
-                            <%--<li class="menu-item main-nav-item">
-                                <a href="/Give/veritas">Give</a>
-                            </li>--%>
-                            <%--<li class="menu-item main-nav-item">
-                                <a href="/Livestream" class="btn btn-accent">Live Stream</a>
-                            </li>--%>
                         </ul>
                     </div>
                     <div class="mobile-menu">
@@ -204,56 +140,13 @@
                         </div>
                         <ul class="main-navigation" id="menu-mobile-menu">
                             <li class="menu-item">
-                                <a class="text-white" href="/Veritas/what-we-do">
-                                    What We Do
-                                    <%--<i class="fa fa-chevron-right pull-right"></i>--%>
-                                </a>
-                               <%-- <div class="about-menu-mobile">
-                                    <div>
-                                        <a class="text-white" id="about-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i> Menu</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Veritas/what-we-do"">What We Do</a>
-                                    </div>
-                                    <div class="sub-menu-item">
-                                        <a href="/Veritas/Tuesday-Nights" class="text-white">Tuesday Nights</a>
-                                    </div>
-                                    <div class="sub-menu-item">
-                                        <a href="/Veritas/Small-Groups" class="text-white">Small Groups</a>
-                                    </div>
-                                    <div class="sub-menu-item">
-                                        <a href="/Veritas/Fall-Retreat" class="text-white">Fall Retreat</a>
-                                    </div>
-                                    <div class="sub-menu-item">
-                                        <a href="/Veritas/Serving" class="text-white">Serving</a>
-                                    </div>
-                                </div>--%>
+                                <a class="text-white" href="/Veritas/what-we-do">What We Do</a>
                             </li>
                             <li class="menu-item">
-                                <a class="text-white" href="/Veritas/Staff" >
-                                    Get to Know Us
-                                    <%--<i class="fa fa-chevron-right pull-right"></i>--%>
-                                </a>
-                               <%-- <div class="ministry-menu-mobile">
-                                    <div>
-                                        <a class="text-white" id="ministry-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i> Menu</a>
-                                    </div>
-                                    <div>
-                                        <a>Get to Know Us</a>
-                                    </div>
-                                    <div class="sub-menu-item">
-                                        <a href="/Veritas/Staff" class="text-white">Staff</a>
-                                    </div>
-                                    <div class="sub-menu-item">
-                                        <a href="/Home" class="text-white">The Crossing</a>
-                                    </div>
-                                </div>--%>
+                                <a class="text-white" href="/Veritas/Staff">Get to Know Us</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Veritas/Resources" class="text-white">Message</a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="/Veritas/im-new" class="text-white">I'm New</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Veritas/Events?aud=Veritas" class="text-white">Events</a>

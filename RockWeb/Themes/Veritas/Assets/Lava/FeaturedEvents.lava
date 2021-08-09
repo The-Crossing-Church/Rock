@@ -1,7 +1,7 @@
 <div class='background--grey full-width'>
   <div class='container'>
     <br/>
-    <h2>Featured</h2>
+    <h2 class='text--centered'>Featured</h2>
     <div class='carousel-wrapper'>
       <div id="featured-slider" class="slider">
         <div class="wrapper">
@@ -9,11 +9,16 @@
             {% for eventItemOccurrence in EventItemOccurrences %}
             <div class="slide">
               <a href="{{DetailsPage}}?EventOccurrenceId={{ eventItemOccurrence.Id }}">
-                <div style="padding: 8px">
+                <div style="padding: 8px" class='text--centered'>
                   <div class='img-wrapper'>
-                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{eventItemOccurrence.EventItem.Photo.Guid}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    {% assign altImage = eventItemOccurrence.EventItem | Attribute:'AlternateEventCardImage' %}
+                    {% if altImage != '' %}
+                      <img class="d-block w-100" src="{{altImage}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    {% else %}
+                      <img class="d-block w-100" src="/GetImage.ashx?Guid={{eventItemOccurrence.EventItem.Photo.Guid}}" alt="{{eventItemOccurrence.EventItem.Name}}" />
+                    {% endif %}
                   </div>
-                  <span>{{eventItemOccurrence.EventItem.Name}}</span>
+                  {% comment %}<span>{{eventItemOccurrence.EventItem.Name}}</span>{% endcomment %}
                 </div>
               </a>
             </div>

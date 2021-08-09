@@ -5,7 +5,7 @@
         {% assign classname = 'background--grey full-width' %}
     {% endif %}
     <div class='{{classname}}'>
-        <div class='container'>
+        <div class='{% if classname != '' %}container{% endif %}'>
             <br/>
             <h2>{{s.Series}}</h2>
             <div class='carousel-wrapper'>
@@ -14,7 +14,7 @@
                         <div id="watch-{{forloop.index0}}-slides" class="slides">
                             {% for i in s.Items %}
                                 <div class="slide">
-                                    <a href="/Resource/Watch?Slug={{i.ItemGlobalKey}}">
+                                    <a href="/Resource/Watch/{{i.PrimarySlug}}">
                                         <div style="padding: 8px">
                                             <div class='img-wrapper'>
                                                 <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
@@ -45,7 +45,7 @@
   .slider, .wrapper {
     width: 300px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 300px;
   }
   .slides {
@@ -64,7 +64,7 @@
   .slider, .wrapper {
     width: 350px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 350px;
   }
   .slides {
@@ -83,7 +83,7 @@
   .slider, .wrapper {
     width: 720px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 360px;
   }
   .slides {
@@ -102,7 +102,7 @@
   .slider, .wrapper {
     width: 940px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 313.3px;
   }
   .slides {
@@ -121,7 +121,7 @@
   .slider, .wrapper {
     width: 1140px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 380px;
   }
   .slides {
@@ -169,15 +169,19 @@
   transition: left 0.2s ease-out;
 }
 
-.slide {
+.slide:not(.carousel) {
+  display: block;
   height: 300px;
   cursor: pointer;
-  display: flex;
   flex-direction: column;
   justify-content: center;
   transition: all 1s;
   position: relative;
   padding: 8px;
+}
+
+.slide:not(.carousel) a {
+  vertical-align: top;
 }
 
 .control {

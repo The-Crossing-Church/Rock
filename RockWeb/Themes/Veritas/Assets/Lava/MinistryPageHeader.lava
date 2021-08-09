@@ -1,7 +1,7 @@
 ﻿{% assign logo = Item | Attribute:'Logo' %}
 {% assign subtitle = Item | Attribute:'Subtitle' %}
 {% assign ministry = Item.ContentChannel | Attribute:'Ministry' %}
-<br/>
+<br/><br class='d-none d-md-block'/>
 <div class='row'>
   <div class='col col-xs-12' style='text-align: center;'>
     {% if logo != '' %}
@@ -11,8 +11,9 @@
     <h2 class='text--upper subtitle'>{{subtitle}}</h2>
   </div>
 </div>
+<br/><br class='d-none d-md-block'/>
 {% include '~~/Assets/Lava/PageHeaderCarousel.lava' %}
-<br/><br/>
+<br/><br class='d-none d-md-block'/>
 <style>
 h2.subtitle {
   font-size: 1.5em;
