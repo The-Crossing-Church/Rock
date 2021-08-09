@@ -378,6 +378,8 @@
     .pull-md-left {
         float: left;
     }
+}
+@media (min-width: 576px) {
     .pull-md-right {
         float: right;
     }
