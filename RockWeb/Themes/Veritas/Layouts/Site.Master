@@ -126,7 +126,7 @@
                                 <a href="/Veritas/Staff">Get to Know Us</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Veritas/Resources">Message</a>
+                                <a href="/Veritas/Resources">Messages</a>
                             </li>
                             <li class="menu-item main-nav-item">
                                 <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
@@ -146,7 +146,7 @@
                                 <a class="text-white" href="/Veritas/Staff">Get to Know Us</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Veritas/Resources" class="text-white">Message</a>
+                                <a href="/Veritas/Resources" class="text-white">Messages</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Veritas/Events?aud=Veritas" class="text-white">Events</a>

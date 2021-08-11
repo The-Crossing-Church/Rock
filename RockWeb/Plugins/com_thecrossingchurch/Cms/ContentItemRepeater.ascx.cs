@@ -19,7 +19,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Gets all active and approved content for the specified channel and returns it to a list for display" )]
     [ContentChannelField( "Content Channel", required: true, order: 0 )]
-    [TextField( "Attribute Key", required: true, defaultValue: "Series", order: 1 )]
     [TextField( "Filter Attribute Key", required: false, order: 2 )]
     [TextField( "Filter Page Parameter", required: false, order: 3 )]
     [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false, order: 4 )]
@@ -32,7 +31,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private RockContext _context { get; set; }
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
-        private string AttributeKey { get; set; }
         private string FilterAttributeKey { get; set; }
         private string FilterPageParameterKey { get; set; }
         private string FilterPageParameterValue { get; set; }
@@ -65,7 +63,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _context = new RockContext();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
             _limit = GetAttributeValue( "ItemLimit" ).AsIntegerOrNull();
-            AttributeKey = GetAttributeValue( "AttributeKey" );
             FilterAttributeKey = GetAttributeValue( "FilterAttributeKey" );
             FilterPageParameterKey = GetAttributeValue( "FilterPageParameter" );
             if ( !String.IsNullOrEmpty( FilterPageParameterKey ) )

@@ -181,7 +181,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
             return items.Select( e =>
             {
-                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
+                var p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
                 //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                 var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
@@ -204,7 +204,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
                     var posts = blogResponse.results.Select( e =>
                     {
-                        var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, Type = "Read" };
+                        var p = new Post() { Id = 0, Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, Type = "Read" };
                         if ( e.publishDate.HasValue )
                         {
                             p.PublishDate = e.publishDate.Value;
@@ -221,9 +221,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         #endregion
 
-        [DotLiquid.LiquidType( "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "Slug", "MatchingTags", "ContentChannelId", "Type" )]
+        [DotLiquid.LiquidType( "Id", "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "Slug", "MatchingTags", "ContentChannelId", "Type" )]
         private class Post
         {
+            public int Id { get; set; }
             public string Title { get; set; }
             public string Author { get; set; }
             public DateTime PublishDate { get; set; }

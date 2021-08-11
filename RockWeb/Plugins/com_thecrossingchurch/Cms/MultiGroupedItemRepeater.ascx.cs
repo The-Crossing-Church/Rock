@@ -34,10 +34,10 @@ using Z.EntityFramework.Plus;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
-    [DisplayName( "Grouped Item Repeater" )]
+    [DisplayName( "Multi Grouped Item Repeater" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Similar to Content Item Repeater but Groups Items" )]
-    [ContentChannelField( "Content Channel", required: true, order: 0 )]
+    [ContentChannelsField( "Content Channels", required: true, order: 0 )]
     [TextField( "Attribute Key", required: true, defaultValue: "Series", order: 1 )]
     [TextField( "Filter Attribute Key", required: false, order: 2 )]
     [TextField( "Filter Page Parameter", required: false, order: 3 )]
@@ -45,7 +45,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/WatchSeries.lava' %}", "", order: 6 )]
 
-    public partial class GroupedItemRepeater : Rock.Web.UI.RockBlock
+    public partial class MultiGroupedItemRepeater : Rock.Web.UI.RockBlock
     {
         #region Variables
         private RockContext _context { get; set; }
