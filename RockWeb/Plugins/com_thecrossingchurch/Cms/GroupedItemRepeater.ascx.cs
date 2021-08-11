@@ -164,12 +164,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }
         #endregion
-    }
 
-    [DotLiquid.LiquidType( "Series", "Items" )]
-    public class ItemGroup
-    {
-        public string Series { get; set; }
-        public List<ContentChannelItem> Items { get; set; }
+        [DotLiquid.LiquidType( "Series", "Items" )]
+        public class ItemGroup
+        {
+            public string Series { get; set; }
+            public List<ContentChannelItem> Items { get; set; }
+        }
     }
 }
