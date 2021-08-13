@@ -110,7 +110,7 @@
                             <a href="/Veritas/what-we-do">What We Do</a>
                         </li>
                         <li class="menu-item main-nav-item ministry-nav dropdown">
-                            <a href="/Home">The Crossing</a>
+                            <a href="/Veritas/Staff">Get to Know Us</a>
                         </li>
                     </ul>
                 </div>
@@ -122,14 +122,14 @@
                 <div class="nav-menu right">
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
-                            <li class="menu-item main-nav-item ministry-nav dropdown">
-                                <a href="/Veritas/Staff">Get to Know Us</a>
-                            </li>
                             <li class="menu-item main-nav-item">
                                 <a href="/Veritas/Resources">Messages</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
+                                <a href="/Veritas/Events?aud=College">Events</a>
+                            </li>
+                            <li class="menu-item main-nav-item">
+                                <a class="btn btn-accent" href="/Registration/veritas-rides">Find a Ride</a>
                             </li>
                         </ul>
                     </div>
@@ -152,10 +152,13 @@
                                 <a href="/Veritas/Events?aud=Veritas" class="text-white">Events</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Give/Veritas" class="text-white">Support Our Staff</a>
+                                <a href="/Registration/veritas-rides" class="text-white">Find a Ride</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Home" class="text-white">
+                                <a href="/Give/Veritas" class="text-white">Support Veritas Staff</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="https://thecrossingchurch.com" class="text-white">
                                     <div class="text--centered">
                                         Go Back to
                                         <img style="width:90%;" src="/Themes/TheCrossing/Assets/Logos/logo.png" />

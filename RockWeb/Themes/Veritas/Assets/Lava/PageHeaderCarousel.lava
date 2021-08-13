@@ -64,7 +64,7 @@
                         {% if hasTitle %}
                             <h2 class='text--white'>{{titles[forloop.index0]}}</h2>
                             {% if hasSubtitle %}
-                                <hr/>
+                                <br/>
                                 {{subtitles[forloop.index0]}} 
                                 <br class='d-none d-md-block'/>
                                 <br class='d-none d-md-block'/>
