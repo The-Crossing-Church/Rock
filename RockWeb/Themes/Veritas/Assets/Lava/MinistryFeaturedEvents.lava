@@ -56,6 +56,13 @@
 <script>
   $(document).ready(()=> {
     $('#eventsCarousel').carousel();
+    let tallest = 0
+    $('#eventsCarousel div .item').each((i, e) => {
+        if ($(e).height() > tallest ) {
+            tallest = $(e).height()
+        }
+    })
+    $('#eventsCarousel div .item').css('min-height', tallest)
   })
 </script>
 {% stylesheet compile:'less' import:'_variables.less' %}
