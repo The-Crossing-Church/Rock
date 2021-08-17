@@ -62,10 +62,10 @@
                 <div class='hero-overlay text--centered align-center justify-center {% if hasTitle == false %}cta--only{% endif %}'>
                     <div class='text--white'>
                         {% if hasTitle %}
-                            <h2 class='text--white'>{{titles[forloop.index0]}}</h2>
+                            <h2 class='text--white'>{{titles[forloop.index0] | Replace:'~',','}}</h2>
                             {% if hasSubtitle %}
                                 <br/>
-                                {{subtitles[forloop.index0]}} 
+                                {{subtitles[forloop.index0] | Replace:'~',','}} 
                                 <br class='d-none d-md-block'/>
                                 <br class='d-none d-md-block'/>
                             {% endif %}

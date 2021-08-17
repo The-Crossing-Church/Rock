@@ -1,3 +1,5 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.19/jquery.touchSwipe.min.js" integrity="sha512-YYiD5ZhmJ0GCdJvx6Xe6HzHqHvMpJEPomXwPbsgcpMFPW+mQEeVBU6l9n+2Y+naq+CLbujk91vHyN18q6/RSYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 {% assign ct = EventItemOccurrences | Size %}
 {% if ct > 0 %}
 <div class='full-width background--grey'>
@@ -56,6 +58,25 @@
 <script>
   $(document).ready(()=> {
     $('#eventsCarousel').carousel();
+
+    $( ".carousel .carousel-inner" ).swipe( {
+    swipeLeft: function ( event, direction, distance, duration, fingerCount ) {
+        this.parent( ).carousel( 'next' );
+    },
+    swipeRight: function ( ) {
+        this.parent( ).carousel( 'prev' );
+    },
+    threshold: 0,
+    tap: function(event, target) {
+        window.location = $(this).find('.carousel-item.active a').attr('href');
+    },
+    excludedElements:"label, button, input, select, textarea, .noSwipe"
+    } );
+
+    $('.carousel .carousel-inner').on('dragstart', 'a', function () {
+        return false;
+    });
+
     let tallest = 0
     $('#eventsCarousel div .item').each((i, e) => {
         if ($(e).height() > tallest ) {

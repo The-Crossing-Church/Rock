@@ -58,9 +58,22 @@
             });
             $('#txtSearch').keyup(function (e) {
                 if (e.keyCode == 13) {
-                    $(this).trigger("enterKey");
+                    e.preventDefault()
+                    var search = document.getElementById('txtSearch');
+                    if (document.activeElement === search) {
+                        console.log('The Search content is: ' + $('#txtSearch').val())
+                        window.location.href = "/Veritas/Search?q=" + $('#txtSearch').val()
+                    }
                 }
             });
+            $('#form1').submit(function (e) {
+                var search = document.getElementById('txtSearch');
+                if (document.activeElement === search) {
+                    e.preventDefault();
+                    console.log('The Search content is: ' + $('#txtSearch').val())
+                    window.location.href = "/Veritas/Search?q=" + $('#txtSearch').val()
+                }
+            })
             $('#mobile-menu-toggle').click(function () {
                 let menu = $('#menu-mobile-menu')
                 let toggle = $('#mobile-menu-toggle')
@@ -158,13 +171,16 @@
                                 <a href="/Give/Veritas" class="text-white">Support Veritas Staff</a>
                             </li>
                             <li class="menu-item">
+                                <a href="https://thecrossingchurch.com" class="text-white">Learn More About The Crossing</a>
+                            </li>
+                            <%--<li class="menu-item">
                                 <a href="https://thecrossingchurch.com" class="text-white">
                                     <div class="text--centered">
                                         Go Back to
                                         <img style="width:90%;" src="/Themes/TheCrossing/Assets/Logos/logo.png" />
                                     </div>
                                 </a>
-                            </li>
+                            </li>--%>
                         </ul>
                     </div>
                 </div>
