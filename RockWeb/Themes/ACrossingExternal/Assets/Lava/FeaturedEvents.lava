@@ -24,18 +24,21 @@
             </div>
         </div>
         <div class='d-block d-md-none'>
-          <div class='img-wrapper'>
-            {% assign altImage = EventItemOccurrences[0].EventItem | Attribute:'AlternateEventCardImage' %}
-            {% if altImage != '' %}
-              <img class="d-block w-100" src="{{altImage}}" alt="{{EventItemOccurrences[0].EventItem.Name}}" />
-            {% else %}
-              <img class="d-block w-100" src="/GetImage.ashx?Guid={{EventItemOccurrences[0].EventItem.Photo.Guid}}" alt="{{EventItemOccurrences[0].EventItem.Name}}" />
-            {% endif %}
-          </div>
+          <a href="{{DetailsPage}}?EventOccurrenceId={{ EventItemOccurrences[0].Id }}">
+            <div class='img-wrapper'>
+              {% assign altImage = EventItemOccurrences[0].EventItem | Attribute:'AlternateEventCardImage' %}
+              {% if altImage != '' %}
+                <img class="d-block w-100" src="{{altImage}}" alt="{{EventItemOccurrences[0].EventItem.Name}}" />
+              {% else %}
+                <img class="d-block w-100" src="/GetImage.ashx?Guid={{EventItemOccurrences[0].EventItem.Photo.Guid}}" alt="{{EventItemOccurrences[0].EventItem.Name}}" />
+              {% endif %}
+            </div>
+          </a>
         </div>
         <br/>
       </div>
     </div>
+    <br/><br/>
     <style>
         .img-wrapper {
             border-radius: 16px;
