@@ -1,14 +1,14 @@
 <div class='full-width'>
   <div class='container'>
     <br/>
-    <h2>Read</h2>
+    <h2 class='text--centered'>Read</h2>
     <a class='hidden-anchor' id='read'></a>
     <div class='carousel-wrapper'>
         <div id="read-slider" class="slider">
             <div class="wrapper">
               <div id="read-slides" class="slides">
                 {% for post in Posts %}
-                  <div class="slide">
+                  <div class="slide text--centered">
                     <a href="{{ post.url }}">
                       <div class='img-wrapper'>
                         <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}" />

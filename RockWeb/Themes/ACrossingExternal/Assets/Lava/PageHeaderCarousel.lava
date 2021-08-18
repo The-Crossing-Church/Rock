@@ -11,7 +11,7 @@
     {% endif %}
 {% endif %}
 {% if imageSize > 0 %}
-    <div id='ministryCarousel' class='carousel slide'>
+    <div id='ministryCarousel' class='carousel slide mb-custom-2x'>
       {% if imageSize > 1 %}
           <ol class="carousel-indicators">
             {% for i in images limit:4 %}

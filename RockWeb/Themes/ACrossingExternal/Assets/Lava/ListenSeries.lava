@@ -7,13 +7,13 @@
     <div class='{{classname}}'>
         <div {% if classname != '' %}class='container'{% endif %}>
             <br/>
-            <h2>{{s.Series}}</h2>
+            <h2 class='text--centered'>{{s.Series}}</h2>
             <div class='carousel-wrapper'>
                 <div id="listen-{{forloop.index0}}-slider" class="slider">
                     <div class="wrapper">
                         <div id="listen-{{forloop.index0}}-slides" class="slides">
                             {% for i in s.Items %}
-                                <div class="slide">
+                                <div class="slide text--centered">
                                     <a href="/Resource/Listen/{{i.PrimarySlug}}">
                                         <div style="padding: 8px">
                                             <div class='img-wrapper'>

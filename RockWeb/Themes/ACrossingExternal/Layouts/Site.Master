@@ -63,7 +63,6 @@
                     e.preventDefault()
                     var search = document.getElementById('txtSearch');
                     if (document.activeElement === search) {
-                        //$(this).trigger("enterKey");
                         console.log('The Search content is: ' + $('#txtSearch').val())
                         window.location.href = "/Search?q=" + $('#txtSearch').val()
                     }
@@ -170,11 +169,6 @@
 
         <!-- Page Header -->
         <header>
-            <div class="triple-bar">
-                <div class="col-xs-4 background--accent"></div>
-                <div class="col-xs-4 background--medium-blue"></div>
-                <div class="col-xs-4 background--dark-teal"></div>
-            </div>
             <div class="header-inset">
                 <div class="nav-menu left">
                     <div class="header-search">

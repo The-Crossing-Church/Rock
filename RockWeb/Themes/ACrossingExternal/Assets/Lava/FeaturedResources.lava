@@ -1,13 +1,13 @@
 <div class='background--grey full-width'>
   <div class='container'>
     <br/>
-    <h2>Featured</h2>
+    <h2 class='text--centered'>Featured</h2>
     <div class='carousel-wrapper'>
         <div id="featured-slider" class="slider">
             <div class="wrapper">
                 <div id="featured-slides" class="slides">
                     {% for i in Items %}
-                        <div class="slide">
+                        <div class="slide text--centered">
                           <a href="{{i | Attribute:'Link' }}">
                             <div style="padding: 8px">
                               <div class='img-wrapper'>

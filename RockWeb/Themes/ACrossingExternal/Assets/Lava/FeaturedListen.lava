@@ -1,14 +1,14 @@
 <div class='background--grey full-width'>
   <div class='container'>
     <br/>
-    <h2>Listen</h2>
+    <h2 class='text--centered'>Listen</h2>
     <a class='hidden-anchor' id='listen'></a>
     <div class='carousel-wrapper'>
         <div id="listen-slider" class="slider">
             <div class="wrapper">
                 <div id="listen-slides" class="slides">
                     {% for i in Items %}
-                        <div class="slide">
+                        <div class="slide text--centered">
                           <a href="/Resource/Listen/{{i.PrimarySlug}}">
                             <div style="padding: 8px">
                               <div class='img-wrapper'>

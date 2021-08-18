@@ -8,7 +8,7 @@
         
         <!-- Page Title -->
         <Rock:PageIcon ID="PageIcon" runat="server" />
-        <h1 class="pagetitle"><Rock:PageTitle ID="PageTitle" runat="server" /></h1>
+        <h1 class="pagetitle py-custom-2x"><Rock:PageTitle ID="PageTitle" runat="server" /></h1>
         
         <!-- Breadcrumbs -->    
         <Rock:PageBreadCrumbs ID="PageBreadCrumbs" runat="server" />

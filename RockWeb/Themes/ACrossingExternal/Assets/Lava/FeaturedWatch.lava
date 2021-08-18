@@ -1,14 +1,14 @@
 <div class='full-width'>
   <div class='container'>
     <br/>
-    <h2>Watch</h2>
+    <h2 class='text--centered'>Watch</h2>
     <a class='hidden-anchor' id='watch'></a>
     <div class='carousel-wrapper'>
         <div id="watch-slider" class="slider">
             <div class="wrapper">
                 <div id="watch-slides" class="slides">
                     {% for i in Items %}
-                        <div class="slide">
+                        <div class="slide text--centered">
                           <a href="/Resource/Watch/{{i.PrimarySlug}}">
                             <div style="padding: 8px">
                               <div class='img-wrapper'>
