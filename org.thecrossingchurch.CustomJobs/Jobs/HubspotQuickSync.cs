@@ -42,6 +42,7 @@ using System.Drawing;
 using OfficeOpenXml.Style;
 using System.Threading;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace org.crossingchurch.HubspotQuickSync.Jobs
 {
@@ -190,7 +191,10 @@ namespace org.crossingchurch.HubspotQuickSync.Jobs
                 var matches = contacts_with_email.Where( c => c.rock_id == syncContacts[i].Id.ToString() || c.Email.ToLower() == syncContacts[i].Email.ToLower() ).ToList();
                 //Set properties
                 List<HubspotPropertyUpdate> properties = new List<HubspotPropertyUpdate>();
-                properties.Add( new HubspotPropertyUpdate { property = property, value = propertyValue } );
+                if ( !String.IsNullOrEmpty( property ) && !String.IsNullOrEmpty( propertyValue ) )
+                {
+                    properties.Add( new HubspotPropertyUpdate { property = property, value = propertyValue } );
+                }
                 foreach ( Guid? g in syncAttrGuids )
                 {
                     if ( g.HasValue )
@@ -307,11 +311,12 @@ namespace org.crossingchurch.HubspotQuickSync.Jobs
                         var jsonResponse = reader.ReadToEnd();
                         Console.WriteLine( $"Hubspot: {jsonResponse}" );
                         HttpContext context2 = HttpContext.Current;
-                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {id}{Environment.NewLine}Response:{jsonResponse} " ), context2 );
+                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error<br/>{ex}<br/>Current Id: {id}<br/>URL: {url}<br/>Body: {GenerateJSON( properties )}<br/>Response:{jsonResponse} " ), context2 );
                         //Retry the request
                         if ( attempt < 5 )
                         {
-                            Thread.Sleep( 60000 );
+                            Thread.Sleep( 10000 );
+                            //Task.Delay( TimeSpan.FromSeconds( 60 ) ).ContinueWith( t => MakeRequest( method, url, properties, id, attempt + 1 ) );
                             MakeRequest( method, url, properties, id, attempt + 1 );
                         }
                     }
