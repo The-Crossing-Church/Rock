@@ -88,7 +88,7 @@
         width="100%"
       >
         <template v-slot:event="{event}">
-          {% raw %}<strong data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" :title="event.name" data-trigger="hover" :data-content="summary(event.description)" @click="openEvent(event)">{{event.name}}</strong>{% endraw %}
+          {% raw %}<div data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" :title="event.name" data-trigger="hover" :data-content="summary(event.description)" @click="openEvent(event)"><strong>{{event.name}}</strong></div>{% endraw %}
         </template> 
       </v-calendar>
       <div class='d-none d-md-block' style="position: relative;">

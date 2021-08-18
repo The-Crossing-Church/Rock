@@ -137,6 +137,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                         featuredEnd = DateTime.Parse( featured.Split( ',' ).Last() );
                                         if ( DateTime.Compare( featuredStart, RockDateTime.Now ) <= 0 && DateTime.Compare( featuredEnd, RockDateTime.Now ) >= 0 )
                                         {
+                                            m.AttributeValues.Add( "_IsFeatured", new AttributeValueCache() { Value = "true" } );
                                             return true;
                                         }
 
@@ -154,6 +155,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             {
                 events = events.Take( Limit.Value ).ToList();
             }
+            events = events.OrderBy( e => e.NextStartDateTime ).ToList();
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "StartDate", StartDate.Value );
             mergeFields.Add( "DetailsPage", LinkedPageRoute( "DetailsPage" ) );

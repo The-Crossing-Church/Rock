@@ -95,7 +95,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             {
                 StartDate = DateTime.Parse( PageParameter( PageParameterKey.Start ) );
                 StartDate = new DateTime( StartDate.Value.Year, StartDate.Value.Month, 1, 0, 0, 0 );
-                EndDate = new DateTime( StartDate.Value.Year, ( StartDate.Value.Month + 1 ), 1, 0, 0, 0 );
+                if ( StartDate.Value.Month < 12 )
+                {
+                    EndDate = new DateTime( StartDate.Value.Year, ( StartDate.Value.Month + 1 ), 1, 0, 0, 0 );
+                }
+                else
+                {
+                    EndDate = new DateTime( ( StartDate.Value.Year + 1 ), 1, 1, 0, 0, 0 );
+                }
             }
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Search ) ) )
             {
