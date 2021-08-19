@@ -1,3 +1,4 @@
+{% comment %}{% include '~~/Assets/Lava/Calendar.lava' %}{% endcomment %}
  {% comment %} Add Vue and Vuetify CDN {% endcomment %}
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
@@ -21,15 +22,17 @@
   <v-app>
     <div>
       <v-row>
-        <v-col cols="12" md="6">
-          <div class='search-input pull-md-left'>
+        <v-col cols="12" class="justfy-center">
+          <div class='search-input'>
             <v-input dense append-icon="mdi-magnify" @click:append="loadDates(date)" >
               <input id="txtSearchCal" type="text" v-model="search" placeholder="Search Events..." />
             </v-input>
           </div>
         </v-col>
-        <v-col cols="12" md="6">
-          <div class='audience-input pull-md-right'>
+      </v-row>
+      <v-row>
+        <v-col cols="12" class="justfy-center">
+          <div class='audience-input'>
             <v-select
               :items='{{Audiences | Sort:'Value' | ToJSON }}'
               item-text="Value"
@@ -41,9 +44,9 @@
           </div>
         </v-col>
       </v-row>
-      <v-row>
+      <v-row style="margin-bottom: 2px;">
         <v-col>
-          <v-btn color="primary" class="pull-left" icon @click="prevMonth">
+          <v-btn color="secondary" small class="pull-left" fab @click="prevMonth">
             <v-icon>mdi-chevron-left</v-icon>
           </v-btn>
         </v-col>
@@ -59,8 +62,8 @@
             min-width="auto"
           >
             <template v-slot:activator="{ on, attrs }">
-              <div v-on="on" v-bind="attrs">
-                {% raw %}<strong>{{date | month}}</strong>{% endraw %}
+              <div v-on="on" v-bind="attrs" style="font-size: 1.5rem;">
+                {% raw %}<strong>{{date | month}}</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
               </div>
             </template>
             <v-date-picker
@@ -73,7 +76,7 @@
           </v-dialog>
         </v-col>
         <v-col>
-          <v-btn color="primary" class="pull-right" icon @click="nextMonth">
+          <v-btn color="secondary" small class="pull-right" fab @click="nextMonth">
             <v-icon>mdi-chevron-right</v-icon>
           </v-btn>
         </v-col>
@@ -336,11 +339,15 @@
 .container {
     padding: 0px 15px;
 }
-.search-input {
+.search-input, .audience-input>.v-input>.v-input__control>.v-input__slot {
     width: 100%;
     border-radius: 30px;
     border: 2px solid #1B3142;
     padding: 6px;
+    margin: auto;
+}
+.audience-input {
+    margin: auto; 
 }
 .search-input input, .search-input input:focus {
     border: none; 
@@ -358,21 +365,21 @@
 .search-input .v-input .v-input__control .v-messages {
     display: none;
 }
-.audience-input {
-    width: 100%;
-    max-width: 350px;
-    margin: auto;
-}
 .audience-input>.v-input>.v-input__control>.v-input__slot:before,
 .audience-input>.v-input>.v-input__control>.v-input__slot:after {
     border-style: none;
 }
+.audience-input>.v-input>.v-input__control>.v-input__slot>.v-select__slot>.v-label.v-label--active {
+    display: none;
+}
+{% comment %}
 .audience-input>.v-input>.v-input__control>.v-input__slot label {
     right: 25px !important;
     left: auto !important;
 }
+{% endcomment %}
 @media (min-width: 1201px) {
-    .search-input {
+    .search-input, .audience-input {
         max-width: 300px;
     }
     .pull-md-left {
@@ -383,5 +390,12 @@
     .pull-md-right {
         float: right;
     }
+}
+.v-application, .popover {
+    font-family: "museo-sans";
+}
+.theme--light.v-label {
+    color: rgba(0,0,0,.4);
+    font-weight: normal;
 }
 </style>

@@ -109,9 +109,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                 Search = PageParameter( PageParameterKey.Search );
             }
             var eventCalendar = new EventCalendarService( new RockContext() ).Get( GetAttributeValue( "EventCalendar" ).AsGuid() );
-            List<string> auds = PageParameter( PageParameterKey.Audience ).Split( ',' ).ToList();
+            List<string> auds = new List<string>();
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Audience ) ) ) {
+                auds = PageParameter( PageParameterKey.Audience ).Split( ',' ).ToList();
+            }
             DefinedType audienceDT = new DefinedTypeService( rockContext ).Get( Guid.Parse( Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE ) );
-            Audiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && auds.Contains( dv.Value ) ).Select( dv => dv.Guid ).ToList();
+            Audiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && ( auds.Contains( dv.Value ) || ( auds.Count() > 0 && dv.Value == "All Church" ) ) ).Select( dv => dv.Guid ).ToList();
             AvailableAudiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && dv.IsActive == true ).ToList();
             if ( eventCalendar != null )
             {
