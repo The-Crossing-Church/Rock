@@ -372,6 +372,7 @@ header:not(.panel-heading) {
     width: 100%;
     max-width: 1330px;
     margin: auto;
+    text-align: center;
 
     .nav-menu {
       display: inline-block;
@@ -392,6 +393,7 @@ header:not(.panel-heading) {
           width: 40px;
           vertical-align: middle;
           transition: .16s ease-in;
+          border-radius: 30px 0px 0px 30px;
 
           .fa-search, .mdi-magnify {
             font-size: 25px;
@@ -420,7 +422,7 @@ header:not(.panel-heading) {
             width: 0px;
             visibility: hidden;
             height: 40px;
-            border-radius: 0px;
+            border-radius: 0px 30px 30px 0px;
             border: none;
             font-family: sans-serif;
             line-height: 1.15;
@@ -675,6 +677,14 @@ header:not(.panel-heading) {
     text-align: right;
     padding-left: 20px;
     padding-right: 0px;
+
+    .desktop-menu {
+      .main-navigation {
+        li:last-child {
+          margin-right: 0;
+        }
+      }
+    }
   }
 
   .nav-menu.left {

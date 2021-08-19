@@ -9,7 +9,7 @@
           <div id="read-slides" class="slides">
             {% for post in Posts %}
             <div class="slide text--centered">
-              <div style="padding: 8px; text-align: left;">
+              <div style="padding: 8px;">
                 <a href="{{ post.url }}">
                   <div class='img-wrapper'>
                     <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}" />

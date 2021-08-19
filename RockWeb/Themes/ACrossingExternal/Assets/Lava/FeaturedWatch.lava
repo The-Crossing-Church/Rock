@@ -8,8 +8,12 @@
             <div class="wrapper">
                 <div id="watch-slides" class="slides">
                     {% for i in Items %}
-                        <div class="slide text--centered">
-                          <a href="/Resource/Watch/{{i.PrimarySlug}}">
+                        <div class="slide">
+                          {% assign url = '/Resource/Watch/' %}
+                          {% if i.ContentChannelId == 87 %}
+                            {% assign url = '/Music/Watch/' %}
+                          {% endif %}
+                          <a href="{{url}}{{i.PrimarySlug}}">
                             <div style="padding: 8px">
                               <div class='img-wrapper'>
                                 <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
