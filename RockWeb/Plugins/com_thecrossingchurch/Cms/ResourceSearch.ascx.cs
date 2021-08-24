@@ -203,17 +203,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     var jsonResponse = reader.ReadToEnd();
                     blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
                     var posts = blogResponse.results.Select( e =>
-                    {
-                        var p = new Post() { Id = 0, Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, Type = "Read" };
-                        if ( e.publishDate.HasValue )
-                        {
-                            p.PublishDate = e.publishDate.Value;
-                        }
-                        List<string> matchingTags = new List<string>();
-                        var intersect = tags.Intersect( e.tags );
-                        p.MatchingTags = intersect.ToList();
-                        return p;
-                    } );
+                     {
+                         var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog",""), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                         if ( e.publishedDate.HasValue )
+                         {
+                             //Convert Epoch Time
+                             DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+                             start = start.AddMilliseconds( e.publishedDate.Value );
+                             //Convert Time Zone
+                             start = start.ToLocalTime();
+                             p.PublishDate = start;
+                         }
+                         List<string> matchingTags = new List<string>();
+                         var intersect = tags.Intersect( e.tags );
+                         p.MatchingTags = intersect.ToList();
+                         return p;
+                     } );
                     return posts.ToList();
                 }
             }
@@ -245,11 +250,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private class BlogPost
         {
-            public string name { get; set; }
-            public string authorName { get; set; }
+            public string title { get; set; }
+            public string authorFullName { get; set; }
             public string url { get; set; }
-            public string featuredImage { get; set; }
-            public DateTime? publishDate { get; set; }
+            public string featuredImageUrl { get; set; }
+            public double? publishedDate { get; set; }
             public List<string> tags { get; set; }
         }
     }
