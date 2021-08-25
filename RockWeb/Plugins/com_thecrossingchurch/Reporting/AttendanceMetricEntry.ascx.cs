@@ -124,7 +124,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                         }
                         else
                         {
-                            this.Time.SelectedValue = ServiceTimes.FirstOrDefault( st => st.Name == Metric.MetricValueDateTime.Value.ToString( "h:mm" ) ).Id.ToString();
+                            var time = ServiceTimes.FirstOrDefault( st => st.Name == Metric.MetricValueDateTime.Value.ToString( "h:mm" ) );
+                            if(time != null)
+                            {
+                                this.Time.SelectedValue = time.Id.ToString();
+                            }
                         }
                     }
                     else
