@@ -57,8 +57,7 @@
                 console.log('The Search content is: ' + $('#txtSearch').val())
                 window.location.href = "/Search?q=" + $('#txtSearch').val()
             });
-            //$('#txtSearch').keyup(function (e) {
-            window.addEventListener('keyup', function (e) {
+            $('#txtSearch').keyup(function (e) {
                 if (e.keyCode == 13) {
                     e.preventDefault()
                     var search = document.getElementById('txtSearch');
@@ -68,6 +67,14 @@
                     }
                 }
             });
+            $('#form1').submit(function (e) {
+                var search = document.getElementById('txtSearch');
+                if (document.activeElement === search) {
+                    e.preventDefault();
+                    console.log('The Search content is: ' + $('#txtSearch').val())
+                    window.location.href = "/Search?q=" + $('#txtSearch').val()
+                }
+            })
             $('#mobile-menu-toggle').click(function () {
                 let menu = $('#menu-mobile-menu')
                 let toggle = $('#mobile-menu-toggle')
