@@ -1,5 +1,4 @@
-{% comment %}{% include '~~/Assets/Lava/Calendar.lava' %}{% endcomment %}
- {% comment %} Add Vue and Vuetify CDN {% endcomment %}
+{% comment %} Add Vue and Vuetify CDN {% endcomment %}
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
@@ -31,17 +30,36 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="12" class="justfy-center">
-          <div class='audience-input'>
-            <v-select
-              :items='{{Audiences | Sort:'Value' | ToJSON }}'
-              item-text="Value"
-              item-value="Value"
-              clearable
-              label="Audience"
-              v-model="audience"
-            ></v-select>
-          </div>
+        <v-col cols="12" class="text--centered">
+          <v-dialog
+            ref="audMenu"
+            v-model="audMenu"
+            :close-on-content-click="false"
+            transition="scale-transition"
+            offset-y
+            attach
+            max-width="290px"
+            min-width="auto"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <div v-on="on" v-bind="attrs" style="font-size: 1.5rem;">
+                <template v-if="audience == ''">
+                  {% raw %}<strong>Filter Events by Ministry</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
+                </template>
+                <template v-else>
+                  {% raw %}<strong>{{audience}} Events</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
+                </template>
+              </div>
+            </template>
+            <v-list>
+              <v-list-item v-if="audience != ''" @click="audience = ''">
+                  Clear Selection
+              </v-list-item>
+              <v-list-item v-for="a in audiences" class='hover' :key="a.Id" @click="audience = a.Value">
+                {% raw %}{{a.Value}}{% endraw %}
+              </v-list-item>
+            </v-list>
+          </v-dialog>
         </v-col>
       </v-row>
       <v-row style="margin-bottom: 2px;">
@@ -180,7 +198,9 @@
                 date: '',
                 search: '',
                 popover: false,
-                audience: ''
+                audience: '',
+                audiences: {{Audiences | Sort:'Value' | ToJSON }},
+                audMenu: false
             },
             created() {
                 const self = this
