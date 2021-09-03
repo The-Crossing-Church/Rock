@@ -160,12 +160,16 @@
 .slide:not(.carousel) {
   height: 350px;
   cursor: pointer;
-  display: flex;
+  display: block;
   flex-direction: column;
   justify-content: center;
   transition: all 1s;
   position: relative;
   padding: 8px;
+}
+
+.slide:not(.carousel) a {
+  vertical-align: top;
 }
 
 .control {

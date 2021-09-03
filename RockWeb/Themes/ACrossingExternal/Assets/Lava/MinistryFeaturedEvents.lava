@@ -15,31 +15,32 @@
       </ol>
       <div class="carousel-inner">
         {% for i in EventItemOccurrences %}
-        <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
-          <div class='row'>
-            <div class='col col-xs-12 col-md-6'>
-              {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
-              {% if altImage != '' %}
-                <img class="d-block w-100" src="{{ altImage }}" />
-              {% else %}
-                <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
-              {% endif %}
-            </div>
-            <div class='col col-xs-12 col-md-6'>
-              <br/>
-              <h2>{{i.EventItem.Name}}</h2>
-              {{ i.Schedule.FriendlyScheduleText }} <br/>
-              <br/>
-              {{i.EventItem.Description}}
-              <br/>
-              <div class='text--centered'>
-                <a class='btn btn-primary' href="{{DetailsPage}}?EventOccurrenceId={{ i.Id }}">View Event</a>
+          <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
+            <div class='row'>
+              <div class='col col-xs-12 col-md-6'>
+                {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
+                {% if altImage != '' %}
+                  <img class="d-block w-100" src="{{ altImage }}" />
+                {% else %}
+                  <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
+                {% endif %}
               </div>
-              <br/>
-              <br/>
+              <div class='col col-xs-12 col-md-6'>
+                <br/>
+                <h2>{{i.EventItem.Name}}</h2>
+                {% assign dateTimeFormat = i | Attribute:'DateTimeDisplayFormat' %}
+                {{ i.Schedule.FriendlyScheduleText }} <br/>
+                <br/>
+                {{i.EventItem.Description}}
+                <br/>
+                <div class='text--centered'>
+                  <a class='btn btn-primary' href="{{DetailsPage}}?EventOccurrenceId={{ i.Id }}">View Event</a>
+                </div>
+                <br/>
+                <br/>
+              </div>
             </div>
           </div>
-        </div>
         {% endfor %}
       </div>
     </div>
