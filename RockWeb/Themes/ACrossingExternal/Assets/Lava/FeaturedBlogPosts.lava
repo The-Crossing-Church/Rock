@@ -47,7 +47,7 @@
     width: 300px;
   }
   .slides {
-    left: -300px;
+    left: -600px;
   }
   {% assign ct = Posts | Size %}
   {% if ct == 1 %}
@@ -64,7 +64,7 @@
     width: 350px;
   }
   .slides {
-    left: -350px;
+    left: -700px;
   }
   {% assign ct = Posts | Size %}
   {% if ct == 1 %}

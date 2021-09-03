@@ -31,7 +31,12 @@
                 {% assign dateTimeFormat = i | Attribute:'DateTimeDisplayFormat' %}
                 {{ i.Schedule.FriendlyScheduleText }} <br/>
                 <br/>
-                {{i.EventItem.Description}}
+                <div class="d-none d-md-block">
+                  {{i.EventItem.Description}}
+                </div>
+                <div class="d-block d-md-none">
+                  {{i.EventItem.Description  | TruncateWords:30 }}
+                </div>
                 <br/>
                 <div class='text--centered'>
                   <a class='btn btn-primary' href="{{DetailsPage}}?EventOccurrenceId={{ i.Id }}">View Event</a>
