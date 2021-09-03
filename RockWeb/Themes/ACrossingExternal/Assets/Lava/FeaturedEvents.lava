@@ -133,7 +133,7 @@
       {% assign ct = EventItemOccurrences | Size %}
       {% if ct < 2 %}
         .control {
-          display: none !important; 
+          display: none !important;
         }
       {% endif %}
     }
@@ -150,7 +150,7 @@
       {% assign ct = EventItemOccurrences | Size %}
       {% if ct < 3 %}
         .control {
-          display: none !important; 
+          display: none !important;
         }
       {% endif %}
     }
@@ -167,40 +167,40 @@
       {% assign ct = EventItemOccurrences | Size %}
       {% if ct < 3 %}
         .control {
-          display: none !important; 
+          display: none !important;
         }
       {% endif %}
     }
-    
+
     .carousel-wrapper {
-      position: relative; 
+      position: relative;
       min-height: 300px;
     }
-    
+
     .slider {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
     }
-    
+
     .wrapper {
       overflow: hidden;
       position: relative;
       z-index: 1;
     }
-    
+
     .slides {
       display: flex;
       position: relative;
       top: 0;
       width: 10000px;
     }
-    
+
     .slides.shifting {
       transition: left 0.2s ease-out;
     }
-    
+
     .slide:not(.carousel) {
       cursor: pointer;
       display: block;
@@ -210,14 +210,14 @@
       position: relative;
       padding: 8px;
     }
-    
+
     .slide:not(.carousel) a {
       vertical-align: top;
     }
-    
+
     .control {
       position: absolute;
-      top: 50%;
+      top: 116px;
       width: 40px;
       height: 40px;
       background: #fff;
@@ -243,12 +243,12 @@
       background-repeat: no-repeat;
       cursor: pointer;
     }
-    
+
     .prev:active,
     .next:active {
       transform: scale(0.8);
     }
-    
+
     .img-wrapper {
       height:200px;
       overflow-y: hidden;
@@ -269,7 +269,7 @@
         sliderItems = document.getElementById("featured-slides"),
         prev = document.getElementById("featured-prev"),
         next = document.getElementById("featured-next");
-    
+
       function slide(wrapper, items, prev, next) {
         var posX1 = 0,
           posX2 = 0,
@@ -289,7 +289,7 @@
           cloneLast = lastSlide.cloneNode(true),
           index = 0,
           allowShift = true;
-    
+
         // Clone first and last slide
         items.appendChild(cloneFirst);
         if(cloneSecond) {
@@ -300,15 +300,15 @@
         }
         items.insertBefore(cloneLast, firstSlide);
         wrapper.classList.add("loaded");
-    
+
         // Mouse events
         items.onmousedown = dragStart;
-    
+
         // Touch events
         items.addEventListener("touchstart", dragStart);
         items.addEventListener("touchend", dragEnd);
         items.addEventListener("touchmove", dragAction);
-    
+
         // Click events
         prev.addEventListener("click", function () {
           shiftSlide(-1);
@@ -316,15 +316,15 @@
         next.addEventListener("click", function () {
           shiftSlide(1);
         });
-    
+
         // Transition events
         items.addEventListener("transitionend", checkIndex);
-    
+
         function dragStart(e) {
           e = e || window.event;
           e.preventDefault();
           posInitial = items.offsetLeft;
-    
+
           if (e.type == "touchstart") {
             posX1 = e.touches[0].clientX;
           } else {
@@ -333,10 +333,10 @@
             document.onmousemove = dragAction;
           }
         }
-    
+
         function dragAction(e) {
           e = e || window.event;
-    
+
           if (e.type == "touchmove") {
             posX2 = posX1 - e.touches[0].clientX;
             posX1 = e.touches[0].clientX;
@@ -346,7 +346,7 @@
           }
           items.style.left = items.offsetLeft - posX2 + "px";
         }
-    
+
         function dragEnd(e) {
           posFinal = items.offsetLeft;
           if (posFinal - posInitial < -threshold) {
@@ -358,19 +358,19 @@
           } else {
             items.style.left = posInitial + "px";
           }
-    
+
           document.onmouseup = null;
           document.onmousemove = null;
         }
-    
+
         function shiftSlide(dir, action) {
           items.classList.add("shifting");
-    
+
           if (allowShift) {
             if (!action) {
               posInitial = items.offsetLeft;
             }
-    
+
             if (dir == 1) {
               items.style.left = posInitial - slideSize + "px";
               index++;
@@ -379,18 +379,18 @@
               index--;
             }
           }
-    
+
           allowShift = false;
         }
-    
+
         function checkIndex() {
           items.classList.remove("shifting");
-    
+
           if (index == -1) {
             items.style.left = -(slidesLength * slideSize) + "px";
             index = slidesLength - 1;
           }
-    
+
           if (index == slidesLength) {
             if(window.screen.width >= 1200 && items.length > 1) {
               items.style.left = -(2 * slideSize) + "px";
@@ -399,11 +399,11 @@
             }
             index = 0;
           }
-    
+
           allowShift = true;
         }
       }
-    
+
       slide(slider, sliderItems, prev, next);
     });
     </script>
