@@ -9,7 +9,7 @@
                 <div id="listen-slides" class="slides">
                     {% for i in Items %}
                         <div class="slide text--centered">
-                          <a href="/Resource/Listen/{{i.PrimarySlug}}">
+                          <a href="/Resources/Listen/{{i | Attribute:'Series'}}/{{i | Attribute:'Subseries'}}/{{i.PrimarySlug}}">
                             <div style="padding: 8px">
                               <div class='img-wrapper'>
                                 <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />

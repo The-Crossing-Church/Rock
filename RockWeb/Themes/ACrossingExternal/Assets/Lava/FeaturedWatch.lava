@@ -9,9 +9,9 @@
                 <div id="watch-slides" class="slides">
                     {% for i in Items %}
                         <div class="slide text--centered">
-                          {% assign url = '/Resource/Watch/' %}
+                          {% capture url %}/Resources/Watch/{{i.ContentChannel | Attribute:'ResourceCategory'}}/{{i | Attribute:'Series'}}/{% endcapture %}
                           {% if i.ContentChannelId == 87 %}
-                            {% assign url = '/Music/Watch/' %}
+                          {% assign url = '/Music/Watch/' %}
                           {% endif %}
                           <a href="{{url}}{{i.PrimarySlug}}">
                             <div style="padding: 8px">
