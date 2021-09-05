@@ -49,7 +49,7 @@
     width: 300px;
   }
   .slides {
-    left: -300px;
+    left: -600px;
   }
   {% for s in Items %}
     {% assign ct = s.Items | Size %}
@@ -68,7 +68,7 @@
     width: 350px;
   }
   .slides {
-    left: -350px;
+    left: -700px;
   }
   {% for s in Items %}
     {% assign ct = s.Items | Size %}
