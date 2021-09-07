@@ -55,7 +55,7 @@
     {% assign ct = s.Items | Size %}
     {% if ct == 1 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -74,7 +74,7 @@
     {% assign ct = s.Items | Size %}
     {% if ct == 1 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -93,7 +93,7 @@
     {% assign ct = s.Items | Size %}
     {% if ct < 2 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -112,7 +112,7 @@
     {% assign ct = s.Items | Size %}
     {% if ct < 3 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -131,14 +131,14 @@
     {% assign ct = s.Items | Size %}
     {% if ct < 3 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
 }
 
 .carousel-wrapper {
-  position: relative; 
+  position: relative;
   min-height: 300px;
 }
 
@@ -186,7 +186,7 @@
 
 .control {
   position: absolute;
-  top: 50%;
+  top: 116px;
   width: 40px;
   height: 40px;
   background: #fff;

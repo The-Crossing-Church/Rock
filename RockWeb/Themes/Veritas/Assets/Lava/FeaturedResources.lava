@@ -43,7 +43,7 @@
   {% assign ct = Items | Size %}
   {% if ct == 1 %}
     .featured-control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -60,7 +60,7 @@
   {% assign ct = Items | Size %}
   {% if ct == 1 %}
     .featured-control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -77,7 +77,7 @@
   {% assign ct = Items | Size %}
   {% if ct < 2 %}
     .featured-control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -94,7 +94,7 @@
   {% assign ct = Items | Size %}
   {% if ct < 3 %}
     .featured-control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -111,13 +111,13 @@
   {% assign ct = Items | Size %}
   {% if ct < 3 %}
     .featured-control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
 
 .carousel-wrapper {
-  position: relative; 
+  position: relative;
   min-height: 300px;
 }
 
@@ -165,7 +165,7 @@
 
 .control {
   position: absolute;
-  top: 50%;
+  top: 116px;
   width: 40px;
   height: 40px;
   background: #fff;

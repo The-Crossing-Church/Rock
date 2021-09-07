@@ -7,13 +7,13 @@
     <div class='{{classname}}'>
         <div class='{% if classname != '' %}container{% endif %}'>
             <br/>
-            <h2>{{s.Series}}</h2>
+            <h2 class="text--centered">{{s.Series}}</h2>
             <div class='carousel-wrapper'>
                 <div id="watch-{{forloop.index0}}-slider" class="slider">
                     <div class="wrapper">
                         <div id="watch-{{forloop.index0}}-slides" class="slides">
                             {% for i in s.Items %}
-                                <div class="slide">
+                                <div class="slide text--centered">
                                     <a href="/Resource/Watch/{{i.PrimarySlug}}">
                                         <div style="padding: 8px">
                                             <div class='img-wrapper'>
@@ -49,13 +49,13 @@
     width: 300px;
   }
   .slides {
-    left: -300px;
+    left: -600px;
   }
   {% for s in Items %}
     {% assign ct = s.Items | Size %}
     {% if ct == 1 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -68,13 +68,13 @@
     width: 350px;
   }
   .slides {
-    left: -350px;
+    left: -700px;
   }
   {% for s in Items %}
     {% assign ct = s.Items | Size %}
     {% if ct == 1 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -93,7 +93,7 @@
     {% assign ct = s.Items | Size %}
     {% if ct < 2 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -112,7 +112,7 @@
     {% assign ct = s.Items | Size %}
     {% if ct < 3 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
@@ -131,14 +131,14 @@
     {% assign ct = s.Items | Size %}
     {% if ct < 3 %}
       .ctrl-{{forloop.index0}} {
-        display: none !important; 
+        display: none !important;
       }
     {% endif %}
   {% endfor %}
 }
 
 .carousel-wrapper {
-  position: relative; 
+  position: relative;
   min-height: 300px;
 }
 
@@ -186,7 +186,7 @@
 
 .control {
   position: absolute;
-  top: 50%;
+  top: 116px;
   width: 40px;
   height: 40px;
   background: #fff;

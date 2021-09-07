@@ -94,8 +94,18 @@
         })
     </script>
     <!-- Start of HubSpot Embed Code -->
-    <%--<script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>--%>
+    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>
     <!-- End of HubSpot Embed Code -->
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VF4Z1LYJTM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-VF4Z1LYJTM');
+    </script>
+    <!-- End Google Analytics -->
+
 </head>
 <body runat="server" id="body">
 
@@ -103,11 +113,6 @@
 
         <!-- Page Header -->
         <header>
-            <div class="triple-bar">
-                <div class="col-xs-4 background--light-blue"></div>
-                <div class="col-xs-4 background--medium-blue"></div>
-                <div class="col-xs-4 background--dark-blue"></div>
-            </div>
 			<div class="header-inset">
                 <div class="nav-menu left">
                     <div class="header-search">
