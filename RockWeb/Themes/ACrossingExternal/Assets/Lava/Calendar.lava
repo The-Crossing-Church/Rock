@@ -68,7 +68,7 @@
             <v-icon>mdi-chevron-left</v-icon>
           </v-btn>
         </v-col>
-        <v-col class='text--centered'>
+        <v-col class='text--centered' style="min-width: 175px;">
           <v-dialog
             ref="menu"
             v-model="menu"

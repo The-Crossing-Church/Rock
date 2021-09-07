@@ -29,7 +29,9 @@
                 <br/>
                 <h2>{{i.EventItem.Name}}</h2>
                 {% assign dateTimeFormat = i | Attribute:'DateTimeDisplayFormat' %}
-                {{ i.Schedule.FriendlyScheduleText }} <br/>
+                {% if dateTimeFormat != 'No Time' %}
+                  {{ i.Schedule.FriendlyScheduleText }} <br/>
+                {% endif %}
                 <br/>
                 <div class="d-none d-md-block">
                   {{i.EventItem.Description}}
