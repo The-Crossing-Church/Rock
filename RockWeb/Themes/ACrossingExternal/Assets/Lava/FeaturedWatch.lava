@@ -242,8 +242,8 @@ $(document).ready(function () {
         seclastSlide = slides[slidesLength - 2],
         lastSlide = slides[slidesLength - 1],
         cloneFirst = firstSlide.cloneNode(true),
-        cloneSecond = secondSlide.cloneNode(true),
-        cloneSecLast = seclastSlide.cloneNode(true),
+        cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+        cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
         cloneLast = lastSlide.cloneNode(true),
         index = 0,
         allowShift = true;
