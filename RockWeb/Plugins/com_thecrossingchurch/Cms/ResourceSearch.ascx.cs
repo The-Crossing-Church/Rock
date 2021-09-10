@@ -193,7 +193,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private List<Post> SearchRead( string apiKey )
         {
             //Get blog posts that match
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED" );
+            WebRequest request = WebRequest.Create( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
             var response = request.GetResponse();
             HubspotBlogResponse blogResponse = new HubspotBlogResponse();
             using ( Stream stream = response.GetResponseStream() )

@@ -22,10 +22,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [TextField( "Attribute Key", required: true, defaultValue: "Series", order: 1 )]
     [TextField( "Filter Attribute Key", required: false, order: 2 )]
     [TextField( "Filter Page Parameter", required: false, order: 3 )]
-    [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false, order: 4 )]
-    [BooleanField( "Order By Date", "Check this box to order by date, otherwise the Order property will be used.", defaultValue: true, order: 5 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 6 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "", order: 7 )]
+    [TextField( "Route Parameters", "Attributes on the Content Channels, in a comma separated list", required: false, order: 4 )]
+    [IntegerField( "Item Limit", "The max number of items to display, leave blank to not limit", required: false, order: 5 )]
+    [BooleanField( "Order By Date", "Check this box to order by date, otherwise the Order property will be used.", defaultValue: true, order: 6 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 7 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, "", "", order: 8 )]
 
     public partial class MultiContentItemRepeater : Rock.Web.UI.RockBlock
     {

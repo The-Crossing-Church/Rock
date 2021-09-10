@@ -24,7 +24,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [ContentChannelField( "Staff Content Channel", required: false, order: 1 )]
     [EventCalendarField( "Calendar", "", false, "8A444668-19AF-4417-9C74-09F842572974", order: 2 )]
     [LinkedPage( "Event Details Page", "Detail page for events", order: 3 )]
-    [DefinedValueField( "Audiences", Description = "The audiences for this ministry", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, Order = 4 )]
+    [DefinedValueField( "Audiences", Description = "The audiences to include in search", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, IsRequired = false, Order = 4 )]
     [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, order: 5 )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 6 )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/' %}", "", 7 )]
@@ -157,8 +157,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                                     //Html block contains search query
                                     PageResult r = new PageResult() { Id = p.Id, Title = p.PageTitle, Description = p.Description };
                                     r.Tags = _tiSvc.Get( 0, "", "", null, p.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                                    //p.LoadAttributes();
-                                    //r.Tags = p.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                                     if ( html.Content.Length > ( 150 + idx ) )
                                     {
                                         r.Matched = html.Content.Substring( idx, 150 );
@@ -178,10 +176,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 {
                     //Check for matching tags
                     PageResult r = new PageResult() { Id = p.Id, Title = p.PageTitle, Description = p.Description };
-                    //p.LoadAttributes();
-                    //r.Tags = p.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                     r.Tags = _tiSvc.Get( 0, "", "", null, p.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                    if ( r.Tags.Select( t => t.ToLower() ).Contains( query ) )
+                    var intersection = query.Split( ' ' ).Intersect( r.Tags.Select( t => t.ToLower() ) ).ToList();
+                    if ( r.Tags.Select( t => t.ToLower() ).Contains( query ) || intersection.Count() > 0 )
                     {
                         results.Add( r );
                         added = true;

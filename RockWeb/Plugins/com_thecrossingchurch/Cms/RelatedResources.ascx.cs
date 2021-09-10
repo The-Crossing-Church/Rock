@@ -240,6 +240,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private List<Post> GetBlogPosts()
         {
+            //TODO: Chnage the blog search so it only pulls Crossing Blog Posts not ToT 
+
+
             //Get the Hubspot Tags
             List<string> tag_ids = new List<string>();
             Dictionary<string, string> tagDict = new Dictionary<string, string>();

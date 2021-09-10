@@ -95,7 +95,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         {
             //Get custom contact properties from Hubspot 
             //WebRequest request = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&limit=" + numPosts );
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/content/api/v2/blog-posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&limit=" + numPosts );
+            WebRequest request = WebRequest.Create( "https://api.hubapi.com/content/api/v2/blog-posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&content_group_id=14822403917&limit=" + numPosts );
             var response = request.GetResponse();
             BlogResponse blogResponse = new BlogResponse();
             DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );

@@ -135,7 +135,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                 return false;
                             }
                             ).ToList();
-            if ( events.Count() < 8 )
+            if ( !Audience.HasValue && events.Count() < 8 )
             {
                 //Add additional upcoming events to this list to fil out the carousel a bit more
                 var ids = events.Select( e => e.Id ).ToList();
