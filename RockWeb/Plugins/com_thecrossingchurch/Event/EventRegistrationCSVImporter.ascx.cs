@@ -433,6 +433,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                 try
                                 {
                                     registrant.SetAttributeValue( customCols[k].RockValue, data[headers.IndexOf( customCols[k].HeaderValue )] );
+                                    registrant.SaveAttributeValue( customCols[k].RockValue );
                                 }
                                 catch
                                 {
