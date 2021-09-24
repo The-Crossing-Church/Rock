@@ -34,7 +34,6 @@
           <v-dialog
             ref="audMenu"
             v-model="audMenu"
-            :close-on-content-click="false"
             transition="scale-transition"
             offset-y
             attach
@@ -47,16 +46,26 @@
                   {% raw %}<strong>Filter Events by Ministry</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
                 </template>
                 <template v-else>
-                  {% raw %}<strong>{{audience}} Events</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
+                  <strong>{% raw %}{{formatList(audience)}}{% endraw %} Events</strong><v-icon>mdi-menu-down</v-icon>
                 </template>
               </div>
             </template>
             <v-list>
-              <v-list-item v-if="audience != ''" @click="audience = ''">
-                  Clear Selection
+              <v-list-item>
+                <v-btn icon small color="secondary" @click="audMenu = false;" absolute right><v-icon>mdi-close</v-icon></v-btn>
               </v-list-item>
-              <v-list-item v-for="a in audiences" class='hover' :key="a.Id" @click="audience = a.Value">
-                {% raw %}{{a.Value}}{% endraw %}
+              <v-list-item v-for="a in audiences" class='hover' :key="a.Id" @click="toggleAudience(a.Value)">
+                <v-list-item-icon>
+                    <v-icon v-if="audience.includes(a.Value)">mdi-check</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  {% raw %}{{a.Value}}{% endraw %}
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item>
+                <v-btn color="secondary" v-if="audience.length > 0" @click="audience = []; audMenu = false;">Clear All</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn color="accent" @click="audMenu = false;">Filter</v-btn>
               </v-list-item>
             </v-list>
           </v-dialog>
@@ -198,7 +207,7 @@
                 date: '',
                 search: '',
                 popover: false,
-                audience: '',
+                audience: [],
                 audiences: {{Audiences | Sort:'Value' | ToJSON }},
                 audMenu: false
             },
@@ -206,10 +215,10 @@
                 const self = this
                 this.loadEvents()
                 this.date = moment().format('YYYY-MM')
-                let query = new URLSearchParams(window.location.search);
-                let sd = query.get("Start");
+                let query = new URLSearchParams(window.location.search)
+                let sd = query.get("Start")
                 let s = query.get("Search")
-                let a = query.get("aud");
+                let a = query.get("aud")
                 if(sd) {
                   this.focus = sd
                   this.date = moment(sd).format('YYYY-MM')
@@ -218,7 +227,11 @@
                   this.search = s
                 }
                 if(a) {
-                  this.audience = a
+                  if(a.includes(",")) {
+                    this.audience = a.split(",")
+                  } else {
+                    this.audience.push(a)
+                  }
                 }
                 window.addEventListener('keyup', function (e) {
                     if (e.keyCode == 13) {
@@ -286,7 +299,7 @@
                   if(this.search) {
                     params += "&Search=" + this.search
                   }
-                  if(this.audience) {
+                  if(this.audience && this.audience.length > 0) {
                     params += "&aud=" + this.audience
                   }
                   document.location.search = params
@@ -311,6 +324,24 @@
                   if(!sd || sd.substring(0,7) != val.substring(0,7)){
                     this.loadDates(val)
                   }
+                },
+                toggleAudience(val) {
+                  if(this.audience.includes(val)) {
+                    let idx = this.audience.indexOf(val)
+                    this.audience.splice(idx, 1)
+                  } else {
+                    this.audience.push(val)
+                  }
+                },
+                formatList(val) {
+                  if(val.length > 1 && val.length < 3) {
+                    return val.join(" and ")
+                  } else if(val.length > 2) {
+                    let str = val.join(", ")
+                    let idx = str.lastIndexOf(",")
+                    return str.substring(0, idx + 1) + " and" + str.substring(idx + 1, str.length)
+                  }
+                  return val[0]
                 }
             },
             filters: {
@@ -336,11 +367,14 @@
                     this.loadDates(val)
                   }
                 },
-                audience(val) {
-                  let query = new URLSearchParams(window.location.search);
-                  let sd = query.get("aud");
-                  if(!sd || sd != val){
-                    this.loadDates(this.date)
+                audMenu(val) {
+                  //On menu close
+                  if(!val) {
+                    let query = new URLSearchParams(window.location.search);
+                    let sd = query.get("aud");
+                    if(!sd || sd != this.audience.join()){
+                      this.loadDates(this.date)
+                    }
                   }
                 }
             }
@@ -417,5 +451,8 @@
 .theme--light.v-label {
     color: rgba(0,0,0,.4);
     font-weight: normal;
+}
+.v-dialog__content--active {
+  z-index: 2000 !important; 
 }
 </style>

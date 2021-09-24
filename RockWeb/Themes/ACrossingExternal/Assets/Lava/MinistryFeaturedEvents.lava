@@ -53,7 +53,7 @@
     </div>
     <br/>
     <div class='text--centered'>
-      <a class='btn btn-primary' href="/Events?aud={{Audiences | Select:'Value' | Join:','}}">View All Events</a>
+      <a class='btn btn-primary' href="/Events?aud={{AdditionalAudiences | Select:'Value' | Join:','}}">View All Events</a>
     </div>
     <br/>
   </div>
