@@ -108,6 +108,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private List<Post> SearchContent( Guid guid )
         {
             ContentChannel channel = _ccSvc.Get( guid );
+            TaggedItemService _tiSvc = new TaggedItemService( _context );
             channel.LoadAttributes();
             //Filter by Content Channel and Title (if present in query) 
             var items = _cciSvc.Queryable().Where( i => i.ContentChannelId == channel.Id && ( String.IsNullOrEmpty( title ) || i.Title.ToLower().Contains( title ) ) ).ToList();
@@ -116,11 +117,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 bool meetsRec = true;
                 //var itemTag = i.AttributeValues["Tags"].Value.ToLower().Split( ',' ).ToList();
-                TaggedItemService _tiSvc = new TaggedItemService( _context );
                 var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var itemSeries = i.AttributeValues["Series"].Value.ToLower();
                 var itemAuthor = i.AttributeValues["Author"].ValueFormatted.ToLower();
-                var itemDesc = i.AttributeValues["Description"].Value.ToLower();
+                var itemDesc = i.Content != null ? i.Content.ToLower() : "";
 
                 if ( channel.RequiresApproval && i.Status != ContentChannelItemStatus.Approved )
                 {
@@ -181,8 +181,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
             return items.Select( e =>
             {
-                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
-                var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
+                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
+                var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
                 return p;
@@ -192,7 +193,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private List<Post> SearchRead( string apiKey )
         {
             //Get blog posts that match
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST" );
+            WebRequest request = WebRequest.Create( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
             var response = request.GetResponse();
             HubspotBlogResponse blogResponse = new HubspotBlogResponse();
             using ( Stream stream = response.GetResponseStream() )
@@ -202,17 +203,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     var jsonResponse = reader.ReadToEnd();
                     blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
                     var posts = blogResponse.results.Select( e =>
-                    {
-                        var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, Type = "Read" };
-                        if ( e.publishDate.HasValue )
-                        {
-                            p.PublishDate = e.publishDate.Value;
-                        }
-                        List<string> matchingTags = new List<string>();
-                        var intersect = tags.Intersect( e.tags );
-                        p.MatchingTags = intersect.ToList();
-                        return p;
-                    } );
+                     {
+                         var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog",""), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                         if ( e.publishedDate.HasValue )
+                         {
+                             //Convert Epoch Time
+                             DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+                             start = start.AddMilliseconds( e.publishedDate.Value );
+                             //Convert Time Zone
+                             start = start.ToLocalTime();
+                             p.PublishDate = start;
+                         }
+                         List<string> matchingTags = new List<string>();
+                         var intersect = tags.Intersect( e.tags );
+                         p.MatchingTags = intersect.ToList();
+                         return p;
+                     } );
                     return posts.ToList();
                 }
             }
@@ -220,9 +226,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         #endregion
 
-        [DotLiquid.LiquidType( "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "Slug", "MatchingTags", "ContentChannelId", "Type" )]
+        [DotLiquid.LiquidType( "Id", "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "Slug", "MatchingTags", "ContentChannelId", "Type" )]
         private class Post
         {
+            public int Id { get; set; }
             public string Title { get; set; }
             public string Author { get; set; }
             public DateTime PublishDate { get; set; }
@@ -243,11 +250,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private class BlogPost
         {
-            public string name { get; set; }
-            public string authorName { get; set; }
+            public string title { get; set; }
+            public string authorFullName { get; set; }
             public string url { get; set; }
-            public string featuredImage { get; set; }
-            public DateTime? publishDate { get; set; }
+            public string featuredImageUrl { get; set; }
+            public double? publishedDate { get; set; }
             public List<string> tags { get; set; }
         }
     }

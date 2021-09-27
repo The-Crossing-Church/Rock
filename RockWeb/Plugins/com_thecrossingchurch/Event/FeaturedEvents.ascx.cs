@@ -58,6 +58,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         private DateTime? EndDate { get; set; }
         private string Search { get; set; }
         private int CalendarId { get; set; }
+        private List<Guid> Audiences { get; set; }
+        private static class PageParameterKey
+        {
+            public const string Audience = "Aud";
+        }
 
         #endregion
 
@@ -79,9 +84,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+            RockContext rockContext = new RockContext();
             DateTime today = RockDateTime.Now;
             StartDate = new DateTime( today.Year, today.Month, 1, 0, 0, 0 ).AddDays( -7 );
             var eventCalendar = new EventCalendarService( new RockContext() ).Get( GetAttributeValue( "EventCalendar" ).AsGuid() );
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Audience ) ) )
+            {
+                List<string> auds = PageParameter( PageParameterKey.Audience ).Split( ',' ).ToList();
+                DefinedType audienceDT = new DefinedTypeService( rockContext ).Get( Guid.Parse( Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE ) );
+                Audiences = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == audienceDT.Id && auds.Contains( dv.Value ) ).Select( dv => dv.Guid ).ToList();
+            }
+            else
+            {
+                Audiences = new List<Guid>();
+            }
             if ( eventCalendar != null )
             {
                 CalendarId = eventCalendar.Id;
@@ -101,7 +117,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             var events = eventSvc.Queryable( "EventItem" ).Where( m =>
                                          m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
                                          m.EventItem.IsActive &&
-                                         m.EventItem.IsApproved
+                                         m.EventItem.IsApproved &&
+                                         ( Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ) )
                             ).ToList()
                             .Where( m =>
                             {
@@ -130,13 +147,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                          m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
                                          m.EventItem.IsActive &&
                                          m.EventItem.IsApproved &&
-                                         !ids.Contains( m.Id )
+                                         !ids.Contains( m.Id ) &&
+                                         ( Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ) )
                             ).ToList().Where( m =>
-                                        m.NextStartDateTime.HasValue && 
+                                        m.NextStartDateTime.HasValue &&
                                         DateTime.Compare( m.NextStartDateTime.Value, RockDateTime.Now ) >= 0
                             ).OrderBy( m => m.NextStartDateTime ).Take( 8 - events.Count() ).ToList();
                 events.AddRange( addEvents );
             }
+
+            //If we are filtering by an audience, show only one featured event! 
+            if ( Audiences.Count() == 1 )
+            {
+                events = events.Take( 1 ).ToList();
+            }
+
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "StartDate", StartDate.Value );
             mergeFields.Add( "DetailsPage", LinkedPageRoute( "DetailsPage" ) );

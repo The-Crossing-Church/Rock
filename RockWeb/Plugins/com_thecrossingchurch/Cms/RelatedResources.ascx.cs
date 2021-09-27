@@ -200,7 +200,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             } ).ToList();
             return items.Select( e =>
             {
-                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, ContentChannelId = e.ContentChannelId };
+                var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId };
                 //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                 var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
@@ -240,6 +240,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private List<Post> GetBlogPosts()
         {
+            //TODO: Chnage the blog search so it only pulls Crossing Blog Posts not ToT 
+
+
             //Get the Hubspot Tags
             List<string> tag_ids = new List<string>();
             Dictionary<string, string> tagDict = new Dictionary<string, string>();
@@ -266,7 +269,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             if ( tag_ids.Count() > 0 )
             {
                 //Get blog posts that match
-                string url = "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate";
+                string url = "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED";
                 for ( int i = 0; i < tag_ids.Count(); i++ )
                 {
                     url += "&topic_id__in=" + tag_ids[i];

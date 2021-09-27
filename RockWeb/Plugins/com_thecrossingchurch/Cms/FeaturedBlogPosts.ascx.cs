@@ -44,7 +44,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [TextField( "HubSpot API Key", required: true, order: 0 )]
     [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 2 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/Read.lava' %}", "", 3 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 3 )]
 
     public partial class FeaturedBlogPosts : Rock.Web.UI.RockBlock
     {
@@ -94,9 +94,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private void GetPosts()
         {
             //Get custom contact properties from Hubspot 
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&limit=" + numPosts );
+            //WebRequest request = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&limit=" + numPosts );
+            WebRequest request = WebRequest.Create( "https://api.hubapi.com/content/api/v2/blog-posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&content_group_id=14822403917&limit=" + numPosts );
             var response = request.GetResponse();
             BlogResponse blogResponse = new BlogResponse();
+            DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+            
             using ( Stream stream = response.GetResponseStream() )
             {
                 using ( StreamReader reader = new StreamReader( stream ) )
@@ -106,26 +109,45 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 }
             }
 
+            var posts = blogResponse.objects.Select( b => new BlogPost() { name = b.name, authorName = b.blog_post_author.display_name, url = b.url, featured_image = b.featured_image, publishDate = start.AddMilliseconds( b.publish_date_local_time.Value ) } );
+
             var mergeFields = new Dictionary<string, object>();
-            mergeFields.Add( "Posts", blogResponse.results );
+            mergeFields.Add( "Posts", posts );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }
         #endregion
-        public class BlogResponse
+        private class BlogResponse
         {
             public int total { get; set; }
-            public List<BlogPost> results { get; set; }
+            public List<BlogPost> objects { get; set; }
         }
 
-        [DotLiquid.LiquidType( "name", "authorName", "url", "publishDate", "featuredImage" )]
-        public class BlogPost
+        [DotLiquid.LiquidType( "name", "authorName", "url", "publishDate", "featured_image" )]
+        private class BlogPost
         {
             public string name { get; set; }
+            public BlogAuthor blog_post_author { get; set; }
             public string authorName { get; set; }
             public string url { get; set; }
-            public string featuredImage { get; set; }
+            public string featured_image { get; set; }
+            public long? publish_date_local_time { get; set; }
             public DateTime? publishDate { get; set; }
         }
+
+        private class BlogAuthor
+        {
+            public string display_name { get; set; }
+        }
+
+        //[DotLiquid.LiquidType( "name", "authorName", "url", "publishDate", "featuredImage" )]
+        //public class BlogPost
+        //{
+        //    public string name { get; set; }
+        //    public string authorName { get; set; }
+        //    public string url { get; set; }
+        //    public string featuredImage { get; set; }
+        //    public DateTime? publishDate { get; set; }
+        //}
     }
 }

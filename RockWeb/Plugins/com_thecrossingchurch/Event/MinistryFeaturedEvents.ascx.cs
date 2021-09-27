@@ -46,11 +46,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
     [EventCalendarField( "Event Calendar", "The event calendar to be displayed", true, "8A444668-19AF-4417-9C74-09F842572974", order: 0 )]
     [LinkedPage( "Details Page", "Detail page for events", order: 1 )]
     [DefinedValueField( "Audiences", Description = "The audiences for this ministry", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, Order = 2 )]
-    [DefinedValueField( "Ministry", Key = "Ministry", DefinedTypeGuid = "c5696677 -82e5-4329-a8c2-2b006f589636", AllowMultiple = false, IsRequired = false, Order = 3 )]
-    [BooleanField( "Upcoming Events Only", "Selecting this option will only show upcoming events, deselecting it will include events currently being featured on the main calendar page", defaultValue: false, order: 4 )]
-    [IntegerField( "Limit", "Max number of events to display", required: false, order: 5 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 6 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/MinistryFeaturedEvents.lava' %}", "", 7 )]
+    [DefinedValueField( "Additional Audiences", Description = "Additional audiences to use when going to all events", Key = "AdditionalAudiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, Order = 3 )]
+    [DefinedValueField( "Ministry", Key = "Ministry", DefinedTypeGuid = "c5696677 -82e5-4329-a8c2-2b006f589636", AllowMultiple = false, IsRequired = false, Order = 4 )]
+    [BooleanField( "Upcoming Events Only", "Selecting this option will only show upcoming events, deselecting it will include events currently being featured on the main calendar page", defaultValue: false, order: 5 )]
+    [IntegerField( "Limit", "Max number of events to display", required: false, order: 6 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 7 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/MinistryFeaturedEvents.lava' %}", "", 8 )]
 
     public partial class MinistryFeaturedEvents : Rock.Web.UI.RockBlock
     {
@@ -62,6 +63,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
         private bool UpcomingOnly { get; set; }
         private int? Limit { get; set; }
         private List<Guid> Audiences { get; set; }
+        private List<Guid> AdditionalAudiences { get; set; }
         private DateTime? StartDate { get; set; }
         private DateTime? EndDate { get; set; }
         private string Search { get; set; }
@@ -98,6 +100,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             UpcomingOnly = GetAttributeValue( "UpcomingEventsOnly" ).AsBoolean();
             Limit = GetAttributeValue( "Limit" ).AsIntegerOrNull();
             Audiences = GetAttributeValue( "Audiences" ).SplitDelimitedValues( true ).AsGuidList();
+            AdditionalAudiences = GetAttributeValue( "AdditionalAudiences" ).SplitDelimitedValues( true ).AsGuidList();
             if ( eventCalendar != null )
             {
                 CalendarId = eventCalendar.Id;
@@ -137,6 +140,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                         featuredEnd = DateTime.Parse( featured.Split( ',' ).Last() );
                                         if ( DateTime.Compare( featuredStart, RockDateTime.Now ) <= 0 && DateTime.Compare( featuredEnd, RockDateTime.Now ) >= 0 )
                                         {
+                                            m.AttributeValues.Add( "_IsFeatured", new AttributeValueCache() { Value = "true" } );
                                             return true;
                                         }
 
@@ -154,6 +158,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             {
                 events = events.Take( Limit.Value ).ToList();
             }
+            events = events.OrderBy( e => e.NextStartDateTime ).ToList();
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "StartDate", StartDate.Value );
             mergeFields.Add( "DetailsPage", LinkedPageRoute( "DetailsPage" ) );
@@ -164,7 +169,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                 mergeFields.Add( "Ministry", Ministry.Value );
             }
             List<DefinedValue> audiences = new DefinedValueService( _context ).GetByGuids( Audiences ).ToList();
+            List<DefinedValue> addAudiences = new DefinedValueService( _context ).GetByGuids( AdditionalAudiences ).ToList();
             mergeFields.Add( "Audiences", audiences );
+            var combined = audiences;
+            combined.AddRange( addAudiences );
+            mergeFields.Add( "AdditionalAudiences", combined.Distinct() );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }

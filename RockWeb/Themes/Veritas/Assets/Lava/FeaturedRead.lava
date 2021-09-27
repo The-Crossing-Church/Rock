@@ -1,7 +1,8 @@
-<div class='background--grey full-width'>
+<div class='full-width'>
   <div class='container'>
     <br/>
     <h2>Read</h2>
+    <a class='hidden-anchor' id='read'></a>
     <div class='carousel-wrapper'>
         <div id="read-slider" class="slider">
             <div class="wrapper">
@@ -9,17 +10,11 @@
                 {% for post in Posts %}
                   <div class="slide">
                     <a href="{{ post.url }}">
-                      <div style="padding: 8px">
-                        <div class='img-wrapper'>
-                          {% if post.featuredImage != '' %}
-                            <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}" />
-                          {% else %}
-                            <img class="d-block w-100" src="http://placekitten.com/200/200" alt="{{ post.name }}" />
-                          {% endif %}
-                        </div>
-                        <h4>{{ post.name }}</h4>
-                        <span>{{ post.authorName }}, {{ post.publishDate | Date:'MM/dd/yyyy' }}</span>
+                      <div class='img-wrapper'>
+                        <img class="d-block w-100" src="{{ post.featuredImage }}" alt="{{ post.name }}" />
                       </div>
+                      <h4>{{ post.name }}</h4>
+                      <span>{{ post.authorName }}, {{ post.publishDate | Date:'MMMM dd, yyyy' }}</span>
                     </a>
                   </div>
                 {% endfor %}
@@ -42,7 +37,7 @@
   .slider, .wrapper {
     width: 300px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 300px;
   }
   .slides {
@@ -51,7 +46,7 @@
   {% assign ct = Items | Size %}
   {% if ct == 1 %}
     .control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -59,7 +54,7 @@
   .slider, .wrapper {
     width: 350px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 350px;
   }
   .slides {
@@ -68,7 +63,7 @@
   {% assign ct = Items | Size %}
   {% if ct == 1 %}
     .control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -76,7 +71,7 @@
   .slider, .wrapper {
     width: 720px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 360px;
   }
   .slides {
@@ -85,7 +80,7 @@
   {% assign ct = Items | Size %}
   {% if ct < 2 %}
     .control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -93,7 +88,7 @@
   .slider, .wrapper {
     width: 940px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 313.3px;
   }
   .slides {
@@ -102,7 +97,7 @@
   {% assign ct = Items | Size %}
   {% if ct < 3 %}
     .control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
@@ -110,7 +105,7 @@
   .slider, .wrapper {
     width: 1140px;
   }
-  .slide {
+  .slide:not(.carousel) {
     width: 380px;
   }
   .slides {
@@ -119,13 +114,13 @@
   {% assign ct = Items | Size %}
   {% if ct < 3 %}
     .control {
-      display: none !important; 
+      display: none !important;
     }
   {% endif %}
 }
 
 .carousel-wrapper {
-  position: relative; 
+  position: relative;
   min-height: 300px;
 }
 
@@ -156,10 +151,10 @@
   transition: left 0.2s ease-out;
 }
 
-.slide {
+.slide:not(.carousel) {
   height: 300px;
   cursor: pointer;
-  display: flex;
+  display: block;
   flex-direction: column;
   justify-content: center;
   transition: all 1s;
@@ -167,9 +162,13 @@
   padding: 8px;
 }
 
+.slide:not(.carousel) a {
+  vertical-align: top;
+}
+
 .control {
   position: absolute;
-  top: 50%;
+  top: 116px;
   width: 40px;
   height: 40px;
   background: #fff;
@@ -236,16 +235,20 @@ $(document).ready(function () {
       seclastSlide = slides[slidesLength - 2],
       lastSlide = slides[slidesLength - 1],
       cloneFirst = firstSlide.cloneNode(true),
-      cloneSecond = secondSlide.cloneNode(true),
-      cloneSecLast = seclastSlide.cloneNode(true),
+      cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+      cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
       cloneLast = lastSlide.cloneNode(true),
       index = 0,
       allowShift = true;
 
     // Clone first and last slide
     items.appendChild(cloneFirst);
-    items.appendChild(cloneSecond);
-    items.insertBefore(cloneSecLast, firstSlide);
+    if(cloneSecond) {
+      items.appendChild(cloneSecond);
+    }
+    if(cloneSecLast) {
+      items.insertBefore(cloneSecLast, firstSlide);
+    }
     items.insertBefore(cloneLast, firstSlide);
     wrapper.classList.add("loaded");
 
@@ -340,7 +343,7 @@ $(document).ready(function () {
       }
 
       if (index == slidesLength) {
-        if(window.screen.width >= 1200) {
+        if(window.screen.width >= 1200 && items.length > 1) {
           items.style.left = -(2 * slideSize) + "px";
         } else {
           items.style.left = -(1 * slideSize) + "px";

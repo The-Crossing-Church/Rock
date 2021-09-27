@@ -1,0 +1,78 @@
+﻿<br/>
+<div class='row'>
+    {% for i in Items %}
+        {% assign img = i | Attribute:'Image' %}
+        <div class='col col-xs-12 col-md-4' style="padding-top: 15px; padding-bottom: 15px;">
+            <a
+                class="ministry-image"
+                style="background: url('{{img}}');"
+                href="{{i | Attribute:'Link'}}"
+            >
+                <h3 class="image-link">{{i.Title}}</h3>
+                <div class='overlay'></div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+<style>
+  .ministry-image {
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+  }
+  .image-link {
+    font-size: 1.5em;
+    line-height: 1.20833em;
+    letter-spacing: 1px;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    text-align: center;
+    z-index: 10;
+  }
+  .overlay {
+    background-color: rgb(27,49,66);
+    opacity: 0.8;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
+.social-media .links {
+    display: block;
+    padding: 0;
+    list-style: none;
+}
+.social-media .links li {
+    display: inline-block;
+    margin: 0 15px;
+}
+.social-media .links li a {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1b3142;
+    color: #fff;
+    text-decoration: none;
+    position: relative;
+    font-size: 30px;
+}
+</style>
+{% stylesheet compile:'less' %}
+  .ministry-image:hover {
+    .overlay {
+      background-color:#fff;
+      opacity: 1;
+    }
+    .image-link {
+      color: black;
+    }
+  }
+{% endstylesheet %}

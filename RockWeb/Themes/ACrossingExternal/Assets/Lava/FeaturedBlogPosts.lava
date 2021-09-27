@@ -1,0 +1,364 @@
+<div class='full-width'>
+  <div class='container'>
+    <br/>
+    <h2 class='text--centered'>Read</h2>
+    <a class='hidden-anchor' id='read'></a>
+    <div class='carousel-wrapper'>
+      <div id="read-slider" class="slider">
+        <div class="wrapper">
+          <div id="read-slides" class="slides">
+            {% for post in Posts %}
+            <div class="slide text--centered">
+              <div style="padding: 8px;">
+                <a href="{{ post.url }}">
+                  <div class='img-wrapper'>
+                    <img class="d-block w-100" src="{{ post.featured_image }}" alt="{{ post.name }}" />
+                  </div>
+                  <h4>{{ post.name }}</h4>
+                  <span>{{ post.authorName }}, {{ post.publishDate | Date:'MMMM dd, yyyy' }}</span>
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <a id="read-prev" class="control prev read-control">
+          <i class='fa fa-chevron-left'></i>
+        </a>
+        <a id="read-next" class="control next read-control">
+          <i class='fa fa-chevron-right'></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <div style='text-align: center;'>
+    <a class='btn btn-primary' href="https://info.thecrossingchurch.com/blog">Explore All</a>
+  </div>
+  <br/>
+</div>
+
+{% stylesheet compile:'less' %}
+@media (max-width: 374px) {
+  .slider, .wrapper {
+    width: 300px;
+  }
+  .slide:not(.carousel) {
+    width: 300px;
+  }
+  .slides {
+    left: -600px;
+  }
+  {% assign ct = Posts | Size %}
+  {% if ct == 1 %}
+    .read-control {
+      display: none !important;
+    }
+  {% endif %}
+}
+@media (min-width: 375px) {
+  .slider, .wrapper {
+    width: 350px;
+  }
+  .slide:not(.carousel) {
+    width: 350px;
+  }
+  .slides {
+    left: -700px;
+  }
+  {% assign ct = Posts | Size %}
+  {% if ct == 1 %}
+    .read-control {
+      display: none !important;
+    }
+  {% endif %}
+}
+@media (min-width: 768px) {
+  .slider, .wrapper {
+    width: 720px;
+  }
+  .slide:not(.carousel) {
+    width: 360px;
+  }
+  .slides {
+    left: -720px;
+  }
+  {% assign ct = Posts | Size %}
+  {% if ct < 2 %}
+    .read-control {
+      display: none !important;
+    }
+  {% endif %}
+}
+@media (min-width: 992px) {
+  .slider, .wrapper {
+    width: 940px;
+  }
+  .slide:not(.carousel) {
+    width: 313.3px;
+  }
+  .slides {
+    left: -626.6px;
+  }
+  {% assign ct = Posts | Size %}
+  {% if ct < 3 %}
+    .read-control {
+      display: none !important;
+    }
+  {% endif %}
+}
+@media (min-width: 1200px) {
+  .slider, .wrapper {
+    width: 1140px;
+  }
+  .slide:not(.carousel) {
+    width: 380px;
+  }
+  .slides {
+    left: -760px;
+  }
+  {% assign ct = Posts | Size %}
+  {% if ct < 3 %}
+    .read-control {
+      display: none !important;
+    }
+  {% endif %}
+}
+
+.carousel-wrapper {
+  position: relative;
+  min-height: 350px;
+}
+
+.slider {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 350px;
+  /*box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);*/
+}
+
+.wrapper {
+  overflow: hidden;
+  position: relative;
+  height: 350px;
+  z-index: 1;
+}
+
+.slides {
+  display: flex;
+  position: relative;
+  top: 0;
+  width: 10000px;
+}
+
+.slides.shifting {
+  transition: left 0.2s ease-out;
+}
+
+.slide:not(.carousel) {
+  height: 350px;
+  cursor: pointer;
+  display: block;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 1s;
+  position: relative;
+  padding: 8px;
+}
+
+.slide:not(.carousel) a {
+  vertical-align: top;
+}
+
+.control {
+  position: absolute;
+  top: 116px;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-radius: 40px;
+  margin-top: -20px;
+  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  border: 2px solid #1B3142;
+}
+.prev {
+  left: 0;
+}
+.next {
+  right: 0;
+}
+.prev,
+.next {
+  background-size: 22px;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.prev:active,
+.next:active {
+  transform: scale(0.8);
+}
+
+.img-wrapper {
+  height:200px;
+  overflow-y: hidden;
+  position: relative;
+}
+.img-wrapper img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+  transform: translate(-50%,-50%);
+}
+{% endstylesheet %}
+<script>
+$(document).ready(function () {
+  var slider = document.getElementById("read-slider"),
+    sliderItems = document.getElementById("read-slides"),
+    prev = document.getElementById("read-prev"),
+    next = document.getElementById("read-next");
+
+  function slide(wrapper, items, prev, next) {
+    var slides = items.getElementsByClassName("slide"),
+      slidesLength = slides.length;
+    if (slidesLength > 0 ) {
+      var posX1 = 0,
+        posX2 = 0,
+        posInitial,
+        posFinal,
+        threshold = 100,
+        slideSize = slidesLength > 0 ? items.getElementsByClassName("slide")[0].offsetWidth : 0,
+        firstSlide = slides[0],
+        secondSlide = slides[1],
+        seclastSlide = slides[slidesLength - 2],
+        lastSlide = slides[slidesLength - 1],
+        cloneFirst = firstSlide.cloneNode(true),
+      cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+      cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
+        cloneLast = lastSlide.cloneNode(true),
+        index = 0,
+        allowShift = true;
+
+      // Clone first and last slide
+      items.appendChild(cloneFirst);
+      items.appendChild(cloneSecond);
+      items.insertBefore(cloneSecLast, firstSlide);
+      items.insertBefore(cloneLast, firstSlide);
+      wrapper.classList.add("loaded");
+
+      // Mouse events
+      items.onmousedown = dragStart;
+
+      // Touch events
+      items.addEventListener("touchstart", dragStart);
+      items.addEventListener("touchend", dragEnd);
+      items.addEventListener("touchmove", dragAction);
+
+      // Click events
+      prev.addEventListener("click", function () {
+        shiftSlide(-1);
+      });
+      next.addEventListener("click", function () {
+        shiftSlide(1);
+      });
+
+      // Transition events
+      items.addEventListener("transitionend", checkIndex);
+
+      function dragStart(e) {
+        e = e || window.event;
+        e.preventDefault();
+        posInitial = items.offsetLeft;
+
+        if (e.type == "touchstart") {
+          posX1 = e.touches[0].clientX;
+        } else {
+          posX1 = e.clientX;
+          document.onmouseup = dragEnd;
+          document.onmousemove = dragAction;
+        }
+      }
+
+      function dragAction(e) {
+        e = e || window.event;
+
+        if (e.type == "touchmove") {
+          posX2 = posX1 - e.touches[0].clientX;
+          posX1 = e.touches[0].clientX;
+        } else {
+          posX2 = posX1 - e.clientX;
+          posX1 = e.clientX;
+        }
+        items.style.left = items.offsetLeft - posX2 + "px";
+      }
+
+      function dragEnd(e) {
+        posFinal = items.offsetLeft;
+        if (posFinal - posInitial < -threshold) {
+          shiftSlide(1, "drag");
+        } else if (posFinal - posInitial > threshold) {
+          shiftSlide(-1, "drag");
+        } else if (posFinal == posInitial) {
+          e.target.click()
+        } else {
+          items.style.left = posInitial + "px";
+        }
+
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+
+      function shiftSlide(dir, action) {
+        items.classList.add("shifting");
+
+        if (allowShift) {
+          if (!action) {
+            posInitial = items.offsetLeft;
+          }
+
+          if (dir == 1) {
+            items.style.left = posInitial - slideSize + "px";
+            index++;
+          } else if (dir == -1) {
+            items.style.left = posInitial + slideSize + "px";
+            index--;
+          }
+        }
+
+        allowShift = false;
+      }
+
+      function checkIndex() {
+        items.classList.remove("shifting");
+
+        if (index == -1) {
+          items.style.left = -(slidesLength * slideSize) + "px";
+          index = slidesLength - 1;
+        }
+
+        if (index == slidesLength) {
+          if(window.screen.width >= 1200) {
+            items.style.left = -(2 * slideSize) + "px";
+          } else {
+            items.style.left = -(1 * slideSize) + "px";
+          }
+          index = 0;
+        }
+
+        allowShift = true;
+      }
+    }
+  }
+
+  slide(slider, sliderItems, prev, next);
+});
+</script>
