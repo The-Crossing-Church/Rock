@@ -1,4 +1,6 @@
-﻿{{ Group | Attribute:'OpportunityTitle' | AddMetaTagToHead:'property','twitter:title' }}
+﻿{% comment %}Causing a failed viewstate so commenting out this{% endcomment %}
+{% comment %}
+{{ Group | Attribute:'OpportunityTitle' | AddMetaTagToHead:'property','twitter:title' }}
 {{ Group | Attribute:'OpportunitySummary' | AddMetaTagToHead:'property','twitter:description' }}
 {{ Group | Attribute:'OpportunityTitle' | AddMetaTagToHead:'property','og:title' }}
 {{ Group | Attribute:'OpportunitySummary' | AddMetaTagToHead:'property','og:description' }}
@@ -8,6 +10,7 @@
 {{ opportunityPhotoUrl | AddMetaTagToHead:'property','twitter:image' }}
 {{ 'summary_large_image' | AddMetaTagToHead:'property','twitter:card' }}
 {% endif %}
+{% endcomment %}
 
 {% assign setPageTitleToOpportunityTitle = Block | Attribute:'SetPageTitletoOpportunityTitle','RawValue' %}
 {% if setPageTitleToOpportunityTitle != true %}
@@ -27,20 +30,32 @@
 <div class='opportunity-summary'>
     {{ Group | Attribute:'OpportunitySummary' }}
 </div>
-<ul class='socialsharing margin-b-lg'>
-    <li>
-        <a href='http://www.facebook.com/share.php?u=<url>' onclick='return fbs_click()' target='_blank' class='socialicon socialicon-facebook' title='' data-original-title='Share via Facebook'>
-            <i class='fa fa-fw fa-facebook'></i>
-        </a>
-    </li>
-    <li>
-        <a href='http://twitter.com/home?status={{ Group | Attribute:'OpportunityTitle' | Escape }}%20{{ 'Global' | Page:'Url' | Escape }}' class='socialicon socialicon-twitter' title='' data-original-title='Share via Twitter'>
-            <i class='fa fa-fw fa-twitter'></i>
-        </a>
-    </li>
-    <li>
-        <a href='mailto:?subject={{ Group | Attribute:'OpportunityTitle' | Escape }}&body=%0D%0A{{ 'Global' | Page:'Url' }}' class='socialicon socialicon-email' title='' data-original-title='Share via Email'>
-            <i class='fa fa-fw fa-envelope-o'></i>
-        </a>
-    </li>
-</ul>
+<script>function fbs_click() { u = location.href; t = document.title; window.open('http://www.facebook.com/sharer.php?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(t), 'sharer', 'toolbar=0,status=0,width=626,height=436'); return false; }</script>
+<div class="social-media">
+    <ul class='links'>
+        <li class="ml-0">
+            <a href="http://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}' onclick='return fbs_click()" target='_blank' data-original-title='Share via Facebook'>
+                <i class='fab fa-facebook-f'></i>
+            </a>
+        </li>
+        <li>
+            <a href="https://twitter.com/intent/tweet?text={{ Group | Attribute:'OpportunityTitle' | Escape }}%20{{ 'Global' | Page:'Url' | Escape }}" data-original-title='Share via Twitter'>
+                <i class='fab fa-twitter'></i>
+            </a>
+        </li>
+        <li>
+            <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
+                <i class='fa fa-share-alt'></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<script>
+    function copyToClip() {
+        navigator.clipboard.writeText("{{ 'Global' | Page:'Url' }}")
+        .then(() => {
+            alert('Copied to Clipboard')
+        })
+    }
+</script>

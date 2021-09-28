@@ -114,3 +114,8 @@
     
 </div>
 {% endif %}
+<style>
+.img-thumbnail {
+    border: none !important;
+}
+</style>
