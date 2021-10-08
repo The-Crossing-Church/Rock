@@ -116,6 +116,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
             //Only care about the ones that are custom and could be valid Rock fields
             props = props.Where( p => p.createdUserId != null ).ToList();
+            //Business Unit hs_all_assigned_business_unit_ids
 
             //Get List of all contacts from Hubspot
             List<HubSpotContact> contacts = new List<HubSpotContact>();
@@ -215,80 +216,42 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
 
                 bool inBucket = false;
-                //Try to mark people that are potential matches
+                //Try to mark people that are potential matches, only people who can at least match email or phone and one other thing
                 if ( person == null )
                 {
                     var contact = contacts_with_email[i];
-                    //Try based on firstname
-                    var fname_matches = personService.Queryable().ToList().Where( p =>
+                    //Matches phone number and one other piece of info
+                    if ( !String.IsNullOrEmpty( contact.Phone ) )
                     {
-                        return CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName );
-                    } ).ToList();
-                    if ( fname_matches.Count() > 0 )
-                    {
-                        fname_matches = fname_matches.Where( p => CustomEquals( p.LastName, contact.LastName ) || CustomEquals( p.Email, contact.Email ) || ( !String.IsNullOrEmpty( contact.Phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ) ).ToList();
-                        for ( var j = 0; j < fname_matches.Count(); j++ )
+                        var phone_matches = personService.Queryable().Where( p => p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ).ToList();
+                        if ( phone_matches.Count() > 0 )
                         {
-                            //Save this information in the excel sheet....
-                            SaveData( worksheet, row, fname_matches[j], contact );
-                            inBucket = true;
-                            row++;
-                        }
-                    }
-                    else
-                    {
-                        //Try based on last name
-                        var lname_matches = personService.Queryable().ToList().Where( p =>
-                        {
-                            return CustomEquals( p.LastName, contact.LastName );
-                        } ).ToList();
-                        if ( lname_matches.Count() > 0 )
-                        {
-                            lname_matches = lname_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || CustomEquals( p.Email, contact.Email ) || ( !String.IsNullOrEmpty( contact.Phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ) ).ToList();
-                            for ( var j = 0; j < lname_matches.Count(); j++ )
+                            phone_matches = phone_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || CustomEquals( p.Email, contact.Email ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
+                            for ( var j = 0; j < phone_matches.Count(); j++ )
                             {
                                 //Save this information in the excel sheet....
-                                SaveData( worksheet, row, lname_matches[j], contact );
+                                SaveData( worksheet, row, phone_matches[j], contact );
                                 inBucket = true;
                                 row++;
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        //Matches email and one other piece of info
+                        var email_matches = personService.Queryable().ToList().Where( p =>
                         {
-                            //Try based on phone number
-                            if ( !String.IsNullOrEmpty( contact.Phone ) )
+                            return CustomEquals( p.Email, contact.Email );
+                        } ).ToList();
+                        if ( email_matches.Count() > 0 )
+                        {
+                            email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || ( !String.IsNullOrEmpty( contact.Phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
+                            for ( var j = 0; j < email_matches.Count(); j++ )
                             {
-                                var phone_matches = personService.Queryable().Where( p => p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ).ToList();
-                                if ( phone_matches.Count() > 0 )
-                                {
-                                    phone_matches = phone_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || CustomEquals( p.Email, contact.Email ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
-                                    for ( var j = 0; j < phone_matches.Count(); j++ )
-                                    {
-                                        //Save this information in the excel sheet....
-                                        SaveData( worksheet, row, phone_matches[j], contact );
-                                        inBucket = true;
-                                        row++;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                //Save email only matches to the excel sheet since Hubspot has a lot of data that has no name
-                                var email_matches = personService.Queryable().ToList().Where( p =>
-                                {
-                                    return CustomEquals( p.Email, contact.Email );
-                                } ).ToList();
-                                if ( email_matches.Count() > 0 )
-                                {
-                                    for ( var j = 0; j < email_matches.Count(); j++ )
-                                    {
-                                        //Save this information in the excel sheet....
-                                        SaveData( worksheet, row, email_matches[j], contact );
-                                        inBucket = true;
-                                        row++;
-                                    }
-                                }
-
+                                //Save this information in the excel sheet....
+                                SaveData( worksheet, row, email_matches[j], contact );
+                                inBucket = true;
+                                row++;
                             }
                         }
                     }
@@ -471,13 +434,16 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             var serving_prop = props.FirstOrDefault( p => p.label == "Currently Serving" );
                             var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
                             //set the serving prop
-                            if ( current_serving.Count() > 0 )
+                            if( serving_prop  != null )
                             {
-                                properties.Add( new HubspotPropertyUpdate() { property = serving_prop.name, value = "true" } );
-                            }
-                            else
-                            {
-                                properties.Add( new HubspotPropertyUpdate() { property = serving_prop.name, value = "false" } );
+                                if ( current_serving.Count() > 0 )
+                                {
+                                    properties.Add( new HubspotPropertyUpdate() { property = serving_prop.name, value = "true" } );
+                                }
+                                else
+                                {
+                                    properties.Add( new HubspotPropertyUpdate() { property = serving_prop.name, value = "false" } );
+                                }
                             }
                             //figure out if they attend small group
                             if ( current_sg.Count() > 0 )
