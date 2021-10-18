@@ -53,6 +53,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         private FinancialAccount fund { get; set; }
         private GroupService groupSvc { get; set; }
         private PersonService personSvc { get; set; }
+        private AttributeValueService avSvc { get; set; }
         private FinancialTransactionService ftSvc { get; set; }
         private static class PageParameterKey
         {
@@ -89,36 +90,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             base.OnLoad( e );
             context = new RockContext();
-            //Get Variable Data from Query Params
-            //if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Start ) ) )
-            //{
-            //    start = DateTime.Parse( PageParameter( PageParameterKey.Start ) );
-            //    lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day );
-            //}
-            //if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.End ) ) )
-            //{
-            //    end = DateTime.Parse( PageParameter( PageParameterKey.End ) );
-            //    lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day );
-            //}
-            //if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Fund ) ) )
-            //{
-            //    fund = new FinancialAccountService( context ).Get( Guid.Parse( PageParameter( PageParameterKey.Fund ) ) );
-            //}
             //Generate Giving Data if filters have data 
             personSvc = new PersonService( context );
             groupSvc = new GroupService( context );
             ftSvc = new FinancialTransactionService( context );
+            avSvc = new AttributeValueService( context );
             if ( pkrAcct.SelectedValue == "0" )
             {
                 pkrAcct.SetValue( 12 );
             }
-            //if ( !Page.IsPostBack )
-            //{
-            //    if ( start.HasValue && end.HasValue && fund != null )
-            //    {
-            //        BindGrid();
-            //    }
-            //}
         }
 
         #endregion
@@ -211,7 +191,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 {
                     householdName = householdName.Substring( 1 );
                 }
-                p.LoadAttributes();
+                //p.LoadAttributes();
                 DonorData d = new DonorData()
                 {
                     FamilyId = joinedData[i].KeyId.Value,
@@ -292,8 +272,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                 }
 
                 //d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
-                d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
-                d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
+                //d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
+                //d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
+                var personEntity = EntityTypeCache.Get( "Rock.Model.Person" );
+                var vals = avSvc.Queryable().Where( av => av.Attribute.EntityTypeId == personEntity.Id && av.EntityId == p.Id ).ToList();
+                if ( vals.FirstOrDefault( av => av.Attribute.Key == "AvgDaysBetweenGifts" ) != null )
+                {
+                    d.Average = vals.FirstOrDefault( av => av.Attribute.Key == "AvgDaysBetweenGifts" ).ValueFormatted;
+                }
+                if ( vals.FirstOrDefault( av => av.Attribute.Key == "StdDevFromAvg" ) != null )
+                {
+                    d.StdDev = vals.FirstOrDefault( av => av.Attribute.Key == "StdDevFromAvg" ).ValueFormatted;
+                }
                 //If Source is empty for Current Transactions, Try Previous Transactions
                 if ( String.IsNullOrEmpty( d.Source ) )
                 {
@@ -349,7 +339,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     d.MostRecentFund = fund.Name;
                     d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount );
                 }
-                if( d.PreviousAmountGiven > 0 || d.AmountGiven > 0 )
+                if ( d.PreviousAmountGiven > 0 || d.AmountGiven > 0 )
                 {
                     donorData.Add( d );
                 }
@@ -420,8 +410,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             start = pkrStart.SelectedDate;
             end = pkrEnd.SelectedDate;
-            lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day ); 
-            lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day ); 
+            lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day );
+            lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day );
             fund = new FinancialAccountService( context ).Get( Int32.Parse( pkrAcct.SelectedValue ) );
             if ( start.HasValue && end.HasValue && fund != null )
             {
