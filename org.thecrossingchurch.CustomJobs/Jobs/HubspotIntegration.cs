@@ -264,7 +264,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //}
                 //else
                 //{
-                //    person = personService.Get( 14659 );
+                //    person = personService.Get( 27460 );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
@@ -318,7 +318,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         foreach ( PropertyInfo propInfo in person.GetType().GetProperties() )
                         {
                             var current_prop = props.FirstOrDefault( p => p.label == "Rock " + propInfo.Name );
-                            if ( current_prop != null )
+                            if ( current_prop != null && propInfo.GetValue( person ) != null )
                             {
                                 if ( propInfo.PropertyType.FullName == "Rock.Model.DefinedValue" )
                                 {
@@ -331,10 +331,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     DateTime tryDate;
                                     if ( DateTime.TryParse( propInfo.GetValue( person ).ToString(), out tryDate ) )
                                     {
-                                        //Set date time to Midnight because HubSpot sucks 
-                                        tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
-                                        var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
-                                        properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
+                                        //Set date time to Midnight because HubSpot sucks also verify the year is within 1000 years from today
+                                        DateTime today = RockDateTime.Now;
+                                        if ( today.Year - tryDate.Year < 1000 && today.Year - tryDate.Year > -1000 )
+                                        {
+                                            tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
+                                            var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
+                                            properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
+                                        }
                                     }
                                 }
                                 else
@@ -434,7 +438,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             var serving_prop = props.FirstOrDefault( p => p.label == "Currently Serving" );
                             var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
                             //set the serving prop
-                            if( serving_prop  != null )
+                            if ( serving_prop != null )
                             {
                                 if ( current_serving.Count() > 0 )
                                 {
@@ -524,7 +528,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
                         //Update the Contact in Hubspot
                         var alreadyKnown = contacts_with_email[i].has_potential_rock_match;
-                        if(alreadyKnown == "True")
+                        if ( alreadyKnown == "True" )
                         {
                             //Update the bucket prop to false since they are no longer in the potential matches, but actually matched.
                             var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
@@ -544,7 +548,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     if ( inBucket )
                     {
                         var alreadyKnown = contacts_with_email[i].has_potential_rock_match;
-                        if(alreadyKnown != "True")
+                        if ( alreadyKnown != "True" )
                         {
                             //We don't have an exact match but we have guesses, so update Hubspot to reflect that.
                             var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
@@ -561,9 +565,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             System.IO.File.WriteAllBytes( path, sheetbytes );
         }
 
-        private ContactListHubSpotModel<HubSpotContact> GetContacts( HubSpotApi api, long offset, int attempt)
+        private ContactListHubSpotModel<HubSpotContact> GetContacts( HubSpotApi api, long offset, int attempt )
         {
-            ContactListHubSpotModel<HubSpotContact> list = new ContactListHubSpotModel<HubSpotContact>(); 
+            ContactListHubSpotModel<HubSpotContact> list = new ContactListHubSpotModel<HubSpotContact>();
             try
             {
                 list = api.Contact.List<HubSpotContact>( new ListRequestOptions
@@ -573,11 +577,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     Offset = offset
                 } );
             }
-            catch(Exception e)
+            catch ( Exception e )
             {
                 HttpContext context2 = HttpContext.Current;
                 ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Exception from Library:{Environment.NewLine}{e.Message}{Environment.NewLine}" ), context2 );
-                if(attempt < 5)
+                if ( attempt < 5 )
                 {
                     Thread.Sleep( 60000 );
                     GetContacts( api, offset, attempt + 1 );
