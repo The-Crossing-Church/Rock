@@ -236,23 +236,20 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                         }
                     }
-                    else
+                    //Matches email and one other piece of info
+                    var email_matches = personService.Queryable().ToList().Where( p =>
                     {
-                        //Matches email and one other piece of info
-                        var email_matches = personService.Queryable().ToList().Where( p =>
+                        return CustomEquals( p.Email, contact.Email );
+                    } ).ToList();
+                    if ( email_matches.Count() > 0 )
+                    {
+                        email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || ( !String.IsNullOrEmpty( contact.Phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
+                        for ( var j = 0; j < email_matches.Count(); j++ )
                         {
-                            return CustomEquals( p.Email, contact.Email );
-                        } ).ToList();
-                        if ( email_matches.Count() > 0 )
-                        {
-                            email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || ( !String.IsNullOrEmpty( contact.Phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
-                            for ( var j = 0; j < email_matches.Count(); j++ )
-                            {
-                                //Save this information in the excel sheet....
-                                SaveData( worksheet, row, email_matches[j], contact );
-                                inBucket = true;
-                                row++;
-                            }
+                            //Save this information in the excel sheet....
+                            SaveData( worksheet, row, email_matches[j], contact );
+                            inBucket = true;
+                            row++;
                         }
                     }
                 }
