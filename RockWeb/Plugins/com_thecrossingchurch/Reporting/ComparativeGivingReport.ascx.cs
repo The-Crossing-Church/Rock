@@ -32,6 +32,7 @@ using Nest;
 using Amazon.S3.Model;
 using DocumentFormat.OpenXml.Vml.Spreadsheet;
 using System.Threading.Tasks;
+using Rock.Communication;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 {
@@ -41,6 +42,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     [DisplayName( "Comparative Giving Report" )]
     [Category( "com_thecrossingchurch > Reporting" )]
     [Description( "Comparative Giving Report to view data across years" )]
+    [PersonField( "Person", "Who will be notified when the report is complete", true )]
 
     public partial class ComparativeGivingReport : Rock.Web.UI.RockBlock
     {
@@ -416,81 +418,81 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             fund = new FinancialAccountService( context ).Get( Int32.Parse( pkrAcct.SelectedValue ) );
             if ( start.HasValue && end.HasValue && fund != null )
             {
-                Response.Clear();
-                Response.Buffer = true;
-                Response.Cache.SetCacheability( HttpCacheability.Public );
-                Response.Charset = "";
-                //Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                //Response.AddHeader( "content-disposition", "attachment;filename=ComparativeGivingReport.xlsx" );
-                Response.ContentType = "text/csv";
-                Response.AddHeader( "content-disposition", "attachment;filename=ComparativeGivingReport.csv" );
+                alertInfo.InnerText = "Your file is being prepared, you will recieve an email when it is ready.";
+                alertInfo.Visible = true;
 
-                //ExcelPackage excel = new ExcelPackage();
-                //excel.Workbook.Properties.Title = "Comparative Giving Report";
-                //// add author info
-                //Rock.Model.UserLogin userLogin = Rock.Model.UserLoginService.GetCurrentUser();
-                //if ( userLogin != null )
-                //{
-                //    excel.Workbook.Properties.Author = userLogin.Person.FullName;
-                //}
-                //else
-                //{
-                //    excel.Workbook.Properties.Author = "Rock";
-                //}
-                //ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add( "Report" );
-                //worksheet.PrinterSettings.LeftMargin = .5m;
-                //worksheet.PrinterSettings.RightMargin = .5m;
-                //worksheet.PrinterSettings.TopMargin = .5m;
-                //worksheet.PrinterSettings.BottomMargin = .5m;
-
-                var headers = new List<string> { "Household", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Amount Given", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
-                //var h = 1;
-                //var row = 2;
-                //foreach ( var header in headers )
-                //{
-                //    worksheet.Cells[1, h].Value = header;
-                //    h++;
-                //}
-
-                Response.Write( String.Join( ",", headers ) );
-                Response.Write( "\n" );
-                Response.Flush();
-
-                var data = GenerateData();
-
-                for ( var i = 0; i < data.Count(); i++ )
+                Task.Run( () =>
                 {
-                    //worksheet.Cells[row, 1].Value = data[i].HouseholdName;
-                    //worksheet.Cells[row, 2].Value = data[i].AmountGiven;
-                    //worksheet.Cells[row, 3].Value = data[i].NumberOfGifts;
-                    //worksheet.Cells[row, 4].Value = data[i].AverageGiftAmount;
-                    //worksheet.Cells[row, 5].Value = data[i].PreviousAmountGiven;
-                    //worksheet.Cells[row, 6].Value = data[i].PreviousNumberOfGifts;
-                    //worksheet.Cells[row, 7].Value = data[i].PreviousAverageGiftAmount;
-                    //worksheet.Cells[row, 8].Value = data[i].AmountChange;
-                    //worksheet.Cells[row, 9].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
-                    //worksheet.Cells[row, 10].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
-                    //worksheet.Cells[row, 11].Value = data[i].MostRecentFund;
-                    //worksheet.Cells[row, 12].Value = data[i].MostRecentFundAmount;
-                    //worksheet.Cells[row, 13].Value = data[i].GivingZone;
-                    //worksheet.Cells[row, 14].Value = data[i].DonorType;
-                    //worksheet.Cells[row, 15].Value = data[i].Average;
-                    //worksheet.Cells[row, 16].Value = data[i].StdDev;
-                    //worksheet.Cells[row, 17].Value = data[i].Source;
-                    //row++;
-                    string row = "\"" + data[i].HouseholdName + "\"" + "," + data[i].AmountGiven + "," + data[i].NumberOfGifts + "," + data[i].AverageGiftAmount + "," + data[i].PreviousAmountGiven + "," + data[i].PreviousNumberOfGifts + "," + data[i].PreviousAverageGiftAmount + "," + data[i].AmountChange + "," + data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" ) + "," + ( data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "" ) + "," + data[i].MostRecentFund + "," + data[i].MostRecentFundAmount + "," + data[i].GivingZone + "," + data[i].DonorType + "," + data[i].Average + "," + data[i].StdDev + "," + data[i].Source + "\n";
-                    Response.Write( row );
-                }
+                    ExcelPackage excel = new ExcelPackage();
+                    excel.Workbook.Properties.Title = "Comparative Giving Report";
+                    // add author info
+                    Rock.Model.UserLogin userLogin = Rock.Model.UserLoginService.GetCurrentUser();
+                    if ( userLogin != null )
+                    {
+                        excel.Workbook.Properties.Author = userLogin.Person.FullName;
+                    }
+                    else
+                    {
+                        excel.Workbook.Properties.Author = "Rock";
+                    }
+                    ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add( "Report" );
+                    worksheet.PrinterSettings.LeftMargin = .5m;
+                    worksheet.PrinterSettings.RightMargin = .5m;
+                    worksheet.PrinterSettings.TopMargin = .5m;
+                    worksheet.PrinterSettings.BottomMargin = .5m;
 
-                //byte[] byteArray;
-                //using ( MemoryStream ms = new MemoryStream() )
-                //{
-                //    excel.SaveAs( ms );
-                //    byteArray = ms.ToArray();
-                //}
-                //Response.BinaryWrite( byteArray );
-                Response.Flush();
-                Response.End();
+                    var headers = new List<string> { "Household", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Amount Given", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
+                    var h = 1;
+                    var row = 2;
+                    foreach ( var header in headers )
+                    {
+                        worksheet.Cells[1, h].Value = header;
+                        h++;
+                    }
+
+                    var data = GenerateData();
+
+                    for ( var i = 0; i < data.Count(); i++ )
+                    {
+                        worksheet.Cells[row, 1].Value = data[i].HouseholdName;
+                        worksheet.Cells[row, 2].Value = data[i].AmountGiven;
+                        worksheet.Cells[row, 3].Value = data[i].NumberOfGifts;
+                        worksheet.Cells[row, 4].Value = data[i].AverageGiftAmount;
+                        worksheet.Cells[row, 5].Value = data[i].PreviousAmountGiven;
+                        worksheet.Cells[row, 6].Value = data[i].PreviousNumberOfGifts;
+                        worksheet.Cells[row, 7].Value = data[i].PreviousAverageGiftAmount;
+                        worksheet.Cells[row, 8].Value = data[i].AmountChange;
+                        worksheet.Cells[row, 9].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
+                        worksheet.Cells[row, 10].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
+                        worksheet.Cells[row, 11].Value = data[i].MostRecentFund;
+                        worksheet.Cells[row, 12].Value = data[i].MostRecentFundAmount;
+                        worksheet.Cells[row, 13].Value = data[i].GivingZone;
+                        worksheet.Cells[row, 14].Value = data[i].DonorType;
+                        worksheet.Cells[row, 15].Value = data[i].Average;
+                        worksheet.Cells[row, 16].Value = data[i].StdDev;
+                        worksheet.Cells[row, 17].Value = data[i].Source;
+                        row++;
+                    }
+                    byte[] sheetbytes = excel.GetAsByteArray();
+                    string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Finance\\Comparative_Giving_Report.xlsx";
+                    System.IO.File.WriteAllBytes( path, sheetbytes );
+
+                    //Notify file is ready
+                    Guid? guid = GetAttributeValue( "Person" ).AsGuidOrNull();
+                    if ( guid.HasValue )
+                    {
+                        Person p = new PersonService( context ).Get( guid.Value );
+                        RockEmailMessage email = new RockEmailMessage();
+                        RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( p, new Dictionary<string, object>() );
+                        email.AddRecipient( recipient );
+                        email.Subject = "Comparative Giving Report is Ready";
+                        email.Message = "Your file is ready. It can be found in the <a href='https://rock.thecrossingchurch.com/page/433'>CMS File manager</a> at Content/Finance/Comparative_Giving_Report.xlsx";
+                        email.FromEmail = "system@thecrossingchurch.com";
+                        email.FromName = "The Crossing System";
+                        email.CreateCommunicationRecord = true;
+                        var output = email.Send();
+                    }
+                } );
             }
         }
 

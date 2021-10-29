@@ -23,6 +23,7 @@
                 </div>
             </div>
         </div>
+        <div class="alert alert-info" runat="server" id="alertInfo" visible="false"></div>
         <Rock:Grid ID="grdGiving" runat="server" AllowSorting="true">
             <Columns>
                 <Rock:RockBoundField HeaderText="Household" DataField="HouseholdName" SortExpression="HouseholdName" ExcelExportBehavior="AlwaysInclude" />
