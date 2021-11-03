@@ -260,7 +260,7 @@
                                         <a href="/Ministry/Students" class="text-white">Students</a>
                                     </div>
                                     <div>
-                                        <a href="https://veritascomo.com/Veritas" class="text-white">College</a>
+                                        <a href="https://veritascomo.com/Veritas" class="text-white" target="_blank">College</a>
                                     </div>
                                     <div>
                                         <a data-toggle="collapse" href="#adultsCollapse" role="button" aria-expanded="false" aria-controls="adultsCollapse" class="text-white">Adults</a>
@@ -359,7 +359,7 @@
                                         <a href="/Ministry/Students" class="text-white">Students</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="https://veritascomo.com/Veritas" class="text-white">College</a>
+                                        <a href="https://veritascomo.com/Veritas" class="text-white" target="_blank">College</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a id="adult-menu-open" class="text-white">Adults
