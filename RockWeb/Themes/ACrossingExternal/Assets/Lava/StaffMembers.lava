@@ -28,7 +28,7 @@
                                     {% comment %} <span class='floating--title text--accent text--upper'>Title</span> {% endcomment %}
                                     <p>{{i | Attribute:'Person','Object' | Attribute:'Position'}}</p>
                                     {% comment %} <span class='floating--title text--accent text--upper'>Contact Info</span> {% endcomment %}
-                                    <p><a href="mailto:{{i | Attribute:'Person','Email' }}">{{i | Attribute:'Person','Email' }}</a></p>
+                                    <p><a href="mailto:{{i | Attribute:'Email' }}">{{i | Attribute:'Email' }}</a></p>
                                     {% comment %} <span class='floating--title text--accent text--upper'>Bio</span> {% endcomment %}
                                     <p>{{i.Content}}</p>
                                 </div>
