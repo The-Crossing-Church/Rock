@@ -35,6 +35,15 @@ namespace Rock.Lava
     /// </summary>
     public static class LavaHelper
     {
+        #region Constructors
+
+        static LavaHelper()
+        {
+            InitializeLavaCommentsRegex();
+        }
+
+        #endregion
+
         /// <summary>
         /// Gets the common merge fields for Lava operations. By default it'll include CurrentPerson, Context, PageParameter, and Campuses
         /// </summary>
@@ -395,5 +404,136 @@ namespace Rock.Lava
 
             return false;
         }
+
+        #region Lava Comments
+
+        private static string LavaTokenBlockCommentStart = @"/-";
+        private static string LavaTokenBlockCommentEnd = @"-/";
+        private static string LavaTokenLineComment = @"//-";
+
+        private static Regex _lavaCommentMatchGroupsRegex = null;
+
+        /// <summary>
+        /// Build the regular expression that will be used to remove Lava-style comments from the template.
+        /// </summary>
+        private static void InitializeLavaCommentsRegex()
+        {
+            const string doubleQuotedString = @"(""[^""]*"")+";
+            const string singleQuotedString = @"('[^']*')+";
+
+            string lineCommentElement = LavaTokenLineComment + @"(.*?)\r?\n";
+
+            var blockCommentElement = Regex.Escape( LavaTokenBlockCommentStart ) + @"(.*?)" + Regex.Escape( LavaTokenBlockCommentEnd );
+
+            var rawBlock = @"\{%\sraw\s%\}(.*?)\{%\sendraw\s%\}";
+
+            var templateElementMatchGroups = rawBlock + "|" + singleQuotedString + "|" + doubleQuotedString + "|" + blockCommentElement + "|" + lineCommentElement;
+
+            // Create and compile the Regex, because it will be used very frequently.
+            _lavaCommentMatchGroupsRegex = new Regex( templateElementMatchGroups, RegexOptions.Compiled | RegexOptions.Singleline );
+        }
+
+        /// <summary>
+        /// Remove Lava-style comments from a Lava template.
+        /// Lava comments provide a shorthand alternative to the Liquid {% comment %}{% endcomment %} block,
+        /// and can can be in one of the following forms:
+        /// 
+        /// /- This Lava block comment style...
+        ///    ... can span multiple lines -/
+        ///
+        /// //- This Lava line comment style can be appended to any single line.
+        /// 
+        /// </summary>
+        /// <param name="lavaTemplate"></param>
+        /// <returns></returns>
+        public static string RemoveLavaComments( string lavaTemplate )
+        {
+            if ( string.IsNullOrEmpty( lavaTemplate ) )
+            {
+                return string.Empty;
+            }
+
+            // Remove comments from the content.
+            var lavaWithoutComments = _lavaCommentMatchGroupsRegex.Replace( lavaTemplate,
+                me =>
+                {
+                    // If the match group is a line comment, retain the end-of-line marker.
+                    if ( me.Value.StartsWith( LavaTokenBlockCommentStart ) || me.Value.StartsWith( LavaTokenLineComment ) )
+                    {
+                        return me.Value.StartsWith( LavaTokenLineComment ) ? Environment.NewLine : string.Empty;
+                    }
+
+                    // If the match group is not a comment, return a literal string.
+                    return me.Value;
+                } );
+
+            return lavaWithoutComments;
+        }
+
+        /// <summary>
+        /// Indicates if the target string contains any Lava-specific comment elements.
+        /// Liquid {% comment %} tags are not classified as Lava-specific comment syntax, and
+        /// comments contained in quoted strings and {% raw %} tags are ignored.
+        /// </summary>
+        /// <param name="content">The content.</param>
+        /// <returns></returns>
+        public static bool ContainsLavaComments( string content )
+        {
+            if ( string.IsNullOrEmpty( content ) )
+            {
+                return false;
+            }
+
+            int searchStartIndex = 0;
+            Match match = null;
+
+            while ( match == null || match.Success )
+            {
+                match = _lavaCommentMatchGroupsRegex.Match( content, searchStartIndex );
+
+                if ( match.Value.StartsWith( LavaTokenBlockCommentStart ) || match.Value.StartsWith( LavaTokenLineComment ) )
+                {
+                    return true;
+                }
+
+                searchStartIndex = match.Index + match.Length;
+            }
+
+            return false;
+        }
+
+        #endregion
+
+        #region IsLavaTemplate
+
+        /// <summary>
+        /// Indicates if the target string contains any elements of a Lava template.
+        /// NOTE: This function may return a false positive if the target string contains anything that resembles a Lava element, perhaps contained in a string literal.
+        /// </summary>
+        /// <param name="content">The content.</param>
+        /// <returns></returns>
+        public static bool IsLavaTemplate( this string content )
+        {
+            if ( content == null )
+            {
+                return false;
+            }
+
+            // If the input string contains any Lava tags, consider it as a template.
+            if ( content.HasMergeFields() )
+            {
+                return true;
+            }
+
+            // If the input string contains any Lava-style comments, consider it as a template.
+            if ( ContainsLavaComments( content ) )
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
     }
 }

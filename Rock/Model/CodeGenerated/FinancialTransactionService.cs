@@ -52,6 +52,12 @@ namespace Rock.Model
         {
             errorMessage = string.Empty;
  
+            if ( new Service<FinancialTransactionAlert>( Context ).Queryable().Any( a => a.TransactionId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", FinancialTransaction.FriendlyTypeName, FinancialTransactionAlert.FriendlyTypeName );
+                return false;
+            }  
+ 
             if ( new Service<FinancialTransactionRefund>( Context ).Queryable().Any( a => a.OriginalTransactionId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", FinancialTransaction.FriendlyTypeName, FinancialTransactionRefund.FriendlyTypeName );
@@ -101,6 +107,7 @@ namespace Rock.Model
             target.CheckMicrParts = source.CheckMicrParts;
             target.FinancialGatewayId = source.FinancialGatewayId;
             target.FinancialPaymentDetailId = source.FinancialPaymentDetailId;
+            target.ForeignCurrencyCodeValueId = source.ForeignCurrencyCodeValueId;
             target.ForeignGuid = source.ForeignGuid;
             target.ForeignKey = source.ForeignKey;
             target.FutureProcessingDateTime = source.FutureProcessingDateTime;
@@ -113,7 +120,6 @@ namespace Rock.Model
             target.ScheduledTransactionId = source.ScheduledTransactionId;
             target.SettledDate = source.SettledDate;
             target.SettledGroupId = source.SettledGroupId;
-            target.SettledSourceDate = source.SettledSourceDate;
             target.ShowAsAnonymous = source.ShowAsAnonymous;
             target.SourceTypeValueId = source.SourceTypeValueId;
             target.Status = source.Status;
@@ -122,7 +128,6 @@ namespace Rock.Model
             target.SundayDate = source.SundayDate;
             target.TransactionCode = source.TransactionCode;
             target.TransactionDateTime = source.TransactionDateTime;
-            target.TransactionSourceDate = source.TransactionSourceDate;
             target.TransactionTypeValueId = source.TransactionTypeValueId;
             target.CreatedDateTime = source.CreatedDateTime;
             target.ModifiedDateTime = source.ModifiedDateTime;

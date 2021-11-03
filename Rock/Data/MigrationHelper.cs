@@ -91,6 +91,18 @@ namespace Rock.Data
         /// <param name="guid">The GUID.</param>
         public void UpdateEntityType( string name, string friendlyName, string assemblyName, bool isEntity, bool isSecured, string guid )
         {
+             /* 
+                02/23/2021 MDP, NA
+
+                In this script, we put the AttributeIds into a @attributeIds table variable, then use that for the UPDATE
+                SQL. We were finding that this fixes a performance issue cause by the SQL optimizer choosing
+                to use the IX_FieldTypeId Index on Attribute, but doing a Full Table Scan on AttributeValue.
+
+                Putting the AttributeIds into the table variable helped the SQL optimizer to use the IX_AttributeId index
+                on AttributeValue instead of doing the Full Table Scan. 
+             */
+
+
             Migration.Sql( string.Format( @"
 
                 DECLARE @Guid uniqueidentifier
@@ -117,12 +129,29 @@ namespace Rock.Data
 	                DECLARE @EntityTypeFieldTypeId int = ( SELECT TOP 1 [Id] FROM [FieldType] WHERE [Class] = 'Rock.Field.Types.EntityTypeFieldType' )
 	                DECLARE @ComponentFieldTypeId int = ( SELECT TOP 1 [Id] FROM [FieldType] WHERE [Class] = 'Rock.Field.Types.ComponentFieldType' )
 	                DECLARE @ComponentsFieldTypeId int = ( SELECT TOP 1 [Id] FROM [FieldType] WHERE [Class] = 'Rock.Field.Types.ComponentsFieldType' )
+                    DECLARE @OldGuidString nvarchar(50) = LOWER(CAST(@Guid AS nvarchar(50)))
 
-                    UPDATE V SET [Value] = REPLACE( LOWER([Value]), LOWER(CAST(@Guid AS varchar(50))), LOWER('{5}') )
-	                FROM [AttributeValue] V
-	                INNER JOIN [Attribute] A ON A.[Id] = V.[AttributeId]
-	                WHERE ( A.[FieldTypeId] = @EntityTypeFieldTypeId OR A.[FieldTypeId] = @ComponentFieldTypeId	OR A.[FieldTypeId] = @ComponentsFieldTypeId )
-                    OPTION (RECOMPILE)
+                    IF @OldGuidString != LOWER('{5}')
+					BEGIN
+
+                        DECLARE @attributeIds TABLE (id INT)
+						INSERT INTO @attributeIds
+							SELECT Id
+							FROM [Attribute] A
+							WHERE (
+                                A.[FieldTypeId] = @EntityTypeFieldTypeId OR
+                                A.[FieldTypeId] = @ComponentFieldTypeId OR
+                                A.[FieldTypeId] = @ComponentsFieldTypeId
+                            )
+
+                        UPDATE V SET [Value] = REPLACE( LOWER([Value]), @OldGuidString, LOWER('{5}') )
+	                    FROM [AttributeValue] V
+                            WHERE v.[AttributeId] IN (select Id from @attributeIds) AND
+                            Value IS NOT NULL AND
+                            Value != '' AND
+                            V.Value LIKE '%' + @OldGuidString + '%' -- short circuit unnecessary writes, which are slow because of indexes
+                        OPTION (RECOMPILE)
+                    END
 
                 END
 ",
@@ -329,7 +358,7 @@ namespace Rock.Data
                 ELSE
                 BEGIN
 	                INSERT INTO [BlockType]([IsSystem],[Category],[Name],[Description],[Guid], EntityTypeId)
-	                VALUES(1,'Mobile','{name}','{description.Replace( "'", "''" )}','{guid.ToUpper()}', @entityTypeId)
+	                VALUES(1,'{category}','{name}','{description.Replace( "'", "''" )}','{guid.ToUpper()}', @entityTypeId)
                 END" );
         }
 
@@ -784,7 +813,7 @@ namespace Rock.Data
 
             if ( skipIfAlreadyExists )
             {
-                addPageSQL = $"if not exists (select * from Page where [Guid] = '{guid}') begin\n" + addPageSQL + "\nend";
+                addPageSQL = $"if not exists (select * from [Page] where [Guid] = '{guid}') begin\n" + addPageSQL + "\nend";
             }
 
             Migration.Sql( addPageSQL );
@@ -2948,7 +2977,6 @@ END" );
             }
 
             var addUpdateSql = $@"
-
                 DECLARE @FieldTypeId int
                 SET @FieldTypeId = (SELECT [Id] FROM [FieldType] WHERE [Guid] = '{fieldTypeGuid}')
 
@@ -2977,6 +3005,45 @@ END" );
             Migration.Sql( addUpdateSql );
         }
 
+        /// <summary>
+        /// Updates the global attribute.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="entityTypeQualifierColumn">The entity type qualifier column.</param>
+        /// <param name="entityTypeQualifierValue">The entity type qualifier value.</param>
+        /// <param name="guid">The unique identifier.</param>
+        /// <param name="fieldTypeGuid">The field type unique identifier.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="description">The description.</param>
+        /// <param name="order">The order.</param>
+        public void UpdateGlobalAttribute( string key, string entityTypeQualifierColumn, string entityTypeQualifierValue, string guid, string fieldTypeGuid, string name, string description, int order )
+        {
+            if ( string.IsNullOrWhiteSpace( key ) )
+            {
+                key = name.Replace( " ", string.Empty );
+            }
+
+            var updateSql = $@"
+                DECLARE @FieldTypeId int
+                SET @FieldTypeId = (SELECT [Id] FROM [FieldType] WHERE [Guid] = '{fieldTypeGuid}')
+
+                UPDATE [Attribute]
+                SET [Guid] = '{guid}',
+                    [FieldTypeId] = @FieldTypeId,
+                    [Name] = '{name}',
+                    [Description] = '{description}',
+                    [Order] = {order},
+                    [IsGridColumn]=0,
+                    [IsMultiValue]=0,
+                    [IsRequired]=0,
+                    [IsSystem]=1
+                WHERE [EntityTypeId] IS NULL
+                AND [Key] = '{key}'
+                AND [EntityTypeQualifierColumn] = '{entityTypeQualifierColumn}'
+                AND [EntityTypeQualifierValue] = '{entityTypeQualifierValue}'";
+
+            Migration.Sql( updateSql );
+        }
 
         /// <summary>
         /// Adds a global attribute. If one already exists it is deleted.
@@ -3288,14 +3355,15 @@ END" );
         /// <param name="entityTypeGuid">The entity type unique identifier.</param>
         public void DeleteAttributesByEntityType( string entityTypeGuid )
         {
-            Migration.Sql( string.Format( @"
-                SELECT a.*
-                FROM Attribute a
-                WHERE a.EntityTypeId IN (
-	                SELECT w.Id
-	                FROM EntityType w
-	                WHERE w.Guid = '{0}'
-                )", entityTypeGuid ) );
+            Migration.Sql( $@"
+                DECLARE @EntityTypeGuid AS varchar(50) = '{entityTypeGuid}'
+                DECLARE @EntityTypeId AS int = (SELECT [Id] FROM [dbo].[EntityType] WHERE [Guid] = @EntityTypeGuid)
+
+                IF (@EntityTypeId IS NOT NULL)
+                BEGIN
+	                DELETE FROM [dbo].[Attribute] WHERE [EntityTypeId] = @EntityTypeId
+                END" );
+
         }
 
         /// <summary>
@@ -4106,7 +4174,7 @@ BEGIN
                             [Guid])
                         VALUES(
                             1,@AttributeId,@DefinedValueId,
-                            '{value.Replace( "'", "''")}',
+                            N'{value.Replace( "'", "''")}',
                             NEWID())
                     END
                 END
@@ -4319,9 +4387,20 @@ END
         /// <param name="userSelectable">if set to <c>true</c> [user selectable].</param>
         /// <param name="guid">The unique identifier.</param>
         /// <param name="IsSystem">if set to <c>true</c> [is system].</param>
-        public void UpdateNoteType( string name, string entityTypeName, bool userSelectable,  string guid, bool IsSystem = true )
+        /// <param name="iconCssClass">The icon CSS class.</param>
+        /// <param name="AllowWatching">if set to <c>true</c> [allow watching].</param>
+        public void UpdateNoteType( string name, string entityTypeName, bool userSelectable,  string guid, bool IsSystem = true, string iconCssClass = null, bool AllowWatching = false)
         {
             EnsureEntityTypeExists( entityTypeName );
+
+            if( iconCssClass == null )
+            {
+                iconCssClass = "NULL";
+            }
+            else
+            {
+                iconCssClass = $"'{iconCssClass}'";
+            }
 
             Migration.Sql( $@"
 
@@ -4332,9 +4411,9 @@ END
                 IF @Id IS NULL
                 BEGIN
                     INSERT INTO [NoteType] (
-                        [Name],[EntityTypeId],[UserSelectable],[Guid],[IsSystem])
+                        [Name],[EntityTypeId],[UserSelectable],[Guid],[IsSystem], [IconCssClass], [AllowsWatching])
                     VALUES(
-                        '{name}',@EntityTypeId,{userSelectable.Bit()},'{guid}',{IsSystem.Bit()})
+                        '{name}',@EntityTypeId,{userSelectable.Bit()},'{guid}',{IsSystem.Bit()}, {iconCssClass}, {AllowWatching.Bit()})
                 END
                 ELSE
                 BEGIN
@@ -4343,7 +4422,9 @@ END
                         [EntityTypeId] = @EntityTypeId,
                         [UserSelectable] = {userSelectable.Bit()},
                         [Guid] = '{guid}',
-                        [IsSystem] = {IsSystem.Bit()}
+                        [IsSystem] = {IsSystem.Bit()},
+                        [IconCssClass] = {iconCssClass},
+                        [AllowsWatching] = {AllowWatching.Bit()}
                     WHERE Id = @Id;
                 END" );
                     
@@ -7691,8 +7772,8 @@ END
         /// <param name="includes">The includes.</param>
         public void CreateIndexIfNotExists( string tableName, string[] keys, string[] includes )
         {
-            var indexName = $"IX_{keys.JoinStrings( "_" )}";
-            CreateIndexIfNotExists( tableName, indexName, keys, includes);
+            var sql = MigrationIndexHelper.GenerateCreateIndexIfNotExistsSql( tableName, keys, includes );
+            Migration.Sql( sql );
         }
 
         /// <summary>
@@ -7704,13 +7785,8 @@ END
         /// <param name="includes">The includes.</param>
         public void CreateIndexIfNotExists( string tableName, string indexName, string[] keys, string[] includes )
         {
-            Migration.Sql(
-$@"IF NOT EXISTS( SELECT * FROM sys.indexes WHERE NAME = '{indexName}' AND object_id = OBJECT_ID( '{tableName}' ) )
-BEGIN
-    CREATE INDEX [{indexName}]
-    ON [{tableName}] ( {keys.JoinStrings( "," )} )
-    { ( includes.Length > 0 ? $"INCLUDE ( {includes.JoinStrings( "," )} )" : "" ) };
-END" );
+            var sql = MigrationIndexHelper.GenerateCreateIndexIfNotExistsSql( tableName, indexName, keys, includes );
+            Migration.Sql( sql );
         }
 
         /// <summary>
@@ -7720,14 +7796,21 @@ END" );
         /// <param name="indexName">Name of the index.</param>
         public void DropIndexIfExists( string tableName, string indexName )
         {
-            Migration.Sql(
-$@"IF EXISTS( SELECT * FROM sys.indexes WHERE NAME = '{indexName}' AND object_id = OBJECT_ID( '{tableName}' ) )
-BEGIN
-    DROP INDEX [{indexName}]
-    ON [{tableName}];
-END" );
+            var sql = MigrationIndexHelper.GenerateDropIndexIfExistsSql( tableName, indexName );
+            Migration.Sql( sql );
         }
 
         #endregion Index Helpers
+
+        /// <summary>
+        /// Checks if a table column exists.
+        /// </summary>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        /// <returns></returns>
+        public bool ColumnExists( string tableName, string columnName )
+        {
+            return ( ( string ) Migration.SqlScalar( $"SELECT 'true' FROM sys.columns WHERE Name = N'{columnName}' AND Object_ID = Object_ID(N'[dbo].[{tableName}]')" ) ).AsBoolean();
+        }
     }
 }

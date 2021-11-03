@@ -32,16 +32,16 @@ namespace Rock.Model
     /// <summary>
     /// Represents a connection request
     /// </summary>
-    [RockDomain( "Connection" )]
+    [RockDomain( "Engagement" )]
     [Table( "ConnectionRequest" )]
     [DataContract]
-    public partial class ConnectionRequest : Model<ConnectionRequest>
+    public partial class ConnectionRequest : Model<ConnectionRequest>, IOrdered
     {
 
         #region Entity Properties
 
         /// <summary>
-        /// Gets or sets the connection opportunity identifier.
+        /// Gets or sets the <see cref="Rock.Model.ConnectionOpportunity"/> identifier.
         /// </summary>
         /// <value>
         /// The connection opportunity identifier.
@@ -51,7 +51,7 @@ namespace Rock.Model
         public int ConnectionOpportunityId { get; set; }
 
         /// <summary>
-        /// Gets or sets the person alias identifier.
+        /// Gets or sets the <see cref="Rock.Model.PersonAlias"/> identifier.
         /// </summary>
         /// <value>
         /// The person alias identifier.
@@ -70,7 +70,7 @@ namespace Rock.Model
         public string Comments { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection status identifier.
+        /// Gets or sets the <see cref="Rock.Model.ConnectionStatus"/> identifier.
         /// </summary>
         /// <value>
         /// The connection status identifier.
@@ -99,7 +99,7 @@ namespace Rock.Model
         public DateTime? FollowupDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the campus identifier.
+        /// Gets or sets the <see cref="Rock.Model.Campus"/> identifier.
         /// </summary>
         /// <value>
         /// The campus identifier.
@@ -108,7 +108,7 @@ namespace Rock.Model
         public int? CampusId { get; set; }
 
         /// <summary>
-        /// Gets or sets the assigned group identifier.
+        /// Gets or sets the assigned <see cref="Rock.Model.Group"/> identifier.
         /// </summary>
         /// <value>
         /// The assigned group identifier.
@@ -144,7 +144,7 @@ namespace Rock.Model
         public string AssignedGroupMemberAttributeValues { get; set; }
 
         /// <summary>
-        /// Gets or sets the connector person alias identifier.
+        /// Gets or sets the connector <see cref="Rock.Model.PersonAlias"/> identifier.
         /// </summary>
         /// <value>
         /// The connector person alias identifier.
@@ -167,12 +167,31 @@ namespace Rock.Model
                         CreatedDateTime.Value.ToString( "yyyyMMdd" ).AsInteger();
             private set { }
         }
+
+        /// <summary>
+        /// Gets or sets the order.
+        /// </summary>
+        /// <value>
+        /// The order.
+        /// </value>
+        [DataMember]
+        public int Order { get; set; }
+
+        /// <summary>
+        /// Gets or sets the history change list.
+        /// </summary>
+        /// <value>
+        /// The history change list.
+        /// </value>
+        [NotMapped]
+        public virtual History.HistoryChangeList HistoryChangeList { get; set; }
+
         #endregion
 
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the connection status.
+        /// Gets or sets the <see cref="Rock.Model.ConnectionStatus"/>.
         /// </summary>
         /// <value>
         /// The connection status.
@@ -181,7 +200,7 @@ namespace Rock.Model
         public virtual ConnectionStatus ConnectionStatus { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection opportunity.
+        /// Gets or sets the <see cref="Rock.Model.ConnectionOpportunity"/>.
         /// </summary>
         /// <value>
         /// The connection opportunity.
@@ -190,7 +209,7 @@ namespace Rock.Model
         public virtual ConnectionOpportunity ConnectionOpportunity { get; set; }
 
         /// <summary>
-        /// Gets or sets the person alias.
+        /// Gets or sets the <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The person alias.
@@ -199,7 +218,7 @@ namespace Rock.Model
         public virtual PersonAlias PersonAlias { get; set; }
 
         /// <summary>
-        /// Gets or sets the campus.
+        /// Gets or sets the <see cref="Rock.Model.Campus"/>.
         /// </summary>
         /// <value>
         /// The campus.
@@ -208,7 +227,7 @@ namespace Rock.Model
         public virtual Campus Campus { get; set; }
 
         /// <summary>
-        /// Gets or sets the assigned group.
+        /// Gets or sets the assigned <see cref="Rock.Model.Group"/>.
         /// </summary>
         /// <value>
         /// The assigned group.
@@ -217,7 +236,7 @@ namespace Rock.Model
         public virtual Group AssignedGroup { get; set; }
 
         /// <summary>
-        /// Gets or sets the connector person alias.
+        /// Gets or sets the connector <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The connector person alias.
@@ -261,7 +280,7 @@ namespace Rock.Model
         /// The created source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate CreatedSourceDate { get; set; }
+        public virtual AnalyticsSourceDate CreatedSourceDate { get; set; }
         #endregion
 
         #region Methods
@@ -311,6 +330,48 @@ namespace Rock.Model
             var transaction = new Rock.Transactions.ConnectionRequestChangeTransaction( entry );
             Rock.Transactions.RockQueue.TransactionQueue.Enqueue( transaction );
 
+            var rockContext = ( RockContext ) dbContext;
+
+            HistoryChangeList = new History.HistoryChangeList();
+
+            switch ( entry.State )
+            {
+                case EntityState.Added:
+                    {
+                        HistoryChangeList.AddChange( History.HistoryVerb.Add, History.HistoryChangeType.Record, "ConnectionRequest" );
+
+                        History.EvaluateChange( HistoryChangeList, "Connector", string.Empty, History.GetValue<PersonAlias>( ConnectorPersonAlias, ConnectorPersonAliasId, rockContext ) );
+                        History.EvaluateChange( HistoryChangeList, "ConnectionStatus", string.Empty, History.GetValue<ConnectionStatus>( ConnectionStatus, ConnectionStatusId, rockContext ) );
+                        History.EvaluateChange( HistoryChangeList, "ConnectionState", null, ConnectionState );
+                        break;
+                    }
+
+                case EntityState.Modified:
+                    {
+                        string originalConnector = History.GetValue<PersonAlias>( null, entry.OriginalValues["ConnectorPersonAliasId"].ToStringSafe().AsIntegerOrNull(), rockContext );
+                        string connector = History.GetValue<PersonAlias>( ConnectorPersonAlias, ConnectorPersonAliasId, rockContext );
+                        History.EvaluateChange( HistoryChangeList, "Connector", originalConnector, connector );
+
+                        int? originalConnectionStatusId = entry.OriginalValues["ConnectionStatusId"].ToStringSafe().AsIntegerOrNull();
+                        int? connectionStatusId = ConnectionStatus != null ? ConnectionStatus.Id : ConnectionStatusId;
+                        if ( !connectionStatusId.Equals( originalConnectionStatusId ) )
+                        {
+                            string origConnectionStatus = History.GetValue<ConnectionStatus>( null, originalConnectionStatusId, rockContext );
+                            string connectionStatus = History.GetValue<ConnectionStatus>( ConnectionStatus, ConnectionStatusId, rockContext );
+                            History.EvaluateChange( HistoryChangeList, "ConnectionStatus", origConnectionStatus, connectionStatus );
+                        }
+
+                        History.EvaluateChange( HistoryChangeList, "ConnectionState", entry.OriginalValues["ConnectionState"].ToStringSafe().ConvertToEnum<ConnectionState>(), ConnectionState );
+                        break;
+                    }
+
+                case EntityState.Deleted:
+                    {
+                        HistoryChangeList.AddChange( History.HistoryVerb.Delete, History.HistoryChangeType.Record, "ConnectionRequest" );
+                        break;
+                    }
+            }
+
             base.PreSaveChanges( dbContext, entry );
         }
 
@@ -330,6 +391,11 @@ namespace Rock.Model
                 ConnectionState = ConnectionState.Inactive;
                 var rockContext = ( RockContext ) dbContext;
                 rockContext.SaveChanges();
+            }
+
+            if ( HistoryChangeList?.Any() == true )
+            {
+                HistoryService.SaveChanges( ( RockContext ) dbContext, typeof( ConnectionRequest ), Rock.SystemGuid.Category.HISTORY_CONNECTION_REQUEST.AsGuid(), this.Id, HistoryChangeList, true, this.ModifiedByPersonAliasId );
             }
 
             base.PostSaveChanges( dbContext );

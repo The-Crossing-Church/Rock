@@ -66,7 +66,7 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <Rock:RockCheckBox ID="cbAllowCheckout" runat="server" Label="Allow Checkout" Text="Yes" 
-                                        Help="Should there option for user to be able to check-out?" />
+                                        Help="Should individuals be allowed to manually check out?" />
                                         </div>
                                         <div class="col-md-6">
                                             <Rock:RockCheckBox ID="cbEnablePresence" runat="server" Label="Enable Presence" Text="Yes" 
@@ -74,7 +74,7 @@
                                         </div>
                                     </div>
                                     <Rock:RockCheckBox ID="cbEnableManager" runat="server" Label="Enable Manager Option" Text="Yes" 
-                                        Help="Should an option be displayed on the check-in welcome screen that allows user to view the management screen (after entering a passcode)?" />
+                                        Help="Should an option be displayed on the check-in welcome screen that allows an individual to view the management screen (after entering a passcode)?" />
                                     <Rock:RockCheckBox ID="cbEnableOverride" runat="server" Label="Enable Override" Text="Yes" 
                                         Help="Should an override button be displayed on the check-in Manager screen that allows a manager to check-in a person and ignore any age and/or grade requirements?" />
                                 </div>
@@ -83,7 +83,7 @@
                                         Help="The number of days back to look for a previous check-in for each person in the family (or related person). If they have previously checked 
                                         within this number of days, they will automatically be selected during the Family check-in process." />
                                     <Rock:RockDropDownList ID="ddlAutoSelectOptions" runat="server" Label="Auto Select Options" 
-                                        Help="The options that should be pre-selected if user has previously checked in.">
+                                        Help="The options that should be pre-selected if an individual has previously checked in.">
                                         <asp:ListItem Text="People Only" Value="0" />
                                         <asp:ListItem Text="People and Their Area/Group/Location" Value="1" />
                                     </Rock:RockDropDownList>
@@ -107,23 +107,31 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <Rock:RockDropDownList ID="ddlSearchType" runat="server" Label="Search Type" Required="true" AutoPostBack="true" OnSelectedIndexChanged="ddlSearchType_SelectedIndexChanged"
-                                        Help="The type of search that is available after person clicks the check-in button on the check-in Welcome screen. Note, the user can also always check-in using
-                                        a scanned barcode, fingerprint, RFID card, etc. if the scanner is attached and configured for keyboard wedge mode."/>
-                                    <Rock:NumberBox ID="nbMaxResults" runat="server" Label="Maximum Number of Results"  NumberType="Integer" 
-                                        Help="The maximum number of search results to return when searching (default is 100)." />
+                                        Help="The type of search that is available after person clicks the check-in button on the check-in Welcome screen. Note, the individual can also always check-in using a scanned barcode, fingerprint, RFID card, etc. if the scanner is attached and configured for keyboard wedge mode."/>
+                                    <Rock:NumberBox ID="nbMaxResults" runat="server" Label="Maximum Number of Results"  NumberType="Integer" Help="The maximum number of search results to return when searching (default is 100)." />
                                 </div>
                                 <div class="col-md-6">
-                                    <Rock:NumberBox ID="nbMinPhoneLength" runat="server" Label="Minimum Phone Number Length" NumberType="Integer" MinimumValue="1" MaximumValue="10"
-                                        Help="The minimum number of digits that needs to be entered for a phone number search (default is 4)." />
-                                    <Rock:NumberBox ID="nbMaxPhoneLength" runat="server" Label="Maximum Phone Number Length" NumberType="Integer" MinimumValue="1" MaximumValue="10"
-                                        Help="The maximum number of digits that can to be entered for a phone number search (default is 10)." />
-                                    <Rock:RockDropDownList ID="ddlPhoneSearchType" runat="server" Label="Phone Search Type" 
-                                        Help="Controls how a person's phone number should be compared to the digits that were entered by person when checking in.">
+                                    <Rock:NumberBox ID="nbMinPhoneLength" runat="server" Label="Minimum Phone Number Length" NumberType="Integer" MinimumValue="1" MaximumValue="10" Help="The minimum number of digits that needs to be entered for a phone number search (default is 4)." />
+                                    <Rock:NumberBox ID="nbMaxPhoneLength" runat="server" Label="Maximum Phone Number Length" NumberType="Integer" MinimumValue="1" MaximumValue="10" Help="The maximum number of digits that can to be entered for a phone number search (default is 10)." />
+                                    <Rock:RockDropDownList ID="ddlPhoneSearchType" runat="server" Label="Phone Search Type" Help="Controls how a person's phone number should be compared to the digits that were entered by person when checking in.">
                                         <asp:ListItem Text="Contains" Value="0" />
                                         <asp:ListItem Text="Ends With" Value="1" />
                                     </Rock:RockDropDownList>
                                 </div>
                             </div>
+                        </Rock:PanelWidget>
+
+                        <%-- Header Text --%>
+                        <Rock:PanelWidget ID="wpHeaderText" runat="server" Title="Header Text">
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceActionSelectHeaderTemplate" Label="Action Select" Help="Lava template to use for the 'Action Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceCheckoutPersonSelectHeaderTemplate" Label="Checkout Person Select" Help="Lava template to use for the 'Checkout Person Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="cePersonSelectHeaderTemplate" Label="Person Select" Help="Lava template to use for the 'Person Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceMultiPersonSelectHeaderTemplate" Label="Multi Person Select" Help="Lava template to use for the 'Multi Person Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceGroupTypeSelectHeaderTemplate" Label="Group Type Select" Help="Lava template to use for the 'Group Type Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family.<br>{{ Individual }} which is a Person object and is the current selected person.<br>{{ SelectedSchedule}} is a Schedule object and is the current selected schedule." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceTimeSelectHeaderTemplate" Label="Time Select" Help="Lava template to use for the 'Time Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family.<br>{{ SelectedIndividuals }} is a list of Person objects which contains all of the currently selected persons.<br>{{ CheckinType }} is the type of check-in given as a string which will be either 'Family' or 'Individual'.<br>{{ SelectedGroup }} is a Group object and corresponds to the selected check-in group listed in Areas and Groups. This only applies for individual checkin types.<br>{{ SelectedLocation }} is a Location and corresponds to the selected location for the group. This only applies for individual checkin types." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceAbilityLevelSelectHeaderTemplate" Label="Ability Level Select" Help="Lava template to use for the 'Ability Level Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family.<br>{{ Individual }} which is a Person object and is the current selected person.<br>{{ SelectedArea }} is a GroupType object and corresponds to the selected check-in Area listed in Areas and Groups." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceLocationSelectHeaderTemplate" Label="Location Select" Help="Lava template to use for the 'Location Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family.<br>{{ Individual }} which is a Person object and is the current selected person.<br>{{ SelectedGroup }} is a Group object and corresponds to the selected check-in group listed in Areas and Groups.<br>{{ SelectedSchedule}} is a Schedule object and is the current selected schedule." />
+                            <Rock:CodeEditor runat="server" EditorMode="Lava" ID="ceGroupSelectHeaderTemplate" Label="Group Select" Help="Lava template to use for the 'Group Select' check-in block header. The available merge fields are:<br>{{ Family }} which is a Group object and is the current family.<br>{{ Individual }} which is a Person object and is the current selected person.<br>{{ SelectedArea }} is a GroupType object and corresponds to the selected check-in Area listed in Areas and Groups.<br>{{ SelectedSchedule }} is a Schedule object and is the current selected schedule.." />
                         </Rock:PanelWidget>
 
                         <%-- Display Settings --%>
@@ -132,6 +140,7 @@
                                 <div class="col-md-12">
                                     <Rock:CodeEditor runat="server" ID="ceStartTemplate" Label="Start Template" Help="The lava template to use when rendering the Start button on the Welcome Block" EditorMode="Lava" />
                                     <Rock:CodeEditor runat="server" ID="ceFamilySelectTemplate" Label="Family Select Template" Help="The lava template to use when rendering each family button on the Family Select" EditorMode="Lava" />
+                                    <Rock:CodeEditor runat="server" ID="cePersonSelectTemplate" Label="Person Select Template" Help="The lava template used to append additional information to each person button on the Person Select & Multi-Person Select Check-in blocks." EditorMode="Lava" />
                                     <Rock:CodeEditor runat="server" ID="ceSuccessTemplate" Label="Success Template" Help="The lava template to use when rendering the Success result on the Success Block" EditorMode="Lava" />
                                 </div>
                             </div>

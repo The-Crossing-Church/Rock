@@ -211,6 +211,24 @@ namespace Rock.Financial
         }
 
         /// <summary>
+        /// Gets a value indicating whether an existing schedule is permissible to be updated such that the payment method's currency changes.
+        /// For example: can a schedule originally created with a credit card be changed to ACH?
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [supports schedule currency change]; otherwise, <c>false</c>.
+        /// </value>
+        public virtual bool SupportsScheduleCurrencyChange => false;
+
+        /// <summary>
+        /// Gets a value indicating whether this gateway can utilize the standard payment entry form included with Rock. An example of this in on
+        /// the ScheduledTransactionEdit block when selecting to "Use a different card".
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [supports standard rock payment entry form]; otherwise, <c>false</c>.
+        /// </value>
+        public virtual bool SupportsStandardRockPaymentEntryForm => true;
+
+        /// <summary>
         /// Authorizes the specified payment information.
         /// </summary>
         /// <param name="financialGateway">The financial gateway.</param>
@@ -439,6 +457,29 @@ namespace Rock.Financial
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Determines whether [is currency supported] [the specified currency code].
+        /// </summary>
+        /// <param name="currencyCode">The currency code.</param>
+        /// <param name="creditCardType">Type of the credit card.</param>
+        /// <returns>
+        ///   <c>true</c> if [is currency supported] [the specified currency code]; otherwise, <c>false</c>.
+        /// </returns>
+        public virtual bool IsCurrencyCodeSupported( DefinedValueCache currencyCode, DefinedValueCache creditCardType )
+        {
+            var globalAttributesCache = GlobalAttributesCache.Get();
+            var organizationCurrencyCodeGuid = globalAttributesCache.GetValue( SystemKey.SystemSetting.ORGANIZATION_CURRENCY_CODE ).AsGuidOrNull();
+
+            if ( organizationCurrencyCodeGuid == null || currencyCode == null )
+            {
+                return false;
+            }
+
+            var organizationCurrencyCode = DefinedValueCache.Get( organizationCurrencyCodeGuid.Value )?.Value;
+
+            return currencyCode.Value.Equals( organizationCurrencyCode, StringComparison.InvariantCultureIgnoreCase );
         }
     }
 }

@@ -250,8 +250,8 @@ namespace RockWeb.Blocks.CheckIn.Config
                 groupType.SetAttributeValue( "core_checkin_SecurityCodeAlphaLength", nbCodeAlphaLength.Text );
                 groupType.SetAttributeValue( "core_checkin_SecurityCodeNumericLength", nbCodeNumericLength.Text );
                 groupType.SetAttributeValue( "core_checkin_SecurityCodeNumericRandom", cbCodeRandom.Checked.ToString() );
-                groupType.SetAttributeValue( "core_checkin_AllowCheckout", cbAllowCheckout.Checked.ToString() );
-                groupType.SetAttributeValue( "core_checkin_EnablePresence", cbEnablePresence.Checked.ToString() );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT, cbAllowCheckout.Checked.ToString() );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE, cbEnablePresence.Checked.ToString() );
                 groupType.SetAttributeValue( "core_checkin_AutoSelectDaysBack", nbAutoSelectDaysBack.Text );
                 groupType.SetAttributeValue( "core_checkin_AutoSelectOptions", ddlAutoSelectOptions.SelectedValueAsInt() );
 
@@ -317,8 +317,19 @@ namespace RockWeb.Blocks.CheckIn.Config
                 groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_SAMEFAMILYKNOWNRELATIONSHIPTYPES, lbSameFamilyKnownRelationshipTypes.SelectedValues.AsDelimited( "," ) );
                 groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_CANCHECKINKNOWNRELATIONSHIPTYPES, lbCanCheckInKnownRelationshipTypes.SelectedValues.AsDelimited( "," ) );
 
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_ACTION_SELECT_HEADER_LAVA_TEMPLATE, ceActionSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_CHECKOUT_PERSON_SELECT_HEADER_LAVA_TEMPLATE, ceCheckoutPersonSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_PERSON_SELECT_HEADER_LAVA_TEMPLATE, cePersonSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_MULTI_PERSON_SELECT_HEADER_LAVA_TEMPLATE, ceMultiPersonSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUP_TYPE_SELECT_HEADER_LAVA_TEMPLATE, ceGroupTypeSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_TIME_SELECT_HEADER_LAVA_TEMPLATE, ceTimeSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_ABILITY_LEVEL_SELECT_HEADER_LAVA_TEMPLATE, ceAbilityLevelSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_LOCATION_SELECT_HEADER_LAVA_TEMPLATE, ceLocationSelectHeaderTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUP_SELECT_HEADER_LAVA_TEMPLATE, ceGroupSelectHeaderTemplate.Text );
+
                 groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_START_LAVA_TEMPLATE, ceStartTemplate.Text );
                 groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_FAMILYSELECT_LAVA_TEMPLATE, ceFamilySelectTemplate.Text );
+                groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_PERSON_SELECT_ADDITIONAL_INFORMATION_LAVA_TEMPLATE, cePersonSelectTemplate.Text );
                 groupType.SetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_SUCCESS_LAVA_TEMPLATE, ceSuccessTemplate.Text );
 
                 // Save group type and attributes
@@ -501,8 +512,8 @@ namespace RockWeb.Blocks.CheckIn.Config
                 nbCodeAlphaLength.Text = groupType.GetAttributeValue( "core_checkin_SecurityCodeAlphaLength" );
                 nbCodeNumericLength.Text = groupType.GetAttributeValue( "core_checkin_SecurityCodeNumericLength" );
                 cbCodeRandom.Checked = groupType.GetAttributeValue( "core_checkin_SecurityCodeNumericRandom" ).AsBoolean( true );
-                cbAllowCheckout.Checked = groupType.GetAttributeValue( "core_checkin_AllowCheckout" ).AsBoolean( true );
-                cbEnablePresence.Checked = groupType.GetAttributeValue( "core_checkin_EnablePresence" ).AsBoolean();
+                cbAllowCheckout.Checked = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean( true );
+                cbEnablePresence.Checked = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE ).AsBoolean();
                 nbAutoSelectDaysBack.Text = groupType.GetAttributeValue( "core_checkin_AutoSelectDaysBack" );
                 ddlAutoSelectOptions.SetValue( groupType.GetAttributeValue( "core_checkin_AutoSelectOptions" ) );
 
@@ -546,8 +557,19 @@ namespace RockWeb.Blocks.CheckIn.Config
                 lbSameFamilyKnownRelationshipTypes.SetValues( groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_SAMEFAMILYKNOWNRELATIONSHIPTYPES ).SplitDelimitedValues() );
                 lbCanCheckInKnownRelationshipTypes.SetValues( groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_CANCHECKINKNOWNRELATIONSHIPTYPES ).SplitDelimitedValues() );
 
+                ceActionSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_ACTION_SELECT_HEADER_LAVA_TEMPLATE );
+                ceCheckoutPersonSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_CHECKOUT_PERSON_SELECT_HEADER_LAVA_TEMPLATE );
+                cePersonSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_PERSON_SELECT_HEADER_LAVA_TEMPLATE );
+                ceMultiPersonSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_MULTI_PERSON_SELECT_HEADER_LAVA_TEMPLATE );
+                ceGroupTypeSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUP_TYPE_SELECT_HEADER_LAVA_TEMPLATE );
+                ceTimeSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_TIME_SELECT_HEADER_LAVA_TEMPLATE );
+                ceAbilityLevelSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_ABILITY_LEVEL_SELECT_HEADER_LAVA_TEMPLATE );
+                ceLocationSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_LOCATION_SELECT_HEADER_LAVA_TEMPLATE );
+                ceGroupSelectHeaderTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUP_SELECT_HEADER_LAVA_TEMPLATE );
+
                 ceStartTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_START_LAVA_TEMPLATE );
                 ceFamilySelectTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_FAMILYSELECT_LAVA_TEMPLATE );
+                cePersonSelectTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_PERSON_SELECT_ADDITIONAL_INFORMATION_LAVA_TEMPLATE );
                 ceSuccessTemplate.Text = groupType.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_SUCCESS_LAVA_TEMPLATE );
 
                 // Other GroupType Attributes
@@ -582,9 +604,10 @@ namespace RockWeb.Blocks.CheckIn.Config
             excludeList.Add( "core_checkin_SecurityCodeAlphaLength" );
             excludeList.Add( "core_checkin_SecurityCodeNumericLength" );
             excludeList.Add( "core_checkin_SecurityCodeNumericRandom" );
-            excludeList.Add( "core_checkin_AllowCheckout" );
             excludeList.Add( "core_checkin_AutoSelectDaysBack" );
             excludeList.Add( "core_checkin_AutoSelectOptions" );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE );
 
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_CANCHECKINKNOWNRELATIONSHIPTYPES );
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYALTERNATEIDFIELDFORADULTS );
@@ -604,9 +627,20 @@ namespace RockWeb.Blocks.CheckIn.Config
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_ADDPERSONWORKFLOWTYPES );
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DEFAULTPERSONCONNECTIONSTATUS );
 
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_ACTION_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_CHECKOUT_PERSON_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_PERSON_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_MULTI_PERSON_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUP_TYPE_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_TIME_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_ABILITY_LEVEL_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_LOCATION_SELECT_HEADER_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUP_SELECT_HEADER_LAVA_TEMPLATE );
+
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_START_LAVA_TEMPLATE );
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_FAMILYSELECT_LAVA_TEMPLATE );
             excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_SUCCESS_LAVA_TEMPLATE );
+            excludeList.Add( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_PERSON_SELECT_ADDITIONAL_INFORMATION_LAVA_TEMPLATE );
 
             if ( groupType.Attributes.Any( t => !excludeList.Contains( t.Value.Key ) ) )
             {
@@ -669,7 +703,7 @@ namespace RockWeb.Blocks.CheckIn.Config
                 string scheduleList = string.Empty;
                 using ( var rockContext = new RockContext() )
                 {
-                    var descendantGroupTypeIds = new GroupTypeService( rockContext ).GetAllAssociatedDescendents( groupType.Id ).Select( a => a.Id );
+                    var descendantGroupTypeIds = new GroupTypeService( rockContext ).GetCheckinAreaDescendants( groupType.Id ).Select( a => a.Id );
                     scheduleList = new GroupLocationService( rockContext )
                         .Queryable().AsNoTracking()
                         .Where( a =>

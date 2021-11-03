@@ -346,6 +346,16 @@ namespace Rock
         }
 
         /// <summary>
+        /// Returns the date of the start of the month for the specified date/time.
+        /// </summary>
+        /// <param name="dt">The dt.</param>
+        /// <returns></returns>
+        public static DateTime StartOfMonth( this DateTime dt )
+        {
+            return new DateTime( dt.Year, dt.Month, 1 );
+        }
+
+        /// <summary>
         /// Returns the date of the start of the week for the specified date/time.
         /// Use <see cref="RockDateTime.FirstDayOfWeek"/> for startOfWeek if you want to have this based on the configured FirstDateOfWeek setting
         /// </summary>
@@ -516,6 +526,20 @@ namespace Rock
                 days = days + birthMonth.AddMonths( 1 ).AddDays( -1 ).Day;
             }
             return days + ( days == 1 ? " day" : " days" );
+        }
+
+        /// <summary>
+        /// Converts a <see cref="DateTime"/> that is in <see cref="RockDateTime.OrgTimeZoneInfo"/>
+        /// into a <see cref="DateTimeOffset"/> that is also in the organization time zone.
+        /// </summary>
+        /// <param name="dateTime">The Rock date time.</param>
+        /// <returns>The <see cref="DateTimeOffset"/> instance that specifies the same point in time.</returns>
+        public static DateTimeOffset ToRockDateTimeOffset( this DateTime dateTime )
+        {
+            // We can only apply a time zone offset to an unspecified type.
+            var unspecifiedDateTime = DateTime.SpecifyKind( dateTime, DateTimeKind.Unspecified );
+
+            return new DateTimeOffset( unspecifiedDateTime, RockDateTime.OrgTimeZoneInfo.GetUtcOffset( unspecifiedDateTime ) );
         }
 
         #endregion DateTime Extensions

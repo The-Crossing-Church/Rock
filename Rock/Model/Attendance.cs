@@ -42,7 +42,7 @@ namespace Rock.Model
         #region Entity Properties
 
         /// <summary>
-        /// Gets or sets the Id of the AttendanceOccurrence that the attendance is for.
+        /// Gets or sets the Id of the <see cref="Rock.Model.AttendanceOccurrence"/> that the attendance is for.
         /// </summary>
         /// <value>
         /// A <see cref="System.Int32" /> representing the Id of the AttendanceOccurrence that the attendance is for.
@@ -183,6 +183,15 @@ namespace Rock.Model
         public bool? Processed { get; set; }
 
         /// <summary>
+        /// Gets or sets if this first time that this person has ever checked into anything
+        /// </summary>
+        /// <value>
+        /// If this attendance is the first time the person has attended anything
+        /// </value>
+        [DataMember]
+        public bool? IsFirstTime { get; set; }
+
+        /// <summary>
         /// Gets or sets the note.
         /// </summary>
         /// <value>
@@ -256,7 +265,7 @@ namespace Rock.Model
         public int? ScheduledByPersonAliasId { get; set; }
 
         /// <summary>
-        /// Gets or sets the attendance check in session identifier.
+        /// Gets or sets the <see cref="Rock.Model.AttendanceCheckInSession"/> identifier.
         /// </summary>
         /// <value>
         /// The attendance check in session identifier.
@@ -275,7 +284,7 @@ namespace Rock.Model
         public DateTime? PresentDateTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the person that presented the <see cref="PersonAlias"/> person attended.
+        /// Gets or sets the person that presented the <see cref="Rock.Model.PersonAlias"/> person attended.
         /// </summary>
         /// <value>
         /// The person that presented the <see cref="PersonAlias"/> person attended.
@@ -284,7 +293,7 @@ namespace Rock.Model
         public int? PresentByPersonAliasId { get; set; }
 
         /// <summary>
-        /// Gets or sets the person that checked-out the <see cref="PersonAlias"/> person attended.
+        /// Gets or sets the person that checked-out the <see cref="Rock.Model.PersonAlias"/> person attended.
         /// </summary>
         /// <value>
         /// The person that checked-out the <see cref="PersonAlias"/> person attended.
@@ -297,7 +306,7 @@ namespace Rock.Model
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the attendance check in session.
+        /// Gets or sets the <see cref="Rock.Model.AttendanceCheckInSession"/>.
         /// </summary>
         /// <value>
         /// The attendance check in session.
@@ -323,7 +332,7 @@ namespace Rock.Model
         public virtual AttendanceOccurrence Occurrence { get; set; }
 
         /// <summary>
-        /// Gets or sets the person alias.
+        /// Gets or sets the <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The person alias.
@@ -395,7 +404,7 @@ namespace Rock.Model
         public virtual DefinedValue DeclineReasonValue { get; set; }
 
         /// <summary>
-        /// Gets or sets the scheduled by person alias.
+        /// Gets or sets the scheduled by <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The scheduled by person alias.
@@ -404,7 +413,7 @@ namespace Rock.Model
         public virtual PersonAlias ScheduledByPersonAlias { get; set; }
 
         /// <summary>
-        /// Gets or sets the presented by person alias.
+        /// Gets or sets the presented by <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The presented by person alias.
@@ -413,7 +422,7 @@ namespace Rock.Model
         public virtual PersonAlias PresentByPersonAlias { get; set; }
 
         /// <summary>
-        /// Gets or sets the checked-out by person alias.
+        /// Gets or sets the checked-out by <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The checked-out by person alias.
@@ -432,48 +441,59 @@ namespace Rock.Model
         {
             get
             {
-                // If the attendance does not have an occurrence schedule, then there's nothing to check.
-                if ( Occurrence == null || Occurrence.Schedule == null )
-                {
-                    return false;
-                }
+                // If the Campus is assigned, trust that over the CampusId value.
+                int? campusId = Campus?.Id ?? CampusId;
 
-                // If person has checked-out, they are obviously not still checked in
-                if ( EndDateTime.HasValue )
-                {
-                    return false;
-                }
-
-                // We'll check start time against timezone next, but don't even bother with that, if start date was more than 2 days ago
-                if ( StartDateTime < RockDateTime.Now.AddDays( -2 ) )
-                {
-                    return false;
-                }
-
-                // Get the current time (and adjust for a campus timezone)
-                var currentDateTime = RockDateTime.Now;
-                if ( Campus != null )
-                {
-                    currentDateTime = Campus.CurrentDateTime;
-                }
-                else if ( CampusId.HasValue )
-                {
-                    var campus = CampusCache.Get( CampusId.Value );
-                    if ( campus != null )
-                    {
-                        currentDateTime = campus.CurrentDateTime;
-                    }
-                }
-
-                // Now that we now the correct time, make sure that the attendance is for today and previous to current time
-                if ( StartDateTime < currentDateTime.Date || StartDateTime > currentDateTime )
-                {
-                    return false;
-                }
-
-                // Person is currently checked in, if the schedule for this attendance is still active
-                return Occurrence.Schedule.WasScheduleOrCheckInActive( currentDateTime );
+                return CalculateIsCurrentlyCheckedIn( StartDateTime, EndDateTime, campusId, this.Occurrence?.Schedule );
             }
+        }
+
+        /// <summary>
+        /// Calculates if an attendance would be considered checked-in based on specified parameters
+        /// </summary>
+        /// <param name="startDateTime">The start date time.</param>
+        /// <param name="endDateTime">The end date time.</param>
+        /// <param name="campusId">The campus identifier.</param>
+        /// <param name="schedule">The schedule.</param>
+        /// <returns></returns>
+        public static bool CalculateIsCurrentlyCheckedIn( DateTime? startDateTime, DateTime? endDateTime, int? campusId, Schedule schedule )
+        {
+            if ( schedule == null )
+            {
+                return false;
+            }
+
+            // If person has checked-out, they are obviously not still checked in.
+            if ( endDateTime.HasValue )
+            {
+                return false;
+            }
+
+            // We'll check start time against timezone next, but don't even bother if start date was more than 2 days ago.
+            if ( startDateTime < RockDateTime.Now.AddDays( -2 ) )
+            {
+                return false;
+            }
+
+            // Get the current time (and adjust for a campus timezone).
+            var currentDateTime = RockDateTime.Now;
+            if ( campusId.HasValue )
+            {
+                var campus = CampusCache.Get( campusId.Value );
+                if ( campus != null )
+                {
+                    currentDateTime = campus.CurrentDateTime;
+                }
+            }
+
+            // Now that we know the correct time, make sure that the attendance is for today and previous to current time.
+            if ( startDateTime < currentDateTime.Date || startDateTime > currentDateTime )
+            {
+                return false;
+            }
+
+            // Person is currently checked in, if the schedule for this attendance is still active.
+            return schedule.WasScheduleOrCheckInActive( currentDateTime );
         }
 
         #endregion
@@ -570,10 +590,10 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Gets or sets the sunday date.
+        /// Gets or sets the Sunday date.
         /// </summary>
         /// <value>
-        /// The sunday date.
+        /// The Sunday date.
         /// </value>
         [LavaInclude]
         [NotMapped]
@@ -733,7 +753,7 @@ namespace Rock.Model
             if ( !_isDeleted )
             {
                 // The data context save operation doesn't need to wait for this to complete
-                Task.Run( () => StreakTypeService.HandleAttendanceRecord( this ) );
+                Task.Run( () => StreakTypeService.HandleAttendanceRecord( this.Id ) );
             }
 
             base.PostSaveChanges( dbContext );
@@ -789,7 +809,7 @@ namespace Rock.Model
             {
                 sb.AppendFormat( " on {0} at {1}", StartDateTime.ToShortDateString(), StartDateTime.ToShortTimeString() );
 
-                var end = EndDateTime ?? Occurrence?.OccurrenceDate;
+                var end = EndDateTime;
                 if ( end.HasValue )
                 {
                     sb.AppendFormat( " until {0} at {1}", end.Value.ToShortDateString(), end.Value.ToShortTimeString() );
@@ -838,6 +858,27 @@ namespace Rock.Model
         public bool IsScheduledPersonDeclined()
         {
             return this.RSVP == RSVP.No;
+        }
+
+        /// <summary>
+        /// Gets the scheduled attendance item status.
+        /// </summary>
+        /// <param name="rsvp">The RSVP.</param>
+        /// <param name="scheduledToAttend">The scheduled to attend.</param>
+        /// <returns></returns>
+        public static ScheduledAttendanceItemStatus GetScheduledAttendanceItemStatus( RSVP rsvp, bool? scheduledToAttend )
+        {
+            var status = ScheduledAttendanceItemStatus.Pending;
+            if ( rsvp == RSVP.No )
+            {
+                status = ScheduledAttendanceItemStatus.Declined;
+            }
+            else if ( scheduledToAttend == true )
+            {
+                status = ScheduledAttendanceItemStatus.Confirmed;
+            }
+
+            return status;
         }
 
         #endregion
@@ -898,7 +939,7 @@ namespace Rock.Model
         Maybe = 2,
 
         /// <summary>
-        /// RVSP not answered yet (or doesn't apply)
+        /// RSVP not answered yet (or doesn't apply)
         /// </summary>
         Unknown = 3
     }

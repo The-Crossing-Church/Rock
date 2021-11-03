@@ -69,7 +69,7 @@ namespace RockWeb.Blocks.CheckIn
 
     public partial class Success : CheckInBlock
     {
-        private static class AttributeKey
+        private new static class AttributeKey
         {
             public const string PersonSelectPage = "PersonSelectPage";
             public const string Title = "Title";
@@ -219,15 +219,18 @@ namespace RockWeb.Blocks.CheckIn
                         if ( printFromClient.Any() )
                         {
                             var urlRoot = string.Format( "{0}://{1}", Request.Url.Scheme, Request.Url.Authority );
-#if DEBUG
+
+                            /*
                             // This is extremely useful when debugging with ngrok and an iPad on the local network.
                             // X-Original-Host will contain the name of your ngrok hostname, therefore the labels will
                             // get a LabelFile url that will actually work with that iPad.
-                            if ( Request.Headers["X-Forwarded-Proto"] != null && Request.Headers["X-Original-Host" ] != null )
+                            if ( Request.Headers["X-Original-Host" ] != null )
                             {
-                                urlRoot = string.Format( "{0}://{1}", Request.Headers.GetValues( "X-Forwarded-Proto" ).First(), Request.Headers.GetValues( "X-Original-Host" ).First() );
+                                var scheme = Request.Headers["X-Forwarded-Proto"] ?? "http";
+                                urlRoot = string.Format( "{0}://{1}", scheme, Request.Headers.GetValues( "X-Original-Host" ).First() );
                             }
-#endif
+                            */
+
                             printFromClient
                                 .OrderBy( l => l.PersonId )
                                 .ThenBy( l => l.Order )
@@ -241,6 +244,15 @@ namespace RockWeb.Blocks.CheckIn
                         {
                             var messages = ZebraPrint.PrintLabels( printFromServer );
                             mergeFields.Add( "ZebraPrintMessageList", messages );
+                        }
+
+                        if ( lbAnother.Visible )
+                        {
+                            var bodyTag = this.Page.Master.FindControl( "body" ) as HtmlGenericControl;
+                            if ( bodyTag != null )
+                            {
+                                bodyTag.AddCssClass( "checkin-anotherperson" );
+                            }
                         }
 
                         var successLavaTemplate = CurrentCheckInState.CheckInType.SuccessLavaTemplate;
@@ -270,7 +282,7 @@ namespace RockWeb.Blocks.CheckIn
 
                             attendanceSessionGuidsCookie.Value = attendanceSessionGuids.AsDelimited( "," );
 
-                            Response.Cookies.Set( attendanceSessionGuidsCookie );
+                            Rock.Web.UI.RockPage.AddOrUpdateCookie( attendanceSessionGuidsCookie );
 
                             lCheckinQRCodeHtml.Text = string.Format( "<div class='qr-code-container text-center'><img class='img-responsive qr-code' src='{0}' alt='Check-in QR Code' width='500' height='500'></div>", GetAttendanceSessionsQrCodeImageUrl( attendanceSessionGuidsCookie ) );
                         }

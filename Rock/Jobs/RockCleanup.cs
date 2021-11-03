@@ -23,7 +23,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+
 using Humanizer;
+
 using Quartz;
 
 using Rock.Attribute;
@@ -97,6 +99,13 @@ namespace Rock.Jobs
         Category = "General",
         Order = 7 )]
 
+    [BooleanField(
+        "Fix Attendance Records Never Marked Present",
+        Description = "If checked, any attendance records (since the last time the job ran) marked DidAttend=true for check-in areas that have 'Enable Presence' which were never marked present, will be changed to false.",
+        Order = 8,
+        Key = AttributeKey.FixAttendanceRecordsNeverMarkedPresent,
+        Category = "Check-in" )]
+
     [DisallowConcurrentExecution]
     public class RockCleanup : IJob
     {
@@ -112,6 +121,7 @@ namespace Rock.Jobs
             public const string MaxMetaphoneNames = "MaxMetaphoneNames";
             public const string BatchCleanupAmount = "BatchCleanupAmount";
             public const string CommandTimeout = "CommandTimeout";
+            public const string FixAttendanceRecordsNeverMarkedPresent = "FixAttendanceRecordsNeverMarkedPresent";
         }
 
         /// <summary>
@@ -130,6 +140,7 @@ namespace Rock.Jobs
 
         private int commandTimeout;
         private int batchAmount;
+        private DateTime lastRunDateTime;
 
         /// <summary>
         /// Job that executes routine Rock cleanup tasks
@@ -146,7 +157,7 @@ namespace Rock.Jobs
 
             batchAmount = dataMap.GetString( AttributeKey.BatchCleanupAmount ).AsIntegerOrNull() ?? 1000;
             commandTimeout = dataMap.GetString( AttributeKey.CommandTimeout ).AsIntegerOrNull() ?? 900;
-
+            lastRunDateTime = Rock.Web.SystemSettings.GetValue( Rock.SystemKey.SystemSetting.ROCK_CLEANUP_LAST_RUN_DATETIME ).AsDateTime() ?? RockDateTime.Now.AddDays( -1 );
             /* IMPORTANT!! MDP 2020-05-05
 
             1 ) Whenever you do a new RockContext() in RockCleanup make sure to set the commandtimeout, like this:
@@ -168,7 +179,7 @@ namespace Rock.Jobs
 
             RunCleanupTask( "median page load time", () => UpdateMedianPageLoadTimes() );
 
-            RunCleanupTask( "old interaction", () => CleanupOldInteractions( dataMap ) );
+            RunCleanupTask( "old interaction", () => CleanupOldInteractions() );
 
             RunCleanupTask( "unused interaction session", () => CleanupUnusedInteractionSessions() );
 
@@ -180,6 +191,8 @@ namespace Rock.Jobs
 
             // updates missing person aliases, metaphones, etc (doesn't delete any records)
             RunCleanupTask( "person", () => PersonCleanup( dataMap ) );
+
+            RunCleanupTask( "family salutation", () => GroupSalutationCleanup( dataMap ) );
 
             RunCleanupTask( "anonymous giver login", () => RemoveAnonymousGiverUserLogins() );
 
@@ -221,6 +234,14 @@ namespace Rock.Jobs
             RunCleanupTask( "set nameless SMS response", () => EnsureNamelessPersonForSMSResponses() );
 
             RunCleanupTask( "merge nameless to person", () => MatchNamelessPersonToRegularPerson() );
+
+            var fixAttendanceRecordsEnabled = dataMap.GetString( AttributeKey.FixAttendanceRecordsNeverMarkedPresent ).AsBoolean();
+            if ( fixAttendanceRecordsEnabled )
+            {
+                RunCleanupTask( "did attend attendance fix", () => FixDidAttendInAttendance() );
+            }
+
+            Rock.Web.SystemSettings.SetValue( Rock.SystemKey.SystemSetting.ROCK_CLEANUP_LAST_RUN_DATETIME, RockDateTime.Now.ToString() );
 
             //// ***********************
             ////  Final count and report
@@ -355,6 +376,39 @@ namespace Rock.Jobs
                     return stackTrace;
                 }
             }
+        }
+
+        /// <summary>
+        /// Updates <see cref="Group.GroupSalutation" />
+        /// </summary>
+        /// <param name="dataMap">The data map.</param>
+        /// <returns></returns>
+        private int GroupSalutationCleanup( JobDataMap dataMap )
+        {
+            var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+
+            // get list of Families that don't have a GroupSalutation populated yet. Include deceased and businesses.
+            var personIdListWithFamilyId = new PersonService( new RockContext() )
+                .Queryable( true, true )
+                .Where( a =>
+                    a.PrimaryFamilyId.HasValue
+                    && ( a.PrimaryFamily.GroupSalutation == null || a.PrimaryFamily.GroupSalutationFull == null || a.PrimaryFamily.GroupSalutation == "" || a.PrimaryFamily.GroupSalutationFull == "" ) )
+                .Select( a => new { a.Id, a.PrimaryFamilyId } ).ToArray();
+
+            var recordsUpdated = 0;
+
+            // we only need one person from each family (and it doesn't matter who)
+            var personIdList = personIdListWithFamilyId.GroupBy( a => a.PrimaryFamilyId.Value ).Select( s => s.FirstOrDefault()?.Id ).Where( a => a.HasValue ).Select( s => s.Value ).ToList();
+
+            foreach ( var personId in personIdList )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    recordsUpdated += PersonService.UpdateGroupSalutations( personId, rockContext );
+                }
+            }
+
+            return recordsUpdated;
         }
 
         /// <summary>
@@ -769,15 +823,14 @@ namespace Rock.Jobs
         /// </summary>
         private int CleanUpWorkflowLogs( JobDataMap dataMap )
         {
-            int totalRowsDeleted = 0;
-
             // Limit the number of workflow logs to delete for this run (20M records could take around 20 minutes).
             int maxRowDeleteLimit = 20000000;
             var workflowContext = new RockContext();
             workflowContext.Database.CommandTimeout = commandTimeout;
 
             var workflowService = new WorkflowService( workflowContext );
-            var workflowLogQuery = new WorkflowLogService( workflowContext ).Queryable();
+
+            var workflowLogs = workflowContext.WorkflowLogs;
 
             // Get the list of workflows that haven't been modified since X days
             // and have at least one workflow log (narrowing it down to ones with Logs improves performance of this cleanup)
@@ -785,12 +838,11 @@ namespace Rock.Jobs
                 .Where( w =>
                     w.WorkflowType.LogRetentionPeriod.HasValue
                     && DateTime.Now > DbFunctions.AddDays( w.ModifiedDateTime, w.WorkflowType.LogRetentionPeriod )
-                    && workflowLogQuery.Any( wl => wl.WorkflowId == w.Id ) )
+                    && workflowLogs.Any( wl => wl.WorkflowId == w.Id ) )
                 .Select( w => w.Id );
 
-            // WorkflowLogService.CanDelete( log ) always returns true, so no need to check
-            var workflowLogsToDeleteQuery = new WorkflowLogService( workflowContext ).Queryable().Where( a => workflowIdsOlderThanLogRetentionPeriodQuery.Contains( a.WorkflowId ) );
-            BulkDeleteInChunks( workflowLogsToDeleteQuery, batchAmount, commandTimeout, maxRowDeleteLimit );
+            var workflowLogsToDeleteQuery = workflowLogs.Where( a => workflowIdsOlderThanLogRetentionPeriodQuery.Contains( a.WorkflowId ) );
+            int totalRowsDeleted = BulkDeleteInChunks( workflowLogsToDeleteQuery, batchAmount, commandTimeout, maxRowDeleteLimit );
 
             return totalRowsDeleted;
         }
@@ -903,8 +955,7 @@ namespace Rock.Jobs
         /// <summary>
         /// Cleans up Interactions for Interaction Channels that have a retention period
         /// </summary>
-        /// <param name="dataMap">The data map.</param>
-        private int CleanupOldInteractions( JobDataMap dataMap )
+        private int CleanupOldInteractions()
         {
             int totalRowsDeleted = 0;
             var currentDateTime = RockDateTime.Now;
@@ -1587,7 +1638,7 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
             rockContext.Database.CommandTimeout = commandTimeout;
 
             var streakService = new StreakService( rockContext );
-            var attemptService = new StreakAchievementAttemptService( rockContext );
+            var attemptService = new AchievementAttemptService( rockContext );
             var duplicateGroups = streakService.Queryable()
                 .GroupBy( s => new { s.PersonAlias.PersonId, s.StreakTypeId } )
                 .Where( g => g.Count() > 1 )
@@ -1608,8 +1659,6 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
                 recordToKeep.ExclusionMap = StreakTypeService.GetAggregateMap( exclusionMaps );
 
                 var recordsToDeleteIds = recordsToDelete.Select( s => s.Id ).ToList();
-                var attempts = attemptService.Queryable().Where( saa => recordsToDeleteIds.Contains( saa.StreakId ) ).ToList();
-                attempts.ForEach( saa => saa.StreakId = recordToKeep.Id );
 
                 streakService.DeleteRange( recordsToDelete );
                 rockContext.SaveChanges( true );
@@ -1707,13 +1756,15 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
 
                 var personService = new PersonService( rockContext );
                 var phoneNumberService = new PhoneNumberService( rockContext );
-
+                
                 var namelessPersonRecordTypeId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_NAMELESS.AsGuid() );
+                var currentMergeRequestQry = PersonService.GetMergeRequestQuery( rockContext );
 
                 int numberTypeMobileValueId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
 
                 var namelessPersonPhoneNumberQry = phoneNumberService.Queryable()
                     .Where( pn => pn.Person.RecordTypeValueId == namelessPersonRecordTypeId )
+                    .Where( pn => !currentMergeRequestQry.Any( mr => mr.Items.Any( i => i.EntityId == pn.Person.Id ) ) )
                     .AsNoTracking();
 
                 var personPhoneNumberQry = phoneNumberService.Queryable()
@@ -1750,15 +1801,87 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
                         {
                             mergeContext.Database.CommandTimeout = commandTimeout;
                             var mergePersonService = new PersonService( mergeContext );
+                            var mergeRequestService = new EntitySetService( mergeContext );
+
                             var namelessPerson = mergePersonService.Get( namelessPersonId );
                             var existingPerson = mergePersonService.Get( existingPersonId );
-                            mergePersonService.MergeNamelessPersonToExistingPerson( namelessPerson, existingPerson );
-                            mergeContext.SaveChanges();
+
+                            // If nameless person has edited attributes that differ from the existing person's attributes
+                            // we need to create a merge request so a human can select how to merge the attributes.
+                            namelessPerson.LoadAttributes();
+                            existingPerson.LoadAttributes();
+
+                            var defaultAttributeValues = namelessPerson.Attributes.ToDictionary(a => a.Key, a => a.Value.DefaultValue);
+                            var namelessPersonEditedAttributeValues = namelessPerson.AttributeValues.Where( av => av.Value.Value != defaultAttributeValues[av.Key] );
+                            var existingPersonEditedAttributeValues = existingPerson.AttributeValues.Where( av => av.Value.Value != defaultAttributeValues[av.Key] );
+
+                            var hasMissingAttributes = namelessPersonEditedAttributeValues.Any( av => !existingPersonEditedAttributeValues.Any( eav => eav.Key == av.Key ) );
+
+                            var hasDifferentValues = false;
+                            if ( !hasMissingAttributes )
+                            {
+                                hasDifferentValues = namelessPersonEditedAttributeValues
+                                    .Any( av => !existingPersonEditedAttributeValues
+                                        .Any( eav => eav.Key == av.Key && eav.Value.Value.Equals(av.Value.Value, StringComparison.OrdinalIgnoreCase)  ) );
+                            }
+
+                            if ( !hasMissingAttributes && !hasDifferentValues )
+                            {
+                                mergePersonService.MergeNamelessPersonToExistingPerson( namelessPerson, existingPerson );
+                                mergeContext.SaveChanges();
+                            }
+                            else
+                            {
+                                var mergeRequest = namelessPerson.CreateMergeRequest( existingPerson );
+                                if ( mergeRequest != null )
+                                {
+                                    mergeRequestService.Add( mergeRequest );
+                                    mergeContext.SaveChanges();
+                                }
+                            }
+
                             mergedNamelessPersonIds.Add( namelessPersonId );
                             rowsUpdated++;
                         }
                     }
                 }
+            }
+
+            return rowsUpdated;
+        }
+
+        /// <summary>
+        /// Fixed Attendance Records Never Marked Present.
+        /// </summary>
+        /// <returns></returns>
+        private int FixDidAttendInAttendance()
+        {
+            int rowsUpdated = 0;
+            var guid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE.AsGuid();
+            var rockContext = new RockContext();
+            rockContext.Database.CommandTimeout = commandTimeout;
+
+            var checkInAreas = new GroupTypeService( rockContext )
+                .Queryable()
+                .Where( g => g.GroupTypePurposeValue.Guid.Equals( guid ) )
+                .OrderBy( g => g.Name )
+                .ToList();
+
+            checkInAreas.LoadAttributes();
+
+            foreach ( var checkInArea in checkInAreas.Where( a => a.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE ).AsBoolean() ) )
+            {
+                var groupTypeIds = new List<int>() { checkInArea.Id };
+                groupTypeIds.AddRange( checkInArea.ChildGroupTypes.Select( a => a.Id ) );
+                // Get all Attendance records for the current day and location
+                var attendanceQueryToUpdate = new AttendanceService( rockContext ).Queryable().Where( a =>
+                    !a.PresentDateTime.HasValue
+                    && a.CreatedDateTime >= lastRunDateTime
+                    && a.DidAttend.HasValue
+                    && a.DidAttend.Value
+                    && groupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
+
+                rowsUpdated += rockContext.BulkUpdate( attendanceQueryToUpdate, a => new Attendance { DidAttend = false } );
             }
 
             return rowsUpdated;

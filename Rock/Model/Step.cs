@@ -35,30 +35,41 @@ namespace Rock.Model
     [DataContract]
     public partial class Step : Model<Step>, IOrdered
     {
+        /* Custom Indexes:
+         *
+         * PersonAliasId, StepTypeId
+         *      Includes CompletedDateTime
+         *      This was added for Step Program Achievement
+         *      
+         *  StepTypeId, PersonAliasId
+         *      Includes CompletedDateTime
+         *      This was added for Step Program Achievement
+         */
+
         #region Entity Properties
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="StepType"/> to which this step belongs. This property is required.
+        /// Gets or sets the Id of the <see cref="Rock.Model.StepType"/> to which this step belongs. This property is required.
         /// </summary>
         [Required]
         [DataMember( IsRequired = true )]
         public int StepTypeId { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="StepStatus"/> to which this step belongs.
+        /// Gets or sets the Id of the <see cref="Rock.Model.StepStatus"/> to which this step belongs.
         /// </summary>
         [DataMember]
         public int? StepStatusId { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="PersonAlias"/> that identifies the Person associated with taking this step. This property is required.
+        /// Gets or sets the Id of the <see cref="Rock.Model.PersonAlias"/> that identifies the Person associated with taking this step. This property is required.
         /// </summary>
         [Required]
         [DataMember( IsRequired = true )]
         public int PersonAliasId { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="Campus"/> associated with this step.
+        /// Gets or sets the Id of the <see cref="Rock.Model.Campus"/> associated with this step.
         /// </summary>
         [DataMember]
         public int? CampusId { get; set; }
@@ -149,31 +160,31 @@ namespace Rock.Model
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the Step Type.
+        /// Gets or sets the <see cref="Rock.Model.StepType"/>.
         /// </summary>
         [DataMember]
         public virtual StepType StepType { get; set; }
 
         /// <summary>
-        /// Gets or sets the Step Status.
+        /// Gets or sets the <see cref="Rock.Model.StepStatus"/>.
         /// </summary>
         [DataMember]
         public virtual StepStatus StepStatus { get; set; }
 
         /// <summary>
-        /// Gets or sets the Person Alias.
+        /// Gets or sets the <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         [DataMember]
         public virtual PersonAlias PersonAlias { get; set; }
 
         /// <summary>
-        /// Gets or sets the Campus.
+        /// Gets or sets the <see cref="Rock.Model.Campus"/>.
         /// </summary>
         [DataMember]
         public virtual Campus Campus { get; set; }
 
         /// <summary>
-        /// Gets or sets a collection containing the <see cref="StepWorkflow">StepWorkflows</see> that are of this step.
+        /// Gets or sets a collection containing the <see cref="Rock.Model.StepWorkflow">StepWorkflows</see> that are of this step.
         /// </summary>
         [DataMember]
         public virtual ICollection<StepWorkflow> StepWorkflows
@@ -199,7 +210,7 @@ namespace Rock.Model
         /// The start source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate StartSourceDate { get; set; }
+        public virtual AnalyticsSourceDate StartSourceDate { get; set; }
 
         /// <summary>
         /// Gets or sets the end source date.
@@ -208,7 +219,7 @@ namespace Rock.Model
         /// The end source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate EndSourceDate { get; set; }
+        public virtual AnalyticsSourceDate EndSourceDate { get; set; }
 
         /// <summary>
         /// Gets or sets the completed source date.
@@ -217,7 +228,7 @@ namespace Rock.Model
         /// The completed source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate CompletedSourceDate { get; set; }
+        public virtual AnalyticsSourceDate CompletedSourceDate { get; set; }
         #endregion Virtual Properties
 
         #region Overrides
@@ -232,14 +243,14 @@ namespace Rock.Model
 
             // Get PersonAlias.
             var person = this.PersonAlias?.Person;
-            if ( person == null )
+            if ( person == null && this.PersonAliasId != 0 )
             {
                 if ( rockContext == null )
                 {
                     rockContext = new RockContext();
                 }
                 var personAlias = new PersonAliasService( rockContext ).Get( this.PersonAliasId );
-                person = personAlias.Person;
+                person = personAlias?.Person;
             }
 
             // Get StepType.

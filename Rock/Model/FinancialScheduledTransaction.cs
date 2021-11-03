@@ -108,7 +108,7 @@ namespace Rock.Model
         public DateTime? EndDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the the maximum number of times that this payment should repeat in this schedule.  If there is not a set number of payments, this value will be null. 
+        /// Gets or sets the maximum number of times that this payment should repeat in this schedule.  If there is not a set number of payments, this value will be null. 
         /// This property is overridden by the schedule's <see cref="EndDate"/>.
         /// </summary>
         /// <value>
@@ -218,12 +218,21 @@ namespace Rock.Model
         [Column( TypeName = "Date" )]
         public DateTime? LastRemindedDate { get; set; }
 
+        /// <summary>
+        /// Gets or sets the foreign currency code value identifier.
+        /// </summary>
+        /// <value>
+        /// The foreign currency code value identifier.
+        /// </value>
+        [DataMember]
+        [DefinedValue( SystemGuid.DefinedType.FINANCIAL_CURRENCY_CODE )]
+        public int? ForeignCurrencyCodeValueId { get; set; }
         #endregion
 
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the authorized person alias.
+        /// Gets or sets the authorized <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The authorized person alias.
@@ -250,7 +259,7 @@ namespace Rock.Model
         public virtual DefinedValue SourceTypeValue { get; set; }
 
         /// <summary>
-        /// Gets or sets the gateway.
+        /// Gets or sets the <see cref="Rock.Model.FinancialGateway">gateway</see>.
         /// </summary>
         /// <value>
         /// The gateway.
@@ -259,7 +268,7 @@ namespace Rock.Model
         public virtual FinancialGateway FinancialGateway { get; set; }
 
         /// <summary>
-        /// Gets or sets the financial payment detail.
+        /// Gets or sets the <see cref="Rock.Model.FinancialPaymentDetail"/>.
         /// </summary>
         /// <value>
         /// The financial payment detail.

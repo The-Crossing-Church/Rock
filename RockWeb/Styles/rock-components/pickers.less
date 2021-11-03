@@ -37,6 +37,7 @@
     max-width: ~"calc(100% - 25px)";
     padding: @padding-base-vertical @padding-base-horizontal;
     font-size: @font-size-base;
+    line-height: @line-height-computed;
     color: @input-color;
     background-color: @input-bg;
     border: 1px solid @input-border;
@@ -48,7 +49,7 @@
     i {
       float: left;
       margin-right: 6px;
-      line-height: @line-height-computed;
+      line-height: inherit;
       vertical-align: bottom;
     }
 
@@ -56,7 +57,7 @@
       float: left;
       width: ~"calc(100% - 42px)";
       overflow: hidden;
-      line-height: @line-height-computed;
+      line-height: inherit;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -64,6 +65,11 @@
     .fa.fa-caret-down {
       margin-top: 3px;
     }
+  }
+
+  &.picker-fullwidth,
+  &.picker-fullwidth .picker-label {
+    width: 100%;
   }
 
   .input-group-sm {
@@ -86,14 +92,18 @@
 
     .viewport {
       width: ~"calc(100% - 15px)";
-      height: 380px;
-      //max-height: ~"calc(100vh - 200px)";
     }
 
     .scrollbar {
       width: 5px;
+    }
+
+    .viewport,
+    .scrollbar {
       height: 380px;
-      //max-height: ~"calc(100vh - 210px)";
+      @media (max-device-height: 480px) {
+        max-height: 200px;
+      }
     }
   }
 
@@ -150,10 +160,7 @@
       margin-right: 0;
     }
 
-    label {
-      display: block;
-    }
-
+    label,
     .label-text {
       display: block;
     }
@@ -249,22 +256,9 @@
 
     .picker-label {
       width: 325px;
-
-      span {
-        width: 240px;
-      }
     }
   }
 }
-
-// #dialog .scroll-container-picker {
-//   width: 360px;
-
-//   .viewport {
-//     width: 340px;
-//     height: 190px;
-//   }
-// }
 
 // date time picker
 .date-time-picker {
@@ -277,16 +271,9 @@
 
 // Campus Account Amount Picker
 .campus-account-amount-picker {
-  margin-bottom: @form-group-margin-bottom;
-
-  .amount-input {
-    margin-bottom: @form-group-margin-bottom;
-  }
-
-  .campus-dropdown {
-    margin-bottom: @form-group-margin-bottom;
-  }
-
+  &,
+  .amount-input,
+  .campus-dropdown,
   .account-dropdown {
     margin-bottom: @form-group-margin-bottom;
   }

@@ -153,6 +153,7 @@ namespace RockWeb.Blocks.Administration
 
             // Save General
             Rock.Web.SystemSettings.SetValue( SystemSetting.ENABLE_MULTI_TIME_ZONE_SUPPORT, cbEnableMultipleTimeZone.Checked.ToString() );
+            Rock.Web.SystemSettings.SetValue( SystemSetting.ALWAYS_SHOW_BUSINESS_IN_PERSONPICKER, cbIncludeBusinessInPersonPicker.Checked.ToString() );
 
             nbGeneralMessage.NotificationBoxType = NotificationBoxType.Success;
             nbGeneralMessage.Title = string.Empty;
@@ -234,15 +235,15 @@ namespace RockWeb.Blocks.Administration
             nbLoggingMessage.Text = "Setting saved successfully.";
         }
 
-        protected void btnLoggingFlush_Click( object sender, EventArgs e )
+        protected void btnDeleteLog_Click( object sender, EventArgs e )
         {
             nbLoggingMessage.Visible = true;
 
-            RockLogger.Log.Close();
+            RockLogger.Log.Delete();
 
             nbLoggingMessage.NotificationBoxType = NotificationBoxType.Success;
             nbLoggingMessage.Title = string.Empty;
-            nbLoggingMessage.Text = "The buffered logs were successfully flushed out to the log file.";
+            nbLoggingMessage.Text = "The log files were successfully deleted.";
         }
         #endregion
 
@@ -254,6 +255,7 @@ namespace RockWeb.Blocks.Administration
         private void BindGeneralConfiguration()
         {
             cbEnableMultipleTimeZone.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.ENABLE_MULTI_TIME_ZONE_SUPPORT ).AsBoolean();
+            cbIncludeBusinessInPersonPicker.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.ALWAYS_SHOW_BUSINESS_IN_PERSONPICKER ).AsBoolean();
         }
 
         private void BindLoggingSettings()

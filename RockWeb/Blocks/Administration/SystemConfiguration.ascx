@@ -14,7 +14,14 @@
 
                 <Rock:PanelWidget ID="pwGeneralConfiguration" runat="server" Title="General Configuration" Expanded="true">
                     <Rock:NotificationBox ID="nbGeneralMessage" runat="server" NotificationBoxType="Warning" Title="Warning" Visible="false" />
-                    <Rock:RockCheckBox ID="cbEnableMultipleTimeZone" runat="server" Label="Enable Multiple Time Zone Support" ValidationGroup="GeneralSetting" Help="When checked, Mutliple Time Zone is supported." />
+                    <div class="row">
+                        <div class="col-md-6">
+                            <Rock:RockCheckBox ID="cbEnableMultipleTimeZone" runat="server" Label="Enable Multiple Time Zone Support" ValidationGroup="GeneralSetting" Help="When checked, Mutliple Time Zone is supported." />
+                        </div>
+                        <div class="col-md-6">
+                            <Rock:RockCheckBox ID="cbIncludeBusinessInPersonPicker" runat="server" Label="Always Show Businesses in Person Picker" ValidationGroup="GeneralSetting" Help="When enabled, businesses will always be included in the search results of the person picker." />
+                        </div>
+                    </div>
                     <div class="actions margin-t-lg">
                         <Rock:BootstrapButton ID="btnGeneralSave" runat="server" CssClass="btn btn-primary" AccessKey="s" OnClick="btnGeneralSave_Click" Text="Save" DataLoadingText="Saving..." ValidationGroup="GeneralSetting"></Rock:BootstrapButton>
                     </div>
@@ -58,12 +65,12 @@
                             OnClick="btnLoggingSave_Click" />
 
                         <Rock:BootstrapButton
-                            ID="btnFlushLog"
+                            ID="btnDeleteLog"
                             runat="server"
                             CssClass="btn btn-link"
-                            Text="Flush Log"
-                            DataLoadingText="Flushing Log ..."
-                            OnClick="btnLoggingFlush_Click" />
+                            Text="Delete Log"
+                            DataLoadingText="Deleting Log ..."
+                            OnClick="btnDeleteLog_Click" />
                     </div>
                 </Rock:PanelWidget>
 

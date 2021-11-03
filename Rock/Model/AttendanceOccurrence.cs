@@ -59,12 +59,16 @@ namespace Rock.Model
         public int? LocationId { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the schedule that the <see cref="Rock.Model.Person"/> checked in to.
+        /// Gets or sets the Id of the <see cref="Rock.Model.Schedule"/> that the <see cref="Rock.Model.Person"/> checked in to.
         /// </summary>
         /// <value>
         /// An <see cref="System.Int32"/> representing the schedule that was checked in to.
         /// </value>
+        /// <remarks>
+        /// [IgnoreCanDelete] since there is a ON DELETE SET NULL cascade on this
+        /// </remarks>
         [DataMember]
+        [IgnoreCanDelete]
         public int? ScheduleId { get; set; }
 
         /// <summary>
@@ -176,7 +180,7 @@ namespace Rock.Model
         public string DeclineReasonValueIds { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="StepType"/> to which this occurrence is associated.
+        /// Gets or sets the Id of the <see cref="Rock.Model.StepType"/> to which this occurrence is associated.
         /// </summary>
         [DataMember]
         public int? StepTypeId { get; set; }
@@ -204,6 +208,17 @@ namespace Rock.Model
             get => OccurrenceDate.ToString( "yyyyMMdd" ).AsInteger();
             private set { }
         }
+
+        /// <summary>
+        /// Gets or sets the attendance type value identifier.
+        /// </summary>
+        /// <value>
+        /// The attendance type value identifier.
+        /// </value>
+        [DataMember]
+        [DefinedValue( SystemGuid.DefinedType.CHECK_IN_ATTENDANCE_TYPES )]
+        public int? AttendanceTypeValueId { get; set; }
+
         #endregion
 
         #region Virtual Properties
@@ -218,7 +233,7 @@ namespace Rock.Model
         public virtual Group Group { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="Rock.Model.Location"/> where the <see cref="Rock.Model.Person"/> attended.
+        /// Gets or sets the <see cref="Rock.Model.Location"/> where the Person attended.
         /// </summary>
         /// <value>
         /// The <see cref="Rock.Model.Location"/> where the <see cref="Rock.Model.Person"/> attended.
@@ -227,7 +242,7 @@ namespace Rock.Model
         public virtual Location Location { get; set; }
 
         /// <summary>
-        /// Gets or sets the schedule.
+        /// Gets or sets the <see cref="Rock.Model.Schedule"/>.
         /// </summary>
         /// <value>
         /// The schedule.
@@ -325,7 +340,7 @@ namespace Rock.Model
             }
         }
         /// <summary>
-        /// Gets or sets the Step Type.
+        /// Gets or sets the <see cref="Rock.Model.StepType"/>.
         /// </summary>
         [DataMember]
         public virtual StepType StepType { get; set; }
@@ -337,7 +352,7 @@ namespace Rock.Model
         /// The occurrence source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate OccurrenceSourceDate { get; set; }
+        public virtual AnalyticsSourceDate OccurrenceSourceDate { get; set; }
         #endregion
 
         #region Public Methods
@@ -393,7 +408,7 @@ namespace Rock.Model
         /// </returns>
         public override string ToString()
         {
-            return $"Occurrence for {Schedule} {Group} at {Location} on { OccurrenceDate }";
+            return $"Occurrence for {Schedule} {Group} at {Location} on { OccurrenceDate.ToShortDateString() }";
         }
 
         #endregion
@@ -414,7 +429,9 @@ namespace Rock.Model
         {
             this.HasOptional( a => a.Group ).WithMany().HasForeignKey( p => p.GroupId ).WillCascadeOnDelete( true );
             this.HasOptional( a => a.Location ).WithMany().HasForeignKey( p => p.LocationId ).WillCascadeOnDelete( true );
-            this.HasOptional( a => a.Schedule ).WithMany().HasForeignKey( p => p.ScheduleId ).WillCascadeOnDelete( true );
+
+            // A Migration will manually add a ON DELETE SET NULL for ScheduleId.
+            this.HasOptional( a => a.Schedule ).WithMany().HasForeignKey( p => p.ScheduleId ).WillCascadeOnDelete( false );
             this.HasOptional( a => a.StepType ).WithMany().HasForeignKey( p => p.StepTypeId ).WillCascadeOnDelete( true );
 
             // NOTE: When creating a migration for this, don't create the actual FK's in the database for this just in case there are outlier OccurrenceDates that aren't in the AnalyticsSourceDate table

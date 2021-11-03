@@ -37,7 +37,7 @@ namespace Rock.Model
         #region Entity Properties
 
         /// <summary>
-        /// Gets or sets the group identifier.
+        /// Gets or sets the <see cref="Rock.Model.Group"/> identifier.
         /// </summary>
         /// <value>
         /// The group identifier.
@@ -48,7 +48,7 @@ namespace Rock.Model
         public int? GroupId { get; set; }
 
         /// <summary>
-        /// Gets or sets the group type identifier.
+        /// Gets or sets the <see cref="Rock.Model.GroupType"/> identifier.
         /// </summary>
         /// <value>
         /// The group type identifier.
@@ -93,7 +93,7 @@ namespace Rock.Model
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the group.
+        /// Gets or sets the <see cref="Rock.Model.Group"/>.
         /// </summary>
         /// <value>
         /// The group.
@@ -102,7 +102,7 @@ namespace Rock.Model
         public virtual Group Group { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of the group.
+        /// Gets or sets the <see cref="Rock.Model.GroupType">type</see> of the group.
         /// </summary>
         /// <value>
         /// The type of the group.
@@ -111,7 +111,7 @@ namespace Rock.Model
         public virtual GroupType GroupType { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of the group requirement.
+        /// Gets or sets the <see cref="Rock.Model.GroupRequirementType">type</see> of the group requirement.
         /// </summary>
         /// <value>
         /// The type of the group requirement.
@@ -120,7 +120,7 @@ namespace Rock.Model
         public virtual GroupRequirementType GroupRequirementType { get; set; }
 
         /// <summary>
-        /// The specific Group Role that this requirement is for. NULL means this requirement applies to all roles.
+        /// The specific <see cref="Rock.Model.GroupTypeRole">Group Role</see> that this requirement is for. NULL means this requirement applies to all roles.
         /// </summary>
         /// <value>
         /// The group type role.
@@ -156,7 +156,7 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Returns a list of each person and their GroupRequiremnt status for this group requirement
+        /// Returns a list of each person and their GroupRequirement status for this group requirement
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <param name="personQry">The person qry.</param>
@@ -182,19 +182,18 @@ namespace Rock.Model
 
             if ( this.GroupRequirementType.RequirementCheckType == RequirementCheckType.Dataview )
             {
-                var errorMessages = new List<string>();
                 var personService = new PersonService( rockContext );
                 var paramExpression = personService.ParameterExpression;
                 List<int> warningDataViewPersonIdList = null;
                 if ( this.GroupRequirementType.WarningDataViewId.HasValue )
                 {
-                    var warningDataViewWhereExpression = this.GroupRequirementType.WarningDataView.GetExpression( personService, paramExpression, out errorMessages );
+                    var warningDataViewWhereExpression = this.GroupRequirementType.WarningDataView.GetExpression( personService, paramExpression );
                     warningDataViewPersonIdList = personService.Get( paramExpression, warningDataViewWhereExpression ).Where( a => personQry.Any( p => p.Id == a.Id ) ).Select( a => a.Id ).ToList();
                 }
 
                 if ( this.GroupRequirementType.DataViewId.HasValue )
                 {
-                    var dataViewWhereExpression = this.GroupRequirementType.DataView.GetExpression( personService, paramExpression, out errorMessages );
+                    var dataViewWhereExpression = this.GroupRequirementType.DataView.GetExpression( personService, paramExpression );
                     var dataViewQry = personService.Get( paramExpression, dataViewWhereExpression );
                     if ( dataViewQry != null )
                     {

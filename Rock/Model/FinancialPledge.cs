@@ -140,7 +140,7 @@ namespace Rock.Model
         #region Virtual Properties
 
         /// <summary>
-        /// Gets or sets the person alias.
+        /// Gets or sets the <see cref="Rock.Model.PersonAlias"/>.
         /// </summary>
         /// <value>
         /// The person alias.
@@ -149,7 +149,7 @@ namespace Rock.Model
         public virtual PersonAlias PersonAlias { get; set; }
 
         /// <summary>
-        /// Gets or sets the group.
+        /// Gets or sets the <see cref="Rock.Model.Group"/>.
         /// </summary>
         /// <value>
         /// The group.
@@ -183,7 +183,7 @@ namespace Rock.Model
         /// The start source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate StartSourceDate { get; set; }
+        public virtual AnalyticsSourceDate StartSourceDate { get; set; }
 
         /// <summary>
         /// Gets or sets the end source date.
@@ -192,7 +192,7 @@ namespace Rock.Model
         /// The end source date.
         /// </value>
         [DataMember]
-        public AnalyticsSourceDate EndSourceDate { get; set; }
+        public virtual AnalyticsSourceDate EndSourceDate { get; set; }
         #endregion
 
         #region Public Methods

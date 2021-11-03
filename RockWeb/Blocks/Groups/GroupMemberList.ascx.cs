@@ -294,6 +294,7 @@ namespace RockWeb.Blocks.Groups
         private bool _showAttendance = false;
         private bool _hasGroupRequirements = false;
         private HashSet<int> _groupMemberIdsThatLackGroupRequirements = new HashSet<int>();
+        private List<int> _groupMemberIdsWithWarnings = new List<int>();
         private bool _showDateAdded = false;
         private bool _showNoteColumn = false;
 
@@ -436,6 +437,10 @@ namespace RockWeb.Blocks.Groups
                 if ( _hasGroupRequirements )
                 {
                     if ( _groupMemberIdsThatLackGroupRequirements.Contains( groupMember.Id ) )
+                    {
+                        sbNameHtml.Append( " <i class='fa fa-exclamation-triangle text-danger'></i>" );
+                    }
+                    else if ( _groupMemberIdsWithWarnings.Contains( groupMember.Id) )
                     {
                         sbNameHtml.Append( " <i class='fa fa-exclamation-triangle text-warning'></i>" );
                     }
@@ -1015,48 +1020,14 @@ namespace RockWeb.Blocks.Groups
             }
 
             // Add Link to Profile Page Column
-            if ( !string.IsNullOrEmpty( GetAttributeValue( "PersonProfilePage" ) ) )
-            {
-                AddPersonProfileLinkColumn();
-            }
+            var personProfileLinkField = new PersonProfileLinkField();
+            personProfileLinkField.LinkedPageAttributeKey = "PersonProfilePage";
+            gGroupMembers.Columns.Add( personProfileLinkField );
 
-            // Add delete column
+            // Hold a reference to the delete column
             _deleteField = new DeleteField();
             _deleteField.Click += DeleteOrArchiveGroupMember_Click;
             gGroupMembers.Columns.Add( _deleteField );
-        }
-
-        /// <summary>
-        /// Adds the column with a link to profile page.
-        /// </summary>
-        private void AddPersonProfileLinkColumn()
-        {
-            HyperLinkField hlPersonProfileLink = new HyperLinkField();
-            hlPersonProfileLink.ItemStyle.HorizontalAlign = HorizontalAlign.Center;
-            hlPersonProfileLink.HeaderStyle.CssClass = "grid-columncommand";
-            hlPersonProfileLink.ItemStyle.CssClass = "grid-columncommand";
-            hlPersonProfileLink.ControlStyle.CssClass = "btn btn-default btn-sm";
-            hlPersonProfileLink.DataNavigateUrlFields = new string[1] { "PersonId" };
-
-            /*
-             * 2020-02-27 - JPH
-             *
-             * The LinkedPageUrl() method now has logic to prevent JavaScript Injection attacks. See the following:
-             * https://app.asana.com/0/1121505495628584/1162600333693130/f
-             * https://github.com/SparkDevNetwork/Rock/commit/4d0a4917282121d8ea55064d4f660a9b1c476946#diff-4a0cf24007088762bcf634d2ca28f30a
-             *
-             * Because of this, the "###" we pass into this method below will be returned encoded.
-             * We now need to search for the encoded version within our usage of the Replace() method.
-             *
-             * Reason: XSS Prevention
-             */
-
-            hlPersonProfileLink.DataNavigateUrlFormatString = LinkedPageUrl( "PersonProfilePage", new Dictionary<string, string> { { "PersonId", "###" } } ).Replace( HttpUtility.UrlEncode( "###" ), "{0}" );
-
-            hlPersonProfileLink.DataTextFormatString = "<i class='fa fa-user'></i>";
-
-            hlPersonProfileLink.DataTextField = "PersonId";
-            gGroupMembers.Columns.Add( hlPersonProfileLink );
         }
 
         /// <summary>
@@ -1438,8 +1409,9 @@ namespace RockWeb.Blocks.Groups
             _hasGroupRequirements = new GroupRequirementService( rockContext ).Queryable().Where( a => ( a.GroupId.HasValue && a.GroupId == _group.Id ) || ( a.GroupTypeId.HasValue && a.GroupTypeId == _group.GroupTypeId ) ).Any();
 
             // If there are group requirements that that member doesn't meet, show an icon in the grid
-            bool includeWarnings = false;
-            _groupMemberIdsThatLackGroupRequirements = new HashSet<int>( new GroupService( rockContext ).GroupMembersNotMeetingRequirements( _group, includeWarnings ).Select( a => a.Key.Id ).ToList().Distinct() );
+            var groupService = new GroupService( rockContext );
+            _groupMemberIdsThatLackGroupRequirements = new HashSet<int>( groupService.GroupMembersNotMeetingRequirements( _group, false ).Select( a => a.Key.Id ).ToList().Distinct() );
+            _groupMemberIdsWithWarnings = groupService.GroupMemberIdsWithRequirementWarnings( _group );
 
             gGroupMembers.EntityTypeId = EntityTypeCache.Get( Rock.SystemGuid.EntityType.GROUP_MEMBER.AsGuid() ).Id;
 

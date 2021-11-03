@@ -70,7 +70,25 @@ namespace Rock.Model
                 return false;
             }  
  
+            if ( new Service<CommunicationResponseAttachment>( Context ).Queryable().Any( a => a.BinaryFileId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", BinaryFile.FriendlyTypeName, CommunicationResponseAttachment.FriendlyTypeName );
+                return false;
+            }  
+ 
+            if ( new Service<CommunicationTemplate>( Context ).Queryable().Any( a => a.ImageFileId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", BinaryFile.FriendlyTypeName, CommunicationTemplate.FriendlyTypeName );
+                return false;
+            }  
+ 
             if ( new Service<CommunicationTemplate>( Context ).Queryable().Any( a => a.LogoBinaryFileId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", BinaryFile.FriendlyTypeName, CommunicationTemplate.FriendlyTypeName );
+                return false;
+            }  
+ 
+            if ( new Service<CommunicationTemplate>( Context ).Queryable().Any( a => a.PushImageBinaryFileId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", BinaryFile.FriendlyTypeName, CommunicationTemplate.FriendlyTypeName );
                 return false;
@@ -97,6 +115,12 @@ namespace Rock.Model
             if ( new Service<FinancialAccount>( Context ).Queryable().Any( a => a.ImageBinaryFileId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", BinaryFile.FriendlyTypeName, FinancialAccount.FriendlyTypeName );
+                return false;
+            }  
+ 
+            if ( new Service<FinancialStatementTemplate>( Context ).Queryable().Any( a => a.LogoBinaryFileId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", BinaryFile.FriendlyTypeName, FinancialStatementTemplate.FriendlyTypeName );
                 return false;
             }  
  

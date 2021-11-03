@@ -112,7 +112,23 @@ namespace Rock.NMI
         IsRequired = false,
         DefaultValue = "",
         Order = 8 )]
-    public class Gateway : GatewayComponent, IThreeStepGatewayComponent, IHostedGatewayComponent
+
+    [DecimalField(
+        "Credit Card Fee Coverage Percentage (Future)",
+        Key = AttributeKey.CreditCardFeeCoveragePercentage,
+        Description = @"The credit card fee percentage that will be used to determine what to add to the person's donation, if they want to cover the fee.",
+        IsRequired = false,
+        DefaultValue = null,
+        Order = 9 )]
+
+    [CurrencyField(
+        "ACH Transaction Fee Coverage Amount (Future)",
+        Key = AttributeKey.ACHTransactionFeeCoverageAmount,
+        Description = "The dollar amount to add to an ACH transaction, if they want to cover the fee.",
+        IsRequired = false,
+        DefaultValue = null,
+        Order = 10 )]
+    public class Gateway : GatewayComponent, IThreeStepGatewayComponent, IHostedGatewayComponent, IFeeCoverageGatewayComponent
     {
         #region Attribute Keys
 
@@ -133,6 +149,16 @@ namespace Rock.NMI
             public const string TokenizationKey = "TokenizationKey";
             public const string PromptForName = "PromptForName";
             public const string PromptForAddress = "PromptForAddress";
+
+            /// <summary>
+            /// The credit card fee coverage percentage
+            /// </summary>
+            public const string CreditCardFeeCoveragePercentage = "CreditCardFeeCoveragePercentage";
+
+            /// <summary>
+            /// The ach transaction fee coverage amount
+            /// </summary>
+            public const string ACHTransactionFeeCoverageAmount = "ACHTransactionFeeCoverageAmount";
         }
 
         #endregion Attribute Keys
@@ -369,14 +395,14 @@ namespace Rock.NMI
                 }
 
                 var rootElement = CreateThreeStepRootDoc( financialGateway, "complete-action" );
-                rootElement.Add( new XElement( "token-id", resultQueryString.Substring( 10 ) ) );
+                rootElement.Add( new XElement( "token-id", resultQueryString.SubstringSafe( 10 ) ) );
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
                 var threeStepChangeStep3Response = PostToGatewayThreeStepAPI<ThreeStepChargeStep3Response>( financialGateway, xdoc );
 
                 if ( threeStepChangeStep3Response == null )
                 {
                     errorMessage = "Invalid Response from NMI";
-                    ExceptionLogService.LogException( new NMIGatewayException( $"An invalid response was received from the NMI gateway at step 3.  This could potentially result in a customer charge that is not recorded in Rock.  The token-id was: {resultQueryString.Substring( 10 )}" ) );
+                    ExceptionLogService.LogException( new NMIGatewayException( $"An invalid response was received from the NMI gateway at step 3.  This could potentially result in a customer charge that is not recorded in Rock.  The token-id was: {resultQueryString.SubstringSafe( 10 )}" ) );
                     return null;
                 }
 
@@ -412,7 +438,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 {
                     // cc payment
                     var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
-                    transaction.FinancialPaymentDetail.NameOnCardEncrypted = Encryption.EncryptString( $"{threeStepChangeStep3Response.Billing?.FirstName} {threeStepChangeStep3Response.Billing?.LastName}" );
+                    transaction.FinancialPaymentDetail.NameOnCard = $"{threeStepChangeStep3Response.Billing?.FirstName} {threeStepChangeStep3Response.Billing?.LastName}";
                     transaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : ( int? ) null;
                     transaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
                     transaction.FinancialPaymentDetail.AccountNumberMasked = ccNumber.Masked( true );
@@ -420,8 +446,8 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     string mmyy = threeStepChangeStep3Response.Billing?.CcExp;
                     if ( !string.IsNullOrWhiteSpace( mmyy ) && mmyy.Length == 4 )
                     {
-                        transaction.FinancialPaymentDetail.ExpirationMonthEncrypted = Encryption.EncryptString( mmyy.Substring( 0, 2 ) );
-                        transaction.FinancialPaymentDetail.ExpirationYearEncrypted = Encryption.EncryptString( mmyy.Substring( 2, 2 ) );
+                        transaction.FinancialPaymentDetail.ExpirationMonth = mmyy.Substring( 0, 2 ).AsIntegerOrNull();
+                        transaction.FinancialPaymentDetail.ExpirationYear = mmyy.Substring( 2, 2 ).AsIntegerOrNull();
                     }
                 }
                 else
@@ -619,7 +645,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             try
             {
                 var rootElement = CreateThreeStepRootDoc( financialGateway, "complete-action" );
-                rootElement.Add( new XElement( "token-id", resultQueryString.Substring( 10 ) ) );
+                rootElement.Add( new XElement( "token-id", resultQueryString.SubstringSafe( 10 ) ) );
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
                 var threeStepSubscriptionStep3Response = PostToGatewayThreeStepAPI<ThreeStepSubscriptionStep3Response>( financialGateway, xdoc );
 
@@ -664,8 +690,8 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     string mmyy = threeStepSubscriptionStep3Response.Billing?.CcExp;
                     if ( !string.IsNullOrWhiteSpace( mmyy ) && mmyy.Length == 4 )
                     {
-                        scheduledTransaction.FinancialPaymentDetail.ExpirationMonthEncrypted = Encryption.EncryptString( mmyy.Substring( 0, 2 ) );
-                        scheduledTransaction.FinancialPaymentDetail.ExpirationYearEncrypted = Encryption.EncryptString( mmyy.Substring( 2, 2 ) );
+                        scheduledTransaction.FinancialPaymentDetail.ExpirationMonth = mmyy.Substring( 0, 2 ).AsIntegerOrNull();
+                        scheduledTransaction.FinancialPaymentDetail.ExpirationYear = mmyy.Substring( 2, 2 ).AsIntegerOrNull();
                     }
                 }
                 else
@@ -1412,7 +1438,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             {
                 // cc payment
                 var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
-                financialPaymentDetail.NameOnCardEncrypted = Encryption.EncryptString( $"{customerInfo.FirstName} {customerInfo.LastName}" );
+                financialPaymentDetail.NameOnCard = $"{customerInfo.FirstName} {customerInfo.LastName}";
                 financialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : ( int? ) null;
 
                 //// The gateway tells us what the CreditCardType is since it was selected using their hosted payment entry frame.
@@ -1432,8 +1458,8 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 string mmyy = customerInfo.CcExp;
                 if ( !string.IsNullOrWhiteSpace( mmyy ) && mmyy.Length == 4 )
                 {
-                    financialPaymentDetail.ExpirationMonthEncrypted = Encryption.EncryptString( mmyy.Substring( 0, 2 ) );
-                    financialPaymentDetail.ExpirationYearEncrypted = Encryption.EncryptString( mmyy.Substring( 2, 2 ) );
+                    financialPaymentDetail.ExpirationMonth = mmyy.Substring( 0, 2 ).AsIntegerOrNull();
+                    financialPaymentDetail.ExpirationYear = mmyy.Substring( 2, 2 ).AsIntegerOrNull();
                 }
             }
             else
@@ -1953,7 +1979,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
             if ( tokenResponse?.IsSuccessStatus() != true )
             {
-                if ( tokenResponse.HasValidationError() )
+                if ( tokenResponse?.HasValidationError() == true)
                 {
                     errorMessage = tokenResponse.ValidationMessage;
                 }
@@ -2085,6 +2111,22 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         }
 
         #endregion IHostedGatewayComponent
+
+        #region IFeeCoverageGatewayComponent
+
+        /// <inheritdoc/>
+        public decimal? GetCreditCardFeeCoveragePercentage( FinancialGateway financialGateway )
+        {
+            return this.GetAttributeValue( financialGateway, AttributeKey.CreditCardFeeCoveragePercentage )?.AsDecimalOrNull();
+        }
+
+        /// <inheritdoc/>
+        public decimal? GetACHFeeCoverageAmount( FinancialGateway financialGateway )
+        {
+            return this.GetAttributeValue( financialGateway, AttributeKey.ACHTransactionFeeCoverageAmount )?.AsDecimalOrNull();
+        }
+
+        #endregion IFeeCoverageGatewayComponent
 
         #region NMI Specific
 
