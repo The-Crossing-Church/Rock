@@ -413,8 +413,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             start = pkrStart.SelectedDate;
             end = pkrEnd.SelectedDate;
+            end = new DateTime( end.Value.Year, end.Value.Month, end.Value.Day, 23, 59, 59 );
             lystart = new DateTime( start.Value.Year - 1, start.Value.Month, start.Value.Day );
-            lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day );
+            lyend = new DateTime( end.Value.Year - 1, end.Value.Month, end.Value.Day, 23, 59, 59 );
             fund = new FinancialAccountService( context ).Get( Int32.Parse( pkrAcct.SelectedValue ) );
             if ( start.HasValue && end.HasValue && fund != null )
             {
@@ -474,23 +475,37 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                         row++;
                     }
                     byte[] sheetbytes = excel.GetAsByteArray();
-                    string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Finance\\Comparative_Giving_Report.xlsx";
-                    System.IO.File.WriteAllBytes( path, sheetbytes );
+                    BinaryFile file = new BinaryFile()
+                    {
+                        FileName = "Comparative_Giving_Report.xlsx",
+                        MimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        BinaryFileTypeId = 14,
+                        IsTemporary = true
+                    };
+                    file.FileSize = sheetbytes.Length;
+                    file.ContentStream = new MemoryStream( sheetbytes );
+                    new BinaryFileService( context ).Add( file );
+                    context.SaveChanges();
+                    //string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Finance\\Comparative_Giving_Report.xlsx";
+                    //System.IO.File.WriteAllBytes( path, sheetbytes );
 
                     //Notify file is ready
                     Guid? guid = GetAttributeValue( "Person" ).AsGuidOrNull();
                     if ( guid.HasValue )
                     {
-                        Person p = new PersonService( context ).Get( guid.Value );
+                        Person p = new PersonAliasService( context ).Get( guid.Value ).Person;
                         RockEmailMessage email = new RockEmailMessage();
                         RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( p, new Dictionary<string, object>() );
                         email.AddRecipient( recipient );
                         email.Subject = "Comparative Giving Report is Ready";
-                        email.Message = "Your file is ready. It can be found in the <a href='https://rock.thecrossingchurch.com/page/433'>CMS File manager</a> at Content/Finance/Comparative_Giving_Report.xlsx";
+                        email.Message = "Here is your comparative giving report for " + start.Value.ToString("d") + " to " + end.Value.ToString("d") + ".";
                         email.FromEmail = "system@thecrossingchurch.com";
                         email.FromName = "The Crossing System";
                         email.CreateCommunicationRecord = true;
-                        var output = email.Send();
+                        email.Attachments.Add(file);
+                        List<string> errorMessages = new List<string>();
+                        var output = email.Send(out errorMessages);
+                        Console.WriteLine( "ey" );
                     }
                 } );
             }
