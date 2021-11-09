@@ -505,7 +505,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                         email.Attachments.Add(file);
                         List<string> errorMessages = new List<string>();
                         var output = email.Send(out errorMessages);
-                        Console.WriteLine( "ey" );
+                        if(!output)
+                        {
+                            Exception ex = new Exception( "Error in CGR:\n" + String.Join( "\n", errorMessages ) );
+                            ExceptionLogService.LogException( ex, HttpContext.Current );
+                        }
                     }
                 } );
             }
