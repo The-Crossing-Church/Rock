@@ -28,8 +28,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 <asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 
-<div id="app">
-  <v-app>
+<div id="app" v-cloak>
+  <v-app v-cloak>
     <div>
       <v-row>
         <v-col>
@@ -115,11 +115,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
           </v-card>
         </v-col>
       </v-row>
-      <v-overlay :value="overlay">
+      <v-dialog 
+        v-model="overlay" 
+        v-if="overlay"
+        max-width="85%"
+        style="margin-top: 100px !important; max-height: 80vh;"
+      >
         <v-card
           light
           width="100%"
-          style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
           <v-card-title>
             {{selected.Name}}
@@ -564,7 +568,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-overlay>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -858,6 +862,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
   .v-overlay__content {
     width: 60%;
   }
+  .v-dialog:not(.v-dialog--fullscreen) {
+    max-height: 80vh !important;
+  }
+  .v-dialog {
+    margin-top: 100px !important;
+  }
   .floating-title {
     text-transform: uppercase;
     font-size: 0.65rem;
@@ -906,5 +916,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
   }
   .v-expansion-panel--active>.v-expansion-panel-header {
     border-bottom: 1px solid #e2e2e2;
+  }
+  [v-cloak] {
+    display: none !important;
   }
 </style>

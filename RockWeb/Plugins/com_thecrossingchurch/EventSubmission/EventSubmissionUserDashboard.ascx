@@ -43,8 +43,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
   OnClick="AddComment_Click"
 />
 
-<div id="app">
-  <v-app>
+<div id="app" v-cloak>
+  <v-app v-cloak>
     <div>
       <v-row>
         <v-col>
@@ -1621,5 +1621,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
     padding: 8px;
     border-radius: 6px;
     margin: 4px 0px;
+  }
+  [v-cloak] {
+    display: none !important;
   }
 </style>

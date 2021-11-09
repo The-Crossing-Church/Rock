@@ -35,8 +35,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
   OnClick="btnSwitchFocus_Click"
 />
 
-<div id="app">
-  <v-app>
+<div id="app" v-cloak>
+  <v-app v-cloak>
     <v-main>
       <v-card>
         <v-card-text>
@@ -598,5 +598,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
   }
   .v-expansion-panel--active > .v-expansion-panel-header {
     border-bottom: 1px solid #e2e2e2;
+  }
+  [v-cloak] {
+    display: none !important;
   }
 </style>

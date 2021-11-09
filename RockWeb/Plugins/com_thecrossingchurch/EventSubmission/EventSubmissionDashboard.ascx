@@ -61,13 +61,64 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   OnClick="AddComment_Click"
 />
 
-<div id="app">
-  <v-app>
+<div id="app" v-cloak>
+  <v-app v-cloak>
     <div>
       <v-row>
         <v-col>
           <v-card>
             <v-card-text>
+              <v-row align="center">
+                <v-col>
+                  <v-text-field
+                    label="Search"
+                    prepend-inner-icon="mdi-magnify"
+                    v-model="filters.query"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col>
+                  <v-text-field
+                    label="Submitter"
+                    prepend-inner-icon="mdi-account"
+                    v-model="filters.submitter"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col>
+                  <v-autocomplete
+                    label="Status"
+                    :items="['Submitted', 'Approved', 'Denied', 'Cancelled']"
+                    v-model="filters.status"
+                    multiple
+                    attach
+                    clearable
+                  ></v-autocomplete>
+                </v-col>
+                <v-col>
+                  <v-autocomplete
+                    label="Resources"
+                    :items="['Room', 'Catering', 'Childcare', 'Extra Resources', 'Online', 'Publicity', 'Registration']"
+                    v-model="filters.resources"
+                    multiple
+                    attach
+                    clearable
+                  ></v-autocomplete>
+                </v-col>
+                <v-col cols="2">
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn fab small color="primary" class="pull-right ml-2" @click="openHistory" v-bind="attrs" v-on="on">
+                        <v-icon>mdi-history</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>View History</span>
+                  </v-tooltip>
+                  <v-btn color="primary" class="pull-right" @click="filter">
+                    Filter
+                  </v-btn>
+                </v-col>
+              </v-row>
               <v-list>
                 <v-list-item class="list-with-border">
                   <v-row>
@@ -114,11 +165,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 </v-list-item>
               </v-list>
             </v-card-text>
-            <v-card-actions>
-              <v-btn color="primary" @click="openHistory">
-                <v-icon>mdi-history</v-icon> View Request History
-              </v-btn>
-            </v-card-actions>
           </v-card>
         </v-col>
       </v-row>
@@ -127,8 +173,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           <v-card>
             <v-card-text>
               <template v-if="sortedCurrent.length > 0">
-                <v-row v-for="d in sortedCurrent" :key="d.Timeframe">
-                  <v-col>
+                <v-row>
+                  <v-col v-for="d in sortedCurrent" :key="d.Timeframe">
                     <v-list dense>
                       <v-list-item><strong>{{d.Timeframe}}</strong></v-list-item>
                       <v-list-item
@@ -149,7 +195,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col> </v-col>
       </v-row>
       <v-dialog 
         v-if="overlay" 
@@ -505,7 +550,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes && selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
                       <v-col>
                         <div class="floating-title">Desired Drinks</div>
-                        <template v-if="selected.Changes != null && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
+                        <template v-if="selected.Changes != null && e.Drinks && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
                           <span class='red--text'>{{(e.Drinks ? e.Drinks.join(', ') : 'Empty')}}: </span>
                           <span class='primary--text'>{{(selected.Changes.Events[idx].Drinks? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
                         </template>
@@ -1209,6 +1254,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             },
             data: {
                 requests: [],
+                allrequests: [],
                 current: [],
                 selected: {},
                 overlay: false,
@@ -1219,7 +1265,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 bufferErrMsg: '',
                 fab: false,
                 commentDialog: false,
-                comment: ''
+                comment: '',
+                filters: {
+                    query: "",
+                    submitter: "",
+                    status: [],
+                    resources: []
+                },
             },
             created() {
                 this.getRecent();
@@ -1314,7 +1366,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                         req.Comments = i.Comments;
                         temp.push(req);
                     });
-                    this.requests = temp;
+                    this.allrequests = temp;
+                    this.filter();
                 },
                 getCurrent() {
                     let raw = JSON.parse($('[id$="hfCurrent"]').val());
@@ -1471,6 +1524,41 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     $('[id$="hfComment"]').val(this.comment);
                     $('[id$="btnAddComment"')[0].click();
                     $('#updateProgress').show();
+                },
+                filter() {
+                    let temp = this.allrequests;
+                    if (this.filters.submitter != "" && this.filters.submitter != null) {
+                        temp = temp.filter((i) => {
+                            return i.CreatedBy.toLowerCase().includes(
+                                this.filters.submitter.toLowerCase()
+                            );
+                        });
+                    }
+                    if (this.filters.status.length > 0) {
+                        temp = temp.filter((i) => {
+                            return this.filters.status.includes(i.RequestStatus);
+                        });
+                    }
+                    if (this.filters.resources.length > 0) {
+                        temp = temp.filter((i) => {
+                            let iRR = this.requestType(i).split(',')
+                            let intersects = false
+                            this.filters.resources.forEach(r => {
+                                if (iRR.includes(r)) {
+                                    intersects = true
+                                }
+                            })
+                            return intersects
+                        })
+                    }
+                    if (this.filters.query != "" && this.filters.query != null) {
+                        temp = temp.filter((i) => {
+                            return i.Name.toLowerCase().includes(
+                                this.filters.query.toLowerCase()
+                            );
+                        });
+                    }
+                    this.requests = temp
                 },
                 checkHasConflicts() {
                     this.existingRequests = JSON.parse(
@@ -1653,5 +1741,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
     padding: 8px;
     border-radius: 6px;
     margin: 4px 0px;
+  }
+  [v-cloak] {
+    display: none !important;
   }
 </style>

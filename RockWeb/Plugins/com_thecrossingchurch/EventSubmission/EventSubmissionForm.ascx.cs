@@ -45,16 +45,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Category( "com_thecrossingchurch > Event Submission" )]
     [Description( "Request form for Event Submissions" )]
 
-    [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
-    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 1 )]
-    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 2 )]
-    [IntegerField( "ContentChannelTypeId", "The id of the content channel type for an event request.", true, 0, "", 3 )]
-    [TextField( "Page Guid", "The guid of the page for redirect on save.", true, "", "", 4 )]
-    [TextField( "Rock Base URL", "Base URL for Rock", true, "https://rock.thecrossingchurch.com", "", 5 )]
-    [TextField( "Request Page Id", "Page Id of the Request Form", true, "", "", 6 )]
-    [TextField( "Dashboard Page Id", "Page Id of the Request Dashboard", true, "", "", 7 )]
-    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true )]
-    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true )]
+    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
+    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 2 )]
+    [LinkedPage( "Request Page", "The Request Form Page", true, "", "", 4 )]
+    [LinkedPage( "Dashboard Page", "The Request Dashboard Page", true, "", "", 5 )]
+    [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 6 )]
+    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, "", "", 7 )]
+    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, "", "", 8 )]
 
     public partial class EventSubmissionForm : Rock.Web.UI.RockBlock
     {
@@ -62,8 +60,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         public RockContext context { get; set; }
         public string BaseURL { get; set; }
         public string RequestPageId { get; set; }
+        public Guid? RequestPageGuid { get; set; }
         public string DashboardPageId { get; set; }
-        private int DefinedTypeId { get; set; }
+        private int RoomDefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
         private int ContentChannelTypeId { get; set; }
@@ -73,6 +72,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private Rock.Model.Group EventSR { get; set; }
         private bool CurrentPersonIsRoomAdmin { get; set; }
         private bool CurrentPersonIsEventAdmin { get; set; }
+        private bool CurrentPersonIsSuperUser { get; set; }
         private static class PageParameterKey
         {
             public const string Id = "Id";
@@ -103,18 +103,55 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             base.OnLoad( e );
             context = new RockContext();
-            DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
-            MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
-            ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
-            ContentChannelTypeId = GetAttributeValue( "ContentChannelTypeId" ).AsInteger();
-            BaseURL = GetAttributeValue( "RockBaseURL" );
-            RequestPageId = GetAttributeValue( "RequestPageId" );
-            DashboardPageId = GetAttributeValue( "DashboardPageId" );
-            var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
-            var EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
+
+            Guid? RoomDefinedTypeGuid = GetAttributeValue( "RoomList" ).AsGuidOrNull();
+            Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
+            if ( RoomDefinedTypeGuid.HasValue && MinistryDefinedTypeGuid.HasValue )
+            {
+                RoomDefinedTypeId = new DefinedTypeService( context ).Get( RoomDefinedTypeGuid.Value ).Id;
+                MinistryDefinedTypeId = new DefinedTypeService( context ).Get( MinistryDefinedTypeGuid.Value ).Id;
+            }
+
+            Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+            if ( ContentChannelGuid.HasValue )
+            {
+                ContentChannel channel = new ContentChannelService( context ).Get( ContentChannelGuid.Value );
+                ContentChannelId = channel.Id;
+                ContentChannelTypeId = channel.ContentChannelTypeId;
+            }
+
+            Rock.Model.Attribute attr = new AttributeService( context ).Queryable().FirstOrDefault( a => a.Key == "InternalApplicationRoot" );
+            if ( attr != null )
+            {
+                BaseURL = new AttributeValueService( context ).Queryable().FirstOrDefault( av => av.AttributeId == attr.Id ).Value;
+                if ( !BaseURL.EndsWith( "/" ) )
+                {
+                    BaseURL += "/";
+                }
+            }
+            RequestPageGuid = GetAttributeValue( "RequestPage" ).AsGuidOrNull();
+            Guid? DashboardPageGuid = GetAttributeValue( "DashboardPage" ).AsGuidOrNull();
+            if ( RequestPageGuid.HasValue && DashboardPageGuid.HasValue )
+            {
+                RequestPageId = new PageService( context ).Get( RequestPageGuid.Value ).Id.ToString();
+                DashboardPageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
+            }
+
+            Guid? superUserGuid = GetAttributeValue( "SuperUserRole" ).AsGuidOrNull();
+            Guid? RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
+            Guid? EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
+
+            //Throw an error if not all values are present
+            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !superUserGuid.HasValue || !RoomSRGuid.HasValue || !EventSRGuid.HasValue )
+            {
+                return;
+            }
+
             hfIsAdmin.Value = "False";
+            hfIsSuperUser.Value = "False";
             CurrentPersonIsEventAdmin = false;
             CurrentPersonIsRoomAdmin = false;
+            CurrentPersonIsSuperUser = false;
             if ( RoomSRGuid.HasValue )
             {
                 RoomOnlySR = new GroupService( context ).Get( RoomSRGuid.Value );
@@ -132,8 +169,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     CurrentPersonIsEventAdmin = true;
                 }
             }
+            if ( superUserGuid.HasValue )
+            {
+                Rock.Model.Group superUsers = new GroupService( context ).Get( superUserGuid.Value );
+                if ( CurrentPersonId.HasValue && superUsers.Members.Where( m => m.GroupMemberStatus == GroupMemberStatus.Active ).Select( m => m.PersonId ).ToList().Contains( CurrentPersonId.Value ) )
+                {
+                    hfIsSuperUser.Value = "True";
+                    CurrentPersonIsSuperUser = true;
+                }
+            }
             hfPersonName.Value = CurrentPerson.FullName;
-            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
+            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == RoomDefinedTypeId ).ToList();
             Rooms.LoadAttributes();
             hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive, IsDisabled = !dv.IsActive } ) );
             Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
@@ -311,12 +357,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( isExisting )
             {
                 item.ModifiedByPersonAliasId = CurrentPersonAliasId;
+                item.ModifiedDateTime = RockDateTime.Now;
             }
             else
             {
                 item.CreatedByPersonAliasId = CurrentPersonAliasId;
+                item.CreatedDateTime = RockDateTime.Now;
             }
-            item.CreatedDateTime = RockDateTime.Now;
             item.Title = request.Name;
             if ( isPreApproved == "No" )
             {
@@ -365,7 +412,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 query.Add( "Id", item.Id.ToString() );
             }
-            NavigateToPage( Guid.Parse( GetAttributeValue( "PageGuid" ) ), query );
+            NavigateToPage( RequestPageGuid.Value, query );
         }
 
 
@@ -420,7 +467,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Dictionary<string, string> query = new Dictionary<string, string>();
             query.Add( "ShowSuccess", "true" );
             query.Add( "Id", id.ToString() );
-            NavigateToPage( Guid.Parse( GetAttributeValue( "PageGuid" ) ), query );
+            NavigateToPage( RequestPageGuid.Value, query );
         }
         #endregion
 
@@ -521,7 +568,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 foreach ( var d in dates )
                 {
                     DateTime dt = DateTime.Parse( d );
-                    if ( DateTime.Compare( dt, DateTime.Now ) >= 1 )
+                    if ( DateTime.Compare( dt, DateTime.Now ) >= 0 )
                     {
                         return true;
                     }

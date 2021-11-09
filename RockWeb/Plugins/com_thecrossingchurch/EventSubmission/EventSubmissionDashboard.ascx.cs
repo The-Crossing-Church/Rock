@@ -45,27 +45,33 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Category( "com_thecrossingchurch > Event Submission" )]
     [Description( "Dashboard for Event Submissions" )]
 
-    [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
-    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 1 )]
-    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 2 )]
-    [TextField( "Rock Base URL", "Base URL for Rock", true, "https://rock.thecrossingchurch.com/page/", "", 3 )]
-    [IntegerField( "Page Id", "The id of the page for editing requests.", true, 0, "", 4 )]
-    [IntegerField( "User Dashboard Page Id", "The id of the page for editing requests.", true, 0, "", 5 )]
-    [IntegerField( "HistoryPageId", "The id of the page for viewing all requests.", true, 0, "", 6 )]
+    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
+    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 2 )]
+    [LinkedPage( "Request Page", "The Request Form Page", true, "", "", 4 )]
+    [LinkedPage( "User Dashboard Page", "The Request User Dashboard Page", true, "", "", 5 )]
+    [LinkedPage( "History Page", "The Request History Page", true, "", "", 6 )]
     [WorkflowTypeField( "Request Workflow", "Workflow to launch when request is approved or denied to send email", order: 7 )]
-    [LinkedPage( "Workflow Entry Page", order: 8 )]
-    [TextField( "Denied ChangesURL", "URL for the User Action Workflow Entry", order: 9 )]
+    [WorkflowTypeField( "User Action Workflow", "Workflow to launch when change request is denied", order: 8 )]
+    [LinkedPage( "Workflow Entry Page", order: 9 )]
+    [DateField( "Filter Date", "Don't show requests created before this date", required: false, order: 10 )]
+    [TextField( "Denied ChangesURL", "URL for the User Action Workflow Entry", order: 10 )]
 
     public partial class EventSubmissionDashboard : Rock.Web.UI.RockBlock
     {
         #region Variables
         public RockContext context { get; set; }
-        private int DefinedTypeId { get; set; }
+        private int RoomDefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
+        private int ContentChannelTypeId { get; set; }
+        private int RequestWorkflowId { get; set; }
+        private int UserActionWorkflowId { get; set; }
         public string BaseURL { get; set; }
-        private int PageId { get; set; }
-        private int UserPageId { get; set; }
+        private string RequestPageId { get; set; }
+        private string UserDashboardPageId { get; set; }
+        private string HistoryPageId { get; set; }
+        private DateTime? FilterDate { get; set; }
         private List<DefinedValue> Rooms { get; set; }
         private List<DefinedValue> Ministries { get; set; }
         private static class PageParameterKey
@@ -98,28 +104,80 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             base.OnLoad( e );
             context = new RockContext();
-            DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
-            MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
-            ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
-            BaseURL = GetAttributeValue( "RockBaseURL" );
-            PageId = GetAttributeValue( "PageId" ).AsInteger();
-            UserPageId = GetAttributeValue( "UserDashboardPageId" ).AsInteger();
-            hfRequestURL.Value = "/page/" + PageId;
-            var HistoryPageId = GetAttributeValue( "HistoryPageId" ).AsInteger();
-            hfHistoryURL.Value = "/page/" + HistoryPageId;
-            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
-            Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
-            Ministries.LoadAttributes();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+
+            Guid? RoomDefinedTypeGuid = GetAttributeValue( "RoomList" ).AsGuidOrNull();
+            if ( RoomDefinedTypeGuid.HasValue )
+            {
+                RoomDefinedTypeId = new DefinedTypeService( context ).Get( RoomDefinedTypeGuid.Value ).Id;
+                Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == RoomDefinedTypeId ).ToList();
+                Rooms.LoadAttributes();
+                hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
+            }
+
+            Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
+            if ( MinistryDefinedTypeGuid.HasValue )
+            {
+                MinistryDefinedTypeId = new DefinedTypeService( context ).Get( MinistryDefinedTypeGuid.Value ).Id;
+                Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
+                Ministries.LoadAttributes();
+                hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+            }
+
+            Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+            if ( ContentChannelGuid.HasValue )
+            {
+                ContentChannel channel = new ContentChannelService( context ).Get( ContentChannelGuid.Value );
+                ContentChannelId = channel.Id;
+                ContentChannelTypeId = channel.ContentChannelTypeId;
+            }
+
+            Rock.Model.Attribute attr = new AttributeService( context ).Queryable().FirstOrDefault( a => a.Key == "InternalApplicationRoot" );
+            if ( attr != null )
+            {
+                BaseURL = new AttributeValueService( context ).Queryable().FirstOrDefault( av => av.AttributeId == attr.Id ).Value;
+                if ( !BaseURL.EndsWith( "/" ) )
+                {
+                    BaseURL += "/";
+                }
+            }
+
+            Guid? RequestPageGuid = GetAttributeValue( "RequestPage" ).AsGuidOrNull();
+            Guid? DashboardPageGuid = GetAttributeValue( "UserDashboardPage" ).AsGuidOrNull();
+            Guid? HistoryPageGuid = GetAttributeValue( "HistoryPage" ).AsGuidOrNull();
+            if ( RequestPageGuid.HasValue && DashboardPageGuid.HasValue && HistoryPageGuid.HasValue )
+            {
+                RequestPageId = new PageService( context ).Get( RequestPageGuid.Value ).Id.ToString();
+                UserDashboardPageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
+                HistoryPageId = new PageService( context ).Get( HistoryPageGuid.Value ).Id.ToString();
+                hfRequestURL.Value = "/page/" + RequestPageId;
+                hfHistoryURL.Value = "/page/" + HistoryPageId;
+            }
+
+            Guid? requestWF = GetAttributeValue( "RequestWorkflow" ).AsGuidOrNull();
+            if ( requestWF.HasValue )
+            {
+                RequestWorkflowId = new WorkflowTypeService( context ).Get( requestWF.Value ).Id;
+            }
+            Guid? userActionWF = GetAttributeValue( "UserActionWorkflow" ).AsGuidOrNull();
+            if ( userActionWF.HasValue )
+            {
+                UserActionWorkflowId = new WorkflowTypeService( context ).Get( userActionWF.Value ).Id;
+            }
+
+            if ( !String.IsNullOrEmpty( GetAttributeValue( "FilterDate" ) ) )
+            {
+                FilterDate = GetAttributeValue( "FilterDate" ).AsDateTime();
+            }
+
+            //Throw an error if not all values are present
+            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !HistoryPageGuid.HasValue || !requestWF.HasValue || !userActionWF.HasValue )
+            {
+                return;
+            }
+
             GetRecentRequests();
             GetThisWeeksEvents();
             LoadUpcoming();
-            if ( !Page.IsPostBack )
-            {
-
-            }
         }
 
         #endregion
@@ -166,8 +224,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( action == "Approved" || action == "Deny" || emailDenyOptions )
                 {
                     Dictionary<string, string> query = new Dictionary<string, string>();
-                    WorkflowType wfType = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "RequestWorkflow" ) ) );
-                    query.Add( "WorkflowTypeId", wfType.Id.ToString() );
+                    query.Add( "WorkflowTypeId", RequestWorkflowId.ToString() );
                     query.Add( "ItemId", item.Id.ToString() );
                     NavigateToLinkedPage( "WorkflowEntryPage", query );
                 }
@@ -244,7 +301,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
-            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
+            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && ( !FilterDate.HasValue || DateTime.Compare( i.CreatedDateTime.Value, FilterDate.Value ) >= 0 ) ).ToList();
             items.LoadAttributes();
             items = items.Where( i => ( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Approved" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Cancelled" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Denied" ) || DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
@@ -319,6 +376,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
         protected void SendDeniedChangesEmail( ContentChannelItem item )
         {
+            string url = BaseURL + "WorkflowEntry/" + UserActionWorkflowId + "?ItemId=";
             string subject = "Proposed Changes for " + item.Title + " have been Denied";
             string message = "Hello " + item.CreatedByPersonName + ",<br/>" +
                 "<p>We regret to inform you the changes you have requested to your event request have been denied.</p> <br/>" +
@@ -330,10 +388,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 "<table>" +
                     "<tr>" +
                         "<td style='tect-align: center;'>" +
-                            "<a href='" + GetAttributeValue( "DeniedChangesURL" ) + item.Id + "&Action=Original' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Use Original</a>" +
+                            "<a href='" + url + item.Id + "&Action=Original' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Use Original</a>" +
                         "</td>" +
                         "<td style='tect-align: center;'>" +
-                            "<a href='" + GetAttributeValue( "DeniedChangesURL" ) + item.Id + "&Action=Cancelled' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Cancel Request </a>" +
+                            "<a href='" + url + item.Id + "&Action=Cancelled' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Cancel Request </a>" +
                         "</td>" +
                     "</tr>" +
                 "</table>";
@@ -357,7 +415,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             string message = "Hello " + item.CreatedByPersonName + ",<br/>" +
                 "<p>This comment has been added to your request:</p>" +
                 "<blockquote>" + comment.Message + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + UserPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + UserDashboardPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
             message = header + message + footer;
