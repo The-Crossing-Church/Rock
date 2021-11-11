@@ -215,6 +215,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         //This option will send a generic denied changes email allowing them to revert or cancel 
                         item.SetAttributeValue( "RequestStatus", "Proposed Changes Denied" );
                         break;
+                    case "InProgress":
+                        //New option meaning Andrew has looked at it but they need to make changes
+                        item.SetAttributeValue( "RequestStatus", "In Progress" );
+                        break;
                     default:
                         item.SetAttributeValue( "RequestStatus", "Approved" );
                         break;

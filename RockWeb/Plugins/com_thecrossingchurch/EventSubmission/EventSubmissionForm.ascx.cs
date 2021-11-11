@@ -50,9 +50,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 2 )]
     [LinkedPage( "Request Page", "The Request Form Page", true, "", "", 4 )]
     [LinkedPage( "Dashboard Page", "The Request Dashboard Page", true, "", "", 5 )]
-    [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 6 )]
-    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, "", "", 7 )]
-    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, "", "", 8 )]
+    [LinkedPage( "User Dashboard Page", "The Request Dashboard Page", true, "", "", 6 )]
+    [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 7 )]
+    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, "", "", 8 )]
+    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, "", "", 9 )]
 
     public partial class EventSubmissionForm : Rock.Web.UI.RockBlock
     {
@@ -61,6 +62,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         public string BaseURL { get; set; }
         public string RequestPageId { get; set; }
         public Guid? RequestPageGuid { get; set; }
+        public Guid? UserDashboardPageGuid { get; set; }
         public string DashboardPageId { get; set; }
         private int RoomDefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
@@ -131,6 +133,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             RequestPageGuid = GetAttributeValue( "RequestPage" ).AsGuidOrNull();
             Guid? DashboardPageGuid = GetAttributeValue( "DashboardPage" ).AsGuidOrNull();
+            UserDashboardPageGuid = GetAttributeValue( "UserDashboardPage" ).AsGuidOrNull();
             if ( RequestPageGuid.HasValue && DashboardPageGuid.HasValue )
             {
                 RequestPageId = new PageService( context ).Get( RequestPageGuid.Value ).Id.ToString();
@@ -142,7 +145,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Guid? EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
 
             //Throw an error if not all values are present
-            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !superUserGuid.HasValue || !RoomSRGuid.HasValue || !EventSRGuid.HasValue )
+            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !UserDashboardPageGuid.HasValue || !superUserGuid.HasValue || !RoomSRGuid.HasValue || !EventSRGuid.HasValue )
             {
                 return;
             }
@@ -210,37 +213,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             string raw = hfRequest.Value;
             EventRequest request = JsonConvert.DeserializeObject<EventRequest>( raw );
-            string requestType = "";
-            List<string> rt = new List<string>();
-            if ( request.needsSpace )
-            {
-                rt.Add( "Room" );
-            }
-            if ( request.needsOnline )
-            {
-                rt.Add( "Online Event" );
-            }
-            if ( request.needsPub )
-            {
-                rt.Add( "Publicity" );
-            }
-            if ( request.needsCatering )
-            {
-                rt.Add( "Catering" );
-            }
-            if ( request.needsChildCare )
-            {
-                rt.Add( "Childcare" );
-            }
-            if ( request.needsReg )
-            {
-                rt.Add( "Registration" );
-            }
-            if ( request.needsAccom )
-            {
-                rt.Add( "Extra Resources" );
-            }
-            requestType = String.Join( ", ", rt );
+            string requestType = GetRequestResources( request );
             string status = "Submitted";
             string isPreApproved = "No";
 
@@ -354,6 +327,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 isExisting = true;
             }
             item.LoadAttributes();
+            //TODO COOKSEY: Update the active date when submitted for the first time, use that in the other things instead of created date?
             if ( isExisting )
             {
                 item.ModifiedByPersonAliasId = CurrentPersonAliasId;
@@ -415,7 +389,85 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             NavigateToPage( RequestPageGuid.Value, query );
         }
 
+        /// <summary>
+        /// Save a request as a draft without submitting it
+        /// </summary>
+        protected void Save_Click( object sender, EventArgs e )
+        {
+            string raw = hfRequest.Value;
+            EventRequest request = JsonConvert.DeserializeObject<EventRequest>( raw );
+            string requestType = GetRequestResources( request );
+            string status = "Draft";
+            string isPreApproved = "No";
+            ContentChannelItemService svc = new ContentChannelItemService( context );
+            ContentChannelItem item = new ContentChannelItem();
+            item.ContentChannelTypeId = ContentChannelTypeId;
+            item.ContentChannelId = ContentChannelId;
+            bool isExisting = false;
+            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
+            {
+                int id = Int32.Parse( PageParameter( PageParameterKey.Id ) );
+                item = svc.Get( id );
+                isExisting = true;
+            }
+            item.LoadAttributes();
+            if ( isExisting )
+            {
+                item.ModifiedByPersonAliasId = CurrentPersonAliasId;
+                item.ModifiedDateTime = RockDateTime.Now;
+            }
+            else
+            {
+                item.CreatedByPersonAliasId = CurrentPersonAliasId;
+                item.CreatedDateTime = RockDateTime.Now;
+            }
+            item.Title = request.Name;
+            item.SetAttributeValue( "RequestJSON", raw );
+            item.SetAttributeValue( "EventDates", String.Join( ", ", request.EventDates ) );
+            item.SetAttributeValue( "RequestType", requestType );
+            item.SetAttributeValue( "IsPreApproved", isPreApproved );
+            //Save everything
+            context.ContentChannelItems.AddOrUpdate( item );
+            context.SaveChanges();
+            item.SaveAttributeValues( context );
+            Dictionary<string, string> query = new Dictionary<string, string>();
+            query.Add( "Id", item.Id.ToString() );
+            NavigateToPage( UserDashboardPageGuid.Value, query );
+        }
 
+        private string GetRequestResources( EventRequest request )
+        {
+            List<string> rt = new List<string>();
+            if ( request.needsSpace )
+            {
+                rt.Add( "Room" );
+            }
+            if ( request.needsOnline )
+            {
+                rt.Add( "Online Event" );
+            }
+            if ( request.needsPub )
+            {
+                rt.Add( "Publicity" );
+            }
+            if ( request.needsCatering )
+            {
+                rt.Add( "Catering" );
+            }
+            if ( request.needsChildCare )
+            {
+                rt.Add( "Childcare" );
+            }
+            if ( request.needsReg )
+            {
+                rt.Add( "Registration" );
+            }
+            if ( request.needsAccom )
+            {
+                rt.Add( "Extra Resources" );
+            }
+            return String.Join( ", ", rt );
+        }
 
         /// <summary>
         /// Submit Date Change Request

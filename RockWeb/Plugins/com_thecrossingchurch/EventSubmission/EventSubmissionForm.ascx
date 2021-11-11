@@ -45,7 +45,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       <v-card v-if="panel == 0">
         <v-card-text>
           <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it is currently {{request.Status}}.</v-alert>
-          <v-alert v-if="canEdit && request.Status && request.Status != 'Submitted'" type="warning">Any changes made to this request will need to be approved.</v-alert>
+          <v-alert v-if="canEdit && request.Status && (request.Status != 'Submitted')" type="warning">Any changes made to this request will need to be approved.</v-alert>
           <v-layout>
             <h3>Let's Design Your Event</h3>
             <v-spacer></v-spacer>
@@ -295,6 +295,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-card-actions>
           <v-btn v-if="isSuperUser" color="secondary" @click="prev">Back</v-btn>
           <v-spacer></v-spacer>
+          <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')">
+            <v-icon>mdi-content-save</v-icon>
+            Save
+          </v-btn>
           <v-btn color="primary" :disabled="!request.Name || !request.Ministry || !request.Contact || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">Next</v-btn>
         </v-card-actions>
       </v-card>
@@ -348,6 +352,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-card-actions>
           <v-btn color="secondary" @click="prev">Back</v-btn>
           <v-spacer></v-spacer>
+          <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')">
+            <v-icon>mdi-content-save</v-icon>
+            Save
+          </v-btn>
           <v-btn color="primary" @click="next" v-if="currentIdx == request.Events.length - 1 && canEdit">{{( isExistingRequest ? 'Update' : 'Submit')}}</v-btn>
           <v-btn color="primary" @click="next" v-else>Next</v-btn>
         </v-card-actions>
@@ -491,6 +499,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-card-actions>
           <v-btn color="secondary" @click="prev">Back</v-btn>
           <v-spacer></v-spacer>
+          <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')">
+            <v-icon>mdi-content-save</v-icon>
+            Save
+          </v-btn>
           <v-btn color="primary" @click="next" v-if="currentIdx == request.Events.length - 1 && canEdit">{{( isExistingRequest ? 'Update' : 'Submit')}}</v-btn>
           <v-btn color="primary" @click="next" v-else>Next</v-btn>
           <Rock:BootstrapButton
@@ -626,6 +638,7 @@ document.addEventListener("DOMContentLoaded", function () {
         needsChildCare: false,
         needsAccom: false,
         IsSame: true,
+        Status: 'Submitted',
         Name: "",
         Ministry: "",
         Contact: "",

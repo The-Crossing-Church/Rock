@@ -55,7 +55,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                 <v-col>
                   <v-autocomplete
                     label="Status"
-                    :items="['Submitted', 'Approved', 'Denied', 'Cancelled']"
+                    :items="['Draft','Submitted','In Progress','Approved','Denied','Cancelled','Pending Changes','Proposed Changes Denied','Changes Accepted by User','Cancelled by User']"
                     v-model="filters.status"
                     multiple
                     attach

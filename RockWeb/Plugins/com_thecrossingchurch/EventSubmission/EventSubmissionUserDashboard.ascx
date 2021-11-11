@@ -68,7 +68,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                         <v-autocomplete
                           label="Request Status"
                           v-model="filters.status"
-                          :items="['Submitted','Approved','Denied','Cancelled','Pending Changes','Proposed Changes Denied','Changes Accepted by User','Cancelled by User']"
+                          :items="['Draft','Submitted','In Progress','Approved','Denied','Cancelled','Pending Changes','Proposed Changes Denied','Changes Accepted by User','Cancelled by User']"
                           multiple
                           attach
                           clearable
