@@ -47,16 +47,17 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-stepper-step 
             v-if="isSuperUser" 
             step="1" 
-            @click="stepper = 1"
+            :class="`${stepper == 1 ? 'active' : ''}`"
+            @click="skipToStep(1)"
             :complete="request.needsSpace || request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub"
           >
             Resources
           </v-stepper-step>
           <v-stepper-step 
             :step="`${isSuperUser ? 2 : 1 }`" 
-            @click="isSuperUser ? (stepper = 2) : (stepper = 1)"
+            @click="skipToStep(isSuperUser ? 2 : 1)"
             :complete="isStepComplete(`${isSuperUser ? 2 : 1 }`)"
-            :rules="[val => { if(errors.length == 0) { return true; } let err = errors.filter(x => x.page == `${isSuperUser ? 2 : 1 }`); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
+            :rules="[val => { if(errors.length == 0 || stepper == (isSuperUser ? 2 : 1)) { return true; } let err = errors.filter(x => x.page == `${isSuperUser ? 2 : 1 }`); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
           >
             Basic Info
           </v-stepper-step>
@@ -64,8 +65,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             v-for="(e, idx) in request.Events" 
             :key="idx" :step="`${isSuperUser ? (idx + 3) : (idx + 2) }`" 
             :complete="isStepComplete(`${isSuperUser ? (idx + 3) : (idx + 2) }`)" 
-            @click="currentIdx = idx; currentEvent = e; isSuperUser ? (stepper = idx + 3) : (stepper = idx + 2);"
-            :rules="[val => { if(errors.length == 0) { return true; } let err = errors.filter(x => x.page == `${isSuperUser ? (idx + 3) : (idx + 2) }`); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
+            @click="skipToStep(isSuperUser ? (idx + 3) : (idx + 2));"
+            :rules="[val => { if(errors.length == 0 || stepper == (isSuperUser ? (idx + 3) : (idx + 2))) { return true; } let err = errors.filter(x => x.page == `${isSuperUser ? (idx + 3) : (idx + 2) }`); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
           >
             <template v-if="request.Events.length == 1">Event Info</template>
             <template v-else>{{e.EventDate | formatDate}}</template>
@@ -73,9 +74,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-stepper-step 
             v-if="isSuperUser && request.needsPub" 
             :step="request.Events.length + 3" 
-            @click="stepper = (request.Events.length + 3)"
+            @click="skipToStep(request.Events.length + 3)"
             :complete="isStepComplete(`${request.Events.length + 3}`)"
-            :rules="[val => { if(errors.length == 0) { return true; } let err = errors.filter(x => x.page == `${request.Events.length + 3}`); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
+            :rules="[val => { if(errors.length == 0 || stepper == (request.Events.length + 3)) { return true; } let err = errors.filter(x => x.page == `${request.Events.length + 3}`); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
           >
             Publicity
           </v-stepper-step>
@@ -83,7 +84,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         <v-stepper-items>
           <v-stepper-content v-if="isSuperUser" step="1">
             <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it is currently {{request.Status}}.</v-alert>
-            <v-alert v-if="canEdit && request.Status && !(request.Status == 'Submitted' || request.Status == 'Draft')" type="warning">Any changes made to this request will need to be approved.</v-alert>
+            <v-alert v-if="canEdit && request.Status && !(request.Status == 'Submitted' || request.Status == 'In Progress'|| request.Status == 'Draft')" type="warning">Any changes made to this request will need to be approved.</v-alert>
             <v-layout>
               <h3>Let's Design Your Event</h3>
               <v-spacer></v-spacer>
@@ -110,7 +111,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="A physical space for an event"
                   hint="If you need any doors unlocked for this event, please be sure to include Special Accommodations below. Selecting a physical space does not assume unlocked doors."
                   :persistent-hint="request.needsSpace"
+                  :disabled="!originalRequest.needsSpace && twoWeeksTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsSpace">
+                  The last possible date to request a physical space {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <v-row>
@@ -120,7 +125,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Zoom"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsOnline"
+                  :disabled="!originalRequest.needsOnline && twoWeeksTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsOnline">
+                  The last possible date to request zoom {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <v-row>
@@ -130,7 +139,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Food Request"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsCatering"
+                  :disabled="!originalRequest.needsCatering && twoWeeksTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsCatering">
+                  The last possible date to request catering {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <v-row>
@@ -140,7 +153,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Childcare"
                   hint="Requests involving childcare must be made at least 30 days in advance."
                   :persistent-hint="request.needsChildCare"
+                  :disabled="!originalRequest.needsChildCare && thirtyDaysTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsChildCare">
+                  The last possible date to request childcare {{thirtyDaysTense}} {{thirtyDaysBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <v-row>
@@ -150,7 +167,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Special Accommodations (tech, drinks, web calendar, extensive set-up, doors unlocked)"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsAccom"
+                  :disabled="!originalRequest.needsAccom && twoWeeksTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsAccom">
+                  The last possible date to request special accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <v-row>
@@ -160,7 +181,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Registration"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsReg"
+                  :disabled="!originalRequest.needsReg && twoWeeksTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsReg">
+                  The last possible date to request registration {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <v-row>
@@ -170,7 +195,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Publicity"
                   hint="Requests involving publicity must be made at least 6 weeks in advance."
                   :persistent-hint="request.needsPub"
+                  :disabled="!originalRequest.needsPub && sixWeeksTense == 'was'"
                 ></v-switch>
+                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsPub">
+                  The last possible date to request publicity {{sixWeeksTense}} {{sixWeeksBeforeEventStart}}
+                </div>
               </v-col>
             </v-row>
             <div style="width: 100%; padding: 16px 0px;">
@@ -765,6 +794,7 @@ document.addEventListener("DOMContentLoaded", function () {
         WhyAttendTwenty: "",
         Notes: "",
       },
+      originalRequest: {},
       existingRequests: [],
       rooms: [],
       ministries: [],
@@ -863,6 +893,8 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Status = parsed.RequestStatus
         this.request.CreatedBy = parsed.CreatedBy
         this.request.canEdit = parsed.CanEdit
+        this.request.SubmittedOn = parsed.Active
+        this.originalRequest = JSON.parse(JSON.stringify(this.request))
       }
       this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
       window["moment-range"].extendMoment(moment);
@@ -903,51 +935,110 @@ document.addEventListener("DOMContentLoaded", function () {
         return items.join(", ");
       },
       earliestDate() {
-          let eDate = new moment();
-          if (
-            !this.request.needsPub && !this.request.needsChildCare && (
-                this.request.needsOnline ||
-                this.request.needsCatering ||
-                this.request.needsReg ||
-                this.request.needsAccom
-          )) {
-            eDate = moment(eDate).add(14, "days");
-          }
-          if (this.request.needsPub) {
-            eDate = moment(eDate).add(6, "weeks").add(1, "day");
-          }
-          if (
-              !this.request.needsPub && (
-                  this.request.needsChildCare ||
-                  this.request.ExpectedAttendance > 250
-              )) {
-              eDate = moment().add(30, "days");
-              this.request.EventDates.forEach((itm, i) => {
-                if (!moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))) {
-                  this.request.EventDates.splice(i, 1);
-                }
-              });
-          }
-          return moment(eDate).format("yyyy-MM-DD");
+        let eDate = new moment();
+        if(this.request.Id > 0) {
+          eDate = new moment(this.request.SubmittedOn)
+        }
+        if (this.request.needsPub) {
+          eDate = moment(eDate).add(6, "weeks").add(1, "day");
+        } else if (
+            this.request.needsChildCare ||
+            this.request.ExpectedAttendance > 250
+          ) {
+          eDate = moment().add(30, "days");
+          this.request.EventDates.forEach((itm, i) => {
+            if (!moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))) {
+              this.request.EventDates.splice(i, 1);
+            }
+          });
+        } else if (
+          this.request.needsOnline ||
+          this.request.needsCatering ||
+          this.request.needsReg ||
+          this.request.needsAccom
+        ) {
+          eDate = moment(eDate).add(14, "days");
+        }
+        return moment(eDate).format("yyyy-MM-DD");
       },
       earliestPubDate() {
-          let eDate = new moment();
-          eDate = moment(eDate).add(21, "days");
-          return moment(eDate).format("yyyy-MM-DD");
+        let eDate = new moment();
+        if(this.request.Id > 0) {
+          eDate = new moment(this.request.SubmittedOn)
+        }
+        eDate = moment(eDate).add(21, "days");
+        return moment(eDate).format("yyyy-MM-DD");
+      },
+      twoWeeksBeforeEventStart(){
+        if(this.request.EventDates?.length > 0) {
+          let first = this.request.EventDates.map((i) => {
+            return new moment(i)
+          }).sort().pop()
+          return new moment(first).subtract(2, 'weeks').format("dddd, MMMM Do")
+        }
+      },
+      thirtyDaysBeforeEventStart(){
+        if(this.request.EventDates?.length > 0) {
+          let first = this.request.EventDates.map((i) => {
+            return new moment(i)
+          }).sort().pop()
+          return new moment(first).subtract(30, 'days').format("dddd, MMMM Do")
+        }
+      },
+      sixWeeksBeforeEventStart(){
+        if(this.request.EventDates?.length > 0) {
+          let first = this.request.EventDates.map((i) => {
+            return new moment(i)
+          }).sort().pop()
+          return new moment(first).subtract(6, 'weeks').format("dddd, MMMM Do")
+        }
+      },
+      twoWeeksTense(){
+        if(this.request.EventDates?.length > 0) {
+          let first = this.request.EventDates.map((i) => {
+            return new moment(i)
+          }).sort().pop()
+          if(first.subtract(2, 'weeks').isAfter(new moment())){
+            return 'is'
+          }
+          return 'was'
+        }
+      },
+      thirtyDaysTense(){
+        if(this.request.EventDates?.length > 0) {
+          let first = this.request.EventDates.map((i) => {
+            return new moment(i)
+          }).sort().pop()
+          if(first.subtract(30, 'days').isAfter(new moment())){
+            return 'is'
+          }
+          return 'was'
+        }
+      },
+      sixWeeksTense(){
+        if(this.request.EventDates?.length > 0) {
+          let first = this.request.EventDates.map((i) => {
+            return new moment(i)
+          }).sort().pop()
+          if(first.subtract(6, 'weeks').isAfter(new moment())){
+            return 'is'
+          }
+          return 'was'
+        }
       },
       longDates() {
-          return this.request.EventDates.map((i) => {
-            return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
-          });
+        return this.request.EventDates.map((i) => {
+          return { text: moment(i).format("dddd, MMMM Do yyyy"), val: i };
+        });
       },
       isValid() {
-          let isValidForm = true
-          this.errors.forEach(e => {
-            if(e.errors && e.errors.length > 0) {
-              isValidForm = false
-            }
-          })
-          return isValidForm
+        let isValidForm = true
+        this.errors.forEach(e => {
+          if(e.errors && e.errors.length > 0) {
+            isValidForm = false
+          }
+        })
+        return isValidForm
       },
       currentErrors() {
         let e = this.errors?.filter(err => { return err.page == this.stepper })
@@ -1030,6 +1121,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return "No"
       },
+      skipToStep(step){
+        this.validate()
+        if(this.isSuperUser) {
+          if(step > 2 && step < (this.request.Events.length + (this.request.needsPub ? 3 : 2))) {
+            //Is an event date need to set current index
+            this.currentIdx = step - 3
+          } 
+        } else {
+          if(step > 1 && step < (this.request.Events.length + 1)) {
+            //Is an event date need to set current index
+            this.currentIdx = step - 2
+          } 
+        }
+        this.currentEvent = this.request.Events[this.currentIdx]
+        this.stepper = step
+      },
       next() {
         this.validate()
         if(this.isSuperUser) {
@@ -1059,7 +1166,6 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           if(this.stepper == 1) {
             this.currentIdx = 0
-            this.currentEvent = this.request.Events[this.currentIdx]
           } else if(this.stepper == (1 + this.request.Events.length)) {
             if (this.isValid) {
               this.hasConflictsOrTimeIssue = false
@@ -1127,15 +1233,6 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Events[0].EventDate = val.eventDate;
         this.request.Events[0].ExpectedAttendance = val.att;
         this.request.EventDates = [val.eventDate];
-      },
-      addGoogleKey(key) {
-        if (this.googleCurrentKey) {
-          this.request.GoogleKeys.push(this.googleCurrentKey)
-          this.googleCurrentKey = ''
-        }
-      },
-      removeGoogleKey(idx) {
-        this.request.GoogleKeys.splice(idx, 1)
       },
       updateReg(indexes) {
         this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
@@ -1743,5 +1840,9 @@ document.addEventListener("DOMContentLoaded", function () {
   .v-stepper, .v-stepper__items, .v-stepper__wrapper {
     overflow: visible !important;
     /*overflow-x: hidden !important;*/
+  }
+  .date-warning {
+    color: #CC3F0C !important;
+    font-weight: bold !important;
   }
 </style>

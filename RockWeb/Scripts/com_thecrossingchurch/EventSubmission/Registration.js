@@ -262,177 +262,176 @@ export default {
       }
   },
   created: function () {
-      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-      debugger
+    this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
   },
   methods: {
-      formatRooms(val) {
-          if (val) {
-              let rms = [];
-              val.forEach((i) => {
-                  this.rooms.forEach((r) => {
-                      if (i == r.Id) {
-                          rms.push(r.Value);
-                      }
-                  });
-              });
-              return rms.join(", ");
-          }
-          return "";
-      },
-      prefillSection() {
-          this.dialog = false
-          let idx = this.request.EventDates.indexOf(this.prefillDate)
-          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-          this.$emit('updatereg', { targetIdx: idx, currIdx: currIdx })
+    formatRooms(val) {
+      if (val) {
+        let rms = []
+        val.forEach((i) => {
+          this.rooms.forEach((r) => {
+            if (i == r.Id) {
+              rms.push(r.Value)
+            }
+          })
+        })
+        return rms.join(", ")
       }
+      return ""
+    },
+    prefillSection() {
+      this.dialog = false
+      let idx = this.request.EventDates.indexOf(this.prefillDate)
+      let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+      this.$emit('updatereg', { targetIdx: idx, currIdx: currIdx })
+    }
   },
   computed: {
-      defaultRegistraionStart() {
-          if (this.request.needsReg) {
-              if (this.e.RegistrationDate) {
-                  return this.e.RegistrationDate
-              }
-              if (this.request.PublicityStartDate) {
-                  return moment(this.request.PublicityStartDate).subtract(3, 'days').format("yyyy-MM-DD")
-              }
-          }
-          return ""
-      },
-      defaultRegistraionEnd() {
-          if (this.request.needsReg) {
-              if (this.e.RegistrationEndDate) {
-                  return this.e.RegistrationEndDate
-              }
-              if (this.request.EventDates) {
-                  if (this.e.EventDate) {
-                      return moment(this.e.EventDate).subtract(1, "day").format("yyyy-MM-DD")
-                  } else {
-                      let eventDates = this.request.EventDates.map(p => moment(p))
-                      let firstDate = moment.min(eventDates)
-                      return moment(firstDate).subtract(1, "day").format("yyyy-MM-DD")
-                  }
-              }
-          }
-          return ""
-      },
-      defaultThankYou() {
-          if (this.request.needsReg) {
-              if (this.request.Id > 0 && this.e.ThankYou) {
-                  return this.e.ThankYou
-              }
-              if (this.request.Name) {
-                  return "Thank you for registering for " + this.request.Name
-              }
-              return ""
-          }
-          return ""
-      },
-      defaultTimeLocation() {
-          if (this.request.needsReg) {
-              if (this.request.Id > 0 && this.e.TimeLocation) {
-                return this.e.TimeLocation
-              }
-              if (this.request.Name && this.e.StartTime) {
-                let dt = moment(this.e.EventDate).format('MM/DD/yyyy')
-                if(this.request.IsSame) {
-                  dt = moment(this.request.EventDates[0]).format('MM/DD/yyyy')
-                } 
-                let message = this.request.Name + " will take place at " + this.e.StartTime + " on " + dt 
-                if(this.e.Rooms && this.e.Rooms.length > 0) {
-                  message += " in " + this.formatRooms(this.e.Rooms)
-                }
-                return message
-              }
-              return ""
-          }
-          return ""
-      },
-      emailPreview() {
-          let preview =
-              "<div style='background-color: #F2F2F2;'>" +
-              "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
-              "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
-              "</div>" +
-              "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
-              "<h1>" + this.request.Name + "</h1><br/>" +
-              this.e.ThankYou + "<br/><br/>" +
-              this.e.TimeLocation + "<br/><br/>" +
-              "<p>The following people have been registered for " + this.request.Name + ":</p>" +
-              "<ul>" +
-              "<li>First Registrant</li>" +
-              "<li>Second Registrant</li>" +
-              "</ul>"
-          if (this.e.Fee) {
-              preview +=
-                  "<p>" +
-                  "Total Cost: $" + this.e.Fee + "<br/>" +
-                  "Total Paid: $" + this.e.Fee + "<br/>" +
-                  "Balance Due: $0.00<br/>" +
-                  "</p>"
-          }
-          preview += this.e.AdditionalDetails
-          preview += "</div>"
-          preview +=
-              "<div style='text-align:center;'><br/>" +
-              "<b>The Crossing</b><br/>" +
-              "3615 Southland Dr.<br/>" +
-              "Columbia, MO 65201<br/>" +
-              "(573) 256-4410<br/>" +
-              "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
-              "</div>"
-          preview += "</div>"
-          return preview
-      },
-      prefillOptions() {
-          return this.request.EventDates.filter(i => i != this.e.EventDate)
-      },
-      feeOptions() {
-          if (this.request.needsOnline) {
-              return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
-          }
-          return ['Fee per Individual', 'Fee per Couple', 'No Fees']
+    defaultRegistraionStart() {
+      if (this.request.needsReg) {
+        if (this.e.RegistrationDate) {
+          return this.e.RegistrationDate
+        }
+        if (this.request.PublicityStartDate) {
+          return moment(this.request.PublicityStartDate).subtract(3, 'days').format("yyyy-MM-DD")
+        }
       }
+      return ""
+    },
+    defaultRegistraionEnd() {
+      if (this.request.needsReg) {
+        if (this.e.RegistrationEndDate) {
+          return this.e.RegistrationEndDate
+        }
+        if (this.request.EventDates) {
+          if (this.e.EventDate) {
+            return moment(this.e.EventDate).subtract(1, "day").format("yyyy-MM-DD")
+          } else {
+            let eventDates = this.request.EventDates.map(p => moment(p))
+            let firstDate = moment.min(eventDates)
+            return moment(firstDate).subtract(1, "day").format("yyyy-MM-DD")
+          }
+        }
+      }
+      return ""
+    },
+    defaultThankYou() {
+      if (this.request.needsReg) {
+        if (this.request.Id > 0 && this.e.ThankYou) {
+          return this.e.ThankYou
+        }
+        if (this.request.Name) {
+          return "Thank you for registering for " + this.request.Name
+        }
+        return ""
+      }
+      return ""
+    },
+    defaultTimeLocation() {
+      if (this.request.needsReg) {
+        if (this.request.Id > 0 && this.e.TimeLocation) {
+          return this.e.TimeLocation
+        }
+        if (this.request.Name && this.e.StartTime) {
+          let dt = moment(this.e.EventDate).format('MM/DD/yyyy')
+          if(this.request.IsSame) {
+            dt = moment(this.request.EventDates[0]).format('MM/DD/yyyy')
+          } 
+          let message = this.request.Name + " will take place at " + this.e.StartTime + " on " + dt 
+          if(this.e.Rooms && this.e.Rooms.length > 0) {
+            message += " in " + this.formatRooms(this.e.Rooms)
+          }
+          return message
+        }
+        return ""
+      }
+      return ""
+    },
+    emailPreview() {
+      let preview =
+        "<div style='background-color: #F2F2F2;'>" +
+        "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
+        "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
+        "</div>" +
+        "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
+        "<h1>" + this.request.Name + "</h1><br/>" +
+      this.e.ThankYou + "<br/><br/>" +
+      this.e.TimeLocation + "<br/><br/>" +
+      "<p>The following people have been registered for " + this.request.Name + ":</p>" +
+      "<ul>" +
+      "<li>First Registrant</li>" +
+      "<li>Second Registrant</li>" +
+      "</ul>"
+      if (this.e.Fee) {
+        preview +=
+          "<p>" +
+          "Total Cost: $" + this.e.Fee + "<br/>" +
+          "Total Paid: $" + this.e.Fee + "<br/>" +
+          "Balance Due: $0.00<br/>" +
+          "</p>"
+      }
+      preview += this.e.AdditionalDetails
+      preview += "</div>"
+      preview +=
+        "<div style='text-align:center;'><br/>" +
+        "<b>The Crossing</b><br/>" +
+        "3615 Southland Dr.<br/>" +
+        "Columbia, MO 65201<br/>" +
+        "(573) 256-4410<br/>" +
+        "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
+        "</div>"
+      preview += "</div>"
+      return preview
+    },
+    prefillOptions() {
+      return this.request.EventDates.filter(i => i != this.e.EventDate)
+    },
+    feeOptions() {
+      if (this.request.needsOnline) {
+        return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
+      }
+      return ['Fee per Individual', 'Fee per Couple', 'No Fees']
+    }
   },
   watch: {
-      e(val) {
-          this.$emit('change', val)
-      },
-      defaultRegistraionEnd(val) {
-          if (val) {
-              this.e.RegistrationEndDate = val
-          }
-      },
-      defaultRegistraionStart(val) {
-          if (val) {
-              this.e.RegistrationDate = val
-          }
-      },
-      defaultThankYou(val) {
-          if (val) {
-              this.e.ThankYou = val
-          }
-      },
-      defaultTimeLocation(val) {
-          if (val) {
-              this.e.TimeLocation = val
-          }
-      },
-      'e.FeeType'(val) {
-          if (!val.includes('Fee per Individual')) {
-              this.e.Fee = null
-          }
-          if (!val.includes('Fee per Couple')) {
-              this.e.CoupleFee = null
-          }
-          if (!val.includes('Online Fee')) {
-              this.e.OnlineFee = null
-          }
+    e(val) {
+      this.$emit('change', val)
+    },
+    defaultRegistraionEnd(val) {
+      if (val) {
+        this.e.RegistrationEndDate = val
       }
+    },
+    defaultRegistraionStart(val) {
+      if (val) {
+        this.e.RegistrationDate = val
+      }
+    },
+    defaultThankYou(val) {
+      if (val) {
+        this.e.ThankYou = val
+      }
+    },
+    defaultTimeLocation(val) {
+      if (val) {
+        this.e.TimeLocation = val
+      }
+    },
+    'e.FeeType'(val) {
+      if (!val.includes('Fee per Individual')) {
+        this.e.Fee = null
+      }
+      if (!val.includes('Fee per Couple')) {
+        this.e.CoupleFee = null
+      }
+      if (!val.includes('Online Fee')) {
+        this.e.OnlineFee = null
+      }
+    }
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy");
+    },
   },
 }

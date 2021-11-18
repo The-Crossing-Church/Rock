@@ -39,7 +39,7 @@ export default {
       multiple
       attach
       :rules="[rules.requiredArr(e.Rooms, 'Room/Space'), rules.roomCapacity(rooms, e.Rooms, e.ExpectedAttendance)]"
-      hint="Click the map icon to view campus map"
+      hint="Click the map icon to view campus map. Rooms that are unselectable are unavailable for your dates and times."
       persistent-hint
     >
       <template v-slot:prepend-item>

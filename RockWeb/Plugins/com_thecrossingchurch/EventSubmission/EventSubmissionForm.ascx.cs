@@ -327,25 +327,34 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 isExisting = true;
             }
             item.LoadAttributes();
-            //TODO COOKSEY: Update the active date when submitted for the first time, use that in the other things instead of created date?
+            string currentStatus = item.GetAttributeValue( "RequestStatus" );
             if ( isExisting )
             {
                 item.ModifiedByPersonAliasId = CurrentPersonAliasId;
                 item.ModifiedDateTime = RockDateTime.Now;
+                if ( currentStatus == "Draft" )
+                {
+                    //If the form has not yet been submitted, only saved and now is being submitted for the first time. Update Submission Date (StartDateTime)
+                    item.StartDateTime = RockDateTime.Now;
+                }
             }
             else
             {
                 item.CreatedByPersonAliasId = CurrentPersonAliasId;
                 item.CreatedDateTime = RockDateTime.Now;
+                item.StartDateTime = RockDateTime.Now;
             }
             item.Title = request.Name;
             if ( isPreApproved == "No" )
             {
-                string currentStatus = item.GetAttributeValue( "RequestStatus" );
                 if ( currentStatus == "Approved" || currentStatus == "Pending Changes" )
                 {
                     status = "Pending Changes";
                 }
+            }
+            if ( currentStatus == "In Progress" )
+            {
+                status = currentStatus;
             }
             item.SetAttributeValue( "RequestStatus", status );
             //Changes are proposed if the event isn't pre-approved, is existing, and the requestor isn't in the Event Admin Role
@@ -538,7 +547,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( item.CreatedByPersonId == CurrentPersonId )
             {
                 string status = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value;
-                if ( status == "Submitted" || status == "Approved" )
+                if ( status == "Submitted" || status == "In Progress" || status == "Approved" )
                 {
                     canEdit = true;
                 }
@@ -554,7 +563,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     canEdit = true;
                 }
             }
-            hfRequest.Value = JsonConvert.SerializeObject( new { Id = item.Id, Value = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, CreatedBy = item.CreatedByPersonId, CreatedOn = item.CreatedDateTime, RequestStatus = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, CanEdit = canEdit } );
+            hfRequest.Value = JsonConvert.SerializeObject( new { Id = item.Id, Value = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, CreatedBy = item.CreatedByPersonId, CreatedOn = item.CreatedDateTime, Active = item.StartDateTime, RequestStatus = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, CanEdit = canEdit } );
         }
 
         /// <summary>
