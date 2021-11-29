@@ -50,6 +50,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             :class="`${stepper == 1 ? 'active' : ''}`"
             @click="skipToStep(1)"
             :complete="request.needsSpace || request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub"
+            :rules="[val => { if(errors.length == 0 || stepper == 1) { return true; } let err = errors.filter(x => x.page == 1); return err?.length == 0 || err[0].errors.length == 0 ? true : 'No'; }]"
           >
             Resources
           </v-stepper-step>
@@ -85,6 +86,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           <v-stepper-content v-if="isSuperUser" step="1">
             <v-alert v-if="canEdit == false" type="error">You are not able to make changes to this request because it is currently {{request.Status}}.</v-alert>
             <v-alert v-if="canEdit && request.Status && !(request.Status == 'Submitted' || request.Status == 'In Progress'|| request.Status == 'Draft')" type="warning">Any changes made to this request will need to be approved.</v-alert>
+            <v-alert type="error" v-if="currentErrors.length > 0" style="width: 100%;">
+              You can't cheat the system...
+              <ul>
+                <li v-for="e in currentErrors">
+                  {{e}}
+                </li>
+              </ul>
+            </v-alert>
             <v-layout>
               <h3>Let's Design Your Event</h3>
               <v-spacer></v-spacer>
@@ -111,11 +120,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="A physical space for an event"
                   hint="If you need any doors unlocked for this event, please be sure to include Special Accommodations below. Selecting a physical space does not assume unlocked doors."
                   :persistent-hint="request.needsSpace"
-                  :disabled="!originalRequest.needsSpace && twoWeeksTense == 'was'"
                 ></v-switch>
+                <!--
                 <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsSpace">
                   The last possible date to request a physical space {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
                 </div>
+                -->
               </v-col>
             </v-row>
             <v-row>
@@ -125,9 +135,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Zoom"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsOnline"
-                  :disabled="!originalRequest.needsOnline && twoWeeksTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsOnline && twoWeeksTense == 'was'"
                 ></v-switch>
-                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsOnline">
+                <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsOnline">
                   The last possible date to request zoom {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
                 </div>
               </v-col>
@@ -139,9 +149,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Food Request"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsCatering"
-                  :disabled="!originalRequest.needsCatering && twoWeeksTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsCatering && twoWeeksTense == 'was'"
                 ></v-switch>
-                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsCatering">
+                <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsCatering">
                   The last possible date to request catering {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
                 </div>
               </v-col>
@@ -153,9 +163,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Childcare"
                   hint="Requests involving childcare must be made at least 30 days in advance."
                   :persistent-hint="request.needsChildCare"
-                  :disabled="!originalRequest.needsChildCare && thirtyDaysTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsChildCare && thirtyDaysTense == 'was'"
                 ></v-switch>
-                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsChildCare">
+                <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsChildCare">
                   The last possible date to request childcare {{thirtyDaysTense}} {{thirtyDaysBeforeEventStart}}
                 </div>
               </v-col>
@@ -167,9 +177,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Special Accommodations (tech, drinks, web calendar, extensive set-up, doors unlocked)"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsAccom"
-                  :disabled="!originalRequest.needsAccom && twoWeeksTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsAccom && twoWeeksTense == 'was'"
                 ></v-switch>
-                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsAccom">
+                <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsAccom">
                   The last possible date to request special accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
                 </div>
               </v-col>
@@ -181,9 +191,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Registration"
                   hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
                   :persistent-hint="request.needsReg"
-                  :disabled="!originalRequest.needsReg && twoWeeksTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsReg && twoWeeksTense == 'was'"
                 ></v-switch>
-                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsReg">
+                <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsReg">
                   The last possible date to request registration {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
                 </div>
               </v-col>
@@ -195,9 +205,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   label="Publicity"
                   hint="Requests involving publicity must be made at least 6 weeks in advance."
                   :persistent-hint="request.needsPub"
-                  :disabled="!originalRequest.needsPub && sixWeeksTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsPub && sixWeeksTense == 'was'"
                 ></v-switch>
-                <div class="date-warning overline" v-if="request.EventDates?.length > 0 && !request.needsPub">
+                <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsPub">
                   The last possible date to request publicity {{sixWeeksTense}} {{sixWeeksBeforeEventStart}}
                 </div>
               </v-col>
@@ -205,7 +215,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
             <div style="width: 100%; padding: 16px 0px;">
               <v-row>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="primary" @click="stepper++">Next</v-btn>
+                  <v-btn color="primary" @click="next">Next</v-btn>
                   <br/>
                 </v-col>
               </v-row>
@@ -319,6 +329,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     v-model="request.EventDates"
                     :disabled="cannotChangeDates"
                   ></v-autocomplete>
+                  <br/>
+                  <div v-if="isExistingRequest && (originalRequest.EventDates.toString() != request.EventDates.toString())" class='overline'>
+                    Please note that by modifying the date of your event, all support services and publicity strategies are subject to change and are not guaranteed as they were before.
+                  </div>
                 </v-col>
               </v-row>
               <v-row v-if="request.EventDates.length > 1">
@@ -332,6 +346,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-row>
             </v-form>
             <template v-if="request.IsSame">
+              <br/>
               <v-row>
                 <v-col>
                   <strong>What time will your <template v-if='requestedResources == "rooms"'>meeting</template><template v-else>event</template> begin and end?</strong>
@@ -959,6 +974,10 @@ document.addEventListener("DOMContentLoaded", function () {
         ) {
           eDate = moment(eDate).add(14, "days");
         }
+        //Override for Funerals
+        if(this.isFuneralRequest) {
+          eDate = new moment()
+        }
         return moment(eDate).format("yyyy-MM-DD");
       },
       earliestPubDate() {
@@ -967,6 +986,10 @@ document.addEventListener("DOMContentLoaded", function () {
           eDate = new moment(this.request.SubmittedOn)
         }
         eDate = moment(eDate).add(21, "days");
+        //Override for Funerals
+        if(this.isFuneralRequest) {
+          eDate = new moment()
+        }
         return moment(eDate).format("yyyy-MM-DD");
       },
       twoWeeksBeforeEventStart(){
@@ -1112,6 +1135,13 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       preApprovalDate() {
         return moment().add(14, 'days')
+      }, 
+      isFuneralRequest() {
+        let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
+        if(ministryName?.toLowerCase().includes("funeral")) {
+          return true
+        }
+        return false
       }
     },
     methods: {
@@ -1422,6 +1452,49 @@ document.addEventListener("DOMContentLoaded", function () {
       validate() {
         let eventErrors = null 
         eventErrors = { page: this.stepper, errors: []}
+        //Override for Funerals
+        let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
+        if(this.isSuperUser && this.stepper < 3 && !ministryName?.toLowerCase().includes("funeral")) {
+          //Validate that the user didn't chnage the date to add a new resource then change the date back
+          let resourceErrors = { page: 1, errors: []}
+          if(this.request.needsOnline && !this.originalRequest.needsOnline && this.twoWeeksTense == 'was') {
+            resourceErrors.errors.push("Your request for zoom is invalid, it has been removed")
+            this.request.needsOnline = false
+          }
+          if(this.request.needsCatering && !this.originalRequest.needsCatering && this.twoWeeksTense == 'was') {
+            resourceErrors.errors.push("Your request for catering is invalid, it has been removed")
+            this.request.needsCatering = false
+          }
+          if(this.request.needsChildCare && !this.originalRequest.needsChildCare && this.thirtyDaysTense == 'was') {
+            resourceErrors.errors.push("Your request for childcare is invalid, it has been removed")
+            this.request.needsChildCare = false
+          }
+          if(this.request.needsAccom && !this.originalRequest.needsAccom && this.twoWeeksTense == 'was') {
+            resourceErrors.errors.push("Your request for accommodations is invalid, it has been removed")
+            this.request.needsAccom = false
+          }
+          if(this.request.needsReg && !this.originalRequest.needsReg && this.twoWeeksTense == 'was') {
+            resourceErrors.errors.push("Your request for registration is invalid, it has been removed")
+            this.request.needsReg = false
+          }
+          if(this.request.needsPub && !this.originalRequest.needsPub && this.sixWeeksTense == 'was') {
+            resourceErrors.errors.push("Your request for publicity is invalid, it has been removed")
+            this.request.needsPub = false
+          }
+          if(resourceErrors.errors.length > 0) {
+            let ridx = -1
+            this.errors.forEach((e, i) => {
+              if (e.page == 1) {
+                ridx = i
+              }
+            })
+            if(ridx > -1) {
+              this.errors[ridx].errors = resourceErrors.errors
+            } else {
+              this.errors.push(resourceErrors)
+            }
+          }
+        }
         if((this.isSuperUser && this.stepper == 2) || (!this.isSuperUser && this.stepper == 1)) {
           if (this.$refs.form) {
             this.$refs.form.validate()

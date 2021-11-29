@@ -761,6 +761,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             if ( isPreApproved == "Yes" )
             {
+                subject = "Your Request has been approved";
                 message = "Your room/space request has been approved. The details of your request are as follows: <br/>";
             }
             else

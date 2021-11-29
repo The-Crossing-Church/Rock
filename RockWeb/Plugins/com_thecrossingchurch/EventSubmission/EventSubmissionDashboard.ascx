@@ -1232,7 +1232,8 @@ document.addEventListener("DOMContentLoaded", function () {
               secondary: "#3D3D3D",
               accent: "#8ED2C9",
               inprogress: '#ECC30B',
-              denied: '#CC3F0C'
+              denied: '#CC3F0C',
+              pending: '#61A4A9'
             },
           },
         },

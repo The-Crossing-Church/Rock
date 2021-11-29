@@ -98,6 +98,10 @@ export default {
         case "Proposed Changes Denied":
           color = "denied"
           break;
+        case "Pending Changes":
+        case "Changes Accepted by User":
+          color="pending"
+          break;
       }
       return color
     }
