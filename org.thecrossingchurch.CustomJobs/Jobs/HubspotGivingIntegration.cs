@@ -47,7 +47,6 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
     /// 
     /// </summary>
     [AccountField( "Fund", "The fund to pull people from to add to HubSpot", true, "", "", 0 )]
-    [TextField( "Hubspot API Key", "API Key for Hubspot", true, "", "", 1 )]
     [TextField( "Hubspot Property", "Property to Update in Hubspot", true, "", "", 2 )]
     [AttributeField( "Person Attributes",
         Description = "Person Attributes to save to Hubspot",
@@ -82,7 +81,7 @@ namespace org.crossingchurch.HubspotGivingIntegration.Jobs
             JobDataMap dataMap = context.JobDetail.JobDataMap;
             RockContext _context = new RockContext();
 
-            string key = dataMap.GetString( "HubspotAPIKey" );
+            string key = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
             string property = dataMap.GetString( "HubspotProperty" );
             string fundGuid = dataMap.GetString( "Fund" );
             List<string> rockAttrGuids = dataMap.GetString( "PersonAttributes" ).Split( ',' ).ToList();

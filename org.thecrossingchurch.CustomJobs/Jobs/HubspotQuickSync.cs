@@ -49,7 +49,6 @@ namespace org.crossingchurch.HubspotQuickSync.Jobs
     /// <summary>
     /// 
     /// </summary>
-    [TextField( "Hubspot API Key", "API Key for Hubspot", true, "", "System", 1 )]
     [TextField( "Hubspot Property", "Property to update in Hubspot", false, "", "HubSpot Data", 2 )]
     [TextField( "Hubspot Value", "Value to write to the property for all people that match criteria", false, "", "HubSpot Data", 3 )]
     [TextField( "Contact Source", "Value ot use for the contact source in HubSpot if a new person is added ot HubSpot", false, "", "HubSpot Data", 4 )]
@@ -98,7 +97,7 @@ namespace org.crossingchurch.HubspotQuickSync.Jobs
             JobDataMap dataMap = context.JobDetail.JobDataMap;
             RockContext _context = new RockContext();
 
-            string key = dataMap.GetString( "HubspotAPIKey" );
+            string key = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
             string property = dataMap.GetString( "HubspotProperty" );
             string propertyValue = dataMap.GetString( "HubspotValue" );
             string contactSource = dataMap.GetString( "ContactSource" );

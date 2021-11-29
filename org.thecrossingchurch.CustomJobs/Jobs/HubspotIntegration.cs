@@ -47,7 +47,6 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     /// <summary>
     /// 
     /// </summary>
-    [TextField( "Hubspot API Key", "API Key for Hubspot", true, "", "", 0 )]
     [DisallowConcurrentExecution]
     public class HubspotIntegration : IJob
     {
@@ -74,7 +73,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         {
             JobDataMap dataMap = context.JobDetail.JobDataMap;
 
-            string key = dataMap.GetString( "HubspotAPIKey" );
+            string key = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
 
             var current_id = 0;
 

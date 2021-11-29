@@ -41,7 +41,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Related Resources" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Pulls Watch, Listen, Read Content with similar tags" )]
-    [TextField( "HubSpot API Key", required: false, order: 0 )]
     [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
     [ContentChannelField( "Watch Content Channel", required: true, order: 2 )]
     [ContentChannelField( "Listen Content Channel", required: true, order: 3 )]
@@ -85,7 +84,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         {
             base.OnLoad( e );
             _context = new RockContext();
-            apiKey = GetAttributeValue( "HubSpotAPIKey" );
+            apiKey = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
             numPosts = GetAttributeValue( "NumberofPosts" ).AsInteger();
             string watchGuid = GetAttributeValue( "WatchContentChannel" );
             if ( !String.IsNullOrEmpty( watchGuid ) )

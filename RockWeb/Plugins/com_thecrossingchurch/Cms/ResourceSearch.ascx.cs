@@ -15,6 +15,7 @@ using Z.EntityFramework.Plus;
 using System.Net;
 using System.IO;
 using Newtonsoft.Json;
+using Rock.Web.Cache;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
@@ -23,7 +24,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Description( "Display results of search query" )]
     [ContentChannelField( "Watch Content Channel", required: false )]
     [ContentChannelField( "Listen Content Channel", required: false )]
-    [TextField( "Hubspot API Key", required: false )]
     [IntegerField( "Limit", "The max number of posts to display", required: false )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 4 )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 5 )]
@@ -67,7 +67,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _context = new RockContext();
             Guid? WatchContentChannelGuid = GetAttributeValue( "WatchContentChannel" ).AsGuidOrNull();
             Guid? ListenContentChannelGuid = GetAttributeValue( "ListenContentChannel" ).AsGuidOrNull();
-            string HubspotAPIKey = GetAttributeValue( "HubspotAPIKey" );
+            string HubspotAPIKey = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
             int? limit = GetAttributeValue( "Limit" ).AsIntegerOrNull();
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
@@ -204,7 +204,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
                     var posts = blogResponse.results.Select( e =>
                      {
-                         var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog",""), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                         var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
                          if ( e.publishedDate.HasValue )
                          {
                              //Convert Epoch Time

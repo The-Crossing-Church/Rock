@@ -41,7 +41,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Featured Blog Posts" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Pulls most recently published blog posts from HubSpot" )]
-    [TextField( "HubSpot API Key", required: true, order: 0 )]
     [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 2 )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 3 )]
@@ -76,7 +75,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
-            apiKey = GetAttributeValue( "HubSpotAPIKey" );
+            apiKey = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
             numPosts = GetAttributeValue( "NumberofPosts" ).AsInteger();
             if ( !String.IsNullOrEmpty( apiKey ) )
             {
@@ -99,7 +98,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             var response = request.GetResponse();
             BlogResponse blogResponse = new BlogResponse();
             DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
-            
+
             using ( Stream stream = response.GetResponseStream() )
             {
                 using ( StreamReader reader = new StreamReader( stream ) )
