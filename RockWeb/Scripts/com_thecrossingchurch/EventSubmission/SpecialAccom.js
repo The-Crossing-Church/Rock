@@ -155,90 +155,90 @@ export default {
 `,
   props: ["e", "request"],
   data: function () {
-      return {
-          dialog: false,
-          valid: true,
-          prefillDate: '',
-          setupImage: {},
-          rules: {
-              required(val, field) {
-                  return !!val || `${field} is required`;
-              },
-              requiredArr(val, field) {
-                  return val.length > 0 || `${field} is required`;
-              },
-              blurbValidation(value, pubDate) {
-                  let daysUntil = moment(pubDate).diff(moment(), "days");
-                  if (daysUntil <= 30) {
-                      return (
-                          value.length >= 150 ||
-                          "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
-                      );
-                  } else {
-                      return true;
-                  }
-              },
+    return {
+      dialog: false,
+      valid: true,
+      prefillDate: '',
+      setupImage: {},
+      rules: {
+        required(val, field) {
+          return !!val || `${field} is required`;
+        },
+        requiredArr(val, field) {
+          return val.length > 0 || `${field} is required`;
+        },
+        blurbValidation(value, pubDate) {
+          let daysUntil = moment(pubDate).diff(moment(), "days");
+          if (daysUntil <= 30) {
+            return (
+              value.length >= 150 ||
+              "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
+            );
+          } else {
+            return true;
           }
+        },
       }
+    }
   },
   created: function () {
-      if (this.e.SetUpImage) {
-          this.setupImage = this.e.SetUpImage;
-      }
+    if (this.e.SetUpImage) {
+      this.setupImage = this.e.SetUpImage;
+    }
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy");
+    },
   },
   computed: {
-      prefillOptions() {
-          return this.request.EventDates.filter(i => i != this.e.EventDate)
-      },
-      techHint() {
-          return `${this.e.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`
-      },
-      calLabel() {
-          return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
-      },
-      doorLabel() {
-          return `Will you need doors unlocked for this event? (${this.boolToYesNo(this.e.NeedsDoorsUnlocked)})`
-      },
-      drinkHint() {
-          return ''
-          // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
-      },
-      defaultFoodTime() {
-          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-              let time = moment(this.e.StartTime, "hh:mm A");
-              return time.subtract(30, "minutes").format("hh:mm A");
-          }
-          return null;
-      },
+    prefillOptions() {
+      return this.request.EventDates.filter(i => i != this.e.EventDate)
+    },
+    techHint() {
+      return `${this.e.TechNeeds.toString().includes('Live Stream') ? 'Keep in mind that all live stream requests will come at an additional charge to the ministry, which will be verified with you in your follow-up email with the Events Director.' : ''}`
+    },
+    calLabel() {
+      return `I would like this event to be listed on the public web calendar (${this.boolToYesNo(this.e.ShowOnCalendar)})`
+    },
+    doorLabel() {
+      return `Will you need doors unlocked for this event? (${this.boolToYesNo(this.e.NeedsDoorsUnlocked)})`
+    },
+    drinkHint() {
+      return ''
+      // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+    },
+    defaultFoodTime() {
+      if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+        let time = moment(this.e.StartTime, "hh:mm A");
+        return time.subtract(30, "minutes").format("hh:mm A");
+      }
+      return null;
+    },
   },
   methods: {
-      prefillSection() {
-          this.dialog = false
-          let idx = this.request.EventDates.indexOf(this.prefillDate)
-          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-          this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
-      },
-      handleSetUpFile(e) {
-          let file = { name: e.name, type: e.type };
-          var reader = new FileReader();
-          const self = this;
-          reader.onload = function (e) {
-              console.log(e)
-              file.data = e.target.result;
-              self.e.SetUpImage = file;
-          };
-          reader.readAsDataURL(e);
-      },
-      boolToYesNo(val) {
-          if (val) {
-              return "Yes";
-          }
-          return "No";
-      },
+    prefillSection() {
+      this.dialog = false
+      let idx = this.request.EventDates.indexOf(this.prefillDate)
+      let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+      this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
+    },
+    handleSetUpFile(e) {
+      let file = { name: e.name, type: e.type };
+      var reader = new FileReader();
+      const self = this;
+      reader.onload = function (e) {
+        console.log(e)
+        file.data = e.target.result;
+        self.e.SetUpImage = file;
+      };
+      reader.readAsDataURL(e);
+    },
+    boolToYesNo(val) {
+      if (val) {
+        return "Yes";
+      }
+      return "No";
+    },
   }
 }

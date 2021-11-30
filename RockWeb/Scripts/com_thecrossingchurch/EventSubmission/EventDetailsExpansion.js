@@ -502,7 +502,7 @@ export default {
         </template>
       </v-col>
       <v-col v-if="e.TimeLocation || (selected.Changes && selected.Changes.Events[idx].TimeLocation)">
-        <div class="floating-title">Confirmation Email Time and Location</div>
+        <div class="floating-title">Confirmation Email Date, Time, and Location</div>
         <template v-if="selected.Changes != null && e.TimeLocation != selected.Changes.Events[idx].TimeLocation">
           <span class='red--text'>{{(e.TimeLocation ? e.TimeLocation : 'Empty')}}: </span>
           <span class='primary--text'>{{(selected.Changes.Events[idx].TimeLocation ? selected.Changes.Events[idx].TimeLocation : 'Empty')}}</span>
