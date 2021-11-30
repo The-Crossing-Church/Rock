@@ -171,7 +171,7 @@ export default {
                   let daysUntil = moment(pubDate).diff(moment(), "days");
                   if (daysUntil <= 30) {
                       return (
-                          value.length >= 100 ||
+                          value.length >= 150 ||
                           "It doesn't look like you've entered a complete blurb, please enter the full blurb you wish to appear in publicity"
                       );
                   } else {

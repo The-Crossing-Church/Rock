@@ -45,6 +45,7 @@ export default {
         multiple
         attach
         v-model="e.ChildCareOptions"
+        ref="childcareOptRef"
       >
         <template v-slot:item="data">
           <div style="padding: 12px 0px; width: 100%">
@@ -52,14 +53,16 @@ export default {
               v-if="e.ChildCareOptions.includes(data.item)"
               color="primary"
               style="margin-right: 32px"
-              >mdi-checkbox-marked</v-icon
             >
+              mdi-checkbox-marked
+            </v-icon>
             <v-icon
               v-else
               color="primary"
               style="margin-right: 32px"
-              >mdi-checkbox-blank-outline</v-icon
             >
+              mdi-checkbox-blank-outline
+            </v-icon>
             {{data.item}}
           </div>
         </template>
@@ -74,14 +77,16 @@ export default {
                 v-if="childCareSelectAll"
                 color="primary"
                 style="margin-right: 32px"
-                >mdi-checkbox-marked</v-icon
               >
+                mdi-checkbox-marked
+              </v-icon>
               <v-icon
                 v-else
                 color="primary"
                 style="margin-right: 32px"
-                >mdi-checkbox-blank-outline</v-icon
               >
+                mdi-checkbox-blank-outline
+              </v-icon>
               Select All
             </div>
           </v-list-item>
@@ -93,6 +98,7 @@ export default {
         label="Estimated number of kids"
         type="number"
         v-model="e.EstimatedKids"
+        :rules="[rules.required(e.EstimatedKids, 'Number')]"
       ></v-text-field>
     </v-col>
   </v-row>
@@ -129,59 +135,60 @@ export default {
 `,
   props: ["e", "request"],
   data: function () {
-      return {
-          dialog: false,
-          valid: true,
-          prefillDate: '',
-          childCareSelectAll: false,
-          rules: {
-              required(val, field) {
-                  return !!val || `${field} is required`;
-              },
-              requiredArr(val, field) {
-                  return val.length > 0 || `${field} is required`;
-              },
-          }
+    return {
+      dialog: false,
+      valid: true,
+      prefillDate: '',
+      childCareSelectAll: false,
+      rules: {
+        required(val, field) {
+          return !!val || `${field} is required`;
+        },
+        requiredArr(val, field) {
+          return val.length > 0 || `${field} is required`;
+        },
       }
+    }
   },
   created: function () {
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy");
+    },
   },
   computed: {
-      prefillOptions() {
-          return this.request.EventDates.filter(i => i != this.e.EventDate)
-      },
-      defaultChildcareTime() {
-          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-              let time = moment(this.e.StartTime, "hh:mm A");
-              return time.subtract(15, "minutes").format("hh:mm A");
-          }
-          return null;
-      },
+    prefillOptions() {
+      return this.request.EventDates.filter(i => i != this.e.EventDate)
+    },
+    defaultChildcareTime() {
+      if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+        let time = moment(this.e.StartTime, "hh:mm A");
+        return time.subtract(15, "minutes").format("hh:mm A");
+      }
+      return null;
+    },
   },
   methods: {
-      toggleChildCareOptions() {
-          this.childCareSelectAll = !this.childCareSelectAll;
-          if (this.childCareSelectAll) {
-              this.e.ChildCareOptions = [
-                  "Infant/Toddler",
-                  "Preschool",
-                  "K-2nd",
-                  "3-5th",
-              ];
-          } else {
-              this.e.ChildCareOptions = [];
-          }
-      },
-      prefillSection() {
-          this.dialog = false
-          let idx = this.request.EventDates.indexOf(this.prefillDate)
-          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-          this.$emit('updatechildcare', { targetIdx: idx, currIdx: currIdx })
+    toggleChildCareOptions() {
+      this.childCareSelectAll = !this.childCareSelectAll;
+      if (this.childCareSelectAll) {
+        this.e.ChildCareOptions = [
+          "Infant/Toddler",
+          "Preschool",
+          "K-2nd",
+          "3-5th",
+        ]
+        this.$refs.childcareOptRef.blur()
+      } else {
+        this.e.ChildCareOptions = []
       }
+    },
+    prefillSection() {
+      this.dialog = false
+      let idx = this.request.EventDates.indexOf(this.prefillDate)
+      let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+      this.$emit('updatechildcare', { targetIdx: idx, currIdx: currIdx })
+    }
   }
 }

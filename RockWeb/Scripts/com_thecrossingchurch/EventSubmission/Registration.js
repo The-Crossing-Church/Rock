@@ -50,6 +50,7 @@ export default {
       v-model="e.FeeType"
       multiple
       attach
+      ref="feeTypeRef"
     ></v-autocomplete>
   </v-col>
 </v-row>
@@ -284,7 +285,7 @@ export default {
       let idx = this.request.EventDates.indexOf(this.prefillDate)
       let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
       this.$emit('updatereg', { targetIdx: idx, currIdx: currIdx })
-    }
+    },
   },
   computed: {
     defaultRegistraionStart() {
@@ -388,9 +389,18 @@ export default {
     },
     feeOptions() {
       if (this.request.needsOnline) {
-        return ['Fee per Individual', 'Fee per Couple', 'Online Fee', 'No Fees']
+        return [
+          {text: 'Fee per Individual', value: 'Fee per Individual', disabled: (this.e.FeeType.includes("No Fees") ? true : false)},
+          {text: 'Fee per Couple', value: 'Fee per Couple', disabled: (this.e.FeeType.includes("No Fees") ? true : false)},
+          {text: 'Online Fee', value: 'Online Fee', disabled: (this.e.FeeType.includes("No Fees") ? true : false)},
+          {text: 'No Fees', value: 'No Fees', disabled: (this.e.FeeType.length > 0 && !this.e.FeeType.includes("No Fees") ? true : false)}
+        ]
       }
-      return ['Fee per Individual', 'Fee per Couple', 'No Fees']
+      return [
+        {text: 'Fee per Individual', value: 'Fee per Individual', disabled: (this.e.FeeType.includes("No Fees") ? true : false)},
+        {text: 'Fee per Couple', value: 'Fee per Couple', disabled: (this.e.FeeType.includes("No Fees") ? true : false)},
+        {text: 'No Fees', value: 'No Fees', disabled: (this.e.FeeType.length > 0 && !this.e.FeeType.includes("No Fees") ? true : false)}
+      ]
     }
   },
   watch: {
@@ -426,6 +436,9 @@ export default {
       }
       if (!val.includes('Online Fee')) {
         this.e.OnlineFee = null
+      }
+      if(val.includes('No Fees')) {
+        this.$refs.feeTypeRef.blur()
       }
     }
   },
