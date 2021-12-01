@@ -90,7 +90,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             rockContext = new RockContext();
             DateTime today = RockDateTime.Now;
             StartDate = new DateTime( today.Year, today.Month, 1, 0, 0, 0 );
-            EndDate = new DateTime( today.Year, ( today.Month + 1 ), 1, 0, 0, 0 );
+            if ( StartDate.Value.Month < 12 )
+            {
+                EndDate = new DateTime( today.Year, ( today.Month + 1 ), 1, 0, 0, 0 );
+            }
+            else
+            {
+                EndDate = new DateTime( ( today.Year + 1 ), 1, 1, 0, 0, 0 );
+            }
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Start ) ) )
             {
                 StartDate = DateTime.Parse( PageParameter( PageParameterKey.Start ) );
