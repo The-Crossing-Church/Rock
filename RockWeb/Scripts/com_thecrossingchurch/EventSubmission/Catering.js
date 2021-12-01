@@ -56,11 +56,14 @@ export default {
           ></v-text-field>
         </v-col>
         <v-col>
-          <v-text-field
+          <v-autocomplete
             label="Food Budget Line"
             v-model="e.BudgetLine"
+            :items="budgetLines"
+            item-value="Id"
+            item-text="Value"
             :rules="[rules.required(e.BudgetLine, 'Budget Line')]"
-          ></v-text-field>
+          ></v-autocomplete>
         </v-col>
       </v-row>
       <v-row>
@@ -176,11 +179,14 @@ export default {
             ></v-select>
           </v-col>
           <v-col>
-            <v-text-field
+            <v-autocomplete
               label="Food Budget Line for Childcare"
               v-model="e.CCBudgetLine"
               :rules="[rules.required(e.CCBudgetLine, 'Budget Line')]"
-            ></v-text-field>
+              :items="budgetLines"
+              item-value="Id"
+              item-text="Value"
+            ></v-autocomplete>
           </v-col>
         </v-row>
         <v-row>
@@ -239,63 +245,65 @@ export default {
   `,
   props: ["e", "request"],
   data: function () {
-      return {
-          dialog: false,
-          valid: true,
-          rooms: [],
-          prefillDate: '',
-          sameFoodDrinkDropOff: false,
-          rules: {
-              required(val, field) {
-                  return !!val || `${field} is required`;
-              },
-              requiredArr(val, field) {
-                  return val.length > 0 || `${field} is required`;
-              },
-          }
+    return {
+      dialog: false,
+      valid: true,
+      rooms: [],
+      budgetLines: [],
+      prefillDate: '',
+      sameFoodDrinkDropOff: false,
+      rules: {
+        required(val, field) {
+          return !!val || `${field} is required`;
+        },
+        requiredArr(val, field) {
+          return val.length > 0 || `${field} is required`;
+        },
       }
+    }
   },
   created: function () {
-      this.allEvents = [];
-      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+    this.allEvents = [];
+    this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+    this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value);
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy");
+    },
   },
   computed: {
-      prefillOptions() {
-          return this.request.EventDates.filter(i => i != this.e.EventDate)
-      },
-      deliveryLabel() {
-          return `Would you like your food to be delivered? ${this.e.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`
-      },
-      drinkHint() {
-          return ''
-          // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
-      },
-      defaultFoodTime() {
-          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-              let time = moment(this.e.StartTime, "hh:mm A");
-              return time.subtract(30, "minutes").format("hh:mm A");
-          }
-          return null;
-      },
+    prefillOptions() {
+      return this.request.EventDates.filter(i => i != this.e.EventDate)
+    },
+    deliveryLabel() {
+      return `Would you like your food to be delivered? ${this.e.FoodDelivery ? 'Yes!' : 'No, someone from my team will pick it up'}`
+    },
+    drinkHint() {
+      return ''
+      // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
+    },
+    defaultFoodTime() {
+      if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+        let time = moment(this.e.StartTime, "hh:mm A");
+        return time.subtract(30, "minutes").format("hh:mm A");
+      }
+      return null;
+    },
   },
   methods: {
-      prefillSection() {
-          this.dialog = false
-          let idx = this.request.EventDates.indexOf(this.prefillDate)
-          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-          this.$emit('updatecatering', { targetIdx: idx, currIdx: currIdx })
-      }
+    prefillSection() {
+      this.dialog = false
+      let idx = this.request.EventDates.indexOf(this.prefillDate)
+      let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+      this.$emit('updatecatering', { targetIdx: idx, currIdx: currIdx })
+    }
   },
   watch: {
-      sameFoodDrinkDropOff(val) {
-          if (val) {
-              this.e.DrinkDropOff = this.e.FoodDropOff
-          }
-      },
+    sameFoodDrinkDropOff(val) {
+      if (val) {
+        this.e.DrinkDropOff = this.e.FoodDropOff
+      }
+    },
   }
 }

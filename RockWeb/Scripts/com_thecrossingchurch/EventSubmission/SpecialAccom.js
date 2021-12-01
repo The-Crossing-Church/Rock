@@ -95,7 +95,7 @@ export default {
   <v-row v-if="e.ShowOnCalendar">
     <v-col>
       <v-textarea
-        label="Please type out your blurb"
+        label="Please type out your blurb for the web calendar"
         v-model="e.PublicityBlurb"
         :rules="[rules.blurbValidation(e.PublicityBlurb, request.PublicityStartDate)]"
         validate-on-blur
