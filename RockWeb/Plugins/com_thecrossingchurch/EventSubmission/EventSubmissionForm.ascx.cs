@@ -35,6 +35,7 @@ using Microsoft.Identity.Client;
 using Microsoft.Graph.Auth;
 using Microsoft.Graph;
 using System.Threading.Tasks;
+using RockWeb.TheCrossing;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -47,7 +48,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
     [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
     [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
-    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 2 )]
+    [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "", 2 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 3 )]
     [LinkedPage( "Request Page", "The Request Form Page", true, "", "", 4 )]
     [LinkedPage( "Dashboard Page", "The Request Dashboard Page", true, "", "", 5 )]
     [LinkedPage( "User Dashboard Page", "The Request Dashboard Page", true, "", "", 6 )]
@@ -66,10 +68,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         public string DashboardPageId { get; set; }
         private int RoomDefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
+        private int BudgetDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
         private int ContentChannelTypeId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
         private List<DefinedValue> Ministries { get; set; }
+        private List<DefinedValue> BudgetLines { get; set; }
         private Rock.Model.Group RoomOnlySR { get; set; }
         private Rock.Model.Group EventSR { get; set; }
         private bool CurrentPersonIsRoomAdmin { get; set; }
@@ -108,29 +112,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             Guid? RoomDefinedTypeGuid = GetAttributeValue( "RoomList" ).AsGuidOrNull();
             Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
-            if ( RoomDefinedTypeGuid.HasValue && MinistryDefinedTypeGuid.HasValue )
-            {
-                RoomDefinedTypeId = new DefinedTypeService( context ).Get( RoomDefinedTypeGuid.Value ).Id;
-                MinistryDefinedTypeId = new DefinedTypeService( context ).Get( MinistryDefinedTypeGuid.Value ).Id;
-            }
-
+            Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
-            if ( ContentChannelGuid.HasValue )
-            {
-                ContentChannel channel = new ContentChannelService( context ).Get( ContentChannelGuid.Value );
-                ContentChannelId = channel.Id;
-                ContentChannelTypeId = channel.ContentChannelTypeId;
-            }
 
-            Rock.Model.Attribute attr = new AttributeService( context ).Queryable().FirstOrDefault( a => a.Key == "InternalApplicationRoot" );
-            if ( attr != null )
-            {
-                BaseURL = new AttributeValueService( context ).Queryable().FirstOrDefault( av => av.AttributeId == attr.Id ).Value;
-                if ( !BaseURL.EndsWith( "/" ) )
-                {
-                    BaseURL += "/";
-                }
-            }
+            var eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
+            hfRooms.Value = eventSubmissionHelper.RoomsJSON;
+            hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
+            hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
+            ContentChannelId = eventSubmissionHelper.ContentChannelId;
+            BaseURL = eventSubmissionHelper.BaseURL;
+
             RequestPageGuid = GetAttributeValue( "RequestPage" ).AsGuidOrNull();
             Guid? DashboardPageGuid = GetAttributeValue( "DashboardPage" ).AsGuidOrNull();
             UserDashboardPageGuid = GetAttributeValue( "UserDashboardPage" ).AsGuidOrNull();
@@ -145,7 +136,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Guid? EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
 
             //Throw an error if not all values are present
-            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !UserDashboardPageGuid.HasValue || !superUserGuid.HasValue || !RoomSRGuid.HasValue || !EventSRGuid.HasValue )
+            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !BudgetDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !UserDashboardPageGuid.HasValue || !superUserGuid.HasValue || !RoomSRGuid.HasValue || !EventSRGuid.HasValue )
             {
                 return;
             }
@@ -182,12 +173,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
             }
             hfPersonName.Value = CurrentPerson.FullName;
-            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == RoomDefinedTypeId ).ToList();
-            Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive, IsDisabled = !dv.IsActive } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
-            Ministries.LoadAttributes();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive, IsDisabled = !dv.IsActive } ) );
+            ThisWeekRequests();
             ThisWeekRequests();
             if ( !Page.IsPostBack )
             {

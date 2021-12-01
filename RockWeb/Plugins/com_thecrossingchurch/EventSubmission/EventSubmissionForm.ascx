@@ -30,6 +30,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 
 <asp:HiddenField ID="hfRooms" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
+<asp:HiddenField ID="hfBudgetLines" runat="server" />
 <asp:HiddenField ID="hfReservations" runat="server" />
 <asp:HiddenField ID="hfRequest" runat="server" />
 <asp:HiddenField ID="hfUpcomingRequests" runat="server" />
@@ -1018,10 +1019,16 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       twoWeeksTense(){
         if(this.request.EventDates?.length > 0) {
+          let today = new moment()
+          today.set({
+              hour:   0,
+              minute: 0,
+              second: 0
+          })
           let first = this.request.EventDates.map((i) => {
             return new moment(i)
-          }).sort().pop()
-          if(first.subtract(2, 'weeks').isAfter(new moment())){
+          }).sort().pop().subtract(2, 'weeks')
+          if(first.isAfter(today) || first.isSame(today, 'day')){
             return 'is'
           }
           return 'was'
@@ -1029,10 +1036,16 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       thirtyDaysTense(){
         if(this.request.EventDates?.length > 0) {
+          let today = new moment()
+          today.set({
+              hour:   0,
+              minute: 0,
+              second: 0
+          })
           let first = this.request.EventDates.map((i) => {
             return new moment(i)
-          }).sort().pop()
-          if(first.subtract(30, 'days').isAfter(new moment())){
+          }).sort().pop().subtract(30, 'days')
+          if(first.isAfter(today) || first.isSame(today, 'day')){
             return 'is'
           }
           return 'was'
@@ -1040,10 +1053,16 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       sixWeeksTense(){
         if(this.request.EventDates?.length > 0) {
+          let today = new moment()
+          today.set({
+              hour:   0,
+              minute: 0,
+              second: 0
+          })
           let first = this.request.EventDates.map((i) => {
             return new moment(i)
-          }).sort().pop()
-          if(first.subtract(6, 'weeks').isAfter(new moment())){
+          }).sort().pop().subtract(6, 'weeks')
+          if(first.isAfter(today) || first.isSame(today, 'day')){
             return 'is'
           }
           return 'was'

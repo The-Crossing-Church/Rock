@@ -31,6 +31,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
 
 <asp:HiddenField ID="hfRooms" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
+<asp:HiddenField ID="hfBudgetLines" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 <asp:HiddenField ID="hfRequestURL" runat="server" />
 <asp:HiddenField ID="hfWorkflowURL" runat="server" />

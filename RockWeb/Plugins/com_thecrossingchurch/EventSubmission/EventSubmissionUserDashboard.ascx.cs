@@ -35,6 +35,7 @@ using System.Data.Entity.Migrations;
 using Microsoft.Identity.Client;
 using System.Threading.Tasks;
 using Rock.Communication;
+using RockWeb.TheCrossing;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -45,13 +46,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Category( "com_thecrossingchurch > Event Submission" )]
     [Description( "Dashboard for Current User's Event Submissions" )]
 
-    [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
-    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 1)]
-    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 2 )]
-    [TextField( "Rock Base URL", "Base URL for Rock", true, "https://rock.thecrossingchurch.com/page/", "", 3 )]
-    [IntegerField( "Page Id", "The id of the page for editing requests.", true, 0, "", 4 )]
-    [IntegerField( "Admin Dashboard Page Id", "The id of the page for the admin dashboard.", true, 0, "", 5 )]
-    [IntegerField( "Workflow Entry Page Id", "The id of the page for workflow entries.", true, 0, "", 6 )]
+    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
+    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
+    [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "", 2 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 3 )]
+    [LinkedPage( "Request Page", "The Request Form Page", true, "", "", 4 )]
+    [LinkedPage( "Admin Dashboard Page", "The Request Admin Dashboard Page", true, "", "", 5 )]
+    [LinkedPage( "Workflow Entry Page", order: 6 )]
     [WorkflowTypeField( "User Action Workflow", "The workflow that allows users to accept proposed changes, use original, or cancel request", order: 7 )]
     [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, order: 8 )]
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, order: 9 )]
@@ -60,14 +61,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     {
         #region Variables
         public RockContext context { get; set; }
-        private int DefinedTypeId { get; set; }
+        private int RoomDefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
+        private int BudgetDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
+        private int ContentChannelTypeId { get; set; }
         public string BaseURL { get; set; }
-        private int PageId { get; set; }
-        private int AdminPageId { get; set; }
+        private string RequestPageId { get; set; }
+        private string AdminDashboardPageId { get; set; }
+        private int UserActionWorkflowId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
         private List<DefinedValue> Ministries { get; set; }
+        private List<DefinedValue> BudgetLines { get; set; }
         private Rock.Model.Group RoomOnlySR { get; set; }
         private Rock.Model.Group EventSR { get; set; }
         private static class PageParameterKey
@@ -100,22 +105,38 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             base.OnLoad( e );
             context = new RockContext();
-            DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
-            MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
-            ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
-            BaseURL = GetAttributeValue( "RockBaseURL" );
-            PageId = GetAttributeValue( "PageId" ).AsInteger();
-            AdminPageId = GetAttributeValue( "AdminDashboardPageId" ).AsInteger();
-            hfRequestURL.Value = "/page/" + PageId;
-            int workflowEntryPageId = GetAttributeValue( "WorkflowEntryPageId" ).AsInteger();
-            int workflowTypeId = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "UserActionWorkflow" ) ) ).Id;
-            hfWorkflowURL.Value = "/page/" + workflowEntryPageId + "?WorkflowTypeId=" + workflowTypeId;
-            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
-            Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
-            Ministries.LoadAttributes();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+
+            Guid? RoomDefinedTypeGuid = GetAttributeValue( "RoomList" ).AsGuidOrNull();
+            Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
+            Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
+            Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+
+            var eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
+            hfRooms.Value = eventSubmissionHelper.RoomsJSON;
+            hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
+            hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
+            ContentChannelId = eventSubmissionHelper.ContentChannelId;
+            BaseURL = eventSubmissionHelper.BaseURL;
+
+            Guid? RequestPageGuid = GetAttributeValue( "RequestPage" ).AsGuidOrNull();
+            Guid? DashboardPageGuid = GetAttributeValue( "AdminDashboardPage" ).AsGuidOrNull();
+            if ( RequestPageGuid.HasValue && DashboardPageGuid.HasValue )
+            {
+                RequestPageId = new PageService( context ).Get( RequestPageGuid.Value ).Id.ToString();
+                AdminDashboardPageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
+                hfRequestURL.Value = "/page/" + RequestPageId;
+            }
+
+            Guid? userActionWF = GetAttributeValue( "UserActionWorkflow" ).AsGuidOrNull();
+            if ( userActionWF.HasValue )
+            {
+                UserActionWorkflowId = new WorkflowTypeService( context ).Get( userActionWF.Value ).Id;
+                int workflowEntryPageId = GetAttributeValue( "WorkflowEntryPageId" ).AsInteger();
+                int workflowTypeId = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "UserActionWorkflow" ) ) ).Id;
+                hfWorkflowURL.Value = "/page/" + workflowEntryPageId + "?WorkflowTypeId=" + workflowTypeId;
+            }
+
+
             var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
             var EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
             if ( RoomSRGuid.HasValue )
@@ -126,6 +147,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 EventSR = new GroupService( context ).Get( EventSRGuid.Value );
             }
+
+            //Throw an error if not all values are present
+            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !BudgetDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !userActionWF.HasValue )
+            {
+                return;
+            }
+
             LoadMyRequests();
         }
 
@@ -174,7 +202,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             string subject = CurrentPerson.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>" + CurrentPerson.FullName + " has added this comment to their request:</p>" +
                 "<blockquote>" + comment.Message + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + AdminPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + AdminDashboardPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             List<GroupMember> groupMembers = new List<GroupMember>();
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
