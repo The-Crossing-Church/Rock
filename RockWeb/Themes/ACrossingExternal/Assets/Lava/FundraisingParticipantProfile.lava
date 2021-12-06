@@ -1,9 +1,3 @@
-{{ Group | Attribute:'OpportunityTitle' | AddMetaTagToHead:'property','twitter:title' }}
-{{ Group | Attribute:'OpportunitySummary' | AddMetaTagToHead:'property','twitter:description' }}
-
-{{ Group | Attribute:'OpportunityTitle' | AddMetaTagToHead:'property','og:title' }}
-{{ Group | Attribute:'OpportunitySummary' | AddMetaTagToHead:'property','og:description' }}
-
 {% assign opportunityPhotoUrl = item | Attribute:'OpportunityPhoto','Url' %}
 {% if opportunityPhotoUrl != '' %}
     {{ opportunityPhotoUrl | AddMetaTagToHead:'property','og:image' }}
