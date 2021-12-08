@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionUserDashboard.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionUserDashboard"
 %> <%-- Add Vue and Vuetify CDN --%>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <link
@@ -11,7 +11,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
   rel="stylesheet"
 />
 <link
-  href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
+  href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css"
   rel="stylesheet"
 />
 <link
@@ -32,6 +32,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
 <asp:HiddenField ID="hfRooms" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfBudgetLines" runat="server" />
+<asp:HiddenField ID="hfRequest" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 <asp:HiddenField ID="hfRequestURL" runat="server" />
 <asp:HiddenField ID="hfWorkflowURL" runat="server" />
@@ -42,6 +43,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
   CssClass="btn-hidden"
   runat="server"
   OnClick="AddComment_Click"
+/>
+<Rock:BootstrapButton
+  ID="btnResubmitRequest"
+  CssClass="btn-hidden"
+  runat="server"
+  OnClick="ResubmitRequest_Click"
 />
 
 <div id="app" v-cloak>
@@ -201,7 +208,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                     <v-col><strong>Submitted On</strong></v-col>
                     <v-col><strong>Event Dates</strong></v-col>
                     <v-col><strong>Requested Resources</strong></v-col>
-                    <v-col><strong>Status</strong></v-col>
+                    <v-col cols="3"><strong>Status</strong></v-col>
                   </v-row>
                 </v-list-item>
                 <v-list-item
@@ -216,7 +223,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                     <v-col>{{ r.CreatedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
                     <v-col>{{ requestType(r) }}</v-col>
-                    <v-col :class="getStatusPillClass(r.RequestStatus)">{{ r.RequestStatus }}</v-col>
+                    <v-col cols="3" class='d-flex justify-left'>
+                      <event-actions :r="r" v-on:editrequest="editRequest" v-on:cancelrequest="cancelRequest" v-on:resubmitrequest="resubmitRequest" v-on:commentrequest="addComment"></event-actions>
+                    </v-col>
                   </v-row>
                 </v-list-item>
               </v-list>
@@ -553,13 +562,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
             >
               <v-icon>mdi-pencil</v-icon> Edit
             </v-btn>
-            <!-- <v-btn
-              v-if="selected.RequestStatus == 'Proposed Changes Denied'"
-              color="accent"
-              @click="changeStatus('ChangesAccepted', selected.Id)"
-            >
-              <v-icon>mdi-check</v-icon> Accept Event Director's Suggestion
-            </v-btn> -->
             <v-btn
               v-if="selected.RequestStatus == 'Proposed Changes Denied'"
               color="primary"
@@ -582,6 +584,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
             >
               <v-icon>mdi-comment-edit</v-icon> Add Comment
             </v-btn>
+            <v-btn
+              @click="resubmitRequest"
+              style="margin-left: 8px;"
+              color="pending"
+            >
+              <v-icon>mdi-calendar-refresh</v-icon> Resubmit
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
@@ -601,13 +610,102 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog v-if="resubmitDialog" v-model="resubmitDialog" max-width="80%">
+        <v-card>
+          <v-card-title>Resubmit {{selected.Name}}</v-card-title>
+          <v-card-text>
+            <template v-if="selected.Events.length == 1">
+              To resubmit a request, please select the new date(s) for your event.
+            </template>
+            <template v-else>
+              To resubmit a request, you must select a replacement date for each date that was in the original request or remove the date. Information about each original date will then be pre-filled for the new dates you select. The new request will be saved as a draft you must edit before submitting. 
+            </template>
+            <div class='overline'>Resources requested for {{selected.Name}}</div>
+            <div>Remove any you won't need for your re-submission of this event</div>
+            <v-chip v-if="copy.needsSpace" close close-icon="mdi-close" @click:close="copy.needsSpace = false" class="mt-s-1">Space</v-chip>
+            <v-chip v-if="copy.needsOnline" close close-icon="mdi-close" @click:close="copy.needsOnline = false" class="mt-s-1">Zoom</v-chip>
+            <v-chip v-if="copy.needsCatering" close close-icon="mdi-close" @click:close="copy.needsCatering = false" class="mt-s-1">Catering</v-chip>
+            <v-chip v-if="copy.needsChildCare" close close-icon="mdi-close" @click:close="copy.needsChildCare = false" class="mt-s-1">ChildCare</v-chip>
+            <v-chip v-if="copy.needsReg" close close-icon="mdi-close" @click:close="copy.needsReg = false" class="mt-s-1">Registration</v-chip>
+            <v-chip v-if="copy.needsAccom" close close-icon="mdi-close" @click:close="copy.needsAccom = false" class="mt-s-1">Special Accomodations</v-chip>
+            <v-chip v-if="copy.needsPub" close close-icon="mdi-close" @click:close="copy.needsPub = false" class="mt-s-1">Publicity</v-chip>
+            <template v-if="selected.Events.length == 1">
+              <v-row>
+                <v-col cols="6">
+                  <strong>Select your new dates</strong><br/>
+                  <v-date-picker
+                    multiple
+                    v-model="copy.EventDates"
+                    :min="earliestDateForResubmission"
+                    elevation="1"
+                    landscape
+                  ></v-date-picker>
+                </v-col>
+                <v-col cols="3" xs="6">
+                  <v-list dense>
+                    <v-list-item v-for="(d, idx) in copy.EventDates" :key="d">
+                      <v-list-item-content>{{d | formatDate}}</v-list-item-content>
+                      <v-list-item-action>
+                        <v-btn icon color="denied" @click="copy.EventDates.splice(idx, 1)">
+                          <v-icon>mdi-close</v-icon>
+                        </v-btn>
+                      </v-list-item-action>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
+              </v-row>
+            </template>
+            <template v-else>
+              <v-row v-for="(e, idx) in selected.EventDates" :key="e">
+                <v-col>
+                  <v-text-field
+                    v-model="formatDate(e)"
+                    readonly
+                  ></v-text-field>
+                </v-col>
+                <template v-if="!resubmissionData[idx].wasRemoved">
+                  <v-col>
+                    <date-picker label="New Date" v-model="resubmissionData[idx].date" :min="earliestDateForResubmission"></date-picker>
+                  </v-col>
+                  <v-col cols="1" align-self="center">
+                    <v-btn fab small color="denied" @click="resubmissionData[idx].wasRemoved = true;">
+                      <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                  </v-col>
+                </template>
+                <template v-else>
+                  <v-col>
+                    <v-text-field
+                      value="Date Removed"
+                      disabled
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="1" align-self="center">
+                    <v-btn fab small color="accent" @click="resubmissionData[idx].wasRemoved = false;">
+                      <v-icon>mdi-plus</v-icon>
+                    </v-btn>
+                  </v-col>
+                </template>
+              </v-row>
+            </template>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="resubmit">Resubmit Request</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
 <script type="module">
+import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/UserEventActions.js';
 import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js';
+import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js';
 document.addEventListener("DOMContentLoaded", function () {
+  Vue.component("event-actions", eventActions);
   Vue.component("event-details", eventDetails);
+  Vue.component("date-picker", datePicker);
   new Vue({
     el: "#app",
     vuetify: new Vuetify({
@@ -617,6 +715,9 @@ document.addEventListener("DOMContentLoaded", function () {
             primary: "#347689",
             secondary: "#3D3D3D",
             accent: "#8ED2C9",
+            inprogress: '#ECC30B',
+            denied: '#CC3F0C',
+            pending: '#61A4A9'
           },
         },
       },
@@ -629,6 +730,8 @@ document.addEventListener("DOMContentLoaded", function () {
       requests: [],
       filteredRequests: [],
       selected: {},
+      copy: {},
+      resubmissionData: [],
       overlay: false,
       panels: [0],
       rooms: [],
@@ -647,6 +750,7 @@ document.addEventListener("DOMContentLoaded", function () {
       createStartMenu: false,
       createEndMenu: false,
       commentDialog: false,
+      resubmitDialog: false,
       comment: ''
     },
     created() {
@@ -726,6 +830,21 @@ document.addEventListener("DOMContentLoaded", function () {
           return o.Events.length > 0;
         });
       },
+      earliestDateForResubmission() {
+        if(this.copy) {
+          let target = moment()
+          if(this.copy.needsPub) {
+            target = moment(target).add(6, 'weeks')
+          } else if (this.copy.needsChildCare) {
+            target = moment(target).add(30, 'days')
+          } else if(this.copy.needsOnline || this.copy.needsCatering || this.copy.needsReg) {
+            target = moment(target).add(14, 'days')
+          } else {
+            target = null
+          }
+          return target ? target.format('yyyy-MM-DD') : target
+        }
+      }
     },
     methods: {
       getRecent() {
@@ -759,6 +878,9 @@ document.addEventListener("DOMContentLoaded", function () {
           return dates.join(", ");
         }
         return "";
+      },
+      formatDate(val) {
+        return moment(val).format("MM/DD/yyyy");
       },
       formatRooms(val) {
         if (val) {
@@ -831,16 +953,16 @@ document.addEventListener("DOMContentLoaded", function () {
           return "no-top-pad status-pill denied";
         }
       },
-      foodTimeTitle(e) {
-        if (e.FoodDelivery) {
-          return "Food Set-up time";
-        } else {
-          return "Desired Pick-up time from Vendor";
+      editRequest(r) {
+        if(r) {
+          this.selected = r
         }
-      },
-      editRequest() {
         let url = $('[id$="hfRequestURL"]').val();
         window.location = url + `?Id=${this.selected.Id}`;
+      },
+      addComment(r) {
+        this.selected = r
+        this.commentDialog = true
       },
       saveComment() {
         $('[id$="hfRequestID"]').val(this.selected.Id);
@@ -860,6 +982,9 @@ document.addEventListener("DOMContentLoaded", function () {
           a.download = this.selected.Changes.Events[idx].SetUpImage.name;
         }
         a.click();
+      },
+      cancelRequest(r){
+        this.changeStatus('Cancelled', r.Id)
       },
       changeStatus(status, id) {
         let url = $('[id$="hfWorkflowURL"]').val();
@@ -914,6 +1039,44 @@ document.addEventListener("DOMContentLoaded", function () {
           })
         }
         this.filteredRequests = temp
+      },
+      resubmitRequest(r) {
+        if(r) {
+          this.selected = r
+        }
+        this.copy = JSON.parse(JSON.stringify(this.selected))
+        this.resubmissionData = []
+        this.copy.EventDates.forEach((idx, d) => {
+          this.resubmissionData.push({idx: idx, wasRemoved: false, date: ''})
+        })
+        this.copy.EventDates = []
+        this.resubmitDialog = true
+      },
+      resubmit() {
+        this.resubmissionDialog = false
+        $('#updateProgress').show();
+        if(this.copy.Events.length > 1) {
+          this.copy.EventDates = []
+          //Update dates
+          for(let i=0; i < this.resubmissionData.length; i++) {
+            this.copy.Events[i].EventDate = moment(this.resubmissionData[i].date).format('yyyy-MM-DD')
+            this.copy.EventDates.push(moment(this.resubmissionData[i].date).format('yyyy-MM-DD'))
+            if(this.resubmissionData[i].wasRemoved) {
+              this.copy.Events[i] = null
+            }
+          }
+          //Remove skipped dates
+          this.copy.Events = this.copy.Events.filter(e => { return e != null })
+        }
+        //null dates
+        this.copy.PublicityStartDate = null
+        this.copy.PublicityEndDate = null
+        for(let i = 0; i< this.copy.Events.length; i++) {
+          this.copy.Events[i].RegistrationDate = null
+          this.copy.Events[i].RegistrationEndDate = null
+        }
+        $('[id$="hfRequest"]').val(JSON.stringify(this.copy));
+        $('[id$="btnResubmitRequest"')[0].click();
       }
     },
   });
@@ -957,6 +1120,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   .v-overlay__content {
     width: 60%;
+  }
+  .v-dialog:not(.v-dialog--fullscreen) {
+    max-height: 80vh !important;
+  }
+  .v-dialog {
+    margin-top: 100px !important;
   }
   .floating-title {
     text-transform: uppercase;

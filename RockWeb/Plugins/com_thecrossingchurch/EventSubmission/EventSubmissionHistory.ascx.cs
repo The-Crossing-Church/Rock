@@ -30,6 +30,9 @@ using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using Newtonsoft.Json;
 using CSScriptLibrary;
 using System.Data.Entity.Migrations;
+using RockWeb.TheCrossing;
+using EventRequest = RockWeb.TheCrossing.EventSubmissionHelper.EventRequest;
+using Comment = RockWeb.TheCrossing.EventSubmissionHelper.Comment;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -40,14 +43,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Category( "com_thecrossingchurch > Event Submission" )]
     [Description( "All Event Submissions" )]
 
-    [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
-    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 0 )]
-    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 0 )]
+    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
+    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
+    [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "", 2 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 3 )]
 
     public partial class EventSubmissionHistory : Rock.Web.UI.RockBlock
     {
         #region Variables
-        public RockContext context { get; set; }
+        private RockContext context { get; set; }
+        private EventSubmissionHelper eventSubmissionHelper { get; set; }
         private int DefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
@@ -80,15 +85,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             base.OnLoad( e );
             context = new RockContext();
-            DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
-            MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
-            ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
-            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
-            Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
-            Ministries.LoadAttributes();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+
+            Guid? RoomDefinedTypeGuid = GetAttributeValue( "RoomList" ).AsGuidOrNull();
+            Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
+            Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
+            Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+
+            eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
+            hfRooms.Value = eventSubmissionHelper.RoomsJSON;
+            hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
+            hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
+            ContentChannelId = eventSubmissionHelper.ContentChannelId;
+
             GetAllRequests();
             if ( !Page.IsPostBack )
             {

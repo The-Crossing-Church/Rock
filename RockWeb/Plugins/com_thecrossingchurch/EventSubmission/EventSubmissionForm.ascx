@@ -10,7 +10,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   rel="stylesheet"
 />
 <link
-  href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
+  href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css"
   rel="stylesheet"
 />
 <link
@@ -1098,7 +1098,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (this.isAdmin) {
           return false
         }
-        if (this.request.Id > 0 && this.request.Status != 'Submitted') {
+        if (this.request.Id > 0 && !(this.request.Status == 'Submitted' || this.request.Status == 'Draft')) {
           if (!this.request.IsSame || this.request.Events.length > 1) {
             return true
           }
@@ -1109,7 +1109,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (this.isAdmin) {
           return false
         }
-        if (this.request.Id > 0 && this.request.Status != 'Submitted') {
+        if (this.request.Id > 0 && !(this.request.Status == 'Submitted' || this.request.Status == 'Draft')) {
           return true
         }
         return false
@@ -1266,9 +1266,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return err[0]?.errors.length == 0 ? true : false
       },
       submit() {
+        $('#updateProgress').show();
         $('[id$="hfRequest"]').val(JSON.stringify(this.request));
         $('[id$="btnSubmit"')[0].click();
-        $('#updateProgress').show();
       },
       sendDateChangeRequest() {
         this.changeDialog = false

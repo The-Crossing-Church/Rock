@@ -177,14 +177,14 @@ export default {
           searchInput: '',
           rules: {
               required(val, field) {
-                  return !!val || `${field} is required`;
+                return !!val || `${field} is required`;
               },
               requiredArr(val, field) {
                   return val.length > 0 || `${field} is required`;
               },
               isInt(val, field) {
                   if (val) {
-                      return !(val.includes('.') || val.includes('-')) || `${field} must be a whole number`
+                    return !(val.includes('.') || val.includes('-')) || `${field} must be a whole number`
                   }
                   return true
               },

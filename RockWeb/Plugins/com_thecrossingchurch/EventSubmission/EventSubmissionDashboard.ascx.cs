@@ -36,6 +36,8 @@ using Microsoft.Identity.Client;
 using System.Threading.Tasks;
 using Rock.Communication;
 using RockWeb.TheCrossing;
+using EventRequest = RockWeb.TheCrossing.EventSubmissionHelper.EventRequest;
+using Comment = RockWeb.TheCrossing.EventSubmissionHelper.Comment;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -62,7 +64,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     public partial class EventSubmissionDashboard : Rock.Web.UI.RockBlock
     {
         #region Variables
-        public RockContext context { get; set; }
+        private RockContext context { get; set; }
+        private EventSubmissionHelper eventSubmissionHelper { get; set; }
         private int RoomDefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int BudgetDefinedTypeId { get; set; }
@@ -113,7 +116,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
 
-            var eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
+            eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
             hfRooms.Value = eventSubmissionHelper.RoomsJSON;
             hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
             hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
@@ -423,102 +426,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             public string CreatedBy { get; set; }
             public DateTime? CreatedOn { get; set; }
             public string RequestStatus { get; set; }
-        }
-        private class EventRequest
-        {
-            public bool needsSpace { get; set; }
-            public bool needsOnline { get; set; }
-            public bool needsPub { get; set; }
-            public bool needsReg { get; set; }
-            public bool needsCatering { get; set; }
-            public bool needsChildCare { get; set; }
-            public bool needsAccom { get; set; }
-            public bool IsSame { get; set; }
-            public string Name { get; set; }
-            public string Ministry { get; set; }
-            public string Contact { get; set; }
-            public List<string> EventDates { get; set; }
-            public List<EventDetails> Events { get; set; }
-
-            public string WhyAttendSixtyFive { get; set; }
-            public string TargetAudience { get; set; }
-            public bool EventIsSticky { get; set; }
-            public DateTime? PublicityStartDate { get; set; }
-            public DateTime? PublicityEndDate { get; set; }
-            public List<string> PublicityStrategies { get; set; }
-            public string WhyAttendNinety { get; set; }
-            public List<string> GoogleKeys { get; set; }
-            public string WhyAttendTen { get; set; }
-            public string VisualIdeas { get; set; }
-            public List<StoryItem> Stories { get; set; }
-            public string WhyAttendTwenty { get; set; }
-            public string Notes { get; set; }
-        }
-        private class StoryItem
-        {
-            public string Name { get; set; }
-            public string Email { get; set; }
-            public string Description { get; set; }
-        }
-        private class EventDetails
-        {
-            public string EventDate { get; set; }
-            public string StartTime { get; set; }
-            public string EndTime { get; set; }
-            public int? MinsStartBuffer { get; set; }
-            public int? MinsEndBuffer { get; set; }
-            public int? ExpectedAttendance { get; set; }
-            public List<string> Rooms { get; set; }
-            public List<string> TableType { get; set; }
-            public int? NumTablesRound { get; set; }
-            public int? NumTablesRect { get; set; }
-            public int? NumChairsRound { get; set; }
-            public int? NumChairsRect { get; set; }
-            public bool? Checkin { get; set; }
-            public string EventURL { get; set; }
-            public string ZoomPassword { get; set; }
-            public DateTime? RegistrationDate { get; set; }
-            public DateTime? RegistrationEndDate { get; set; }
-            public string RegistrationEndTime { get; set; }
-            public List<string> FeeType { get; set; }
-            public string FeeBudgetLine { get; set; }
-            public string Fee { get; set; }
-            public string CoupleFee { get; set; }
-            public string OnlineFee { get; set; }
-            public string Sender { get; set; }
-            public string SenderEmail { get; set; }
-            public string ThankYou { get; set; }
-            public string TimeLocation { get; set; }
-            public string AdditionalDetails { get; set; }
-            public string Vendor { get; set; }
-            public string Menu { get; set; }
-            public bool FoodDelivery { get; set; }
-            public string FoodTime { get; set; }
-            public string BudgetLine { get; set; }
-            public string FoodDropOff { get; set; }
-            public string CCVendor { get; set; }
-            public string CCMenu { get; set; }
-            public string CCFoodTime { get; set; }
-            public string CCBudgetLine { get; set; }
-            public List<string> ChildCareOptions { get; set; }
-            public int? EstimatedKids { get; set; }
-            public string CCStartTime { get; set; }
-            public string CCEndTime { get; set; }
-            public List<string> Drinks { get; set; }
-            public string DrinkDropOff { get; set; }
-            public string DrinkTime { get; set; }
-            public List<string> TechNeeds { get; set; }
-            public bool ShowOnCalendar { get; set; }
-            public string PublicityBlurb { get; set; }
-            public string TechDescription { get; set; }
-            public string SetUp { get; set; }
-        }
-
-        private class Comment
-        {
-            public string CreatedBy { get; set; }
-            public DateTime? CreatedOn { get; set; }
-            public string Message { get; set; }
         }
     }
 }

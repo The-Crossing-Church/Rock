@@ -11,7 +11,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
   rel="stylesheet"
 />
 <link
-  href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
+  href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css"
   rel="stylesheet"
 />
 <link
@@ -26,6 +26,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 
 <asp:HiddenField ID="hfRooms" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
+<asp:HiddenField ID="hfBudgetLines" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 
 <div id="app" v-cloak>
