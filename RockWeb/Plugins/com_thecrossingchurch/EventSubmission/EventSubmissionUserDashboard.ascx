@@ -263,11 +263,15 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card>
         </v-col>
       </v-row>
-      <v-overlay :value="overlay">
+      <v-dialog 
+        v-model="overlay" 
+        v-if="overlay"
+        max-width="85%"
+        style="margin-top: 100px !important; max-height: 80vh;"
+      >
         <v-card
           light
           width="100%"
-          style="max-height: 75vh; overflow-y: scroll; margin-top: 100px"
         >
           <v-card-title>
             <template v-if="selected.Changes != null && selected.Name != selected.Changes.Name">
@@ -558,7 +562,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="editRequest"
-              v-if="selected.RequestStatus == 'Submitted' || selected.RequestStatus == 'Approved'"
+              v-if="selected.RequestStatus == 'Draft' || selected.RequestStatus == 'Submitted' || selected.RequestStatus == 'Approved'"
             >
               <v-icon>mdi-pencil</v-icon> Edit
             </v-btn>
@@ -570,7 +574,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
               <v-icon>mdi-check</v-icon> Use Originally Approved Request
             </v-btn>
             <v-btn
-              v-if="selected.RequestStatus != 'Cancelled'"
+              v-if="selected.RequestStatus != 'Cancelled' && selected.RequestStatus != 'Draft'"
               color="grey"
               @click="changeStatus('Cancel', selected.Id)"
               style="margin-left: 8px;"
@@ -578,6 +582,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
               <v-icon>mdi-cancel</v-icon> Cancel Request
             </v-btn>
             <v-btn 
+              v-if="selected.RequestStatus != 'Draft'"
               @click="commentDialog = true"
               style="margin-left: 8px;"
               color="accent"
@@ -597,7 +602,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-overlay>
+      </v-dialog>
       <v-dialog v-if="commentDialog" v-model="commentDialog" max-width="80%">
         <v-card>
           <v-card-title></v-card-title>

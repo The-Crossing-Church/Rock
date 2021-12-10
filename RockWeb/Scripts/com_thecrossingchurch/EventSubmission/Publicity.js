@@ -1,3 +1,4 @@
+import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js';
 export default {
   template: 
   `
@@ -47,70 +48,24 @@ export default {
       </v-row>
       <v-row>
         <v-col>
-          <v-menu
-            v-model="pubStartMenu"
-            :close-on-content-click="false"
-            :nudge-right="40"
-            transition="scale-transition"
-            offset-y
-            min-width="290px"
-            attach
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="request.PublicityStartDate"
-                label="What is the earliest date you are comfortable advertising your event?"
-                prepend-inner-icon="mdi-calendar"
-                readonly
-                v-bind="attrs"
-                v-on="on"
-                clearable
-                :rules="[rules.required(request.PublicityStartDate, 'Date')]"
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="request.PublicityStartDate"
-              @input="pubStartMenu = false"
-              :min="earliestPubDate"
-              :show-current="earliestPubDate"
-              :from-date="earliestPubDate"
-            ></v-date-picker>
-          </v-menu>
+          <date-picker
+            v-model="request.PublicityStartDate"
+            label="What is the earliest date you are comfortable advertising your event?"
+            :rules="[rules.needsEventDates(request.EventDates), rules.required(request.PublicityStartDate, 'Date')]"
+            :min="earliestPubDate"
+            :max="latestStartPubDate"
+            :date="request.PublicityStartDate"
+          ></date-picker>
         </v-col>
         <v-col>
-          <v-menu
-            v-model="pubEndMenu"
-            :close-on-content-click="false"
-            :nudge-right="40"
-            transition="scale-transition"
-            offset-y
-            min-width="290px"
-            attach
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="request.PublicityEndDate"
-                label="What is the latest date you are comfortable advertising your event?"
-                prepend-inner-icon="mdi-calendar"
-                readonly
-                v-bind="attrs"
-                v-on="on"
-                :rules="[rules.required(request.PublicityEndDate, 'Date'), rules.publicityEndDate(request.EventDates, request.PublicityEndDate, request.PublicityStartDate)]"
-                clearable
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="request.PublicityEndDate"
-              @input="pubEndMenu = false"
-              :min="earliestEndPubDate"
-              :show-current="earliestEndPubDate"
-              :max="latestPubDate"
-            >
-              <span style="width: 290px; text-align: center; font-size: 12px;" v-if="!request.EventDates || request.EventDates.length == 0">
-                Please select dates for your event to calculate the possible end dates
-              </span>
-            </v-date-picker>
-          </v-menu>
+          <date-picker
+            v-model="request.PublicityEndDate"
+            label="What is the latest date you are comfortable advertising your event?"
+            :rules="[rules.needsEventDates(request.EventDates), rules.required(request.PublicityEndDate, 'Date'), rules.publicityEndDate(request.EventDates, request.PublicityEndDate, request.PublicityStartDate)]"
+            :min="earliestEndPubDate"
+            :max="latestPubDate"
+            :date="request.PublicityEndDate"
+          ></date-picker>
         </v-col>
       </v-row>
       <v-row>
@@ -278,6 +233,12 @@ export default {
               }
               return true
           },
+          needsEventDates(eventDates) {
+            if(!eventDates || eventDates.length == 0) {
+              return "You must select the dates of your event before selecting publicity dates"
+            }
+            return true
+          }
       },
       pubStartMenu: false,
       pubEndMenu: false,
@@ -288,32 +249,41 @@ export default {
     
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy");
+    },
   },
   computed: {
     earliestEndPubDate() {
-        let eDate = new moment();
-        if (this.request.PublicityStartDate) {
-            eDate = moment(this.request.PublicityStartDate).add(21, "days");
-        } else {
-            eDate = moment(this.earliestPubDate).add(21, "days");
-        }
-        return moment(eDate).format("yyyy-MM-DD");
+      let eDate = new moment();
+      if (this.request.PublicityStartDate) {
+        eDate = moment(this.request.PublicityStartDate).add(21, "days");
+      } else {
+        eDate = moment(this.earliestPubDate).add(21, "days");
+      }
+      return moment(eDate).format("yyyy-MM-DD");
+    },
+    latestStartPubDate() {
+      let eDate = new moment();
+      if (this.request.PublicityEndDate) {
+        eDate = moment(this.request.PublicityEndDate).add(-21, "days");
+      } else {
+        eDate = moment(this.latestPubDate).add(-21, "days");
+      }
+      return moment(eDate).format("yyyy-MM-DD");
     },
     latestPubDate() {
-        let sortedDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
-        let eDate = new moment(sortedDates[sortedDates.length - 1]);
-        eDate = moment(eDate).subtract(1, "days");
-        return moment(eDate).format("yyyy-MM-DD");
+      let sortedDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
+      let eDate = new moment(sortedDates[sortedDates.length - 1]);
+      eDate = moment(eDate).subtract(1, "days");
+      return moment(eDate).format("yyyy-MM-DD");
     },
     pubStrategyOptions() {
-        let ops = ['Social Media/Google Ads', 'Mobile Worship Folder']
-        if (this.request.EventIsSticky) {
-            ops.push('Announcement')
-        }
-        return ops
+      let ops = ['Social Media/Google Ads', 'Mobile Worship Folder']
+      if (this.request.EventIsSticky) {
+        ops.push('Announcement')
+      }
+      return ops
     },
     WhyAttendSixtyFiveHint() {
       return `Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. For example, “Have you ever wondered how Jesus would have dealt with depression and anxiety?” (${this.request.WhyAttendSixtyFive.length}/450)`
@@ -339,10 +309,10 @@ export default {
   },
   methods: {
     boolToYesNo(val) {
-        if (val) {
-            return "Yes";
-        }
-        return "No";
+      if (val) {
+        return "Yes";
+      }
+      return "No";
     },
     GoogleKey(idx) {
       return `google_${idx}`
@@ -359,5 +329,8 @@ export default {
     removeGoogleKey(idx) {
       this.request.GoogleKeys.splice(idx, 1)
     },
+  },
+  components: {
+    'date-picker' : datePicker
   }
 }

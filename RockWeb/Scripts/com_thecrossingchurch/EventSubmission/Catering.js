@@ -14,7 +14,7 @@ export default {
       </v-row>
       <v-row>
         <v-col cols="12" style='font-weight: bold;'>
-          Although buffets are now permissible, keep in mind that some of your attendees may still appreciate the precautionary measures of an individually packaged meal. For a list of vendors providing boxed options, 
+          For a list of our preferred vendors -  
           <v-menu attach>
             <template v-slot:activator="{ on, attrs }">
               <span v-bind="attrs" v-on="on" class='accent-text'>
@@ -22,26 +22,71 @@ export default {
               </span>
             </template>
             <v-list>
+              <v-list-item @click="e.Vendor = 'Arris’'">
+                Arris’
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'B&B'">
+                B&B
+              </v-list-item>
               <v-list-item @click="e.Vendor = 'Chick-fil-A'">
                 Chick-fil-A
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Chipotle'">
+                Chipotle
               </v-list-item>
               <v-list-item @click="e.Vendor = 'Como Smoke and Fire'">
                 Como Smoke and Fire
               </v-list-item>
+              <v-list-item @click="e.Vendor = 'D-Rowe’s'">
+                D-Rowe’s
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Freddy’s'">
+                Freddy’s
+              </v-list-item>
               <v-list-item @click="e.Vendor = 'Honey Baked Ham'">
                 Honey Baked Ham
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Hoss’'">
+                Hoss’
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Hy-Vee Catering'">
+                Hy-Vee Catering
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Italian Village'">
+                Italian Village
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Jimmy John’s'">
+                Jimmy John’s
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Lee’s'">
+                Lee’s
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Mrs. Tammie'">
+                Mrs. Tammie
               </v-list-item>
               <v-list-item @click="e.Vendor = 'Panera'">
                 Panera
               </v-list-item>
+              <v-list-item @click="e.Vendor = 'Papa John’s'">
+                Papa John’s
+              </v-list-item>
               <v-list-item @click="e.Vendor = 'Picklemans'">
                 Pickleman's
               </v-list-item>
+              <v-list-item @click="e.Vendor = 'Pizza Tree'">
+                Pizza Tree
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Popeye’s'">
+                Popeye’s
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Shakespeare’s'">
+                Shakespeare’s
+              </v-list-item>
+              <v-list-item @click="e.Vendor = 'Sophia’s'">
+                Sophia’s
+              </v-list-item>
               <v-list-item @click="e.Vendor = 'Tropical Smoothie Cafe'">
                 Tropical Smoothie Cafe
-              </v-list-item>
-              <v-list-item @click="e.Vendor = 'Word of Mouth Catering'">
-                Word of Mouth Catering
               </v-list-item>
             </v-list>
           </v-menu>

@@ -12,6 +12,7 @@ export default {
     >
       <template v-slot:activator="{ on }">
         <v-text-field
+          prepend-inner-icon="mdi-calendar"
           v-model="dateFormatted"
           :label="label"
           :readonly="readonly"
@@ -20,18 +21,19 @@ export default {
           v-on="on"
           :hint="hint"
           :persistent-hint="persistentHint"
+          :clearable="clearable"
         ></v-text-field>
       </template>
       <v-date-picker
         v-model="dateISO"
-        no-title
         @input="menu = false"
         :min="min"
+        :max="max"
       ></v-date-picker>
     </v-menu>
   </div>
 `,
-  props: ["label", "readonly", "date", "rules", "hint", "persistentHint", "min"],
+  props: ["label", "readonly", "date", "rules", "hint", "persistentHint", "clearable", "min", "max"],
   data() {
     return {
       menu: false,
@@ -43,9 +45,6 @@ export default {
     if(this.date && moment(this.date).isValid()) {
       this.dateISO = moment(this.date).format('YYYY-MM-DD')
       this.dateFormatted = moment(this.date).format('MM/DD/YYYY')
-    } else if (this.min && moment(this.min).isValid()) {
-      this.dateISO = moment(this.min).format('YYYY-MM-DD')
-      this.dateFormatted = moment(this.min).format('MM/DD/YYYY')
     } else {
       this.dateISO = null
       this.dateFormatted = ''

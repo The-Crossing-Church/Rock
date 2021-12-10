@@ -382,7 +382,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-btn v-if="isSuperUser" color="secondary" @click="prev">Back</v-btn>
                 </v-col>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;">
+                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;" @click="saveDraft">
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
@@ -562,7 +562,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-btn color="secondary" @click="prev">Back</v-btn>
                 </v-col>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;">
+                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;" @click="saveDraft">
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
@@ -585,7 +585,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-btn color="secondary" @click="prev">Back</v-btn>
                 </v-col>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;">
+                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;" @click="saveDraft">
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
@@ -605,6 +605,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
         ID="btnSubmit"
         CssClass="btn-hidden"
         OnClick="Submit_Click"
+      />  
+      <Rock:BootstrapButton
+        runat="server"
+        ID="btnSave"
+        CssClass="btn-hidden"
+        OnClick="Save_Click"
       />  
       <v-card v-if="showSuccess">
         <v-card-text>
@@ -679,6 +685,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog
+        v-model="saveDialog"
+        v-if="saveDialog"
+        max-width="850px"
+      >
+        <v-card>
+          <v-card-title></v-card-title>
+          <v-card-text>
+            Your request needs a name and date to be able to save it.
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="secondary" @click="saveDialog = false;">
+              Close
+            </v-btn> 
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -691,6 +715,7 @@ import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childca
 import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js';
 import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js';
 import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js';
+import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("time-picker", timePickerVue);
   Vue.component("space", spaceVue);
@@ -700,6 +725,7 @@ document.addEventListener("DOMContentLoaded", function () {
   Vue.component("accom", accomVue);
   Vue.component("drinks", drinksVue);
   Vue.component("publicity", publicityVue);
+  Vue.component("date-picker", datePicker);
   new Vue({
     el: "#app",
     vuetify: new Vuetify({
@@ -884,7 +910,8 @@ document.addEventListener("DOMContentLoaded", function () {
       isAdmin: false,
       isSuperUser: false,
       dateChangeMessage: '',
-      changeDialog: false
+      changeDialog: false,
+      saveDialog: false
     },
     created() {
       this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
@@ -1687,22 +1714,30 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         this.request.EventDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))
         this.request.Events = this.request.Events.sort((a, b) => moment(a.EventDate).diff(moment(b.EventDate)))
+      },
+      saveDraft() {
+        if(this.request.Name && this.request.EventDates.length > 0) {
+          $('#updateProgress').show();
+          $('[id$="hfRequest"]').val(JSON.stringify(this.request));
+          $('[id$="btnSave"')[0].click();
+        }
+        this.saveDialog = true
       }
     },
     filters: {
-        formatDateTime(val) {
-            return moment(val).format("MM/DD/yyyy hh:mm A");
-        },
-        formatDate(val) {
-            return moment(val).format("MM/DD/yyyy");
-        },
-        formatCurrency(val) {
-            var formatter = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-            });
-            return formatter.format(val);
-        },
+      formatDateTime(val) {
+        return moment(val).format("MM/DD/yyyy hh:mm A");
+      },
+      formatDate(val) {
+        return moment(val).format("MM/DD/yyyy");
+      },
+      formatCurrency(val) {
+        var formatter = new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        });
+        return formatter.format(val);
+      },
     },
     watch: {
       'request.EventDates'(val, oval) {

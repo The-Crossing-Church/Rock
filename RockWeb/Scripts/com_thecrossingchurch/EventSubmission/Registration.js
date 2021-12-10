@@ -1,3 +1,4 @@
+import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js';
 export default {
   template: `
 <v-form ref="regForm" v-model="valid">
@@ -14,34 +15,14 @@ export default {
 </v-row>
 <v-row>
   <v-col cols="12" md="6">
-    <v-menu
-      v-model="menu"
-      :close-on-content-click="false"
-      :nudge-right="40"
-      transition="scale-transition"
-      offset-y
-      min-width="290px"
-      attach
-    >
-      <template v-slot:activator="{ on, attrs }">
-        <v-text-field
-          v-model="e.RegistrationDate"
-          label="What date do you need the registration link to be ready and live?"
-          prepend-inner-icon="mdi-calendar"
-          readonly
-          v-bind="attrs"
-          v-on="on"
-          clearable
-          :rules="[rules.required(e.RegistrationDate, 'Start Date'), ]"
-        ></v-text-field>
-      </template>
-      <v-date-picker
-        v-model="e.RegistrationDate"
-        @input="menu = false"
-        :min="earliestPubDate"
-        :show-current="earliestPubDate"
-      ></v-date-picker>
-    </v-menu>
+    <date-picker
+      v-model="e.RegistrationDate"
+      :date="e.RegistrationDate"
+      label="What date do you need the registration link to be ready and live?"
+      clearable
+      :rules="[rules.required(e.RegistrationDate, 'Start Date'), ]"
+      :min="earliestPubDate"
+    ></date-picker>
   </v-col>
   <v-col cols="12" md="6">
     <v-autocomplete
@@ -95,36 +76,16 @@ export default {
     <br/>
     <v-row>
       <v-col>
-        <v-menu
-          v-model="menu2"
-          :close-on-content-click="false"
-          :nudge-right="40"
-          transition="scale-transition"
-          offset-y
-          min-width="290px"
-          attach
-        >
-          <template v-slot:activator="{ on, attrs }">
-            <v-text-field
-              v-model="e.RegistrationEndDate"
-              label="What date should registration close?"
-              hint="We always default to 24 hours before your event if you have no reason to close registration earlier."
-              persistent-hint
-              prepend-inner-icon="mdi-calendar"
-              readonly
-              v-bind="attrs"
-              v-on="on"
-              :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.EventDate, e.RegistrationEndDate, request.needsChildCare)]"
-              clearable
-            ></v-text-field>
-          </template>
-          <v-date-picker
-            v-model="e.RegistrationEndDate"
-            @input="menu2 = false"
-            :min="earliestPubDate"
-            :show-current="earliestPubDate"
-          ></v-date-picker>
-        </v-menu>
+        <date-picker
+          v-model="e.RegistrationEndDate"
+          :date="e.RegistrationEndDate"
+          label="What date should registration close?"
+          hint="We always default to 24 hours before your event if you have no reason to close registration earlier."
+          persistent-hint
+          clearable
+          :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.EventDate, e.RegistrationEndDate, request.needsChildCare)]"
+          :min="earliestPubDate"
+        ></date-picker>
       </v-col>
     </v-row>
   </v-col>
@@ -232,7 +193,7 @@ export default {
                       minDate = moment(eventDate)
                   }
                   if (needsChildCare) {
-                      minDate = minDate.subtract(1, "day")
+                      minDate = minDate.subtract(2, "day")
                   }
                   if (moment(closeDate).isAfter(minDate)) {
                       if (needsChildCare) {
@@ -243,21 +204,21 @@ export default {
                   return true
               },
               registrationCloseTime(eventDate, closeDate, needsChildCare, startTime, endtime, closeTime) {
-                  let minDate = moment(eventDate)
-                  let actualDate = moment(`${closeDate} ${closeTime}`)
+                let minDate = moment(eventDate)
+                let actualDate = moment(`${closeDate} ${closeTime}`)
+                if (needsChildCare) {
+                  minDate = minDate.subtract(1, "day")
+                  minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
+                } else {
+                  minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
+                }
+                if (moment(actualDate).isAfter(minDate)) {
                   if (needsChildCare) {
-                      minDate = minDate.subtract(1, "day")
-                      minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
-                  } else {
-                      minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
+                    return 'When requesting childcare, registration must close 24 hours before the start of your event'
                   }
-                  if (moment(actualDate).isAfter(minDate)) {
-                      if (needsChildCare) {
-                          return 'When requesting childcare, registration must close 24 hours before the start of your event'
-                      }
-                      return 'Registration cannot end after your event'
-                  }
-                  return true
+                  return 'Registration cannot end after your event'
+                }
+                return true
               }
           }
       }
@@ -306,10 +267,16 @@ export default {
         }
         if (this.request.EventDates) {
           if (this.e.EventDate) {
+            if(this.request.needsChildCare) {
+              return moment(this.e.EventDate).subtract(2, "day").format("yyyy-MM-DD")
+            }
             return moment(this.e.EventDate).subtract(1, "day").format("yyyy-MM-DD")
           } else {
             let eventDates = this.request.EventDates.map(p => moment(p))
             let firstDate = moment.min(eventDates)
+            if(this.request.needsChildCare) {
+              return moment(firstDate).subtract(2, "day").format("yyyy-MM-DD")
+            }
             return moment(firstDate).subtract(1, "day").format("yyyy-MM-DD")
           }
         }
@@ -447,4 +414,7 @@ export default {
       return moment(val).format("MM/DD/yyyy");
     },
   },
+  components: {
+    'date-picker' : datePicker
+  }
 }

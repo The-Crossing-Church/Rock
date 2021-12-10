@@ -41,7 +41,7 @@ export default {
       <v-btn fab small 
         style="margin: 0px 2px;" 
         color="grey"
-        v-if="r.RequestStatus != 'Cancelled'"
+        v-if="r.RequestStatus != 'Cancelled' && r.RequestStatus != 'Draft'"
         @click="cancel"
         v-bind="attrs"
         v-on="on"
@@ -51,7 +51,7 @@ export default {
     </template>
     <span>Cancel Request</span>
   </v-tooltip>
-  <v-tooltip bottom>
+  <v-tooltip bottom v-if="r.RequestStatus != 'Draft'">
     <template v-slot:activator="{ on, attrs }">
       <v-btn fab small 
         style="margin: 0px 2px;" 
