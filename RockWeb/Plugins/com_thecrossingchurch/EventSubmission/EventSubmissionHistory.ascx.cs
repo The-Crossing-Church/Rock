@@ -117,6 +117,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).OrderByDescending( i => i.CreatedDateTime ).ToList();
             items.LoadAttributes();
+            items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" ).ToList();
             hfRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } ) );
         }
 

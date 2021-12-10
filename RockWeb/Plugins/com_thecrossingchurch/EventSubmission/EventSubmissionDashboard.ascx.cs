@@ -289,7 +289,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && ( !FilterDate.HasValue || DateTime.Compare( i.CreatedDateTime.Value, FilterDate.Value ) >= 0 ) ).ToList();
             items.LoadAttributes();
-            items = items.Where( i => ( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Approved" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Cancelled" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Denied" ) || DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
+            items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" && ( ( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Approved" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Cancelled" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Denied" ) || DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ) ).ToList();
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );

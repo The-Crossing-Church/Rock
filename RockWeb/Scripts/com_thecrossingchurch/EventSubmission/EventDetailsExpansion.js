@@ -634,17 +634,27 @@ export default {
     <v-row v-if="e.SetUpImage || (selected.Changes && selected.Changes.Events[idx].SetUpImage)">
       <v-col>
         <div class="floating-title">Set-up Image</div>
-        {{e.SetUpImage.name}}
-        <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
-          <v-icon color="accent">mdi-download</v-icon>
-        </v-btn>
+        <template  v-if="e.SetUpImage">
+          <span class='red--text'>{{e.SetUpImage.name}}</span>
+          <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+            <v-icon color="accent">mdi-download</v-icon>
+          </v-btn>
+        </template>
+        <template v-else>
+          <span class='red--text'>Empty</span>
+        </template>
       </v-col>
       <v-col v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
         <div class="floating-title">Set-up Image</div>
-        {{selected.Changes.Events[idx].SetUpImage.name}}
-        <v-btn icon color="accent" @click="saveFile(idx, 'new')">
-          <v-icon color="accent">mdi-download</v-icon>
-        </v-btn>
+        <template v-if="selected.Changes.Events[idx].SetUpImage">
+          <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
+          <v-btn icon color="accent" @click="saveFile(idx, 'new')">
+            <v-icon color="accent">mdi-download</v-icon>
+          </v-btn>
+        </template>
+        <template v-else>
+        <span class='primary--text'>Empty</span>
+        </template>
       </v-col>
     </v-row>
   </template>

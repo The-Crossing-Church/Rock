@@ -959,7 +959,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       },
       editRequest(r) {
-        if(r) {
+        if(r && r.Id > 0) {
           this.selected = r
         }
         let url = $('[id$="hfRequestURL"]').val();
@@ -1046,7 +1046,7 @@ document.addEventListener("DOMContentLoaded", function () {
         this.filteredRequests = temp
       },
       resubmitRequest(r) {
-        if(r) {
+        if(r && r.Id > 0) {
           this.selected = r
         }
         this.copy = JSON.parse(JSON.stringify(this.selected))

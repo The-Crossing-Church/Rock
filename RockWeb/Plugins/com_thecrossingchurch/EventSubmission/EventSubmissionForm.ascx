@@ -382,7 +382,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-btn v-if="isSuperUser" color="secondary" @click="prev">Back</v-btn>
                 </v-col>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;" @click="saveDraft">
+                  <v-btn color="accent" v-if="isSuperUser" :disabled="request.Status != 'Draft'" style="margin-right: 8px;" @click="saveDraft">
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
@@ -562,13 +562,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-btn color="secondary" @click="prev">Back</v-btn>
                 </v-col>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;" @click="saveDraft">
+                  <v-btn color="accent" v-if="isSuperUser" :disabled="request.Status != 'Draft'" style="margin-right: 8px;" @click="saveDraft">
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
                   <v-btn color="primary" :disabled="!request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
                     <template v-if="(idx == (request.Events.length - 1) && !request.needsPub) && canEdit">
-                      {{( isExistingRequest ? 'Update' : 'Submit')}}
+                      {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
                     <template v-else>Next</template>
                   </v-btn>
@@ -585,13 +585,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <v-btn color="secondary" @click="prev">Back</v-btn>
                 </v-col>
                 <v-col class="d-flex justify-end">
-                  <v-btn color="accent" v-if="isSuperUser" :disabled="!(request.Status == 'Draft' || request.Status == 'Submitted')" style="margin-right: 8px;" @click="saveDraft">
+                  <v-btn color="accent" v-if="isSuperUser" :disabled="request.Status != 'Draft'" style="margin-right: 8px;" @click="saveDraft">
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
                   <v-btn color="primary" :disabled="!canEdit || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
                     <template>
-                      {{( isExistingRequest ? 'Update' : 'Submit')}}
+                      {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
                   </v-btn>
                 </v-col>
@@ -1720,8 +1720,9 @@ document.addEventListener("DOMContentLoaded", function () {
           $('#updateProgress').show();
           $('[id$="hfRequest"]').val(JSON.stringify(this.request));
           $('[id$="btnSave"')[0].click();
+        } else {
+          this.saveDialog = true
         }
-        this.saveDialog = true
       }
     },
     filters: {
