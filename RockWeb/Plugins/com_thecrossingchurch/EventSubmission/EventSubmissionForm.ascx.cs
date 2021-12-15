@@ -360,6 +360,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             item.SetAttributeValue( "EventDates", String.Join( ", ", request.EventDates ) );
             item.SetAttributeValue( "RequestType", requestType );
+            item.SetAttributeValue( "ValidSecions", String.Join( ", ", request.ValidSections ) );
+            item.SetAttributeValue( "RequestIsValid", request.IsValid.ToString() );
             item.SetAttributeValue( "IsPreApproved", isPreApproved );
 
             //Save everything
@@ -426,6 +428,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             item.SetAttributeValue( "RequestStatus", status );
             item.SetAttributeValue( "EventDates", String.Join( ", ", request.EventDates ) );
             item.SetAttributeValue( "RequestType", requestType );
+            item.SetAttributeValue( "ValidSecions", String.Join( ", ", request.ValidSections ) );
+            item.SetAttributeValue( "RequestIsValid", request.IsValid.ToString() );
             item.SetAttributeValue( "IsPreApproved", isPreApproved );
             //Save everything
             context.ContentChannelItems.AddOrUpdate( item );

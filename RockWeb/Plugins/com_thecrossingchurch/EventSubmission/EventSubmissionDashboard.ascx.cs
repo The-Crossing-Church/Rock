@@ -167,6 +167,34 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         #region Events
 
         /// <summary>
+        /// Partial Approval
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void PartialApproval_Click( object sender, EventArgs e )
+        {
+            int? id = hfRequestID.Value.AsIntegerOrNull();
+            if ( id.HasValue )
+            {
+                string raw = hfUpdatedItem.Value;
+                EventRequest request = JsonConvert.DeserializeObject<EventRequest>( raw );
+                ContentChannelItem item = new ContentChannelItemService( context ).Get( id.Value );
+                item.LoadAttributes();
+                item.SetAttributeValue( "RequestStatus", "Approved" );
+                item.SetAttributeValue( "RequestJSON", raw );
+                item.SetAttributeValue( "ProposedChangesJSON", "" );
+
+                //Save CCI
+                item.SaveAttributeValues( context );
+                hfRequestID.Value = null;
+                GetRecentRequests();
+                GetThisWeeksEvents();
+
+                //Send Changes Email
+            }
+        }
+
+        /// <summary>
         /// Change Status
         /// </summary>
         /// <param name="sender"></param>
@@ -238,10 +266,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 ContentChannelItem item = new ContentChannelItemService( context ).Get( id.Value );
                 item.LoadAttributes();
                 //Update Buffer
-                var request = JsonConvert.DeserializeObject<EventRequest>( hfUpdatedItem.Value );
                 item.SetAttributeValue( "RequestJSON", hfUpdatedItem.Value );
-                //Check for Existing Calendar Item
-                //Update if exists
 
                 //Save CCI
                 item.SaveAttributeValues( context );

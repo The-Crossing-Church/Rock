@@ -61,6 +61,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   runat="server"
   OnClick="AddComment_Click"
 />
+<Rock:BootstrapButton
+  ID="btnPartialApproval"
+  CssClass="btn-hidden"
+  runat="server"
+  OnClick="PartialApproval_Click"
+/>
 
 <div id="app" v-cloak>
   <v-app v-cloak>
@@ -145,7 +151,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
                     <v-col>{{ requestType(r) }}</v-col>
                     <v-col cols="3" class='d-flex justify-center'>
-                      <event-action :r="r" v-on:calladdbuffer="callAddBuffer" v-on:setapproved="setApproved" v-on:setinprogress="setInProgress"></event-action>
+                      <event-action :r="r" v-on:calladdbuffer="callAddBuffer" v-on:setapproved="setApproved" v-on:setinprogress="setInProgress" v-on:partialapproval="partialApproval"></event-action>
                     </v-col>
                   </v-row>
                 </v-list-item>
@@ -213,7 +219,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
               </v-col>
               <v-col class="text-right">
                 <div class="floating-title">Submitted On</div>
-                {{selected.SubmittedOn}} | formatDateTime}}
+                {{selected.SubmittedOn | formatDateTime}}
               </v-col>
             </v-row>
             <hr />
@@ -242,7 +248,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-row>
               <v-col>
                 <div class="floating-title">Requested Resources</div>
-                {{requestType(this.selected)}}
+                {{requestType(selected)}}
               </v-col>
             </v-row>
             <v-expansion-panels v-model="panels" multiple flat>
@@ -268,186 +274,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   </template>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content style="color: rgba(0,0,0,.6);">
-                  <event-details :e="e" :idx="idx" :selected="selected"></event-details>
+                  <event-details :e="e" :idx="idx" :selected="selected" :approvalmode="false"></event-details>
                 </v-expansion-panel-content>
               </v-expansion-panel>
             </v-expansion-panels>
             <template v-if="selected.needsPub || (selected.Changes && selected.Changes.needsPub)">
-              <h6 class='text--accent text-uppercase'>Publicity Information</h6>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Describe Why Someone Should Attend Your Event (450)</div>
-                  <template v-if="selected.Changes != null && selected.WhyAttendSixtyFive != selected.Changes.WhyAttendSixtyFive">
-                    <span class='red--text'>{{(selected.WhyAttendSixtyFive ? selected.WhyAttendSixtyFive : 'Empty' )}}: </span>
-                    <span class='primary--text'>{{(selected.Changes.WhyAttendSixtyFive ? selected.Changes.WhyAttendSixtyFive : 'Empty')}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.WhyAttendSixtyFive}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Target Audience</div>
-                  <template v-if="selected.Changes != null && selected.TargetAudience != selected.Changes.TargetAudience">
-                    <span class='red--text'>{{(selected.TargetAudience ? selected.TargetAudience : 'Empty')}}: </span>
-                    <span class='primary--text'>{{(selected.Changes.TargetAudience ? selected.Changes.TargetAudience : 'Empty')}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.TargetAudience}}
-                  </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Event is Sticky</div>
-                  <template v-if="selected.Changes != null && selected.EventIsSticky != selected.Changes.EventIsSticky">
-                    <span class='red--text'>{{(selected.EventIsSticky != null ? boolToYesNo(selected.EventIsSticky) : 'Empty')}}: </span>
-                    <span class='primary--text'>{{(selected.Changes.EventIsSticky ? boolToYesNo(selected.Changes.EventIsSticky) : 'Empty')}}</span>
-                  </template>
-                  <template v-else>
-                    {{boolToYesNo(selected.EventIsSticky)}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Publicity Start Date</div>
-                  <template v-if="selected.Changes != null && selected.PublicityStartDate != selected.Changes.PublicityStartDate">
-                    <span class='red--text' v-if="selected.PublicityStartDate">{{selected.PublicityStartDate | formatDate}}: </span>
-                    <span class='red--text' v-else>Empty: </span>
-                    <span class='primary--text' v-if="selected.Changes.PublicityStartDate">{{selected.Changes.PublicityStartDate | formatDate}}</span>
-                    <span class='primary--text' v-else>Empty</span>
-                  </template>
-                  <template v-else>
-                    {{selected.PublicityStartDate | formatDate}}
-                  </template>
-                </v-col>
-                <v-col>
-                  <div class="floating-title">Publicity End Date</div>
-                  <template v-if="selected.Changes != null && selected.PublicityEndDate != selected.Changes.PublicityEndDate">
-                    <span class='red--text' v-if="selected.PublicityEndDate">{{selected.PublicityEndDate | formatDate}}: </span>
-                    <span class='red--text' v-else>Empty: </span>
-                    <span class='primary--text' v-if="selected.Changes.PublicityEndDate">{{selected.Changes.PublicityEndDate | formatDate}}</span>
-                    <span class='primary--text' v-else>Empty</span>
-                  </template>
-                  <template v-else>
-                    {{selected.PublicityEndDate | formatDate}}
-                  </template>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <div class="floating-title">Publicity Strategies</div>
-                  <template v-if="selected.Changes != null && selected.PublicityStrategies.toString() != selected.Changes.PublicityStrategies.toString()">
-                    <span class='red--text'>{{(selected.PublicityStrategies ? selected.PublicityStrategies.join(', ') : 'Empty')}}: </span>
-                    <span class='primary--text'>{{(selected.Changes.PublicityStrategies ? selected.Changes.PublicityStrategies.join(', ') : 'Empty')}}</span>
-                  </template>
-                  <template v-else>
-                    {{selected.PublicityStrategies.join(', ')}}
-                  </template>
-                </v-col>
-              </v-row>
-              <template v-if="selected.PublicityStrategies.includes('Social Media/Google Ads')">
-                <v-row>
-                  <v-col>
-                    <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
-                    <template v-if="selected.Changes != null && selected.WhyAttendNinety != selected.Changes.WhyAttendNinety">
-                      <span class='red--text'>{{(selected.WhyAttendNinety ? selected.WhyAttendNinety : 'Empty')}}: </span>
-                      <span class='primary--text'>{{(selected.Changes.WhyAttendNinety ? selected.Changes.WhyAttendNinety : 'Empty')}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.WhyAttendNinety}}
-                    </template>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <template v-if="selected.Changes != null && selected.GoogleKeys.toString() != selected.Changes.GoogleKeys.toString()">
-                    <v-col class='red--text'>
-                        <div class="floating-title">Google Keys</div>
-                        <ul>
-                          <li v-for="k in selected.GoogleKeys" :key="k">
-                            {{k}}
-                          </li>
-                        </ul>
-                      </v-col>
-                      <v-col class='primary--text'>
-                        <ul>
-                          <li v-for="k in selected.Changes.GoogleKeys" :key="k">
-                            {{k}}
-                          </li>
-                        </ul>
-                      </v-col>
-                    </template>
-                    <template v-else>
-                      <v-col>
-                        <div class="floating-title">Google Keys</div>
-                        <ul>
-                          <li v-for="k in selected.GoogleKeys" :key="k">
-                            {{k}}
-                          </li>
-                        </ul>
-                      </v-col>
-                  </template>
-                </v-row>
-              </template>
-              <template v-if="selected.PublicityStrategies.includes('Mobile Worship Folder')">
-                <v-row>
-                  <v-col>
-                    <div class="floating-title">Describe Why Someone Should Attend Your Event (65)</div>
-                    <template v-if="selected.Changes != null && selected.WhyAttendTen != selected.Changes.WhyAttendTen">
-                      <span class='red--text'>{{(selected.WhyAttendTen ? selected.WhyAttendTen : 'Empty')}}: </span>
-                      <span class='primary--text'>{{(selected.Changes.WhyAttendTen ? selected.Changes.WhyAttendTen : 'Empty')}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.WhyAttendTen}}
-                    </template>
-                  </v-col>
-                  <v-col v-if="selected.VisualIdeas != ''">
-                    <div class="floating-title">Visual Ideas for Graphic</div>
-                    <template v-if="selected.Changes != null && selected.VisualIdeas != selected.Changes.VisualIdeas">
-                      <span class='red--text'>{{(selected.VisualIdeas ? selected.VisualIdeas : 'Empty')}}: </span>
-                      <span class='primary--text'>{{(selected.Changes.VisualIdeas ? selected.Changes.VisualIdeas : 'Empty')}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.VisualIdeas}}
-                    </template>
-                  </v-col>
-                </v-row>
-              </template>
-              <template v-if="selected.PublicityStrategies.includes('Announcement')">
-                <v-row v-for="(s, sidx) in selected.Stories" :key="`Story_${sidx}`">
-                  <template v-if="selected.Changes != null && selected.Stories.toString() != selected.Changes.Stories.toString()">
-                    <v-col class='red--text'>
-                      <div class="floating-title">Story {{sidx+1}}</div>
-                      {{s.Name}}, {{s.Email}} <br/>
-                      {{s.Description}}
-                    </v-col>
-                    <v-col class='primary--text'>
-                      <div class="floating-title">Story {{sidx+1}}</div>
-                      {{selected.Changes.Stories[sidx].Name}}, {{selected.Changes.Stories[sidx].Email}} <br/>
-                      {{selected.Changes.Stories[sidx].Description}}
-                    </v-col>
-                  </template>
-                  <template v-else>
-                    <v-col>
-                      <div class="floating-title">Story {{sidx+1}}</div>
-                      {{s.Name}}, {{s.Email}} <br/>
-                      {{s.Description}}
-                    </v-col>
-                  </template>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <div class="floating-title">Describe Why Someone Should Attend Your Event (175)</div>
-                    <template v-if="selected.Changes != null && selected.WhyAttendTwenty != selected.Changes.WhyAttendTwenty">
-                      <span class='red--text'>{{(selected.WhyAttendTwenty ? selected.WhyAttendTwenty : 'Empty')}}: </span>
-                      <span class='primary--text'>{{(selected.Changes.WhyAttendTwenty ? selected.Changes.WhyAttendTwenty : 'Empty')}}</span>
-                    </template>
-                    <template v-else>
-                      {{selected.WhyAttendTwenty}}
-                    </template>
-                  </v-col>
-                </v-row>
-              </template>
+              <pub-details :request="selected" :approvalmode="false"></pub-details>
             </template>
             <v-row v-if="selected.Notes">
               <v-col>
@@ -604,15 +436,28 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog
+        v-if="approvalDialog" 
+        v-model="approvalDialog" 
+        max-width="85%"
+        style="margin-top: 100px !important; max-height: 80vh;"
+      >
+        <partial-approval ref="partialApproval" :request="selected" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:complete="sendPartialApproval" v-on:cancel="ignorePartialApproval" v-on:newchange="increaseChangeCount" v-on:newchoice="increaseSelectionCount" ></partial-approval>
+      </v-dialog>
     </div>
   </v-app>
 </div>
 <script type="module">
 import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/EventActions.js';
 import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js';
+import pubDetails from '/Scripts/com_thecrossingchurch/EventSubmission/PublicityDetails.js';
+import partialApproval from '/Scripts/com_thecrossingchurch/EventSubmission/PartialApproval.js';
+import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("event-action", eventActions);
   Vue.component("event-details", eventDetails);
+  Vue.component("pub-details", pubDetails);
+  Vue.component("partial-approval", partialApproval);
   new Vue({
     el: "#app",
     vuetify: new Vuetify({
@@ -622,6 +467,7 @@ document.addEventListener("DOMContentLoaded", function () {
             primary: "#347689",
             secondary: "#3D3D3D",
             accent: "#8ED2C9",
+            accentDark: "#6DC5B9",
             inprogress: '#ECC30B',
             denied: '#CC3F0C',
             pending: '#61A4A9'
@@ -640,6 +486,10 @@ document.addEventListener("DOMContentLoaded", function () {
       selected: {},
       overlay: false,
       dialog: false,
+      approvalDialog: false,
+      changes: [],
+      changeCount: 0,
+      selectedCount: 0,
       panels: [0],
       rooms: [],
       ministries: [],
@@ -671,12 +521,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     },
     filters: {
-      formatDateTime(val) {
-        return moment(val).format("MM/DD/yyyy hh:mm A");
-      },
-      formatDate(val) {
-        return moment(val).format("MM/DD/yyyy");
-      },
+      ...utils.filters
     },
     computed: {
       sortedCurrent() {
@@ -726,6 +571,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     },
     methods: {
+      ...utils.methods, 
       getRecent() {
         let raw = JSON.parse($('[id$="hfRequests"]').val());
         let temp = [];
@@ -759,73 +605,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         this.current = temp;
       },
-      boolToYesNo(val) {
-        if (val) {
-          return "Yes";
-        }
-        return "No";
-      },
-      formatDates(val) {
-        if (val) {
-          let dates = [];
-          val.forEach((i) => {
-            dates.push(moment(i).format("MM/DD/yyyy"));
-          });
-          return dates.join(", ");
-        }
-        return "";
-      },
-      formatRooms(val) {
-        if (val) {
-          let rms = [];
-          val.forEach((i) => {
-            this.rooms.forEach((r) => {
-              if (i == r.Id) {
-                rms.push(r.Value);
-              }
-            });
-          });
-          return rms.join(", ");
-        }
-        return "";
-      },
-      formatMinistry(val) {
-        if (val) {
-          let formattedVal = this.ministries.filter(m => {
-            return m.Id == val
-          })
-          return formattedVal[0].Value
-        }
-        return "";
-      },
-      requestType(itm) {
-        if (itm) {
-          let resources = [];
-          if (itm.needsSpace) {
-            resources.push("Room");
-          }
-          if (itm.needsOnline) {
-            resources.push("Online");
-          }
-          if (itm.needsPub) {
-            resources.push("Publicity");
-          }
-          if (itm.needsReg) {
-            resources.push("Registration");
-          }
-          if (itm.needsChildCare) {
-            resources.push("Childcare");
-          }
-          if (itm.needsCatering) {
-            resources.push("Catering");
-          }
-          if (itm.needsAccom) {
-            resources.push("Extra Resources");
-          }
-          return resources.join(", ");
-        }
-        return "";
-      },
       getClass(idx) {
         if (idx < this.requests.length - 1) {
           return "list-with-border";
@@ -835,6 +614,9 @@ document.addEventListener("DOMContentLoaded", function () {
       getStatusPillClass(status) {
         if (status == "Approved") {
           return "no-top-pad status-pill approved";
+        }
+        if (status == "In Progress") {
+          return "no-top-pad status-pill inprogress";
         }
         if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
           return "no-top-pad status-pill submitted";
@@ -887,6 +669,10 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       setInProgress(r) {
         this.changeStatus('InProgress', r.Id)
+      },
+      partialApproval(r) {
+        this.selected = r
+        this.approvalDialog = true
       },
       addBuffer() {
         this.bufferErrMsg = ''
@@ -1018,6 +804,54 @@ document.addEventListener("DOMContentLoaded", function () {
           return false
         }
       },
+      approveChange(field) {
+        let exists = this.changes.filter(c => { return c.label == field.label})
+        if(exists.length > 0) {
+          exists[0].isApproved = true
+        } else {
+          this.changes.push({label: field.label, field: field.field, isApproved: true, idx: field.idx})
+        }
+      },
+      denyChange(field) {
+        let exists = this.changes.filter(c => { return c.label == field.label})
+        if(exists.length > 0) {
+          exists[0].isApproved = false
+        } else {
+          this.changes.push({label: field.label, field: field.field, isApproved: false, idx: field.idx})
+        }
+      },
+      increaseChangeCount() {
+        this.changeCount++
+      },
+      increaseSelectionCount() {
+        this.selectedCount++
+      },
+      sendPartialApproval() {
+        if(this.changeCount > this.selectedCount){
+          //Don't save until he picks something for every change
+          window.alert("Not all changes have been approved or denied")
+        } else {
+          for(let i=0; i<this.changes.length; i++) {
+            if(this.changes[i].isApproved) {
+              if(this.changes[i].idx != null) {
+                this.selected.Events[this.changes[i].idx][this.changes[i].field] = this.selected.Changes.Events[this.changes[i].idx][this.changes[i].field]
+              } else {
+                this.selected[this.changes[i].field] = this.selected.Changes[this.changes[i].field]
+              }
+            } 
+          }
+          console.log(this.selected)
+          //Click the button
+          $('[id$="hfRequestID"]').val(this.selected.Id);
+          $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
+          $('[id$="btnPartialApproval"]')[0].click();
+          $('#updateProgress').show();
+        } 
+      },
+      ignorePartialApproval() {
+        this.changes = []
+        this.approvalDialog = false
+      }
     },
   });
 });
@@ -1093,6 +927,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   .status-pill.cancelled {
     border: 2px solid #9e9e9e;
+  }
+  .status-pill.inprogress {
+    border: 2px solid #ECC30B;
   }
   ::-webkit-scrollbar {
     width: 5px;

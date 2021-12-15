@@ -436,32 +436,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   <space :e="e" :request="request" :existing="existingRequests" :ref="`spaceloop${3+idx}`" v-on:updatespace="updateSpace"></space>
                 </template>
                 <%-- Online Information --%>
-                <v-form :ref="`zoomForm${3+idx}`" v-model="onlineFormValid">
-                  <template v-if="request.needsOnline">
-                    <v-row>
-                      <v-col>
-                        <h3 class="primary--text">Zoom Information</h3>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col>
-                        <v-text-field
-                          label="If there is a link your attendees will need to access this event, list it here"
-                          v-model="e.EventURL"
-                          :rules="[rules.required(e.EventURL, 'Link')]"
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col>
-                        <v-text-field
-                          label="If there is a password for the link, list it here"
-                          v-model="e.ZoomPassword"
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                  </template>
-                </v-form>
+                <template v-if="request.needsOnline">
+                  <zoom :e="e" :request="request" :existing="existingRequests" :ref="`zoomloop${3+idx}`"></zoom>
+                </template>
                 <%-- Catering Information --%>
                 <template v-if="request.needsCatering">
                   <catering :e="e" :request="request" :ref="`cateringloop${3+idx}`" v-on:updatecatering="updateCatering"></catering>
@@ -709,6 +686,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 <script type="module">
 import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js';
 import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js';
+import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js';
 import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js';
 import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js';
 import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js';
@@ -719,6 +697,7 @@ import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicke
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("time-picker", timePickerVue);
   Vue.component("space", spaceVue);
+  Vue.component("zoom", zoomVue);
   Vue.component("registration", registrationVue);
   Vue.component("catering", cateringVue);
   Vue.component("childcare", childcareVue);
@@ -760,6 +739,8 @@ document.addEventListener("DOMContentLoaded", function () {
         needsAccom: false,
         IsSame: true,
         Status: 'Draft',
+        IsValid: false,
+        ValidSections: [],
         Name: "",
         Ministry: "",
         Contact: "",
@@ -771,7 +752,7 @@ document.addEventListener("DOMContentLoaded", function () {
             MinsStartBuffer: 0,
             MinsEndBuffer: 0,
             ExpectedAttendance: "",
-            Rooms: "",
+            Rooms: [],
             NumTablesRound: null,
             NumTablesRect: null,
             TableType: [],
@@ -786,6 +767,11 @@ document.addEventListener("DOMContentLoaded", function () {
             AdditionalDetails: "",
             Sender: "",
             SenderEmail: "",
+            NeedsReminderEmail: false,
+            ReminderSender: "",
+            ReminderSenderEmail: "",
+            ReminderTimeLocation: "",
+            ReminderAdditionalDetails: "",
             RegistrationDate: "",
             RegistrationEndDate: "",
             RegistrationEndTime: "",
@@ -1548,7 +1534,7 @@ document.addEventListener("DOMContentLoaded", function () {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
           if (this.$refs.startTime && this.request.IsSame) {
             this.$refs.startTime?.$refs.timeForm?.validate()
@@ -1556,7 +1542,7 @@ document.addEventListener("DOMContentLoaded", function () {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket.filter(eb => !!eb))
               }
-            });
+            })
           }
           if (this.$refs.endTime && this.request.IsSame) {
             this.$refs.endTime?.$refs.timeForm?.validate()
@@ -1564,7 +1550,7 @@ document.addEventListener("DOMContentLoaded", function () {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket.filter(eb => !!eb))
               }
-            });
+            })
           }
         }
         if((this.isSuperUser && this.stepper > 2) || (!this.isSuperUser && this.stepper > 1)) {
@@ -1575,7 +1561,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (e.errorBucket && e.errorBucket.length) {
                   eventErrors.errors.push(...e.errorBucket.filter(eb => !!eb))
                 }
-              });
+              })
             }
             if (this.$refs[`endTimeLoop${this.stepper}`]) {
                 this.$refs[`endTimeLoop${this.stepper}`][0]?.$refs.timeForm?.validate()
@@ -1583,74 +1569,148 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (e.errorBucket && e.errorBucket.length) {
                   eventErrors.errors.push(...e.errorBucket.filter(eb => !!eb))
                 }
-              });
+              })
+            }
+          }
+          if(!this.request.ValidSections[this.stepper]) {
+            while(this.request.ValidSections.length < (this.stepper + 1)) {
+              this.request.ValidSections.push({step: this.request.ValidSections.length, sections: []})
             }
           }
           if(this.$refs[`spaceloop${this.stepper}`]) {
             this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.validate()
+            //Add or remove space from the valid sections list
+            if(this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Room")) {
+                this.request.ValidSections[this.stepper].sections.push("Room")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Room"), 1)
+            }
             this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
+            //Filter null values out of room list 
+            this.request.Events.forEach((e) => {
+              e.Rooms = e.Rooms.filter(r => { return r != null })
+            })
           }
           if(this.$refs[`drinkloop${this.stepper}`]) {
             this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.validate()
+            //Add or remove extra accomodations from the valid sections list
+            if(this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Extra Resources")) {
+                this.request.ValidSections[this.stepper].sections.push("Extra Resources")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+            }
             this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
-          if(this.$refs[`zoomForm${this.stepper}`]) {
-            this.$refs[`zoomForm${this.stepper}`][0]?.validate()
-            this.$refs[`zoomForm${this.stepper}`][0]?.inputs.forEach((e) => {
+          if(this.$refs[`zoomloop${this.stepper}`]) {
+            this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.validate()
+            //Add or remove zoom from the valid sections list
+            if(this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Online Event")) {
+                this.request.ValidSections[this.stepper].sections.push("Online Event")
+              } 
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Online Event"), 1)
+            }
+            this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
+                console.log(e.errorBucket)
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
           if(this.$refs[`regloop${this.stepper}`]) {
             this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.validate()
+            //Add or remove registration from the valid sections list
+            if(this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Registration")) {
+                this.request.ValidSections[this.stepper].sections.push("Registration")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Registration"), 1)
+            }
             this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
           if(this.$refs[`cateringloop${this.stepper}`]) {
             this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.validate()
+            //Add or remove catering from the valid sections list
+            if(this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Catering")) {
+                this.request.ValidSections[this.stepper].sections.push("Catering")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Catering"), 1)
+            }
             this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
           if(this.$refs[`childcareloop${this.stepper}`]) {
             this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.validate()
+            //Add or remove childcare from the valid sections list
+            if(this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Childcare")) {
+                this.request.ValidSections[this.stepper].sections.push("Childcare")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Childcare"), 1)
+            }
             this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
           if(this.$refs[`accomloop${this.stepper}`]) {
             this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.validate()
+            //Add or remove extra accommodations from the valid sections list
+            if(this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Extra Resources")) {
+                this.request.ValidSections[this.stepper].sections.push("Extra Resources")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+            }
             this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
         }
         if(this.request.needsPub && this.stepper == (3 + this.request.Events.length)) {
           if(this.$refs.publicityloop) {
             this.$refs.publicityloop.$refs.pubForm?.validate()
+            //Add or remove publicity from the valid sections list
+            if(this.$refs.publicityloop.$refs.pubForm?.value) {
+              if(!this.request.ValidSections[this.stepper].sections.includes("Publicity")) {
+                this.request.ValidSections[this.stepper].sections.push("Publicity")
+              }
+            } else {
+              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Publicity"), 1)
+            }
             this.$refs.publicityloop.$refs.pubForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
               }
-            });
+            })
           }
         }
         let idx = -1
@@ -1663,6 +1723,11 @@ document.addEventListener("DOMContentLoaded", function () {
           this.errors[idx].errors = eventErrors.errors
         } else {
           this.errors.push(eventErrors)
+        }
+        if(this.errors.length > 0) {
+          this.request.IsValid = false
+        } else {
+          this.request.IsValid = true
         }
       },
       showValidation() {
@@ -1690,7 +1755,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (this.$refs.accomloop) {
           this.$refs.accomloop.$refs.accomForm.validate()
         }
-
       },
       matchMultiEvent() {
         this.request.EventDates.forEach((e, idx) => {
@@ -1723,7 +1787,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           this.saveDialog = true
         }
-      }
+      },
     },
     filters: {
       formatDateTime(val) {

@@ -26,7 +26,7 @@ export default {
       <v-btn fab small 
         style="margin: 0px 2px;" 
         color="inprogress"
-        v-if="r.RequestStatus != 'In Progress'"
+        v-if="r.RequestStatus != 'In Progress' && r.RequestStatus != 'Pending Changes'"
         @click="setInProgress"
         v-bind="attrs"
         v-on="on"
@@ -35,6 +35,21 @@ export default {
       </v-btn>
     </template>
     <span>In Progress</span>
+  </v-tooltip>
+  <v-tooltip bottom>
+    <template v-slot:activator="{ on, attrs }">
+      <v-btn fab small 
+        style="margin: 0px 2px;" 
+        color="accentDark"
+        v-if="r.RequestStatus == 'Pending Changes'"
+        @click="partialApproval"
+        v-bind="attrs"
+        v-on="on"
+      >
+        <v-icon>mdi-format-list-checks</v-icon>
+      </v-btn>
+    </template>
+    <span>Partial Approval</span>
   </v-tooltip>
   <v-tooltip bottom>
     <template v-slot:activator="{ on, attrs }">
@@ -49,7 +64,7 @@ export default {
         <v-icon>mdi-check-circle</v-icon>
       </v-btn>
     </template>
-    <span>Approve</span>
+    <span>Approve <span v-if="r.RequestStatus == 'Pending Changes'">All</span></span>
   </v-tooltip>
   <v-tooltip bottom>
     <template v-slot:activator="{ on, attrs }">
@@ -116,6 +131,9 @@ export default {
     setInProgress() {
       this.$emit("setinprogress", this.r)
     },
+    partialApproval() {
+      this.$emit("partialapproval", this.r)
+    }
   },
   watch: {
     

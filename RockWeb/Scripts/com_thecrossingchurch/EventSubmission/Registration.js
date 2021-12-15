@@ -115,6 +115,7 @@ export default {
       label="Sender Email"
       v-model="e.SenderEmail"
       hint="If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here"
+      persistent-hint
     ></v-text-field>
     <v-textarea
       label="Thank You"
@@ -134,6 +135,48 @@ export default {
     <div v-html="emailPreview"></div>
   </v-col>
 </v-row>
+<v-row>
+  <v-col>
+    <v-switch
+      :label="reminderEmailLabel"
+      v-model="e.NeedsReminderEmail"
+    ></v-switch>
+  </v-col>
+</v-row>
+<template v-if="e.NeedsReminderEmail">
+  <v-row>
+    <v-col>
+      <h4 class="primary--text">Let's build-out the reminder email your registrants will receive before the event</h4>
+    </v-col>
+  </v-row>
+  <v-row>
+    <v-col cols="12" md="6">
+      <v-text-field
+        label="Who should this email come from?"
+        v-model="e.ReminderSender"
+        :rules="[rules.required(e.ReminderSender, 'Sender')]"
+      ></v-text-field>
+      <v-text-field
+        label="Sender Email"
+        v-model="e.ReminderSenderEmail"
+        hint="If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here"
+        persistent-hint
+      ></v-text-field>
+      <v-textarea
+        label="Date, Time, and Location"
+        v-model="e.ReminderTimeLocation"
+      ></v-textarea>
+      <v-textarea
+        label="Additional Details"
+        v-model="e.ReminderAdditionalDetails"
+      ></v-textarea>
+    </v-col>
+    <v-col cols="12" md="6">
+      <div style="font-weight: bold; font-style: italic; text-align: center;">This preview is just to give you a general idea about placement within the email, it is not the final product.</div>
+      <div v-html="reminderEmailPreview"></div>
+    </v-col>
+  </v-row>
+</template>
 <v-dialog
   v-if="dialog"
   v-model="dialog"
@@ -197,7 +240,7 @@ export default {
                   }
                   if (moment(closeDate).isAfter(minDate)) {
                       if (needsChildCare) {
-                          return 'When requesting childcare, registration must close 24 hours before the start of your event'
+                          return 'When requesting childcare, registration must close 48 hours before the start of your event'
                       }
                       return 'Registration cannot end after your event'
                   }
@@ -207,14 +250,14 @@ export default {
                 let minDate = moment(eventDate)
                 let actualDate = moment(`${closeDate} ${closeTime}`)
                 if (needsChildCare) {
-                  minDate = minDate.subtract(1, "day")
+                  minDate = minDate.subtract(2, "day")
                   minDate = moment(`${minDate.format('yyyy-MM-DD')} ${startTime}`)
                 } else {
                   minDate = moment(`${minDate.format('yyyy-MM-DD')} ${endtime}`)
                 }
                 if (moment(actualDate).isAfter(minDate)) {
                   if (needsChildCare) {
-                    return 'When requesting childcare, registration must close 24 hours before the start of your event'
+                    return 'When requesting childcare, registration must close 48 hours before the start of your event'
                   }
                   return 'Registration cannot end after your event'
                 }
@@ -246,6 +289,12 @@ export default {
       let idx = this.request.EventDates.indexOf(this.prefillDate)
       let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
       this.$emit('updatereg', { targetIdx: idx, currIdx: currIdx })
+    },
+    boolToYesNo(val) {
+      if (val) {
+        return "Yes"
+      }
+      return "No"
     },
   },
   computed: {
@@ -351,6 +400,39 @@ export default {
       preview += "</div>"
       return preview
     },
+    reminderEmailPreview() {
+      let preview =
+        "<div style='background-color: #F2F2F2;'>" +
+        "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
+        "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
+        "</div>" +
+        "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
+        "<h1>" + this.request.Name + " Reminder</h1><br/>" +
+        this.e.ReminderTimeLocation + "<br/><br/>" +
+        "<p>The following people have been registered for " + this.request.Name + ":</p>" +
+        "<ul>" +
+        "<li>First Registrant</li>" +
+        "<li>Second Registrant</li>" +
+        "</ul>"
+      if (this.e.Fee) {
+        preview +=
+          "<p>" +
+          "This registration still has a balance of $" + this.e.Fee + ".<br/>" +
+          "</p>"
+      }
+      preview += this.e.ReminderAdditionalDetails
+      preview += "</div>"
+      preview +=
+        "<div style='text-align:center;'><br/>" +
+        "<b>The Crossing</b><br/>" +
+        "3615 Southland Dr.<br/>" +
+        "Columbia, MO 65201<br/>" +
+        "(573) 256-4410<br/>" +
+        "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
+        "</div>"
+      preview += "</div>"
+      return preview
+    },
     prefillOptions() {
       return this.request.EventDates.filter(i => i != this.e.EventDate)
     },
@@ -368,7 +450,10 @@ export default {
         {text: 'Fee per Couple', value: 'Fee per Couple', disabled: (this.e.FeeType.includes("No Fees") ? true : false)},
         {text: 'No Fees', value: 'No Fees', disabled: (this.e.FeeType.length > 0 && !this.e.FeeType.includes("No Fees") ? true : false)}
       ]
-    }
+    },
+    reminderEmailLabel() {
+      return `Would you like a Reminder Email for this Event? (${this.boolToYesNo(this.e.NeedsReminderEmail)})`
+    },
   },
   watch: {
     e(val) {

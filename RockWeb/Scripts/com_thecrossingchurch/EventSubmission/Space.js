@@ -232,10 +232,10 @@ export default {
   },
   computed: {
       attHint() {
-          return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
+        return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
       },
       prefillOptions() {
-          return this.request.EventDates.filter(i => i != this.e.EventDate)
+        return this.request.EventDates.filter(i => i != this.e.EventDate)
       },
       groupedRooms() {
           let loc = []
@@ -379,20 +379,20 @@ export default {
     }
   },
   methods: {
-      prefillSection() {
-          this.dialog = false
-          let idx = this.request.EventDates.indexOf(this.prefillDate)
-          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-          this.$emit('updatespace', { targetIdx: idx, currIdx: currIdx })
-      },
-      boolToYesNo(val) {
-          if (val) {
-              return "Yes";
-          }
-          return "No";
-      },
-      openMap() {
-          this.map = true
+    prefillSection() {
+      this.dialog = false
+      let idx = this.request.EventDates.indexOf(this.prefillDate)
+      let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+      this.$emit('updatespace', { targetIdx: idx, currIdx: currIdx })
+    },
+    boolToYesNo(val) {
+      if (val) {
+        return "Yes";
       }
+      return "No";
+    },
+    openMap() {
+      this.map = true
+    }
   }
 }
