@@ -134,6 +134,8 @@ namespace RockWeb.TheCrossing
             public string WhyAttendTwenty { get; set; }
             public string Notes { get; set; }
             public bool HasConflicts { get; set; }
+            public bool IsValid { get; set; }
+            public List<string> ValidSections { get; set; }
         }
         public class StoryItem
         {
@@ -172,6 +174,11 @@ namespace RockWeb.TheCrossing
             public string ThankYou { get; set; }
             public string TimeLocation { get; set; }
             public string AdditionalDetails { get; set; }
+            public bool NeedsReminderEmail { get; set; }
+            public string ReminderSender { get; set; }
+            public string ReminderSenderEmail { get; set; }
+            public string ReminderTimeLocation { get; set; }
+            public string ReminderAdditionalDetails { get; set; }
             public string Vendor { get; set; }
             public string Menu { get; set; }
             public bool FoodDelivery { get; set; }
