@@ -46,7 +46,7 @@ export default {
     </v-col>
   </v-row>
   <template v-if="selected.needsSpace || (selected.Changes && selected.Changes.needsSpace)">
-    <h6 class='text--accent text-uppercase'>Space Information</h6>
+    <h6 :class='sectionHeaderClassName("Room")'>Space Information</h6>
     <v-row>
       <v-col>
         <div class="floating-title">Expected Number of Attendees</div>
@@ -194,7 +194,7 @@ export default {
     </v-row>
   </template>
   <template v-if="selected.needsOnline || (selected.Changes && selected.Changes.needsOnline)">
-    <h6 class='text--accent text-uppercase'>Online Information</h6>
+    <h6 :class='sectionHeaderClassName("Online Event")'>Online Information</h6>
     <v-row>
       <v-col>
         <div class="floating-title">Event Link</div>
@@ -229,7 +229,7 @@ export default {
     </v-row>
   </template>
   <template v-if="selected.needsChildCare || (selected.Changes && selected.Changes.needsChildCare)">
-    <h6 class='text--accent text-uppercase'>Childcare Information</h6>
+    <h6 :class='sectionHeaderClassName("Childcare")'>Childcare Information</h6>
     <v-row>
       <v-col>
         <div class="floating-title">Childcare Age Groups</div>
@@ -296,7 +296,7 @@ export default {
     </v-row>
   </template>
   <template v-if="selected.needsCatering || (selected.Changes && selected.Changes.needsCatering)">
-    <h6 class='text--accent text-uppercase'>Catering Information</h6>
+    <h6 :class='sectionHeaderClassName("Catering")'>Catering Information</h6>
     <v-row>
       <v-col v-if="e.Vendor || (selected.Changes && selected.Changes.Events[idx].Vendor)">
         <div class="floating-title">Preferred Vendor</div>
@@ -445,7 +445,7 @@ export default {
       </v-col>
     </v-row>
     <template v-if="selected.needsChildCare || (selected.Changes && selected.Changes.needsChildCare)">
-      <h6 class='text--accent text-uppercase'>Childcare Catering Information</h6>
+      <h6 :class='sectionHeaderClassName("Catering")'>Childcare Catering Information</h6>
       <v-row>
         <v-col>
           <div class="floating-title">
@@ -519,7 +519,7 @@ export default {
     </template>
   </template>
   <template v-if="selected.needsReg || (selected.Changes && selected.Changes.needsReg)">
-    <h6 class='text--accent text-uppercase'>Registration Information</h6>
+    <h6 :class='sectionHeaderClassName("Registration")'>Registration Information</h6>
     <v-row v-if="e.RegistrationDate || (selected.Changes && selected.Changes.Events[idx].RegistrationDate)">
       <v-col>
         <div class="floating-title">Registration Date</div>
@@ -677,7 +677,7 @@ export default {
         </template>
       </v-col>
       <v-col v-if="e.SenderEmail || (selected.Changes && selected.Changes.Events[idx].SenderEmail)">
-        <div class="floating-title">Registration Confirmation Sender Email</div>
+        <div class="floating-title">Registration Confirmation Email From Address</div>
         <template v-if="selected.Changes != null && e.SenderEmail != selected.Changes.Events[idx].SenderEmail">
           <template v-if="approvalmode">
             <approval-field :request="selected" :e="e" :idx="idx" field="SenderEmail" :fieldname="formatFieldName('Registration Confirmation Sender Email')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
@@ -741,9 +741,75 @@ export default {
         </template>
       </v-col>
     </v-row>
+    <template v-if="e.NeedsReminderEmail || (selected.Changes && selected.Changes.Events[idx].NeedsReminderEmail)">
+      <v-row>
+        <v-col v-if="e.ReminderSender || (selected.Changes && selected.Changes.Events[idx].ReminderSender)">
+          <div class="floating-title">Registration Reminder Email Sender</div>
+          <template v-if="selected.Changes != null && e.ReminderSender != selected.Changes.Events[idx].ReminderSender">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="Sender" :fieldname="formatFieldName('Registration Confirmation Email Sender')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.ReminderSender ? e.ReminderSender : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].ReminderSender ? selected.Changes.Events[idx].ReminderSender : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{e.ReminderSender}}
+          </template>
+        </v-col>
+        <v-col v-if="e.ReminderSenderEmail || (selected.Changes && selected.Changes.Events[idx].ReminderSenderEmail)">
+          <div class="floating-title">Registration Reminder Email From Address</div>
+          <template v-if="selected.Changes != null && e.ReminderSenderEmail != selected.Changes.Events[idx].ReminderSenderEmail">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="SenderEmail" :fieldname="formatFieldName('Registration Confirmation Sender Email')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.ReminderSenderEmail ? e.ReminderSenderEmail : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].ReminderSenderEmail ? selected.Changes.Events[idx].ReminderSenderEmail : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{e.ReminderSenderEmail}}
+          </template>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col v-if="e.ReminderTimeLocation || (selected.Changes && selected.Changes.Events[idx].ReminderTimeLocation)">
+          <div class="floating-title">Reminder Email Date, Time, and Location</div>
+          <template v-if="selected.Changes != null && e.ReminderTimeLocation != selected.Changes.Events[idx].ReminderTimeLocation">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="TimeLocation" :fieldname="formatFieldName('Confirmation Email Date, Time, and Location')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.ReminderTimeLocation ? e.ReminderTimeLocation : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].ReminderTimeLocation ? selected.Changes.Events[idx].ReminderTimeLocation : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{e.ReminderTimeLocation}}
+          </template>
+        </v-col>
+        <v-col v-if="e.ReminderAdditionalDetails || (selected.Changes && selected.Changes.Events[idx].ReminderAdditionalDetails)">
+          <div class="floating-title">Reminder Email Additional Details</div>
+          <template v-if="selected.Changes != null && e.ReminderAdditionalDetails != selected.Changes.Events[idx].ReminderAdditionalDetails">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="ReminderAdditionalDetails" :fieldname="formatFieldName('Confirmation Email Additional Details')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.ReminderAdditionalDetails ? e.ReminderAdditionalDetails : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].ReminderAdditionalDetails ? selected.Changes.Events[idx].ReminderAdditionalDetails : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{e.ReminderAdditionalDetails}}
+          </template>
+        </v-col>
+      </v-row>
+    </template>
   </template>
   <template v-if="selected.needsAccom || (selected.Changes && selected.Changes.needsAccom)">
-    <h6 class='text--accent text-uppercase'>Additional Information</h6>
+    <h6 :class='sectionHeaderClassName("Extra Resources")'>Additional Information</h6>
     <v-row v-if="e.TechNeeds || e.TechDescription || (selected.Changes && (selected.Changes.Events[idx].TechNeeds || selected.Changes.Events[idx].TechDescription))">
       <v-col v-if="e.TechNeeds && e.TechNeeds.length > 0">
         <div class="floating-title">Tech Needs</div>
@@ -985,6 +1051,13 @@ export default {
     newchoice() {
       this.$emit("newchoice")
     },
+    sectionHeaderClassName(section) {
+      if(this.invalidSections(this.selected).includes(section)) {
+        return 'text--error text-uppercase'
+      } else {
+        return 'text--accent text-uppercase'
+      }
+    }
   },
   components: {
     'approval-field': approvalField,

@@ -37,11 +37,14 @@ export default {
 </v-row>
 <v-row>
   <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual') || e.FeeType.includes('Fee per Couple') || e.FeeType.includes('Online Fee')">
-    <v-text-field
+    <v-autocomplete
       label="Which budget should registration fees go to?"
       v-model="e.FeeBudgetLine"
       :rules="[rules.requiredBL(e.FeeType, e.FeeBudgetLine, 'Budget line')]"
-    ></v-text-field>
+      :items="budgetLines"
+      item-value="Id"
+      item-text="Value"
+    ></v-autocomplete>
   </v-col>
   <v-col cols="12" md="6" v-if="e.FeeType.includes('Fee per Individual')">
     <v-text-field
@@ -214,6 +217,7 @@ export default {
           menu: false,
           menu2: false,
           dialog: false,
+          budgetLines: [],
           prefillDate: '',
           valid: true,
           rules: {
@@ -268,6 +272,7 @@ export default {
   },
   created: function () {
     this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+    this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value);
   },
   methods: {
     formatRooms(val) {

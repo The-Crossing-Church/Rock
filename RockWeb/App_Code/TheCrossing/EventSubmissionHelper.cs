@@ -103,7 +103,7 @@ namespace RockWeb.TheCrossing
             {
                 rt.Add( "Extra Resources" );
             }
-            return String.Join( ", ", rt );
+            return String.Join( ",", rt );
         }
         public class EventRequest
         {

@@ -360,7 +360,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             item.SetAttributeValue( "EventDates", String.Join( ", ", request.EventDates ) );
             item.SetAttributeValue( "RequestType", requestType );
-            item.SetAttributeValue( "ValidSecions", String.Join( ", ", request.ValidSections ) );
+            item.SetAttributeValue( "ValidSections", String.Join( ",", request.ValidSections ) );
             item.SetAttributeValue( "RequestIsValid", request.IsValid.ToString() );
             item.SetAttributeValue( "IsPreApproved", isPreApproved );
 
@@ -738,6 +738,36 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
             }
             message += GenerateEmailDetails( item, request );
+            if ( CurrentPersonIsSuperUser )
+            {
+                DateTime firstDate = request.EventDates.Select( e => DateTime.Parse( e ) ).OrderBy( e => e.Date ).FirstOrDefault();
+                DateTime twoWeekDate = firstDate.AddDays( -14 );
+                DateTime thirtyDayDate = firstDate.AddDays( -30 );
+                DateTime sixWeekDate = firstDate.AddDays( -43 );
+                DateTime today = RockDateTime.Now;
+                today = new DateTime( today.Year, today.Month, today.Day, 0, 0, 0 );
+                if ( twoWeekDate >= today )
+                {
+                    message += "<br/><div><strong>Important Dates for Your Request</strong></div>";
+                    message += "Last Date to Request and Provide All Information for Zoom, Catering, Extra Accommodations, and Registration: <strong>" + twoWeekDate.ToShortDateString() + "</strong><br/>";
+                    if ( thirtyDayDate >= today )
+                    {
+                        message += "Last Date to Request and Provide All Information for Childcare: <strong>" + thirtyDayDate.ToShortDateString() + "</strong><br/>";
+                        if ( sixWeekDate >= today )
+                        {
+                            message += "Last Date to Request and Provide All Information for Publicity: <strong>" + sixWeekDate.ToShortDateString() + "</strong>";
+                        }
+                        else
+                        {
+                            message += "There is not enough time between now and your first event date to allow for Publicity.";
+                        }
+                    }
+                    else
+                    {
+                        message += "There is not enough time between now and your first event date to allow for Childcare.";
+                    }
+                }
+            }
             message += "<br/>" +
                 "<table style='width: 100%;'>" +
                     "<tr>" +
@@ -787,7 +817,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 message += "<strong style='color: #6485b3;'>Date Information</strong><br/>";
                 if ( request.Events.Count() == 1 || request.IsSame )
                 {
-                    message += "<strong>Event Dates:</strong> <span style='font-size: 14px;'>" + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "</span><br/>";
+                    message += "<strong>Event Dates:</strong> " + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "<br/>";
                 }
                 else
                 {
@@ -836,7 +866,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     message += "<br/><strong style='color: #6485b3;'>Food/Drink Information</strong><br/>";
                     message += "<strong>Preferred Vendor:</strong> " + request.Events[i].Vendor + "<br/>";
                     message += "<strong>Preferred Menu:</strong> " + request.Events[i].Menu + "<br/>";
-                    message += "<strong>Budget Line:</strong> " + request.Events[i].BudgetLine + "<br/>";
+                    message += "<strong>Budget Line:</strong> " + BudgetLines.Where( dv => request.Events[i].BudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() + "<br/>";
                     if ( request.Events[i].FoodDelivery )
                     {
                         message += "<strong>Food Set-Up Time:</strong> " + request.Events[i].FoodTime + "<br/>";
@@ -881,7 +911,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Preferred Vendor for Childcare:</strong> " + request.Events[i].CCVendor + "<br/>";
                         message += "<strong>Preferred Menu for Childcare:</strong> " + request.Events[i].CCMenu + "<br/>";
-                        message += "<strong>Budget Line for Childcare:</strong> " + request.Events[i].CCBudgetLine + "<br/>";
+                        message += "<strong>Budget Line for Childcare:</strong> " + BudgetLines.Where( dv => request.Events[i].CCBudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() + "<br/>";
                         message += "<strong>ChildCare Food Set-Up Time:</strong> " + request.Events[i].CCFoodTime + "<br/>";
                     }
                 }
@@ -907,7 +937,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].FeeBudgetLine ) )
                     {
-                        message += "<strong>Registration Fee Budget Line:</strong> " + request.Events[i].FeeBudgetLine + "<br/>";
+                        message += "<strong>Registration Fee Budget Line:</strong> " + BudgetLines.Where( dv => request.Events[i].FeeBudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() + "<br/>";
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].Fee ) )
                     {
@@ -921,17 +951,45 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Registration Online Fee:</strong> " + request.Events[i].OnlineFee + "<br/>";
                     }
+                    if ( !String.IsNullOrEmpty( request.Events[i].Sender ) )
+                    {
+                        message += "<strong>Confirmation Email Sender:</strong> " + request.Events[i].Sender + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].SenderEmail ) )
+                    {
+                        message += "<strong>Confirmation Email From Address:</strong> " + request.Events[i].SenderEmail + "<br/>";
+                    }
                     if ( !String.IsNullOrEmpty( request.Events[i].ThankYou ) )
                     {
                         message += "<strong>Confirmation Email Thank You:</strong> " + request.Events[i].ThankYou + "<br/>";
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].TimeLocation ) )
                     {
-                        message += "<strong>Confirmation Email Time and Location:</strong> " + request.Events[i].TimeLocation + "<br/>";
+                        message += "<strong>Confirmation Email Date, Time, and Location:</strong> " + request.Events[i].TimeLocation + "<br/>";
                     }
                     if ( !String.IsNullOrEmpty( request.Events[i].AdditionalDetails ) )
                     {
                         message += "<strong>Confirmation Email Additional Details:</strong> " + request.Events[i].AdditionalDetails + "<br/>";
+                    }
+                    if ( request.Events[i].NeedsReminderEmail )
+                    {
+                        if ( !String.IsNullOrEmpty( request.Events[i].ReminderSender ) )
+                        {
+                            message += "<strong>Reminder Email Sender:</strong> " + request.Events[i].ReminderSender + "<br/>";
+                        }
+                        if ( !String.IsNullOrEmpty( request.Events[i].ReminderSenderEmail ) )
+                        {
+                            message += "<strong>Reminder Email From Address:</strong> " + request.Events[i].ReminderSenderEmail + "<br/>";
+                        }
+                        if ( !String.IsNullOrEmpty( request.Events[i].ReminderTimeLocation ) )
+                        {
+                            message += "<strong>Reminder Email Date, Time, and Location:</strong> " + request.Events[i].ReminderTimeLocation + "<br/>";
+                        }
+                        if ( !String.IsNullOrEmpty( request.Events[i].ReminderAdditionalDetails ) )
+                        {
+                            message += "<strong>Reminder Email Additional Details:</strong> " + request.Events[i].ReminderAdditionalDetails + "<br/>";
+                        }
+
                     }
                 }
 

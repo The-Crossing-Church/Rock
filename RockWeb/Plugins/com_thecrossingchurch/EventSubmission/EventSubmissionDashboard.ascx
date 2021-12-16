@@ -199,13 +199,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
           width="100%"
         >
           <v-card-title>
-            <template v-if="selected.Changes != null && selected.Name != selected.Changes.Name">
-              <span class='red--text'>{{selected.Name}}: </span>
-              <span class='primary--text'>{{selected.Changes.Name}}</span>
-            </template>
-            <template v-else>
-              {{selected.Name}}
-            </template>
+            <div>
+              <template v-if="selected.Changes != null && selected.Name != selected.Changes.Name">
+                <span class='red--text'>{{selected.Name}}: </span>
+                <span class='primary--text'>{{selected.Changes.Name}}</span>
+              </template>
+              <template v-else>
+                {{selected.Name}} 
+                <v-icon color="accent" v-if="selected.IsValid">mdi-check-circle</v-icon>
+                <v-icon color="inprogress" v-else>mdi-alert-circle</v-icon>
+              </template>
+              <div class='overline' color="inprogress" v-if="invalidSections(selected).length > 0">Invalid Sections: {{invalidSections(selected)}}</div>
+            </div>
             <v-spacer></v-spacer>
             <div :class="getStatusPillClass(selected.RequestStatus)">
               {{selected.RequestStatus}}
@@ -862,6 +867,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   .text--accent {
     color: #8ED2C9;
+  }
+  .text--error, .text--denied {
+    color: #CC3F0C;
   }
   .row {
     margin: 0;

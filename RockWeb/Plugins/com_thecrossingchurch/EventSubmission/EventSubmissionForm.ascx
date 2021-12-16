@@ -821,6 +821,8 @@ document.addEventListener("DOMContentLoaded", function () {
         Stories: [{ Name: "", Email: "", Description: "" }],
         WhyAttendTwenty: "",
         Notes: "",
+        ValidSections: [],
+        ValidStepperSections: []
       },
       originalRequest: {},
       existingRequests: [],
@@ -925,8 +927,15 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.SubmittedOn = parsed.Active
         this.originalRequest = JSON.parse(JSON.stringify(this.request))
       }
+      if(!this.request.ValidStepperSections) {
+        this.request.ValidStepperSections = []
+      }
+      if(!this.request.ValidSections) {
+        this.request.ValidSections = []
+      }
       this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
       window["moment-range"].extendMoment(moment);
+      this.showValidation()
     },
     mounted() {
       let query = new URLSearchParams(window.location.search);
@@ -1198,6 +1207,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         this.currentEvent = this.request.Events[this.currentIdx]
         this.stepper = step
+        window.scrollTo(0, 0);
+        if(this.isExistingRequest || (this.currentErrors && this.currentErrors.length > 0)) {
+          window.setTimeout(() => {
+            this.showValidation()
+          }, 500)
+        }
       },
       next() {
         this.validate()
@@ -1209,7 +1224,7 @@ document.addEventListener("DOMContentLoaded", function () {
           if(this.stepper == 2) {
             this.currentIdx = 0
           } else if(this.stepper == num) {
-            if (this.isValid) {
+            //if (this.isValid) {
               this.hasConflictsOrTimeIssue = false
               this.checkForConflicts()
               this.checkTimeMeetsRequirements()
@@ -1218,10 +1233,10 @@ document.addEventListener("DOMContentLoaded", function () {
               } else {
                 this.submit()
               }
-            } else {
-              this.triedSubmit = true
-              this.stepper = 2
-            }
+            //} else {
+            //  this.triedSubmit = true
+            //  this.stepper = 2
+            //}
           } else {
             this.currentIdx++
           }
@@ -1229,7 +1244,7 @@ document.addEventListener("DOMContentLoaded", function () {
           if(this.stepper == 1) {
             this.currentIdx = 0
           } else if(this.stepper == (1 + this.request.Events.length)) {
-            if (this.isValid) {
+            //if (this.isValid) {
               this.hasConflictsOrTimeIssue = false
               this.checkForConflicts()
               this.checkTimeMeetsRequirements()
@@ -1238,10 +1253,10 @@ document.addEventListener("DOMContentLoaded", function () {
               } else {
                 this.submit()
               }
-            } else {
-              this.triedSubmit = true
-              this.stepper = 1
-            }
+            //} else {
+            //  this.triedSubmit = true
+            //  this.stepper = 1
+            //}
           } else {
             this.currentIdx++
           }
@@ -1249,7 +1264,7 @@ document.addEventListener("DOMContentLoaded", function () {
         this.currentEvent = this.request.Events[this.currentIdx]
         this.stepper++
         window.scrollTo(0, 0)
-        if(this.currentErrors?.length > 0) {
+        if(this.isExistingRequest || (this.currentErrors?.length > 0)) {
           window.setTimeout(() => {
             this.showValidation()
           }, 500)
@@ -1268,7 +1283,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         this.stepper = tab
         window.scrollTo(0, 0);
-        if(this.currentErrors && this.currentErrors.length > 0) {
+        if(this.isExistingRequest || (this.currentErrors && this.currentErrors.length > 0)) {
           window.setTimeout(() => {
             this.showValidation()
           }, 500)
@@ -1527,9 +1542,21 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
         }
+        if(!this.request.ValidStepperSections[this.stepper]) {
+          while(this.request.ValidStepperSections.length < (this.stepper + 1)) {
+            this.request.ValidStepperSections.push({step: this.request.ValidStepperSections.length, sections: []})
+          }
+        }
         if((this.isSuperUser && this.stepper == 2) || (!this.isSuperUser && this.stepper == 1)) {
           if (this.$refs.form) {
             this.$refs.form.validate()
+            if(this.$refs.form.value) {
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Basic")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Basic")
+              }
+            } else {
+              this.request.ValidStepperSections[this.stepper].sections = []
+            }
             this.$refs.form.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
                 eventErrors.errors.push(...e.errorBucket)
@@ -1572,20 +1599,15 @@ document.addEventListener("DOMContentLoaded", function () {
               })
             }
           }
-          if(!this.request.ValidSections[this.stepper]) {
-            while(this.request.ValidSections.length < (this.stepper + 1)) {
-              this.request.ValidSections.push({step: this.request.ValidSections.length, sections: []})
-            }
-          }
           if(this.$refs[`spaceloop${this.stepper}`]) {
             this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.validate()
             //Add or remove space from the valid sections list
             if(this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Room")) {
-                this.request.ValidSections[this.stepper].sections.push("Room")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Room")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Room")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Room"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Room"), 1)
             }
             this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1601,11 +1623,11 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.validate()
             //Add or remove extra accomodations from the valid sections list
             if(this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Extra Resources")) {
-                this.request.ValidSections[this.stepper].sections.push("Extra Resources")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Extra Resources")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Extra Resources")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources"), 1)
             }
             this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1617,15 +1639,14 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.validate()
             //Add or remove zoom from the valid sections list
             if(this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Online Event")) {
-                this.request.ValidSections[this.stepper].sections.push("Online Event")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Online Event")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Online Event")
               } 
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Online Event"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Online Event"), 1)
             }
             this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
-                console.log(e.errorBucket)
                 eventErrors.errors.push(...e.errorBucket)
               }
             })
@@ -1634,11 +1655,11 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.validate()
             //Add or remove registration from the valid sections list
             if(this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Registration")) {
-                this.request.ValidSections[this.stepper].sections.push("Registration")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Registration")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Registration")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Registration"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Registration"), 1)
             }
             this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1650,11 +1671,11 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.validate()
             //Add or remove catering from the valid sections list
             if(this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Catering")) {
-                this.request.ValidSections[this.stepper].sections.push("Catering")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Catering")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Catering")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Catering"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Catering"), 1)
             }
             this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1666,11 +1687,11 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.validate()
             //Add or remove childcare from the valid sections list
             if(this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Childcare")) {
-                this.request.ValidSections[this.stepper].sections.push("Childcare")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Childcare")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Childcare")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Childcare"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Childcare"), 1)
             }
             this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1682,11 +1703,11 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.validate()
             //Add or remove extra accommodations from the valid sections list
             if(this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Extra Resources")) {
-                this.request.ValidSections[this.stepper].sections.push("Extra Resources")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Extra Resources")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Extra Resources")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources"), 1)
             }
             this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1700,11 +1721,13 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$refs.publicityloop.$refs.pubForm?.validate()
             //Add or remove publicity from the valid sections list
             if(this.$refs.publicityloop.$refs.pubForm?.value) {
-              if(!this.request.ValidSections[this.stepper].sections.includes("Publicity")) {
-                this.request.ValidSections[this.stepper].sections.push("Publicity")
+              if(!this.request.ValidStepperSections[this.stepper].sections.includes("Publicity")) {
+                this.request.ValidStepperSections[this.stepper].sections.push("Publicity")
+                this.request.ValidSections.push("Publicity")
               }
             } else {
-              this.request.ValidSections[this.stepper].sections.splice(this.request.ValidSections[this.stepper].sections.indexOf("Publicity"), 1)
+              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Publicity"), 1)
+              this.request.ValidSections.splice(this.request.VaidSections.indexOf("Publicity"), 1)
             }
             this.$refs.publicityloop.$refs.pubForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1712,6 +1735,60 @@ document.addEventListener("DOMContentLoaded", function () {
               }
             })
           }
+        }
+        let i = this.isSuperUser ? 3 : 2
+        let lastIdx = this.request.needsPub ? this.request.ValidStepperSections.length - 1 : this.request.ValidStepperSections.length
+        let targetNum = lastIdx - i
+        let roomCt = 0, onlineCt = 0, regCt = 0, foodCt = 0, childCt = 0, extraCt = 0
+        for(i; i < lastIdx; i++) {
+          if(this.request.ValidStepperSections[i].sections.includes("Room")) {
+            roomCt++
+          }
+          if(this.request.ValidStepperSections[i].sections.includes("Online Event")) {
+            onlineCt++
+          }
+          if(this.request.ValidStepperSections[i].sections.includes("Registration")) {
+            regCt++
+          }
+          if(this.request.ValidStepperSections[i].sections.includes("Catering")) {
+            foodCt++
+          }
+          if(this.request.ValidStepperSections[i].sections.includes("Childcare")) {
+            childCt++
+          }
+          if(this.request.ValidStepperSections[i].sections.includes("Extra Resources")) {
+            extraCt++
+          }
+        }
+        if(roomCt == targetNum && !this.request.ValidSections.includes("Room")) {
+          this.request.ValidSections.push("Room")
+        } else if(roomCt != targetNum && this.request.ValidSections.includes("Room")) {
+          this.request.ValidSections.splice(this.request.ValidSections.indexOf("Room"), 1)
+        }
+        if(onlineCt == targetNum && !this.request.ValidSections.includes("Online Event")) {
+          this.request.ValidSections.push("Online Event")
+        } else if(onlineCt != targetNum && this.request.ValidSections.includes("Online Event")) {
+          this.request.ValidSections.splice(this.request.ValidSections.indexOf("Online Event"), 1)
+        }
+        if(regCt == targetNum && !this.request.ValidSections.includes("Registration")) {
+          this.request.ValidSections.push("Registration")
+        } else if(regCt != targetNum && this.request.ValidSections.includes("Registration")) {
+          this.request.ValidSections.splice(this.request.ValidSections.indexOf("Registration"), 1)
+        }
+        if(foodCt == targetNum && !this.request.ValidSections.includes("Catering")) {
+          this.request.ValidSections.push("Catering")
+        } else if(foodCt != targetNum && this.request.ValidSections.includes("Catering")) {
+          this.request.ValidSections.splice(this.request.ValidSections.indexOf("Catering"), 1)
+        }
+        if(childCt == targetNum && !this.request.ValidSections.includes("Childcare")) {
+          this.request.ValidSections.push("Childcare")
+        } else if(childCt != targetNum && this.request.ValidSections.includes("Childcare")) {
+          this.request.ValidSections.splice(this.request.ValidSections.indexOf("Childcare"), 1)
+        }
+        if(extraCt == targetNum && !this.request.ValidSections.includes("Extra Resources")) {
+          this.request.ValidSections.push("Extra Resources")
+        } else if(extraCt != targetNum && this.request.ValidSections.includes("Extra Resources")) {
+          this.request.ValidSections.splice(this.request.ValidSections.indexOf("Extra Resources"), 1)
         }
         let idx = -1
         this.errors.forEach((e, i) => {
@@ -1724,7 +1801,8 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           this.errors.push(eventErrors)
         }
-        if(this.errors.length > 0) {
+        let allErrs = this.errors.map(e => e.errors).flat()
+        if(allErrs.length > 0) {
           this.request.IsValid = false
         } else {
           this.request.IsValid = true
@@ -1740,20 +1818,26 @@ document.addEventListener("DOMContentLoaded", function () {
         if (this.$refs.endTime) {
           this.$refs.endTime.$refs.timeForm.validate()
         }
-        if (this.$refs.spaceloop) {
-          this.$refs.spaceloop.$refs.spaceForm.validate()
+        let start = this.isSuperUser ? 3 : 2
+        for(let i = start; i<(this.request.Events.length + start ); i++) {
+          if (this.$refs[`spaceloop${i}`]) {
+            this.$refs[`spaceloop${i}`][0]?.$refs.spaceForm?.validate()
+          } 
+          if (this.$refs[`regloop${i}`]) {
+            this.$refs[`regloop${i}`][0]?.$refs.regForm?.validate()
+          }
+          if (this.$refs[`cateringloop${i}`]) {
+            this.$refs[`cateringloop${i}`][0]?.$refs.cateringForm?.validate()
+          }
+          if (this.$refs[`childcareloop${i}`]) {
+            this.$refs[`childcareloop${i}`][0]?.$refs.childForm?.validate()
+          }
+          if (this.$refs[`accomloop${i}`]) {
+            this.$refs[`accomloop${i}`][0]?.$refs.accomForm?.validate()
+          }
         }
-        if (this.$refs.regloop) {
-          this.$refs.regloop.$refs.regForm.validate()
-        }
-        if (this.$refs.cateringloop) {
-          this.$refs.cateringloop.$refs.cateringForm.validate()
-        }
-        if (this.$refs.childcareloop) {
-          this.$refs.childcareloop.$refs.childForm.validate()
-        }
-        if (this.$refs.accomloop) {
-          this.$refs.accomloop.$refs.accomForm.validate()
+        if(this.$refs.publicityloop) {
+          this.$refs.publicityloop.$refs.pubForm?.validate()
         }
       },
       matchMultiEvent() {

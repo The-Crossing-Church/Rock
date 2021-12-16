@@ -87,7 +87,7 @@ export default {
           resources.push("Room");
         }
         if (itm.needsOnline) {
-          resources.push("Online");
+          resources.push("Online Event");
         }
         if (itm.needsPub) {
           resources.push("Publicity");
@@ -108,6 +108,11 @@ export default {
       }
       return "";
     },
-
+    invalidSections(request) {
+      if(request.ValidSections) {
+        let requested = this.requestType(request).split(", ")
+        return requested.filter(r => !request.ValidSections.includes(r) ).join(", ")
+      }
+    }
   }
 }
