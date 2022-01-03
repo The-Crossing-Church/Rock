@@ -134,7 +134,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             items = items.Where( i => {
                 var status = i.AttributeValues["RequestStatus"].Value;
                 var resources = i.AttributeValues["RequestType"].Value;
-                if(status != "Submitted" && status != "Cancelled" && status != "Denied" && resources.Contains("Room") )
+                if(status != "Submitted" && status != "Cancelled" && status != "Denied" && status != "Cancelled by User" && resources.Contains("Room") )
                 {
                     var dateStr = i.AttributeValues["EventDates"];
                     var dates = dateStr.Value.Split( ',' );

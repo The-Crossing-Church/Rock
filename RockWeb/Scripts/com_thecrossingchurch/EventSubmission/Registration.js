@@ -110,12 +110,12 @@ export default {
 <v-row>
   <v-col>
     <v-text-field
-      label="Who should this email come from?"
+      label="Name of the person this email should come from"
       v-model="e.Sender"
       :rules="[rules.required(e.Sender, 'Sender')]"
     ></v-text-field>
     <v-text-field
-      label="Sender Email"
+      label="Email address of the person this email should come from"
       v-model="e.SenderEmail"
       hint="If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here"
       persistent-hint
@@ -155,12 +155,12 @@ export default {
   <v-row>
     <v-col cols="12" md="6">
       <v-text-field
-        label="Who should this email come from?"
+        label="Name of the person this email should come from"
         v-model="e.ReminderSender"
         :rules="[rules.required(e.ReminderSender, 'Sender')]"
       ></v-text-field>
       <v-text-field
-        label="Sender Email"
+        label="Email address of the person this email should come from"
         v-model="e.ReminderSenderEmail"
         hint="If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here"
         persistent-hint
@@ -272,7 +272,7 @@ export default {
   },
   created: function () {
     this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
-    this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value);
+    this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value)
   },
   methods: {
     formatRooms(val) {
@@ -482,6 +482,7 @@ export default {
     defaultTimeLocation(val) {
       if (val) {
         this.e.TimeLocation = val
+        this.e.ReminderTimeLocation = val
       }
     },
     'e.FeeType'(val) {

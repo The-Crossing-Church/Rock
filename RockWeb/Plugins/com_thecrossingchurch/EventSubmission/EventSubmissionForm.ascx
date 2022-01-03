@@ -437,7 +437,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 </template>
                 <%-- Online Information --%>
                 <template v-if="request.needsOnline">
-                  <zoom :e="e" :request="request" :existing="existingRequests" :ref="`zoomloop${3+idx}`"></zoom>
+                  <zoom :e="e" :request="request" :existing="existingRequests" :ref="`zoomloop${3+idx}`" v-on:updatezoom="updateZoom"></zoom>
                 </template>
                 <%-- Catering Information --%>
                 <template v-if="request.needsCatering">
@@ -1325,6 +1325,11 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Events[indexes.currIdx].ThankYou = this.request.Events[indexes.targetIdx].ThankYou
         this.request.Events[indexes.currIdx].TimeLocation = this.request.Events[indexes.targetIdx].TimeLocation
         this.request.Events[indexes.currIdx].AdditionalDetails = this.request.Events[indexes.targetIdx].AdditionalDetails
+        this.request.Events[indexes.currIdx].NeedsReminderEmail = this.request.Events[indexes.targetIdx].NeedsReminderEmail
+        this.request.Events[indexes.currIdx].ReminderSender = this.request.Events[indexes.targetIdx].ReminderSender
+        this.request.Events[indexes.currIdx].ReminderSenderEmail = this.request.Events[indexes.targetIdx].ReminderSenderEmail
+        this.request.Events[indexes.currIdx].ReminderTimeLocation = this.request.Events[indexes.targetIdx].ReminderTimeLocation
+        this.request.Events[indexes.currIdx].ReminderAdditionalDetails = this.request.Events[indexes.targetIdx].ReminderAdditionalDetails
       },
       updateSpace(indexes) {
         this.request.Events[indexes.currIdx].Rooms = this.request.Events[indexes.targetIdx].Rooms
@@ -1371,6 +1376,10 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
         this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
         this.request.Events[indexes.currIdx].NeedsDoorsUnlocked = this.request.Events[indexes.targetIdx].NeedsDoorsUnlocked
+      },
+      updateZoom(indexes) {
+        this.request.Events[indexes.currIdx].EventURL = this.request.Events[indexes.targetIdx].EventURL
+        this.request.Events[indexes.currIdx].ZoomPassword = this.request.Events[indexes.targetIdx].ZoomPassword
       },
       checkForConflicts() {
         this.request.HasConflicts = false

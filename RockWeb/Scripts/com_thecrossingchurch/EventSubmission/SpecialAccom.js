@@ -105,7 +105,7 @@ export default {
   <v-row>
     <v-col cols="12">
       <v-textarea
-        label="Please describe the set-up you require for your event"
+        label="Please describe the extensive set-up you require for your event"
         v-model="e.SetUp"
       ></v-textarea>
     </v-col>

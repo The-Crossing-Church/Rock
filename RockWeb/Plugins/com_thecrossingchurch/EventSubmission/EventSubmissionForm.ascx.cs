@@ -809,7 +809,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             if ( item.AttributeValues["RequestType"].Value != "Room" )
             {
-                message += "<strong>Requested Resources:</strong> " + item.AttributeValues["RequestType"].Value + "<br/><br/>";
+                message += "<strong>Requested Resources:</strong> " + String.Join(", ", item.AttributeValues["RequestType"].Value.Split(',')) + "<br/><br/>";
             }
 
             for ( int i = 0; i < request.Events.Count(); i++ )
