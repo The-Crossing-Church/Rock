@@ -369,6 +369,50 @@ export default {
       }
       return ""
     },
+    defaultReminderTimeLocation() {
+      if (this.request.needsReg) {
+        if (this.request.Id > 0 && this.e.ReminderTimeLocation) {
+          return this.e.ReminderTimeLocation
+        }
+        if (this.request.Name && this.e.StartTime) {
+          let dt = moment(this.e.EventDate).format('MM/DD/yyyy')
+          if(this.request.IsSame) {
+            dt = moment(this.request.EventDates[0]).format('MM/DD/yyyy')
+          } 
+          let message = this.request.Name + " will take place at " + this.e.StartTime + " on " + dt 
+          if(this.e.Rooms && this.e.Rooms.length > 0) {
+            message += " in " + this.formatRooms(this.e.Rooms)
+          }
+          return message
+        }
+        return ""
+      }
+      return ""
+    },
+    defaultSender() {
+      if (this.request.needsReg) {
+        if (this.request.Id > 0 && this.e.Sender) {
+          return this.e.Sender
+        }
+        if (this.request.Contact ) {
+          return this.request.Contact
+        }
+        return ""
+      }
+      return ""
+    },
+    defaultReminderSender() {
+      if (this.request.needsReg) {
+        if (this.request.Id > 0 && this.e.ReminderSender) {
+          return this.e.ReminderSender
+        }
+        if (this.request.Contact ) {
+          return this.request.Contact
+        }
+        return ""
+      }
+      return ""
+    },
     emailPreview() {
       let preview =
         "<div style='background-color: #F2F2F2;'>" +
@@ -482,7 +526,21 @@ export default {
     defaultTimeLocation(val) {
       if (val) {
         this.e.TimeLocation = val
+      }
+    },
+    defaultReminderTimeLocation(val) {
+      if (val) {
         this.e.ReminderTimeLocation = val
+      }
+    },
+    defaultSender(val) {
+      if(val) {
+        this.e.Sender = val
+      }
+    },
+    defaultReminderSender(val) {
+      if(val) {
+        this.e.ReminderSender = val
       }
     },
     'e.FeeType'(val) {

@@ -112,6 +112,8 @@ export default {
       if(request.ValidSections) {
         let requested = this.requestType(request).split(", ")
         return requested.filter(r => !request.ValidSections.includes(r) ).join(", ")
+      } else {
+        return ""
       }
     }
   }

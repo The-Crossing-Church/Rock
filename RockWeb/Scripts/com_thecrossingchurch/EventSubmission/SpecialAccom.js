@@ -14,6 +14,11 @@ export default {
   </v-row>
   <v-row>
     <v-col cols="12">
+      <h4 class="accent--text">Tech</h4>
+    </v-col>
+  </v-row>
+  <v-row>
+    <v-col cols="12">
       <v-autocomplete
         label="What tech needs do you have?"
         :items="['Handheld Mic', 'Wrap Around Mic', 'Special Lighting', 'Graphics/Video/Powerpoint', 'Worship Team', 'Stage Set-Up', 'Basic Live Stream ($)', 'Advanced Live Stream ($)', 'Pipe and Drape', 'BOSE System']"
@@ -35,6 +40,11 @@ export default {
     </v-col>
   </v-row>
   <template v-if="!request.needsCatering">
+    <v-row>
+      <v-col cols="12">
+        <h4 class="accent--text">Drinks</h4>
+      </v-col>
+    </v-row>
     <v-row>
       <v-col cols="12" md="6">
         <br />
@@ -79,16 +89,28 @@ export default {
     </v-row>
   </template>
   <v-row>
-    <v-col cols="12" md="6">
-      <v-switch
-        :label="doorLabel"
-        v-model="e.NeedsDoorsUnlocked"
-      ></v-switch>
+    <v-col cols="12">
+      <h4 class="accent--text">Web Calendar</h4>
     </v-col>
+  </v-row>
+  <v-row>
     <v-col cols="12" md="6">
       <v-switch
         :label="calLabel"
         v-model="e.ShowOnCalendar"
+      ></v-switch>
+    </v-col>
+  </v-row>
+  <v-row>
+    <v-col cols="12">
+      <h4 class="accent--text">Set-Up</h4>
+    </v-col>
+  </v-row>
+  <v-row>
+    <v-col cols="12" md="6">
+      <v-switch
+        :label="doorLabel"
+        v-model="e.NeedsDoorsUnlocked"
       ></v-switch>
     </v-col>
   </v-row>

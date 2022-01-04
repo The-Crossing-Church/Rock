@@ -934,12 +934,12 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.ValidSections = []
       }
       this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
-      window["moment-range"].extendMoment(moment);
+      window["moment-range"].extendMoment(moment)
       this.showValidation()
     },
     mounted() {
-      let query = new URLSearchParams(window.location.search);
-      let success = query.get('ShowSuccess');
+      let query = new URLSearchParams(window.location.search)
+      let success = query.get('ShowSuccess')
       if (success) {
         if (success == "true") {
           this.showSuccess = true
@@ -978,7 +978,7 @@ document.addEventListener("DOMContentLoaded", function () {
           eDate = new moment(this.request.SubmittedOn)
         }
         if (this.request.needsPub) {
-          eDate = moment(eDate).add(6, "weeks").add(1, "day");
+          eDate = moment(eDate).add(6, "weeks").add(1, "day")
         } else if (
             this.request.needsChildCare ||
             this.request.ExpectedAttendance > 250
@@ -986,7 +986,7 @@ document.addEventListener("DOMContentLoaded", function () {
           eDate = moment().add(30, "days");
           this.request.EventDates.forEach((itm, i) => {
             if (!moment(itm).isSameOrAfter(moment(eDate).format("yyyy-MM-DD"))) {
-              this.request.EventDates.splice(i, 1);
+              this.request.EventDates.splice(i, 1)
             }
           });
         } else if (
@@ -995,20 +995,20 @@ document.addEventListener("DOMContentLoaded", function () {
           this.request.needsReg ||
           this.request.needsAccom
         ) {
-          eDate = moment(eDate).add(14, "days");
+          eDate = moment(eDate).add(14, "days")
         }
         //Override for Funerals
         if(this.isFuneralRequest) {
           eDate = new moment()
         }
-        return moment(eDate).format("yyyy-MM-DD");
+        return moment(eDate).format("yyyy-MM-DD")
       },
       earliestPubDate() {
         let eDate = new moment();
         if(this.request.Id > 0) {
           eDate = new moment(this.request.SubmittedOn)
         }
-        eDate = moment(eDate).add(21, "days");
+        eDate = moment(eDate).add(21, "days")
         //Override for Funerals
         if(this.isFuneralRequest) {
           eDate = new moment()
@@ -1106,7 +1106,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       currentErrors() {
         let e = this.errors?.filter(err => { return err.page == this.stepper })
-        return e?.length > 0? e[0].errors : []
+        return e?.length > 0 ? e[0].errors : []
       },
       isExistingRequest() {
         let urlParams = new URLSearchParams(window.location.search);

@@ -37,6 +37,7 @@ using System.Threading.Tasks;
 using Rock.Communication;
 using RockWeb.TheCrossing;
 using EventRequest = RockWeb.TheCrossing.EventSubmissionHelper.EventRequest;
+using PartialApprovalChange = RockWeb.TheCrossing.EventSubmissionHelper.PartialApprovalChange;
 using Comment = RockWeb.TheCrossing.EventSubmissionHelper.Comment;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
@@ -191,6 +192,52 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 GetThisWeeksEvents();
 
                 //Send Changes Email
+                string rawChanges = hfChanges.Value;
+                List<PartialApprovalChange> changes = JsonConvert.DeserializeObject<List<PartialApprovalChange>>( hfChanges.Value ).OrderBy( c => c.isApproved ).ToList();
+                string message = "Hello " + item.CreatedByPersonAlias.Person.NickName + ",<br/>";
+                message += "Please see below which modifications have been approved or denied:<br/>";
+                message += "<strong>Approved Modifications</strong><br/>";
+                message += "<ul>";
+                List<PartialApprovalChange> approved = changes.Where( c => c.isApproved ).ToList();
+                for ( int i = 0; i < approved.Count(); i++ )
+                {
+                    message += "<li>" + approved[i].label + "</li>";
+                }
+                message += "</ul>";
+                message += "<strong>Denied Modifications</strong><br/>";
+                List<PartialApprovalChange> denied = changes.Where( c => !c.isApproved ).ToList();
+                message += "<ul>";
+                for ( int i = 0; i < denied.Count(); i++ )
+                {
+                    message += "<li>" + denied[i].label + "</li>";
+                }
+                message += "</ul>";
+                message +=
+                    "<table style='width: 100%;'>" +
+                        "<tr>" +
+                            "<td></td>" +
+                            "<td style='text-align:center;'>" +
+                                "<a href='" + BaseURL + "page/" + UserDashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>View Updated Event</a>" +
+                            "</td>" +
+                            "<td style='text-align:center;'>" +
+                                "<a href='" + BaseURL + "page/" + RequestPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Continue Modifying</a>" +
+                            "</td>" +
+                            "<td></td>" +
+                        "</tr>" +
+                    "</table>";
+
+                var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+                var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+                message = header + message + footer;
+                RockEmailMessage email = new RockEmailMessage();
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( item.CreatedByPersonAlias.Person, new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+                email.Subject = "Some of Your Changes Have Been Approved";
+                email.Message = message;
+                email.FromEmail = "system@thecrossingchurch.com";
+                email.FromName = "The Crossing System";
+                email.CreateCommunicationRecord = true;
+                var output = email.Send();
             }
         }
 
@@ -426,7 +473,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             string message = "Hello " + item.CreatedByPersonName + ",<br/>" +
                 "<p>This comment has been added to your request:</p>" +
                 "<blockquote>" + comment.Message + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + UserDashboardPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + "page/" + UserDashboardPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
             message = header + message + footer;

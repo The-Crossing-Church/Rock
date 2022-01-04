@@ -43,6 +43,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <asp:HiddenField ID="hfApprovedEmail" runat="server" />
 <asp:HiddenField ID="hfDeniedEmail" runat="server" />
 <asp:HiddenField ID="hfComment" runat="server" />
+<asp:HiddenField ID="hfChanges" runat="server" />
 <Rock:BootstrapButton
   ID="btnChangeStatus"
   CssClass="btn-hidden"
@@ -847,10 +848,11 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           console.log(this.selected)
           //Click the button
-          $('[id$="hfRequestID"]').val(this.selected.Id);
-          $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected));
-          $('[id$="btnPartialApproval"]')[0].click();
-          $('#updateProgress').show();
+          $('[id$="hfChanges"]').val(JSON.stringify(this.changes))
+          $('[id$="hfRequestID"]').val(this.selected.Id)
+          $('[id$="hfUpdatedItem"]').val(JSON.stringify(this.selected))
+          $('[id$="btnPartialApproval"]')[0].click()
+          $('#updateProgress').show()
         } 
       },
       ignorePartialApproval() {

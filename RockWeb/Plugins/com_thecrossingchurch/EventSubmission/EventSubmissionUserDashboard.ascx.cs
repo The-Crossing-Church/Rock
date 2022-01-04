@@ -231,7 +231,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             string subject = CurrentPerson.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>" + CurrentPerson.FullName + " has added this comment to their request:</p>" +
                 "<blockquote>" + comment.Message + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + AdminDashboardPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + BaseURL + "page/" + AdminDashboardPageId + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             List<GroupMember> groupMembers = new List<GroupMember>();
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 

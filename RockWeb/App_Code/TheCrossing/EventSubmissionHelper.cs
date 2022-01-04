@@ -209,5 +209,13 @@ namespace RockWeb.TheCrossing
             public DateTime? CreatedOn { get; set; }
             public string Message { get; set; }
         }
+
+        public class PartialApprovalChange
+        {
+            public string label { get; set; }
+            public string field { get; set; }
+            public bool isApproved { get; set; }
+            public int? idx { get; set; }
+        }
     }
 }

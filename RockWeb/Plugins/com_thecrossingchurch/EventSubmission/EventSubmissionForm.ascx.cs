@@ -467,7 +467,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + BaseURL + DashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
+                            "<a href='" + BaseURL + "page/" + DashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -685,7 +685,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + BaseURL + DashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
+                            "<a href='" + BaseURL + "page/" + DashboardPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -746,26 +746,57 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 DateTime sixWeekDate = firstDate.AddDays( -43 );
                 DateTime today = RockDateTime.Now;
                 today = new DateTime( today.Year, today.Month, today.Day, 0, 0, 0 );
+                List<String> unavailableResources = new List<String>();
                 if ( twoWeekDate >= today )
                 {
                     message += "<br/><div><strong>Important Dates for Your Request</strong></div>";
-                    message += "Last Date to Request and Provide All Information for Zoom, Catering, Extra Accommodations, and Registration: <strong>" + twoWeekDate.ToShortDateString() + "</strong><br/>";
+                    message += "Last date to request and provide all information for the following resources is <strong>" + twoWeekDate.ToShortDateString() + "</strong>:";
+                    message += "<ul>" +
+                            "<li>Zoom</li>" +
+                            "<li>Catering</li>" +
+                            "<li>Extra Accommodations</li>" +
+                            "<li>Registration</li>" +
+                        "</ul> <br/>";
                     if ( thirtyDayDate >= today )
                     {
-                        message += "Last Date to Request and Provide All Information for Childcare: <strong>" + thirtyDayDate.ToShortDateString() + "</strong><br/>";
+                        message += "Last date to request and provide all information for the following resources is <strong>" + thirtyDayDate.ToShortDateString() + "</strong>:";
+                        message += "<ul><li>Childcare</li></ul>";
                         if ( sixWeekDate >= today )
                         {
-                            message += "Last Date to Request and Provide All Information for Publicity: <strong>" + sixWeekDate.ToShortDateString() + "</strong>";
+                            message += "Last date to request and provide all information for the following resources is <strong>" + sixWeekDate.ToShortDateString() + "</strong>:";
+                            message += "<ul><li>Publicity</li></ul>";
                         }
                         else
                         {
-                            message += "There is not enough time between now and your first event date to allow for Publicity.";
+                            unavailableResources.Add( "Publicity" );
+                            //message += "There is not enough time between now and your first event date to allow for Publicity.";
                         }
                     }
                     else
                     {
-                        message += "There is not enough time between now and your first event date to allow for Childcare.";
+                        unavailableResources.Add( "Childcare" );
+                        unavailableResources.Add( "Publicity" );
+                        //message += "There is not enough time between now and your first event date to allow for Childcare.";
                     }
+                }
+                else
+                {
+                    unavailableResources.Add( "Zoom" );
+                    unavailableResources.Add( "Catering" );
+                    unavailableResources.Add( "Extra Accommodations" );
+                    unavailableResources.Add( "Registration" );
+                    unavailableResources.Add( "Childcare" );
+                    unavailableResources.Add( "Publicity" );
+                }
+                if ( unavailableResources.Count() > 0 )
+                {
+                    message += "<div>There is not enough time between now and your first event date to allow for the following resources:</div>";
+                    message += "<ul>";
+                    for ( int i = 0; i < unavailableResources.Count(); i++ )
+                    {
+                        message += "<li>" + unavailableResources[i] + "</li>";
+                    }
+                    message += "</ul>";
                 }
             }
             message += "<br/>" +
@@ -774,7 +805,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
                             "<strong>See a mistake? You can modify your request using the link below. If your request was already approved the changes you make will have to be approved as well.</strong><br/><br/><br/>" +
-                            "<a href='" + BaseURL + RequestPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Modify Request</a>" +
+                            "<a href='" + BaseURL + "page/" + RequestPageId + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Modify Request</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -809,7 +840,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             if ( item.AttributeValues["RequestType"].Value != "Room" )
             {
-                message += "<strong>Requested Resources:</strong> " + String.Join(", ", item.AttributeValues["RequestType"].Value.Split(',')) + "<br/><br/>";
+                message += "<strong>Requested Resources:</strong> " + String.Join( ", ", item.AttributeValues["RequestType"].Value.Split( ',' ) ) + "<br/><br/>";
             }
 
             for ( int i = 0; i < request.Events.Count(); i++ )
