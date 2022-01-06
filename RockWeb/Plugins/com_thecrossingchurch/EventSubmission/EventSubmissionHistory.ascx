@@ -23,12 +23,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
   integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
   crossorigin="anonymous"
 ></script>
+<script 
+  src="https://cdnjs.cloudflare.com/ajax/libs/moment-range/4.0.2/moment-range.js" 
+  integrity="sha512-XKgbGNDruQ4Mgxt7026+YZFOqHY6RsLRrnUJ5SVcbWMibG46pPAC97TJBlgs83N/fqPTR0M89SWYOku6fQPgyw==" 
+  crossorigin="anonymous"
+></script>
 
 <asp:HiddenField ID="hfRooms" runat="server" />
 <asp:HiddenField ID="hfDoors" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfBudgetLines" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
+<asp:HiddenField ID="hfDashboardURL" runat="server" />
 
 <div id="app" v-cloak>
   <v-app v-cloak>
@@ -110,7 +116,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
                       {{requestType(item)}}
                     </td>
                     <td>
-                      <event-action :r="item" v-on:calladdbuffer="callAddBuffer" v-on:setapproved="setApproved" v-on:setinprogress="setInProgress"></event-action>
+                      <event-action :r="item"></event-action>
                     </td>
                   </tr>
                 </template>
@@ -273,6 +279,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
             </v-row>
           </v-card-text>
           <v-card-actions>
+            <v-btn color="accent" @click="openInDash">
+              Open in Dashboard
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
@@ -286,6 +295,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 <script type="module">
 import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/EventActions.js';
 import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js';
+import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("event-action", eventActions);
   Vue.component("event-details", eventDetails);
@@ -307,7 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
       iconfont: "mdi",
     }),
     config: {
-        devtools: true,
+      devtools: true,
     },
     data: {
         requests: [],
@@ -316,43 +326,36 @@ document.addEventListener("DOMContentLoaded", function () {
         overlay: false,
         panels: [0],
         rooms: [],
+        doors: [],
         ministries: [],
+        budgetLines: [],
         page: 0,
         rows: 15,
         filters: {
-            query: "",
-            submitter: "",
-            status: [],
-            resources: []
+          query: "",
+          submitter: "",
+          status: [],
+          resources: []
         },
         headers: [
-            { text: "Request", value: "Name" },
-            { text: "Submitted By", value: "CreatedBy" },
-            { text: "Submitted On", value: "CreatedOn" },
-            { text: "Event Dates", value: "EventDates" },
-            { text: "Requested Resources", value: "Id" },
-            { text: "Status", value: "RequestStatus" },
+          { text: "Request", value: "Name" },
+          { text: "Submitted By", value: "CreatedBy" },
+          { text: "Submitted On", value: "CreatedOn" },
+          { text: "Event Dates", value: "EventDates" },
+          { text: "Requested Resources", value: "Id" },
+          { text: "Status", value: "RequestStatus" },
         ]
     },
     created() {
-        this.getRequests();
-        this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
-        this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+      this.getRequests()
+      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+      this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
+      this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value)
+      this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+      window['moment-range'].extendMoment(moment)
     },
     filters: {
-        formatDateTime(val) {
-            return moment(val).format("MM/DD/yyyy hh:mm A");
-        },
-        formatDate(val) {
-            return moment(val).format("MM/DD/yyyy");
-        },
-        formatCurrency(val) {
-            var formatter = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-            });
-            return formatter.format(val);
-        },
+      ...utils.filters
     },
     computed: {
       foodTimeTitle() {
@@ -367,6 +370,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     },
     methods: {
+      ...utils.methods,
       getRequests() {
           let raw = JSON.parse($('[id$="hfRequests"]').val());
           let temp = [];
@@ -418,142 +422,60 @@ document.addEventListener("DOMContentLoaded", function () {
           this.requests = temp
       },
       paginate(val) {
-          if (val == "next") {
-              let total = this.requests.length;
-              if (total / this.rows > this.page) {
-                  this.page++;
-              }
-          } else {
-              if (this.page > 0) {
-                  this.page--;
-              }
+        if (val == "next") {
+          let total = this.requests.length;
+          if (total / this.rows > this.page) {
+            this.page++;
           }
-      },
-      boolToYesNo(val) {
-          if (val) {
-              return "Yes";
+        } else {
+          if (this.page > 0) {
+            this.page--;
           }
-          return "No";
-      },
-      formatDates(val) {
-          if (val) {
-              let dates = [];
-              val.forEach((i) => {
-                  dates.push(moment(i).format("MM/DD/yyyy"));
-              });
-              return dates.join(", ");
-          }
-          return "";
-      },
-      formatRooms(val) {
-          if (val) {
-              let rms = [];
-              val.forEach((i) => {
-                  this.rooms.forEach((r) => {
-                      if (i == r.Id) {
-                          rms.push(r.Value);
-                      }
-                  });
-              });
-              return rms.join(", ");
-          }
-          return "";
-      },
-      formatMinistry(val) {
-          if (val) {
-              let formattedVal = this.ministries.filter(m => {
-                  return m.Id == val
-              })
-              return formattedVal[0].Value
-          }
-          return "";
-      },
-      getClass(idx) {
-          if (idx < this.requests.length - 1) {
-              return "list-with-border";
-          }
-          return "";
-      },
-      getStatusPillClass(status) {
-          if (status == "Approved") {
-              return "no-top-pad status-pill approved";
-          }
-          if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
-              return "no-top-pad status-pill submitted";
-          }
-          if (status == "Cancelled" || status == "Cancelled by User") {
-              return "no-top-pad status-pill cancelled";
-          }
-          if (status == "Denied" || status == "Proposed Changes Denied") {
-              return "no-top-pad status-pill denied";
-          }
-      },
-      requestType(itm) {
-          if (itm) {
-              let resources = [];
-              if (itm.needsSpace) {
-                  resources.push("Room");
-              }
-              if (itm.needsOnline) {
-                  resources.push("Online");
-              }
-              if (itm.needsPub) {
-                  resources.push("Publicity");
-              }
-              if (itm.needsReg) {
-                  resources.push("Registration");
-              }
-              if (itm.needsChildCare) {
-                  resources.push("Childcare");
-              }
-              if (itm.needsCatering) {
-                  resources.push("Catering");
-              }
-              if (itm.needsAccom) {
-                  resources.push("Extra Resources");
-              }
-              return resources.join(", ");
-          }
-          return "";
+        }
       },
       saveFile(idx, type) {
-          var a = document.createElement("a");
-          a.style = "display: none";
-          document.body.appendChild(a);
-          if (type == 'existing') {
-              a.href = this.selected.Events[idx].SetUpImage.data;
-              a.download = this.selected.Events[idx].SetUpImage.name;
-          } else if (type == 'new') {
-              a.href = this.selected.Changes.Events[idx].SetUpImage.data;
-              a.download = this.selected.Changes.Events[idx].SetUpImage.name;
-          }
-          a.click();
+        var a = document.createElement("a")
+        a.style = "display: none"
+        document.body.appendChild(a)
+        if (type == 'existing') {
+            a.href = this.selected.Events[idx].SetUpImage.data
+            a.download = this.selected.Events[idx].SetUpImage.name
+        } else if (type == 'new') {
+          a.href = this.selected.Changes.Events[idx].SetUpImage.data
+          a.download = this.selected.Changes.Events[idx].SetUpImage.name
+        }
+        a.click()
       },
-      callAddBuffer(r) {
-        this.selected = r
-        this.bufferErrMsg = ''
-        this.dialog = true
+      getStatusPillClass(status) {
+        if (status == "Approved") {
+          return "no-top-pad status-pill approved";
+        }
+        if (status == "In Progress") {
+          return "no-top-pad status-pill inprogress";
+        }
+        if (status == "Submitted" || status == "Pending Changes" || status == "Changes Accepted by User") {
+          return "no-top-pad status-pill submitted";
+        }
+        if (status == "Cancelled" || status == "Cancelled by User") {
+          return "no-top-pad status-pill cancelled";
+        }
+        if (status == "Denied" || status == "Proposed Changes Denied") {
+          return "no-top-pad status-pill denied";
+        }
       },
-      setApproved(r) {
-        this.changeStatus('Approved', r.Id)
-      },
-      setInProgress(r) {
-        this.changeStatus('InProgress', r.Id)
-      },
-      changeStatus(status, id) {
-        $('[id$="hfRequestID"]').val(id);
-        $('[id$="hfAction"]').val(status);
-        $('[id$="btnChangeStatus"]')[0].click();
-        $('#updateProgress').show();
-      },
+      openInDash() {
+        let url = $('[id$="hfDashboardURL"]')[0].value
+        url += `?Id=${this.selected.Id}`
+        window.location = url
+      }
     },
     watch: {
-        page(val) {
-            this.filter();
-        },
-        rows(val) {
-            this.filter();
-        },
+      page(val) {
+        this.filter()
+      },
+      rows(val) {
+        this.filter()
+      },
     },
   });
 });

@@ -950,12 +950,12 @@ export default {
             <approval-field :request="selected" :e="e" :idx="idx" field="Doors" :fieldname="formatFieldName('Doors Needed')" :formatter="formatDoors" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.Doors != null ? formatDoors(e.Doors) : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].Doors != null ? formatDoors(selected.Changes.Events[idx].Doors) : 'Empty')}}</span>
+            <span class='red--text'>{{((e.Doors != null && e.Doors.length > 0) ? formatDoors(e.Doors) : 'Empty')}}: </span>
+            <span class='primary--text'>{{((selected.Changes.Events[idx].Doors != null && selected.Changes.Events[idx].Doors.length > 0) ? formatDoors(selected.Changes.Events[idx].Doors) : 'Empty')}}</span>
           </template>
         </template>
         <template v-else>
-          {{formatDoors(e.Doors)}}
+          {{((e.Doors != null && e.Doors.length > 0) ? formatDoors(e.Doors) : 'Empty')}}
         </template>
       </v-col>
     </v-row>

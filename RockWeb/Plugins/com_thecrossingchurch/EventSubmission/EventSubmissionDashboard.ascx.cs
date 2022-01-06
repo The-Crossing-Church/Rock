@@ -279,6 +279,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         break;
                     default:
                         item.SetAttributeValue( "RequestStatus", "Approved" );
+                        string raw = hfUpdatedItem.Value;
+                        item.SetAttributeValue( "RequestJSON", raw );
+                        item.SetAttributeValue( "ProposedChangesJSON", "" );
                         break;
                 }
                 item.SaveAttributeValues( context );

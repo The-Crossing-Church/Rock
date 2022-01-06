@@ -47,6 +47,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
     [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "", 2 )]
     [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 3 )]
+    [LinkedPage( "Dashboard Page", "The Request Dashboard Page", true, "", "", 4 )]
 
     public partial class EventSubmissionHistory : Rock.Web.UI.RockBlock
     {
@@ -90,6 +91,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
             Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+            Guid? DashboardPageGuid = GetAttributeValue( "DashboardPage" ).AsGuidOrNull();
 
             eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
             hfRooms.Value = eventSubmissionHelper.RoomsJSON;
@@ -97,6 +99,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
             hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
             ContentChannelId = eventSubmissionHelper.ContentChannelId;
+            if ( DashboardPageGuid.HasValue )
+            {
+                string pageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
+                hfDashboardURL.Value = "/page/" + pageId;
+            }
 
             GetAllRequests();
             if ( !Page.IsPostBack )

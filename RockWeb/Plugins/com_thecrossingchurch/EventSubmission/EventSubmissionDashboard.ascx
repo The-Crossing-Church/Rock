@@ -499,7 +499,9 @@ document.addEventListener("DOMContentLoaded", function () {
       selectedCount: 0,
       panels: [0],
       rooms: [],
+      doors: [],
       ministries: [],
+      budgetLines: [],
       bufferErrMsg: '',
       fab: false,
       commentDialog: false,
@@ -514,8 +516,10 @@ document.addEventListener("DOMContentLoaded", function () {
     created() {
       this.getRecent();
       this.getCurrent();
-      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+      this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
       this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+      this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value)
       window['moment-range'].extendMoment(moment)
       let query = new URLSearchParams(window.location.search);
       if (query.get('Id')) {
@@ -661,10 +665,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return val
       },
       changeStatus(status, id) {
-        $('[id$="hfRequestID"]').val(id);
-        $('[id$="hfAction"]').val(status);
-        $('[id$="btnChangeStatus"]')[0].click();
-        $('#updateProgress').show();
+        $('[id$="hfRequestID"]').val(id)
+        $('[id$="hfAction"]').val(status)
+        $('[id$="btnChangeStatus"]')[0].click()
+        $('#updateProgress').show()
       },
       callAddBuffer(r) {
         this.selected = r
@@ -672,6 +676,13 @@ document.addEventListener("DOMContentLoaded", function () {
         this.dialog = true
       },
       setApproved(r) {
+        if(r.Changes) {
+          r.Changes.Changes = null
+          $('[id$="hfUpdatedItem"]').val(JSON.stringify(r.Changes))
+        } else {
+          r.Changes = null
+          $('[id$="hfUpdatedItem"]').val(JSON.stringify(r))
+        }
         this.changeStatus('Approved', r.Id)
       },
       setInProgress(r) {
