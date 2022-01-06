@@ -18,6 +18,8 @@ namespace RockWeb.TheCrossing
         #region variables
         public List<DefinedValue> Rooms { get; set; }
         public string RoomsJSON { get; set; }
+        public List<DefinedValue> Doors { get; set; }
+        public string DoorsJSON { get; set; }
         public List<DefinedValue> Ministries { get; set; }
         public string MinistriesJSON { get; set; }
         public List<DefinedValue> BudgetLines { get; set; }
@@ -36,7 +38,10 @@ namespace RockWeb.TheCrossing
                 int RoomDefinedTypeId = new DefinedTypeService( context ).Get( RoomDefinedTypeGuid.Value ).Id;
                 Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == RoomDefinedTypeId ).ToList();
                 Rooms.LoadAttributes();
+                Doors = Rooms.Where( dv => dv.AttributeValues.FirstOrDefault( av => av.Key == "IsDoor" ).Value.Value.AsBoolean() == true ).ToList();
+                Rooms = Rooms.Where( dv => dv.AttributeValues.FirstOrDefault( av => av.Key == "IsDoor" ).Value.Value.AsBoolean() == false ).ToList();
                 RoomsJSON = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
+                DoorsJSON = JsonConvert.SerializeObject( Doors.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, IsActive = dv.IsActive } ) );
             }
 
             if ( MinistryDefinedTypeGuid.HasValue )
@@ -202,6 +207,7 @@ namespace RockWeb.TheCrossing
             public string TechDescription { get; set; }
             public string SetUp { get; set; }
             public bool? NeedsDoorsUnlocked { get; set; }
+            public List<string> Doors { get; set; }
         }
         public class Comment
         {
