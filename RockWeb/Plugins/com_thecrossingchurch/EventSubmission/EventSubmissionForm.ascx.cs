@@ -884,6 +884,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         message += "<strong>Number of Rectangular Tables:</strong> " + request.Events[i].NumTablesRect + "<br/>";
                         message += "<strong>Number of Chairs Per Rectangular Table:</strong> " + request.Events[i].NumChairsRect + "<br/>";
                     }
+                    if ( request.Events[i].TableType.Count() > 0 && request.Events[i].NeedsTableCloths.HasValue )
+                    {
+                        message += "<strong>Needs Table Cloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
+                    }
                     if ( item.AttributeValues["RequestType"].Value != "Room" )
                     {
                         message += "<strong>Needs In-Person Check-in:</strong> " + ( request.Events[i].Checkin.Value == true ? "Yes" : "No" ) + "<br/>";
@@ -905,6 +909,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Food Set-Up Time:</strong> " + request.Events[i].FoodTime + "<br/>";
                         message += "<strong>Food Set-Up Location:</strong> " + request.Events[i].FoodDropOff + "<br/>";
+                        if ( request.Events[i].TableType.Count() == 0 && request.Events[i].NeedsTableCloths.HasValue )
+                        {
+                            message += "<strong>Needs Table Cloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
+                        }
                     }
                     else
                     {

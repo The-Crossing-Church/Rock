@@ -759,6 +759,7 @@ document.addEventListener("DOMContentLoaded", function () {
             TableType: [],
             NumChairsRound: null,
             NumChairsRect: null,
+            NeedsTableCloths: false,
             Checkin: false,
             SupportTeam: false,
             EventURL: "",

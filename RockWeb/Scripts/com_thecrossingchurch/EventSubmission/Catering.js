@@ -1,3 +1,4 @@
+import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js';
 export default {
   template: `
     <v-form ref="cateringForm" v-model="valid">
@@ -149,6 +150,14 @@ export default {
               ></v-text-field>
             </v-col>
           </v-row>
+        </v-col>
+      </v-row>
+      <v-row v-if=" e.TableType && e.TableType.length == 0">
+        <v-col cols="12" md="6">
+          <v-switch
+            :label="tableClothLabel"
+            v-model="e.NeedsTableCloths"
+          ></v-switch>
         </v-col>
       </v-row>
       <v-row v-else>
@@ -335,8 +344,12 @@ export default {
       }
       return null;
     },
+    tableClothLabel() {
+      return `Would you like table cloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
+    }
   },
   methods: {
+    ...utils.methods,
     prefillSection() {
       this.dialog = false
       let idx = this.request.EventDates.indexOf(this.prefillDate)

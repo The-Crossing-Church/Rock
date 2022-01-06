@@ -40,7 +40,7 @@ namespace RockWeb.TheCrossing
                 Rooms.LoadAttributes();
                 Doors = Rooms.Where( dv => dv.AttributeValues.FirstOrDefault( av => av.Key == "IsDoor" ).Value.Value.AsBoolean() == true ).ToList();
                 Rooms = Rooms.Where( dv => dv.AttributeValues.FirstOrDefault( av => av.Key == "IsDoor" ).Value.Value.AsBoolean() == false ).ToList();
-                RoomsJSON = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
+                RoomsJSON = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive, SetUp = dv.AttributeValues.FirstOrDefault( av => av.Key == "StandardSetUp" ).Value.Value } ) );
                 DoorsJSON = JsonConvert.SerializeObject( Doors.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, IsActive = dv.IsActive } ) );
             }
 
@@ -162,6 +162,7 @@ namespace RockWeb.TheCrossing
             public int? NumTablesRect { get; set; }
             public int? NumChairsRound { get; set; }
             public int? NumChairsRect { get; set; }
+            public bool? NeedsTableCloths { get; set; }
             public bool? Checkin { get; set; }
             public bool? SupportTeam { get; set; }
             public string EventURL { get; set; }
