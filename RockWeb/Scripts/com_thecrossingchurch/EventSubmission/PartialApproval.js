@@ -5,8 +5,13 @@ export default {
     <v-card>
       <v-card-title>
         <template v-if="request.Changes != null && request.Name != request.Changes.Name">
-          <span class='red--text'>{{request.Name}}: </span>
-          <span class='primary--text'>{{request.Changes.Name}}</span>
+          <template v-if="approvalmode">
+            <approval-field :request="request" :e="null" :idx="null" field="Name" fieldname="Event Name" v-on:approvechange="approveChange" v-on:denychange="denyChange"></approval-field>
+          </template>
+          <template v-else>
+            <span class='red--text'>{{request.Name}}: </span>
+            <span class='primary--text'>{{request.Changes.Name}}</span>
+          </template>
         </template>
         <template v-else>
           {{request.Name}}

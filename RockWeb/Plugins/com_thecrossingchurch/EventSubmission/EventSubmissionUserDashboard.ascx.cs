@@ -75,6 +75,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private string AdminDashboardPageId { get; set; }
         private int UserActionWorkflowId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
+        private List<DefinedValue> Doors { get; set; }
         private List<DefinedValue> Ministries { get; set; }
         private List<DefinedValue> BudgetLines { get; set; }
         private Rock.Model.Group RoomOnlySR { get; set; }
@@ -117,6 +118,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
             hfRooms.Value = eventSubmissionHelper.RoomsJSON;
+            hfDoors.Value = eventSubmissionHelper.DoorsJSON;
             hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
             hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
             ContentChannelId = eventSubmissionHelper.ContentChannelId;

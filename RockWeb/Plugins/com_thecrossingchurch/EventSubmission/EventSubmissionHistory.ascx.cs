@@ -93,6 +93,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
             hfRooms.Value = eventSubmissionHelper.RoomsJSON;
+            hfDoors.Value = eventSubmissionHelper.DoorsJSON;
             hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
             hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
             ContentChannelId = eventSubmissionHelper.ContentChannelId;

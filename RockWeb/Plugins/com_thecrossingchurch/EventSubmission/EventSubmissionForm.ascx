@@ -29,6 +29,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 ></script>
 
 <asp:HiddenField ID="hfRooms" runat="server" />
+<asp:HiddenField ID="hfDoors" runat="server" />
 <asp:HiddenField ID="hfMinistries" runat="server" />
 <asp:HiddenField ID="hfBudgetLines" runat="server" />
 <asp:HiddenField ID="hfReservations" runat="server" />
@@ -827,6 +828,7 @@ document.addEventListener("DOMContentLoaded", function () {
       originalRequest: {},
       existingRequests: [],
       rooms: [],
+      doors: [],
       ministries: [],
       rules: {
         required(val, field) {
@@ -902,7 +904,8 @@ document.addEventListener("DOMContentLoaded", function () {
       saveDialog: false
     },
     created() {
-      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+      this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
       this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
       let isAd = $('[id$="hfIsAdmin"]')[0].value;
       if (isAd == 'True') {
@@ -1376,6 +1379,7 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Events[indexes.currIdx].SetUp = this.request.Events[indexes.targetIdx].SetUp
         this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
         this.request.Events[indexes.currIdx].NeedsDoorsUnlocked = this.request.Events[indexes.targetIdx].NeedsDoorsUnlocked
+        this.request.Events[indexes.currIdx].Doors = this.request.Events[indexes.targetIdx].Doors
       },
       updateZoom(indexes) {
         this.request.Events[indexes.currIdx].EventURL = this.request.Events[indexes.targetIdx].EventURL

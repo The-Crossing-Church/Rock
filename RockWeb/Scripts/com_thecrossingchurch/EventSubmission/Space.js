@@ -63,7 +63,7 @@ export default {
     </v-autocomplete>
   </v-col>
 </v-row>
-<v-row v-if="canRequestTables && !request.needsAccom">
+<v-row v-if="canRequestTables">
   <v-col cols="12" md="6">
     <v-select
       label="What kinds of tables would you like?"
@@ -73,8 +73,16 @@ export default {
       v-model="e.TableType"
     ></v-select>
   </v-col>
+  <v-col cols="12" md="6" v-if="!request.needsAccom && isSuperUser && canRequestSpecialAccom">
+    <v-switch
+      label="I need table cloths or extensive set-up!"
+      hint="Did you forget to toggle Special Accommodations? Click here to add it."
+      persistent-hint
+      v-model="request.needsAccom"
+    ></v-switch>
+  </v-col>
 </v-row>
-<v-row v-if="canRequestTables && !request.needsAccom && e.TableType.includes('Round')">
+<v-row v-if="canRequestTables && e.TableType.includes('Round')">
   <v-col>
     <v-text-field
       label="How many round tables do you need?"
@@ -92,7 +100,7 @@ export default {
     ></v-text-field>
   </v-col>
 </v-row>
-<v-row v-if="canRequestTables && !request.needsAccom && e.TableType.includes('Rectangular')">
+<v-row v-if="canRequestTables && e.TableType.includes('Rectangular')">
   <v-col>
     <v-text-field
       label="How many rectangular tables do you need?"
@@ -175,6 +183,7 @@ export default {
           rooms: [],
           prefillDate: '',
           searchInput: '',
+          isSuperUser: false,
           rules: {
               required(val, field) {
                 return !!val || `${field} is required`;
@@ -222,13 +231,17 @@ export default {
       }
   },
   created: function () {
-      this.allEvents = [];
-      this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+    this.allEvents = []
+    this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+    let isSU = $('[id$="hfIsSuperUser"]')[0].value
+    if(isSU == 'True') {
+      this.isSuperUser = true
+    }
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy")
+    },
   },
   computed: {
       attHint() {
@@ -340,25 +353,38 @@ export default {
               l.locations.forEach(i => {
                   arr.push((i))
               })
-              // arr.push({ divider: true })
           })
-          arr.splice(arr.length - 1, 1)
           return arr
       },
       CheckinLabel() {
-          return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+        return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
       },
       canRequestTables() {
-          let dates = this.request.EventDates.map(d => moment(d))
-          let minDate = moment.min(dates)
-          let oneWeek = moment(new Date()).add(7, 'days')
-          if (!this.request.IsSame || this.request.Events.length > 1) {
-              minDate = moment(this.e.EventDate)
-          }
-          if (oneWeek.isAfter(minDate)) {
-              return false
-          }
+        if(this.request.Id > 0 && this.request.Status != 'Draft' && this.e.TableType ) {
           return true
+        }
+        let dates = this.request.EventDates.map(d => moment(d))
+        let minDate = moment.min(dates)
+        let oneWeek = moment(new Date()).add(7, 'days')
+        if (!this.request.IsSame || this.request.Events.length > 1) {
+          minDate = moment(this.e.EventDate)
+        }
+        if (oneWeek.isAfter(minDate)) {
+          return false
+        }
+        return true
+      },
+      canRequestSpecialAccom() {
+        let dates = this.request.EventDates.map(d => moment(d))
+        let minDate = moment.min(dates)
+        let twoWeeks = moment(new Date()).add(14, 'days')
+        if (!this.request.IsSame || this.request.Events.length > 1) {
+          minDate = moment(this.e.EventDate)
+        }
+        if (twoWeeks.isAfter(minDate)) {
+          return false
+        }
+        return true
       }
   },
   watch: {

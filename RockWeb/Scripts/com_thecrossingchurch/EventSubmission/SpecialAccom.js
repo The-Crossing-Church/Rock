@@ -111,7 +111,38 @@ export default {
       <v-switch
         :label="doorLabel"
         v-model="e.NeedsDoorsUnlocked"
+        :hint="doorHint"
+        persistent-hint
       ></v-switch>
+    </v-col>
+    <v-col cols="12" md="6" v-if="e.NeedsDoorsUnlocked">
+      <v-autocomplete
+        label="What doors would you like unlocked?"
+        :items="groupedDoors"
+        v-model="e.Doors"
+        item-text="Value"
+        item-value="Id"
+        prepend-inner-icon="mdi-map"
+        @click:prepend-inner="openMap"
+        multiple
+        clearable
+      >
+        <template v-slot:item="data">
+          <template v-if="data.item.IsHeader">
+            <v-list-item-content class="accent--text text-subtitle-2">{{data.item.Value}}</v-list-item-content>
+          </template>
+          <template v-else>
+            <v-list-item v-bind="data.attrs" v-on="data.on">
+              <v-list-item-action style="margin: 0px; margin-right: 32px;">
+                <v-checkbox :value="data.attrs.inputValue" @change="data.parent.$emit('select')" :disabled="data.item.IsDisabled" v-model="data.attrs.inputValue"></v-checkbox>
+              </v-list-item-action>
+              <v-list-item-content>
+                <v-list-item-title>{{data.item.Value}}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </template>
+        </template>
+      </v-autocomplete>
     </v-col>
   </v-row>
   <v-row v-if="e.ShowOnCalendar">
@@ -173,6 +204,17 @@ export default {
       </v-card-actions>  
     </v-card>
   </v-dialog>
+  <v-dialog
+    v-if="map"
+    v-model="map"
+    max-width="85%"
+  >
+    <v-card>
+      <v-card-text>
+        <v-img src="https://rock.thecrossingchurch.com/Content/Operations/Campus%20Map.png"/>  
+      </v-card-text>  
+    </v-card>
+  </v-dialog>
 </v-form>
 `,
   props: ["e", "request"],
@@ -182,6 +224,7 @@ export default {
       valid: true,
       prefillDate: '',
       setupImage: {},
+      map: false,
       rules: {
         required(val, field) {
           return !!val || `${field} is required`;
@@ -200,13 +243,15 @@ export default {
             return true;
           }
         },
-      }
+      },
+      doors: []
     }
   },
   created: function () {
     if (this.e.SetUpImage) {
       this.setupImage = this.e.SetUpImage;
     }
+    this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
   },
   filters: {
     formatDate(val) {
@@ -226,6 +271,13 @@ export default {
     doorLabel() {
       return `Will you need doors unlocked for this event? (${this.boolToYesNo(this.e.NeedsDoorsUnlocked)})`
     },
+    doorHint(){
+      if(this.e.NeedsDoorsUnlocked) {
+        return ''
+      } else {
+        return 'You and your guests will need to enter through the Main Office Doors and/or use your staff fob for building access'
+      }
+    },
     drinkHint() {
       return ''
       // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
@@ -236,6 +288,51 @@ export default {
         return time.subtract(30, "minutes").format("hh:mm A");
       }
       return null;
+    },
+    groupedDoors() {
+      let loc = []
+      this.doors.forEach(l => {
+        let idx = -1
+        loc.forEach((i, x) => {
+          if (i.Type == l.Type) {
+            idx = x
+          }
+        })
+        l.IsHeader = false
+        if (idx > -1) {
+          loc[idx].locations.push(l)
+        } else {
+          loc.push({ Type: l.Type, locations: [l] })
+        }
+      })
+      loc.forEach(l => {
+        l.locations = l.locations.sort((a, b) => {
+          if (a.Value < b.Value) {
+            return -1
+          } else if (a.Value > b.Value) {
+            return 1
+          } else {
+            return 0
+          }
+        })
+      })
+      loc = loc.sort((a, b) => {
+        if (a.Type < b.Type) {
+          return -1
+        } else if (a.Type > b.Type) {
+          return 1
+        } else {
+          return 0
+        }
+      })
+      let arr = []
+      loc.forEach(l => {
+        arr.push({ Value: l.Type, IsHeader: true})
+        l.locations.forEach(i => {
+          arr.push((i))
+        })
+      })
+      return arr
     },
   },
   methods: {
@@ -262,5 +359,8 @@ export default {
       }
       return "No";
     },
+    openMap() {
+      this.map = true
+    }
   }
 }

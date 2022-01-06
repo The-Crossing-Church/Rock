@@ -45,6 +45,20 @@ export default {
       }
       return "";
     },
+    formatDoors(val) {
+      if (val) {
+        let drs = [];
+        val.forEach((i) => {
+          this.doors.forEach((r) => {
+            if (i == r.Id) {
+              drs.push(r.Value);
+            }
+          });
+        });
+        return drs.join(", ");
+      }
+      return "";
+    },
     formatMinistry(val) {
       if (val) {
         let formattedVal = this.ministries.filter(m => {

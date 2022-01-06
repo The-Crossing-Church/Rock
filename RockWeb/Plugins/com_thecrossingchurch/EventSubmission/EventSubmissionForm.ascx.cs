@@ -73,6 +73,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private int ContentChannelId { get; set; }
         private int ContentChannelTypeId { get; set; }
         private List<DefinedValue> Rooms { get; set; }
+        private List<DefinedValue> Doors { get; set; }
         private List<DefinedValue> Ministries { get; set; }
         private List<DefinedValue> BudgetLines { get; set; }
         private Rock.Model.Group RoomOnlySR { get; set; }
@@ -119,6 +120,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
             hfRooms.Value = eventSubmissionHelper.RoomsJSON;
             Rooms = eventSubmissionHelper.Rooms;
+            hfDoors.Value = eventSubmissionHelper.DoorsJSON;
+            Doors = eventSubmissionHelper.Doors;
             hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
             Ministries = eventSubmissionHelper.Ministries;
             hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
@@ -1061,6 +1064,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
                     message += "<br/><strong style='color: #6485b3;'>Door Information</strong><br/>";
                     message += "<strong>Needs Doors Unlocked:</strong> " + ( request.Events[i].NeedsDoorsUnlocked == true ? "Yes" : "No" ) + "<br/>";
+                    if ( request.Events[i].NeedsDoorsUnlocked == true )
+                    {
+                        message += "<strong>Doors Needed:</strong> " + String.Join( ", ", Doors.Where( dv => request.Events[i].Doors.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
+                    }
 
                     message += "<br/><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
                     message += "<strong>Add to Public Calendar:</strong> " + ( request.Events[i].ShowOnCalendar == true ? "Yes" : "No" ) + "<br/>";

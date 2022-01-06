@@ -909,6 +909,23 @@ export default {
           {{boolToYesNo(e.NeedsDoorsUnlocked)}}
         </template>
       </v-col>
+      <v-col v-if="e.NeedsDoorsUnlocked || (selected.Changes != null && selected.Changes.Events[idx].NeedsDoorsUnlocked)">
+        <div class="floating-title">Doors Needed</div>
+        <template v-if="selected.Changes != null && formatDoors(e.Doors) != formatDoors(selected.Changes.Events[idx].Doors)">
+          <template v-if="approvalmode">
+            <approval-field :request="selected" :e="e" :idx="idx" field="Doors" :fieldname="formatFieldName('Doors Needed')" :formatter="formatDoors" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+          </template>
+          <template v-else>
+            <span class='red--text'>{{(e.Doors != null ? formatDoors(e.Doors) : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.Events[idx].Doors != null ? formatDoors(selected.Changes.Events[idx].Doors) : 'Empty')}}</span>
+          </template>
+        </template>
+        <template v-else>
+          {{formatDoors(e.Doors)}}
+        </template>
+      </v-col>
+    </v-row>
+    <v-row>
       <v-col>
         <div class="floating-title">Add to public calendar</div>
         <template v-if="selected.Changes != null && e.ShowOnCalendar != selected.Changes.Events[idx].ShowOnCalendar">
@@ -1000,6 +1017,7 @@ export default {
   data: function () {
     return {
       rooms: [],
+      doors: [],
       ministries: [],
       budgetLines: [],
       setUpImageChoiceMade: false,
@@ -1008,6 +1026,7 @@ export default {
   },
   created: function () {
     this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
+    this.doors = JSON.parse($('[id$="hfDoors"]')[0].value);
     this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
     this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value)
     window['moment-range'].extendMoment(moment)
