@@ -388,6 +388,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             items.LoadAttributes();
             items = items.Where( i =>
             {
+                string status = i.AttributeValues["RequestStatus"].Value;
+                //Don't include events that aren't already on the calendar
+                if ( status == "Draft" || status == "Submitted" || status.Contains( "Cancelled" ) || status == "Denied" )
+                {
+                    return false;
+                }
                 var dateStr = i.AttributeValues["EventDates"];
                 var dates = dateStr.Value.Split( ',' );
                 foreach ( var d in dates )

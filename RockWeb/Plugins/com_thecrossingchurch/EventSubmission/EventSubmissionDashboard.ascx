@@ -748,8 +748,8 @@ document.addEventListener("DOMContentLoaded", function () {
         } 
         r.Changes = null
         this.selected = r
+        $('[id$="hfUpdatedItem"]').val(JSON.stringify(r))
         if(!this.checkHasConflicts()) {
-          $('[id$="hfUpdatedItem"]').val(JSON.stringify(r))
           this.changeStatus('Approved', r.Id)
         } else {
           this.approvalErrorDialog = true
