@@ -145,7 +145,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   :class="getClass(idx)"
                 >
                   <v-row align="center">
-                    <v-col @click="selected = r; overlay = true;"
+                    <v-col @click="selected = r; overlay = true; conflictingRequests = []; checkHasConflicts();"
                       ><div class="hover">{{ r.Name }}</div></v-col
                     >
                     <v-col>{{ r.CreatedBy }}</v-col>
@@ -317,6 +317,18 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                 <div v-html="nonTransferable(selected.HistoricData)"></div>
               </v-col>
             </v-row>
+            <v-row v-if="conflictingRequests.length > 0">
+              <v-col>
+                <strong>Conflicting Requests</strong>
+                <v-list dense>
+                  <v-list-item v-for="r in conflictingRequests" :idx="r.Id">
+                    <v-list-item-content>
+                      <a :href="`${currentPath}?Id=${r.Id}`">{{(JSON.parse(r.Value).Name)}}</a>
+                    </v-list-item-content>
+                  </v-list-item>
+                </v-list>
+              </v-col>
+            </v-row>
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="editRequest">
@@ -325,7 +337,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <v-btn
               v-if="selected.RequestStatus != 'Approved'"
               color="accent"
-              @click="changeStatus('Approved', selected.Id)"
+              @click="setApproved(selected)"
             >
               <v-icon>mdi-check</v-icon> Approve
             </v-btn>
@@ -451,6 +463,54 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
       >
         <partial-approval ref="partialApproval" :request="selected" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:complete="sendPartialApproval" v-on:cancel="ignorePartialApproval" v-on:newchange="increaseChangeCount" v-on:newchoice="increaseSelectionCount" ></partial-approval>
       </v-dialog>
+      <v-dialog
+        v-if="approvalErrorDialog"
+        v-model="approvalErrorDialog"
+        max-width="85%"
+        style="margin-top: 100px !important; max-height: 80vh;"
+      >
+        <v-card>
+          <v-card-title>Error Approving Request</v-card-title>
+          <v-card-text>
+            <v-row>
+              <v-col>
+                <v-list dense>
+                  <v-list-item>
+                    <v-list-item-content>
+                      <strong>Conflicts</strong> 
+                    </v-list-item-content>
+                  </v-list-item>
+                  <v-list-item v-for="(m, idx) in conflictingMessage" :key="idx">
+                    <v-list-item-content>
+                      {{m}}
+                    </v-list-item-content>
+                  </v-list-item>
+                </v-list>
+              </v-col> 
+              <v-col>
+                <v-list dense>
+                  <v-list-item>
+                    <v-list-item-content>
+                      <strong>Conflicting Requests</strong> 
+                    </v-list-item-content>
+                  </v-list-item>
+                  <v-list-item v-for="(r, idx) in conflictingRequests" :key="idx">
+                    <v-list-item-content>
+                      <a :href="`${currentPath}?Id=${r.Id}`">{{(JSON.parse(r.Value).Name)}}</a>
+                    </v-list-item-content>
+                  </v-list-item>
+                </v-list>
+              </v-col> 
+            </v-row> 
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="accent" @click="changeStatus('Approved', selected.Id)">
+              Approve Anyways
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
@@ -494,6 +554,7 @@ document.addEventListener("DOMContentLoaded", function () {
       overlay: false,
       dialog: false,
       approvalDialog: false,
+      approvalErrorDialog: false,
       changes: [],
       changeCount: 0,
       selectedCount: 0,
@@ -512,6 +573,8 @@ document.addEventListener("DOMContentLoaded", function () {
         status: [],
         resources: []
       },
+      conflictingMessage: '',
+      conflictingRequests: []
     },
     created() {
       this.getRecent();
@@ -528,6 +591,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return i
           }
         })[0]
+        this.checkHasConflicts()
         this.overlay = true
       }
     },
@@ -580,6 +644,9 @@ document.addEventListener("DOMContentLoaded", function () {
           return o.Events.length > 0;
         })
       },
+      currentPath() {
+        return window.location.pathname
+      }
     },
     methods: {
       ...utils.methods, 
@@ -677,13 +744,16 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       setApproved(r) {
         if(r.Changes) {
-          r.Changes.Changes = null
-          $('[id$="hfUpdatedItem"]').val(JSON.stringify(r.Changes))
-        } else {
-          r.Changes = null
+          r = r.Changes
+        } 
+        r.Changes = null
+        this.selected = r
+        if(!this.checkHasConflicts()) {
           $('[id$="hfUpdatedItem"]').val(JSON.stringify(r))
+          this.changeStatus('Approved', r.Id)
+        } else {
+          this.approvalErrorDialog = true
         }
-        this.changeStatus('Approved', r.Id)
       },
       setInProgress(r) {
         this.changeStatus('InProgress', r.Id)
@@ -748,8 +818,8 @@ document.addEventListener("DOMContentLoaded", function () {
         this.existingRequests = JSON.parse(
           $('[id$="hfUpcomingRequests"]')[0].value
         );
-        let conflictingMessage = []
-        let conflictingRequests = this.existingRequests.filter((r) => {
+        this.conflictingMessage = []
+        this.conflictingRequests = this.existingRequests.filter((r) => {
           if (r.Id == this.selected.Id) {
             return false
           }
@@ -808,15 +878,16 @@ document.addEventListener("DOMContentLoaded", function () {
                       }
                       roomNames.push(roomName)
                     })
-                    conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                    this.conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
                   }
                 }
               }
             }
           }
           return conflicts
-        });
-        if (conflictingRequests.length > 0) {
+        })
+        
+        if (this.conflictingRequests.length > 0) {
           return true
         } else {
           return false

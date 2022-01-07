@@ -414,7 +414,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             var reqs = items.Select( i => new FullRequest() { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, Request = JsonConvert.DeserializeObject<EventRequest>( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value ), HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } );
             var current = reqs.Where( r =>
             {
-                if ( r.RequestStatus != "Approved" )
+                if ( r.RequestStatus != "Approved" || r.Request == null )
                 {
                     return false;
                 }
