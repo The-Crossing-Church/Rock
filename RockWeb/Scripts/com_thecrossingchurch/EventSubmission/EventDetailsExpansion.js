@@ -927,123 +927,125 @@ export default {
         </v-col>
       </v-row>
     </template>
-    <v-row>
-      <v-col>
-        <div class="floating-title">Needs doors unlocked</div>
-        <template v-if="selected.Changes != null && e.NeedsDoorsUnlocked != selected.Changes.Events[idx].NeedsDoorsUnlocked">
-          <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsDoorsUnlocked" :fieldname="formatFieldName('Needs doors unlocked')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+    <template v-if="isSuperUser">
+      <v-row>
+        <v-col>
+          <div class="floating-title">Needs doors unlocked</div>
+          <template v-if="selected.Changes != null && e.NeedsDoorsUnlocked != selected.Changes.Events[idx].NeedsDoorsUnlocked">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="NeedsDoorsUnlocked" :fieldname="formatFieldName('Needs doors unlocked')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.NeedsDoorsUnlocked != null ? boolToYesNo(e.NeedsDoorsUnlocked) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsDoorsUnlocked != null ? boolToYesNo(selected.Changes.Events[idx].NeedsDoorsUnlocked) : 'Empty')}}</span>
+            </template>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.NeedsDoorsUnlocked != null ? boolToYesNo(e.NeedsDoorsUnlocked) : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsDoorsUnlocked != null ? boolToYesNo(selected.Changes.Events[idx].NeedsDoorsUnlocked) : 'Empty')}}</span>
+            {{boolToYesNo(e.NeedsDoorsUnlocked)}}
           </template>
-        </template>
-        <template v-else>
-          {{boolToYesNo(e.NeedsDoorsUnlocked)}}
-        </template>
-      </v-col>
-      <v-col v-if="e.NeedsDoorsUnlocked || (selected.Changes != null && selected.Changes.Events[idx].NeedsDoorsUnlocked)">
-        <div class="floating-title">Doors Needed</div>
-        <template v-if="selected.Changes != null && formatDoors(e.Doors) != formatDoors(selected.Changes.Events[idx].Doors)">
-          <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="Doors" :fieldname="formatFieldName('Doors Needed')" :formatter="formatDoors" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
-          </template>
-          <template v-else>
-            <span class='red--text'>{{((e.Doors != null && e.Doors.length > 0) ? formatDoors(e.Doors) : 'Empty')}}: </span>
-            <span class='primary--text'>{{((selected.Changes.Events[idx].Doors != null && selected.Changes.Events[idx].Doors.length > 0) ? formatDoors(selected.Changes.Events[idx].Doors) : 'Empty')}}</span>
-          </template>
-        </template>
-        <template v-else>
-          {{((e.Doors != null && e.Doors.length > 0) ? formatDoors(e.Doors) : 'Empty')}}
-        </template>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <div class="floating-title">Add to public calendar</div>
-        <template v-if="selected.Changes != null && e.ShowOnCalendar != selected.Changes.Events[idx].ShowOnCalendar">
-          <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="ShowOnCalendar" :fieldname="formatFieldName('Add to public calendar')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+        </v-col>
+        <v-col v-if="e.NeedsDoorsUnlocked || (selected.Changes != null && selected.Changes.Events[idx].NeedsDoorsUnlocked)">
+          <div class="floating-title">Doors Needed</div>
+          <template v-if="selected.Changes != null && formatDoors(e.Doors) != formatDoors(selected.Changes.Events[idx].Doors)">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="Doors" :fieldname="formatFieldName('Doors Needed')" :formatter="formatDoors" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{((e.Doors != null && e.Doors.length > 0) ? formatDoors(e.Doors) : 'Empty')}}: </span>
+              <span class='primary--text'>{{((selected.Changes.Events[idx].Doors != null && selected.Changes.Events[idx].Doors.length > 0) ? formatDoors(selected.Changes.Events[idx].Doors) : 'Empty')}}</span>
+            </template>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.ShowOnCalendar != null ? boolToYesNo(e.ShowOnCalendar) : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].ShowOnCalendar != null ? boolToYesNo(selected.Changes.Events[idx].ShowOnCalendar) : 'Empty')}}</span>
+            {{((e.Doors != null && e.Doors.length > 0) ? formatDoors(e.Doors) : 'Empty')}}
           </template>
-        </template>
-        <template v-else>
-          {{boolToYesNo(e.ShowOnCalendar)}}
-        </template>
-      </v-col>
-    </v-row>
-    <v-row v-if="(e.ShowOnCalendar || (selected.Changes && selected.Changes.Events[idx].ShowOnCalendar)) && (e.PublicityBlurb || (selected.Changes && selected.Changes.Events[idx].PublicityBlurb))">
-      <v-col>
-        <div class="floating-title">Web Calendar Blurb</div>
-        <template v-if="selected.Changes != null && e.PublicityBlurb != selected.Changes.Events[idx].PublicityBlurb">
-          <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="PublicityBlurb" :fieldname="formatFieldName('Web Calendar Blurb')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
-          </template>
-          <template v-else>
-            <span class='red--text'>{{(e.PublicityBlurb ? e.PublicityBlurb : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].PublicityBlurb ? selected.Changes.Events[idx].PublicityBlurb : 'Empty')}}</span>
-          </template>
-        </template>
-        <template v-else>
-          {{e.PublicityBlurb}}
-        </template>
-      </v-col>
-    </v-row>
-    <v-row v-if="e.SetUp || (selected.Changes && selected.Changes.Events[idx].SetUp)">
-      <v-col>
-        <div class="floating-title">Requested Set-up</div>
-        <template v-if="selected.Changes != null && e.SetUp != selected.Changes.Events[idx].SetUp">
-          <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="SetUp" :fieldname="formatFieldName('Requested Set-up')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <div class="floating-title">Add to public calendar</div>
+          <template v-if="selected.Changes != null && e.ShowOnCalendar != selected.Changes.Events[idx].ShowOnCalendar">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="ShowOnCalendar" :fieldname="formatFieldName('Add to public calendar')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.ShowOnCalendar != null ? boolToYesNo(e.ShowOnCalendar) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].ShowOnCalendar != null ? boolToYesNo(selected.Changes.Events[idx].ShowOnCalendar) : 'Empty')}}</span>
+            </template>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.SetUp ? e.SetUp : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].SetUp ? selected.Changes.Events[idx].SetUp : 'Empty')}}</span>
+            {{boolToYesNo(e.ShowOnCalendar)}}
           </template>
-        </template>
-        <template v-else>
-          {{e.SetUp}}
-        </template>
-      </v-col>
-    </v-row>
-    <v-row v-if="e.SetUpImage || (selected.Changes && selected.Changes.Events[idx].SetUpImage)">
-      <v-col>
-        <div class="floating-title">Set-up Image</div>
-        <template  v-if="e.SetUpImage">
-          <span class='red--text'>{{e.SetUpImage.name}}</span>
-          <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
-            <v-icon color="accent">mdi-download</v-icon>
+        </v-col>
+      </v-row>
+      <v-row v-if="(e.ShowOnCalendar || (selected.Changes && selected.Changes.Events[idx].ShowOnCalendar)) && (e.PublicityBlurb || (selected.Changes && selected.Changes.Events[idx].PublicityBlurb))">
+        <v-col>
+          <div class="floating-title">Web Calendar Blurb</div>
+          <template v-if="selected.Changes != null && e.PublicityBlurb != selected.Changes.Events[idx].PublicityBlurb">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="PublicityBlurb" :fieldname="formatFieldName('Web Calendar Blurb')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.PublicityBlurb ? e.PublicityBlurb : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].PublicityBlurb ? selected.Changes.Events[idx].PublicityBlurb : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{e.PublicityBlurb}}
+          </template>
+        </v-col>
+      </v-row>
+      <v-row v-if="e.SetUp || (selected.Changes && selected.Changes.Events[idx].SetUp)">
+        <v-col>
+          <div class="floating-title">Requested Set-up</div>
+          <template v-if="selected.Changes != null && e.SetUp != selected.Changes.Events[idx].SetUp">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="SetUp" :fieldname="formatFieldName('Requested Set-up')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.SetUp ? e.SetUp : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].SetUp ? selected.Changes.Events[idx].SetUp : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{e.SetUp}}
+          </template>
+        </v-col>
+      </v-row>
+      <v-row v-if="e.SetUpImage || (selected.Changes && selected.Changes.Events[idx].SetUpImage)">
+        <v-col>
+          <div class="floating-title">Set-up Image</div>
+          <template  v-if="e.SetUpImage">
+            <span class='red--text'>{{e.SetUpImage.name}}</span>
+            <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+              <v-icon color="accent">mdi-download</v-icon>
+            </v-btn>
+          </template>
+          <template v-else>
+            <span class='red--text'>Empty</span>
+          </template>
+        </v-col>
+        <v-col v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
+          <div class="floating-title">Set-up Image</div>
+          <template v-if="selected.Changes.Events[idx].SetUpImage">
+            <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
+            <v-btn icon color="accent" @click="saveFile(idx, 'new')">
+              <v-icon color="accent">mdi-download</v-icon>
+            </v-btn>
+          </template>
+          <template v-else>
+          <span class='primary--text'>Empty</span>
+          </template>
+        </v-col>
+        <v-col v-if="approvalmode">
+          <v-btn fab small color="accent" @click="setUpImageChoiceMade = true; setUpImageIsApproved = true; approveChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && setUpImageIsApproved">
+            <v-icon>mdi-check-circle</v-icon>
           </v-btn>
-        </template>
-        <template v-else>
-          <span class='red--text'>Empty</span>
-        </template>
-      </v-col>
-      <v-col v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
-        <div class="floating-title">Set-up Image</div>
-        <template v-if="selected.Changes.Events[idx].SetUpImage">
-          <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
-          <v-btn icon color="accent" @click="saveFile(idx, 'new')">
-            <v-icon color="accent">mdi-download</v-icon>
+          <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
+            <v-icon>mdi-cancel</v-icon>
           </v-btn>
-        </template>
-        <template v-else>
-        <span class='primary--text'>Empty</span>
-        </template>
-      </v-col>
-      <v-col v-if="approvalmode">
-        <v-btn fab small color="accent" @click="setUpImageChoiceMade = true; setUpImageIsApproved = true; approveChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && setUpImageIsApproved">
-          <v-icon>mdi-check-circle</v-icon>
-        </v-btn>
-        <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
-          <v-icon>mdi-cancel</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
+        </v-col>
+      </v-row>
+    </template>
   </template>
 </div>
 `,
@@ -1055,7 +1057,8 @@ export default {
       ministries: [],
       budgetLines: [],
       setUpImageChoiceMade: false,
-      setUpImageIsApproved: false
+      setUpImageIsApproved: false,
+      isSuperUser: false,
     }
   },
   created: function () {
@@ -1066,6 +1069,10 @@ export default {
     window['moment-range'].extendMoment(moment)
     if(this.selected.Changes != null && this.e.SetUpImage != this.selected.Changes.Events[this.idx].SetUpImage) {
       this.$emit('newchange')
+    }
+    let isSU = $('[id$="hfIsSuperUser"]')[0].value;
+    if(isSU == 'True') {
+      this.isSuperUser = true
     }
   },
   filters: {

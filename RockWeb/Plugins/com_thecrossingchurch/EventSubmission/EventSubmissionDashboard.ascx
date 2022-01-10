@@ -45,6 +45,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
 <asp:HiddenField ID="hfDeniedEmail" runat="server" />
 <asp:HiddenField ID="hfComment" runat="server" />
 <asp:HiddenField ID="hfChanges" runat="server" />
+<asp:HiddenField ID="hfIsSuperUser" runat="server" />
 <Rock:BootstrapButton
   ID="btnChangeStatus"
   CssClass="btn-hidden"

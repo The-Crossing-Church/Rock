@@ -153,6 +153,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 FilterDate = GetAttributeValue( "FilterDate" ).AsDateTime();
             }
 
+            //Admins are always super users 
+            hfIsSuperUser.Value = "True";
+
             //Throw an error if not all values are present
             if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !BudgetDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !HistoryPageGuid.HasValue || !requestWF.HasValue || !userActionWF.HasValue )
             {

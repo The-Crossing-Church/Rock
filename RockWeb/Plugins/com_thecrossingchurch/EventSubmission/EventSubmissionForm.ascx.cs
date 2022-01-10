@@ -1037,20 +1037,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
                 if ( request.needsAccom )
                 {
-                    message += "<br/><strong style='color: #6485b3;'>Tech Information</strong><br/>";
-                    if ( request.Events[i].TechNeeds != null && request.Events[i].TechNeeds.Count() > 0 )
+                    if ( CurrentPersonIsSuperUser || CurrentPersonIsEventAdmin || CurrentPersonIsRoomAdmin )
                     {
-                        message += "<strong>Tech Needs:</strong> " + String.Join( ", ", request.Events[i].TechNeeds ) + "<br/>";
-                    }
-                    if ( !String.IsNullOrEmpty( request.Events[i].TechDescription ) )
-                    {
-                        message += "<strong>Tech Description:</strong> " + request.Events[i].TechDescription + "<br/>";
-                    }
+                        message += "<br/><strong style='color: #6485b3;'>Tech Information</strong><br/>";
+                        if ( request.Events[i].TechNeeds != null && request.Events[i].TechNeeds.Count() > 0 )
+                        {
+                            message += "<strong>Tech Needs:</strong> " + String.Join( ", ", request.Events[i].TechNeeds ) + "<br/>";
+                        }
+                        if ( !String.IsNullOrEmpty( request.Events[i].TechDescription ) )
+                        {
+                            message += "<strong>Tech Description:</strong> " + request.Events[i].TechDescription + "<br/>";
+                        }
 
-                    if ( !String.IsNullOrEmpty( request.Events[i].SetUp ) )
-                    {
-                        message += "<br/><strong style='color: #6485b3;'>Set-Up Information</strong><br/>";
-                        message += "<strong>Room Set-Up:</strong> " + request.Events[i].SetUp + "<br/>";
+                        if ( !String.IsNullOrEmpty( request.Events[i].SetUp ) )
+                        {
+                            message += "<br/><strong style='color: #6485b3;'>Set-Up Information</strong><br/>";
+                            message += "<strong>Room Set-Up:</strong> " + request.Events[i].SetUp + "<br/>";
+                        }
                     }
 
                     if ( !request.needsCatering )
@@ -1070,18 +1073,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         }
                     }
 
-                    message += "<br/><strong style='color: #6485b3;'>Door Information</strong><br/>";
-                    message += "<strong>Needs Doors Unlocked:</strong> " + ( request.Events[i].NeedsDoorsUnlocked == true ? "Yes" : "No" ) + "<br/>";
-                    if ( request.Events[i].NeedsDoorsUnlocked == true )
+                    if ( CurrentPersonIsSuperUser || CurrentPersonIsEventAdmin || CurrentPersonIsRoomAdmin )
                     {
-                        message += "<strong>Doors Needed:</strong> " + String.Join( ", ", Doors.Where( dv => request.Events[i].Doors.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
-                    }
+                        message += "<br/><strong style='color: #6485b3;'>Door Information</strong><br/>";
+                        message += "<strong>Needs Doors Unlocked:</strong> " + ( request.Events[i].NeedsDoorsUnlocked == true ? "Yes" : "No" ) + "<br/>";
+                        if ( request.Events[i].NeedsDoorsUnlocked == true )
+                        {
+                            message += "<strong>Doors Needed:</strong> " + String.Join( ", ", Doors.Where( dv => request.Events[i].Doors.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
+                        }
 
-                    message += "<br/><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
-                    message += "<strong>Add to Public Calendar:</strong> " + ( request.Events[i].ShowOnCalendar == true ? "Yes" : "No" ) + "<br/>";
-                    if ( request.Events[i].ShowOnCalendar && !String.IsNullOrEmpty( request.Events[i].PublicityBlurb ) )
-                    {
-                        message += "<strong>Publicity Blurb:</strong> " + request.Events[i].PublicityBlurb + "<br/>";
+                        message += "<br/><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
+                        message += "<strong>Add to Public Calendar:</strong> " + ( request.Events[i].ShowOnCalendar == true ? "Yes" : "No" ) + "<br/>";
+                        if ( request.Events[i].ShowOnCalendar && !String.IsNullOrEmpty( request.Events[i].PublicityBlurb ) )
+                        {
+                            message += "<strong>Publicity Blurb:</strong> " + request.Events[i].PublicityBlurb + "<br/>";
+                        }
                     }
                 }
                 message += "<hr/>";

@@ -15,11 +15,11 @@ export default {
   <v-row>
     <v-col cols="12" md="6">
       <v-switch
-        v-model="needsDrinks"
+        v-model="request.needsAccom"
         label="Would you like drinks?"
       ></v-switch>
     </v-col>
-    <v-col cols="12" md="6" v-if="needsDrinks">
+    <v-col cols="12" md="6" v-if="request.needsAccom">
       <v-autocomplete
         label="What drinks would you like to have?"
         :items="['Coffee', 'Soda', 'Water']"
@@ -30,7 +30,7 @@ export default {
       ></v-autocomplete>
     </v-col>
   </v-row>
-  <v-row v-if="needsDrinks">
+  <v-row v-if="request.needsAccom">
     <v-col cols="12" md="6">
       <strong>What time would you like your drinks to be delivered?</strong>
       <time-picker

@@ -58,6 +58,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [WorkflowTypeField( "User Action Workflow", "The workflow that allows users to accept proposed changes, use original, or cancel request", order: 7 )]
     [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, order: 8 )]
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, order: 9 )]
+    [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 10 )]
 
     public partial class EventSubmissionUserDashboard : Rock.Web.UI.RockBlock
     {
@@ -144,6 +145,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
 
 
+            Guid? superUserGuid = GetAttributeValue( "SuperUserRole" ).AsGuidOrNull();
             var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
             var EventSRGuid = GetAttributeValue( "EventRequestAdmin" ).AsGuidOrNull();
             if ( RoomSRGuid.HasValue )
@@ -153,6 +155,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( EventSRGuid.HasValue )
             {
                 EventSR = new GroupService( context ).Get( EventSRGuid.Value );
+            }
+            if ( superUserGuid.HasValue )
+            {
+                Rock.Model.Group superUsers = new GroupService( context ).Get( superUserGuid.Value );
+                if ( CurrentPersonId.HasValue && superUsers.Members.Where( m => m.GroupMemberStatus == GroupMemberStatus.Active ).Select( m => m.PersonId ).ToList().Contains( CurrentPersonId.Value ) )
+                {
+                    hfIsSuperUser.Value = "True";
+                }
             }
 
             //Throw an error if not all values are present

@@ -39,6 +39,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
 <asp:HiddenField ID="hfWorkflowURL" runat="server" />
 <asp:HiddenField ID="hfRequestID" runat="server" />
 <asp:HiddenField ID="hfComment" runat="server" />
+<asp:HiddenField ID="hfIsSuperUser" runat="server" />
 <Rock:BootstrapButton
   ID="btnAddComment"
   CssClass="btn-hidden"
