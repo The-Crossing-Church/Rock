@@ -869,7 +869,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.needsSpace )
                 {
                     message += "<br/><strong style='color: #6485b3;'>Room Information</strong><br/>";
-                    message += "<strong>Requested Rooms:</strong> " + String.Join( ", ", Rooms.Where( dv => request.Events[i].Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) + "<br/>";
+                    message += "<strong>Requested Rooms:</strong> " + ( request.Events[i].Rooms.Count() > 0 ? String.Join( ", ", Rooms.Where( dv => request.Events[i].Rooms.Contains( dv.Id.ToString() ) ).Select( dv => dv.Value ) ) : "Not Entered" ) + "<br/>";
                     if ( request.Events[i].TableType.Count() > 0 )
                     {
                         message += "<strong>Requested Tables:</strong> " + String.Join( ", ", request.Events[i].TableType ) + "<br/>";
@@ -904,7 +904,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     message += "<br/><strong style='color: #6485b3;'>Food/Drink Information</strong><br/>";
                     message += "<strong>Preferred Vendor:</strong> " + request.Events[i].Vendor + "<br/>";
                     message += "<strong>Preferred Menu:</strong> " + request.Events[i].Menu + "<br/>";
-                    message += "<strong>Budget Line:</strong> " + BudgetLines.Where( dv => request.Events[i].BudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() + "<br/>";
+                    message += "<strong>Budget Line:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].BudgetLine ) ? BudgetLines.Where( dv => request.Events[i].BudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() : "Not Entered" ) + "<br/>";
                     if ( request.Events[i].FoodDelivery )
                     {
                         message += "<strong>Food Set-Up Time:</strong> " + request.Events[i].FoodTime + "<br/>";
@@ -945,7 +945,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.needsChildCare )
                 {
                     message += "<br/><strong style='color: #6485b3;'>Childcare Information</strong><br/>";
-                    message += "<strong>Childcare Age Groups:</strong> " + String.Join( ", ", request.Events[i].ChildCareOptions ) + "<br/>";
+                    message += "<strong>Childcare Age Groups:</strong> " + ( ( request.Events[i].ChildCareOptions != null && request.Events[i].ChildCareOptions.Count() > 0 ) ? String.Join( ", ", request.Events[i].ChildCareOptions ) : "Not Entered" ) + "<br/>";
                     message += "<strong>Expected Number of Children:</strong> " + request.Events[i].EstimatedKids + "<br/>";
                     message += "<strong>Childcare Start Time:</strong> " + request.Events[i].CCStartTime + "<br/>";
                     message += "<strong>Childcare End Time:</strong> " + request.Events[i].CCEndTime + "<br/>";
@@ -953,7 +953,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Preferred Vendor for Childcare:</strong> " + request.Events[i].CCVendor + "<br/>";
                         message += "<strong>Preferred Menu for Childcare:</strong> " + request.Events[i].CCMenu + "<br/>";
-                        message += "<strong>Budget Line for Childcare:</strong> " + BudgetLines.Where( dv => request.Events[i].CCBudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() + "<br/>";
+                        message += "<strong>Budget Line for Childcare:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCBudgetLine ) ? BudgetLines.Where( dv => request.Events[i].CCBudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() : "Not Entered" ) + "<br/>";
                         message += "<strong>ChildCare Food Set-Up Time:</strong> " + request.Events[i].CCFoodTime + "<br/>";
                     }
                 }

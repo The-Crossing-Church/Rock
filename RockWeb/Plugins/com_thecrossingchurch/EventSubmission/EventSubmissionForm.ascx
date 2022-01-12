@@ -934,7 +934,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if(!this.request.ValidStepperSections) {
         this.request.ValidStepperSections = []
       }
-      if(!this.request.ValidSections) {
+      if(this.request.ValidSections == null) {
         this.request.ValidSections = []
       }
       this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
@@ -1741,7 +1741,9 @@ document.addEventListener("DOMContentLoaded", function () {
               }
             } else {
               this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Publicity"), 1)
-              this.request.ValidSections.splice(this.request.VaidSections.indexOf("Publicity"), 1)
+              if(this.request.ValidSections.includes("Publicity")) {
+                this.request.ValidSections.splice(this.request.VaidSections.indexOf("Publicity"), 1)
+              }
             }
             this.$refs.publicityloop.$refs.pubForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
