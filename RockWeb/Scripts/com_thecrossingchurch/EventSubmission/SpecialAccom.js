@@ -101,6 +101,16 @@ export default {
       ></v-switch>
     </v-col>
   </v-row>
+  <v-row v-if="e.ShowOnCalendar">
+    <v-col>
+      <v-textarea
+        label="Please type out your blurb for the web calendar"
+        v-model="e.PublicityBlurb"
+        :rules="[rules.blurbValidation(e.PublicityBlurb, request.PublicityStartDate)]"
+        validate-on-blur
+      ></v-textarea>
+    </v-col>
+  </v-row>
   <v-row>
     <v-col cols="12">
       <h4 class="accent--text">Set-Up</h4>
@@ -144,16 +154,6 @@ export default {
           </template>
         </template>
       </v-autocomplete>
-    </v-col>
-  </v-row>
-  <v-row v-if="e.ShowOnCalendar">
-    <v-col>
-      <v-textarea
-        label="Please type out your blurb for the web calendar"
-        v-model="e.PublicityBlurb"
-        :rules="[rules.blurbValidation(e.PublicityBlurb, request.PublicityStartDate)]"
-        validate-on-blur
-      ></v-textarea>
     </v-col>
   </v-row>
   <v-row>
@@ -231,7 +231,7 @@ export default {
           return !!val || `${field} is required`;
         },
         requiredArr(val, field) {
-          return val.length > 0 || `${field} is required`;
+          return (val && val.length > 0) || `${field} is required`;
         },
         blurbValidation(value, pubDate) {
           let daysUntil = moment(pubDate).diff(moment(), "days");

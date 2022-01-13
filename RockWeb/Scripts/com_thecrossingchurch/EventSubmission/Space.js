@@ -360,6 +360,9 @@ export default {
               //Disable rooms not available for the date/time
               l.IsDisabled = false
               l.IsHeader = false
+              if(!l.IsActive) {
+                l.IsDisabled = true
+              }
               if(existingRooms.includes(l.Id)){
                 l.IsDisabled = true
               }

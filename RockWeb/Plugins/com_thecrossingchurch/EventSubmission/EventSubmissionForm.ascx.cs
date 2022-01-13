@@ -830,7 +830,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private string GenerateEmailDetails( ContentChannelItem item, EventRequest request )
         {
             string message = "<br/>";
-            message += "<strong style='font-size: 16px;'>Ministry:</strong> <span style='font-size: 16px;'>" + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + "</span><br/>";
+            if ( !String.IsNullOrEmpty( request.Ministry ) )
+            {
+                message += "<strong style='font-size: 16px;'>Ministry:</strong> <span style='font-size: 16px;'>" + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + "</span><br/>";
+            }
             if ( item.AttributeValues["RequestType"].Value == "Room" )
             {
                 message += "<strong style='font-size: 16px;'>Meeting Listing on the Calendar:</strong> <span style='font-size: 16px;'>" + request.Name + "</span><br/>";

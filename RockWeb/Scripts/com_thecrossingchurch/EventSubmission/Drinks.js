@@ -1,6 +1,6 @@
 export default {
   template: `
-<v-form ref="accomForm" v-model="valid">
+<v-form ref="accomForm" v-model="valid" v-if="canRequestSpecialAccom">
   <v-row>
     <v-col>
       <h3 class="primary--text" v-if="request.Events.length == 1">Other Accommodations</h3>
@@ -15,11 +15,11 @@ export default {
   <v-row>
     <v-col cols="12" md="6">
       <v-switch
-        v-model="request.needsAccom"
+        v-model="needsDrinks"
         label="Would you like drinks?"
       ></v-switch>
     </v-col>
-    <v-col cols="12" md="6" v-if="request.needsAccom">
+    <v-col cols="12" md="6" v-if="needsDrinks">
       <v-autocomplete
         label="What drinks would you like to have?"
         :items="['Coffee', 'Soda', 'Water']"
@@ -30,7 +30,7 @@ export default {
       ></v-autocomplete>
     </v-col>
   </v-row>
-  <v-row v-if="request.needsAccom">
+  <v-row v-if="needsDrinks">
     <v-col cols="12" md="6">
       <strong>What time would you like your drinks to be delivered?</strong>
       <time-picker
@@ -86,20 +86,20 @@ export default {
 `,
   props: ["e", "request"],
   data: function () {
-      return {
-          dialog: false,
-          valid: true,
-          prefillDate: '',
-          needsDrinks: false,
-          rules: {
-              required(val, field) {
-                  return !!val || `${field} is required`;
-              },
-              requiredArr(val, field) {
-                  return val.length > 0 || `${field} is required`;
-              },
-          }
+    return {
+      dialog: false,
+      valid: true,
+      prefillDate: '',
+      needsDrinks: false,
+      rules: {
+        required(val, field) {
+          return !!val || `${field} is required`;
+        },
+        requiredArr(val, field) {
+          return val.length > 0 || `${field} is required`;
+        },
       }
+    }
   },
   created: function () {
     if(this.e.Drinks && this.e.Drinks.length > 0 || this.e.DrinkTime || this.e.DrinkDropOff) {
@@ -107,38 +107,57 @@ export default {
     }
   },
   filters: {
-      formatDate(val) {
-          return moment(val).format("MM/DD/yyyy");
-      },
+    formatDate(val) {
+      return moment(val).format("MM/DD/yyyy");
+    },
   },
   computed: {
-      prefillOptions() {
-          return this.request.EventDates.filter(i => i != this.e.EventDate)
-      },
-      defaultFoodTime() {
-          if (this.e.StartTime && !this.e.StartTime.includes('null')) {
-              let time = moment(this.e.StartTime, "hh:mm A");
-              return time.subtract(30, "minutes").format("hh:mm A");
-          }
-          return null;
-      },
+    prefillOptions() {
+      return this.request.EventDates.filter(i => i != this.e.EventDate)
+    },
+    defaultFoodTime() {
+      if (this.e.StartTime && !this.e.StartTime.includes('null')) {
+        let time = moment(this.e.StartTime, "hh:mm A");
+        return time.subtract(30, "minutes").format("hh:mm A");
+      }
+      return null;
+    },
+    canRequestSpecialAccom() {
+      if(this.request.Id > 0 && this.request.Status != "Draft" && this.e.Drinks && this.e.Drinks.length > 0) {
+        //This date already requested drinks
+        return true
+      }
+      let twoWeeks = moment(new Date()).add(14, 'days')
+      if(this.request.IsSame) {
+        let dates = this.request.EventDates.map(d => moment(d))
+        let minDate = moment.min(dates)
+        if (twoWeeks.isAfter(moment(minDate))) {
+          return false
+        }
+      } else {
+        if (twoWeeks.isAfter(moment(this.e.EventDate))) {
+          return false
+        }
+      }
+      return true
+    },
   },
   methods: {
-      prefillSection() {
-          this.dialog = false
-          let idx = this.request.EventDates.indexOf(this.prefillDate)
-          let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
-          this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
-          if((this.e.Drinks && this.e.Drinks.length > 0) && this.e.DrinkTime && this.e.DrinkDropOff) {
-            this.needsDrinks = true
-          }
-      },
-      boolToYesNo(val) {
-          if (val) {
-              return "Yes";
-          }
-          return "No";
-      },
+    prefillSection() {
+      this.dialog = false
+      let idx = this.request.EventDates.indexOf(this.prefillDate)
+      let currIdx = this.request.EventDates.indexOf(this.e.EventDate)
+      this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
+      if((this.e.Drinks && this.e.Drinks.length > 0) && this.e.DrinkTime && this.e.DrinkDropOff) {
+        this.needsDrinks = true
+      }
+    },
+    boolToYesNo(val) {
+      if (val) {
+          return "Yes";
+      }
+      return "No";
+    },
   },
   watch: {
     e(val) {

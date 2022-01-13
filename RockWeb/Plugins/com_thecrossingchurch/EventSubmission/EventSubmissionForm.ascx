@@ -544,7 +544,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
-                  <v-btn color="primary" :disabled="!request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
+                  <v-btn color="primary" :disabled="!request.Name || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
                     <template v-if="(idx == (request.Events.length - 1) && !request.needsPub) && canEdit">
                       {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
@@ -567,7 +567,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
-                  <v-btn color="primary" :disabled="!canEdit || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
+                  <v-btn color="primary" :disabled="!canEdit || !request.Name || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
                     <template>
                       {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
@@ -787,7 +787,7 @@ document.addEventListener("DOMContentLoaded", function () {
             FoodDelivery: true,
             FoodTime: "",
             FoodDropOff: "",
-            Drinks: "",
+            Drinks: [],
             DinkTime: "",
             ServingTeamAgree: false,
             DrinkDropOff: "",
@@ -796,7 +796,7 @@ document.addEventListener("DOMContentLoaded", function () {
             CCMenu: "",
             CCFoodTime: "",
             CCBudgetLine: "",
-            ChildCareOptions: "",
+            ChildCareOptions: [],
             EstimatedKids: null,
             CCStartTime: '',
             CCEndTime: '',
@@ -806,7 +806,8 @@ document.addEventListener("DOMContentLoaded", function () {
             PublicityBlurb: "",
             SetUp: "",
             SetUpImage: null,
-            NeedsDoorsUnlocked: false
+            NeedsDoorsUnlocked: false,
+            Doors: []
           }
         ],
         EventDates: [],
@@ -1187,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return true
         }
         return false
-      }
+      },
     },
     methods: {
       boolToYesNo(val) {
@@ -1345,6 +1346,7 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Events[indexes.currIdx].TableType = this.request.Events[indexes.targetIdx].TableType
         this.request.Events[indexes.currIdx].NumChairsRound = this.request.Events[indexes.targetIdx].NumChairsRound
         this.request.Events[indexes.currIdx].NumChairsRect = this.request.Events[indexes.targetIdx].NumChairsRect
+        this.request.Events[indexes.currIdx].NeedsTableCloths = this.request.Events[indexes.targetIdx].NeedsTableCloths
       },
       updateCatering(indexes) {
         this.request.Events[indexes.currIdx].Vendor = this.request.Events[indexes.targetIdx].Vendor
@@ -1874,6 +1876,12 @@ document.addEventListener("DOMContentLoaded", function () {
             t.RegistrationDate = ""
             t.RegistrationEndDate = ""
             this.request.Events.push(t)
+          }
+        })
+        this.request.Events.forEach((e, idx) => {
+          if(!this.request.EventDates.includes(e.EventDate)) {
+            //Event should be removed from list
+            this.request.Events.splice(idx, 1)
           }
         })
         this.request.EventDates = this.request.EventDates.sort((a, b) => moment(a).diff(moment(b)))

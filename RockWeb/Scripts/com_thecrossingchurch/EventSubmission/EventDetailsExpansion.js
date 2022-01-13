@@ -255,8 +255,8 @@ export default {
             <approval-field :request="selected" :e="e" :idx="idx" field="ChildCareOptions" :fieldname="formatFieldName('Childcare Age Groups')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.ChildCareOptions ? e.ChildCareOptions.join(', ') : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].ChildCareOptions ? selected.Changes.Events[idx].ChildCareOptions.join(', ') : 'Empty')}}</span>
+            <span class='red--text'>{{((e.ChildCareOptions && e.ChildCareOptions.length > 0) ? e.ChildCareOptions.join(', ') : 'Empty')}}: </span>
+            <span class='primary--text'>{{((selected.Changes.Events[idx].ChildCareOptions && selected.Changes.Events[idx].ChildCareOptions.length > 0) ? selected.Changes.Events[idx].ChildCareOptions.join(', ') : 'Empty')}}</span>
           </template>
         </template>
         <template v-else>
@@ -437,8 +437,8 @@ export default {
             <approval-field :request="selected" :e="e" :idx="idx" field="Drinks" :fieldname="formatFieldName('Desired Drinks')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.Drinks ? e.Drinks.join(', ') : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].Drinks? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
+            <span class='red--text'>{{((e.Drinks && e.Drinks.length > 0) ? e.Drinks.join(', ') : 'Empty')}}: </span>
+            <span class='primary--text'>{{((selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0) ? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
           </template>
         </template>
         <template v-else>
@@ -885,8 +885,8 @@ export default {
               <approval-field :request="selected" :e="e" :idx="idx" field="Drinks" :fieldname="formatFieldName('Desired Drinks')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
             </template>
             <template v-else>
-              <span class='red--text'>{{(e.Drinks ? e.Drinks.join(', ') : 'Empty')}}: </span>
-              <span class='primary--text'>{{(selected.Changes.Events[idx].Drinks ? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
+              <span class='red--text'>{{((e.Drinks && e.Drinks.length > 0) ? e.Drinks.join(', ') : 'Empty')}}: </span>
+              <span class='primary--text'>{{((selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0) ? selected.Changes.Events[idx].Drinks.join(', ') : 'Empty')}}</span>
             </template>
           </template>
           <template v-else>
