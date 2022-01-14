@@ -553,7 +553,8 @@ document.addEventListener("DOMContentLoaded", function () {
             accent: "#8ED2C9",
             inprogress: '#ECC30B',
             denied: '#CC3F0C',
-            pending: '#61A4A9'
+            pending: '#61A4A9',
+            draft: '#A18276'
           },
         },
       },

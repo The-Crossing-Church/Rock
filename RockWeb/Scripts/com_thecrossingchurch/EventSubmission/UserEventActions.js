@@ -97,6 +97,9 @@ export default {
     statusBtnColor() {
       let color = "primary";
       switch(this.r.RequestStatus){
+        case "Draft":
+          color = "draft"
+          break;
         case "Approved":
           color = "accent"
           break;
