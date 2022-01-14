@@ -293,113 +293,113 @@ export default {
         return this.request.EventDates.filter(i => i != this.e.EventDate)
       },
       groupedRooms() {
-          let loc = []
-          let dates = []
-          if(this.request.IsSame) {
-            dates = this.request.EventDates
-          } else {
-            dates.push(this.e.EventDate)
-          }
-          let existingOnDate = this.existing.filter(e => {
-            e = JSON.parse(e)
-            if(e.Id == this.request.Id) {
-              return false
-            }
-            let intersect = e.EventDates.filter(val => dates.includes(val))
-            if(intersect.length > 0) {
-              //Filter to events object for the matching dates
-              let events = []
-              if(e.IsSame) {
-                events = e.Events
-              } else {
-                events = e.Events.filter(val => dates.includes(val.EventDate))
-              }
-              //Check if the times overlap
-              let overlaps = false
-              events.forEach((event, idx) => {
-                let date = event.EventDate
-                if(e.IsSame) {
-                  date = intersect[idx]
-                }
-                let cdStart = moment(`${date} ${event.StartTime}`, `yyyy-MM-DD hh:mm A`)
-                if (event.MinsStartBuffer) {
-                    cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
-                }
-                let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`)
-                if (event.MinsEndBuffer) {
-                    cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
-                }
-                let cRange = moment.range(cdStart, cdEnd);
-                for(let i=0; i<dates.length; i++) {
-                  let current = moment.range(
-                      moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
-                      moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`)
-                  );
-                  if (cRange.overlaps(current)) {
-                    overlaps = true
-                  }
-                }
-              })
-              return overlaps
-            }
+        let loc = []
+        let dates = []
+        if(this.request.IsSame) {
+          dates = this.request.EventDates
+        } else {
+          dates.push(this.e.EventDate)
+        }
+        let existingOnDate = this.existing.filter(e => {
+          // e = JSON.parse(e)
+          if(e.Id == this.request.Id) {
             return false
-          }).map(e => JSON.parse(e))
-          let existingRooms = []
-          existingOnDate.forEach(e => {
-            e.Events.forEach(ev => {
-              existingRooms.push(...ev.Rooms)
+          }
+          let intersect = e.EventDates.filter(val => dates.includes(val))
+          if(intersect.length > 0) {
+            //Filter to events object for the matching dates
+            let events = []
+            if(e.IsSame) {
+              events = e.Events
+            } else {
+              events = e.Events.filter(val => dates.includes(val.EventDate))
+            }
+            //Check if the times overlap
+            let overlaps = false
+            events.forEach((event, idx) => {
+              let date = event.EventDate
+              if(e.IsSame) {
+                date = intersect[idx]
+              }
+              let cdStart = moment(`${date} ${event.StartTime}`, `yyyy-MM-DD hh:mm A`)
+              if (event.MinsStartBuffer) {
+                  cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
+              }
+              let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`)
+              if (event.MinsEndBuffer) {
+                  cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
+              }
+              let cRange = moment.range(cdStart, cdEnd);
+              for(let i=0; i<dates.length; i++) {
+                let current = moment.range(
+                    moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
+                    moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`)
+                );
+                if (cRange.overlaps(current)) {
+                  overlaps = true
+                }
+              }
             })
+            return overlaps
+          }
+          return false
+        })//.map(e => JSON.parse(e))
+        let existingRooms = []
+        existingOnDate.forEach(e => {
+          e.Events.forEach(ev => {
+            existingRooms.push(...ev.Rooms)
           })
-          this.rooms.forEach(l => {
-              let idx = -1
-              loc.forEach((i, x) => {
-                  if (i.Type == l.Type) {
-                      idx = x
-                  }
-              })
-              //Disable rooms not available for the date/time
-              l.IsDisabled = false
-              l.IsHeader = false
-              if(!l.IsActive) {
-                l.IsDisabled = true
-              }
-              if(existingRooms.includes(l.Id)){
-                l.IsDisabled = true
-              }
-              if (idx > -1) {
-                  loc[idx].locations.push(l)
-              } else {
-                  loc.push({ Type: l.Type, locations: [l] })
-              }
+        })
+        this.rooms.forEach(l => {
+          let idx = -1
+          loc.forEach((i, x) => {
+            if (i.Type == l.Type) {
+              idx = x
+            }
           })
-          loc.forEach(l => {
-              l.locations = l.locations.sort((a, b) => {
-                  if (a.Value < b.Value) {
-                      return -1
-                  } else if (a.Value > b.Value) {
-                      return 1
-                  } else {
-                      return 0
-                  }
-              })
+          //Disable rooms not available for the date/time
+          l.IsDisabled = false
+          l.IsHeader = false
+          if(!l.IsActive) {
+            l.IsDisabled = true
+          }
+          if(existingRooms.includes(l.Id)){
+            l.IsDisabled = true
+          }
+          if (idx > -1) {
+            loc[idx].locations.push(l)
+          } else {
+            loc.push({ Type: l.Type, locations: [l] })
+          }
+        })
+        loc.forEach(l => {
+          l.locations = l.locations.sort((a, b) => {
+            if (a.Value < b.Value) {
+              return -1
+            } else if (a.Value > b.Value) {
+              return 1
+            } else {
+              return 0
+            }
           })
-          loc = loc.sort((a, b) => {
-              if (a.Type < b.Type) {
-                  return -1
-              } else if (a.Type > b.Type) {
-                  return 1
-              } else {
-                  return 0
-              }
+        })
+        loc = loc.sort((a, b) => {
+          if (a.Type < b.Type) {
+            return -1
+          } else if (a.Type > b.Type) {
+            return 1
+          } else {
+            return 0
+          }
+        })
+        let arr = []
+        loc.forEach(l => {
+          arr.push({ Value: l.Type, IsHeader: true, IsDisabled: true})
+          l.locations.forEach(i => {
+            arr.push((i))
           })
-          let arr = []
-          loc.forEach(l => {
-              arr.push({ Value: l.Type, IsHeader: true, IsDisabled: true})
-              l.locations.forEach(i => {
-                  arr.push((i))
-              })
-          })
-          return arr
+        })
+        return arr
       },
       CheckinLabel() {
         return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
@@ -410,7 +410,7 @@ export default {
         }
         let dates = this.request.EventDates.map(d => moment(d))
         let minDate = moment.min(dates)
-        let oneWeek = moment(new Date()).add(7, 'days')
+        let oneWeek = moment(new Date()).add(14, 'days')
         if (!this.request.IsSame || this.request.Events.length > 1) {
           minDate = moment(this.e.EventDate)
         }

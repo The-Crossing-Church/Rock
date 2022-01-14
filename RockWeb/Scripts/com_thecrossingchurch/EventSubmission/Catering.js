@@ -152,14 +152,6 @@ export default {
           </v-row>
         </v-col>
       </v-row>
-      <v-row v-if=" e.TableType && e.TableType.length == 0">
-        <v-col cols="12" md="6">
-          <v-switch
-            :label="tableClothLabel"
-            v-model="e.NeedsTableCloths"
-          ></v-switch>
-        </v-col>
-      </v-row>
       <v-row v-else>
         <v-col cols="12" md="6">
           <strong>What time would you like to pick up your food?</strong>
@@ -169,6 +161,14 @@ export default {
             :default="defaultFoodTime"
             :rules="[rules.required(e.FoodTime, 'Time')]"
           ></time-picker>
+        </v-col>
+      </v-row>
+      <v-row v-if=" e.TableType && e.TableType.length == 0">
+        <v-col cols="12" md="6">
+          <v-switch
+            :label="tableClothLabel"
+            v-model="e.NeedsTableCloths"
+          ></v-switch>
         </v-col>
       </v-row>
       <v-row>

@@ -501,7 +501,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
                     <date-picker label="New Date" v-model="resubmissionData[idx].date" :min="earliestDateForResubmission"></date-picker>
                   </v-col>
                   <v-col cols="1" align-self="center">
-                    <v-btn fab small color="denied" @click="resubmissionData[idx].wasRemoved = true;">
+                    <v-btn fab small color="denied" @click="resubmissionData[idx].wasRemoved = true; resubmissionData[idx].date = '';">
                       <v-icon>mdi-close</v-icon>
                     </v-btn>
                   </v-col>
@@ -524,7 +524,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" @click="resubmit">Resubmit Request</v-btn>
+            <v-btn color="primary" @click="resubmit" :disabled="!canResubmit">Resubmit Request</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -669,6 +669,23 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           return target ? target.format('yyyy-MM-DD') : target
         }
+      },
+      canResubmit() {
+        if(this.selected.Events.length == 1) {
+          return this.copy.EventDates && this.copy.EventDates.length > 0
+        } else {
+          let numActive = 0
+          let numValid = 0
+          this.resubmissionData.forEach((d, idx) => {
+            if(!d.wasRemoved) {
+              numActive++
+              if(d.date) {
+                numValid++
+              }
+            }
+          })
+          return (numActive == numValid && numValid > 0)
+        }
       }
     },
     methods: {
@@ -802,7 +819,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         this.copy = JSON.parse(JSON.stringify(this.selected))
         this.resubmissionData = []
-        this.copy.EventDates.forEach((idx, d) => {
+        this.copy.EventDates.forEach((d, idx) => {
           this.resubmissionData.push({idx: idx, wasRemoved: false, date: ''})
         })
         this.copy.EventDates = []
@@ -816,8 +833,9 @@ document.addEventListener("DOMContentLoaded", function () {
           //Update dates
           for(let i=0; i < this.resubmissionData.length; i++) {
             this.copy.Events[i].EventDate = moment(this.resubmissionData[i].date).format('yyyy-MM-DD')
-            this.copy.EventDates.push(moment(this.resubmissionData[i].date).format('yyyy-MM-DD'))
-            if(this.resubmissionData[i].wasRemoved) {
+            if(!this.resubmissionData[i].wasRemoved) {
+              this.copy.EventDates.push(moment(this.resubmissionData[i].date).format('yyyy-MM-DD'))
+            } else {
               this.copy.Events[i] = null
             }
           }

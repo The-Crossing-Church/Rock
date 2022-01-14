@@ -544,7 +544,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
-                  <v-btn color="primary" :disabled="!request.Name || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
+                  <v-btn color="primary" :disabled="!minimalRequiremnts" @click="next">
                     <template v-if="(idx == (request.Events.length - 1) && !request.needsPub) && canEdit">
                       {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
@@ -567,7 +567,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
-                  <v-btn color="primary" :disabled="!canEdit || !request.Name || !request.EventDates || (request.EventDates && request.EventDates.length == 0)" @click="next">
+                  <v-btn color="primary" :disabled="!minimalRequiremnts" @click="next">
                     <template>
                       {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
@@ -825,7 +825,8 @@ document.addEventListener("DOMContentLoaded", function () {
         WhyAttendTwenty: "",
         Notes: "",
         ValidSections: [],
-        ValidStepperSections: []
+        ValidStepperSections: [],
+        canEdit: true
       },
       originalRequest: {},
       existingRequests: [],
@@ -939,6 +940,11 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.ValidSections = []
       }
       this.existingRequests = JSON.parse($('[id$="hfUpcomingRequests"]')[0].value)
+      this.existingRequests = this.existingRequests.map(e => {
+        let obj = JSON.parse(e.data)
+        obj.Id = e.Id
+        return obj
+      })
       window["moment-range"].extendMoment(moment)
       this.showValidation()
     },
@@ -1189,6 +1195,23 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return false
       },
+      minimalRequiremnts() {
+        let hasTime = true
+        this.request.Events.forEach(e => {
+          if(!e.StartTime || !e.EndTime || e.StartTime.includes("null") || e.EndTime.includes("null")) {
+            hasTime = false
+          }
+        })
+        let hasSpace = true
+        if(this.request.needsSpace) {
+          this.request.Events.forEach(e => {
+            if(!e.Rooms || e.Rooms.length == 0) {
+              hasSpace = false
+            }
+          })
+        }
+        return this.canEdit && this.request.Name && this.request.EventDates && hasTime && (this.request.EventDates.length > 0) && hasSpace
+      }
     },
     methods: {
       boolToYesNo(val) {

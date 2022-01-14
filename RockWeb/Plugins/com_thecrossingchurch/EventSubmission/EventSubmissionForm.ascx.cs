@@ -585,7 +585,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 //Don't show non-approved requests
                 string status = i.AttributeValues["RequestStatus"].Value;
-                if ( status == "Submitted" || status == "Denied" || status == "Cancelled" || status == "Cancelled by User" )
+                if ( status == "Draft" || status == "Submitted" || status == "Denied" || status == "Cancelled" || status == "Cancelled by User" )
                 {
                     return false;
                 }
@@ -601,7 +601,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 return false;
             } ).ToList();
-            hfUpcomingRequests.Value = JsonConvert.SerializeObject( items.Select( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value ).ToList() );
+            hfUpcomingRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, data = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value } ).ToList() );
         }
 
         /// <summary>
@@ -830,10 +830,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private string GenerateEmailDetails( ContentChannelItem item, EventRequest request )
         {
             string message = "<br/>";
-            if ( !String.IsNullOrEmpty( request.Ministry ) )
-            {
-                message += "<strong style='font-size: 16px;'>Ministry:</strong> <span style='font-size: 16px;'>" + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + "</span><br/>";
-            }
+            message += "<strong style='font-size: 16px;'>Ministry:</strong> <span style='font-size: 16px;'>" + ( !String.IsNullOrEmpty( request.Ministry ) ? Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value : "n/a" ) + "</span><br/>";
             if ( item.AttributeValues["RequestType"].Value == "Room" )
             {
                 message += "<strong style='font-size: 16px;'>Meeting Listing on the Calendar:</strong> <span style='font-size: 16px;'>" + request.Name + "</span><br/>";
@@ -895,7 +892,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Needs In-Person Check-in:</strong> " + ( request.Events[i].Checkin.Value == true ? "Yes" : "No" ) + "<br/>";
                     }
-                    message += "<strong>Expected Attendance:</strong> " + request.Events[i].ExpectedAttendance + "<br/>";
+                    if ( request.Events[i].ExpectedAttendance.HasValue )
+                    {
+                        message += "<strong>Expected Attendance:</strong> " + request.Events[i].ExpectedAttendance.Value + "<br/>";
+                    }
+                    else
+                    {
+                        message += "<strong>Expected Attendance:</strong> n/a<br/>";
+                    }
                     if ( request.Events[i].Checkin.Value == true && request.Events[i].ExpectedAttendance >= 100 )
                     {
                         message += "<strong>Requested Database Team Support:</strong> " + ( request.Events[i].SupportTeam.Value == true ? "Yes" : "No" ) + "<br/>";
@@ -905,13 +909,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.needsCatering )
                 {
                     message += "<br/><strong style='color: #6485b3;'>Food/Drink Information</strong><br/>";
-                    message += "<strong>Preferred Vendor:</strong> " + request.Events[i].Vendor + "<br/>";
-                    message += "<strong>Preferred Menu:</strong> " + request.Events[i].Menu + "<br/>";
+                    message += "<strong>Preferred Vendor:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].Vendor ) ? request.Events[i].Vendor : "n/a" ) + "<br/>";
+                    message += "<strong>Preferred Menu:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].Menu ) ? request.Events[i].Menu : "n/a" ) + "<br/>";
                     message += "<strong>Budget Line:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].BudgetLine ) ? BudgetLines.Where( dv => request.Events[i].BudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() : "Not Entered" ) + "<br/>";
                     if ( request.Events[i].FoodDelivery )
                     {
-                        message += "<strong>Food Set-Up Time:</strong> " + request.Events[i].FoodTime + "<br/>";
-                        message += "<strong>Food Set-Up Location:</strong> " + request.Events[i].FoodDropOff + "<br/>";
+                        message += "<strong>Food Set-Up Time:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].FoodTime ) ? request.Events[i].FoodTime : "n/a" ) + "<br/>";
+                        message += "<strong>Food Set-Up Location:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].FoodDropOff ) ? request.Events[i].FoodDropOff : "n/a" ) + "<br/>";
                         if ( request.Events[i].TableType.Count() == 0 && request.Events[i].NeedsTableCloths.HasValue )
                         {
                             message += "<strong>Needs Table Cloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
@@ -919,7 +923,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                     else
                     {
-                        message += "<strong>Desired Pick-up time from Vendor:</strong> " + request.Events[i].FoodTime + "<br/>";
+                        message += "<strong>Desired Pick-up time from Vendor:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].FoodTime ) ? request.Events[i].FoodTime : "n/a" ) + "<br/>";
                     }
                     if ( request.Events[i].Drinks != null && request.Events[i].Drinks.Count() > 0 )
                     {
@@ -938,7 +942,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.needsOnline )
                 {
                     message += "<br/><strong style='color: #6485b3;'>Online Information</strong><br/>";
-                    message += "<strong>Event Link:</strong> " + request.Events[i].EventURL + "<br/>";
+                    message += "<strong>Event Link:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].EventURL ) ? request.Events[i].EventURL : "n/a" ) + "<br/>";
                     if ( !String.IsNullOrEmpty( request.Events[i].ZoomPassword ) )
                     {
                         message += "<strong>Zoom Password:</strong> " + request.Events[i].ZoomPassword + "<br/>";
@@ -948,16 +952,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.needsChildCare )
                 {
                     message += "<br/><strong style='color: #6485b3;'>Childcare Information</strong><br/>";
-                    message += "<strong>Childcare Age Groups:</strong> " + ( ( request.Events[i].ChildCareOptions != null && request.Events[i].ChildCareOptions.Count() > 0 ) ? String.Join( ", ", request.Events[i].ChildCareOptions ) : "Not Entered" ) + "<br/>";
-                    message += "<strong>Expected Number of Children:</strong> " + request.Events[i].EstimatedKids + "<br/>";
-                    message += "<strong>Childcare Start Time:</strong> " + request.Events[i].CCStartTime + "<br/>";
-                    message += "<strong>Childcare End Time:</strong> " + request.Events[i].CCEndTime + "<br/>";
+                    message += "<strong>Childcare Age Groups:</strong> " + ( ( request.Events[i].ChildCareOptions != null && request.Events[i].ChildCareOptions.Count() > 0 ) ? String.Join( ", ", request.Events[i].ChildCareOptions ) : "n/a" ) + "<br/>";
+                    if ( request.Events[i].EstimatedKids.HasValue )
+                    {
+                        message += "<strong>Expected Number of Children:</strong> " + request.Events[i].EstimatedKids + "<br/>";
+                    }
+                    else
+                    {
+                        message += "<strong>Expected Number of Children:</strong> n/a<br/>";
+                    }
+                    message += "<strong>Childcare Start Time:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCStartTime ) ? request.Events[i].CCStartTime : "n/a" ) + "<br/>";
+                    message += "<strong>Childcare End Time:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCEndTime ) ? request.Events[i].CCEndTime : "n/a" ) + "<br/>";
                     if ( request.needsCatering )
                     {
-                        message += "<strong>Preferred Vendor for Childcare:</strong> " + request.Events[i].CCVendor + "<br/>";
-                        message += "<strong>Preferred Menu for Childcare:</strong> " + request.Events[i].CCMenu + "<br/>";
+                        message += "<strong>Preferred Vendor for Childcare:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCVendor ) ? request.Events[i].CCVendor : "n/a" ) + "<br/>";
+                        message += "<strong>Preferred Menu for Childcare:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCMenu ) ? request.Events[i].CCMenu : "n/a" ) + "<br/>";
                         message += "<strong>Budget Line for Childcare:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCBudgetLine ) ? BudgetLines.Where( dv => request.Events[i].CCBudgetLine == dv.Id.ToString() ).Select( dv => dv.Value ).FirstOrDefault() : "Not Entered" ) + "<br/>";
-                        message += "<strong>ChildCare Food Set-Up Time:</strong> " + request.Events[i].CCFoodTime + "<br/>";
+                        message += "<strong>ChildCare Food Set-Up Time:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].CCFoodTime ) ? request.Events[i].CCFoodTime : "n/a" ) + "<br/>";
                     }
                 }
 
@@ -1091,6 +1102,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         {
                             message += "<strong>Publicity Blurb:</strong> " + request.Events[i].PublicityBlurb + "<br/>";
                         }
+                    }
+                }
+                if ( !CurrentPersonIsSuperUser && request.Events[i].Drinks != null && request.Events[i].Drinks.Count() > 0 )
+                {
+                    message += "<br/><strong style='color: #6485b3;'>Drink Information</strong><br/>";
+                    if ( request.Events[i].Drinks != null && request.Events[i].Drinks.Count() > 0 )
+                    {
+                        message += "<strong>Drinks:</strong> " + String.Join( ", ", request.Events[i].Drinks ) + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].DrinkTime ) )
+                    {
+                        message += "<strong>Drink Set-up Time:</strong> " + request.Events[i].DrinkTime + "<br/>";
+                    }
+                    if ( !String.IsNullOrEmpty( request.Events[i].DrinkDropOff ) )
+                    {
+                        message += "<strong>Drink Drop off Location:</strong> " + request.Events[i].DrinkDropOff + "<br/>";
                     }
                 }
                 message += "<hr/>";

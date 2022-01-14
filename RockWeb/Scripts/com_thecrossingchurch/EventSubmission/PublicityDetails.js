@@ -97,16 +97,16 @@ export default {
               <approval-field :request="selected" :e="null" :idx="null" field="PublicityStrategies" :fieldname="formatFieldName('Publicity Strategies')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
             </template>
             <template v-else>
-              <span class='red--text'>{{(request.PublicityStrategies ? request.PublicityStrategies.join(', ') : 'Empty')}}: </span>
-              <span class='primary--text'>{{(request.Changes.PublicityStrategies ? request.Changes.PublicityStrategies.join(', ') : 'Empty')}}</span>
+              <span class='red--text'>{{((request.PublicityStrategies && request.PublicityStrategies.length > 0) ? request.PublicityStrategies.join(', ') : 'Empty')}}: </span>
+              <span class='primary--text'>{{((request.Changes.PublicityStrategies && request.Changes.PublicityStrategies.length > 0) ? request.Changes.PublicityStrategies.join(', ') : 'Empty')}}</span>
             </template>
           </template>
           <template v-else>
-            {{request.PublicityStrategies.join(', ')}}
+            {{((request.PublicityStrategies && request.PublicityStrategies.length > 0)? request.PublicityStrategies.join(', ') : 'Empty')}}
           </template>
         </v-col>
       </v-row>
-      <template v-if="request.PublicityStrategies.includes('Social Media/Google Ads')">
+      <template v-if="request.PublicityStrategies && request.PublicityStrategies.includes('Social Media/Google Ads')">
         <v-row>
           <v-col>
             <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
