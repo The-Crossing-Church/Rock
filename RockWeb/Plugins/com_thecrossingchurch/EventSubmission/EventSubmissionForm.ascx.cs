@@ -343,7 +343,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 if ( currentStatus == "Approved" || currentStatus == "Pending Changes" )
                 {
-                    status = "Pending Changes";
+                    if ( CurrentPersonIsEventAdmin )
+                    {
+                        status = "Approved";
+                    }
+                    else
+                    {
+                        status = "Pending Changes";
+                    }
                 }
             }
             if ( currentStatus == "In Progress" )
