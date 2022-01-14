@@ -1415,7 +1415,7 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.HasConflicts = false
         let conflictingMessage = []
         let conflictingRequests = this.existingRequests.filter((r) => {
-          r = JSON.parse(r);
+          //r = JSON.parse(r);
           let compareTarget = [], compareSource = []
           //Build an object for each date to compare with 
           if (r.Events[0].Rooms && r.Events[0].Rooms.length > 0) {

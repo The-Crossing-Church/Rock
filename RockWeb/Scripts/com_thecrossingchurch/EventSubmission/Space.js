@@ -301,7 +301,6 @@ export default {
           dates.push(this.e.EventDate)
         }
         let existingOnDate = this.existing.filter(e => {
-          // e = JSON.parse(e)
           if(e.Id == this.request.Id) {
             return false
           }
@@ -343,7 +342,7 @@ export default {
             return overlaps
           }
           return false
-        })//.map(e => JSON.parse(e))
+        })
         let existingRooms = []
         existingOnDate.forEach(e => {
           e.Events.forEach(ev => {
