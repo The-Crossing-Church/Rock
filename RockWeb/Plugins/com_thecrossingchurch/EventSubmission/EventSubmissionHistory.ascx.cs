@@ -30,6 +30,9 @@ using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using Newtonsoft.Json;
 using CSScriptLibrary;
 using System.Data.Entity.Migrations;
+using RockWeb.TheCrossing;
+using EventRequest = RockWeb.TheCrossing.EventSubmissionHelper.EventRequest;
+using Comment = RockWeb.TheCrossing.EventSubmissionHelper.Comment;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -40,14 +43,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Category( "com_thecrossingchurch > Event Submission" )]
     [Description( "All Event Submissions" )]
 
-    [IntegerField( "DefinedTypeId", "The id of the defined type for rooms.", true, 0, "", 0 )]
-    [IntegerField( "MinistryDefinedTypeId", "The id of the defined type for ministries.", true, 0, "", 0 )]
-    [IntegerField( "ContentChannelId", "The id of the content channel for an event request.", true, 0, "", 0 )]
+    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
+    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
+    [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "", 2 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 3 )]
+    [LinkedPage( "Dashboard Page", "The Request Dashboard Page", true, "", "", 4 )]
 
     public partial class EventSubmissionHistory : Rock.Web.UI.RockBlock
     {
         #region Variables
-        public RockContext context { get; set; }
+        private RockContext context { get; set; }
+        private EventSubmissionHelper eventSubmissionHelper { get; set; }
         private int DefinedTypeId { get; set; }
         private int MinistryDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
@@ -80,15 +86,25 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             base.OnLoad( e );
             context = new RockContext();
-            DefinedTypeId = GetAttributeValue( "DefinedTypeId" ).AsInteger();
-            MinistryDefinedTypeId = GetAttributeValue( "MinistryDefinedTypeId" ).AsInteger();
-            ContentChannelId = GetAttributeValue( "ContentChannelId" ).AsInteger();
-            Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == DefinedTypeId ).ToList();
-            Rooms.LoadAttributes();
-            hfRooms.Value = JsonConvert.SerializeObject( Rooms.Select( dv => new { Id = dv.Id, Value = dv.Value, Type = dv.AttributeValues.FirstOrDefault( av => av.Key == "Type" ).Value.Value, Capacity = dv.AttributeValues.FirstOrDefault( av => av.Key == "Capacity" ).Value.Value.AsInteger(), IsActive = dv.IsActive } ) );
-            Ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
-            Ministries.LoadAttributes();
-            hfMinistries.Value = JsonConvert.SerializeObject( Ministries.Select( dv => new { Id = dv.Id, Value = dv.Value, IsPersonal = dv.AttributeValues.FirstOrDefault( av => av.Key == "IsPersonalRequest" ).Value.Value.AsBoolean(), IsActive = dv.IsActive } ) );
+
+            Guid? RoomDefinedTypeGuid = GetAttributeValue( "RoomList" ).AsGuidOrNull();
+            Guid? MinistryDefinedTypeGuid = GetAttributeValue( "MinistryList" ).AsGuidOrNull();
+            Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
+            Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
+            Guid? DashboardPageGuid = GetAttributeValue( "DashboardPage" ).AsGuidOrNull();
+
+            eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
+            hfRooms.Value = eventSubmissionHelper.RoomsJSON;
+            hfDoors.Value = eventSubmissionHelper.DoorsJSON;
+            hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
+            hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
+            ContentChannelId = eventSubmissionHelper.ContentChannelId;
+            if ( DashboardPageGuid.HasValue )
+            {
+                string pageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
+                hfDashboardURL.Value = "/page/" + pageId;
+            }
+
             GetAllRequests();
             if ( !Page.IsPostBack )
             {
@@ -109,6 +125,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).OrderByDescending( i => i.CreatedDateTime ).ToList();
             items.LoadAttributes();
+            items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" ).ToList();
             hfRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } ) );
         }
 

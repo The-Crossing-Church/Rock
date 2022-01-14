@@ -11,7 +11,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
   rel="stylesheet"
 />
 <link
-  href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
+  href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css"
   rel="stylesheet"
 />
 <link
@@ -35,8 +35,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
   OnClick="btnSwitchFocus_Click"
 />
 
-<div id="app">
-  <v-app>
+<div id="app" v-cloak>
+  <v-app v-cloak>
     <v-main>
       <v-card>
         <v-card-text>
@@ -598,5 +598,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventCalendar"
   }
   .v-expansion-panel--active > .v-expansion-panel-header {
     border-bottom: 1px solid #e2e2e2;
+  }
+  [v-cloak] {
+    display: none !important;
   }
 </style>
