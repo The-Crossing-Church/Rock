@@ -1109,6 +1109,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         {
                             message += "<strong>Publicity Blurb:</strong> " + request.Events[i].PublicityBlurb + "<br/>";
                         }
+
+                        message += "<br/><strong style='color: #6485b3;'>Personnel Information</strong><br/>";
+                        message += "<strong>Needs Medical Team:</strong> " + ( request.Events[i].NeedsMedical == true ? "Yes" : "No" ) + "<br/>";
+                        message += "<strong>Needs Security Team:</strong> " + ( request.Events[i].NeedsSecurity == true ? "Yes" : "No" ) + "<br/>";
                     }
                 }
                 if ( !CurrentPersonIsSuperUser && request.Events[i].Drinks != null && request.Events[i].Drinks.Count() > 0 )

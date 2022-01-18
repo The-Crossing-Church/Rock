@@ -840,6 +840,21 @@ export default {
           </template>
         </v-col>
       </v-row>
+      <v-row v-if="(selected.EventDates && selected.EventDates.length > 1 && selected.IsSame) || ((selected.Changes.EventDates && selected.Changes.EventDates.length > 1 && selected.Changes.IsSame))">
+        <div class="floating-title">Events Require Separate Links</div>
+        <template v-if="selected.Changes != null && selected.EventsNeedSeparateLinks != selected.Changes.EventsNeedSeparateLinks">
+          <template v-if="approvalmode">
+            <approval-field :request="selected" :e="e" :idx="idx" field="EventsNeedSeparateLinks" :fieldname="formatFieldName('Events Need Separate Links')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+          </template>
+          <template v-else>
+            <span class='red--text'>{{(selected.EventsNeedSeparateLinks ? selected.EventsNeedSeparateLinks : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.EventsNeedSeparateLinks ? selected.Changes.EventsNeedSeparateLinks : 'Empty')}}</span>
+          </template>
+        </template>
+        <template v-else>
+          {{selected.EventsNeedSeparateLinks}}
+        </template>
+      </v-row>
     </template>
   </template>
   <template v-if="selected.needsAccom || (selected.Changes && selected.Changes.needsAccom)">
@@ -1043,6 +1058,38 @@ export default {
           <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
             <v-icon>mdi-cancel</v-icon>
           </v-btn>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <div class="floating-title">Needs Medical Team</div>
+          <template v-if="selected.Changes != null && e.NeedsMedical != selected.Changes.Events[idx].NeedsMedical">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="NeedsMedical" :fieldname="formatFieldName('Needs Medical Team')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.NeedsMedical ? boolToYesNo(e.NeedsMedical) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsMedical ? boolToYesNo(selected.Changes.Events[idx].NeedsMedical) : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{boolToYesNo(e.NeedsMedical)}}
+          </template>
+        </v-col>
+        <v-col>
+          <div class="floating-title">Needs Security Team</div>
+          <template v-if="selected.Changes != null && e.NeedsSecurity != selected.Changes.Events[idx].NeedsSecurity">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="NeedsSecurity" :fieldname="formatFieldName('Needs Security Team')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.NeedsSecurity ? boolToYesNo(e.NeedsSecurity) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsSecurity ? boolToYesNo(selected.Changes.Events[idx].NeedsSecurity) : 'Empty')}}</span>
+            </template>
+          </template>
+          <template v-else>
+            {{boolToYesNo(e.NeedsSecurity)}}
+          </template>
         </v-col>
       </v-row>
     </template>

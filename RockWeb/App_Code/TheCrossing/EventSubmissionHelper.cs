@@ -209,6 +209,8 @@ namespace RockWeb.TheCrossing
             public string SetUp { get; set; }
             public bool? NeedsDoorsUnlocked { get; set; }
             public List<string> Doors { get; set; }
+            public bool? NeedsMedical { get; set; }
+            public bool? NeedsSecurity { get; set; }
         }
         public class Comment
         {
