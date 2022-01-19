@@ -499,7 +499,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 <drinks :e="e" :request="request" v-on:updateaccom="updateAccom" :ref="`drinkloop${2+idx}`"></drinks>
               </template>
               <%-- Notes --%>
-              <template v-if="request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub">
+              <template v-if="request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub || isInfrastructureRequest">
                 <v-row>
                   <v-col>
                     <h3 class="primary--text">Additional Info</h3>
@@ -552,7 +552,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
-                  <v-btn color="primary" :disabled="!minimalRequiremnts" @click="next">
+                  <v-btn color="primary" :disabled="!minimalRequiremnts && (idx == (request.Events.length - 1) && !request.needsPub) && canEdit" @click="next">
                     <template v-if="(idx == (request.Events.length - 1) && !request.needsPub) && canEdit">
                       {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
@@ -761,6 +761,7 @@ document.addEventListener("DOMContentLoaded", function () {
             MinsEndBuffer: 0,
             ExpectedAttendance: "",
             Rooms: [],
+            InfrastructureSpace: "",
             NumTablesRound: null,
             NumTablesRect: null,
             TableType: [],
@@ -919,20 +920,20 @@ document.addEventListener("DOMContentLoaded", function () {
     created() {
       this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
       this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
-      this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
-      let isAd = $('[id$="hfIsAdmin"]')[0].value;
+      this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+      let isAd = $('[id$="hfIsAdmin"]')[0].value
       if (isAd == 'True') {
           this.isAdmin = true
       }
-      let isSU = $('[id$="hfIsSuperUser"]')[0].value;
+      let isSU = $('[id$="hfIsSuperUser"]')[0].value
       if(isSU == 'True') {
         this.isSuperUser = true
         this.panel = 0
       } else {
         this.request.needsSpace = true
       }
-      this.request.Contact = $('[id$="hfPersonName"]')[0].value;
-      let req = $('[id$="hfRequest"]')[0].value;
+      this.request.Contact = $('[id$="hfPersonName"]')[0].value
+      let req = $('[id$="hfRequest"]')[0].value
       if (req) {
         let parsed = JSON.parse(req)
         this.request = JSON.parse(parsed.Value)
@@ -1205,6 +1206,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return false
       },
+      isInfrastructureRequest() {
+        let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
+        if(ministryName?.toLowerCase().includes("infrastructure")) {
+          return true
+        }
+        return false
+      },
       minimalRequiremnts() {
         let hasTime = true
         this.request.Events.forEach(e => {
@@ -1215,8 +1223,14 @@ document.addEventListener("DOMContentLoaded", function () {
         let hasSpace = true
         if(this.request.needsSpace) {
           this.request.Events.forEach(e => {
-            if(!e.Rooms || e.Rooms.length == 0) {
-              hasSpace = false
+            if(this.isInfrastructureRequest) {
+              if(!e.InfrastructureSpace && (!e.Rooms || e.Rooms.length == 0)) {
+                hasSpace = false
+              }
+            } else {
+              if(!e.Rooms || e.Rooms.length == 0) {
+                hasSpace = false
+              }
             }
           })
         }
@@ -1669,7 +1683,9 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             //Filter null values out of room list 
             this.request.Events.forEach((e) => {
-              e.Rooms = e.Rooms.filter(r => { return r != null })
+              if(e.Rooms && e.Rooms.length > 0) {
+                e.Rooms = e.Rooms.filter(r => { return r != null })
+              }
             })
           }
           if(this.$refs[`drinkloop${this.stepper}`]) {

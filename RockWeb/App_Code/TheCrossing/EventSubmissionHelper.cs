@@ -157,6 +157,7 @@ namespace RockWeb.TheCrossing
             public int? MinsEndBuffer { get; set; }
             public int? ExpectedAttendance { get; set; }
             public List<string> Rooms { get; set; }
+            public string InfrastructureSpace { get; set; }
             public List<string> TableType { get; set; }
             public int? NumTablesRound { get; set; }
             public int? NumTablesRect { get; set; }

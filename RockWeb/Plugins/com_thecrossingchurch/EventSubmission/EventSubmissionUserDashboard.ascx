@@ -622,39 +622,41 @@ document.addEventListener("DOMContentLoaded", function () {
           { Timeframe: moment().add(6, "days").format("dddd"), Events: [] },
         ];
         this.requests.forEach((i) => {
-          let dates = i.EventDates;
-          dates.forEach((d) => {
-            let timeframe = [];
-            if (d == moment().format("yyyy-MM-DD")) {
-              timeframe.push("Today");
-            }
-            if (d == moment().add(1, "days").format("yyyy-MM-DD")) {
-              timeframe.push("Tomorrow");
-            }
-            if (
-              d == moment().add(2, "days").format("yyyy-MM-DD") ||
-              d == moment().add(3, "days").format("yyyy-MM-DD") ||
-              d == moment().add(4, "days").format("yyyy-MM-DD") ||
-              d == moment().add(5, "days").format("yyyy-MM-DD") ||
-              d == moment().add(6, "days").format("yyyy-MM-DD")
-            ) {
-              timeframe.push(moment(d).format("dddd"));
-            }
-            ordered.forEach((o) => {
-              if (timeframe.includes(o.Timeframe)) {
-                if (i.IsSame || i.Events.length == 1) {
-                  o.Events.push({ Name: i.Name, Rooms: i.Events[0].Rooms, Full: i });
-                } else {
-                  let idx = i.EventDates.indexOf(d)
-                  o.Events.push({ Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i })
-                }
+          if(i.Status == "Approved" || i.Status == "Pending Changes" || i.Status == "Proposed Changes Denied" || i.Status == "Changes Accepted by User") {
+            let dates = i.EventDates;
+            dates.forEach((d) => {
+              let timeframe = [];
+              if (d == moment().format("yyyy-MM-DD")) {
+                timeframe.push("Today");
               }
-            });
-          });
-        });
+              if (d == moment().add(1, "days").format("yyyy-MM-DD")) {
+                timeframe.push("Tomorrow");
+              }
+              if (
+                d == moment().add(2, "days").format("yyyy-MM-DD") ||
+                d == moment().add(3, "days").format("yyyy-MM-DD") ||
+                d == moment().add(4, "days").format("yyyy-MM-DD") ||
+                d == moment().add(5, "days").format("yyyy-MM-DD") ||
+                d == moment().add(6, "days").format("yyyy-MM-DD")
+              ) {
+                timeframe.push(moment(d).format("dddd"));
+              }
+              ordered.forEach((o) => {
+                if (timeframe.includes(o.Timeframe)) {
+                  if (i.IsSame || i.Events.length == 1) {
+                    o.Events.push({ Name: i.Name, Rooms: i.Events[0].Rooms, Full: i })
+                  } else {
+                    let idx = i.EventDates.indexOf(d)
+                    o.Events.push({ Name: i.Name, Rooms: i.Events[idx].Rooms, Full: i })
+                  }
+                }
+              })
+            })
+          }
+        })
         return ordered.filter((o) => {
-          return o.Events.length > 0;
-        });
+          return o.Events.length > 0
+        })
       },
       earliestDateForResubmission() {
         if(this.copy) {

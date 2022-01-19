@@ -79,6 +79,23 @@ export default {
         </template>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col>
+        <div class="floating-title">Other Spaces</div>
+        <template v-if="selected.Changes != null && e.InfrastructureSpace != selected.Changes.Events[idx].InfrastructureSpace">
+          <template v-if="approvalmode">
+            <approval-field :request="selected" :e="e" :idx="idx" field="InfrastructureSpace" :fieldname="formatFieldName('InfrastructureSpace')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+          </template>
+          <template v-else>
+            <span class='red--text'>{{(e.InfrastructureSpace ? e.InfrastructureSpace : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.Events[idx].InfrastructureSpace ? selected.Changes.Events[idx].InfrastructureSpace : 'Empty')}}</span>
+          </template>
+        </template>
+        <template v-else>
+          {{e.InfrastructureSpace}}
+        </template>
+      </v-col>
+    </v-row>
     <v-row v-if="e.TableType && e.TableType.length > 0 || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length > 0)">
       <v-col cols="6">
         <div class="floating-title">Requested Tables</div>
