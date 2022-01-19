@@ -136,12 +136,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
 
             Guid? userActionWF = GetAttributeValue( "UserActionWorkflow" ).AsGuidOrNull();
-            if ( userActionWF.HasValue )
+            Guid? WorkflowEntryPageGuid = GetAttributeValue( "WorkflowEntryPage" ).AsGuidOrNull();
+            if ( userActionWF.HasValue && WorkflowEntryPageGuid.HasValue )
             {
                 UserActionWorkflowId = new WorkflowTypeService( context ).Get( userActionWF.Value ).Id;
-                int workflowEntryPageId = GetAttributeValue( "WorkflowEntryPageId" ).AsInteger();
-                int workflowTypeId = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "UserActionWorkflow" ) ) ).Id;
-                hfWorkflowURL.Value = "/page/" + workflowEntryPageId + "?WorkflowTypeId=" + workflowTypeId;
+                if ( WorkflowEntryPageGuid.HasValue )
+                {
+                    int workflowEntryPageId = new PageService( context ).Get( WorkflowEntryPageGuid.Value ).Id;
+                    int workflowTypeId = new WorkflowTypeService( context ).Get( Guid.Parse( GetAttributeValue( "UserActionWorkflow" ) ) ).Id;
+                    hfWorkflowURL.Value = "/page/" + workflowEntryPageId + "?WorkflowTypeId=" + workflowTypeId;
+                }
             }
 
 
@@ -166,7 +170,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
 
             //Throw an error if not all values are present
-            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !BudgetDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !userActionWF.HasValue )
+            if ( !RoomDefinedTypeGuid.HasValue || !MinistryDefinedTypeGuid.HasValue || !BudgetDefinedTypeGuid.HasValue || !ContentChannelGuid.HasValue || String.IsNullOrEmpty( BaseURL ) || !RequestPageGuid.HasValue || !DashboardPageGuid.HasValue || !userActionWF.HasValue || !WorkflowEntryPageGuid.HasValue )
             {
                 return;
             }

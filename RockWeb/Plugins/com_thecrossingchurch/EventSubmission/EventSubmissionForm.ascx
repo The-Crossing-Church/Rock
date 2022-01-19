@@ -191,12 +191,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 <v-switch
                   v-model="request.needsReg"
                   label="Registration"
-                  hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
+                  hint="Requests involving registration must be made at least 30 days in advance."
                   :persistent-hint="request.needsReg"
-                  :disabled="!isFuneralRequest && !originalRequest.needsReg && twoWeeksTense == 'was'"
+                  :disabled="!isFuneralRequest && !originalRequest.needsReg && thirtyDaysTense == 'was'"
                 ></v-switch>
                 <div class="date-warning overline" v-if="!isFuneralRequest && request.EventDates?.length > 0 && !request.needsReg">
-                  The last possible date to request registration {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+                  The last possible date to request registration {{thirtyDaysTense}} {{thirtyDaysBeforeEventStart}}
                 </div>
               </v-col>
             </v-row>
@@ -1003,6 +1003,7 @@ document.addEventListener("DOMContentLoaded", function () {
           eDate = moment(eDate).add(6, "weeks").add(1, "day")
         } else if (
             this.request.needsChildCare ||
+            this.request.needsReg ||
             this.request.ExpectedAttendance > 250
           ) {
           eDate = moment().add(30, "days");
@@ -1014,7 +1015,6 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (
           this.request.needsOnline ||
           this.request.needsCatering ||
-          this.request.needsReg ||
           this.request.needsAccom
         ) {
           eDate = moment(eDate).add(14, "days")
@@ -1585,7 +1585,7 @@ document.addEventListener("DOMContentLoaded", function () {
             resourceErrors.errors.push("Your request for accommodations is invalid, it has been removed")
             this.request.needsAccom = false
           }
-          if(this.request.needsReg && !this.originalRequest.needsReg && this.twoWeeksTense == 'was') {
+          if(this.request.needsReg && !this.originalRequest.needsReg && this.thirtyDaysTense == 'was') {
             resourceErrors.errors.push("Your request for registration is invalid, it has been removed")
             this.request.needsReg = false
           }

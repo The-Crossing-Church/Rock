@@ -20,8 +20,8 @@ export default {
       :date="e.RegistrationDate"
       label="What date do you need the registration link to be ready and live?"
       clearable
-      :rules="[rules.required(e.RegistrationDate, 'Start Date'), ]"
-      :min="earliestPubDate"
+      :rules="[rules.required(e.RegistrationDate, 'Start Date')]"
+      :min="earliestRegDate"
     ></date-picker>
   </v-col>
   <v-col cols="12" md="6">
@@ -87,7 +87,7 @@ export default {
           persistent-hint
           clearable
           :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.EventDate, e.RegistrationEndDate, request.needsChildCare)]"
-          :min="earliestPubDate"
+          :min="earliestRegDate"
         ></date-picker>
       </v-col>
     </v-row>
@@ -303,6 +303,18 @@ export default {
     },
   },
   computed: {
+    earliestRegDate() {
+      let eDate = new moment();
+      if(this.request.Id > 0) {
+        eDate = new moment(this.request.SubmittedOn)
+      }
+      eDate = moment(eDate).add(14, "days")
+      //Override for Funerals
+      if(this.isFuneralRequest) {
+        eDate = new moment()
+      }
+      return moment(eDate).format("yyyy-MM-DD");
+    },
     defaultRegistraionStart() {
       if (this.request.needsReg) {
         if (this.e.RegistrationDate) {
