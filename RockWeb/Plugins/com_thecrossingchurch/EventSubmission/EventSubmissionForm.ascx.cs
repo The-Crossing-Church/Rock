@@ -243,7 +243,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                             if ( request.Events[k].EndTime.Contains( "PM" ) )
                             {
                                 var info = request.Events[k].EndTime.Split( ':' );
-                                if ( Int32.Parse( info[0] ) >= 9 )
+                                if ( Int32.Parse( info[0] ) >= 9 && Int32.Parse( info[0] ) < 12 )
                                 {
                                     allMeetTimeRequirements = false;
                                 }

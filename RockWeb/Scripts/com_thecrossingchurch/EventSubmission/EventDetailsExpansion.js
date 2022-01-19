@@ -354,12 +354,12 @@ export default {
             <approval-field :request="selected" :e="e" :idx="idx" field="BudgetLine" :fieldname="formatFieldName('Budget Line')" :formatter="formatBudgetLine" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.BudgetLine ? e.BudgetLine : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].BudgetLine ? selected.Changes.Events[idx].BudgetLine : 'Empty')}}</span>
+            <span class='red--text'>{{(e.BudgetLine ? formatBudgetLine(e.BudgetLine) : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.Events[idx].BudgetLine ? formatBudgetLine(selected.Changes.Events[idx].BudgetLine) : 'Empty')}}</span>
           </template>
         </template>
         <template v-else>
-          {{e.BudgetLine}}
+          {{formatBudgetLine(e.BudgetLine)}}
         </template>
       </v-col>
     </v-row>
