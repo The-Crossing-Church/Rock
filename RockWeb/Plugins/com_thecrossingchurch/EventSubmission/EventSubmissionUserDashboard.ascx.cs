@@ -59,15 +59,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, order: 8 )]
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, order: 9 )]
     [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 10 )]
+    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "", 11 )]
 
     public partial class EventSubmissionUserDashboard : Rock.Web.UI.RockBlock
     {
         #region Variables
         private RockContext context { get; set; }
         private EventSubmissionHelper eventSubmissionHelper { get; set; }
-        private int RoomDefinedTypeId { get; set; }
-        private int MinistryDefinedTypeId { get; set; }
-        private int BudgetDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
         private int ContentChannelTypeId { get; set; }
         public string BaseURL { get; set; }
@@ -75,12 +73,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private Guid? RequestPageGuid { get; set; }
         private string AdminDashboardPageId { get; set; }
         private int UserActionWorkflowId { get; set; }
-        private List<DefinedValue> Rooms { get; set; }
-        private List<DefinedValue> Doors { get; set; }
-        private List<DefinedValue> Ministries { get; set; }
-        private List<DefinedValue> BudgetLines { get; set; }
         private Rock.Model.Group RoomOnlySR { get; set; }
         private Rock.Model.Group EventSR { get; set; }
+        private Rock.Model.GroupType SharedRequestGT { get; set; }
         private static class PageParameterKey
         {
             public const string Id = "Id";
@@ -148,6 +143,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
             }
 
+            Guid? sharedRequestGTGuid = GetAttributeValue( "SharedEventGroupType" ).AsGuidOrNull();
+            if ( sharedRequestGTGuid.HasValue )
+            {
+                SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGTGuid.Value );
+            }
 
             Guid? superUserGuid = GetAttributeValue( "SuperUserRole" ).AsGuidOrNull();
             var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
@@ -188,7 +188,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         protected void LoadMyRequests()
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
-            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && i.CreatedByPersonAliasId == CurrentPersonAliasId ).ToList();
+            List<int?> aliasIds = new List<int?>() { CurrentPersonAliasId };
+            if ( SharedRequestGT != null )
+            {
+                //Shared requests are configured, find any for the current user.
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
+                var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == CurrentPersonId.Value && gm.GroupRole.Name == "Can View" );
+                groups = from g in groups
+                         join gm in groupMembers on g.Id equals gm.GroupId
+                         select g;
+                var grpList = groups.ToList();
+                for ( int k = 0; k < grpList.Count(); k++ )
+                {
+                    var ids = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Request Creator" ).Select( gm => gm.Person.PrimaryAliasId );
+                    aliasIds.AddRange( ids );
+                }
+            }
+            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && aliasIds.Contains( i.CreatedByPersonAliasId ) ).ToList();
             items.LoadAttributes();
             var requests = items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, Comments = JsonConvert.DeserializeObject<List<Comment>>( i.AttributeValues.FirstOrDefault( av => av.Key == "Comments" ).Value.Value ) } );
             hfRequests.Value = JsonConvert.SerializeObject( requests );

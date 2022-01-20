@@ -64,7 +64,9 @@ export default {
         let formattedVal = this.ministries.filter(m => {
           return m.Id == val
         })
-        return formattedVal[0].Value
+        if(formattedVal && formattedVal.length > 0) {
+          return formattedVal[0].Value
+        } 
       }
       return "";
     },
@@ -73,7 +75,7 @@ export default {
         let formattedVal = this.budgetLines.filter(m => {
           return m.Id == val
         })
-        if(formattedVal) {
+        if(formattedVal && formattedVal.length > 0) {
           return formattedVal[0].Value
         } else {
           return val
