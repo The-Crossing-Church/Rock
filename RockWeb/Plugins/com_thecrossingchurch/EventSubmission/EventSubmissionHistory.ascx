@@ -35,6 +35,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
 <asp:HiddenField ID="hfBudgetLines" runat="server" />
 <asp:HiddenField ID="hfRequests" runat="server" />
 <asp:HiddenField ID="hfDashboardURL" runat="server" />
+<asp:HiddenField ID="hfIsSuperUser" runat="server" />
 
 <div id="app" v-cloak>
   <v-app v-cloak>
