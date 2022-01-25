@@ -308,7 +308,7 @@ export default {
       if(this.request.Id > 0) {
         eDate = new moment(this.request.SubmittedOn)
       }
-      eDate = moment(eDate).add(14, "days")
+      eDate = moment(eDate).add(13, "days")
       //Override for Funerals
       if(this.isFuneralRequest) {
         eDate = new moment()

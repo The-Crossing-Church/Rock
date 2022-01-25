@@ -764,12 +764,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     message += "<ul>" +
                             "<li>Zoom</li>" +
                             "<li>Catering</li>" +
+                            "<li>Registration</li>" +
                             "<li>Extra Accommodations</li>" +
                         "</ul> <br/>";
                     if ( thirtyDayDate >= today )
                     {
                         message += "Last date to request and provide all information for the following resources is <strong>" + thirtyDayDate.ToShortDateString() + "</strong>:";
-                        message += "<ul><li>Childcare</li><li>Registration</li></ul>";
+                        message += "<ul><li>Childcare</li></ul>";
                         if ( sixWeekDate >= today )
                         {
                             message += "Last date to request and provide all information for the following resources is <strong>" + sixWeekDate.ToShortDateString() + "</strong>:";
@@ -783,7 +784,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                     else
                     {
-                        unavailableResources.Add( "Registration" );
                         unavailableResources.Add( "Childcare" );
                         unavailableResources.Add( "Publicity" );
                         //message += "There is not enough time between now and your first event date to allow for Childcare.";
