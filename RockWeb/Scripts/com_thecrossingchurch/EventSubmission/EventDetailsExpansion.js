@@ -1044,38 +1044,54 @@ export default {
         </v-col>
       </v-row>
       <v-row v-if="e.SetUpImage || (selected.Changes && selected.Changes.Events[idx].SetUpImage)">
-        <v-col>
-          <div class="floating-title">Set-up Image</div>
-          <template  v-if="e.SetUpImage">
-            <span class='red--text'>{{e.SetUpImage.name}}</span>
-            <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
-              <v-icon color="accent">mdi-download</v-icon>
+        <template v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
+          <v-col>
+            <div class="floating-title">Set-up Image</div>
+            <template v-if="e.SetUpImage">
+              <span class='red--text'>{{e.SetUpImage.name}}</span>
+              <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+                <v-icon color="accent">mdi-download</v-icon>
+              </v-btn>
+            </template>
+            <template v-else>
+              <span class='red--text'>Empty</span>
+            </template>
+          </v-col>
+          <v-col>
+            <div class="floating-title">Set-up Image</div>
+            <template v-if="selected.Changes.Events[idx].SetUpImage">
+              <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
+              <v-btn icon color="accent" @click="saveFile(idx, 'new')">
+                <v-icon color="accent">mdi-download</v-icon>
+              </v-btn>
+            </template>
+            <template v-else>
+              <span class='primary--text'>Empty</span>
+            </template>
+          </v-col>
+          <v-col v-if="approvalmode">
+            <v-btn fab small color="accent" @click="setUpImageChoiceMade = true; setUpImageIsApproved = true; approveChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && setUpImageIsApproved">
+              <v-icon>mdi-check-circle</v-icon>
             </v-btn>
-          </template>
-          <template v-else>
-            <span class='red--text'>Empty</span>
-          </template>
-        </v-col>
-        <v-col v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
-          <div class="floating-title">Set-up Image</div>
-          <template v-if="selected.Changes.Events[idx].SetUpImage">
-            <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
-            <v-btn icon color="accent" @click="saveFile(idx, 'new')">
-              <v-icon color="accent">mdi-download</v-icon>
+            <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
+              <v-icon>mdi-cancel</v-icon>
             </v-btn>
-          </template>
-          <template v-else>
-          <span class='primary--text'>Empty</span>
-          </template>
-        </v-col>
-        <v-col v-if="approvalmode">
-          <v-btn fab small color="accent" @click="setUpImageChoiceMade = true; setUpImageIsApproved = true; approveChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && setUpImageIsApproved">
-            <v-icon>mdi-check-circle</v-icon>
-          </v-btn>
-          <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
-            <v-icon>mdi-cancel</v-icon>
-          </v-btn>
-        </v-col>
+          </v-col>
+        </template>
+        <template v-else>
+          <v-col>
+            <div class="floating-title">Set-up Image</div>
+            <template v-if="e.SetUpImage">
+              <span>{{e.SetUpImage.name}}</span>
+              <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+                <v-icon color="accent">mdi-download</v-icon>
+              </v-btn>
+            </template>
+            <template v-else>
+              <span>Empty</span>
+            </template>
+          </v-col>
+        </template>
       </v-row>
       <v-row>
         <v-col>
@@ -1181,7 +1197,20 @@ export default {
       } else {
         return 'text--accent text-uppercase'
       }
-    }
+    },
+    saveFile(idx, type) {
+      var a = document.createElement("a");
+      a.style = "display: none";
+      document.body.appendChild(a);
+      if (type == 'existing') {
+        a.href = this.selected.Events[idx].SetUpImage.data;
+        a.download = this.selected.Events[idx].SetUpImage.name;
+      } else if (type == 'new') {
+        a.href = this.selected.Changes.Events[idx].SetUpImage.data;
+        a.download = this.selected.Changes.Events[idx].SetUpImage.name;
+      }
+      a.click();
+    },
   },
   components: {
     'approval-field': approvalField,

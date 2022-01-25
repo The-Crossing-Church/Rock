@@ -715,19 +715,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let url = $('[id$="hfHistoryURL"]').val();
         window.location = url
       },
-      saveFile(idx, type) {
-        var a = document.createElement("a");
-        a.style = "display: none";
-        document.body.appendChild(a);
-        if (type == 'existing') {
-          a.href = this.selected.Events[idx].SetUpImage.data;
-          a.download = this.selected.Events[idx].SetUpImage.name;
-        } else if (type == 'new') {
-          a.href = this.selected.Changes.Events[idx].SetUpImage.data;
-          a.download = this.selected.Changes.Events[idx].SetUpImage.name;
-        }
-        a.click();
-      },
       nonTransferable(val) {
         val = val.replace(/(?:\\[rn])+/g, '<br/>')
         return val
@@ -820,73 +807,76 @@ document.addEventListener("DOMContentLoaded", function () {
           $('[id$="hfUpcomingRequests"]')[0].value
         );
         this.conflictingMessage = []
-        this.conflictingRequests = this.existingRequests.filter((r) => {
-          if (r.Id == this.selected.Id) {
-            return false
-          }
-          r = JSON.parse(r.Value);
-          let compareTarget = [], compareSource = []
-          //Build an object for each date to compare with 
-          if (r.IsSame || r.Events.length == 1) {
-            for (let i = 0; i < r.EventDates.length; i++) {
-              compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+        this.conflictingRequests = []
+        if(this.selected.needsSpace) {
+          this.conflictingRequests = this.existingRequests.filter((r) => {
+            if (r.Id == this.selected.Id) {
+              return false
             }
-          } else {
-            for (let i = 0; i < r.Events.length; i++) {
-              compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
+            r = JSON.parse(r.Value);
+            let compareTarget = [], compareSource = []
+            //Build an object for each date to compare with 
+            if (r.IsSame || r.Events.length == 1) {
+              for (let i = 0; i < r.EventDates.length; i++) {
+                compareTarget.push({ Date: r.EventDates[i], StartTime: r.Events[0].StartTime, EndTime: r.Events[0].EndTime, Rooms: r.Events[0].Rooms, MinsStartBuffer: r.Events[0].MinsStartBuffer, MinsEndBuffer: r.Events[0].MinsEndBuffer });
+              }
+            } else {
+              for (let i = 0; i < r.Events.length; i++) {
+                compareTarget.push({ Date: r.Events[i].EventDate, StartTime: r.Events[i].StartTime, EndTime: r.Events[i].EndTime, Rooms: r.Events[i].Rooms, MinsStartBuffer: r.Events[i].MinsStartBuffer, MinsEndBuffer: r.Events[i].MinsEndBuffer });
+              }
             }
-          }
-          if (this.selected.Events.length == 1 || this.selected.IsSame) {
-            for (let i = 0; i < this.selected.EventDates.length; i++) {
-              compareSource.push({ Date: this.selected.EventDates[i], StartTime: this.selected.Events[0].StartTime, EndTime: this.selected.Events[0].EndTime, Rooms: this.selected.Events[0].Rooms, MinsStartBuffer: this.selected.Events[0].MinsStartBuffer, MinsEndBuffer: this.selected.Events[0].MinsEndBuffer })
+            if (this.selected.Events.length == 1 || this.selected.IsSame) {
+              for (let i = 0; i < this.selected.EventDates.length; i++) {
+                compareSource.push({ Date: this.selected.EventDates[i], StartTime: this.selected.Events[0].StartTime, EndTime: this.selected.Events[0].EndTime, Rooms: this.selected.Events[0].Rooms, MinsStartBuffer: this.selected.Events[0].MinsStartBuffer, MinsEndBuffer: this.selected.Events[0].MinsEndBuffer })
+              }
+            } else {
+              for (let i = 0; i < this.selected.Events.length; i++) {
+                compareSource.push({ Date: this.selected.Events[i].EventDate, StartTime: this.selected.Events[i].StartTime, EndTime: this.selected.Events[i].EndTime, Rooms: this.selected.Events[i].Rooms, MinsStartBuffer: this.selected.Events[i].MinsStartBuffer, MinsEndBuffer: this.selected.Events[i].MinsEndBuffer })
+              }
             }
-          } else {
-            for (let i = 0; i < this.selected.Events.length; i++) {
-              compareSource.push({ Date: this.selected.Events[i].EventDate, StartTime: this.selected.Events[i].StartTime, EndTime: this.selected.Events[i].EndTime, Rooms: this.selected.Events[i].Rooms, MinsStartBuffer: this.selected.Events[i].MinsStartBuffer, MinsEndBuffer: this.selected.Events[i].MinsEndBuffer })
-            }
-          }
-          let conflicts = false
-          for (let x = 0; x < compareTarget.length; x++) {
-            for (let y = 0; y < compareSource.length; y++) {
-              if (compareTarget[x].Date == compareSource[y].Date) {
-                //On same date
-                //Check for conflicting rooms
-                let conflictingRooms = compareSource[y].Rooms.filter(value => compareTarget[x].Rooms.includes(value));
-                if (conflictingRooms.length > 0) {
-                  //Check they do not overlap with moment-range
-                  let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
-                  if (compareTarget[x].MinsStartBuffer) {
-                    cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
-                  }
-                  let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
-                  if (compareTarget[x].MinsEndBuffer) {
-                    cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
-                  }
-                  let cRange = moment.range(cdStart, cdEnd);
-                  let current = moment.range(
-                    moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
-                    moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
-                  );
-                  if (cRange.overlaps(current)) {
-                    conflicts = true
-                    let roomNames = []
-                    conflictingRooms.forEach(r => {
-                      let roomName = this.rooms.filter((room) => {
-                        return room.Id == r;
+            let conflicts = false
+            for (let x = 0; x < compareTarget.length; x++) {
+              for (let y = 0; y < compareSource.length; y++) {
+                if (compareTarget[x].Date == compareSource[y].Date) {
+                  //On same date
+                  //Check for conflicting rooms
+                  let conflictingRooms = compareSource[y].Rooms?.filter(value => compareTarget[x].Rooms.includes(value));
+                  if (conflictingRooms.length > 0) {
+                    //Check they do not overlap with moment-range
+                    let cdStart = moment(`${compareTarget[x].Date} ${compareTarget[x].StartTime}`, `yyyy-MM-DD hh:mm A`);
+                    if (compareTarget[x].MinsStartBuffer) {
+                      cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
+                    }
+                    let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                    if (compareTarget[x].MinsEndBuffer) {
+                      cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
+                    }
+                    let cRange = moment.range(cdStart, cdEnd);
+                    let current = moment.range(
+                      moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
+                      moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                    );
+                    if (cRange.overlaps(current)) {
+                      conflicts = true
+                      let roomNames = []
+                      conflictingRooms.forEach(r => {
+                        let roomName = this.rooms.filter((room) => {
+                          return room.Id == r;
+                        })
+                        if (roomName.length > 0) {
+                          roomName = roomName[0].Value;
+                        }
+                        roomNames.push(roomName)
                       })
-                      if (roomName.length > 0) {
-                        roomName = roomName[0].Value;
-                      }
-                      roomNames.push(roomName)
-                    })
-                    this.conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                      this.conflictingMessage.push(`${moment(compareSource[y].Date).format('MM/DD/yyyy')} (${roomNames.join(", ")})`)
+                    }
                   }
                 }
               }
             }
-          }
-          return conflicts
-        })
+            return conflicts
+          })
+        }
         
         if (this.conflictingRequests.length > 0) {
           return true

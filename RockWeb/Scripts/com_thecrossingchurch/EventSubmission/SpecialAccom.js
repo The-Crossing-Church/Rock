@@ -369,15 +369,18 @@ export default {
       this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
     },
     handleSetUpFile(e) {
-      let file = { name: e.name, type: e.type };
-      var reader = new FileReader();
-      const self = this;
-      reader.onload = function (e) {
-        console.log(e)
-        file.data = e.target.result;
-        self.e.SetUpImage = file;
-      };
-      reader.readAsDataURL(e);
+      if(e) {
+        let file = { name: e.name, type: e.type };
+        var reader = new FileReader();
+        const self = this;
+        reader.onload = function (e) {
+          file.data = e.target.result;
+          self.e.SetUpImage = file;
+        };
+        reader.readAsDataURL(e);
+      } else {
+        this.e.SetUpImage = null
+      }
     },
     boolToYesNo(val) {
       if (val) {
