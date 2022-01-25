@@ -104,6 +104,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 string pageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
                 hfDashboardURL.Value = "/page/" + pageId;
             }
+            hfIsSuperUser.Value = "True";
 
             GetAllRequests();
             if ( !Page.IsPostBack )

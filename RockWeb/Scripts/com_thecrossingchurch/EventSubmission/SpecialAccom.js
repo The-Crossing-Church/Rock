@@ -176,6 +176,25 @@ export default {
       ></v-file-input>
     </v-col>
   </v-row>
+  <v-row>
+    <v-col cols="12">
+      <h4 class="accent--text">Personnel</h4>
+    </v-col>
+  </v-row>
+  <v-row>
+    <v-col cols="12" md="6">
+      <v-switch
+        :label="medicalLabel"
+        v-model="e.NeedsMedical"
+      ></v-switch>
+    </v-col>
+    <v-col cols="12" md="6">
+      <v-switch
+        :label="securityLabel"
+        v-model="e.NeedsSecurity"
+      ></v-switch>
+    </v-col>
+  </v-row>
   <v-dialog
     v-if="dialog"
     v-model="dialog"
@@ -283,6 +302,12 @@ export default {
       return ''
       // return `${this.e.Drinks.toString().includes('Coffee') ? 'Due to COVID-19, all drip coffee must be served by a designated person or team from the hosting ministry. This person must wear a mask and gloves and be the only person to touch the cups, sleeves, lids, and coffee carafe before the coffee is served to attendees. If you are not willing to provide this for your own event, please deselect the coffee option and opt for an individually packaged item like bottled water or soda.' : ''}`
     },
+    medicalLabel() {
+      return `Do you need medical personnel present at your event? (${this.boolToYesNo(this.e.NeedsMedical)})`
+    },
+    securityLabel() {
+      return `Do you need security personnel present at your event? (${this.boolToYesNo(this.e.NeedsSecurity)})`
+    },
     defaultFoodTime() {
       if (this.e.StartTime && !this.e.StartTime.includes('null')) {
         let time = moment(this.e.StartTime, "hh:mm A");
@@ -344,15 +369,18 @@ export default {
       this.$emit('updateaccom', { targetIdx: idx, currIdx: currIdx })
     },
     handleSetUpFile(e) {
-      let file = { name: e.name, type: e.type };
-      var reader = new FileReader();
-      const self = this;
-      reader.onload = function (e) {
-        console.log(e)
-        file.data = e.target.result;
-        self.e.SetUpImage = file;
-      };
-      reader.readAsDataURL(e);
+      if(e) {
+        let file = { name: e.name, type: e.type };
+        var reader = new FileReader();
+        const self = this;
+        reader.onload = function (e) {
+          file.data = e.target.result;
+          self.e.SetUpImage = file;
+        };
+        reader.readAsDataURL(e);
+      } else {
+        this.e.SetUpImage = null
+      }
     },
     boolToYesNo(val) {
       if (val) {

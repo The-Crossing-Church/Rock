@@ -65,6 +65,14 @@ export default {
       </v-autocomplete>
     </v-col>
   </v-row>
+  <v-row v-if="isInfrastructureRequest">
+    <v-col>
+      <v-textarea
+        label="Other Spaces"
+        v-model="e.InfrastructureSpace"
+      ></v-textarea>
+    </v-col>
+  </v-row>
   <v-row v-if="canRequestTables">
     <v-col cols="12" md="6">
       <v-select
@@ -223,6 +231,7 @@ export default {
           setUp: false,
           valid: true,
           rooms: [],
+          ministries: [],
           prefillDate: '',
           searchInput: '',
           isSuperUser: false,
@@ -231,43 +240,43 @@ export default {
                 return !!val || `${field} is required`;
               },
               requiredArr(val, field) {
-                  return val.length > 0 || `${field} is required`;
+                return val.length > 0 || `${field} is required`;
               },
               isInt(val, field) {
-                  if (val) {
-                    return !(val.includes('.') || val.includes('-')) || `${field} must be a whole number`
-                  }
-                  return true
+                if (val) {
+                  return !(val.includes('.') || val.includes('-')) || `${field} must be a whole number`
+                }
+                return true
               },
               exceedsSelected(val, selected, rooms) {
-                  if (val && selected) {
-                      let room = rooms.filter((i) => {
-                          return i.Id == selected;
-                      })[0];
-                      let cap = room.Capacity;
-                      if (val > cap) {
-                          return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
-                              } in the selected space`;
-                      }
+                if (val && selected) {
+                  let room = rooms.filter((i) => {
+                    return i.Id == selected;
+                  })[0];
+                  let cap = room.Capacity;
+                  if (val > cap) {
+                    return `You cannot have more than ${cap} ${cap == 1 ? "person" : "people"
+                        } in the selected space`;
                   }
-                  return true;
+                }
+                return true;
               },
               roomCapacity(allRooms, rooms, attendance) {
-                  if (attendance) {
-                      let selectedRooms = allRooms.filter((r) => {
-                          return rooms.includes(r.Id);
-                      });
-                      let maxCapacity = 0;
-                      selectedRooms.forEach((r) => {
-                          maxCapacity += r.Capacity;
-                      });
-                      if (attendance <= maxCapacity) {
-                          return true;
-                      } else {
-                          return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
-                      }
+                if (attendance) {
+                  let selectedRooms = allRooms.filter((r) => {
+                    return rooms.includes(r.Id);
+                  });
+                  let maxCapacity = 0;
+                  selectedRooms.forEach((r) => {
+                    maxCapacity += r.Capacity;
+                  });
+                  if (attendance <= maxCapacity) {
+                    return true;
+                  } else {
+                    return `This selection of rooms alone can only support a maximum capacity of ${maxCapacity}. Please select more rooms for increased capacity or lower your expected attendance.`;
                   }
-                  return true;
+                }
+                return true;
               },
           }
       }
@@ -275,6 +284,7 @@ export default {
   created: function () {
     this.allEvents = []
     this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
+    this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
     let isSU = $('[id$="hfIsSuperUser"]')[0].value
     if(isSU == 'True') {
       this.isSuperUser = true
@@ -286,153 +296,160 @@ export default {
     },
   },
   computed: {
-      attHint() {
-        return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
-      },
-      prefillOptions() {
-        return this.request.EventDates.filter(i => i != this.e.EventDate)
-      },
-      groupedRooms() {
-        let loc = []
-        let dates = []
-        if(this.request.IsSame) {
-          dates = this.request.EventDates
-        } else {
-          dates.push(this.e.EventDate)
-        }
-        let existingOnDate = this.existing.filter(e => {
-          if(e.Id == this.request.Id) {
-            return false
-          }
-          let intersect = e.EventDates.filter(val => dates.includes(val))
-          if(intersect.length > 0) {
-            //Filter to events object for the matching dates
-            let events = []
-            if(e.IsSame) {
-              events = e.Events
-            } else {
-              events = e.Events.filter(val => dates.includes(val.EventDate))
-            }
-            //Check if the times overlap
-            let overlaps = false
-            events.forEach((event, idx) => {
-              let date = event.EventDate
-              if(e.IsSame) {
-                date = intersect[idx]
-              }
-              let cdStart = moment(`${date} ${event.StartTime}`, `yyyy-MM-DD hh:mm A`)
-              if (event.MinsStartBuffer) {
-                  cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
-              }
-              let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`)
-              if (event.MinsEndBuffer) {
-                  cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
-              }
-              let cRange = moment.range(cdStart, cdEnd);
-              for(let i=0; i<dates.length; i++) {
-                let current = moment.range(
-                    moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
-                    moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`)
-                );
-                if (cRange.overlaps(current)) {
-                  overlaps = true
-                }
-              }
-            })
-            return overlaps
-          }
+    attHint() {
+      return this.e.ExpectedAttendance > 250 ? 'Events with more than 250 attendees must be approved by the city and requests must be submitted at least 30 days in advance' : ''
+    },
+    prefillOptions() {
+      return this.request.EventDates.filter(i => i != this.e.EventDate)
+    },
+    groupedRooms() {
+      let loc = []
+      let dates = []
+      if(this.request.IsSame) {
+        dates = this.request.EventDates
+      } else {
+        dates.push(this.e.EventDate)
+      }
+      let existingOnDate = this.existing.filter(e => {
+        if(e.Id == this.request.Id) {
           return false
-        })
-        let existingRooms = []
-        existingOnDate.forEach(e => {
-          e.Events.forEach(ev => {
-            existingRooms.push(...ev.Rooms)
-          })
-        })
-        this.rooms.forEach(l => {
-          let idx = -1
-          loc.forEach((i, x) => {
-            if (i.Type == l.Type) {
-              idx = x
-            }
-          })
-          //Disable rooms not available for the date/time
-          l.IsDisabled = false
-          l.IsHeader = false
-          if(!l.IsActive) {
-            l.IsDisabled = true
-          }
-          if(existingRooms.includes(l.Id)){
-            l.IsDisabled = true
-          }
-          if (idx > -1) {
-            loc[idx].locations.push(l)
+        }
+        let intersect = e.EventDates.filter(val => dates.includes(val))
+        if(intersect.length > 0) {
+          //Filter to events object for the matching dates
+          let events = []
+          if(e.IsSame) {
+            events = e.Events
           } else {
-            loc.push({ Type: l.Type, locations: [l] })
+            events = e.Events.filter(val => dates.includes(val.EventDate))
           }
-        })
-        loc.forEach(l => {
-          l.locations = l.locations.sort((a, b) => {
-            if (a.Value < b.Value) {
-              return -1
-            } else if (a.Value > b.Value) {
-              return 1
-            } else {
-              return 0
+          //Check if the times overlap
+          let overlaps = false
+          events.forEach((event, idx) => {
+            let date = event.EventDate
+            if(e.IsSame) {
+              date = intersect[idx]
+            }
+            let cdStart = moment(`${date} ${event.StartTime}`, `yyyy-MM-DD hh:mm A`)
+            if (event.MinsStartBuffer) {
+                cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
+            }
+            let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`)
+            if (event.MinsEndBuffer) {
+                cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
+            }
+            let cRange = moment.range(cdStart, cdEnd);
+            for(let i=0; i<dates.length; i++) {
+              let current = moment.range(
+                  moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
+                  moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`)
+              );
+              if (cRange.overlaps(current)) {
+                overlaps = true
+              }
             }
           })
+          return overlaps
+        }
+        return false
+      })
+      let existingRooms = []
+      existingOnDate.forEach(e => {
+        e.Events.forEach(ev => {
+          existingRooms.push(...ev.Rooms)
         })
-        loc = loc.sort((a, b) => {
-          if (a.Type < b.Type) {
+      })
+      this.rooms.forEach(l => {
+        let idx = -1
+        loc.forEach((i, x) => {
+          if (i.Type == l.Type) {
+            idx = x
+          }
+        })
+        //Disable rooms not available for the date/time
+        l.IsDisabled = false
+        l.IsHeader = false
+        if(!l.IsActive) {
+          l.IsDisabled = true
+        }
+        if(existingRooms.includes(l.Id)){
+          l.IsDisabled = true
+        }
+        if (idx > -1) {
+          loc[idx].locations.push(l)
+        } else {
+          loc.push({ Type: l.Type, locations: [l] })
+        }
+      })
+      loc.forEach(l => {
+        l.locations = l.locations.sort((a, b) => {
+          if (a.Value < b.Value) {
             return -1
-          } else if (a.Type > b.Type) {
+          } else if (a.Value > b.Value) {
             return 1
           } else {
             return 0
           }
         })
-        let arr = []
-        loc.forEach(l => {
-          arr.push({ Value: l.Type, IsHeader: true, IsDisabled: true})
-          l.locations.forEach(i => {
-            arr.push((i))
-          })
+      })
+      loc = loc.sort((a, b) => {
+        if (a.Type < b.Type) {
+          return -1
+        } else if (a.Type > b.Type) {
+          return 1
+        } else {
+          return 0
+        }
+      })
+      let arr = []
+      loc.forEach(l => {
+        arr.push({ Value: l.Type, IsHeader: true, IsDisabled: true})
+        l.locations.forEach(i => {
+          arr.push((i))
         })
-        return arr
-      },
-      CheckinLabel() {
-        return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
-      },
-      canRequestTables() {
-        if(this.request.Id > 0 && this.request.Status != 'Draft' && this.e.TableType ) {
-          return true
-        }
-        let dates = this.request.EventDates.map(d => moment(d))
-        let minDate = moment.min(dates)
-        let oneWeek = moment(new Date()).add(14, 'days')
-        if (!this.request.IsSame || this.request.Events.length > 1) {
-          minDate = moment(this.e.EventDate)
-        }
-        if (oneWeek.isAfter(minDate)) {
-          return false
-        }
+      })
+      return arr
+    },
+    CheckinLabel() {
+      return `Do you need in-person check-in on the day of the event? (${this.boolToYesNo(this.e.Checkin)})`
+    },
+    canRequestTables() {
+      if(this.request.Id > 0 && this.request.Status != 'Draft' && this.e.TableType ) {
         return true
-      },
-      canRequestSpecialAccom() {
-        let dates = this.request.EventDates.map(d => moment(d))
-        let minDate = moment.min(dates)
-        let twoWeeks = moment(new Date()).add(14, 'days')
-        if (!this.request.IsSame || this.request.Events.length > 1) {
-          minDate = moment(this.e.EventDate)
-        }
-        if (twoWeeks.isAfter(minDate)) {
-          return false
-        }
-        return true
-      },
-      tableClothLabel() {
-        return `Would you like table cloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
       }
+      let dates = this.request.EventDates.map(d => moment(d))
+      let minDate = moment.min(dates)
+      let oneWeek = moment(new Date()).add(14, 'days')
+      if (!this.request.IsSame || this.request.Events.length > 1) {
+        minDate = moment(this.e.EventDate)
+      }
+      if (oneWeek.isAfter(minDate)) {
+        return false
+      }
+      return true
+    },
+    canRequestSpecialAccom() {
+      let dates = this.request.EventDates.map(d => moment(d))
+      let minDate = moment.min(dates)
+      let twoWeeks = moment(new Date()).add(14, 'days')
+      if (!this.request.IsSame || this.request.Events.length > 1) {
+        minDate = moment(this.e.EventDate)
+      }
+      if (twoWeeks.isAfter(minDate)) {
+        return false
+      }
+      return true
+    },
+    tableClothLabel() {
+      return `Would you like table cloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
+    },
+    isInfrastructureRequest() {
+      let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
+      if(ministryName?.toLowerCase().includes("infrastructure")) {
+        return true
+      }
+      return false
+    },
   },
   watch: {
     groupedRooms: {

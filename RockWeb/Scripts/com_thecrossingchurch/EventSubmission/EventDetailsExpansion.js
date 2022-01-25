@@ -79,6 +79,23 @@ export default {
         </template>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col>
+        <div class="floating-title">Other Spaces</div>
+        <template v-if="selected.Changes != null && e.InfrastructureSpace != selected.Changes.Events[idx].InfrastructureSpace">
+          <template v-if="approvalmode">
+            <approval-field :request="selected" :e="e" :idx="idx" field="InfrastructureSpace" :fieldname="formatFieldName('InfrastructureSpace')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+          </template>
+          <template v-else>
+            <span class='red--text'>{{(e.InfrastructureSpace ? e.InfrastructureSpace : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.Events[idx].InfrastructureSpace ? selected.Changes.Events[idx].InfrastructureSpace : 'Empty')}}</span>
+          </template>
+        </template>
+        <template v-else>
+          {{e.InfrastructureSpace}}
+        </template>
+      </v-col>
+    </v-row>
     <v-row v-if="e.TableType && e.TableType.length > 0 || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length > 0)">
       <v-col cols="6">
         <div class="floating-title">Requested Tables</div>
@@ -337,12 +354,12 @@ export default {
             <approval-field :request="selected" :e="e" :idx="idx" field="BudgetLine" :fieldname="formatFieldName('Budget Line')" :formatter="formatBudgetLine" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text'>{{(e.BudgetLine ? e.BudgetLine : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.Events[idx].BudgetLine ? selected.Changes.Events[idx].BudgetLine : 'Empty')}}</span>
+            <span class='red--text'>{{(e.BudgetLine ? formatBudgetLine(e.BudgetLine) : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.Events[idx].BudgetLine ? formatBudgetLine(selected.Changes.Events[idx].BudgetLine) : 'Empty')}}</span>
           </template>
         </template>
         <template v-else>
-          {{e.BudgetLine}}
+          {{formatBudgetLine(e.BudgetLine)}}
         </template>
       </v-col>
     </v-row>
@@ -840,6 +857,21 @@ export default {
           </template>
         </v-col>
       </v-row>
+      <v-row v-if="(selected.EventDates && selected.EventDates.length > 1 && selected.IsSame) || ((selected.Changes.EventDates && selected.Changes.EventDates.length > 1 && selected.Changes.IsSame))">
+        <div class="floating-title">Events Require Separate Links</div>
+        <template v-if="selected.Changes != null && selected.EventsNeedSeparateLinks != selected.Changes.EventsNeedSeparateLinks">
+          <template v-if="approvalmode">
+            <approval-field :request="selected" :e="e" :idx="idx" field="EventsNeedSeparateLinks" :fieldname="formatFieldName('Events Need Separate Links')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+          </template>
+          <template v-else>
+            <span class='red--text'>{{(selected.EventsNeedSeparateLinks ? selected.EventsNeedSeparateLinks : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.EventsNeedSeparateLinks ? selected.Changes.EventsNeedSeparateLinks : 'Empty')}}</span>
+          </template>
+        </template>
+        <template v-else>
+          {{selected.EventsNeedSeparateLinks}}
+        </template>
+      </v-row>
     </template>
   </template>
   <template v-if="selected.needsAccom || (selected.Changes && selected.Changes.needsAccom)">
@@ -1012,37 +1044,85 @@ export default {
         </v-col>
       </v-row>
       <v-row v-if="e.SetUpImage || (selected.Changes && selected.Changes.Events[idx].SetUpImage)">
+        <template v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
+          <v-col>
+            <div class="floating-title">Set-up Image</div>
+            <template v-if="e.SetUpImage">
+              <span class='red--text'>{{e.SetUpImage.name}}</span>
+              <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+                <v-icon color="accent">mdi-download</v-icon>
+              </v-btn>
+            </template>
+            <template v-else>
+              <span class='red--text'>Empty</span>
+            </template>
+          </v-col>
+          <v-col>
+            <div class="floating-title">Set-up Image</div>
+            <template v-if="selected.Changes.Events[idx].SetUpImage">
+              <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
+              <v-btn icon color="accent" @click="saveFile(idx, 'new')">
+                <v-icon color="accent">mdi-download</v-icon>
+              </v-btn>
+            </template>
+            <template v-else>
+              <span class='primary--text'>Empty</span>
+            </template>
+          </v-col>
+          <v-col v-if="approvalmode">
+            <v-btn fab small color="accent" @click="setUpImageChoiceMade = true; setUpImageIsApproved = true; approveChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && setUpImageIsApproved">
+              <v-icon>mdi-check-circle</v-icon>
+            </v-btn>
+            <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
+              <v-icon>mdi-cancel</v-icon>
+            </v-btn>
+          </v-col>
+        </template>
+        <template v-else>
+          <v-col>
+            <div class="floating-title">Set-up Image</div>
+            <template v-if="e.SetUpImage">
+              <span>{{e.SetUpImage.name}}</span>
+              <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
+                <v-icon color="accent">mdi-download</v-icon>
+              </v-btn>
+            </template>
+            <template v-else>
+              <span>Empty</span>
+            </template>
+          </v-col>
+        </template>
+      </v-row>
+      <v-row>
         <v-col>
-          <div class="floating-title">Set-up Image</div>
-          <template  v-if="e.SetUpImage">
-            <span class='red--text'>{{e.SetUpImage.name}}</span>
-            <v-btn icon color="accent" @click="saveFile(idx, 'existing')">
-              <v-icon color="accent">mdi-download</v-icon>
-            </v-btn>
+          <div class="floating-title">Needs Medical Team</div>
+          <template v-if="selected.Changes != null && e.NeedsMedical != selected.Changes.Events[idx].NeedsMedical">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="NeedsMedical" :fieldname="formatFieldName('Needs Medical Team')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.NeedsMedical ? boolToYesNo(e.NeedsMedical) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsMedical ? boolToYesNo(selected.Changes.Events[idx].NeedsMedical) : 'Empty')}}</span>
+            </template>
           </template>
           <template v-else>
-            <span class='red--text'>Empty</span>
+            {{boolToYesNo(e.NeedsMedical)}}
           </template>
         </v-col>
-        <v-col v-if="selected.Changes != null && e.SetUpImage != selected.Changes.Events[idx].SetUpImage">
-          <div class="floating-title">Set-up Image</div>
-          <template v-if="selected.Changes.Events[idx].SetUpImage">
-            <span class='primary--text'>{{selected.Changes.Events[idx].SetUpImage.name}}</span>
-            <v-btn icon color="accent" @click="saveFile(idx, 'new')">
-              <v-icon color="accent">mdi-download</v-icon>
-            </v-btn>
+        <v-col>
+          <div class="floating-title">Needs Security Team</div>
+          <template v-if="selected.Changes != null && e.NeedsSecurity != selected.Changes.Events[idx].NeedsSecurity">
+            <template v-if="approvalmode">
+              <approval-field :request="selected" :e="e" :idx="idx" field="NeedsSecurity" :fieldname="formatFieldName('Needs Security Team')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            </template>
+            <template v-else>
+              <span class='red--text'>{{(e.NeedsSecurity ? boolToYesNo(e.NeedsSecurity) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].NeedsSecurity ? boolToYesNo(selected.Changes.Events[idx].NeedsSecurity) : 'Empty')}}</span>
+            </template>
           </template>
           <template v-else>
-          <span class='primary--text'>Empty</span>
+            {{boolToYesNo(e.NeedsSecurity)}}
           </template>
-        </v-col>
-        <v-col v-if="approvalmode">
-          <v-btn fab small color="accent" @click="setUpImageChoiceMade = true; setUpImageIsApproved = true; approveChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && setUpImageIsApproved">
-            <v-icon>mdi-check-circle</v-icon>
-          </v-btn>
-          <v-btn fab small color="red" @click="setUpImageChoiceMade = true; setUpImageIsApproved = false; denyChange({field: 'SetUpImage', label: formatFieldName('Set-up Image'), idx: idx})" :disabled="setUpImageChoiceMade && !setUpImageIsApproved">
-            <v-icon>mdi-cancel</v-icon>
-          </v-btn>
         </v-col>
       </v-row>
     </template>
@@ -1117,7 +1197,20 @@ export default {
       } else {
         return 'text--accent text-uppercase'
       }
-    }
+    },
+    saveFile(idx, type) {
+      var a = document.createElement("a");
+      a.style = "display: none";
+      document.body.appendChild(a);
+      if (type == 'existing') {
+        a.href = this.selected.Events[idx].SetUpImage.data;
+        a.download = this.selected.Events[idx].SetUpImage.name;
+      } else if (type == 'new') {
+        a.href = this.selected.Changes.Events[idx].SetUpImage.data;
+        a.download = this.selected.Changes.Events[idx].SetUpImage.name;
+      }
+      a.click();
+    },
   },
   components: {
     'approval-field': approvalField,

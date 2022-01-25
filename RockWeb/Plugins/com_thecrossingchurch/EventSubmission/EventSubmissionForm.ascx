@@ -455,6 +455,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 <%-- Registration Information --%>
                 <template v-if="request.needsReg">
                   <registration :e="e" :request="request" :earliest-pub-date="earliestPubDate" :ref="`regloop${3+idx}`" v-on:updatereg="updateReg"></registration>
+                  <v-row v-if="request.EventDates && request.EventDates.length > 1 && request.IsSame">
+                    <v-col>
+                      <v-switch
+                        :label="`Do each of these occurrences require separate links? (${boolToYesNo(request.EventsNeedSeparateLinks)})`"
+                        v-model="request.EventsNeedSeparateLinks"
+                      ></v-switch>
+                    </v-col>
+                  </v-row>
                 </template>
               </template>
               <template v-else>
@@ -491,7 +499,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 <drinks :e="e" :request="request" v-on:updateaccom="updateAccom" :ref="`drinkloop${2+idx}`"></drinks>
               </template>
               <%-- Notes --%>
-              <template v-if="request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub">
+              <template v-if="request.needsOnline || request.needsCatering || request.needsChildCare || request.needsAccom || request.needsReg || request.needsPub || isInfrastructureRequest">
                 <v-row>
                   <v-col>
                     <h3 class="primary--text">Additional Info</h3>
@@ -544,7 +552,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     <v-icon>mdi-content-save</v-icon>
                     Save
                   </v-btn>
-                  <v-btn color="primary" :disabled="!minimalRequiremnts" @click="next">
+                  <v-btn color="primary" :disabled="!minimalRequiremnts && (idx == (request.Events.length - 1) && !request.needsPub) && canEdit" @click="next">
                     <template v-if="(idx == (request.Events.length - 1) && !request.needsPub) && canEdit">
                       {{( request.Status != 'Draft' ? 'Update' : 'Submit')}}
                     </template>
@@ -741,7 +749,6 @@ document.addEventListener("DOMContentLoaded", function () {
         IsSame: true,
         Status: 'Draft',
         IsValid: false,
-        ValidSections: [],
         Name: "",
         Ministry: "",
         Contact: "",
@@ -754,6 +761,7 @@ document.addEventListener("DOMContentLoaded", function () {
             MinsEndBuffer: 0,
             ExpectedAttendance: "",
             Rooms: [],
+            InfrastructureSpace: "",
             NumTablesRound: null,
             NumTablesRect: null,
             TableType: [],
@@ -807,10 +815,13 @@ document.addEventListener("DOMContentLoaded", function () {
             SetUp: "",
             SetUpImage: null,
             NeedsDoorsUnlocked: false,
-            Doors: []
+            Doors: [],
+            NeedsMedical: false,
+            NeedsSecurity: false
           }
         ],
         EventDates: [],
+        EventsNeedSeparateLinks: false,
         WhyAttendSixtyFive: "",
         TargetAudience: "",
         EventIsSticky: false,
@@ -909,20 +920,20 @@ document.addEventListener("DOMContentLoaded", function () {
     created() {
       this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
       this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
-      this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value);
-      let isAd = $('[id$="hfIsAdmin"]')[0].value;
+      this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+      let isAd = $('[id$="hfIsAdmin"]')[0].value
       if (isAd == 'True') {
           this.isAdmin = true
       }
-      let isSU = $('[id$="hfIsSuperUser"]')[0].value;
+      let isSU = $('[id$="hfIsSuperUser"]')[0].value
       if(isSU == 'True') {
         this.isSuperUser = true
         this.panel = 0
       } else {
         this.request.needsSpace = true
       }
-      this.request.Contact = $('[id$="hfPersonName"]')[0].value;
-      let req = $('[id$="hfRequest"]')[0].value;
+      this.request.Contact = $('[id$="hfPersonName"]')[0].value
+      let req = $('[id$="hfRequest"]')[0].value
       if (req) {
         let parsed = JSON.parse(req)
         this.request = JSON.parse(parsed.Value)
@@ -1195,6 +1206,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return false
       },
+      isInfrastructureRequest() {
+        let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
+        if(ministryName?.toLowerCase().includes("infrastructure")) {
+          return true
+        }
+        return false
+      },
       minimalRequiremnts() {
         let hasTime = true
         this.request.Events.forEach(e => {
@@ -1205,8 +1223,14 @@ document.addEventListener("DOMContentLoaded", function () {
         let hasSpace = true
         if(this.request.needsSpace) {
           this.request.Events.forEach(e => {
-            if(!e.Rooms || e.Rooms.length == 0) {
-              hasSpace = false
+            if(this.isInfrastructureRequest) {
+              if(!e.InfrastructureSpace && (!e.Rooms || e.Rooms.length == 0)) {
+                hasSpace = false
+              }
+            } else {
+              if(!e.Rooms || e.Rooms.length == 0) {
+                hasSpace = false
+              }
             }
           })
         }
@@ -1406,6 +1430,8 @@ document.addEventListener("DOMContentLoaded", function () {
         this.request.Events[indexes.currIdx].SetUpImage = this.request.Events[indexes.targetIdx].SetUpImage
         this.request.Events[indexes.currIdx].NeedsDoorsUnlocked = this.request.Events[indexes.targetIdx].NeedsDoorsUnlocked
         this.request.Events[indexes.currIdx].Doors = this.request.Events[indexes.targetIdx].Doors
+        this.request.Events[indexes.currIdx].NeedsMedical = this.request.Events[indexes.targetIdx].NeedsMedical
+        this.request.Events[indexes.currIdx].NeedsSecurity = this.request.Events[indexes.targetIdx].NeedsSecurity
       },
       updateZoom(indexes) {
         this.request.Events[indexes.currIdx].EventURL = this.request.Events[indexes.targetIdx].EventURL
@@ -1646,7 +1672,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Room")
               }
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Room"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Room") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Room"), 1)
+              }
             }
             this.$refs[`spaceloop${this.stepper}`][0]?.$refs.spaceForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1655,7 +1683,9 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             //Filter null values out of room list 
             this.request.Events.forEach((e) => {
-              e.Rooms = e.Rooms.filter(r => { return r != null })
+              if(e.Rooms && e.Rooms.length > 0) {
+                e.Rooms = e.Rooms.filter(r => { return r != null })
+              }
             })
           }
           if(this.$refs[`drinkloop${this.stepper}`]) {
@@ -1666,7 +1696,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Extra Resources")
               }
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+              }
             }
             this.$refs[`drinkloop${this.stepper}`][0]?.$refs.accomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1682,7 +1714,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Online Event")
               } 
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Online Event"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Online Event") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Online Event"), 1)
+              }
             }
             this.$refs[`zoomloop${this.stepper}`][0]?.$refs.zoomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1698,7 +1732,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Registration")
               }
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Registration"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Registration") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Registration"), 1)
+              }
             }
             this.$refs[`regloop${this.stepper}`][0]?.$refs.regForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1714,7 +1750,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Catering")
               }
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Catering"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Catering") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Catering"), 1)
+              }
             }
             this.$refs[`cateringloop${this.stepper}`][0]?.$refs.cateringForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1730,7 +1768,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Childcare")
               }
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Childcare"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Childcare") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Childcare"), 1)
+              }
             }
             this.$refs[`childcareloop${this.stepper}`][0]?.$refs.childForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {
@@ -1746,7 +1786,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.request.ValidStepperSections[this.stepper].sections.push("Extra Resources")
               }
             } else {
-              this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+              if(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources") >= 0) {
+                this.request.ValidStepperSections[this.stepper].sections.splice(this.request.ValidStepperSections[this.stepper].sections.indexOf("Extra Resources"), 1)
+              }
             }
             this.$refs[`accomloop${this.stepper}`][0]?.$refs.accomForm?.inputs.forEach((e) => {
               if (e.errorBucket && e.errorBucket.length) {

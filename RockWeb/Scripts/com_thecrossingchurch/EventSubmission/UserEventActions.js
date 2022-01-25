@@ -26,7 +26,7 @@ export default {
       <v-btn fab small 
         style="margin: 0px 2px;" 
         color="primary"
-        v-if="r.RequestStatus != 'Submitted' || r.RequestStatus != 'In Progress' || r.RequestStatus != 'Approved'"
+        v-if="r.RequestStatus == 'Draft' || r.RequestStatus == 'Submitted' || r.RequestStatus == 'In Progress' || r.RequestStatus == 'Approved'"
         @click="edit"
         v-bind="attrs"
         v-on="on"
@@ -41,7 +41,7 @@ export default {
       <v-btn fab small 
         style="margin: 0px 2px;" 
         color="grey"
-        v-if="r.RequestStatus != 'Cancelled' && r.RequestStatus != 'Draft'"
+        v-if="!r.RequestStatus.includes('Cancelled') && r.RequestStatus != 'Draft' && r.RequestStatus != 'Denied'"
         @click="cancel"
         v-bind="attrs"
         v-on="on"
@@ -51,7 +51,7 @@ export default {
     </template>
     <span>Cancel Request</span>
   </v-tooltip>
-  <v-tooltip bottom v-if="r.RequestStatus != 'Draft'">
+  <v-tooltip bottom v-if="r.RequestStatus != 'Draft' && !r.RequestStatus.includes('Cancelled') && r.RequestStatus != 'Denied'">
     <template v-slot:activator="{ on, attrs }">
       <v-btn fab small 
         style="margin: 0px 2px;" 
