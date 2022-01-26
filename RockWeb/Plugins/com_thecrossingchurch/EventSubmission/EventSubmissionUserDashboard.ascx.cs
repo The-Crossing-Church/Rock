@@ -38,6 +38,7 @@ using Rock.Communication;
 using RockWeb.TheCrossing;
 using EventRequest = RockWeb.TheCrossing.EventSubmissionHelper.EventRequest;
 using Comment = RockWeb.TheCrossing.EventSubmissionHelper.Comment;
+using Person = Rock.Model.Person;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -48,18 +49,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [Category( "com_thecrossingchurch > Event Submission" )]
     [Description( "Dashboard for Current User's Event Submissions" )]
 
-    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "", 0 )]
-    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "", 1 )]
-    [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "", 2 )]
-    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "", 3 )]
-    [LinkedPage( "Request Page", "The Request Form Page", true, "", "", 4 )]
-    [LinkedPage( "Admin Dashboard Page", "The Request Admin Dashboard Page", true, "", "", 5 )]
-    [LinkedPage( "Workflow Entry Page", order: 6 )]
-    [WorkflowTypeField( "User Action Workflow", "The workflow that allows users to accept proposed changes, use original, or cancel request", order: 7 )]
-    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, order: 8 )]
-    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, order: 9 )]
-    [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 10 )]
-    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "", 11 )]
+    [DefinedTypeField( "Room List", "The defined type for the list of available rooms", true, "", "Configuration", 0 )]
+    [DefinedTypeField( "Ministry List", "The defined type for the list of ministries", true, "", "Configuration", 1 )]
+    [DefinedTypeField( "Budget Lines", "The defined type for the list of budget lines", true, "", "Configuration", 2 )]
+    [ContentChannelField( "Content Channel", "The conent channel for event requests", true, "", "Configuration", 3 )]
+    [LinkedPage( "Request Page", "The Request Form Page", true, "", "Pages", 4 )]
+    [LinkedPage( "Admin Dashboard Page", "The Request Admin Dashboard Page", true, "", "Pages", 5 )]
+    [LinkedPage( "Workflow Entry Page", category: "Pages", order: 6 )]
+    [WorkflowTypeField( "User Action Workflow", "The workflow that allows users to accept proposed changes, use original, or cancel request", category: "Pages", order: 7 )]
+    [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, category: "Security", order: 8 )]
+    [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, category: "Security", order: 9 )]
+    [SecurityRoleField( "Super User Role", "People who can make full requests", true, category: "Security", order: 10 )]
+    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 11 )]
+    [GroupField( "Staff Group", "The group all staff members belong to", false, "", "Sharing", 12 )]
+    [AttributeField( Rock.SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, name: "Shared With Attribute", category: "Sharing", entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 13 )]
 
     public partial class EventSubmissionUserDashboard : Rock.Web.UI.RockBlock
     {
@@ -76,6 +79,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private Rock.Model.Group RoomOnlySR { get; set; }
         private Rock.Model.Group EventSR { get; set; }
         private Rock.Model.GroupType SharedRequestGT { get; set; }
+        private Rock.Model.Attribute sharedWithAttr { get; set; }
         private static class PageParameterKey
         {
             public const string Id = "Id";
@@ -148,6 +152,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGTGuid.Value );
             }
+            Guid? staffGroupGuid = GetAttributeValue( "StaffGroup" ).AsGuidOrNull();
+            if ( staffGroupGuid.HasValue )
+            {
+                hfStaffList.Value = JsonConvert.SerializeObject( new GroupService( context ).Get( staffGroupGuid.Value ).Members.Select( gm => new { Id = gm.PersonId, Name = gm.Person.FullName, Email = gm.Person.Email } ).ToList() );
+
+            }
+            Guid? sharedWithAttrGuid = GetAttributeValue( "SharedWithAttribute" ).AsGuidOrNull();
+            if ( sharedWithAttrGuid.HasValue )
+            {
+                sharedWithAttr = new AttributeService( context ).Get( sharedWithAttrGuid.Value );
+            }
 
             Guid? superUserGuid = GetAttributeValue( "SuperUserRole" ).AsGuidOrNull();
             var RoomSRGuid = GetAttributeValue( "RoomRequestAdmin" ).AsGuidOrNull();
@@ -189,6 +204,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
             List<int?> aliasIds = new List<int?>() { CurrentPersonAliasId };
+            List<int?> entityIds = new List<int?>();
             if ( SharedRequestGT != null )
             {
                 //Shared requests are configured, find any for the current user.
@@ -204,11 +220,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     aliasIds.AddRange( ids );
                 }
             }
-            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && aliasIds.Contains( i.CreatedByPersonAliasId ) ).ToList();
+            if ( sharedWithAttr != null )
+            {
+                entityIds = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => JsonConvert.DeserializeObject<List<string>>( av.Value ).Contains( CurrentPersonId.ToString() ) ).Select( av => av.EntityId ).ToList();
+            }
+            var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && ( aliasIds.Contains( i.CreatedByPersonAliasId ) || entityIds.Contains( i.Id ) ) ).ToList();
             items.LoadAttributes();
-            var requests = items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, Comments = JsonConvert.DeserializeObject<List<Comment>>( i.AttributeValues.FirstOrDefault( av => av.Key == "Comments" ).Value.Value ) } );
+            var requests = items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, Comments = JsonConvert.DeserializeObject<List<Comment>>( i.AttributeValues.FirstOrDefault( av => av.Key == "Comments" ).Value.Value ), SharedWith = i.AttributeValues.FirstOrDefault( av => av.Key == "SharedWith" ).Value.Value } );
             hfRequests.Value = JsonConvert.SerializeObject( requests );
         }
+
         protected void AddComment_Click( object sender, EventArgs e )
         {
             int? id = hfRequestID.Value.AsIntegerOrNull();
@@ -256,6 +277,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Dictionary<string, string> query = new Dictionary<string, string>();
             query.Add( "Id", item.Id.ToString() );
             NavigateToPage( RequestPageGuid.Value, query );
+        }
+
+        protected void ShareRequest_Click( object sender, EventArgs e )
+        {
+            int? id = hfRequestID.Value.AsIntegerOrNull();
+            if ( id.HasValue )
+            {
+                ContentChannelItem item = new ContentChannelItemService( context ).Get( id.Value );
+                item.LoadAttributes();
+                item.SetAttributeValue( "SharedWith", hfSharedWith.Value );
+                item.SaveAttributeValues( context );
+                hfRequestID.Value = null;
+                hfSharedWith.Value = null;
+                Page.Response.Redirect( Page.Request.Url.ToString() + "?Id=" + item.Id.ToString(), true );
+            }
         }
 
         private void SendCommentEmail( ContentChannelItem item, Comment comment )

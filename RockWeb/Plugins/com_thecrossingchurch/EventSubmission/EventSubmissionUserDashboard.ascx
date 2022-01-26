@@ -40,6 +40,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
 <asp:HiddenField ID="hfRequestID" runat="server" />
 <asp:HiddenField ID="hfComment" runat="server" />
 <asp:HiddenField ID="hfIsSuperUser" runat="server" />
+<asp:HiddenField ID="hfStaffList" runat="server" />
+<asp:HiddenField ID="hfSharedWith" runat="server" />
 <Rock:BootstrapButton
   ID="btnAddComment"
   CssClass="btn-hidden"
@@ -51,6 +53,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
   CssClass="btn-hidden"
   runat="server"
   OnClick="ResubmitRequest_Click"
+/>
+<Rock:BootstrapButton
+  ID="btnShareRequest"
+  CssClass="btn-hidden"
+  runat="server"
+  OnClick="ShareRequest_Click"
 />
 
 <div id="app" v-cloak>
@@ -424,6 +432,13 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
             >
               <v-icon>mdi-calendar-refresh</v-icon> Resubmit
             </v-btn>
+            <v-btn
+              @click="shareWithInput = selected.SharedWith; shareDialog = true;"
+              style="margin-left: 8px;"
+              color="draft"
+            >
+              <v-icon>mdi-share-variant</v-icon> Share
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn color="secondary" @click="overlay = false; selected = {}">
               <v-icon>mdi-close</v-icon> Close
@@ -528,15 +543,51 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog
+        v-if="shareDialog"
+        v-model="shareDialog"
+        max-width="75%"
+      >
+        <v-card>
+          <v-card-title>Share Request</v-card-title>
+          <v-card-text>
+            <v-autocomplete
+              :items="staff"
+              item-value="Id"
+              item-text="Name"
+              v-model="shareWithInput"
+              :search-input.sync="searchInput"
+              @change="searchInput=''"
+              multiple
+              chips
+              deletable-chips
+            >
+              <template v-slot:item="data">
+                <v-list-item-content>
+                  <v-list-item-title>{{data.item.Name}}</v-list-item-title>
+                  <v-list-item-subtitle>{{data.item.Email}}</v-list-item-subtitle>
+                </v-list-item-content>
+              </template>
+            </v-autocomplete>
+          </v-card-text> 
+          <v-card-actions>
+            <v-btn color="primary" @click="shareRequest" :disabled="shareWithInput == ''">Share</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="secondary" @click="shareDialog = false; shareWithInput = ''">
+              <v-icon>mdi-close</v-icon> Close
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-app>
 </div>
 <script type="module">
-import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/UserEventActions.js';
-import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js';
-import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js';
-import pubDetails from '/Scripts/com_thecrossingchurch/EventSubmission/PublicityDetails.js';
-import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js';
+import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/UserEventActions.js?v=1.0.1';
+import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js?v=1.0.1';
+import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.1';
+import pubDetails from '/Scripts/com_thecrossingchurch/EventSubmission/PublicityDetails.js?v=1.0.1';
+import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js?v=1.0.1';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("event-actions", eventActions);
   Vue.component("event-details", eventDetails);
@@ -573,6 +624,7 @@ document.addEventListener("DOMContentLoaded", function () {
       panels: [0],
       rooms: [],
       ministries: [],
+      staff: [],
       filters: {
         status: [],
         title: '',
@@ -588,12 +640,16 @@ document.addEventListener("DOMContentLoaded", function () {
       createEndMenu: false,
       commentDialog: false,
       resubmitDialog: false,
+      shareDialog: false,
+      shareWithInput: '',
+      searchInput: '',
       comment: ''
     },
     created() {
       this.getRecent();
       this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
       this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+      this.staff = JSON.parse($('[id$="hfStaffList"]')[0].value)
       window['moment-range'].extendMoment(moment)
       let query = new URLSearchParams(window.location.search);
       if (query.get('Id')) {
@@ -705,6 +761,7 @@ document.addEventListener("DOMContentLoaded", function () {
           req.HistoricData = i.HistoricData;
           req.Changes = i.Changes != '' ? JSON.parse(i.Changes) : null;
           req.Comments = i.Comments;
+          req.SharedWith = i.SharedWith != '' ? JSON.parse(i.SharedWith) : "";
           temp.push(req);
         });
         this.requests = temp;
@@ -854,6 +911,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         $('[id$="hfRequest"]').val(JSON.stringify(this.copy));
         $('[id$="btnResubmitRequest"')[0].click();
+      },
+      shareRequest() {
+        this.selected.SharedWith = this.shareWithInput
+        $('[id$="hfRequestID"]').val(this.selected.Id);
+        $('[id$="SharedWith"]').val(JSON.stringify(this.selected.SharedWith));
+        $('[id$="btnShareRequest"')[0].click();
+        $('#updateProgress').show();
       }
     },
   });

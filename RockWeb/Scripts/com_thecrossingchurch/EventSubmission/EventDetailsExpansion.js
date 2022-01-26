@@ -179,10 +179,10 @@ export default {
     </v-row>
     <v-row v-if="(e.TableType && e.TableType.length > 0) || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length > 0)">
       <v-col cols="12" md="6">
-        <div class="floating-title">Needs Table Cloths</div>
+        <div class="floating-title">Needs Tablecloths</div>
         <template v-if="selected.Changes != null && e.NeedsTableCloths != selected.Changes.Events[idx].NeedsTableCloths">
           <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Table Cloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Tablecloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
             <span class='red--text'>{{(e.NeedsTableCloths ? boolToYesNo(e.NeedsTableCloths)  : 'Empty')}}: </span>
@@ -431,10 +431,10 @@ export default {
     </v-row>
     <v-row v-if="(e.TableType && e.TableType.length == 0) || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length == 0)">
       <v-col cols="12" md="6">
-        <div class="floating-title">Needs Table Cloths</div>
+        <div class="floating-title">Needs Tablecloths</div>
         <template v-if="selected.Changes != null && e.NeedsTableCloths != selected.Changes.Events[idx].NeedsTableCloths">
           <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Table Cloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Tablecloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
             <span class='red--text'>{{(e.NeedsTableCloths ? boolToYesNo(e.NeedsTableCloths)  : 'Empty')}}: </span>

@@ -36,6 +36,7 @@ using System.Threading.Tasks;
 using RockWeb.TheCrossing;
 using EventRequest = RockWeb.TheCrossing.EventSubmissionHelper.EventRequest;
 using Comment = RockWeb.TheCrossing.EventSubmissionHelper.Comment;
+using System.Web.Optimization;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 {
@@ -321,7 +322,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 isExisting = true;
             }
             item.LoadAttributes();
+            //Save data about existing request and the new value of the request 
+            string newValue = JsonConvert.SerializeObject( request );
+            string existingValue = JsonConvert.SerializeObject( JsonConvert.DeserializeObject<EventRequest>( item.GetAttributeValue( "RequestJSON" ) ) );
             string currentStatus = item.GetAttributeValue( "RequestStatus" );
+
+            //Update the created or modified person and time
             if ( isExisting )
             {
                 item.ModifiedByPersonAliasId = CurrentPersonAliasId;
@@ -338,7 +344,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 item.CreatedDateTime = RockDateTime.Now;
                 item.StartDateTime = RockDateTime.Now;
             }
+
             item.Title = request.Name;
+
             if ( isPreApproved == "No" )
             {
                 if ( currentStatus == "Approved" || currentStatus == "Pending Changes" )
@@ -358,6 +366,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 status = currentStatus;
             }
             item.SetAttributeValue( "RequestStatus", status );
+
             //Changes are proposed if the event isn't pre-approved, is existing, and the requestor isn't in the Event Admin Role
             if ( item.Id > 0 && isPreApproved == "No" && status != "Submitted" && !CurrentPersonIsEventAdmin )
             {
@@ -374,26 +383,38 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             item.SetAttributeValue( "RequestIsValid", request.IsValid.ToString() );
             item.SetAttributeValue( "IsPreApproved", isPreApproved );
 
-            //Save everything
-            context.ContentChannelItems.AddOrUpdate( item );
-            context.SaveChanges();
-            item.SaveAttributeValues( context );
-            if ( !isExisting )
+            Dictionary<string, string> query = new Dictionary<string, string>();
+            //If the request is new, was previously a draft, or has changed we should save and notify people
+            if ( !isExisting || newValue != existingValue || currentStatus == "Draft" )
             {
-                NotifyReviewers( item, request, isPreApproved, false );
-                ConfirmationEmail( item, request, isPreApproved, false );
+                //Save everything
+                context.ContentChannelItems.AddOrUpdate( item );
+                context.SaveChanges();
+                item.SaveAttributeValues( context );
+                if ( !isExisting )
+                {
+                    NotifyReviewers( item, request, isPreApproved, false );
+                    ConfirmationEmail( item, request, isPreApproved, false );
+                }
+                else
+                {
+                    if ( CurrentPersonId == item.CreatedByPersonId && status != "Submitted" )
+                    {
+                        //User is modifying their request, send notification
+                        NotifyReviewers( item, request, isPreApproved, true );
+                        ConfirmationEmail( item, request, isPreApproved, true );
+                    }
+                }
             }
             else
             {
-                if ( CurrentPersonId == item.CreatedByPersonId && status != "Submitted" )
-                {
-                    //User is modifying their request, send notification
-                    NotifyReviewers( item, request, isPreApproved, true );
-                    ConfirmationEmail( item, request, isPreApproved, true );
-                }
+                query.Add( "NoChange", "true" );
             }
-            Dictionary<string, string> query = new Dictionary<string, string>();
             query.Add( "ShowSuccess", "true" );
+            if ( isPreApproved == "Yes" )
+            {
+                query.Add( "PreApproved", "true" );
+            }
             if ( isExisting )
             {
                 query.Add( "Id", item.Id.ToString() );
@@ -855,7 +876,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
 
             for ( int i = 0; i < request.Events.Count(); i++ )
             {
-                message += "<strong style='color: #6485b3;'>Date Information</strong><br/>";
+                if ( i > 0 )
+                {
+                    message += "<br/><hr/><br/>";
+                }
+                message += "<div style='font-size: 18px;'><strong style='color: #6485b3;'>Date Information</strong><br/>";
                 if ( request.Events.Count() == 1 || request.IsSame )
                 {
                     message += "<strong>Event Dates:</strong> " + String.Join( ", ", request.EventDates.Select( e => DateTime.Parse( e ).ToString( "MM/dd/yyyy" ) ) ) + "<br/>";
@@ -872,6 +897,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     message += "<strong>End Time:</strong> " + request.Events[i].EndTime + "<br/>";
                 }
+                message += "</div>";
 
                 if ( request.needsSpace )
                 {
@@ -897,7 +923,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                     if ( request.Events[i].TableType.Count() > 0 && request.Events[i].NeedsTableCloths.HasValue )
                     {
-                        message += "<strong>Needs Table Cloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
+                        message += "<strong>Needs Tablecloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
                     }
                     if ( item.AttributeValues["RequestType"].Value != "Room" )
                     {
@@ -929,7 +955,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         message += "<strong>Food Set-Up Location:</strong> " + ( !String.IsNullOrEmpty( request.Events[i].FoodDropOff ) ? request.Events[i].FoodDropOff : "<span style='font-weight: bold; color: #CC3F0C;'>n/a</span>" ) + "<br/>";
                         if ( request.Events[i].TableType.Count() == 0 && request.Events[i].NeedsTableCloths.HasValue )
                         {
-                            message += "<strong>Needs Table Cloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
+                            message += "<strong>Needs Tablecloths:</strong> " + ( request.Events[i].NeedsTableCloths.Value ? "Yes" : "No" ) + "<br/>";
                         }
                     }
                     else
@@ -1135,11 +1161,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         message += "<strong>Drink Drop off Location:</strong> " + request.Events[i].DrinkDropOff + "<br/>";
                     }
                 }
-                message += "<hr/>";
             }
 
             if ( request.needsPub )
             {
+                message += "<br/><hr/>";
                 message += "<br/><strong style='color: #6485b3;'>Publicity Information</strong><br/>";
                 if ( !String.IsNullOrEmpty( request.WhyAttendSixtyFive ) )
                 {

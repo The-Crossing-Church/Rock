@@ -601,14 +601,26 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       <v-card v-if="showSuccess">
         <v-card-text>
           <v-alert v-if="isExistingRequest" type="success">
-            This request has been updated
+            <template v-if="noChangesMade">
+              No changes were made to this request.
+            </template>
+            <template v-else>
+              This request has been updated.
+            </template>
           </v-alert>
           <v-alert v-else type="success">
-            Your request has been submitted! You will receive a confirmation
-            email now with the details of your request, when it has been
-            approved by the Events Director you will receive an email securing
-            your reservation with any additional information from the Events
-            Director
+            <template v-if="isPreApproved">
+              Your request has been submitted! You will receive a confirmation
+              email now with the details of your request. Due to the nature of your
+              request, it has been pre-approved.
+            </template>
+            <template v-else>
+              Your request has been submitted! You will receive a confirmation
+              email now with the details of your request, when it has been
+              approved by the Events Director you will receive an email securing
+              your reservation with any additional information from the Events
+              Director.
+            </template>
           </v-alert>
         </v-card-text>
       </v-card>
@@ -693,16 +705,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script type="module">
-import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js';
-import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js';
-import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js';
-import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js';
-import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js';
-import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js';
-import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js';
-import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js';
-import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js';
-import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js';
+import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.1';
+import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.1';
+import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.1';
+import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.1';
+import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.1';
+import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.1';
+import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.1';
+import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.1';
+import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.1';
+import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.1';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("time-picker", timePickerVue);
   Vue.component("space", spaceVue);
@@ -738,6 +750,8 @@ document.addEventListener("DOMContentLoaded", function () {
       currentEvent: null,
       currentIdx: null,
       showSuccess: false,
+      isPreApproved: false,
+      noChangesMade: false,
       request: {
         needsSpace: false,
         needsOnline: false,
@@ -965,6 +979,18 @@ document.addEventListener("DOMContentLoaded", function () {
       if (success) {
         if (success == "true") {
           this.showSuccess = true
+        }
+      }
+      let preApproved = query.get('PreApproved')
+      if(preApproved) {
+        if(preApproved == "true") {
+          this.isPreApproved = true
+        }
+      }
+      let noChange = query.get('NoChange')
+      if(noChange) {
+        if(noChange == "true") {
+          this.noChangesMade = true
         }
       }
     },

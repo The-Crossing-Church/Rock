@@ -134,7 +134,6 @@ export default {
         item-value="Id"
         prepend-inner-icon="mdi-map"
         @click:prepend-inner="openMap"
-        :rules="[rules.requiredArr(e.Doors, 'Doors')]"
         multiple
         clearable
       >
