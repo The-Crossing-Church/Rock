@@ -610,9 +610,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
           </v-alert>
           <v-alert v-else type="success">
             <template v-if="isPreApproved">
-              Your request has been submitted! You will receive a confirmation
-              email now with the details of your request. Due to the nature of your
-              request, it has been pre-approved.
+              Your request has been pre-approved! You will receive a confirmation
+              email now with the details of your request. 
             </template>
             <template v-else>
               Your request has been submitted! You will receive a confirmation
@@ -2235,5 +2234,16 @@ document.addEventListener("DOMContentLoaded", function () {
   .date-warning {
     color: #CC3F0C !important;
     font-weight: bold !important;
+  }
+  @media only screen and (max-width: 600px) {
+    .v-stepper .v-stepper__header .v-stepper__step {
+      width: 100%;
+      flex-basis: 100%;
+      display: inline-block;
+    }
+    .v-stepper .v-stepper__header .v-stepper__step .v-stepper__label {
+      display: inline;
+      padding-left: 16px;
+    }
   }
 </style>
