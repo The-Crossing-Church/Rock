@@ -49,12 +49,25 @@ export default {
         <template v-slot:item="data">
           <template v-if="data.item.IsHeader">
             <v-list-item @click="selectAll(data.item.Value, $event)">
-              <v-list-item-content class="accent--text text-subtitle-2">
-                <v-list-item-title>
-                  {{data.item.Value}}
-                </v-list-item-title>
-                <v-list-item-subtitle>Click here to toggle all rooms in {{data.item.Value}}</v-list-item-subtitle>
-              </v-list-item-content>
+              <div style="display: flex; flex-direction: column;">
+                <div>
+                  <v-list-item-content class="accent--text text-subtitle-2">
+                    <v-list-item-title>
+                      {{data.item.Value}}
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </div>
+                <div style="display: flex; width: 100%;">
+                  <v-list-item-action style="margin: 0px; margin-right: 32px;">
+                    <v-checkbox :value="allAreChecked(data.item.Value)"></v-checkbox>
+                  </v-list-item-action>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{data.item.Value}} (Select All)
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </div>
+              </div>
             </v-list-item>
           </template>
           <template v-else>
@@ -518,6 +531,20 @@ export default {
           }
         }
         this.e.Rooms = this.e.Rooms.sort()
+      }
+    },
+    allAreChecked(category) {
+      //Select all/none of the rooms in the section
+      let roomsInCategory = this.groupedRooms.filter(r => {
+        return r.Type == category && !r.IsDisabled
+      }).map(r => r.Id).sort()
+      let selectedRoomsInCategory = this.e.Rooms.filter(r => {
+        return roomsInCategory.includes(r)
+      }).sort()
+      if(roomsInCategory.toString() == selectedRoomsInCategory.toString()) {
+        return true
+      } else {
+        return false
       }
     }
   }
