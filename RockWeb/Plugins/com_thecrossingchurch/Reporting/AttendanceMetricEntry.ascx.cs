@@ -135,9 +135,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     {
                         OpenPanel( new BootstrapButton() { ID = "btnSpecial" }, new EventArgs() { } );
                         this.seTime.SelectedTime = TimeSpan.Parse( Metric.MetricValueDateTime.Value.ToString( "HH:mm:ss" ) );
-                        this.ServiceType.SelectedValue = svcType.Id.ToString();
+                        this.ServiceType.SetValue( svcType.EntityId );
+                        this.ServiceType.DataBind();
                     }
-                    this.Location.SetValue( loc );
+                    this.Location.SetValue( loc.Id );
                     this.Location.DataBind();
                     this.OccurrenceDate.SelectedDate = Metric.MetricValueDateTime;
                     this.Attendance.Text = Metric.YValue.ToString().Split( '.' )[0];
