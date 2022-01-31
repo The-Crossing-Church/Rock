@@ -61,7 +61,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, category: "Security", order: 9 )]
     [SecurityRoleField( "Super User Role", "People who can make full requests", true, category: "Security", order: 10 )]
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 11 )]
-    [GroupField( "Staff Group", "The group all staff members belong to", false, "", "Sharing", 12 )]
+    [SecurityRoleField( "Staff Group", "The role of people you can share requests with", false, "", "Sharing", 12 )]
     [AttributeField( Rock.SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, name: "Shared With Attribute", category: "Sharing", entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 13 )]
 
     public partial class EventSubmissionUserDashboard : Rock.Web.UI.RockBlock

@@ -433,6 +433,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
               <v-icon>mdi-calendar-refresh</v-icon> Resubmit
             </v-btn>
             <v-btn
+              v-if="isSuperUser"
               @click="shareWithInput = selected.SharedWith; shareDialog = true;"
               style="margin-left: 8px;"
               color="draft"
@@ -551,6 +552,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
         <v-card>
           <v-card-title>Share Request</v-card-title>
           <v-card-text>
+            The request sharing feature is only to be used when you are no longer the owner of an event and need to pass ownership to someone else. 
+            An example would be covering for someone on leave and giving them ownership of events you created for their ministry while they were on leave.
             <v-autocomplete
               :items="staff"
               item-value="Id"
@@ -643,13 +646,18 @@ document.addEventListener("DOMContentLoaded", function () {
       shareDialog: false,
       shareWithInput: '',
       searchInput: '',
-      comment: ''
+      comment: '',
+      isSuperUser: false
     },
     created() {
       this.getRecent();
       this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
       this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
       this.staff = JSON.parse($('[id$="hfStaffList"]')[0].value)
+      let isSU = $('[id$="hfIsSuperUser"]')[0].value
+      if(isSU == 'True') {
+        this.isSuperUser = true
+      }
       window['moment-range'].extendMoment(moment)
       let query = new URLSearchParams(window.location.search);
       if (query.get('Id')) {

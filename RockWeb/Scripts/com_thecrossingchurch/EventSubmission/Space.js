@@ -63,7 +63,7 @@ export default {
                   </v-list-item-action>
                   <v-list-item-content>
                     <v-list-item-title>
-                      {{data.item.Value}} (Select All)
+                      All {{data.item.Value}}
                     </v-list-item-title>
                   </v-list-item-content>
                 </div>
