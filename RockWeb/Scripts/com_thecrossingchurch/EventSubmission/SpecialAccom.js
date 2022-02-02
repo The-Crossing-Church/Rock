@@ -134,7 +134,8 @@ export default {
         item-value="Id"
         prepend-inner-icon="mdi-map"
         @click:prepend-inner="openMap"
-        :rules="[rules.requiredArr(e.Doors, 'Doors')]"
+        hint="You may choose specific doors, or leave this blank and the ops team will open doors that make sense for your event"
+        persistent-hint
         multiple
         clearable
       >

@@ -345,7 +345,7 @@ export default {
       return null;
     },
     tableClothLabel() {
-      return `Would you like table cloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
+      return `Would you like tablecloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
     }
   },
   methods: {

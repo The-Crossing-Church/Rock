@@ -48,7 +48,27 @@ export default {
         </template>
         <template v-slot:item="data">
           <template v-if="data.item.IsHeader">
-            <v-list-item-content class="accent--text text-subtitle-2">{{data.item.Value}}</v-list-item-content>
+            <v-list-item @click="selectAll(data.item.Value, $event)">
+              <div style="display: flex; flex-direction: column;">
+                <div>
+                  <v-list-item-content class="accent--text text-subtitle-2">
+                    <v-list-item-title>
+                      {{data.item.Value}}
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </div>
+                <div style="display: flex; width: 100%;">
+                  <v-list-item-action style="margin: 0px; margin-right: 32px;">
+                    <v-checkbox :value="allAreChecked(data.item.Value)"></v-checkbox>
+                  </v-list-item-action>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      All {{data.item.Value}}
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </div>
+              </div>
+            </v-list-item>
           </template>
           <template v-else>
             <v-list-item v-bind="data.attrs" v-on="data.on">
@@ -403,7 +423,7 @@ export default {
       })
       let arr = []
       loc.forEach(l => {
-        arr.push({ Value: l.Type, IsHeader: true, IsDisabled: true})
+        arr.push({ Value: l.Type, IsHeader: true, IsDisabled: false})
         l.locations.forEach(i => {
           arr.push((i))
         })
@@ -441,7 +461,7 @@ export default {
       return true
     },
     tableClothLabel() {
-      return `Would you like table cloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
+      return `Would you like tablecloths? (${this.boolToYesNo(this.e.NeedsTableCloths)})`
     },
     isInfrastructureRequest() {
       let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
@@ -488,6 +508,44 @@ export default {
         return `<strong>${room.Value}</strong><span>${room.SetUp != '' ? room.SetUp : 'There is no standard set up for this space.'}</span>`
       }
       return ''
+    },
+    selectAll(category, event) {
+      //Don't add header to room list
+      event.preventDefault()
+      //Select all/none of the rooms in the section
+      let roomsInCategory = this.groupedRooms.filter(r => {
+        return r.Type == category && !r.IsDisabled
+      }).map(r => r.Id).sort()
+      let selectedRoomsInCategory = this.e.Rooms.filter(r => {
+        return roomsInCategory.includes(r)
+      }).sort()
+      if(roomsInCategory.toString() == selectedRoomsInCategory.toString()) {
+        this.e.Rooms = this.e.Rooms.filter(r => {
+          return !roomsInCategory.includes(r)
+        })
+      } else {
+        for(let i = 0; i < roomsInCategory.length; i++) {
+          let idx = this.e.Rooms.indexOf(roomsInCategory[i])
+          if(idx < 0) {
+            this.e.Rooms.push(roomsInCategory[i])
+          }
+        }
+        this.e.Rooms = this.e.Rooms.sort()
+      }
+    },
+    allAreChecked(category) {
+      //Select all/none of the rooms in the section
+      let roomsInCategory = this.groupedRooms.filter(r => {
+        return r.Type == category && !r.IsDisabled
+      }).map(r => r.Id).sort()
+      let selectedRoomsInCategory = this.e.Rooms.filter(r => {
+        return roomsInCategory.includes(r)
+      }).sort()
+      if(roomsInCategory.toString() == selectedRoomsInCategory.toString()) {
+        return true
+      } else {
+        return false
+      }
     }
   }
 }

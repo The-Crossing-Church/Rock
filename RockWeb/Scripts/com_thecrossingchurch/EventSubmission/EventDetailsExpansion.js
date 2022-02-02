@@ -179,10 +179,10 @@ export default {
     </v-row>
     <v-row v-if="(e.TableType && e.TableType.length > 0) || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length > 0)">
       <v-col cols="12" md="6">
-        <div class="floating-title">Needs Table Cloths</div>
+        <div class="floating-title">Needs Tablecloths</div>
         <template v-if="selected.Changes != null && e.NeedsTableCloths != selected.Changes.Events[idx].NeedsTableCloths">
           <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Table Cloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Tablecloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
             <span class='red--text'>{{(e.NeedsTableCloths ? boolToYesNo(e.NeedsTableCloths)  : 'Empty')}}: </span>
@@ -267,7 +267,7 @@ export default {
     <v-row>
       <v-col>
         <div class="floating-title">Childcare Age Groups</div>
-        <template v-if="selected.Changes != null && e.ChildCareOptions.join(', ') != selected.Changes.Events[idx].ChildCareOptions.join(', ')">
+        <template v-if="selected.Changes != null && JSON.stringify(e.ChildCareOptions) != JSON.stringify(selected.Changes.Events[idx].ChildCareOptions)">
           <template v-if="approvalmode">
             <approval-field :request="selected" :e="e" :idx="idx" field="ChildCareOptions" :fieldname="formatFieldName('Childcare Age Groups')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
@@ -277,7 +277,7 @@ export default {
           </template>
         </template>
         <template v-else>
-          {{e.ChildCareOptions.join(', ')}}
+          {{((e.ChildCareOptions && e.ChildCareOptions.length > 0) ? e.ChildCareOptions.join(', ') : 'Empty')}}
         </template>
       </v-col>
       <v-col>
@@ -431,10 +431,10 @@ export default {
     </v-row>
     <v-row v-if="(e.TableType && e.TableType.length == 0) || (selected.Changes && selected.Changes.Events[idx].TableType && selected.Changes.Events[idx].TableType.length == 0)">
       <v-col cols="12" md="6">
-        <div class="floating-title">Needs Table Cloths</div>
+        <div class="floating-title">Needs Tablecloths</div>
         <template v-if="selected.Changes != null && e.NeedsTableCloths != selected.Changes.Events[idx].NeedsTableCloths">
           <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Table Cloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            <approval-field :request="selected" :e="e" :idx="idx" field="NeedsTableCloths" :fieldname="formatFieldName('Needs Tablecloths')" :formatter="boolToYesNo" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
             <span class='red--text'>{{(e.NeedsTableCloths ? boolToYesNo(e.NeedsTableCloths)  : 'Empty')}}: </span>
@@ -449,7 +449,7 @@ export default {
     <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes && selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
       <v-col>
         <div class="floating-title">Desired Drinks</div>
-        <template v-if="selected.Changes != null && e.Drinks && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
+        <template v-if="selected.Changes != null && JSON.stringify(e.Drinks) != JSON.stringify(selected.Changes.Events[idx].Drinks)">
           <template v-if="approvalmode">
             <approval-field :request="selected" :e="e" :idx="idx" field="Drinks" :fieldname="formatFieldName('Desired Drinks')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
@@ -459,7 +459,7 @@ export default {
           </template>
         </template>
         <template v-else>
-          {{e.Drinks.join(', ')}}
+          {{((e.Drinks && e.Drinks.length > 0) ? e.Drinks.join(', ') : 'Empty')}}
         </template>
       </v-col>
     </v-row>
@@ -879,7 +879,7 @@ export default {
     <v-row v-if="e.TechNeeds || e.TechDescription || (selected.Changes && (selected.Changes.Events[idx].TechNeeds || selected.Changes.Events[idx].TechDescription))">
       <v-col v-if="e.TechNeeds && e.TechNeeds.length > 0">
         <div class="floating-title">Tech Needs</div>
-        <template v-if="selected.Changes != null && e.TechNeeds.join(', ') != selected.Changes.Events[idx].TechNeeds.join(', ')">
+        <template v-if="selected.Changes != null && JSON.stringify(e.TechNeeds) != JSON.stringify(selected.Changes.Events[idx].TechNeeds)">
           <template v-if="approvalmode">
             <approval-field :request="selected" :e="e" :idx="idx" field="TechNeeds" :fieldname="formatFieldName('Tech Needs')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
@@ -889,7 +889,7 @@ export default {
           </template>
         </template>
         <template v-else>
-          {{e.TechNeeds.join(', ')}}
+          {{(e.TechNeeds ? e.TechNeeds.join(', ') : 'Empty')}}
         </template>
       </v-col>
       <v-col v-if="e.TechDescription || (selected.Changes && selected.Changes.Events[idx].TechDescription)">
@@ -912,7 +912,7 @@ export default {
       <v-row v-if="(e.Drinks && e.Drinks.length > 0) || (selected.Changes && selected.Changes.Events[idx].Drinks && selected.Changes.Events[idx].Drinks.length > 0)">
         <v-col>
           <div class="floating-title">Desired Drinks</div>
-          <template v-if="selected.Changes != null && e.Drinks.join(', ') != selected.Changes.Events[idx].Drinks.join(', ')">
+          <template v-if="selected.Changes != null && JSON.stringify(e.Drinks) != JSON.stringify(selected.Changes.Events[idx].Drinks)">
             <template v-if="approvalmode">
               <approval-field :request="selected" :e="e" :idx="idx" field="Drinks" :fieldname="formatFieldName('Desired Drinks')" :formatter="formatList" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
             </template>
@@ -922,7 +922,7 @@ export default {
             </template>
           </template>
           <template v-else>
-            {{e.Drinks.join(', ')}}
+            {{((e.Drinks && e.Drinks.length > 0) ? e.Drinks.join(', ') : 'Empty')}}
           </template>
         </v-col>
       </v-row>
