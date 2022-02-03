@@ -135,10 +135,10 @@ namespace Rock.Model
         /// <returns></returns>
         public bool Reactivate( FinancialScheduledTransaction scheduledTransaction, out string errorMessages )
         {
-            if ( scheduledTransaction != null &&
-                scheduledTransaction.FinancialGateway != null &&
-                scheduledTransaction.FinancialGateway.IsActive )
+            if ( scheduledTransaction != null && scheduledTransaction.FinancialGateway != null && scheduledTransaction.FinancialGateway.IsActive )
             {
+                scheduledTransaction.InactivateDateTime = null;
+
                 if ( scheduledTransaction.FinancialGateway.Attributes == null )
                 {
                     scheduledTransaction.FinancialGateway.LoadAttributes( ( RockContext ) this.Context );
@@ -147,14 +147,7 @@ namespace Rock.Model
                 var gateway = scheduledTransaction.FinancialGateway.GetGatewayComponent();
                 if ( gateway != null )
                 {
-                    if ( gateway.ReactivateScheduledPayment( scheduledTransaction, out errorMessages ) )
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return gateway.ReactivateScheduledPayment( scheduledTransaction, out errorMessages );
                 }
             }
 
@@ -170,10 +163,10 @@ namespace Rock.Model
         /// <returns></returns>
         public bool Cancel( FinancialScheduledTransaction scheduledTransaction, out string errorMessages )
         {
-            if ( scheduledTransaction != null &&
-                scheduledTransaction.FinancialGateway != null &&
-                scheduledTransaction.FinancialGateway.IsActive )
+            if ( scheduledTransaction != null && scheduledTransaction.FinancialGateway != null && scheduledTransaction.FinancialGateway.IsActive )
             {
+                scheduledTransaction.InactivateDateTime = RockDateTime.Now;
+
                 if ( scheduledTransaction.FinancialGateway.Attributes == null )
                 {
                     scheduledTransaction.FinancialGateway.LoadAttributes( ( RockContext ) this.Context );
@@ -182,14 +175,7 @@ namespace Rock.Model
                 var gateway = scheduledTransaction.FinancialGateway.GetGatewayComponent();
                 if ( gateway != null )
                 {
-                    if ( gateway.CancelScheduledPayment( scheduledTransaction, out errorMessages ) )
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return gateway.CancelScheduledPayment( scheduledTransaction, out errorMessages );
                 }
             }
 
@@ -232,6 +218,11 @@ namespace Rock.Model
         {
             int totalPayments = 0;
             int totalAlreadyDownloaded = 0;
+
+            // If there is a payment without a transaction, but has one of the following status, don't report it as a 'unmatched' transaction.
+            // If they have one of these statuses, and can't be matched, the user probably closed the browser or walked away before completing the transaction.
+            string[] ignorableUnMatchedStatuses = new string[2] { "in_progress", "abandoned" };
+
             List<Payment> paymentsWithoutTransaction = new List<Payment>();
             int totalAdded = 0;
             int totalReversals = 0;
@@ -530,7 +521,11 @@ namespace Rock.Model
                         }
                         else
                         {
-                            paymentsWithoutTransaction.Add( payment );
+                            // If the payment can't be matched (and we aren't ignoring it due to its status), add it to the payment without a transactions that we'll report.
+                            if ( !ignorableUnMatchedStatuses.Contains( payment.Status, System.StringComparer.OrdinalIgnoreCase ) )
+                            {
+                                paymentsWithoutTransaction.Add( payment );
+                            }
                         }
                     }
                     else

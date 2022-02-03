@@ -277,10 +277,29 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string CHECK_IN_MANAGER_EN_ROUTE = "BC86F18C-9F38-4CA3-8CF9-5A837CBC700D";
 
+        #region Mobile Block Types
+
+        /// <summary>
+        /// The mobile Groups > <see cref="Rock.Blocks.Types.Mobile.Groups.GroupRegistration">Group Registration</see> block type.
+        /// </summary>
+        public const string MOBILE_GROUPS_GROUP_REGISTRATION = "8A42E4FA-9FE1-493C-B6D8-7A766D96E912";
+
+        /// <summary>
+        /// The mobile Groups > <see cref="Rock.Blocks.Types.Mobile.Groups.GroupFinder">Group Finder</see> block type.
+        /// </summary>
+        public const string MOBILE_GROUPS_GROUP_FINDER = "BAC6671E-4D6F-4428-A6FA-69B8BEADF55C";
+
+        /// <summary>
+        /// The mobile Prayer > Prayer Card View block type.
+        /// </summary>
+        public const string MOBILE_PRAYER_PRAYER_CARD_VIEW = "CA75C558-9345-47E7-99AF-D8191D31D00D";
+
+        #endregion
         /// <summary>
         /// The contribution statement lava (Legacy)
         /// </summary>
         [Obsolete( "Use ContributionStatementGenerator instead" )]
+        [RockObsolete( "12.4" )]
         public const string CONTRIBUTION_STATEMENT_LAVA_LEGACY = "AF986B72-ADD9-4E05-971F-1DE4EBED8667";
     }
 }

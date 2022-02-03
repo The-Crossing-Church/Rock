@@ -75,7 +75,11 @@ namespace Rock.SystemGuid
 
         /// <summary>
         /// The list of values that SMS messages can be sent from.  Depending on provider, these may
-        /// be phone numbers or short codes
+        /// be phone numbers or short codes.
+        /// <br />
+        /// The DefinedValue.Value will be the SMS Phone Number( or ShortCode). For example, '+16235551234'. 
+        /// <br />
+        /// The DefinedValue.Description will just be any description, such as 'Rock Solid Church SMS Number'.
         /// </summary>
         public const string COMMUNICATION_SMS_FROM = "611BDE1F-7405-4D16-8626-CCFEDB0E62BE";
 
@@ -420,6 +424,21 @@ namespace Rock.SystemGuid
         /// The check in attendance types
         /// </summary>
         public const string CHECK_IN_ATTENDANCE_TYPES = "C0508751-3BDD-40A7-BE37-8AA4FC56E00E";
+
+        /// <summary>
+        /// The schedule type
+        /// </summary>
+        public const string SCHEDULE_TYPE = "831648D4-2E2C-4940-8358-9B426AEDB460";
+
+        /// <summary>
+        /// The map markers
+        /// </summary>
+        public const string MAP_MARKERS = "80DC21DE-A2C2-42DF-880B-FA9CABD504A0";
+
+        /// <summary>
+        /// Languages
+        /// </summary>
+        public const string LANGUAGES = "6060ba8b-4085-4a29-bf19-a4862b95556a";
 
         /// <summary>
         /// The statement generator lava template (Legacy)
