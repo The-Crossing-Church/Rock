@@ -200,7 +200,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
                     .Select(a => a.Id)
                     .ToList();
 
-                //hfCurrentAttendanceIds.Value = attendanceIds.
+                hfCurrentAttendanceIds.Value = attendanceIds.AsDelimited(",");
             }
         }
 
