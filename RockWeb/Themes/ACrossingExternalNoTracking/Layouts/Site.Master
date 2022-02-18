@@ -274,6 +274,9 @@
                                         <a href="/Ministry/Care" class="text-white">Care & Support</a>
                                     </div>
                                     <div>
+                                        <a href="/Ministry/Counseling" class="text-white">Counseling</a>
+                                    </div>
+                                    <div>
                                         <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
                                     </div>
                                 </div>
@@ -394,6 +397,9 @@
                                             </div>
                                             <div style="height:200px;"></div>
                                         </div>--%>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Counseling" class="text-white">Counseling</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
