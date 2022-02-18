@@ -516,11 +516,11 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
   </v-app>
 </div>
 <script type="module">
-import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/EventActions.js?v=1.0.1';
-import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js?v=1.0.1';
-import pubDetails from '/Scripts/com_thecrossingchurch/EventSubmission/PublicityDetails.js?v=1.0.1';
-import partialApproval from '/Scripts/com_thecrossingchurch/EventSubmission/PartialApproval.js?v=1.0.1';
-import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js?v=1.0.1';
+import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/EventActions.js?v=1.0.2';
+import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js?v=1.0.2';
+import pubDetails from '/Scripts/com_thecrossingchurch/EventSubmission/PublicityDetails.js?v=1.0.2';
+import partialApproval from '/Scripts/com_thecrossingchurch/EventSubmission/PartialApproval.js?v=1.0.2';
+import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js?v=1.0.2';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("event-action", eventActions);
   Vue.component("event-details", eventDetails);
