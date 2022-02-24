@@ -106,6 +106,16 @@ namespace Rock.Jobs
         Key = AttributeKey.FixAttendanceRecordsNeverMarkedPresent,
         Category = "Check-in" )]
 
+    [IntegerField(
+        "Remove Expired Saved Accounts after days",
+        Key = AttributeKey.RemovedExpiredSavedAccountDays,
+        Description = "The number of days after a saved account expires to delete the saved account. For example, if a credit card expiration is January 2023, it'll expire on Feb 1st, 2023. Setting this to 0 will delete the saved account on Feb 1st. Leave this blank to not delete expired saved accounts.",
+        DefaultValue = null,
+        IsRequired = false,
+        Category = "Finance",
+        Order = 1
+        )]
+
     [DisallowConcurrentExecution]
     public class RockCleanup : IJob
     {
@@ -122,6 +132,7 @@ namespace Rock.Jobs
             public const string BatchCleanupAmount = "BatchCleanupAmount";
             public const string CommandTimeout = "CommandTimeout";
             public const string FixAttendanceRecordsNeverMarkedPresent = "FixAttendanceRecordsNeverMarkedPresent";
+            public const string RemovedExpiredSavedAccountDays = "RemovedExpiredSavedAccountDays";
         }
 
         /// <summary>
@@ -160,7 +171,7 @@ namespace Rock.Jobs
             lastRunDateTime = Rock.Web.SystemSettings.GetValue( Rock.SystemKey.SystemSetting.ROCK_CLEANUP_LAST_RUN_DATETIME ).AsDateTime() ?? RockDateTime.Now.AddDays( -1 );
             /* IMPORTANT!! MDP 2020-05-05
 
-            1 ) Whenever you do a new RockContext() in RockCleanup make sure to set the commandtimeout, like this:
+            1 ) Whenever you do a new RockContext() in RockCleanup make sure to set the CommandTimeout, like this:
 
                 var rockContext = new RockContext();
                 rockContext.Database.CommandTimeout = commandTimeout;
@@ -168,8 +179,7 @@ namespace Rock.Jobs
             2) The cleanupTitle parameter on RunCleanupTask should short. The should be short enough so that the summary of all job tasks
                only shows a one line summary of each task (doesn't wrap)
 
-            3) The cleanupTitle parameter should be in {Verb} [adjective] {noun} format (look below for examples)
-
+            3) The cleanupTitle parameter should be in {noun} format (look below for examples)
 
             */
 
@@ -231,6 +241,8 @@ namespace Rock.Jobs
 
             RunCleanupTask( "validate schedule", () => EnsureScheduleEffectiveStartEndDates() );
 
+            RunCleanupTask( "inactivate completed schedules", () => AutoInactivateCompletedSchedules() );
+
             RunCleanupTask( "set nameless SMS response", () => EnsureNamelessPersonForSMSResponses() );
 
             RunCleanupTask( "merge nameless to person", () => MatchNamelessPersonToRegularPerson() );
@@ -240,6 +252,8 @@ namespace Rock.Jobs
             {
                 RunCleanupTask( "did attend attendance fix", () => FixDidAttendInAttendance() );
             }
+
+            RunCleanupTask( "remove expired saved accounts", () => RemoveExpiredSavedAccounts( dataMap ) );
 
             Rock.Web.SystemSettings.SetValue( Rock.SystemKey.SystemSetting.ROCK_CLEANUP_LAST_RUN_DATETIME, RockDateTime.Now.ToString() );
 
@@ -387,24 +401,40 @@ namespace Rock.Jobs
         {
             var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
-            // get list of Families that don't have a GroupSalutation populated yet. Include deceased and businesses.
-            var personIdListWithFamilyId = new PersonService( new RockContext() )
-                .Queryable( true, true )
-                .Where( a =>
-                    a.PrimaryFamilyId.HasValue
-                    && ( a.PrimaryFamily.GroupSalutation == null || a.PrimaryFamily.GroupSalutationFull == null || a.PrimaryFamily.GroupSalutation == "" || a.PrimaryFamily.GroupSalutationFull == "" ) )
-                .Select( a => new { a.Id, a.PrimaryFamilyId } ).ToArray();
+            var rockContext = new RockContext();
+
+            // just in case there are Groups that have a null or empty Name, update them.
+            var familiesWithoutNames = new GroupService( rockContext )
+                .Queryable().Where( a => a.GroupTypeId == familyGroupTypeId )
+                .Where( a => string.IsNullOrEmpty( a.Name ) );
+
+            if ( familiesWithoutNames.Any() )
+            {
+                rockContext.BulkUpdate( familiesWithoutNames, g => new Group { Name = "Family" } );
+            }
+
+            // Calculate any missing GroupSalutation values on Family Groups.
+
+            /* 11-01-2021  MDP
+              GroupSalutationCleanup only fills in any missing GroupSalutions. Families added by Rock will get the GroupSalutations calculated
+              on Save, but Families (Groups) that might have been added thru a plugin or direct SQL might have missing GroupSalutations.
+              Not that cleanup job doesn't attempt to fix any salutations that might be incorrect.
+              This is mostly because it can take a long time (300,000 families would take around 30 minutes every time that RockCleanup is done).
+            */
+            var familyIdList = new GroupService( rockContext )
+                .Queryable().Where( a => a.GroupTypeId == familyGroupTypeId && ( string.IsNullOrEmpty( a.GroupSalutation ) || string.IsNullOrEmpty( a.GroupSalutationFull ) ) )
+                .Select( a => a.Id ).ToList();
 
             var recordsUpdated = 0;
 
-            // we only need one person from each family (and it doesn't matter who)
-            var personIdList = personIdListWithFamilyId.GroupBy( a => a.PrimaryFamilyId.Value ).Select( s => s.FirstOrDefault()?.Id ).Where( a => a.HasValue ).Select( s => s.Value ).ToList();
-
-            foreach ( var personId in personIdList )
+            foreach ( var familyId in familyIdList )
             {
-                using ( var rockContext = new RockContext() )
+                using ( var rockContextUpdate = new RockContext() )
                 {
-                    recordsUpdated += PersonService.UpdateGroupSalutations( personId, rockContext );
+                    if ( GroupService.UpdateGroupSalutations( familyId, rockContextUpdate ) )
+                    {
+                        recordsUpdated++;
+                    }
                 }
             }
 
@@ -1157,25 +1187,6 @@ namespace Rock.Jobs
         {
             int recordsDeleted = 0;
 
-            // Cleanup AttributeMatrix records that are no longer associated with an attribute value
-            using ( RockContext rockContext = new RockContext() )
-            {
-                rockContext.Database.CommandTimeout = commandTimeout;
-
-                AttributeMatrixService attributeMatrixService = new AttributeMatrixService( rockContext );
-                AttributeMatrixItemService attributeMatrixItemService = new AttributeMatrixItemService( rockContext );
-
-                var orphanedAttributeMatrices = attributeMatrixService.GetOrphanedAttributeMatrices().ToList();
-
-                if ( orphanedAttributeMatrices.Any() )
-                {
-                    recordsDeleted += orphanedAttributeMatrices.Count;
-                    attributeMatrixItemService.DeleteRange( orphanedAttributeMatrices.SelectMany( a => a.AttributeMatrixItems ) );
-                    attributeMatrixService.DeleteRange( orphanedAttributeMatrices );
-                    rockContext.SaveChanges();
-                }
-            }
-
             // clean up other orphaned entity attributes
             Type rockContextType = typeof( Rock.Data.RockContext );
             foreach ( var cachedType in EntityTypeCache.All().Where( e => e.IsEntity ) )
@@ -1715,6 +1726,41 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
         }
 
         /// <summary>
+        /// Inactivates completed one-time schedules.
+        /// </summary>
+        /// <returns></returns>
+        private int AutoInactivateCompletedSchedules()
+        {
+            int rowsUpdated = 0;
+            using ( var rockContext = new RockContext() )
+            {
+                rockContext.Database.CommandTimeout = commandTimeout;
+
+                var scheduleService = new ScheduleService( rockContext );
+
+                var autoCompleteSchedules = scheduleService.Queryable()
+                    .Where( s => s.AutoInactivateWhenComplete && s.IsActive )
+                    .ToList();
+
+                foreach ( var schedule in autoCompleteSchedules )
+                {
+                    if ( schedule.GetNextStartDateTime( RockDateTime.Now ) == null )
+                    {
+                        schedule.IsActive = false;
+                        rowsUpdated++;
+                    }
+                }
+
+                if ( rowsUpdated > 0 )
+                {
+                    rockContext.SaveChanges();
+                }
+            }
+
+            return rowsUpdated;
+        }
+
+        /// <summary>
         /// Ensures the nameless person for SMS responses that have a NULL fromPersonAliasId
         /// </summary>
         /// <returns></returns>
@@ -1756,7 +1802,7 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
 
                 var personService = new PersonService( rockContext );
                 var phoneNumberService = new PhoneNumberService( rockContext );
-                
+
                 var namelessPersonRecordTypeId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_NAMELESS.AsGuid() );
                 var currentMergeRequestQry = PersonService.GetMergeRequestQuery( rockContext );
 
@@ -1811,7 +1857,7 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
                             namelessPerson.LoadAttributes();
                             existingPerson.LoadAttributes();
 
-                            var defaultAttributeValues = namelessPerson.Attributes.ToDictionary(a => a.Key, a => a.Value.DefaultValue);
+                            var defaultAttributeValues = namelessPerson.Attributes.ToDictionary( a => a.Key, a => a.Value.DefaultValue );
                             var namelessPersonEditedAttributeValues = namelessPerson.AttributeValues.Where( av => av.Value.Value != defaultAttributeValues[av.Key] );
                             var existingPersonEditedAttributeValues = existingPerson.AttributeValues.Where( av => av.Value.Value != defaultAttributeValues[av.Key] );
 
@@ -1822,7 +1868,7 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
                             {
                                 hasDifferentValues = namelessPersonEditedAttributeValues
                                     .Any( av => !existingPersonEditedAttributeValues
-                                        .Any( eav => eav.Key == av.Key && eav.Value.Value.Equals(av.Value.Value, StringComparison.OrdinalIgnoreCase)  ) );
+                                        .Any( eav => eav.Key == av.Key && ( eav.Value?.Value ?? "" ).Equals( ( av.Value?.Value ?? "" ), StringComparison.OrdinalIgnoreCase ) ) );
                             }
 
                             if ( !hasMissingAttributes && !hasDifferentValues )
@@ -1873,6 +1919,7 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
             {
                 var groupTypeIds = new List<int>() { checkInArea.Id };
                 groupTypeIds.AddRange( checkInArea.ChildGroupTypes.Select( a => a.Id ) );
+
                 // Get all Attendance records for the current day and location
                 var attendanceQueryToUpdate = new AttendanceService( rockContext ).Queryable().Where( a =>
                     !a.PresentDateTime.HasValue
@@ -1984,6 +2031,44 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
             }
 
             return updateCount;
+        }
+
+        /// <summary>
+        /// Removes any expired saved accounts (if <see cref="AttributeKey.RemovedExpiredSavedAccountDays" /> is set)
+        /// </summary>
+        /// <param name="dataMap">The data map.</param>
+        /// <returns></returns>
+        private int RemoveExpiredSavedAccounts( JobDataMap dataMap )
+        {
+            int? removedExpiredSavedAccountDays = dataMap.GetString( AttributeKey.RemovedExpiredSavedAccountDays ).AsIntegerOrNull();
+
+            if ( !removedExpiredSavedAccountDays.HasValue )
+            {
+                return 0;
+            }
+
+            var rockContext = new RockContext();
+            rockContext.Database.CommandTimeout = commandTimeout;
+            var service = new FinancialPersonSavedAccountService( rockContext );
+            var result = service.RemoveExpiredSavedAccounts( removedExpiredSavedAccountDays.Value );
+
+            if ( result?.AccountRemovalExceptions.Any() == true )
+            {
+                Exception exceptionToLog;
+
+                if ( result.AccountRemovalExceptions.Count == 1 )
+                {
+                    exceptionToLog = new RockJobWarningException( "Remove Expired Saved Accounts completed with warnings.", result.AccountRemovalExceptions[0] );
+                }
+                else
+                {
+                    exceptionToLog = new RockJobWarningException( "Remove Expired Saved Accounts completed with warnings.", new AggregateException( result.AccountRemovalExceptions ) );
+                }
+
+                ExceptionLogService.LogException( exceptionToLog );
+            }
+
+            return result.AccountsDeletedCount;
         }
 
         /// <summary>

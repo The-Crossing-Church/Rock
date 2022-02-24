@@ -73,7 +73,7 @@ namespace Rock.StatementGenerator.Rest
         [Authenticate, Secured]
         [HttpPost]
         [System.Web.Http.Route( "api/FinancialGivingStatement/UploadGivingStatementDocument" )]
-        public void UploadGivingStatementDocument( [FromBody] FinancialStatementGeneratorUploadGivingStatementData uploadGivingStatementData )
+        public FinancialStatementGeneratorUploadGivingStatementResult UploadGivingStatementDocument( [FromBody] FinancialStatementGeneratorUploadGivingStatementData uploadGivingStatementData )
         {
             var rockContext = new RockContext();
 
@@ -128,36 +128,56 @@ namespace Rock.StatementGenerator.Rest
 
             var documentName = saveOptions.DocumentName;
 
-            var groupId = financialStatementGeneratorRecipient.GroupId;
-            var givingFamilyMembersQuery = new GroupMemberService( rockContext ).GetByGroupId( groupId, false );
-
             List<int> documentPersonIds;
-            if ( saveOptions.DocumentSaveFor == FinancialStatementGeneratorOptions.FinancialStatementIndividualSaveOptions.FinancialStatementIndividualSaveOptionsSaveFor.AllActiveAdults )
+            if ( financialStatementGeneratorRecipient.PersonId.HasValue )
             {
-                documentPersonIds = givingFamilyMembersQuery.Where( a => a.Person.AgeClassification == AgeClassification.Adult ).Select( a => a.PersonId ).ToList();
-            }
-            else if ( saveOptions.DocumentSaveFor == FinancialStatementGeneratorOptions.FinancialStatementIndividualSaveOptions.FinancialStatementIndividualSaveOptionsSaveFor.AllActiveFamilyMembers )
-            {
-                documentPersonIds = givingFamilyMembersQuery.Select( a => a.PersonId ).ToList();
+                // If we are saving for a person that gives an individual, just give document to that person (ignore the FinancialStatementIndividualSaveOptionsSaveFor option)
+                // only upload the document to the individual person
+                documentPersonIds = new List<int>();
+                documentPersonIds.Add( financialStatementGeneratorRecipient.PersonId.Value );
             }
             else
             {
-                var headOfHouseHoldPersonId = givingFamilyMembersQuery.GetHeadOfHousehold( s => ( int? ) s.PersonId );
-                documentPersonIds = new List<int>();
-                if ( headOfHouseHoldPersonId.HasValue )
+                var groupId = financialStatementGeneratorRecipient.GroupId;
+                var givingFamilyMembersQuery = new GroupMemberService( rockContext ).GetByGroupId( groupId, false );
+
+                // limit to family members within the same giving group
+                givingFamilyMembersQuery = givingFamilyMembersQuery.Where( a => a.Person.GivingGroupId.HasValue && a.Person.GivingGroupId == groupId );
+
+                if ( saveOptions.DocumentSaveFor == FinancialStatementGeneratorOptions.FinancialStatementIndividualSaveOptions.FinancialStatementIndividualSaveOptionsSaveFor.AllActiveAdultsInGivingGroup )
                 {
-                    documentPersonIds.Add( headOfHouseHoldPersonId.Value );
+                    documentPersonIds = givingFamilyMembersQuery
+                        .Where( a => a.Person.AgeClassification == AgeClassification.Adult ).Select( a => a.PersonId ).ToList();
+                }
+                else if ( saveOptions.DocumentSaveFor == FinancialStatementGeneratorOptions.FinancialStatementIndividualSaveOptions.FinancialStatementIndividualSaveOptionsSaveFor.AllActiveFamilyMembersInGivingGroup )
+                {
+                    documentPersonIds = givingFamilyMembersQuery
+                        .Select( a => a.PersonId ).ToList();
+                }
+                else if ( saveOptions.DocumentSaveFor == FinancialStatementGeneratorOptions.FinancialStatementIndividualSaveOptions.FinancialStatementIndividualSaveOptionsSaveFor.PrimaryGiver )
+                {
+                    // Set document for PrimaryGiver (aka Head of Household).
+                    // Note that HeadOfHouseHold would calculated based on family members within the same giving group
+                    var headOfHouseHoldPersonId = givingFamilyMembersQuery.GetHeadOfHousehold( s => ( int? ) s.PersonId );
+                    documentPersonIds = new List<int>();
+                    if ( headOfHouseHoldPersonId.HasValue )
+                    {
+                        documentPersonIds.Add( headOfHouseHoldPersonId.Value );
+                    }
+                }
+                else
+                {
+                    // shouldn't happen
+                    documentPersonIds = new List<int>();
                 }
             }
 
-            
             var today = RockDateTime.Today;
             var tomorrow = today.AddDays( 1 );
 
             foreach ( var documentPersonId in documentPersonIds )
             {
                 // Create the document, linking the entity and binary file.
-
                 if ( saveOptions.OverwriteDocumentsOfThisTypeCreatedOnSameDate == true )
                 {
                     using ( var deleteDocContext = new RockContext() )
@@ -204,7 +224,7 @@ namespace Rock.StatementGenerator.Rest
                     Name = saveOptions.DocumentName,
                     Description = saveOptions.DocumentDescription
                 };
-                
+
                 document.SetBinaryFile( binaryFile.Id, rockContext );
 
                 var documentService = new DocumentService( rockContext );
@@ -213,20 +233,27 @@ namespace Rock.StatementGenerator.Rest
             }
 
             rockContext.SaveChanges();
+
+            return new FinancialStatementGeneratorUploadGivingStatementResult
+            {
+                NumberOfIndividuals = documentPersonIds.Count
+            };
         }
 
         /// <summary>
-        /// Render and return a giving statement for the specified person.
+        /// Render and return a giving statement for the specified person. If the person
+        /// uses combined giving, the statement will be for the person's giving group.
         /// </summary>
-        /// <param name="personId">The person that made the contributions. That person's entire
-        /// giving group is included, which is typically the family.</param>
+        /// <param name="personId">The person that the statement is for. If the person
+        /// uses combined giving, the statement will be for the person's giving group,
+        /// which is typically the family.</param>
         /// <param name="year">The contribution calendar year. ie 2019.  If not specified, the
         /// current year is assumed.</param>
         /// <param name="templateDefinedValueId">[Obsolete] The defined value ID that represents the statement
         /// lava. This defined value should be a part of the Statement Generator Lava Template defined
         /// type. If no ID is specified, then the default defined value for the Statement Generator Lava
         /// Template defined type is assumed.</param>
-        /// <param name="financialStatementTemplateId"></param>
+        /// <param name="financialStatementTemplateId">The Statement Template to use. This is required (unless the obsolete templateDefinedValueId is specified).</param>
         /// <param name="hideRefundedTransactions">if set to <c>true</c> transactions that have any
         /// refunds will be hidden.</param>
         /// <returns>
@@ -290,10 +317,26 @@ namespace Rock.StatementGenerator.Rest
                 StartDate = startDate,
             };
 
-            var financialStatementGeneratorRecipientRequest = new FinancialStatementGeneratorRecipientRequest( options )
+            var financialStatementGeneratorRecipientRequest = new FinancialStatementGeneratorRecipientRequest( options );
+            if ( person.GivingGroupId.HasValue )
             {
-                FinancialStatementGeneratorRecipient = new FinancialStatementGeneratorRecipient { GroupId = person.PrimaryFamilyId.Value, PersonId = person.Id }
-            };
+                // If person has a GivingGroupId get the combined statement for the GivingGroup
+                financialStatementGeneratorRecipientRequest.FinancialStatementGeneratorRecipient = new FinancialStatementGeneratorRecipient
+                {
+                    GroupId = person.GivingGroupId.Value,
+                    PersonId = null
+                };
+            }
+            else
+            {
+                // If person gives individually ( GivingGroupId is null) get the individual statement for the person
+                // and specify Group as the Primary Family so we know which Family to use for the address.
+                financialStatementGeneratorRecipientRequest.FinancialStatementGeneratorRecipient = new FinancialStatementGeneratorRecipient
+                {
+                    GroupId = person.PrimaryFamilyId.Value,
+                    PersonId = person.Id
+                };
+            }
 
             // Get the generator result
             FinancialStatementGeneratorRecipientResult result = FinancialStatementGeneratorHelper.GetStatementGeneratorRecipientResult( financialStatementGeneratorRecipientRequest, this.GetPerson() );
