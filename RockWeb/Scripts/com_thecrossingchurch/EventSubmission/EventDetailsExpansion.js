@@ -857,7 +857,7 @@ export default {
           </template>
         </v-col>
       </v-row>
-      <v-row v-if="(selected.EventDates && selected.EventDates.length > 1 && selected.IsSame) || ((selected.Changes.EventDates && selected.Changes.EventDates.length > 1 && selected.Changes.IsSame))">
+      <v-row v-if="(selected.EventDates && selected.EventDates.length > 1 && selected.IsSame) || ((selected.Changes && selected.Changes.EventDates && selected.Changes.EventDates.length > 1 && selected.Changes.IsSame))">
         <div class="floating-title">Events Require Separate Links</div>
         <template v-if="selected.Changes != null && selected.EventsNeedSeparateLinks != selected.Changes.EventsNeedSeparateLinks">
           <template v-if="approvalmode">
