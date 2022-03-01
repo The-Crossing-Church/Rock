@@ -73,7 +73,7 @@ export default {
           <template v-else>
             <v-list-item v-bind="data.attrs" v-on="data.on">
               <v-list-item-action style="margin: 0px; margin-right: 32px;">
-                <v-checkbox :value="data.attrs.inputValue" @change="data.parent.$emit('select')" :disabled="data.item.IsDisabled" v-model="data.attrs.inputValue"></v-checkbox>
+                <v-checkbox :value="data.attrs.inputValue" readonly :disabled="data.item.IsDisabled" v-model="data.attrs.inputValue"></v-checkbox>
               </v-list-item-action>
               <v-list-item-content>
                 <v-list-item-title>{{data.item.Value}} ({{data.item.Capacity}})</v-list-item-title>
@@ -246,6 +246,7 @@ export default {
   props: ["e", "request", "existing"],
   data: function () {
       return {
+          cnsole: console,
           dialog: false,
           map: false,
           setUp: false,
