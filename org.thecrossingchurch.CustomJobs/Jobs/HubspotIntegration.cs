@@ -138,7 +138,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 Person person = null;
                 if ( !String.IsNullOrEmpty( contacts_with_email[i].rock_id ) )
                 {
-                    person = personService.Get( Int32.Parse( contacts_with_email[i].rock_id ) );
+                    int id;
+                    if ( Int32.TryParse( contacts_with_email[i].rock_id, out id ) )
+                    {
+                        person = personService.Get( id );
+                    }
                 }
 
                 //If there is not a value for Rock Id, proceed to run the query with HubSpot data
