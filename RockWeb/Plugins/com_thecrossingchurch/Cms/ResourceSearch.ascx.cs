@@ -35,8 +35,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
         private string title { get; set; }
+        private List<string> contentType { get; set; }
         private List<string> tags { get; set; }
-        private string series { get; set; }
+        private List<string> series { get; set; }
         private string author { get; set; }
         private string global { get; set; }
         #endregion
@@ -73,20 +74,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _ccSvc = new ContentChannelService( _context );
             title = PageParameter( "title" ).ToLower();
             tags = !String.IsNullOrEmpty( PageParameter( "tags" ) ) ? PageParameter( "tags" ).ToLower().Split( ',' ).ToList() : new List<string>();
-            series = PageParameter( "series" ).ToLower();
+            series = !String.IsNullOrEmpty( PageParameter( "series" ) ) ? PageParameter( "series" ).ToLower().Split( ',' ).ToList() : new List<string>();
+            contentType = !String.IsNullOrEmpty( PageParameter( "contenttype" ) ) ? PageParameter( "contenttype" ).ToLower().Split( ',' ).ToList() : new List<string>();
             author = PageParameter( "author" ).ToLower();
             global = PageParameter( "q" ).ToLower();
             List<Post> results = new List<Post>();
 
-            if ( WatchContentChannelGuid.HasValue )
+            if ( WatchContentChannelGuid.HasValue && ( contentType.Count() == 0 || contentType.Contains( "watch" ) ) )
             {
                 results.AddRange( SearchContent( WatchContentChannelGuid.Value ) );
             }
-            if ( ListenContentChannelGuid.HasValue )
+            if ( ListenContentChannelGuid.HasValue && ( contentType.Count() == 0 || contentType.Contains( "listen" ) ) )
             {
                 results.AddRange( SearchContent( ListenContentChannelGuid.Value ) );
             }
-            if ( !String.IsNullOrEmpty( HubspotAPIKey ) )
+            if ( !String.IsNullOrEmpty( HubspotAPIKey ) && ( contentType.Count() == 0 || contentType.Contains( "read" ) ) )
             {
                 results.AddRange( SearchRead( HubspotAPIKey ) );
             }
@@ -140,9 +142,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                         meetsRec = false;
                     }
                 }
-                if ( !String.IsNullOrEmpty( series ) )
+                if ( series.Count() > 0 )
                 {
-                    if ( !itemSeries.Contains( series ) )
+                    if ( !series.Contains( itemSeries ) )
                     {
                         meetsRec = false;
                     }
@@ -203,22 +205,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     var jsonResponse = reader.ReadToEnd();
                     blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
                     var posts = blogResponse.results.Select( e =>
-                     {
-                         var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
-                         if ( e.publishedDate.HasValue )
-                         {
-                             //Convert Epoch Time
-                             DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
-                             start = start.AddMilliseconds( e.publishedDate.Value );
-                             //Convert Time Zone
-                             start = start.ToLocalTime();
-                             p.PublishDate = start;
-                         }
-                         List<string> matchingTags = new List<string>();
-                         var intersect = tags.Intersect( e.tags );
-                         p.MatchingTags = intersect.ToList();
-                         return p;
-                     } );
+                    {
+                        var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                        if ( e.publishedDate.HasValue )
+                        {
+                            //Convert Epoch Time
+                            DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+                            start = start.AddMilliseconds( e.publishedDate.Value );
+                            //Convert Time Zone
+                            start = start.ToLocalTime();
+                            p.PublishDate = start;
+                        }
+                        List<string> matchingTags = new List<string>();
+                        var intersect = tags.Intersect( e.tags );
+                        p.MatchingTags = intersect.ToList();
+                        return p;
+                    } );
                     return posts.ToList();
                 }
             }
