@@ -72,7 +72,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     AttributeKeys.Add( key );
                 }
             }
-            if ( group_id.HasValue && !String.IsNullOrEmpty( PrimaryOverseerKey ) && !String.IsNullOrEmpty( SecondaryOverseerKey ) )
+            if ( group_id.HasValue && group_id.Value > 0 && !String.IsNullOrEmpty( PrimaryOverseerKey ) && !String.IsNullOrEmpty( SecondaryOverseerKey ) )
             {
                 parent = new GroupService( _context ).Get( group_id.Value );
 
