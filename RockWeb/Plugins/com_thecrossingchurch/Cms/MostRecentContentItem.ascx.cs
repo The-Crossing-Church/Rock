@@ -82,6 +82,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             item.LoadAttributes();
             var mergeFields = new Dictionary<string, object>();
             mergeFields.Add( "Item", item );
+            mergeFields.Add( "CurrentPerson", CurrentPerson );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }
