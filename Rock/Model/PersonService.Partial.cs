@@ -4419,7 +4419,7 @@ FROM (
 		,p.NickName
 		,p.LastName
 		,p.GivingLeaderId
-		,isnull(pf.CalculatedGivingLeaderId, p.Id) CalculatedGivingLeaderId
+		,COALESCE(pf.CalculatedGivingLeaderId,pfd.CalculatedGivingLeaderId, p.Id) CalculatedGivingLeaderId
 	FROM Person p
 	OUTER APPLY (
 		SELECT TOP 1 p2.[Id] CalculatedGivingLeaderId
@@ -4435,9 +4435,23 @@ FROM (
 			,p2.[BirthMonth]
 			,p2.[BirthDay]
 		) pf
+	OUTER APPLY (
+		SELECT TOP 1 p2.[Id] CalculatedGivingLeaderId
+		FROM [GroupMember] gm
+		INNER JOIN [GroupTypeRole] r ON r.[Id] = gm.[GroupRoleId]
+		INNER JOIN [Person] p2 ON p2.[Id] = gm.[PersonId]
+		WHERE gm.[GroupId] = p.GivingGroupId
+			AND p2.[IsDeceased] = 1
+			AND p2.[GivingGroupId] = p.GivingGroupId
+		ORDER BY r.[Order]
+			,p2.[Gender]
+			,p2.[BirthYear]
+			,p2.[BirthMonth]
+			,p2.[BirthDay]
+		) pfd
 	WHERE (
 			p.GivingLeaderId = 0
-			OR (p.GivingLeaderId != ISNULL(pf.CalculatedGivingLeaderId, p.Id))
+			OR (p.GivingLeaderId != COALESCE(pf.CalculatedGivingLeaderId,pfd.CalculatedGivingLeaderId, p.Id))
 			)" );
 
             if ( personId.HasValue )
