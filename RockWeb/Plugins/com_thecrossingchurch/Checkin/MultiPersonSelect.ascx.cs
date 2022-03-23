@@ -32,7 +32,7 @@ using Rock.Web.UI.Controls;
 namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
 {
     /// <summary>
-    /// Customized to display a custom message if someone has already checked in. It works in conjuction with a 
+    /// Custom copy of v12.8 block to display a custom message if someone has already checked in. It works in conjuction with a 
     /// pillars.WorkflowActions.Workflow.Action.CheckIn.CheckPreviousCheckin.cs workflow action.
     /// </summary>
     /// 
@@ -40,22 +40,90 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
     [Category("com_thecrossingchurch > Check-in")]
     [Description("Lists people who match the selected family and provides option of selecting multiple.")]
 
-    [LinkedPage("Auto Select Next Page", "The page to navigate to after selecting people in auto-select mode.", false, "", "", 5)]
-    [CodeEditorField("Pre-Selected Options Format", "The format to use when displaying auto-checkin options", CodeEditorMode.Lava, CodeEditorTheme.Rock, 100, false, @"
-<span class='auto-select-schedule'>{{ Schedule.Name }}:</span>
-<span class='auto-select-group'>{{ Group.Name }}</span>
-<span class='auto-select-location'>{{ Location.Name }}</span>
-", "", 6, "OptionFormat")]
+    #region Attribute Keys
 
-    [TextField("Title", "Title to display. Use {0} for family name.", false, "{0}", "Text", 7)]
-    [TextField("Caption", "", false, "Select People", "Text", 8)]
-    [TextField("Option Title", "Title to display on option screen. Use {0} for person's full name.", false, "{0}", "Text", 9)]
-    [TextField("Option Sub Title", "Subtitle to display on option screen. Use {0} for person's nickname.", false, "Please select the options that {0} would like to attend.", "Text", 10)]
-    [TextField("No Option Message", "", false, "Sorry, there are currently not any available areas that the selected people can check into.", "Text", 11)]
-    [TextField("Next Button Text", "", false, "Next", "Text", 12)]
+    [LinkedPage( "Auto Select Next Page",
+        Key = AttributeKey.AutoSelectNextPage,
+        Description = "The page to navigate to after selecting people in auto-select mode.",
+        IsRequired = false,
+        Order = 5 )]
+
+    [CodeEditorField( "Pre-Selected Options Format",
+        Key = AttributeKey.OptionFormat,
+        Description = "The format to use when displaying auto-checkin options",
+        EditorMode = CodeEditorMode.Lava,
+        EditorTheme = CodeEditorTheme.Rock,
+        EditorHeight = 100,
+        IsRequired = false,
+        DefaultValue = PreSelectedOptionsFormatDefaultValue,
+        Order = 6 )]
+
+    [TextField( "Caption",
+        Key = AttributeKey.Caption,
+        IsRequired = false,
+        DefaultValue = "Select People",
+        Category = "Text",
+        Order = 7 )]
+
+    [TextField( "Option Title",
+        Key = AttributeKey.OptionTitle,
+        Description = "Title to display on option screen. Use {0} for person's full name.",
+        IsRequired = false,
+        DefaultValue = "{0}",
+        Category = "Text",
+        Order = 8 )]
+
+    [TextField( "Option Sub Title",
+        Key = AttributeKey.OptionSubTitle,
+        Description = "Subtitle to display on option screen. Use {0} for person's nickname.",
+        IsRequired = false,
+        DefaultValue = "Please select the options that {0} would like to attend.",
+        Category = "Text",
+        Order = 9 )]
+
+    [TextField( "No Option Message",
+        Key = AttributeKey.NoOptionMessage,
+        IsRequired = false,
+        DefaultValue = "Sorry, there are currently not any available areas that the selected people can check into.",
+        Category = "Text",
+        Order = 10 )]
+
+    [TextField( "Next Button Text",
+        Key = AttributeKey.NextButtonText,
+        Description = "",
+        IsRequired = false,
+        DefaultValue = "Next",
+        Category = "Text",
+        Order = 11 )]
+
+    #endregion Attribute Keys
 
     public partial class MultiPersonSelect : CheckInBlock
     {
+        /* 2021-05/07 ETD
+         * Use new here because the parent CheckInBlock also has inherited class AttributeKey.
+         */
+        private new static class AttributeKey
+        {
+            public const string AutoSelectNextPage = "AutoSelectNextPage";
+            public const string OptionFormat = "OptionFormat";
+            public const string Caption = "Caption";
+            public const string OptionTitle = "OptionTitle";
+            public const string OptionSubTitle = "OptionSubTitle";
+            public const string NoOptionMessage = "NoOptionMessage";
+            public const string NextButtonText = "NextButtonText";
+        }
+
+        #region Attribute Default Values
+        private const string PreSelectedOptionsFormatDefaultValue = @"
+<span class='auto-select-schedule'>{{ Schedule.Name }}:</span>
+<span class='auto-select-group'>{{ Group.Name }}</span>
+<span class='auto-select-location'>{{ Location.Name }}</span>
+";
+
+
+        #endregion Attribute Default Values
+
         bool _hidePhotos = false;
         bool _autoCheckin = false;
         private static class PageParameterKey
@@ -69,12 +137,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
         /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnInit( EventArgs e )
         {
-            base.OnInit(e);
+            base.OnInit( e );
 
             rSelection.ItemDataBound += rSelection_ItemDataBound;
             rSelection.ItemCommand += RSelection_ItemCommand;
 
-            string script = string.Format(@"
+            string script = string.Format( @"
         function GetPersonSelection() {{
             var ids = '';
             $('div.checkin-person-list').find('i.fa-check-square').each( function() {{
@@ -86,13 +154,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             }}
             else
             {{
-                $('#{0}').button('Loading')
+                $('#{0}').button('loading')
                 $('#{1}').val(ids);
                 return true;
             }}
         }}
 
-        $('a.js-person-select').click( function() {{
+        $('a.js-person-select').on('click', function() {{
             $(this).toggleClass('active');
             $(this).find('i').toggleClass('fa-check-square').toggleClass('fa-square-o');
             var ids = '';
@@ -113,13 +181,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             }}
             else
             {{
-                $('#{2}').button('Loading')
+                $('#{2}').button('loading')
                 $('#{3}').val(keys);
                 return true;
             }}
         }}
 
-        $('a.js-option-select').click( function() {{
+        $('a.js-option-select').on('click', function() {{
             $(this).removeClass('btn-dimmed');
             $(this).find('i').toggleClass('fa-check-square').toggleClass('fa-square-o');
             var scheduleId = $(this).attr('data-schedule-id');
@@ -135,8 +203,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                 }}
             }});
         }});
-", lbSelect.ClientID, hfPeople.ClientID, lbOptionSelect.ClientID, hfOptions.ClientID);
-            ScriptManager.RegisterStartupScript(pnlContent, pnlContent.GetType(), "SelectPerson", script, true);
+", lbSelect.ClientID, hfPeople.ClientID, lbOptionSelect.ClientID, hfOptions.ClientID );
+            ScriptManager.RegisterStartupScript( pnlContent, pnlContent.GetType(), "SelectPerson", script, true );
         }
 
         /// <summary>
@@ -145,14 +213,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
         /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnLoad( EventArgs e )
         {
-            base.OnLoad(e);
+            base.OnLoad( e );
 
-            RockPage.AddScriptLink("~/Scripts/CheckinClient/checkin-core.js");
+            RockPage.AddScriptLink( "~/Scripts/CheckinClient/checkin-core.js" );
 
-            var bodyTag = this.Page.Master.FindControl("bodyTag") as HtmlGenericControl;
+            var bodyTag = this.Page.Master.FindControl( "bodyTag" ) as HtmlGenericControl;
             if ( bodyTag != null )
             {
-                bodyTag.AddCssClass("checkin-multipersonselect-bg");
+                bodyTag.AddCssClass( "checkin-multipersonselect-bg" );
             }
 
             if ( CurrentWorkflow == null || CurrentCheckInState == null )
@@ -191,10 +259,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
 
                     lbEditFamily.Visible = CurrentCheckInState.Kiosk.RegistrationModeEnabled;
 
-                    lTitle.Text = string.Format(GetAttributeValue("Title"), family.ToString());
-                    lCaption.Text = GetAttributeValue("Caption");
+                    lTitle.Text = GetTitleText();
+                    lCaption.Text = GetAttributeValue( AttributeKey.Caption );
                     lCaption2.Text = lCaption.Text;
-                    lbSelect.Text = GetAttributeValue("NextButtonText");
+                    lbSelect.Text = GetAttributeValue( AttributeKey.NextButtonText );
 
                     if ( _autoCheckin )
                     {
@@ -202,16 +270,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                         bool preventDuplicate = !IsOverride && CurrentCheckInState.CheckInType.PreventDuplicateCheckin;
                         using ( var rockContext = new Rock.Data.RockContext() )
                         {
-                            Rock.Workflow.Action.CheckIn.SetAvailableSchedules.ProcessForFamily(rockContext, family);
-                            Rock.Workflow.Action.CheckIn.FilterByPreviousCheckin.ProcessForFamily(rockContext, family, preventDuplicate);
+                            Rock.Workflow.Action.CheckIn.SetAvailableSchedules.ProcessForFamily( rockContext, family );
+                            Rock.Workflow.Action.CheckIn.FilterByPreviousCheckin.ProcessForFamily( rockContext, family, preventDuplicate );
                         }
 
                         // Check to see if person has option pre-selected and if not, select first item.
                         foreach ( var person in family.People )
                         {
-                            if ( !person.GroupTypes.Any(t => t.PreSelected) )
+                            if ( !person.GroupTypes.Any( t => t.PreSelected ) )
                             {
-                                SelectFirstOption(person);
+                                SelectFirstOption( person );
                             }
                         }
                     }
@@ -227,7 +295,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                     {
                         foreach ( var person in family.People )
                         {
-                            person.PreSelected = selectedPersonIds.Contains(person.Person.Id);
+                            person.PreSelected = selectedPersonIds.Contains( person.Person.Id );
                         }
                     }
                 }
@@ -243,13 +311,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
         {
             if ( e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem )
             {
-                var pnlPhoto = e.Item.FindControl("pnlPhoto") as Panel;
+                var pnlPhoto = e.Item.FindControl( "pnlPhoto" ) as Panel;
                 pnlPhoto.Visible = !_hidePhotos;
 
-                var pnlPerson = e.Item.FindControl("pnlPerson") as Panel;
-                pnlPerson.CssClass = ( _hidePhotos ? "col-md-10 col-sm-10 col-xs-8" : "col-md-10 col-sm-8 col-xs-6" );
-
-                var lPersonButton = e.Item.FindControl("lPersonButton") as Literal;
+                var lPersonButton = e.Item.FindControl( "lPersonButton" ) as Literal;
+                var lPersonSelectLava = e.Item.FindControl( "lPersonSelectLava" ) as Literal;
                 var person = e.Item.DataItem as CheckInPerson;
 
                 if ( lPersonButton != null && person != null )
@@ -258,9 +324,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
 
                     if ( _autoCheckin )
                     {
-                        var selectedOptions = person.GetOptions(true, true);
+                        var selectedOptions = person.GetOptions( true, true );
 
-                        string format = GetAttributeValue("OptionFormat");
+                        string format = GetAttributeValue( AttributeKey.OptionFormat );
                         foreach ( var option in selectedOptions )
                         {
                             var mergeFields = new Dictionary<string, object> {
@@ -269,15 +335,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                             { "Location", option.Location },
                             { "Schedule", option.Schedule }
                         };
-                            options.Add(format.ResolveMergeFields(mergeFields));
+                            options.Add( format.ResolveMergeFields( mergeFields ) );
                         }
 
-                        var pnlPersonButton = e.Item.FindControl("pnlPersonButton") as Panel;
-                        var pnlChangeButton = e.Item.FindControl("pnlChangeButton") as Panel;
+                        var pnlPersonButton = e.Item.FindControl( "pnlPersonButton" ) as Panel;
+                        var pnlChangeButton = e.Item.FindControl( "pnlChangeButton" ) as Panel;
                         if ( pnlPersonButton != null && pnlChangeButton != null )
                         {
                             pnlPersonButton.CssClass = "checkin-person-btn checkin-person-has-change col-xs-12 col-sm-9 col-md-10";
-                            pnlChangeButton.Visible = selectedOptions.Count > 1 || AnyUnselectedOptions(person);
+                            pnlChangeButton.Visible = selectedOptions.Count > 1 || AnyUnselectedOptions( person );
                         }
                     }
                     //<div class='row'>
@@ -294,9 +360,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
 
                     if ( options.Any() )
                     {
-                        lPersonButton.Text = string.Format(@"
+                        lPersonButton.Text = string.Format( @"
 <div class='row'>
-    <div class='col-md-5 family-personselect'>{0}</div>
+    <div class='col-md-5 family-personselect'>{0}{2}</div>
     <div class='col-md-7 auto-select family-auto-select'>
         <div class='auto-select-caption'>Current Selection</div>
         <div class='auto-select-details'>{1}</div>
@@ -307,9 +373,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                     }
                     else
                     {
-                        lPersonButton.Text = string.Format(@"
+                        lPersonButton.Text = string.Format( @"
 <div class='family-personselect'>{0}{1}</div>
 ", person.Person.FullName, alert);
+                    }
+                }
+
+                if ( lPersonSelectLava != null && person != null )
+                {
+                    var personSelectLavaTemplate = CurrentCheckInState.CheckInType.PersonSelectAdditionalInfoLavaTemplate;
+                    if ( personSelectLavaTemplate.IsNotNullOrWhiteSpace() )
+                    {
+                        var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, null, new Rock.Lava.CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false } );
+                        mergeFields.Add( "Person", person );
+                        lPersonSelectLava.Text = personSelectLavaTemplate.ResolveMergeFields( mergeFields );
                     }
                 }
             }
@@ -325,7 +402,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
         {
             if ( e.CommandName == "Change" )
             {
-                ShowOptions(e.CommandArgument.ToString().AsInteger());
+                ShowOptions( e.CommandArgument.ToString().AsInteger() );
             }
         }
 
@@ -362,10 +439,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                                             if ( schedule.Selected )
                                             {
                                                 int scheduleId = schedule.Schedule.Id;
-                                                person.PossibleSchedules.Where(s => s.Schedule.Id == scheduleId).ToList().ForEach(s => { s.Selected = true; });
-                                                groupType.SelectedForSchedule.Add(scheduleId, true);
-                                                group.SelectedForSchedule.Add(scheduleId, true);
-                                                location.SelectedForSchedule.Add(scheduleId, true);
+                                                person.PossibleSchedules.Where( s => s.Schedule.Id == scheduleId ).ToList().ForEach( s => { s.Selected = true; } );
+                                                groupType.SelectedForSchedule.Add( scheduleId, true );
+                                                group.SelectedForSchedule.Add( scheduleId, true );
+                                                location.SelectedForSchedule.Add( scheduleId, true );
                                             }
                                         }
                                     }
@@ -377,11 +454,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                     if ( _autoCheckin )
                     {
                         SaveState();
-                        NavigateToLinkedPage("AutoSelectNextPage");
+                        NavigateToLinkedPage( AttributeKey.AutoSelectNextPage );
                     }
                     else
                     {
-                        ProcessSelection(maWarning);
+                        ProcessSelection( maWarning );
                     }
                 }
             }
@@ -408,27 +485,27 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             var family = CurrentCheckInState.CheckIn.CurrentFamily;
             if ( family != null )
             {
-                var person = family.People.FirstOrDefault(p => p.Person.Id == hfPersonId.ValueAsInt());
+                var person = family.People.FirstOrDefault( p => p.Person.Id == hfPersonId.ValueAsInt() );
                 if ( person != null )
                 {
-                    var selectedKeys = hfOptions.Value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                    var selectedKeys = hfOptions.Value.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ).ToList();
 
                     person.PreSelected = false;
-                    foreach ( var groupType in person.GroupTypes )
+                    foreach( var groupType in person.GroupTypes )
                     {
                         groupType.PreSelected = false;
-                        foreach ( var group in groupType.Groups )
+                        foreach( var group in groupType.Groups )
                         {
                             group.PreSelected = false;
-                            foreach ( var location in group.Locations )
+                            foreach( var location in group.Locations )
                             {
                                 location.PreSelected = false;
-                                foreach ( var schedule in location.Schedules )
+                                foreach( var schedule in location.Schedules )
                                 {
                                     schedule.PreSelected = false;
 
-                                    string currentKey = string.Format("{0}|{1}|{2}|{3}", groupType.GroupType.Id, group.Group.Id, location.Location.Id, schedule.Schedule.Id);
-                                    if ( selectedKeys.Contains(currentKey) )
+                                    string currentKey = string.Format( "{0}|{1}|{2}|{3}", groupType.GroupType.Id, group.Group.Id, location.Location.Id, schedule.Schedule.Id );
+                                    if ( selectedKeys.Contains( currentKey ) )
                                     {
                                         schedule.PreSelected = true;
                                         location.PreSelected = true;
@@ -472,10 +549,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             if ( family != null )
             {
                 rSelection.DataSource = family.People
-                .OrderByDescending(p => p.FamilyMember)
-                .ThenBy(p => p.Person.BirthYear)
-                .ThenBy(p => p.Person.BirthMonth)
-                .ThenBy(p => p.Person.BirthDay)
+                .OrderByDescending( p => p.FamilyMember )
+                .ThenBy( p => p.Person.BirthYear )
+                .ThenBy( p => p.Person.BirthMonth )
+                .ThenBy( p => p.Person.BirthDay )
                 .ToList();
 
                 rSelection.DataBind();
@@ -486,10 +563,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
         {
             ProcessSelection(
                 maWarning,
-                () => CurrentCheckInState.CheckIn.CurrentFamily.GetPeople(true)
-                    .SelectMany(p => p.GroupTypes.Where(t => !t.ExcludedByFilter))
+                () => CurrentCheckInState.CheckIn.CurrentFamily.GetPeople( true )
+                    .SelectMany( p => p.GroupTypes.Where( t => !t.ExcludedByFilter ) )
                     .Count() <= 0,
-                string.Format("<p>{0}</p>", GetAttributeValue("NoOptionMessage")));
+                string.Format( "<p>{0}</p>", GetAttributeValue( AttributeKey.NoOptionMessage ) ) );
         }
 
         protected string GetSelectedClass( bool selected )
@@ -507,7 +584,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             var person = dataitem as Person;
             if ( person != null )
             {
-                return Person.GetPersonPhotoUrl(person, 200, 200);
+                return Person.GetPersonPhotoUrl( person, 200, 200 );
             }
             return string.Empty;
         }
@@ -520,8 +597,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                 var options = new List<string>();
                 if ( _autoCheckin && person.PreSelected )
                 {
-                    string format = GetAttributeValue("OptionFormat");
-                    foreach ( var option in person.GetOptions(true, true) )
+                    string format = GetAttributeValue( AttributeKey.OptionFormat );
+                    foreach ( var option in person.GetOptions( true, true ) )
                     {
                         var mergeFields = new Dictionary<string, object> {
                             { "GroupType", option.GroupType },
@@ -529,30 +606,40 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                             { "Location", option.Location },
                             { "Schedule", option.Schedule }
                         };
-                        options.Add(format.ResolveMergeFields(mergeFields));
+                        options.Add( format.ResolveMergeFields( mergeFields ) );
                     }
                 }
 
-                if ( options.Any() )
+                if (options.Any() )
                 {
-                    return string.Format(@"
+                    return string.Format( @"
 <div class='row'>
-    <div class='col-md-4 family-personselect'>{0}</div>
-    <div class='col-md-8 text-light'><small>is checking into...<br/>{1}</small></div>
+    <div class='col-md-5 family-personselect'>{0}</div>
+    <div class='col-md-7 auto-select family-auto-select'><div class='auto-select-caption'>Current Selection</div><div class='auto-select-details'>{1}</div></div>
 </div>
-", person.Person.FullName, options.AsDelimited("<br/>"));
+", person.Person.FullName, options.AsDelimited( "<br/>" ) );
                 }
                 else
                 {
-                    return string.Format(@"
+                    return string.Format( @"
 <div class='family-personselect'>{0}</div>
-", person.Person.FullName);
+", person.Person.FullName );
                 }
             }
 
             return string.Empty;
         }
 
+        private string GetTitleText()
+        {
+            var mergeFields = new Dictionary<string, object>
+            {
+                { LavaMergeFieldName.Family, CurrentCheckInState.CheckIn.CurrentFamily.Group }
+            };
+
+            var multiPersonSelectHeaderLavaTemplate = CurrentCheckInState.CheckInType.MultiPersonSelectHeaderLavaTemplate ?? string.Empty;
+            return multiPersonSelectHeaderLavaTemplate.ResolveMergeFields( mergeFields );
+        }
 
         private void ShowOptions( int personId )
         {
@@ -562,12 +649,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                 GoBack();
             }
 
-            var person = family.People.FirstOrDefault(p => p.Person.Id == personId);
+            var person = family.People.FirstOrDefault( p => p.Person.Id == personId );
             if ( person != null )
             {
                 hfPersonId.Value = person.Person.Id.ToString();
-                lOptionTitle.Text = string.Format(GetAttributeValue("OptionTitle"), person.Person.FullName);
-                lOptionSubTitle.Text = string.Format(GetAttributeValue("OptionSubTitle"), person.Person.NickName);
+                lOptionTitle.Text = string.Format( GetAttributeValue( AttributeKey.OptionTitle ), person.Person.FullName );
+                lOptionSubTitle.Text = string.Format( GetAttributeValue( AttributeKey.OptionSubTitle ), person.Person.NickName );
 
                 BindOptions();
 
@@ -581,12 +668,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             var family = CurrentCheckInState.CheckIn.CurrentFamily;
             if ( family != null )
             {
-                var person = family.People.FirstOrDefault(p => p.Person.Id == hfPersonId.ValueAsInt());
+                var person = family.People.FirstOrDefault( p => p.Person.Id == hfPersonId.ValueAsInt() );
                 if ( person != null )
                 {
-                    var options = person.GetOptions(false, false);
-                    var selectedScheduleIds = options.Where(o => o.Selected).Select(o => o.Schedule.Schedule.Id).ToList();
-                    options.Where(o => !o.Selected && selectedScheduleIds.Contains(o.Schedule.Schedule.Id)).ToList().ForEach(o => { o.Disabled = true; });
+                    var options = person.GetOptions( false, false );
+                    var selectedScheduleIds = options.Where( o => o.Selected ).Select( o => o.Schedule.Schedule.Id ).ToList();
+                    options.Where( o => !o.Selected && selectedScheduleIds.Contains( o.Schedule.Schedule.Id ) ).ToList().ForEach( o => { o.Disabled = true; } );
 
                     rOptions.DataSource = options;
                     rOptions.DataBind();
@@ -599,14 +686,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             var option = dataItem as CheckInPersonSummary;
             if ( option != null )
             {
-                string format = GetAttributeValue("OptionFormat");
+                string format = GetAttributeValue( AttributeKey.OptionFormat );
                 var mergeFields = new Dictionary<string, object> {
                             { "GroupType", option.GroupType },
                             { "Group", option.Group },
                             { "Location", option.Location },
                             { "Schedule", option.Schedule }
                         };
-                return format.ResolveMergeFields(mergeFields);
+                return format.ResolveMergeFields( mergeFields );
             }
 
             return string.Empty;
@@ -655,15 +742,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             var firstSchedule = person.PossibleSchedules.FirstOrDefault();
             if ( firstSchedule != null )
             {
-                foreach ( var groupType in person.GroupTypes.Where(t => t.AvailableForSchedule.Contains(firstSchedule.Schedule.Id)) )
+                foreach ( var groupType in person.GroupTypes.Where( t => t.AvailableForSchedule.Contains( firstSchedule.Schedule.Id ) ) )
                 {
-                    foreach ( var group in groupType.Groups.Where(t => t.AvailableForSchedule.Contains(firstSchedule.Schedule.Id)) )
+                    foreach ( var group in groupType.Groups.Where( t => t.AvailableForSchedule.Contains( firstSchedule.Schedule.Id ) ) )
                     {
-                        foreach ( var location in group.Locations.Where(t => t.AvailableForSchedule.Contains(firstSchedule.Schedule.Id)) )
+                        foreach ( var location in group.Locations.Where( t => t.AvailableForSchedule.Contains( firstSchedule.Schedule.Id ) ) )
                         {
-                            foreach ( var schedule in location.Schedules.Where(s => s.Schedule.Id == firstSchedule.Schedule.Id) )
+                            foreach ( var schedule in location.Schedules.Where( s => s.Schedule.Id == firstSchedule.Schedule.Id ) )
                             {
-                                if ( location.AvailableForSchedule.Contains(schedule.Schedule.Id) )
+                                if ( location.AvailableForSchedule.Contains( schedule.Schedule.Id ) )
                                 {
                                     schedule.PreSelected = true;
                                     location.PreSelected = true;
@@ -689,9 +776,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                         {
                             int scheduleId = schedule.Schedule.Id;
 
-                            if ( location.AvailableForSchedule.Contains(scheduleId) &&
-                                group.AvailableForSchedule.Contains(scheduleId) &&
-                                groupType.AvailableForSchedule.Contains(scheduleId) )
+                            if (location.AvailableForSchedule.Contains( scheduleId ) &&
+                                group.AvailableForSchedule.Contains( scheduleId ) &&
+                                groupType.AvailableForSchedule.Contains( scheduleId ) )
                             {
                                 schedule.PreSelected = true;
                                 location.PreSelected = true;
@@ -721,7 +808,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
             var editFamilyBlock = this.RockPage.ControlsOfTypeRecursive<CheckInEditFamilyBlock>().FirstOrDefault();
             if ( editFamilyBlock != null && CurrentCheckInState.CheckIn.CurrentFamily != null )
             {
-                editFamilyBlock.ShowEditFamily(CurrentCheckInState.CheckIn.CurrentFamily);
+                editFamilyBlock.ShowEditFamily( CurrentCheckInState.CheckIn.CurrentFamily );
             }
         }
 
