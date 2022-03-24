@@ -114,7 +114,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                         overseers[i].Person.LoadAttributes();
                         for ( int k = 0; k < AttributeKeys.Count(); k++ )
                         {
-                            overseers[i].AttributeValues.Add( AttributeKeys[k], new Rock.Web.Cache.AttributeValueCache() { Value = overseers[i].Person.GetAttributeValue( AttributeKeys[k] ) } );
+                            overseers[i].AttributeValues.Add( AttributeKeys[k], new Rock.Web.Cache.AttributeValueCache() { Value = overseers[i].Person.AttributeValues[AttributeKeys[k]].ValueFormatted } );
                         }
                         person.JsonData = JsonConvert.SerializeObject( overseers[i].AttributeValues );
 
@@ -207,7 +207,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             gm.Person.LoadAttributes();
             for ( int k = 0; k < AttributeKeys.Count(); k++ )
             {
-                gm.AttributeValues.Add( AttributeKeys[k], new Rock.Web.Cache.AttributeValueCache() { Value = gm.Person.GetAttributeValue( AttributeKeys[k] ) } );
+                gm.AttributeValues.Add( AttributeKeys[k], new Rock.Web.Cache.AttributeValueCache() { Value = gm.Person.AttributeValues[AttributeKeys[k]].ValueFormatted } );
             }
             item.JsonData = JsonConvert.SerializeObject( gm.AttributeValues );
 
