@@ -8,7 +8,7 @@
             <div class="panel-body">
                 <div class="row">
                     <div class="col col-xs-12">
-                        <Rock:DataViewItemPicker ID="pkrDataView" runat="server" Label="Source" />
+                        <Rock:DataViewItemPicker ID="pkrDataView" runat="server" Label="Source Data View" />
                     </div>
                 </div>
                 <div class="row">
