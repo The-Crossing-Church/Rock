@@ -93,13 +93,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 results.AddRange( SearchRead( HubspotAPIKey ) );
             }
 
+            results = results.OrderByDescending( r => r.PublishDate ).ToList();
+
             if ( limit.HasValue )
             {
                 results = results.Take( limit.Value ).ToList();
             }
 
+            //Limit items if there was no search filter
+            if ( String.IsNullOrEmpty( title ) && tags.Count() == 0 && series.Count() == 0 && contentType.Count() == 0 && String.IsNullOrEmpty( author ) && String.IsNullOrEmpty( global ) )
+            {
+                results = results.Take( 50 ).ToList();
+            }
+
             var mergeFields = new Dictionary<string, object>();
-            mergeFields.Add( "Posts", results.OrderByDescending( p => p.PublishDate ).ToList() );
+            mergeFields.Add( "Posts", results );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
         }
