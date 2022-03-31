@@ -351,7 +351,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 //Save CCI
                 item.SaveAttributeValues( context );
                 hfRequestID.Value = null;
-                Page.Response.Redirect( Page.Request.Url.ToString(), true );
+                string url = Page.Request.Url.ToString().Split( '?' )[0] + "?Id=" + item.Id.ToString();
+                Page.Response.Redirect( url, true );
             }
         }
 

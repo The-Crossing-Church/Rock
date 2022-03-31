@@ -211,6 +211,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             string requestType = eventSubmissionHelper.GetRequestResources( request );
             string status = "Submitted";
             string isPreApproved = "No";
+            List<string> notPreApprovedreason = new List<string>();
 
             //Pre-Approval Check
             //Requests for only a space, between 9am and 9pm (Mon-Fri) 1pm and 9pm (Sun) or 9am and 12pm (Sat), within the next 14 days, not in Gym or Auditorium, and no more than 30 people attending can be pre-approved
@@ -260,31 +261,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                                         {
                                             allMeetTimeRequirements = false;
                                         }
-                                        //else
-                                        //{ //Pretty sure this is redundant
-                                        //    var info = request.Events[k].StartTime.Split( ':' );
-                                        //    if ( Int32.Parse( info[0] ) >= 9 )
-                                        //    {
-                                        //        allMeetTimeRequirements = false;
-                                        //    }
-                                        //}
                                     }
                                     else if ( dt.DayOfWeek == System.DayOfWeek.Saturday )
                                     {
                                         allMeetTimeRequirements = false;
-                                        //if ( request.Events[k].StartTime.Contains( "PM" ) )
-                                        //{
-                                        //    allMeetTimeRequirements = false;
-                                        //}
-                                        //if ( request.Events[k].EndTime.Contains( "PM" ) )
-                                        //{
-                                        //    var info = request.Events[k].StartTime.Split( ':' );
-                                        //    var info2 = info[0].Split( ' ' );
-                                        //    if ( Int32.Parse( info[0] ) != 12 || info2[0] != "00" )
-                                        //    {
-                                        //        allMeetTimeRequirements = false;
-                                        //    }
-                                        //}
                                     }
                                 }
                             }
@@ -304,10 +284,30 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                                     status = "Approved";
                                     isPreApproved = "Yes";
                                 }
+                                else
+                                {
+                                    notPreApprovedreason.Add( "Request is in a location that requires approval" );
+                                }
+                            }
+                            else
+                            {
+                                notPreApprovedreason.Add( "Request is outside of business hours" );
                             }
                         }
                     }
+                    else
+                    {
+                        notPreApprovedreason.Add( "Expected Attendance is not less than or equal to 30" );
+                    }
                 }
+                else
+                {
+                    notPreApprovedreason.Add( "Request is not within the next 14 days" );
+                }
+            }
+            else
+            {
+                notPreApprovedreason.Add( "Request conflicts with another event" );
             }
 
             ContentChannelItemService svc = new ContentChannelItemService( context );
@@ -398,11 +398,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 else
                 {
-                    if ( CurrentPersonId == item.CreatedByPersonId && status != "Submitted" )
+                    if ( CurrentPersonId == item.CreatedByPersonId && ( status != "Submitted" || currentStatus == "Draft" ) )
                     {
                         //User is modifying their request, send notification
-                        NotifyReviewers( item, request, isPreApproved, true );
-                        ConfirmationEmail( item, request, isPreApproved, true );
+                        NotifyReviewers( item, request, isPreApproved, currentStatus == "Draft" ? false : true );
+                        ConfirmationEmail( item, request, isPreApproved, currentStatus == "Draft" ? false : true );
                     }
                 }
             }
@@ -414,6 +414,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             if ( isPreApproved == "Yes" )
             {
                 query.Add( "PreApproved", "true" );
+            }
+            else
+            {
+                if ( requestType == "Room" )
+                {
+                    query.Add( "Reason", String.Join( ";", notPreApprovedreason ) );
+                }
             }
             if ( isExisting )
             {

@@ -146,9 +146,12 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                   :class="getClass(idx)"
                 >
                   <v-row align="center">
-                    <v-col @click="selected = r; overlay = true; conflictingRequests = []; checkHasConflicts();"
-                      ><div class="hover">{{ r.Name }}</div></v-col
-                    >
+                    <v-col @click="selected = r; overlay = true; conflictingRequests = []; checkHasConflicts();">
+                      <div class="hover">
+                        {{ r.Name }}
+                        <v-icon small v-if="getCommentNotification(r) > 0" color="accent" style="vertical-align: top;">mdi-message-alert</v-icon>
+                      </div>
+                    </v-col>
                     <v-col>{{ r.CreatedBy }}</v-col>
                     <v-col>{{ r.SubmittedOn | formatDateTime }}</v-col>
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
@@ -706,6 +709,21 @@ document.addEventListener("DOMContentLoaded", function () {
         if (status == "Denied" || status == "Proposed Changes Denied") {
           return "no-top-pad status-pill denied";
         }
+      },
+      getCommentNotification(req) {
+        if(!req.Comments || req.Comments.length == 0) {
+          return 0
+        } 
+        let count = 0
+        //return the number of comments by the user since the admin's last comment
+        req.Comments.forEach(c => {
+          if(c.CreatedBy == req.CreatedBy) {
+            count++
+          } else {
+            count = 0
+          }
+        })
+        return count
       },
       editRequest() {
         let url = $('[id$="hfRequestURL"]').val();
