@@ -149,7 +149,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col @click="selected = r; overlay = true; conflictingRequests = []; checkHasConflicts();">
                       <div class="hover">
                         {{ r.Name }}
-                        <v-icon small v-if="getCommentNotification(r) > 0" color="accent" style="vertical-align: top;">mdi-message-alert</v-icon>
                       </div>
                     </v-col>
                     <v-col>{{ r.CreatedBy }}</v-col>
@@ -157,7 +156,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
                     <v-col>{{ formatDates(r.EventDates) }}</v-col>
                     <v-col>{{ requestType(r) }}</v-col>
                     <v-col cols="3" class='d-flex justify-center'>
-                      <event-action :r="r" v-on:calladdbuffer="callAddBuffer" v-on:setapproved="setApproved" v-on:setinprogress="setInProgress" v-on:partialapproval="partialApproval"></event-action>
+                      <template v-if="getCommentNotification(r) > 0">
+                        <v-badge overlap color="accent" :content="getCommentNotification(r)" >
+                          <event-action :r="r" v-on:calladdbuffer="callAddBuffer" v-on:setapproved="setApproved" v-on:setinprogress="setInProgress" v-on:partialapproval="partialApproval"></event-action>
+                        </v-badge>
+                      </template>
+                      <template v-else>
+                        <event-action :r="r" v-on:calladdbuffer="callAddBuffer" v-on:setapproved="setApproved" v-on:setinprogress="setInProgress" v-on:partialapproval="partialApproval"></event-action>
+                      </template>
                     </v-col>
                   </v-row>
                 </v-list-item>
@@ -1063,5 +1069,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   [v-cloak] {
     display: none !important;
+  }
+  .v-badge__badge {
+    z-index: 10;
   }
 </style>
