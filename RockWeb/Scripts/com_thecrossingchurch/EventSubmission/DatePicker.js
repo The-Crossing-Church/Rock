@@ -29,11 +29,12 @@ export default {
         @input="menu = false"
         :min="min"
         :max="max"
+        :show-current="showCurrent"
       ></v-date-picker>
     </v-menu>
   </div>
 `,
-  props: ["label", "readonly", "date", "rules", "hint", "persistentHint", "clearable", "min", "max"],
+  props: ["label", "readonly", "date", "rules", "hint", "persistentHint", "clearable", "min", "max", "showCurrent"],
   data() {
     return {
       menu: false,

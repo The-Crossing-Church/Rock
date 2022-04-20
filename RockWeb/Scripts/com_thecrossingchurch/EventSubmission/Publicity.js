@@ -51,20 +51,23 @@ export default {
           <date-picker
             v-model="request.PublicityStartDate"
             label="What is the earliest date you are comfortable advertising your event?"
-            :rules="[rules.needsEventDates(request.EventDates), rules.required(request.PublicityStartDate, 'Date')]"
+            :rules="[rules.needsEventDates(request.EventDates), rules.required(request.PublicityStartDate, 'Date'), rules.publicityStartDate(request.Status, request.SubmittedOn, request.PublicityStartDate, request.PublicityEndDate)]"
             :min="earliestPubDate"
             :max="latestStartPubDate"
+            :show-current="earliestPubDate"
             :date="request.PublicityStartDate"
+            :clearable="true"
           ></date-picker>
         </v-col>
         <v-col>
           <date-picker
             v-model="request.PublicityEndDate"
             label="What is the latest date you are comfortable advertising your event?"
-            :rules="[rules.needsEventDates(request.EventDates), rules.required(request.PublicityEndDate, 'Date'), rules.publicityEndDate(request.EventDates, request.PublicityEndDate, request.PublicityStartDate)]"
+            :rules="[rules.needsEventDates(request.EventDates), rules.required(request.PublicityEndDate, 'Date'), rules.publicityEndDate(request.EventDates, request.Status, request.SubmittedOn, request.PublicityEndDate, request.PublicityStartDate)]"
             :min="earliestEndPubDate"
             :max="latestPubDate"
             :date="request.PublicityEndDate"
+            :clearable="true"
           ></date-picker>
         </v-col>
       </v-row>
@@ -221,15 +224,40 @@ export default {
               }
               return true
           },
-          publicityEndDate(eventDates, endDate, startDate) {
+          publicityStartDate(reqStatus, submittedDate, startDate, endDate) {
+            let subDate = moment(submittedDate)
+            if(reqStatus == 'Draft') {
+              subDate = moment()
+            }
+            if(endDate) {
+              let pubSpan = moment(endDate).diff(moment(startDate), 'days')
+              if (pubSpan < 21) {
+                  return 'Publicity start date must be at least 21 days before publicity end.'
+              }
+            }
+            let subSpan = moment(startDate).diff(moment(subDate), 'days') + 1
+            if(subSpan < 21) {
+              return `Publicity start date must be at least 21 days after submission date (${subDate.format('MM/DD/yyyy')}).`
+            }
+            return true
+          },
+          publicityEndDate(eventDates, reqStatus, submittedDate, endDate, startDate) {
               let dates = eventDates.map(d => moment(d))
               let minDate = moment.max(dates).subtract(1, 'days')
               if (moment(endDate).isAfter(minDate)) {
                   return 'Publicity cannot end after event.'
               }
-              let span = moment(endDate).diff(moment(startDate), 'days')
+              let span = moment(endDate).diff(moment(startDate), 'days') + 1
               if (span < 21) {
                   return 'Publicity end date must be at least 21 days after publicity start.'
+              }
+              let subDate = moment(submittedDate)
+              if(reqStatus == 'Draft') {
+                subDate = moment()
+              }
+              let subSpan = moment(endDate).diff(moment(subDate), 'days') + 1
+              if(subSpan < 42) {
+                return `Publicity end date must be at least 6 weeks after submission date (${subDate.format('MM/DD/yyyy')}).`
               }
               return true
           },

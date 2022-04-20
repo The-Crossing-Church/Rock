@@ -2,8 +2,8 @@
 CodeFile="EventSubmissionForm.ascx.cs"
 Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionForm"
 %> <%-- Add Vue and Vuetify CDN --%>
-<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <link
   href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
@@ -979,7 +979,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     return obj
                 })
                 window["moment-range"].extendMoment(moment)
-                this.showValidation()
             },
             mounted() {
                 let query = new URLSearchParams(window.location.search)
@@ -995,7 +994,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         this.isPreApproved = true
                     }
                 } else {
-                    console.log('find the reason')
                     let reason = query.get('Reason')
                     if (reason) {
                         this.reasonNotApproved = reason.split(';')
@@ -1007,6 +1005,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         this.noChangesMade = true
                     }
                 }
+                if(this.request.Status == 'Draft') {
+                  this.validate()
+                }
+                this.showValidation()
             },
             computed: {
                 requestedResources() {
@@ -1036,7 +1038,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 earliestDate() {
                     let eDate = new moment();
-                    if (this.request.Id > 0) {
+                    if (this.request.Id > 0 && this.request.Status != 'Draft') {
                         eDate = new moment(this.request.SubmittedOn)
                     }
                     if (this.request.needsPub) {
@@ -1067,7 +1069,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 earliestPubDate() {
                     let eDate = new moment();
-                    if (this.request.Id > 0) {
+                    if (this.request.Id > 0 && this.request.Status != 'Draft') {
                         eDate = new moment(this.request.SubmittedOn)
                     }
                     eDate = moment(eDate).add(21, "days")
@@ -1325,10 +1327,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             } else {
                                 this.submit()
                             }
-                            //} else {
-                            //  this.triedSubmit = true
-                            //  this.stepper = 2
-                            //}
                         } else {
                             this.currentIdx++
                         }
@@ -1345,10 +1343,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             } else {
                                 this.submit()
                             }
-                            //} else {
-                            //  this.triedSubmit = true
-                            //  this.stepper = 1
-                            //}
                         } else {
                             this.currentIdx++
                         }
@@ -1394,14 +1388,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     this.changeDialog = false
                     $('[id$="hfChangeRequest"]').val(this.dateChangeMessage)
                     $('[id$="btnChangeRequest"')[0].click();
-                },
-                setDate(val) {
-                    this.request.Events[0].Rooms = [val.room];
-                    this.request.Events[0].StartTime = val.startTime;
-                    this.request.Events[0].EndTime = val.endTime;
-                    this.request.Events[0].EventDate = val.eventDate;
-                    this.request.Events[0].ExpectedAttendance = val.att;
-                    this.request.EventDates = [val.eventDate];
                 },
                 updateReg(indexes) {
                     this.request.Events[indexes.currIdx].RegistrationDate = this.request.Events[indexes.targetIdx].RegistrationDate
@@ -1602,36 +1588,43 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 validate() {
+                    this.errors = []
                     let eventErrors = null
                     eventErrors = { page: this.stepper, errors: [] }
                     //Override for Funerals
                     let ministryName = this.ministries.filter(m => { return m.Id == this.request.Ministry })[0]?.Value
+                    let resourceErrors = { page: 1, errors: [] }
                     if (this.isSuperUser && this.stepper < 3 && !ministryName?.toLowerCase().includes("funeral")) {
                         //Validate that the user didn't chnage the date to add a new resource then change the date back
-                        let resourceErrors = { page: 1, errors: [] }
-                        if (this.request.needsOnline && !this.originalRequest.needsOnline && this.twoWeeksTense == 'was') {
+                        if (this.request.needsOnline && (!this.originalRequest.needsOnline || this.request.Status == 'Draft') && this.twoWeeksTense == 'was') {
                             resourceErrors.errors.push("Your request for zoom is invalid, it has been removed")
                             this.request.needsOnline = false
+                            this.originalRequest.needsOnline = false
                         }
-                        if (this.request.needsCatering && !this.originalRequest.needsCatering && this.twoWeeksTense == 'was') {
+                        if (this.request.needsCatering && (!this.originalRequest.needsCatering || this.request.Status == 'Draft') && this.twoWeeksTense == 'was') {
                             resourceErrors.errors.push("Your request for catering is invalid, it has been removed")
                             this.request.needsCatering = false
+                            this.originalRequest.needsCatering = false
                         }
-                        if (this.request.needsChildCare && !this.originalRequest.needsChildCare && this.thirtyDaysTense == 'was') {
+                        if (this.request.needsChildCare && (!this.originalRequest.needsChildCare || this.request.Status == 'Draft') && this.thirtyDaysTense == 'was') {
                             resourceErrors.errors.push("Your request for childcare is invalid, it has been removed")
                             this.request.needsChildCare = false
+                            this.originalRequest.needsChildCare = false
                         }
-                        if (this.request.needsAccom && !this.originalRequest.needsAccom && this.twoWeeksTense == 'was') {
+                        if (this.request.needsAccom && (!this.originalRequest.needsAccom || this.request.Status == 'Draft') && this.twoWeeksTense == 'was') {
                             resourceErrors.errors.push("Your request for accommodations is invalid, it has been removed")
                             this.request.needsAccom = false
+                            this.originalRequest.needsAccom = false
                         }
-                        if (this.request.needsReg && !this.originalRequest.needsReg && this.twoWeeksTense == 'was') {
+                        if (this.request.needsReg && (!this.originalRequest.needsReg || this.request.Status == 'Draft') && this.twoWeeksTense == 'was') {
                             resourceErrors.errors.push("Your request for registration is invalid, it has been removed")
                             this.request.needsReg = false
+                            this.originalRequest.needsReg = false
                         }
-                        if (this.request.needsPub && !this.originalRequest.needsPub && this.sixWeeksTense == 'was') {
+                        if (this.request.needsPub && (!this.originalRequest.needsPub || this.request.Status == 'Draft') && this.sixWeeksTense == 'was') {
                             resourceErrors.errors.push("Your request for publicity is invalid, it has been removed")
                             this.request.needsPub = false
+                            this.originalRequest.needsPub = false
                         }
                         if (resourceErrors.errors.length > 0) {
                             let ridx = -1
@@ -1920,7 +1913,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     })
                     if (idx > -1) {
-                        this.errors[idx].errors = eventErrors.errors
+                        this.errors[idx].errors.push(...eventErrors.errors)
                     } else {
                         this.errors.push(eventErrors)
                     }
@@ -2033,9 +2026,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             this.request.IsSame = true
                         }
                     }
-                    this.errors = []
                 },
-                'request.IsSame'(val) {
+                'request.IsSame'(val, oval) {
                     if (!val) {
                         this.matchMultiEvent()
                     } else {
@@ -2044,9 +2036,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                             this.request.Events.length = 1
                         }
                     }
-                    this.errors = []
                 },
-                'request.Ministry'(val) {
+                'request.Ministry'(val, oval) {
                     let min = this.ministries.filter(m => {
                         return m.Id == this.request.Ministry
                     })
@@ -2062,8 +2053,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsSpace'(val) {
-                    if (!val) {
+                'request.needsSpace'(val, oval) {
+                    if (!val || (val && !oval)) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].Rooms = []
                             this.request.Events[i].ExpectedAttendance = null
@@ -2077,8 +2068,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsOnline'(val) {
-                    if (!val) {
+                'request.needsOnline'(val, oval) {
+                    if (!val || (val && !oval)) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].EventURL = ''
                             this.request.Events[i].ZoomPassword = ''
@@ -2088,8 +2079,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsReg'(val) {
-                    if (!val) {
+                'request.needsReg'(val, oval) {
+                    if (!val || (val && !oval)) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].RegistrationDate = ''
                             this.request.Events[i].RegistrationEndDate = ''
@@ -2107,8 +2098,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsCatering'(val) {
-                    if (!val) {
+                'request.needsCatering'(val, oval) {
+                    if (!val || (val && !oval)) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].Vendor = ''
                             this.request.Events[i].BudgetLine = ''
@@ -2127,8 +2118,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsChildCare'(val) {
-                    if (!val) {
+                'request.needsChildCare'(val, oval) {
+                    if (!val || (val && !oval)) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].CCStartTime = ''
                             this.request.Events[i].CCEndTime = ''
@@ -2137,8 +2128,8 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsAccom'(val) {
-                    if (!val) {
+                'request.needsAccom'(val, oval) {
+                    if (!val || (val && !oval)) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].TechNeeds = []
                             this.request.Events[i].TechDescription = ''
@@ -2156,23 +2147,24 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         }
                     }
                 },
-                'request.needsPub'(val) {
-                    if (!val) {
-                        for (var i = 0; i < this.request.Events.length; i++) {
-                            this.request.WhyAttendSixtyFive = ""
-                            this.request.TargetAudience = ""
-                            this.request.EventIsSticky = false
-                            this.request.PublicityStartDate = ""
-                            this.request.PublicityEndDate = ""
-                            this.request.PublicityStrategies = ""
-                            this.request.WhyAttendNinety = ""
-                            this.request.GoogleKeys = []
-                            this.request.WhyAttendTen = ""
-                            this.request.VisualIdeas = ""
-                            this.request.Stories = [{ Name: "", Email: "", Description: "" }]
-                            this.request.WhyAttendTwenty = ""
-                        }
+                'request.needsPub': { 
+                  handler(val, oval) {
+                    if (!val || (val && !oval)) {
+                        this.request.WhyAttendSixtyFive = ""
+                        this.request.TargetAudience = ""
+                        this.request.EventIsSticky = false
+                        this.request.PublicityStartDate = ""
+                        this.request.PublicityEndDate = ""
+                        this.request.PublicityStrategies = ""
+                        this.request.WhyAttendNinety = ""
+                        this.request.GoogleKeys = []
+                        this.request.WhyAttendTen = ""
+                        this.request.VisualIdeas = ""
+                        this.request.Stories = [{ Name: "", Email: "", Description: "" }]
+                        this.request.WhyAttendTwenty = ""
                     }
+                  },
+                  immediate: true
                 },
             }
         });
