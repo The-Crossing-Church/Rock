@@ -67,9 +67,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         #region Variables
         private RockContext context { get; set; }
         private EventSubmissionHelper eventSubmissionHelper { get; set; }
-        private int RoomDefinedTypeId { get; set; }
-        private int MinistryDefinedTypeId { get; set; }
-        private int BudgetDefinedTypeId { get; set; }
         private int ContentChannelId { get; set; }
         private int RequestWorkflowId { get; set; }
         private int UserActionWorkflowId { get; set; }
@@ -78,9 +75,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private string UserDashboardPageId { get; set; }
         private string HistoryPageId { get; set; }
         private DateTime? FilterDate { get; set; }
-        private List<DefinedValue> Rooms { get; set; }
-        private List<DefinedValue> Ministries { get; set; }
-        private List<DefinedValue> BudgetLines { get; set; }
         private static class PageParameterKey
         {
             public const string Id = "Id";
@@ -368,8 +362,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelItemService svc = new ContentChannelItemService( context );
             DateTime oneweekago = DateTime.Now.AddDays( -7 );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId && ( !FilterDate.HasValue || DateTime.Compare( i.CreatedDateTime.Value, FilterDate.Value ) >= 0 ) ).ToList();
+            var itm = items[0];
+            itm.LoadAttributes();
+            var attrId = itm.Attributes["RequestStatus"].Id;
+            var statuses = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == attrId && av.Value != "Draft" && av.Value != "Approved" && !av.Value.Contains( "Cancelled" ) && av.Value != "Denied" );
+            var statusItems = items.Join( statuses,
+                    i => i.Id,
+                    s => s.EntityId,
+                    ( i, s ) => i
+                ).ToList();
+            items = items.Where( i => DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
+            items.AddRange( statusItems );
+            items = items.Distinct().ToList();
             items.LoadAttributes();
-            items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" && ( ( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Approved" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Cancelled" && i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Denied" ) || DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ) ).ToList();
+            items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" ).ToList();
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );
@@ -389,17 +395,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
             List<ContentChannelItem> items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
-            items.LoadAttributes();
-            items = items.Where( i =>
+            var itm = items[0];
+            itm.LoadAttributes();
+            var attrId = itm.Attributes["EventDates"].Id;
+            var eventDates = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == attrId ).ToList();
+            var upcomingDates = eventDates.Where( r =>
             {
-                string status = i.AttributeValues["RequestStatus"].Value;
-                //Don't include events that aren't already on the calendar
-                if ( status == "Draft" || status == "Submitted" || status.Contains( "Cancelled" ) || status == "Denied" )
-                {
-                    return false;
-                }
-                var dateStr = i.AttributeValues["EventDates"];
-                var dates = dateStr.Value.Split( ',' );
+                var dates = r.Value.Split( ',' );
                 foreach ( var d in dates )
                 {
                     DateTime dt = DateTime.Parse( d );
@@ -409,7 +411,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     }
                 }
                 return false;
-            } ).ToList();
+            } );
+            items = items.Join( upcomingDates,
+                    i => i.Id,
+                    e => e.EntityId,
+                    ( i, e ) => i
+                ).ToList();
+
+            items.LoadAttributes();
+            items = items.Where( i => !( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value == "Draft" || i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value == "Submitted" || i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value.Contains( "Cancelled" ) || i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value == "Denied" ) ).ToList();
             hfUpcomingRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, SubmittedOn = i.StartDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } ).ToList() );
         }
 
@@ -420,20 +430,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
-            items.LoadAttributes();
-            var reqs = items.Select( i => new FullRequest() { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, Request = JsonConvert.DeserializeObject<EventRequest>( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value ), HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } );
-            var current = reqs.Where( r =>
+            var itm = items[0];
+            itm.LoadAttributes();
+            var attrId = itm.Attributes["EventDates"].Id;
+            var eventDates = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == attrId ).ToList();
+            var currentEvents = eventDates.Where( r =>
             {
-                if ( r.RequestStatus != "Approved" || r.Request == null )
-                {
-                    return false;
-                }
-                var dates = r.Request.EventDates;
                 var occursInWeek = false;
                 var endOfWeek = DateTime.Now.AddDays( 6 );
                 endOfWeek = new DateTime( endOfWeek.Year, endOfWeek.Month, endOfWeek.Day, 23, 59, 59 );
                 var today = DateTime.Now;
                 today = new DateTime( today.Year, today.Month, today.Day, 0, 0, 0 );
+                var dates = r.Value.Split( ',' ).ToList();
                 for ( var i = 0; i < dates.Count(); i++ )
                 {
                     if ( DateTime.Compare( DateTime.Parse( dates[i] ), endOfWeek ) <= 0 && DateTime.Compare( DateTime.Parse( dates[i] ), today ) >= 0 )
@@ -443,6 +451,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 return occursInWeek;
             } );
+            items = items.Join( currentEvents,
+                    i => i.Id,
+                    e => e.EntityId,
+                    ( i, e ) => i
+                ).ToList();
+
+            items.LoadAttributes();
+            var reqs = items.Select( i => new FullRequest() { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, Request = JsonConvert.DeserializeObject<EventRequest>( i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value ), HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, CreatedOn = i.CreatedDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value } );
+            var current = reqs.Where( r => r.RequestStatus == "Approved" && r.Request != null );
             hfCurrent.Value = JsonConvert.SerializeObject( current );
         }
 

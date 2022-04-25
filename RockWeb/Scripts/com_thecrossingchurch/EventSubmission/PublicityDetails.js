@@ -107,56 +107,61 @@ export default {
         </v-col>
       </v-row>
       <template v-if="request.PublicityStrategies && request.PublicityStrategies.includes('Social Media/Google Ads')">
-        <v-row>
-          <v-col>
-            <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
-            <template v-if="request.Changes != null && request.WhyAttendNinety != request.Changes.WhyAttendNinety">
-              <template v-if="approvalmode">
-                <approval-field :request="selected" :e="null" :idx="null" field="WhyAttendNinety" :fieldname="formatFieldName('Describe Why Someone Should Attend Your Event (90)')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+        <template v-if="request.WhyAttendNinety != '' && (request.Changes == null || request.Changes.WhyAttendNinety != '')">
+          <v-row>
+            <v-col>
+              <div class="floating-title">Describe Why Someone Should Attend Your Event (90)</div>
+              <template v-if="request.Changes != null && request.WhyAttendNinety != request.Changes.WhyAttendNinety">
+                <template v-if="approvalmode">
+                  <approval-field :request="selected" :e="null" :idx="null" field="WhyAttendNinety" :fieldname="formatFieldName('Describe Why Someone Should Attend Your Event (90)')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+                </template>
+                <template v-else>
+                  <span class='red--text'>{{(request.WhyAttendNinety ? request.WhyAttendNinety : 'Empty')}}: </span>
+                  <span class='primary--text'>{{(request.Changes.WhyAttendNinety ? request.Changes.WhyAttendNinety : 'Empty')}}</span>
+                </template>
               </template>
               <template v-else>
-                <span class='red--text'>{{(request.WhyAttendNinety ? request.WhyAttendNinety : 'Empty')}}: </span>
-                <span class='primary--text'>{{(request.Changes.WhyAttendNinety ? request.Changes.WhyAttendNinety : 'Empty')}}</span>
+                {{request.WhyAttendNinety}}
               </template>
+            </v-col>
+          </v-row>
+        </template>
+        <template v-if="request.GoogleKeys.toString() != '' && (request.Changes == null || request.Changes.GoogleKeys.toString() != '')">
+          <v-row>
+            <template v-if="request.Changes != null && request.GoogleKeys.toString() != request.Changes.GoogleKeys.toString()">
+              <v-col class='red--text'>
+                  <div class="floating-title">Google Keys</div>
+                  <ul>
+                    <li v-for="k in request.GoogleKeys" :key="k">
+                      {{k}}
+                    </li>
+                  </ul>
+                </v-col>
+                <v-col class='primary--text'>
+                  <ul>
+                    <li v-for="k in request.Changes.GoogleKeys" :key="k">
+                      {{k}}
+                    </li>
+                  </ul>
+                </v-col>
+              </template>
+              <template v-else>
+                <v-col>
+                  <div class="floating-title">Google Keys</div>
+                  <ul>
+                    <li v-for="k in request.GoogleKeys" :key="k">
+                      {{k}}
+                    </li>
+                  </ul>
+                </v-col>
             </template>
-            <template v-else>
-              {{request.WhyAttendNinety}}
-            </template>
-          </v-col>
-        </v-row>
-        <v-row>
-          <template v-if="request.Changes != null && request.GoogleKeys.toString() != request.Changes.GoogleKeys.toString()">
-            <v-col class='red--text'>
-                <div class="floating-title">Google Keys</div>
-                <ul>
-                  <li v-for="k in request.GoogleKeys" :key="k">
-                    {{k}}
-                  </li>
-                </ul>
-              </v-col>
-              <v-col class='primary--text'>
-                <ul>
-                  <li v-for="k in request.Changes.GoogleKeys" :key="k">
-                    {{k}}
-                  </li>
-                </ul>
-              </v-col>
-            </template>
-            <template v-else>
-              <v-col>
-                <div class="floating-title">Google Keys</div>
-                <ul>
-                  <li v-for="k in request.GoogleKeys" :key="k">
-                    {{k}}
-                  </li>
-                </ul>
-              </v-col>
-          </template>
-        </v-row>
+          </v-row>
+        </template>
       </template>
       <template v-if="request.PublicityStrategies.includes('Mobile Worship Folder')">
+      <template v-if="(request.WhyAttendTen != '' && (request.Changes == null || request.Changes.WhyAttendTen != '')) || (request.VisualIdeas != '' && (request.Changes == null || request.Changes.VisualIdeas != ''))">
         <v-row>
-          <v-col>
+          <v-col v-if="request.WhyAttendTen != '' && (request.Changes == null || request.Changes.WhyAttendTen != '')">
             <div class="floating-title">Describe Why Someone Should Attend Your Event (65)</div>
             <template v-if="request.Changes != null && request.WhyAttendTen != request.Changes.WhyAttendTen">
               <template v-if="approvalmode">
@@ -171,7 +176,7 @@ export default {
               {{request.WhyAttendTen}}
             </template>
           </v-col>
-          <v-col v-if="request.VisualIdeas != ''">
+          <v-col v-if="request.VisualIdeas != '' && (request.Changes == null || request.Changes.VisualIdeas != '')">
             <div class="floating-title">Visual Ideas for Graphic</div>
             <template v-if="request.Changes != null && request.VisualIdeas != request.Changes.VisualIdeas">
               <template v-if="approvalmode">
@@ -188,45 +193,50 @@ export default {
           </v-col>
         </v-row>
       </template>
+      </template>
       <template v-if="request.PublicityStrategies.includes('Announcement')">
-        <v-row v-for="(s, sidx) in request.Stories" :key="storyKey(sidx)">
-          <template v-if="request.Changes != null && request.Stories.toString() != request.Changes.Stories.toString()">
-            <v-col class='red--text'>
-              <div class="floating-title">Story {{sidx+1}}</div>
-              {{s.Name}}, {{s.Email}} <br/>
-              {{s.Description}}
-            </v-col>
-            <v-col class='primary--text'>
-              <div class="floating-title">Story {{sidx+1}}</div>
-              {{request.Changes.Stories[sidx].Name}}, {{request.Changes.Stories[sidx].Email}} <br/>
-              {{request.Changes.Stories[sidx].Description}}
-            </v-col>
-          </template>
-          <template v-else>
-            <v-col>
-              <div class="floating-title">Story {{sidx+1}}</div>
-              {{s.Name}}, {{s.Email}} <br/>
-              {{s.Description}}
-            </v-col>
-          </template>
-        </v-row>
-        <v-row>
-          <v-col>
-            <div class="floating-title">Describe Why Someone Should Attend Your Event (175)</div>
-            <template v-if="request.Changes != null && request.WhyAttendTwenty != request.Changes.WhyAttendTwenty">
-              <template v-if="approvalmode">
-                <approval-field :request="selected" :e="null" :idx="null" field="WhyAttendTwenty" :fieldname="formatFieldName('Describe Why Someone Should Attend Your Event (175)')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
-              </template>
-              <template v-else>
-                <span class='red--text'>{{(request.WhyAttendTwenty ? request.WhyAttendTwenty : 'Empty')}}: </span>
-                <span class='primary--text'>{{(request.Changes.WhyAttendTwenty ? request.Changes.WhyAttendTwenty : 'Empty')}}</span>
-              </template>
+        <template v-if="request.Stories.toString() != '' && (request.Changes == null || request.Changes.Stories.toString() != '')">
+          <v-row v-for="(s, sidx) in request.Stories" :key="storyKey(sidx)">
+            <template v-if="request.Changes != null && request.Stories.toString() != request.Changes.Stories.toString()">
+              <v-col class='red--text'>
+                <div class="floating-title">Story {{sidx+1}}</div>
+                {{s.Name}}, {{s.Email}} <br/>
+                {{s.Description}}
+              </v-col>
+              <v-col class='primary--text'>
+                <div class="floating-title">Story {{sidx+1}}</div>
+                {{request.Changes.Stories[sidx].Name}}, {{request.Changes.Stories[sidx].Email}} <br/>
+                {{request.Changes.Stories[sidx].Description}}
+              </v-col>
             </template>
             <template v-else>
-              {{request.WhyAttendTwenty}}
+              <v-col>
+                <div class="floating-title">Story {{sidx+1}}</div>
+                {{s.Name}}, {{s.Email}} <br/>
+                {{s.Description}}
+              </v-col>
             </template>
-          </v-col>
-        </v-row>
+          </v-row>
+        </template>
+        <template v-if="request.WhyAttendTwenty != '' && (request.Changes == null || request.Changes.WhyAttendTwenty != '')">
+          <v-row>
+            <v-col>
+              <div class="floating-title">Describe Why Someone Should Attend Your Event (175)</div>
+              <template v-if="request.Changes != null && request.WhyAttendTwenty != request.Changes.WhyAttendTwenty">
+                <template v-if="approvalmode">
+                  <approval-field :request="selected" :e="null" :idx="null" field="WhyAttendTwenty" :fieldname="formatFieldName('Describe Why Someone Should Attend Your Event (175)')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+                </template>
+                <template v-else>
+                  <span class='red--text'>{{(request.WhyAttendTwenty ? request.WhyAttendTwenty : 'Empty')}}: </span>
+                  <span class='primary--text'>{{(request.Changes.WhyAttendTwenty ? request.Changes.WhyAttendTwenty : 'Empty')}}</span>
+                </template>
+              </template>
+              <template v-else>
+                {{request.WhyAttendTwenty}}
+              </template>
+            </v-col>
+          </v-row>
+        </template>
       </template>
     </div>
   `,

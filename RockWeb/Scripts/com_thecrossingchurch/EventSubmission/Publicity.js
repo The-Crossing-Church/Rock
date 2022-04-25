@@ -12,10 +12,10 @@ export default {
       <v-row>
         <v-col>
           <v-textarea
-            label="In 450 characters or less, describe why someone should attend your event and what they will learn/receive."
+            label="Describe why someone should attend your event, what they will gain from your event, and any additional information that will help publicize your event."
             v-model="request.WhyAttendSixtyFive"
             :hint="WhyAttendSixtyFiveHint"
-            :rules="[rules.required(request.WhyAttendSixtyFive, 'This field'), rules.publicityCharacterLimit(request.WhyAttendSixtyFive, 450)]"
+            :rules="[rules.required(request.WhyAttendSixtyFive, 'This field')]"
           ></v-textarea>
         </v-col>
       </v-row>
@@ -83,116 +83,6 @@ export default {
           ></v-select>
         </v-col>
       </v-row>
-      <template v-if="request.PublicityStrategies.includes('Social Media/Google Ads')">
-        <v-row>
-          <v-col>
-            <i><strong style="font-size: 16px;">As a reminder the information you are filling out below is a request for Social Media/Google Ads. The Communication Manager will provide further direction and strategy.</strong></i>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-textarea
-              label="In 90 characters or less, describe why someone should attend your event."
-              v-model="request.WhyAttendNinety"
-              :rules="[rules.required(request.WhyAttendNinety, 'This field'), rules.publicityCharacterLimit(request.WhyAttendNinety, 90)]"
-              :hint="WhyAttendNinetyHint"
-            ></v-textarea>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <label class="v-label theme--light">Which words, phrases, and questions would you like your event to trigger when someone searches on Google?</label>
-            <v-chip-group>
-              <v-chip
-                v-for="(key, idx) in request.GoogleKeys"
-                :key="GoogleKey(idx)"
-                close
-                @click:close="removeGoogleKey(idx)"
-                close-icon="mdi-delete"
-              >
-                {{key}}
-              </v-chip>
-            </v-chip-group>
-            <v-text-field
-              label="Type a word or phrase here, then hit the 'Enter' key to add it to your list"
-              v-model="googleCurrentKey"
-              @keydown.enter="addGoogleKey"
-              :disabled="request.GoogleKeys.length >= 50"
-              :hint="GoogleKeyHint"
-              persistent-hint
-            ></v-text-field>
-          </v-col>
-        </v-row>
-      </template>
-      <template v-if="request.PublicityStrategies.includes('Mobile Worship Folder')">
-        <v-row>
-          <v-col>
-            <i><strong style="font-size: 16px;">As a reminder the information you are filling out below is a request for Mobile Worship Folder. The Communication Manager will provide further direction and strategy.</strong></i>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-text-field
-              label="In 65 characters or less, describe why someone should attend your event."
-              v-model="request.WhyAttendTen"
-              :hint="WhyAttendTenHint"
-              :rules="[rules.required(request.WhyAttendTen, 'This field'), rules.publicityCharacterLimit(request.WhyAttendTen, 65)]"
-            ></v-text-field>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-textarea
-              label="In terms of graphic design, do you have any specific ideas regarding imagery, symbols, or any other visual elements to help guide our graphic designer?"
-              v-model="request.VisualIdeas"
-              :hint="VisualIdeasHint"
-              :rules="[rules.publicityCharacterLimit(request.VisualIdeas, 300)]"
-            ></v-textarea>
-          </v-col>
-        </v-row>
-      </template>
-      <template v-if="request.PublicityStrategies.includes('Announcement')">
-        <v-row>
-          <v-col>
-            <strong style="font-size: 16px;">Please give the name and email of 1-3 people who have benefited from this in the past. Write a 1 paragraph description of their involvement and experience.</strong>
-          </v-col>
-        </v-row>
-        <v-row v-for="(s, idx) in request.Stories" :key="StoryKey(idx)">
-          <v-col>
-            <v-text-field
-              label="Name"
-              v-model="s.Name"
-            ></v-text-field>
-          </v-col>
-          <v-col>
-            <v-text-field
-              label="Email"
-              v-model="s.Email"
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12">
-            <v-textarea
-              label="Description of their involvement and experience."
-              v-model="s.Description"
-            ></v-textarea>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-btn color="accent" :disabled="request.Stories.length == 3" @click="request.Stories.push({Name:'', Email: '', Description: ''})">Add Person</v-btn>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-textarea
-              label="In 175 characters or less, describe why someone should attend your event."
-              v-model="request.WhyAttendTwenty"
-              :rules="[rules.publicityCharacterLimit(request.WhyAttendTwenty, 175)]"
-              :hint="WhyAttendTwentyHint"
-            ></v-textarea>
-          </v-col>
-        </v-row>
-      </template>
     </v-form>
   </div>
   `,

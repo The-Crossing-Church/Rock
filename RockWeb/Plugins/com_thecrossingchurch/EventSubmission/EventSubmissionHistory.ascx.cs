@@ -123,7 +123,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         protected void GetAllRequests()
         {
             ContentChannelItemService svc = new ContentChannelItemService( context );
-            DateTime oneweekago = DateTime.Now.AddDays( -7 );
             var items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).OrderByDescending( i => i.CreatedDateTime ).ToList();
             items.LoadAttributes();
             items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" ).ToList();

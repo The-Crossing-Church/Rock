@@ -35,7 +35,6 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
 <asp:HiddenField ID="hfReservations" runat="server" />
 <asp:HiddenField ID="hfRequest" runat="server" />
 <asp:HiddenField ID="hfUpcomingRequests" runat="server" />
-<asp:HiddenField ID="hfThisWeeksRequests" runat="server" />
 <asp:HiddenField ID="hfIsAdmin" runat="server" />
 <asp:HiddenField ID="hfIsSuperUser" runat="server" />
 <asp:HiddenField ID="hfPersonName" runat="server" />
@@ -712,16 +711,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script type="module">
-    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.1';
-    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.1';
-    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.1';
-    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.1';
-    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.1';
-    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.1';
-    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.1';
-    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.1';
-    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.1';
-    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.1';
+    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.2';
+    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.2';
+    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.2';
+    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.2';
+    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.2';
+    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.2';
+    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.2';
+    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.2';
+    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.2';
+    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.2';
     document.addEventListener("DOMContentLoaded", function () {
         Vue.component("time-picker", timePickerVue);
         Vue.component("space", spaceVue);
@@ -2054,7 +2053,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 'request.needsSpace'(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].Rooms = []
                             this.request.Events[i].ExpectedAttendance = null
@@ -2069,7 +2068,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 'request.needsOnline'(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].EventURL = ''
                             this.request.Events[i].ZoomPassword = ''
@@ -2080,7 +2079,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 'request.needsReg'(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].RegistrationDate = ''
                             this.request.Events[i].RegistrationEndDate = ''
@@ -2099,7 +2098,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 'request.needsCatering'(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].Vendor = ''
                             this.request.Events[i].BudgetLine = ''
@@ -2119,7 +2118,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 'request.needsChildCare'(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].CCStartTime = ''
                             this.request.Events[i].CCEndTime = ''
@@ -2129,7 +2128,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                     }
                 },
                 'request.needsAccom'(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         for (var i = 0; i < this.request.Events.length; i++) {
                             this.request.Events[i].TechNeeds = []
                             this.request.Events[i].TechDescription = ''
@@ -2149,7 +2148,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 },
                 'request.needsPub': { 
                   handler(val, oval) {
-                    if (!val || (val && !oval)) {
+                    if (!val) {
                         this.request.WhyAttendSixtyFive = ""
                         this.request.TargetAudience = ""
                         this.request.EventIsSticky = false

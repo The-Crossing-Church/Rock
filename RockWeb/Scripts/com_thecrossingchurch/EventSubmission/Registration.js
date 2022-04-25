@@ -121,21 +121,9 @@ export default {
       persistent-hint
     ></v-text-field>
     <v-textarea
-      label="Thank You"
-      v-model="e.ThankYou"
-    ></v-textarea>
-    <v-textarea
-      label="Date, Time, and Location"
-      v-model="e.TimeLocation"
-    ></v-textarea>
-    <v-textarea
-      label="Additional Details"
+      label="What do you need communicated in your confirmation email for your event after they register?"
       v-model="e.AdditionalDetails"
     ></v-textarea>
-  </v-col>
-  <v-col>
-    <div style="font-weight: bold; font-style: italic; text-align: center;">This preview is just to give you a general idea about placement within the email, it is not the final product.</div>
-    <div v-html="emailPreview"></div>
   </v-col>
 </v-row>
 <v-row>
@@ -153,7 +141,7 @@ export default {
     </v-col>
   </v-row>
   <v-row>
-    <v-col cols="12" md="6">
+    <v-col>
       <v-text-field
         label="Name of the person this email should come from"
         v-model="e.ReminderSender"
@@ -166,17 +154,9 @@ export default {
         persistent-hint
       ></v-text-field>
       <v-textarea
-        label="Date, Time, and Location"
-        v-model="e.ReminderTimeLocation"
-      ></v-textarea>
-      <v-textarea
-        label="Additional Details"
+        label="What do you need communicated in your reminder email for your event?"
         v-model="e.ReminderAdditionalDetails"
       ></v-textarea>
-    </v-col>
-    <v-col cols="12" md="6">
-      <div style="font-weight: bold; font-style: italic; text-align: center;">This preview is just to give you a general idea about placement within the email, it is not the final product.</div>
-      <div v-html="reminderEmailPreview"></div>
     </v-col>
   </v-row>
 </template>
@@ -349,58 +329,6 @@ export default {
       }
       return ""
     },
-    defaultThankYou() {
-      if (this.request.needsReg) {
-        if (this.request.Id > 0 && this.e.ThankYou) {
-          return this.e.ThankYou
-        }
-        if (this.request.Name) {
-          return "Thank you for registering for " + this.request.Name
-        }
-        return ""
-      }
-      return ""
-    },
-    defaultTimeLocation() {
-      if (this.request.needsReg) {
-        if (this.request.Id > 0 && this.e.TimeLocation) {
-          return this.e.TimeLocation
-        }
-        if (this.request.Name && this.e.StartTime) {
-          let dt = moment(this.e.EventDate).format('MM/DD/yyyy')
-          if(this.request.IsSame) {
-            dt = moment(this.request.EventDates[0]).format('MM/DD/yyyy')
-          } 
-          let message = this.request.Name + " will take place at " + this.e.StartTime + " on " + dt 
-          if(this.e.Rooms && this.e.Rooms.length > 0) {
-            message += " in " + this.formatRooms(this.e.Rooms)
-          }
-          return message
-        }
-        return ""
-      }
-      return ""
-    },
-    defaultReminderTimeLocation() {
-      if (this.request.needsReg) {
-        if (this.request.Id > 0 && this.e.ReminderTimeLocation) {
-          return this.e.ReminderTimeLocation
-        }
-        if (this.request.Name && this.e.StartTime) {
-          let dt = moment(this.e.EventDate).format('MM/DD/yyyy')
-          if(this.request.IsSame) {
-            dt = moment(this.request.EventDates[0]).format('MM/DD/yyyy')
-          } 
-          let message = this.request.Name + " will take place at " + this.e.StartTime + " on " + dt 
-          if(this.e.Rooms && this.e.Rooms.length > 0) {
-            message += " in " + this.formatRooms(this.e.Rooms)
-          }
-          return message
-        }
-        return ""
-      }
-      return ""
-    },
     defaultSender() {
       if (this.request.needsReg) {
         if (this.request.Id > 0 && this.e.Sender) {
@@ -425,75 +353,6 @@ export default {
       }
       return ""
     },
-    emailPreview() {
-      let preview =
-        "<div style='background-color: #F2F2F2;'>" +
-        "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
-        "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
-        "</div>" +
-        "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
-        "<h1>" + this.request.Name + "</h1><br/>" +
-      this.e.ThankYou + "<br/><br/>" +
-      this.e.TimeLocation + "<br/><br/>" +
-      "<p>The following people have been registered for " + this.request.Name + ":</p>" +
-      "<ul>" +
-      "<li>First Registrant</li>" +
-      "<li>Second Registrant</li>" +
-      "</ul>"
-      if (this.e.Fee) {
-        preview +=
-          "<p>" +
-          "Total Cost: $" + this.e.Fee + "<br/>" +
-          "Total Paid: $" + this.e.Fee + "<br/>" +
-          "Balance Due: $0.00<br/>" +
-          "</p>"
-      }
-      preview += this.e.AdditionalDetails
-      preview += "</div>"
-      preview +=
-        "<div style='text-align:center;'><br/>" +
-        "<b>The Crossing</b><br/>" +
-        "3615 Southland Dr.<br/>" +
-        "Columbia, MO 65201<br/>" +
-        "(573) 256-4410<br/>" +
-        "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
-        "</div>"
-      preview += "</div>"
-      return preview
-    },
-    reminderEmailPreview() {
-      let preview =
-        "<div style='background-color: #F2F2F2;'>" +
-        "<div style='text-align: center; padding-top: 30px; padding-bottom: 30px;'>" +
-        "<img src='https://rock.thecrossingchurch.com/content/EmailTemplates/CrossingLogo-EmailTemplate-Header-215x116.png' border='0' style='width:100%; max-width: 215px; height: auto;'>" +
-        "</div>" +
-        "<div style='background-color: #F9F9F9; padding: 30px; margin: auto; max-width: 90%;'>" +
-        "<h1>" + this.request.Name + " Reminder</h1><br/>" +
-        this.e.ReminderTimeLocation + "<br/><br/>" +
-        "<p>The following people have been registered for " + this.request.Name + ":</p>" +
-        "<ul>" +
-        "<li>First Registrant</li>" +
-        "<li>Second Registrant</li>" +
-        "</ul>"
-      if (this.e.Fee) {
-        preview +=
-          "<p>" +
-          "This registration still has a balance of $" + this.e.Fee + ".<br/>" +
-          "</p>"
-      }
-      preview += this.e.ReminderAdditionalDetails
-      preview += "</div>"
-      preview +=
-        "<div style='text-align:center;'><br/>" +
-        "<b>The Crossing</b><br/>" +
-        "3615 Southland Dr.<br/>" +
-        "Columbia, MO 65201<br/>" +
-        "(573) 256-4410<br/>" +
-        "<a href='https://thecrossingchurch.com'><b>thecrossingchurch.com</b></a><br/><br/>" +
-        "</div>"
-      preview += "</div>"
-      return preview
-    },
     prefillOptions() {
       return this.request.EventDates.filter(i => i != this.e.EventDate)
     },
@@ -517,8 +376,11 @@ export default {
     },
   },
   watch: {
-    e(val) {
-      this.$emit('change', val)
+    e: {
+      handler(val) {
+        this.$emit('change', val)
+      },
+      deep: true
     },
     defaultRegistraionEnd(val) {
       if (val) {
@@ -530,30 +392,21 @@ export default {
         this.e.RegistrationDate = val
       }
     },
-    defaultThankYou(val) {
-      if (val) {
-        this.e.ThankYou = val
-      }
+    defaultSender: {
+      handler(val) {
+        if(val) {
+          this.e.Sender = val
+        }
+      },
+      immediate: true
     },
-    defaultTimeLocation(val) {
-      if (val) {
-        this.e.TimeLocation = val
-      }
-    },
-    defaultReminderTimeLocation(val) {
-      if (val) {
-        this.e.ReminderTimeLocation = val
-      }
-    },
-    defaultSender(val) {
-      if(val) {
-        this.e.Sender = val
-      }
-    },
-    defaultReminderSender(val) {
-      if(val) {
-        this.e.ReminderSender = val
-      }
+    defaultReminderSender: {
+      handler(val) {
+        if(val) {
+          this.e.ReminderSender = val
+        }
+      }, 
+      immediate: true
     },
     'e.FeeType'(val) {
       if (!val.includes('Fee per Individual')) {

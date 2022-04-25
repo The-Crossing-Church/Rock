@@ -182,8 +182,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
             }
             hfPersonName.Value = CurrentPerson.FullName;
-            ThisWeekRequests();
-            ThisWeekRequests();
             if ( !Page.IsPostBack )
             {
                 if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
@@ -567,39 +565,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         }
 
         /// <summary>
-        /// Load requests happening in the next seven days to display on the quick view event selection
-        /// </summary>
-        protected void ThisWeekRequests()
-        {
-            ContentChannelItemService svc = new ContentChannelItemService( context );
-            List<ContentChannelItem> items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
-            items.LoadAttributes();
-            DateTime oneWeek = DateTime.Now.AddDays( 7 );
-            oneWeek = new DateTime( oneWeek.Year, oneWeek.Month, oneWeek.Day, 23, 59, 59 );
-            items = items.Where( i =>
-            {
-                //Don't show non-approved requests
-                string status = i.AttributeValues["RequestStatus"].Value;
-                if ( status == "Submitted" || status == "Denied" || status == "Cancelled" || status == "Cancelled by User" )
-                {
-                    return false;
-                }
-                var dateStr = i.AttributeValues["EventDates"];
-                var dates = dateStr.Value.Split( ',' );
-                foreach ( var d in dates )
-                {
-                    DateTime dt = DateTime.Parse( d );
-                    if ( DateTime.Compare( dt, DateTime.Now ) >= 0 && DateTime.Compare( dt, oneWeek ) <= 0 )
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            } ).ToList();
-            hfThisWeeksRequests.Value = JsonConvert.SerializeObject( items.Select( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value ).ToList() );
-        }
-
-        /// <summary>
         /// Load upcoming requests
         /// </summary>
         protected void LoadUpcoming()
@@ -611,21 +576,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             }
             ContentChannelItemService svc = new ContentChannelItemService( context );
             List<ContentChannelItem> items = svc.Queryable().Where( i => i.ContentChannelId == ContentChannelId ).ToList();
-            items.LoadAttributes();
-            items = items.Where( i =>
+            var itm = items[0];
+            itm.LoadAttributes();
+            var statusAttrId = itm.Attributes["RequestStatus"].Id;
+            var statuses = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == statusAttrId && av.Value != "Draft" && av.Value != "Submitted" && !av.Value.Contains( "Cancelled" ) && av.Value != "Denied" );
+            items = items.Join( statuses,
+                    i => i.Id,
+                    s => s.EntityId,
+                    ( i, s ) => i
+                ).ToList();
+            var dateAttrId = itm.Attributes["EventDates"].Id;
+            var eventDates = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == dateAttrId ).ToList();
+            eventDates = eventDates.Where( e =>
             {
-                if ( i.Id == id )
-                {
-                    return false;
-                }
-                //Don't show non-approved requests
-                string status = i.AttributeValues["RequestStatus"].Value;
-                if ( status == "Draft" || status == "Submitted" || status == "Denied" || status == "Cancelled" || status == "Cancelled by User" )
-                {
-                    return false;
-                }
-                var dateStr = i.AttributeValues["EventDates"];
-                var dates = dateStr.Value.Split( ',' );
+                var dates = e.Value.Split( ',' );
                 foreach ( var d in dates )
                 {
                     DateTime dt = DateTime.Parse( d );
@@ -636,6 +600,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 }
                 return false;
             } ).ToList();
+            items = items.Join( eventDates,
+                    i => i.Id,
+                    e => e.EntityId,
+                    ( i, e ) => i
+                ).ToList();
+
+            items.LoadAttributes();
             hfUpcomingRequests.Value = JsonConvert.SerializeObject( items.Select( i => new { Id = i.Id, data = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value } ).ToList() );
         }
 
@@ -1059,14 +1030,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                     {
                         message += "<strong>Confirmation Email From Address:</strong> " + request.Events[i].SenderEmail + "<br/>";
                     }
-                    if ( !String.IsNullOrEmpty( request.Events[i].ThankYou ) )
-                    {
-                        message += "<strong>Confirmation Email Thank You:</strong> " + request.Events[i].ThankYou + "<br/>";
-                    }
-                    if ( !String.IsNullOrEmpty( request.Events[i].TimeLocation ) )
-                    {
-                        message += "<strong>Confirmation Email Date, Time, and Location:</strong> " + request.Events[i].TimeLocation + "<br/>";
-                    }
                     if ( !String.IsNullOrEmpty( request.Events[i].AdditionalDetails ) )
                     {
                         message += "<strong>Confirmation Email Additional Details:</strong> " + request.Events[i].AdditionalDetails + "<br/>";
@@ -1080,10 +1043,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                         if ( !String.IsNullOrEmpty( request.Events[i].ReminderSenderEmail ) )
                         {
                             message += "<strong>Reminder Email From Address:</strong> " + request.Events[i].ReminderSenderEmail + "<br/>";
-                        }
-                        if ( !String.IsNullOrEmpty( request.Events[i].ReminderTimeLocation ) )
-                        {
-                            message += "<strong>Reminder Email Date, Time, and Location:</strong> " + request.Events[i].ReminderTimeLocation + "<br/>";
                         }
                         if ( !String.IsNullOrEmpty( request.Events[i].ReminderAdditionalDetails ) )
                         {
@@ -1176,7 +1135,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 message += "<br/><strong style='color: #6485b3;'>Publicity Information</strong><br/>";
                 if ( !String.IsNullOrEmpty( request.WhyAttendSixtyFive ) )
                 {
-                    message += "<strong>Describe Why Someone Should Attend Your Event (450):</strong> " + request.WhyAttendSixtyFive + "<br/>";
+                    message += "<strong>Describe Why Someone Should Attend Your Event:</strong> " + request.WhyAttendSixtyFive + "<br/>";
                 }
                 if ( !String.IsNullOrEmpty( request.TargetAudience ) )
                 {
@@ -1194,57 +1153,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 if ( request.PublicityStrategies != null && request.PublicityStrategies.Count() > 0 )
                 {
                     message += "<strong>Publicity Strategies:</strong> " + String.Join( ", ", request.PublicityStrategies ) + "<br/>";
-
-                    if ( request.PublicityStrategies.Contains( "Social Media/Google Ads" ) )
-                    {
-                        message += "<br/><strong style='color: #6485b3;'>Social Media/Google Information</strong><br/>";
-                        if ( !String.IsNullOrEmpty( request.WhyAttendNinety ) )
-                        {
-                            message += "<strong>Describe Why Someone Should Attend Your Event (90):</strong> " + request.WhyAttendNinety + "<br/>";
-                        }
-                        if ( request.GoogleKeys != null && request.GoogleKeys.Count() > 0 )
-                        {
-                            message += "<strong>Google Keys:</strong> <ul>";
-                            for ( int i = 0; i < request.GoogleKeys.Count(); i++ )
-                            {
-                                message += "<li>" + request.GoogleKeys[i] + "</li>";
-                            }
-                            message += "</ul>";
-                        }
-                    }
-
-                    if ( request.PublicityStrategies.Contains( "Mobile Worship Folder" ) )
-                    {
-                        message += "<br/><strong style='color: #6485b3;'>Mobile Worship Folder Information</strong><br/>";
-                        if ( !String.IsNullOrEmpty( request.WhyAttendTen ) )
-                        {
-                            message += "<strong>Describe Why Someone Should Attend Your Event (65):</strong> " + request.WhyAttendTen + "<br/>";
-                        }
-                        if ( !String.IsNullOrEmpty( request.VisualIdeas ) )
-                        {
-                            message += "<strong>Visual Ideas for Graphic:</strong> " + request.VisualIdeas + "<br/>";
-                        }
-                    }
-
-                    if ( request.PublicityStrategies.Contains( "Announcement" ) )
-                    {
-                        message += "<br/><strong style='color: #6485b3;'>Announcement Information</strong><br/>";
-                        if ( request.Stories != null && request.Stories.Count() > 0 )
-                        {
-                            for ( int i = 0; i < request.Stories.Count(); i++ )
-                            {
-                                if ( !String.IsNullOrEmpty( request.Stories[i].Name ) && !String.IsNullOrEmpty( request.Stories[i].Email ) && !String.IsNullOrEmpty( request.Stories[i].Description ) )
-                                {
-                                    message += "<strong>Story " + i + ":</strong> " + request.Stories[i].Name + ", " + request.Stories[i].Email + "<br/>";
-                                    message += request.Stories[i].Description + "<br/>";
-                                }
-                            }
-                        }
-                        if ( !String.IsNullOrEmpty( request.WhyAttendTwenty ) )
-                        {
-                            message += "<strong>Describe Why Someone Should Attend Your Event (175):</strong> " + request.WhyAttendTwenty + "<br/>";
-                        }
-                    }
                 }
             }
 
