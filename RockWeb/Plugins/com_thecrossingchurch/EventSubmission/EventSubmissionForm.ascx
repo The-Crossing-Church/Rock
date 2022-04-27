@@ -1004,10 +1004,10 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                         this.noChangesMade = true
                     }
                 }
-                if(this.request.Status == 'Draft') {
+                if(this.request.Status == 'Draft' && this.request.Id > 0) {
                   this.validate()
+                  this.showValidation()
                 }
-                this.showValidation()
             },
             computed: {
                 requestedResources() {

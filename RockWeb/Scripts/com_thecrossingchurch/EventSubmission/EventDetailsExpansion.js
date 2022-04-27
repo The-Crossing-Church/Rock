@@ -519,15 +519,15 @@ export default {
           <div class="floating-title">Budget Line for Childcare</div>
           <template v-if="selected.Changes != null && e.CCBudgetLine != selected.Changes.Events[idx].CCBudgetLine">
             <template v-if="approvalmode">
-              <approval-field :request="selected" :e="e" :idx="idx" field="CCBudgetLine" :fieldname="formatFieldName('Budget Line for Childcare')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+              <approval-field :request="selected" :e="e" :idx="idx" field="CCBudgetLine" :fieldname="formatFieldName('Budget Line for Childcare')" :formatter="formatBudgetLine" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
             </template>
             <template v-else>
-              <span class='red--text'>{{(e.CCBudgetLine ? e.CCBudgetLine : 'Empty')}}: </span>
-              <span class='primary--text'>{{(selected.Changes.Events[idx].CCBudgetLine ? selected.Changes.Events[idx].CCBudgetLine : 'Empty')}}</span>
+              <span class='red--text'>{{(e.CCBudgetLine ? formatBudgetLine(e.CCBudgetLine) : 'Empty')}}: </span>
+              <span class='primary--text'>{{(selected.Changes.Events[idx].CCBudgetLine ? formatBudgetLine(selected.Changes.Events[idx].CCBudgetLine) : 'Empty')}}</span>
             </template>
           </template>
           <template v-else>
-            {{e.CCBudgetLine}}
+            {{formatBudgetLine(e.CCBudgetLine)}}
           </template>
         </v-col>
       </v-row>
@@ -615,14 +615,14 @@ export default {
             <approval-field :request="selected" :e="e" :idx="idx" field="FeeBudgetLine" :fieldname="formatFieldName('Registration Fee Budget Line')" :formatter="formatBudgetLine" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text' v-if="e.FeeBudgetLine">{{e.FeeBudgetLine}}: </span>
+            <span class='red--text' v-if="e.FeeBudgetLine">{{formatBudgetLine(e.FeeBudgetLine)}}: </span>
             <span class='red--text' v-else>Empty: </span>
-            <span class='primary--text' v-if="selected.Changes.Events[idx].FeeBudgetLine">{{selected.Changes.Events[idx].FeeBudgetLine}}</span>
+            <span class='primary--text' v-if="selected.Changes.Events[idx].FeeBudgetLine">{{formatBudgetLine(selected.Changes.Events[idx].FeeBudgetLine)}}</span>
             <span class='primary--text' v-else>Empty</span>
           </template>
         </template>
         <template v-else>
-          {{e.FeeBudgetLine}}
+          {{formatBudgetLine(e.FeeBudgetLine)}}
         </template>
       </v-col>
       <v-col cols="12" md="6" v-if="e.Fee || (selected.Changes && selected.Changes.Events[idx].Fee)">
