@@ -195,9 +195,9 @@ export default {
       </template>
       </template>
       <template v-if="request.PublicityStrategies.includes('Announcement')">
-        <template v-if="request.Stories.toString() != '' && (request.Changes == null || request.Changes.Stories.toString() != '')">
+        <template v-if="hasStories">
           <v-row v-for="(s, sidx) in request.Stories" :key="storyKey(sidx)">
-            <template v-if="request.Changes != null && request.Stories.toString() != request.Changes.Stories.toString()">
+            <template v-if="request.Changes != null && JSON.stringify(request.Stories) != JSON.stringify(request.Changes.Stories)">
               <v-col class='red--text'>
                 <div class="floating-title">Story {{sidx+1}}</div>
                 {{s.Name}}, {{s.Email}} <br/>
@@ -214,7 +214,7 @@ export default {
                 <div class="floating-title">Story {{sidx+1}}</div>
                 {{s.Name}}, {{s.Email}} <br/>
                 {{s.Description}}
-              </v-col>
+                </v-col>
             </template>
           </v-row>
         </template>
@@ -253,7 +253,9 @@ export default {
     ...utils.filters
   },
   computed: {
-    
+    hasStories() {
+      return (JSON.stringify(this.request.Stories) != '[{"Name":"","Email":"","Description":""}]' && (this.request.Changes == null || JSON.stringify(this.request.Changes.Stories) != '[{"Name":"","Email":"","Description":""}]') )
+    },
   },
   methods: {
     storyKey(idx) {

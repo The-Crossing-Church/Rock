@@ -15,7 +15,7 @@ export default {
             label="Describe why someone should attend your event, what they will gain from your event, and any additional information that will help publicize your event."
             v-model="request.WhyAttendSixtyFive"
             :hint="WhyAttendSixtyFiveHint"
-            :rules="[rules.required(request.WhyAttendSixtyFive, 'This field')]"
+            :rules="[rules.required(request.WhyAttendSixtyFive, 'This field'), rules.publicityCharacterLimit(request.WhyAttendSixtyFive, 450)]"
           ></v-textarea>
         </v-col>
       </v-row>
@@ -204,7 +204,7 @@ export default {
       return ops
     },
     WhyAttendSixtyFiveHint() {
-      return `Be sure to write in the second person using rhetorical questions that elicit interest or touch a felt need. For example, “Have you ever wondered how Jesus would have dealt with depression and anxiety?” (${this.request.WhyAttendSixtyFive.length}/450)`
+      return `(${this.request.WhyAttendSixtyFive.length}/450)`
     },
     IsEventStickyLabel() {
       return `Is your event a “sticky” event? (${this.boolToYesNo(this.request.EventIsSticky)})`
