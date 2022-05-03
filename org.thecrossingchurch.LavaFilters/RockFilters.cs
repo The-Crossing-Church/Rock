@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using Rock.Lava;
 using Rock.Attribute;
+using Rock.Web.Cache;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -296,11 +297,22 @@ namespace com_thecrossingchurch.LavaFilters
                 throw new Exception( "Must provide a attribute to group by." );
             }
 
-            //Load Attributes for the Entity
-            e.LoadAttributes();
-            //Limit to entities with the desired attribute
-            e = e.Where( i => i.Attributes.ContainsKey( attribute ) );
-            var grouping = e.AsQueryable().GroupBy( x => x.GetAttributeValue( attribute ) );
+            //Load Attribute for the Entities
+            var first = e.First();
+            first.LoadAttributes();
+            var attrId = first.Attributes[attribute].Id;
+            var values = new AttributeValueService( new RockContext() ).Queryable().Where( av => av.AttributeId == attrId );
+            var data = e.Join( values,
+                    entity => entity.Id,
+                    v => v.EntityId,
+                    ( entity, v ) =>
+                    {
+                        entity.AttributeValues.AddOrReplace( attribute, new AttributeValueCache( v ) );
+                        return entity;
+                    }
+                );
+
+            var grouping = data.AsQueryable().GroupBy( x => x.GetAttributeValue( attribute ) );
             Dictionary<string, object> groupedList;
             if ( limit.HasValue )
             {
