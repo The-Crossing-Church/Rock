@@ -374,16 +374,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             items = items.Where( i => DateTime.Compare( i.CreatedDateTime.Value, oneweekago ) >= 0 ).ToList();
             items.AddRange( statusItems );
             items = items.Distinct().ToList();
+            items.LoadAttributes();
             items = items.Where( i => i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value != "Draft" ).ToList();
             if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Id ) ) )
             {
                 var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );
                 if ( items.IndexOf( item ) < 0 )
                 {
+                    item.LoadAttributes();
                     items.Add( item );
                 }
             }
-            items.LoadAttributes();
             var requests = items.OrderByDescending( i => i.StartDateTime ).Select( i => new { Id = i.Id, Value = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestJSON" ).Value.Value, HistoricData = i.AttributeValues.FirstOrDefault( av => av.Key == "NonTransferrableData" ).Value.Value, CreatedBy = i.CreatedByPersonName, Changes = i.AttributeValues.FirstOrDefault( av => av.Key == "ProposedChangesJSON" ).Value.Value, CreatedOn = i.CreatedDateTime, SubmittedOn = i.StartDateTime, RequestStatus = i.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value, Comments = JsonConvert.DeserializeObject<List<Comment>>( i.AttributeValues.FirstOrDefault( av => av.Key == "Comments" ).Value.Value ) } );
             hfRequests.Value = JsonConvert.SerializeObject( requests );
         }
