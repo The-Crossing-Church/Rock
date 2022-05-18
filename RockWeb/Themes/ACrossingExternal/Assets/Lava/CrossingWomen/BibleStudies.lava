@@ -1,0 +1,155 @@
+﻿{% capture searchText %}{{Item | Attribute:'Semester'}} {{Item | Attribute:'Year'}}{% endcapture %}
+{% sql %}
+SELECT STRING_AGG(CAST(EventItemOccurrenceId AS varchar(50)), ',') AS Ids
+FROM (
+        SELECT EventItemOccurrenceId, ei.EventItemId, EventCalendarId
+        FROM EventCalendarItem
+                INNER JOIN (
+            SELECT EventItemOccurrenceId, EventItemId
+            FROM EventItemOccurrence
+                    INNER JOIN (
+                SELECT DISTINCT EventItemOccurrenceId
+                FROM EventItemOccurrenceGroupMap
+                        INNER JOIN (
+                    SELECT Id
+                    FROM RegistrationInstance
+                    WHERE Name LIKE '%WBS {{searchText}}%'
+                ) AS ri ON ri.Id = RegistrationInstanceId
+            ) AS eio ON EventItemOccurrenceId = EventItemOccurrence.Id
+        ) AS ei ON ei.EventItemId = EventCalendarItem.EventItemId
+        WHERE EventCalendarId = 1
+    ) AS events GROUP BY EventCalendarId
+{% endsql %}
+{% assign ids = results[0].Ids %}
+{% eventitemoccurrence ids:'{{ids}}' %}
+    <div class='row row-equal-height'>
+    {% for e in eventitemoccurrenceItems %}
+        <div class='col col-xs-12 col-sm-6 col-md-3 mb-2'>
+            <div class='hover womens-card' data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{e.EventItem.Name}}" data-trigger="hover" data-content="<div>{{ e.EventItem.Description | Slice: 0, 200 | Trim }}[...]</div>">
+                <a href="/Events/Detail?EventOccurrenceId={{e.Id}}" class='text--centered'>
+                    <div class='wrapper' >
+                        <img src="/GetImage.ashx?Guid={{e.EventItem.Photo.Guid}}" />
+                    </div>
+                    <br/>
+                    <div style='font-size: .9375em; min-height: 65px;'>
+                        {{e.EventItem.Name | Split:' - ' | Last}}
+                    </div>
+                    {% assign scheduledDates = e.Schedule.iCalendarContent | DatesFromICal:'all' %}
+                    {% assign numDates = scheduledDates | Size %}
+                    {% if numDates > 0 %}
+                        <div class='text--upper' style='font-size: .75em; font-weight: 700;'>
+                            {% if numDates > 1 %}
+                                {{ scheduledDates | First | Date:'dddd' | Pluralize }}, {{scheduledDates | First | Date:'MMM d'}} - {{ scheduledDates | Last | Date:'MMM d @ h:mm tt' }}
+                            {% else %}
+                                {{ scheduledDates | First | Date:'dddd, MMM d, yyyy @ h:mm tt' }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% if e.Location != '' %}
+                        <div class='text--upper pt-1 pb-2' style='font-size: .75em; font-weight: 700;'>
+                            {{e.Location}}
+                        </div>
+                    {% endif %}
+                    {% assign eventItemOccurrenceLinkages = e.Linkages %}
+                    {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+                    {% if eventItemOccurrenceLinkagesCount > 0 %}
+                        {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                            {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
+                            {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+                            {% assign showRegistration = true %}
+                            {% assign registrationMessage = '' %}
+                            
+                            {% if daysTillStartDate and daysTillStartDate > 0 %}
+                                {% assign showRegistration = false %}
+                                {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                    {% capture registrationMessage %}<div class='text--upper' style='font-size: .75em; font-weight: 700;'>Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'MM/dd/yy' }}</div>{% endcapture %}
+                                {% else %}
+                                    {% capture registrationMessage %}<div class='text--upper' style='font-size: .75em; font-weight: 700;'>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'MM/dd/yy' }}</div>{% endcapture %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% if daysTillEndDate and daysTillEndDate < 0 %}
+                                {% assign showRegistration = false %}
+                                {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                    {% capture registrationMessage %}<div class='text--upper' style='font-size: .75em; font-weight: 700;'>Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'MM/dd/yy' }}</div>{% endcapture %}
+                                {% else %}
+                                    {% capture registrationMessage %}<div class='text--upper' style='font-size: .75em; font-weight: 700;'>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'MM/dd/yy' }}</div>{% endcapture %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% if showRegistration == true %}
+                                {% assign maxAtt = eventItemOccurrenceLinkage.RegistrationInstance.MaxAttendees %}
+                                {% sql return:'attendees' %}
+                                    SELECT COUNT(*) AS 'ct' FROM RegistrationRegistrant
+                                    WHERE RegistrationId IN (
+                                        SELECT Id FROM Registration WHERE RegistrationInstanceId = {{eventItemOccurrenceLinkage.RegistrationInstanceId}}
+                                    )
+                                {% endsql %}
+                                {% for a in attendees %}
+                                    {% assign numAtt = a.ct %}
+                                {% endfor %}
+                                {% if maxAtt == null or maxAtt == '' %}
+                                    {% assign maxAtt = 0 %}
+                                {% endif %}
+                                {% if numAtt < maxAtt or maxAtt == 0 %}
+                                    {% assign statusLabel = 'Register' %}
+                                {% else %}
+                                    {% if eventItemOccurrenceLinkage.RegistrationInstance.RegistrationTemplate.WaitListEnabled == true %}
+                                        {% assign statusLabel = 'Join Wait List' %}
+                                    {% else %}
+                                        {% assign statusLabel = 'Full' %}
+                                    {% endif %}
+                                {% endif %}
+                                {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                    {% assign registrationButtonText = statusLabel %}
+                                {% else %}
+                                    {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
+                                {% endif %}
+                                {% if statusLabel == 'Full' %}
+                                    {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                        {% assign registrationButtonText = 'Registration Full' %}
+                                    {% else %}
+                                        {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
+                                    {% endif %}
+                                    <div class='text--upper' style='font-size: .75em; font-weight: 700;'>{{ registrationButtonText }}</div>
+                                {% else %}
+                                    <div class='womens-card-button justify-center'>
+                                        {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
+                                            <a href='/page/413?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn btn-primary'>Register</a>
+                                        {% else %}
+                                            <a href="/page/413?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn btn-primary ">Register</a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                {{registrationMessage}}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% endeventitemoccurrence %}
+<br/>
+<style>
+    .wrapper img {
+        width: 100%;
+    }
+    .womens-card {
+        height: 100%;
+        padding-bottom: 40px;
+    }
+    .womens-card-button {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+</style>
+<script>
+    $(document).ready(function() {
+        $('[data-toggle="popover"]').popover()
+    })
+</script>

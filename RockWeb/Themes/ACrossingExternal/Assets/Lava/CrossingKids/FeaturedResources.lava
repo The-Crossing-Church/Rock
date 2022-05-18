@@ -38,6 +38,9 @@
 {[ endrescarousel ]}
 <br/>
 <br/>
+<script>
+  $('[data-toggle="popover"]').popover()
+</script>
 <style>
   #resources-carousel-slides .img-wrapper {
     height: auto;
