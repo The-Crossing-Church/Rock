@@ -1,6 +1,6 @@
 ﻿{% assign svcs = 'Global' | Attribute:'ServiceTimes' | Split:',' %}
 {% assign secondSvc = svcs[1] %}
-{[ tabgroup tabname:'tabname' ]}
+{[ tabgroup tabname:'agapetabs' ]}
     {% for i in Items %}
         [[ tab title:'{{i.Title}}' ]] 
             <div class='text-center py-2'>
