@@ -1,0 +1,3 @@
+﻿<div class="get-started-cards">
+    {[ cardrow items:Items titleattr:'CardTitle' cardcss:'border--bottom pad-16 text--centered' ]}
+</div>

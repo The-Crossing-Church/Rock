@@ -6,7 +6,7 @@
                 <img src="{{i | Attribute:'Image'}}" />
                 <div style='padding: 8px;' class='text--centered'>
                     <strong>{{i | Attribute:'Name'}}</strong><br/>
-                    <div>
+                    <div class='card-body'>
                         {{i.Content}}
                     </div>
                 </div>

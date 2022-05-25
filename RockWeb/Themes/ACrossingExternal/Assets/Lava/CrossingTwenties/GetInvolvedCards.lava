@@ -7,7 +7,7 @@
                 <div style="padding: 8px;" class='text--centered'>
                     <strong>{{i | Attribute:'Heading' }}</strong>
                     <br/>
-                    <p>
+                    <p class='card-body'>
                         {{i.Content}}
                     </p>
                 </div>
