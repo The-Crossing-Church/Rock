@@ -1,0 +1,32 @@
+﻿{% assign tgBS = Item | Attribute:'LessonTitle' %}
+{% if tgBS != '' %}
+    <strong>Bible Story Focus:</strong> {{ Item | Attribute:'LessonTitle' }} <br/>
+{% endif %}
+{% if Item.Content != '' %}
+    <strong>Lesson Overview:</strong> 
+    <blockquote>
+        {{ Item.Content }}
+    </blockquote>
+{% endif %}
+{% assign ppCT = Item | Attribute:'CircleTimeQuestions' %}
+{% if ppCT != '' %}
+    <strong>Circle Time Questions:</strong> (Preschool Purple Only)
+    <ul>
+        <li>
+            {{Item | Attribute:'CircleTimeQuestions' }}
+        </li>
+    </ul>
+{% endif %}
+{% assign ppA = Item | Attribute:'Activities','RawValue' %}
+{% if ppA != '' %}
+    <strong>Activities:</strong>
+    {% assign activities = Item | Attribute:'Activities','RawValue' | Split:'|' %}
+    <ul>
+        {% for a in activities %}
+            <li>
+                {% assign ageGroup = {a | Split:'^' | First | Replace:'%2C',',' %}
+                {{a | Split:'^' | Last | Replace:'%2C',','}} {% if ageGroup != 'All' %}({{ageGroup}}){% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

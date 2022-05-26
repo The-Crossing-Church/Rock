@@ -1,0 +1,26 @@
+﻿{% assign secTitle = Item | Attribute:'LessonTitle' %}
+{% if secTitle != '' %}
+    <strong>Lesson Title:</strong> {{ Item | Attribute:'LessonTitle' }} <br/>
+{% endif %}
+{% if Item.Content != '' %}
+    <strong>Lesson Overview:</strong> 
+    <blockquote>
+        {{ Item.Content }}
+    </blockquote>
+{% endif %}
+{% assign secScript = Item | Attribute:'Scripture' %}
+{% if secScript != '' %}
+    <strong>Lesson Scripture:</strong> {{Item | Attribute:'Scripture' }} <br/>
+{% endif %}
+{% assign secObj = Item | Attribute:'Objective' %}
+{% if secObj != '' %}
+    <strong>Lesson Objective:</strong> {{Item | Attribute:'Objective' }} <br/>
+{% endif %}
+{% assign secApp = Item | Attribute:'Application' %}
+{% if secApp != '' %}
+    <strong>Lesson Application:</strong> {{Item | Attribute:'Application' }} <br/>
+{% endif %}
+{% assign secAct = Item | Attribute:'Activity' %}
+{% if secAct != '' %}
+    <strong>Activity:</strong> {{Item | Attribute:'Activity' }} <br/>
+{% endif %}

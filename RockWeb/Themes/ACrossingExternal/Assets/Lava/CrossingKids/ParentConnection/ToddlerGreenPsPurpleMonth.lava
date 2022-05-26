@@ -1,0 +1,22 @@
+﻿<div class='justify-center'>
+    <img src="{{ Item | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+</div>
+<strong>Date:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMMM d, yyyy' }} <br/>
+{% assign tgEss = Item | Attribute:'Essential' %}
+{% if tgEss != '' %}
+    <strong>Early Childhood Essential:</strong> {{ Item | Attribute:'Essential' }} <br/>
+{% endif %}
+{% assign tgMV = Item | Attribute:'MemoryVerse' %}
+{% if tgMV != '' %}
+    <strong>Memory Verse:</strong> {{ Item | Attribute:'MemoryVerse' }} <br/>
+{% endif %}
+{% assign tgUnit = Item | Attribute:'Unit' %}
+{% if tgUnit != '' %}
+    <strong>Monthly Topic:</strong> {{ Item | Attribute:'Unit' }} <br/>
+{% endif %}
+{% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/ToddlerGreenPsPurpleWeek.lava' Item:Item.ChildItems[0].ChildContentChannelItem %}
+{% assign music = Item | Attribute:'SpotifyPlaylist' %}
+{% if music != '' %}
+<br/>
+    <iframe src="{{ Item | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+{% endif %}
