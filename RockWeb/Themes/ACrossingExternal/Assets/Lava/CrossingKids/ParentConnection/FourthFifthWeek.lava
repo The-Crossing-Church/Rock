@@ -1,26 +1,26 @@
-﻿{% assign lt = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+﻿{% assign lt = Item.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
 {% if lt != '' %}
-    <strong>Lesson Title:</strong> {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+    <strong>Lesson Title:</strong> {{ Item.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
 {% endif %}
-{% if crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem.Content != '' %}
+{% if Item.ChildItems[0].ChildContentChannelItem.Content != '' %}
     <strong>Lesson Overview:</strong> 
     <blockquote>
-        {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem.Content }}
+        {{ Item.ChildItems[0].ChildContentChannelItem.Content }}
     </blockquote>
 {% endif %}
-{% assign ffScript = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' %}
+{% assign ffScript = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' %}
 {% if ffScript != '' %}
-    <strong>Lesson Scripture:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' }} <br/>
+    <strong>Lesson Scripture:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' }} <br/>
 {% endif %}
-{% assign ffObj = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' %}
+{% assign ffObj = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' %}
 {% if ffObj != '' %}
-    <strong>Lesson Objective:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' }} <br/>
+    <strong>Lesson Objective:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' }} <br/>
 {% endif %}
-{% assign ffApp = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' %}
+{% assign ffApp = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Application' %}
 {% if ffApp != '' %}
-    <strong>Lesson Application:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' }} <br/>
+    <strong>Lesson Application:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Application' }} <br/>
 {% endif %}
-{% assign ffAct = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' %}
+{% assign ffAct = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' %}
 {% if ffAct != '' %}
-    <strong>Activity:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' }} <br/>
+    <strong>Activity:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' }} <br/>
 {% endif %}

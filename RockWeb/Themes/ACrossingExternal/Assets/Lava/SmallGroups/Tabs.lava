@@ -1,0 +1,12 @@
+﻿<div class='py-4'>
+    {[ tabgroup tabname:'sg-tabs' ]}
+        {% for i in Items %}
+            {% assign title = i | Attribute:'Series' %}
+            [[ tab title:'{{title}}' ]] 
+                <div class='text-center py-4'>
+                    {{i.Content}}
+                </div>
+            [[ endtab ]]
+        {% endfor %}
+    {[ endtabgroup ]}
+</div>

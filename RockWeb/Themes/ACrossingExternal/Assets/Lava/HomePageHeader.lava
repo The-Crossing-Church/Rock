@@ -1,4 +1,10 @@
-﻿{% assign images = Item | Attribute:'Image' | Split:',' %}
+﻿{% assign svcTimes =  'Global' | Attribute:'ServiceTimes' | Split:',' %}
+{% capture times %}
+    {% for s in svcTimes %}
+        {{s | Replace:'a.m.', ''}} {% if forloop.last != true %}|{% endif %}
+    {% endfor %}
+{% endcapture %}
+{% assign images = Item | Attribute:'Image' | Split:',' %}
 {% assign titles = Item | Attribute:'HeroTitle' | Split: ',' %}
 {% assign subtitles = Item | Attribute:'HeroSubtitle' | Split: ',' %}
 {% assign ctaText = Item | Attribute:'CTAText' | Split: ',' %}
@@ -62,10 +68,10 @@
                 <div class='hero-overlay text--centered align-center justify-center {% if hasTitle == false %}cta--only{% endif %}'>
                     <div class='text--white'>
                         {% if hasTitle %}
-                            <h2 class='text--white'>{{titles[forloop.index0]}}</h2>
+                            <h1 class='text--white'>{{titles[forloop.index0]}}</h1>
                             {% if hasSubtitle %}
                                 <br/>
-                                {{subtitles[forloop.index0]}} 
+                                <h2 class='text--white subtitle'>{{subtitles[forloop.index0] | Replace:'##SERVICE_TIMES##',times}}</h2>
                                 <br class='d-none d-md-block'/>
                                 <br class='d-none d-md-block'/>
                             {% endif %}
