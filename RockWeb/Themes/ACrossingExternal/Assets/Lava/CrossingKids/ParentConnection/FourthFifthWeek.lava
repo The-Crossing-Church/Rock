@@ -1,26 +1,26 @@
-﻿{% assign lt = Item.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+﻿{% assign lt = Item | Attribute:'LessonTitle' %}
 {% if lt != '' %}
-    <strong>Lesson Title:</strong> {{ Item.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+    <strong>Lesson Title:</strong> {{ Item | Attribute:'LessonTitle' }} <br/>
 {% endif %}
-{% if Item.ChildItems[0].ChildContentChannelItem.Content != '' %}
+{% if Item.Content != '' %}
     <strong>Lesson Overview:</strong> 
     <blockquote>
-        {{ Item.ChildItems[0].ChildContentChannelItem.Content }}
+        {{ Item.Content }}
     </blockquote>
 {% endif %}
-{% assign ffScript = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' %}
+{% assign ffScript = Item | Attribute:'Scripture' %}
 {% if ffScript != '' %}
-    <strong>Lesson Scripture:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' }} <br/>
+    <strong>Lesson Scripture:</strong> {{Item | Attribute:'Scripture' }} <br/>
 {% endif %}
-{% assign ffObj = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' %}
+{% assign ffObj = Item | Attribute:'Objective' %}
 {% if ffObj != '' %}
-    <strong>Lesson Objective:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' }} <br/>
+    <strong>Lesson Objective:</strong> {{Item | Attribute:'Objective' }} <br/>
 {% endif %}
-{% assign ffApp = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Application' %}
+{% assign ffApp = Item | Attribute:'Application' %}
 {% if ffApp != '' %}
-    <strong>Lesson Application:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Application' }} <br/>
+    <strong>Lesson Application:</strong> {{Item | Attribute:'Application' }} <br/>
 {% endif %}
-{% assign ffAct = Item.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' %}
+{% assign ffAct = Item | Attribute:'Activity' %}
 {% if ffAct != '' %}
-    <strong>Activity:</strong> {{Item.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' }} <br/>
+    <strong>Activity:</strong> {{Item | Attribute:'Activity' }} <br/>
 {% endif %}
