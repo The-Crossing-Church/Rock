@@ -1,0 +1,40 @@
+﻿<div class='row'>
+    <div class='col col-xs-12 col-md-7'>
+        <div class='video-wrapper'>
+            <iframe title="player" src="{{Item | Attribute:'Link'}}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+    <div class='col col-xs-12 col-md-5'>
+        <h2>{{Item.Title}}</h2>
+        <br/>
+        {% assign speaker = Item | Attribute:'Author' %}
+        {% if speaker == '' %}
+            {% assign speaker = Item | Attribute:'GuestSpeaker' %}
+        {% endif %}
+        {% if speaker != '' %}
+            <strong>{{speaker}}</strong>
+        {% endif %}
+        <br/>
+        <br/>
+        {{Item.Content}}
+        <br/>
+        <br/>
+    </div>
+</div>
+<br/>
+
+<style>
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 56.25%;
+    }
+    .video-wrapper>iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>

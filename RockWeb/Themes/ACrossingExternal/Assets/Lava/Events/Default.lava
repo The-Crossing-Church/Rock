@@ -1,29 +1,60 @@
-﻿<h3 class='text--upper' style='font-weight: normal;'><a href='/Ministry/Adults/Women/womens-bible-studies'>Women's Bible Studies</a></h3>
-<hr class='bar--medium-blue'/>
-<div class="row">
-  <div class="col col-xs-12 col-md-8">
-    <h1>{{ Event.Name | Split:' - ' | Last }}</h1>
-    <br/>
+﻿<div class="row pt-5">
+  <div class="col col-xs-12 col-md-5 justify-center">
+    {% if Event.Photo.Guid %}
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" style=" height: 100%; width: 100%; object-fit: cover;" />
+      {% capture metaimg %}https://thecrossingchurch.com/GetImage.ashx?Guid={{ Event.Photo.Guid }}{% endcapture %}
+      {{ metaimg | AddMetaTagToHead:'property','og:image' }}
+    {% endif %}
+  </div>
+  <div class="col col-xs-12 col-md-7">
+    {% comment %}<span class="floating-event-title">Event</span> <br />{% endcomment %}
+    <h1>{{ Event.Name }}</h1> <br/>
     {% assign scheduledDates = EventItemOccurrence.Schedule.iCalendarContent | DatesFromICal:'all' %}
     {% assign numDates = scheduledDates | Size %}
     {% if numDates > 0 %}
-    <span class="floating-event-title">Date/Time</span> <br />
-      {% if numDates > 1 %}
-        <a data-toggle="collapse" href="#dateList" role="button" aria-expanded="false" aria-controls="dateList">
-            <div>
-                {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy @ h:mm tt' }}
-                <i class='fa expand-icon pull-right'></i>
+      {% assign dateTimeFormat = EventItemOccurrence | Attribute:'DateTimeDisplayFormat' %}
+      {% assign duration = EventItemOccurrence.Schedule.DurationInMinutes %}
+      {% assign endTime = scheduledDates | Last | DateAdd:EventItemOccurrence.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
+      {% comment %}<span class="floating-event-title">Date/Time</span> <br />{% endcomment %}
+      {% if isGrouped == 'No' %}
+        {% if numDates > 1 %}
+            <a data-toggle="collapse" href="#dateList" role="button" aria-expanded="false" aria-controls="dateList">
+                <div>
+                    {% if dateTimeFormat == 'No Time' %}
+                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy' }}
+                    {% elseif dateTimeFormat == 'All Day' %}
+                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy' }} (All Day)
+                    {% else %}
+                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy h:mm tt' }}{% if duration > 0 %} - {{endTime}}{% endif %}
+                    {% endif %}
+                    <i class='fa expand-icon pull-right'></i>
+                </div>
+            </a> 
+            <div class='collapse' id="dateList">
+                <ul class="list-unstyled">
+                    {% for scheduledDate in scheduledDates %}
+                      <li>
+                        {% if dateTimeFormat == 'No Time' %}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy' }}
+                        {% elseif dateTimeFormat == 'All Day' %}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy' }} (All Day)
+                        {% else %}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy h:mm tt' }}{% if duration > 0 %} - {{endTime}}{% endif %}
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                </ul>
             </div>
-        </a> 
-        <div class='collapse' id="dateList">
-            <ul class="list-unstyled">
-                {% for scheduledDate in scheduledDates %}
-                  <li>
-                    {{ scheduledDate | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
-                  </li>
-                {% endfor %}
-            </ul>
-        </div>
+            <br/>
+        {% else %}
+            {% if dateTimeFormat == 'No Time' %}
+                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy' }} <br/><br/>
+            {% elseif dateTimeFormat == 'All Day' %}
+                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy' }} (All Day) <br/><br/>
+            {% else %}
+                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy h:mm tt' }}{% if duration > 0 %} - {{endTime}}{% endif %} <br/><br/>
+            {% endif %}
+        {% endif %}
       {% else %}
         {% assign displayDates = scheduledDates %}
         {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
@@ -49,24 +80,24 @@
         <ul class="list-unstyled">
             {% for d in displayDates %}
                 <li>
-                    {{d | Date:'dddd, MMMM d, yyyy @ h:mm tt'}} <br/>
+                    {% if dateTimeFormat == 'No Time' %}
+                        {{d | Date:'dddd, MMMM d, yyyy'}}
+                    {% elseif dateTimeFormat == 'All Day' %}
+                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day) 
+                    {% else %}
+                        {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTime}}{% endif %} 
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
       {% endif %}
     {% endif %}
-    <br/>
-    <div class="wbs-title background--grey text--upper">About This Bible Study</div>
+    {% if EventItemOccurrence.Location != '' %}
+        {% comment %}<span class="floating-event-title">Location</span> <br />{% endcomment %}
+        {{ EventItemOccurrence.Location }} <br/><br/>
+    {% endif %}
+    {% comment %}<span class="floating-event-title">Description</span> <br />{% endcomment %}
     {{ Event.Description }} 
-    <div class="row">
-      <div class="col col-xs-12" style="min-height: 40px; margin-bottom: 10px;">
-      {% if EventItemOccurrence.ContactEmail != '' %}
-        {% if EventItemOccurrence.ContactEmail != '' %}
-          <a href="mailto:{{ EventItemOccurrence.ContactEmail }}" class="btn btn-primary margin-t-sm">Contact</a>
-        {% endif %}
-      {% endif %}
-      </div>
-    </div>
     <div class="row">
       {% assign eventItemOccurrenceLinkages = EventItemOccurrence.Linkages %}
       {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
@@ -110,7 +141,7 @@
               {% else %}
                 {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
               {% endif %}
-              <div class='label label-default text-center margin-t-sm' style='display: block; padding: 8px;'>{{ registrationButtonText }}</div>
+              <div class='margin-t-sm' style='font-weight: bold;'>{{ registrationButtonText }}</div>
             {% else %}
               {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
                 <a href='{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-sm'>{{ registrationButtonText }}</a>
@@ -124,12 +155,34 @@
           </div>
         {% endfor %}
       {% endif %}
+      {% if calendars contains 1 %}
+          {% assign eventCalItem = Event.EventCalendarItems | Where:'EventCalendarId',1 | First %}
+          {% assign r = eventCalItem | Attribute:'ExternalLink','RawValue' %}
+          {% if r != '' %}
+            {% assign externalLinks = eventCalItem | Attribute:'ExternalLink','RawValue' | Split:'|' %}
+          {% endif %}
+          {% assign r = EventItemOccurrence | Attribute:'ExternalLink','RawValue' %}
+          {% if r != '' %}
+            {% assign externalReg = EventItemOccurrence | Attribute:'ExternalLink','RawValue' | Split:'|' %}
+          {% endif %}
+      {% else %}
+          {% assign eventCalItem = Event.EventCalendarItems | Where:'EventCalendarId',2 | First %}
+          {% assign r = eventCalItem | Attribute:'ExternalLinkInternal','RawValue' %}
+          {% if r != '' %}
+            {% assign externalLinks = eventCalItem | Attribute:'ExternalLinkInternal','RawValue' | Split:'|' %}
+          {% endif %}
+      {% endif %}
+      {% for el in externalLinks %}
+        <div class="col col-xs-12" style="min-height: 40px;">
+            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
+        </div>
+      {% endfor %}
+      {% for el in externalReg %}
+        <div class="col col-xs-12" style="min-height: 40px;">
+            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
+        </div>
+      {% endfor %}
     </div>
-    {% if EventItemOccurrence.Location != '' %}
-        <br/>
-        <span class="floating-event-title">Location</span> <br />
-        {{ EventItemOccurrence.Location }} <br/><br/>
-    {% endif %}
     <br/>
     <div class="row">
       <div class="col col-xs-12">
@@ -138,18 +191,18 @@
         <div class='social-media'>
             <ul class="links">
               <li style="margin-left: 0px;">
-                <a href="http://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
+                <a href="https://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
                   <i class='fab fa-facebook-f'></i>
                 </a>
               </li>
               <li>
-                <a href="http://twitter.com/home?status={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
+                <a href="https://twitter.com/intent/tweet?text={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
                   <i class='fab fa-twitter'></i>
                 </a>
               </li>
               <li>
-                <a href="mailto:?Subject={{ Event.Name | Escape }}&Body={{ 'Global' | Page:'Url' }}"  title="" data-original-title="Share via Email">
-                  <i class='fa fa-envelope'></i>
+                <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
+                  <i class='fa fa-share-alt'></i>
                 </a>
               </li>
               <li>
@@ -161,41 +214,16 @@
         </div>
       </div>
     </div>
-  </div>
-  <div class="col col-xs-12 col-md-4">
-    {% if Event.Photo.Guid %}
-      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
+    {% if EventItemOccurrence.ContactEmail != '' %}
+        <div class="row">
+          <div class="col col-xs-12 pt-3 hover">
+            {% if EventItemOccurrence.ContactPersonAlias != null %}
+              If you have any questions, please contact <a onclick="toggleForm()" class="">{{EventItemOccurrence.ContactPersonAlias.Person.FullName}}.</a>
+            {% else %}
+              If you have any questions, please <a onclick="toggleForm()" class="">contact us.</a>
+            {% endif %}
+          </div>
+        </div>
     {% endif %}
   </div>
 </div>
-
-<style>
-.floating-event-title {
-    font-size: .75em;
-    color: #054557;
-    text-transform: uppercase;
-    padding: 0 0 3px;
-    border-bottom: 1px solid #1B3142;
-    letter-spacing: 1px;
-}
-.wbs-title {
-    padding: 2px 4px;
-    
-}
-</style>
-{% stylesheet compile:'less' %}
-    a[aria-expanded="false"] {
-        div {
-            .expand-icon:before {
-                content: "\f078";
-            }
-        }
-    }
-    a[aria-expanded="true"] {
-        div {
-            .expand-icon:before {
-                content: "\f077";
-            }
-        }
-    }
-{% endstylesheet %}

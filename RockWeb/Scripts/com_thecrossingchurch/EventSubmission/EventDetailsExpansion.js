@@ -857,22 +857,24 @@ export default {
           </template>
         </v-col>
       </v-row>
-      <v-row v-if="(selected.EventDates && selected.EventDates.length > 1 && selected.IsSame) || ((selected.Changes && selected.Changes.EventDates && selected.Changes.EventDates.length > 1 && selected.Changes.IsSame))">
+    </template>
+    <v-row v-if="(selected.EventDates && selected.EventDates.length > 1 && selected.IsSame) || ((selected.Changes && selected.Changes.EventDates && selected.Changes.EventDates.length > 1 && selected.Changes.IsSame))">
+      <v-col>
         <div class="floating-title">Events Require Separate Links</div>
         <template v-if="selected.Changes != null && selected.EventsNeedSeparateLinks != selected.Changes.EventsNeedSeparateLinks">
           <template v-if="approvalmode">
-            <approval-field :request="selected" :e="e" :idx="idx" field="EventsNeedSeparateLinks" :fieldname="formatFieldName('Events Need Separate Links')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
+            <approval-field :request="selected" :e="e" :idx="idx" field="EventsNeedSeparateLinks" :formatter="boolToYesNo" :fieldname="formatFieldName('Events Need Separate Links')" v-on:approvechange="approveChange" v-on:denychange="denyChange" v-on:newchoice="newchoice" v-on:newchange="newchange"></approval-field>
           </template>
           <template v-else>
-            <span class='red--text'>{{(selected.EventsNeedSeparateLinks ? selected.EventsNeedSeparateLinks : 'Empty')}}: </span>
-            <span class='primary--text'>{{(selected.Changes.EventsNeedSeparateLinks ? selected.Changes.EventsNeedSeparateLinks : 'Empty')}}</span>
+            <span class='red--text'>{{(selected.EventsNeedSeparateLinks ? boolToYesNo(selected.EventsNeedSeparateLinks) : 'Empty')}}: </span>
+            <span class='primary--text'>{{(selected.Changes.EventsNeedSeparateLinks ? boolToYesNo(selected.Changes.EventsNeedSeparateLinks) : 'Empty')}}</span>
           </template>
         </template>
         <template v-else>
-          {{selected.EventsNeedSeparateLinks}}
+          {{boolToYesNo(selected.EventsNeedSeparateLinks)}}
         </template>
-      </v-row>
-    </template>
+      </v-col>
+    </v-row>
   </template>
   <template v-if="selected.needsAccom || (selected.Changes && selected.Changes.needsAccom)">
     <h6 :class='sectionHeaderClassName("Extra Resources")'>Additional Information</h6>

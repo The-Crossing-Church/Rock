@@ -1,0 +1,29 @@
+﻿<div class='justify-center'>
+    <img src="{{ Item | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+</div>
+<strong>Date:</strong> {{ Item.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMMM d, yyyy' }} <br/>
+{% assign secUnit = Item | Attribute:'Unit' %}
+{% if secUnit != '' %}
+    <strong>Unit:</strong> {{ Item | Attribute:'Unit' }} <br/>
+{% endif %}
+{% assign secEss = Item | Attribute:'Essential' %}
+{% if secEss != '' %}
+    <strong>Elementary Essential:</strong> {{ Item | Attribute:'Essential' }} <br/>
+{% endif %}
+{% assign secMV = Item | Attribute:'MemoryVerse' %}
+{% if secMV != '' %}
+    <strong>Memory Verse:</strong> {{ Item | Attribute:'MemoryVerse' }} <br/>
+{% endif %}
+{% if Item.Content != '' %}
+    <strong>Unit Overview:</strong>
+    <blockquote>
+        {{ Item.Content }}
+    </blockquote>
+    <br/>
+{% endif %}
+{% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/SecondThirdWeek.lava' Item:Item.ChildItems[0].ChildContentChannelItem %}
+{% assign music = Item | Attribute:'SpotifyPlaylist' %}
+{% if music != '' %}
+    <br/><br/>
+    <iframe src="{{ Item | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+{% endif %}

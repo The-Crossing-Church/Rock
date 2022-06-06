@@ -294,9 +294,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionH
   </v-app>
 </div>
 <script type="module">
-import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/EventActions.js?v=1.0.3';
-import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js?v=1.0.3';
-import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js?v=1.0.3';
+import eventActions from '/Scripts/com_thecrossingchurch/EventSubmission/EventActions.js?v=1.0.4';
+import eventDetails from '/Scripts/com_thecrossingchurch/EventSubmission/EventDetailsExpansion.js?v=1.0.4';
+import utils from '/Scripts/com_thecrossingchurch/EventSubmission/Utilities.js?v=1.0.4';
 document.addEventListener("DOMContentLoaded", function () {
   Vue.component("event-action", eventActions);
   Vue.component("event-details", eventDetails);

@@ -1,0 +1,20 @@
+﻿<br/>
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-md-4'>
+            <div class='card--custom card-with-button' style="height:100%;">
+                <img src="{{ i | Attribute:'Image' }}" />
+                <div style="padding: 8px;" class='text--centered'>
+                    <strong>{{i | Attribute:'Heading' }}</strong>
+                    <br/>
+                    <p class='card-body'>
+                        {{i.Content}}
+                    </p>
+                </div>
+            </div>
+            <div class='link-wrapper text--centered'>
+                <a class='btn btn-primary' href="/Ministry/Adults/Twenties?Slug={{i.Id}}#form">Get Connected</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>

@@ -1,105 +1,89 @@
-﻿<br/>
+﻿<h3 class='text--upper' style='font-weight: normal;'><a href='/Ministry/Adults/Women/womens-bible-studies'>Women's Bible Studies</a></h3>
+<hr class='bar--medium-blue'/>
 <div class="row">
-  <div class="col col-xs-12 col-md-7 justify-center">
-    {% if Event.Photo.Guid %}
-      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
-    {% endif %}
-  </div>
-  <div class="col col-xs-12 col-md-5">
-    <span class="floating-event-title">Event</span> <br />
-    <h1>{{ Event.Name }}</h1>
+  <div class="col col-xs-12 col-md-8">
+    <h1>{{ Event.Name | Split:' - ' | Last }}</h1>
+    <br/>
     {% assign scheduledDates = EventItemOccurrence.Schedule.iCalendarContent | DatesFromICal:'all' %}
     {% assign numDates = scheduledDates | Size %}
-    {% assign calendars = Event.EventCalendarItems | Select:'EventCalendarId' %}
-    {% if calendars contains 1 %}
-        {% assign isGrouped = Event | Attribute:'OccurrencesAreGrouped' %}
-    {% else %}
-        {% assign isGrouped = Event | Attribute:'OccurrencesAreGroupedInternal' %}
-    {% endif %}
     {% if numDates > 0 %}
-      {% assign dateTimeFormat = EventItemOccurrence | Attribute:'DateTimeDisplayFormat' %}
-      <span class="floating-event-title">Date/Time</span> <br />
+    <span class="floating-event-title">Date/Time</span> <br />
+      {% assign duration = EventItemOccurrence.Schedule.DurationInMinutes %}
+      {% assign endTime = scheduledDates | Last | DateAdd:EventItemOccurrence.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
       {% if isGrouped == 'No' %}
         {% if numDates > 1 %}
             <a data-toggle="collapse" href="#dateList" role="button" aria-expanded="false" aria-controls="dateList">
                 <div>
-                    {% if dateTimeFormat == 'No Time' %}
-                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy' }}
-                    {% elseif dateTimeFormat == 'All Day' %}
-                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy' }} (All Day)
-                    {% else %}
-                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy @ h:mm tt' }}
-                    {% endif %}
+                    {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy h:mm tt' }} - {{endTime}}
                     <i class='fa expand-icon pull-right'></i>
                 </div>
             </a> 
             <div class='collapse' id="dateList">
                 <ul class="list-unstyled">
                     {% for scheduledDate in scheduledDates %}
-                      <li>
-                        {% if dateTimeFormat == 'No Time' %}
-                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy' }}
-                        {% elseif dateTimeFormat == 'All Day' %}
-                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy' }} (All Day)
-                        {% else %}
-                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
-                        {% endif %}
-                      </li>
+                    <li>
+                        {{ scheduledDate | Date:'dddd, MMMM d, yyyy h:mm' }} - {{endTime}}
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
-            <br/>
         {% else %}
-            {% if dateTimeFormat == 'No Time' %}
-                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy' }} <br/><br/>
-            {% elseif dateTimeFormat == 'All Day' %}
-                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy' }} (All Day) <br/><br/>
-            {% else %}
-                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy @ h:mm tt' }} <br/><br/>
-            {% endif %}
-        {% endif %}
-      {% else %}
-        {% assign displayDates = scheduledDates %}
-        {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
-            {% for i in eventitemoccurrenceItems %}
-                {% if i.Id != EventItemOccurrence.Id %}
-                    {% assign sdates = i.Schedule.iCalendarContent | DatesFromICal:'all'  %}
-                    {% assign ct = sdates | Size %}
-                    {% if ct == 1 %}
-                        {% assign nextDate = sdates | First %}
-                        {% assign diff = 'Now' DateDiff:nextDate %}
-                        {% if diff > 0 %}
-                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %} 
+            {% assign displayDates = scheduledDates %}
+            {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
+                {% for i in eventitemoccurrenceItems %}
+                    {% if i.Id != EventItemOccurrence.Id %}
+                        {% assign sdates = i.Schedule.iCalendarContent | DatesFromICal:'all'  %}
+                        {% assign ct = sdates | Size %}
+                        {% if ct == 1 %}
+                            {% assign nextDate = sdates | First %}
+                            {% assign diff = 'Now' DateDiff:nextDate %}
+                            {% if diff > 0 %}
+                                {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %} 
+                            {% endif %}
                         {% endif %}
                     {% endif %}
-                {% endif %}
+                {% endfor %}
+            {% endeventitemoccurrence %}
+            {% assign ddSize = displayDates | Size %}
+            {% if ddSize > 1 %}
+                {% assign displayDates = displayDates | Split:',' %}
+                {% assign displayDates = displayDates | Sort %}
+            {% endif %}
+            <ul class="list-unstyled">
+                {% for d in displayDates %}
+                    <li>
+                        {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTime}}{% endif %} <br/>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+      {% else %}
+        {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
+            {% for i in eventitemoccurrenceItems %}
+                {% assign sdates = i.Schedule.iCalendarContent | DatesFromICal:'all'  %}
+                {% assign duration = i.Schedule.DurationInMinutes %}
+                {% assign endTime = sdates | Last | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
+                <a data-toggle="collapse" href="#dateList{{forloop.index0}}" role="button" aria-expanded="false" aria-controls="dateList{{forloop.index0}}">
+                    <div>
+                        {{sdates | First | Date:'ddd, MMM d'}} - {{ sdates | Last | Date:'ddd, MMM d, yyyy h:mm tt' }} - {{endTime}}
+                        <i class='fa expand-icon pull-right'></i>
+                    </div>
+                </a> 
+                <div class='collapse' id="dateList{{forloop.index0}}">
+                    <ul class="list-unstyled">
+                        {% for scheduledDate in sdates %}
+                        <li>
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy h:mm' }} - {{endTime}}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             {% endfor %}
         {% endeventitemoccurrence %}
-        {% assign ddSize = displayDates | Size %}
-        {% if ddSize > 1 %}
-            {% assign displayDates = displayDates | Split:',' %}
-            {% assign displayDates = displayDates | Sort %}
-        {% endif %}
-        <ul class="list-unstyled">
-            {% for d in displayDates %}
-                <li>
-                    {% if dateTimeFormat == 'No Time' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}}
-                    {% elseif dateTimeFormat == 'All Day' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day) 
-                    {% else %}
-                        {{d | Date:'dddd, MMMM d, yyyy @ h:mm tt'}} 
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
       {% endif %}
     {% endif %}
-    {% if EventItemOccurrence.Location != '' %}
-        <span class="floating-event-title">Location</span> <br />
-        {{ EventItemOccurrence.Location }} <br/><br/>
-    {% endif %}
-    <span class="floating-event-title">Description</span> <br />
+    <br/>
+    <div class="wbs-title background--grey text--upper">About This Book</div>
     {{ Event.Description }} 
     <div class="row">
       <div class="col col-xs-12" style="min-height: 40px; margin-bottom: 10px;">
@@ -153,7 +137,7 @@
               {% else %}
                 {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
               {% endif %}
-              <div class='label label-default text-center margin-t-sm' style='display: block; padding: 8px;'>{{ registrationButtonText }}</div>
+              <div class='margin-t-sm' style='font-weight: bold;'>{{ registrationButtonText }}</div>
             {% else %}
               {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
                 <a href='{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-sm'>{{ registrationButtonText }}</a>
@@ -167,32 +151,12 @@
           </div>
         {% endfor %}
       {% endif %}
-      {% if calendars contains 1 %}
-          {% assign r = Event | Attribute:'ExternalLink','RawValue' %}
-          {% if r != '' %}
-            {% assign externalLinks = Event | Attribute:'ExternalLink','RawValue' | Split:'|' %}
-          {% endif %}
-          {% assign r = EventItemOccurrence | Attribute:'ExternalLink','RawValue' %}
-          {% if r != '' %}
-            {% assign externalReg = EventItemOccurrence | Attribute:'ExternalLink','RawValue' | Split:'|' %}
-          {% endif %}
-      {% else %}
-          {% assign r = Event | Attribute:'ExternalLinkInternal','RawValue' %}
-          {% if r != '' %}
-            {% assign externalLinks = Event | Attribute:'ExternalLinkInternal','RawValue' | Split:'|' %}
-          {% endif %}
-      {% endif %}
-      {% for el in externalLinks %}
-        <div class="col col-xs-12" style="min-height: 40px;">
-            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm'>{{el | Split:'^' | First}}</a>
-        </div>
-      {% endfor %}
-      {% for el in externalReg %}
-        <div class="col col-xs-12" style="min-height: 40px;">
-            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
-        </div>
-      {% endfor %}
     </div>
+    {% if EventItemOccurrence.Location != '' %}
+        <br/>
+        <span class="floating-event-title">Location</span> <br />
+        {{ EventItemOccurrence.Location }} <br/><br/>
+    {% endif %}
     <br/>
     <div class="row">
       <div class="col col-xs-12">
@@ -201,18 +165,18 @@
         <div class='social-media'>
             <ul class="links">
               <li style="margin-left: 0px;">
-                <a href="http://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
+                <a href="https://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
                   <i class='fab fa-facebook-f'></i>
                 </a>
               </li>
               <li>
-                <a href="http://twitter.com/home?status={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
+                <a href="https://twitter.com/intent/tweet?text={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
                   <i class='fab fa-twitter'></i>
                 </a>
               </li>
               <li>
-                <a href="mailto:?Subject={{ Event.Name | Escape }}&Body={{ 'Global' | Page:'Url' }}"  title="" data-original-title="Share via Email">
-                  <i class='fa fa-envelope'></i>
+                <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
+                  <i class='fa fa-share-alt'></i>
                 </a>
               </li>
               <li>
@@ -225,35 +189,11 @@
       </div>
     </div>
   </div>
+  <div class="col col-xs-12 col-md-4">
+    {% if Event.Photo.Guid %}
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
+      {% capture metaimg %}https://thecrossingchurch.com/GetImage.ashx?Guid={{ Event.Photo.Guid }}{% endcapture %}
+      {{ metaimg | AddMetaTagToHead:'property','og:image' }}
+    {% endif %}
+  </div>
 </div>
-
-<style>
-.floating-event-title {
-    font-size: .75em;
-    color: #054557;
-    text-transform: uppercase;
-    padding: 0 0 3px;
-    border-bottom: 1px solid #1B3142;
-    letter-spacing: 1px;
-}
-.wbs-title {
-    padding: 2px 4px;
-    
-}
-</style>
-{% stylesheet compile:'less' %}
-    a[aria-expanded="false"] {
-        div {
-            .expand-icon:before {
-                content: "\f078";
-            }
-        }
-    }
-    a[aria-expanded="true"] {
-        div {
-            .expand-icon:before {
-                content: "\f077";
-            }
-        }
-    }
-{% endstylesheet %}

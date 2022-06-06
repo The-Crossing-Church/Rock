@@ -381,6 +381,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 var item = svc.Get( Int32.Parse( PageParameter( PageParameterKey.Id ) ) );
                 if ( items.IndexOf( item ) < 0 )
                 {
+                    item.LoadAttributes();
                     items.Add( item );
                 }
             }

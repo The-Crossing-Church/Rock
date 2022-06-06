@@ -1,0 +1,22 @@
+﻿{[ rescarousel carouselid:'cs-resources' ]}
+    [[ title class:'text--centered pb-custom-2x' ]]
+        Resources
+    [[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+            <div class='hover' data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description' }}</div>">
+                <a href="/crossing-students-resources/{{i.PrimarySlug}}">
+                    <div class='img-wrapper' >
+                        <img src="{{ i | Attribute:'Image' }}" />
+                    </div>
+                    <div style='font-size: .9375em; font-weight: light; padding-top: 8px;'>
+                        {{i.Title}}
+                    </div>
+                    <div class='text--upper' style='font-size: .75em; font-weight: 700;'>
+                        {{i | Attribute:'Author' }}
+                    </div>
+                </a>
+            </div>
+        [[ enditem ]]
+    {% endfor %}
+{[ endrescarousel ]}
