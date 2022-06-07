@@ -1241,7 +1241,7 @@ namespace RockWeb.com_bemaservices.Promotion
                 gtpGroupType.SelectedValue = gfSettings.GetUserPreference ( "Group Type" );
             }
 
-            ddlGroupTypePurpose.BindToDefinedType ( DefinedTypeCache.Get ( Rock.SystemGuid.DefinedType.GROUPTYPE_PURPOSE.AsGuid () ), true );
+            //ddlGroupTypePurpose.BindToDefinedType ( DefinedTypeCache.Get ( Rock.SystemGuid.DefinedType.GROUPTYPE_PURPOSE.AsGuid () ), true );
             ddlGroupTypePurpose.SetValue ( gfSettings.GetUserPreference ( "Group Type Purpose" ) );
 
             // Set the Active Status

@@ -192,7 +192,7 @@ namespace Plugins.com_simpledonation
 
             accountService.NotifySimpleDonation(
                 NotificationKind.SIMPLE_DONATION_USER_CREATED,
-                GlobalAttributesCache.Value( "OrganizationName" ),
+                GlobalAttributesCache.Value( "OrganizationName" ).EscapeQuotes(),
                 GlobalAttributesCache.Value( "PublicApplicationRoot" ),
                 VersionInfo.GetRockSemanticVersionNumber() );
         }

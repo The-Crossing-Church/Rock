@@ -259,7 +259,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
         /// </summary>
         private void BindFilter()
         {
-            ddlDeviceType.BindToDefinedType( DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.DEVICE_TYPE ) ) );
+            //ddlDeviceType.BindToDefinedType( DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.DEVICE_TYPE ) ) );
             ddlDeviceType.Items.Insert( 0, new ListItem( string.Empty, string.Empty ) );
 
             ddlPrintTo.BindToEnum<PrintTo>();

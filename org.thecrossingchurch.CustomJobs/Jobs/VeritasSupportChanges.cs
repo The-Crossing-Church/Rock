@@ -165,7 +165,7 @@ namespace org.crossingchurch.VeritasSupportChanges.Jobs
             }
 
             //Send Message
-            if ( message.IsNotNullOrWhiteSpace() )
+            if ( !String.IsNullOrWhiteSpace( message ) )
             {
                 var header = new AttributeValueService( _context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
                 var footer = new AttributeValueService( _context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 

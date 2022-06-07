@@ -761,7 +761,12 @@ namespace Plugins.com_simpledonation.Event
             // Change the display when family members are allowed
             rblFamilyOptions.Label = RegistrantTerm + " is in the same " + GetAttributeValue( AttributeKey.FamilyTerm ) + " as";
             rblRegistrarFamilyOptions.Label = "You are in the same " + GetAttributeValue( AttributeKey.FamilyTerm ) + " as";
-            pnlFamilyMembers.Style[HtmlTextWriterStyle.Display] = RegistrationTemplate != null && RegistrationTemplate.RegistrantsSameFamily == RegistrantsSameFamily.Yes ? "block" : "none";
+            pnlFamilyMembers.Style[HtmlTextWriterStyle.Display] = ( RegistrationTemplate != null &&
+                    (
+                        RegistrationTemplate.RegistrantsSameFamily == RegistrantsSameFamily.Yes ||
+                        ( RegistrationTemplate.RegistrantsSameFamily == RegistrantsSameFamily.Ask && rblFamilyOptions.SelectedItem != null && rblFamilyOptions.SelectedItem.Text != "None of the above")
+                    )
+                )? "block" : "none";
 
             if ( !Page.IsPostBack )
             {
@@ -1554,6 +1559,22 @@ namespace Plugins.com_simpledonation.Event
 
         #region Registrant Panel Events
 
+        protected void rblFamilyOptions_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            if ( rblFamilyOptions.SelectedItem.Text == "None of the above" )
+            {
+                ddlFamilyMembers.SelectedValue = "";
+                SetRegistrantFields( ddlFamilyMembers.SelectedValueAsInt() );
+                CreateRegistrantControls( true );
+
+                decimal currentStep = ( FormCount * CurrentRegistrantIndex ) + CurrentFormIndex + 1;
+                PercentComplete = ( currentStep / ProgressBarSteps ) * 100.0m;
+                pnlRegistrantProgressBar.Visible = GetAttributeValue( AttributeKey.DisplayProgressBar ).AsBoolean();
+                pnlFamilyMembers.Style[HtmlTextWriterStyle.Display] = "none";
+            }
+
+        }
+
         /// <summary>
         /// Handles the SelectedIndexChanged event of the ddlFamilyMembers control.
         /// </summary>
@@ -1669,6 +1690,7 @@ namespace Plugins.com_simpledonation.Event
                 RegistrationState.DiscountCode = validDiscount ? discountCode : string.Empty;
                 RegistrationState.DiscountPercentage = validDiscount ? discount.DiscountPercentage : 0.0m;
                 RegistrationState.DiscountAmount = validDiscount ? discount.DiscountAmount : 0.0m;
+                RegistrationState.ConfirmationEmail = tbConfirmationEmail.Text;
 
                 CreateDynamicControls( true );
 
@@ -5451,6 +5473,11 @@ namespace Plugins.com_simpledonation.Event
                     {
                         rblRegistrarFamilyOptions.SetValue( firstRegistrant.FamilyGuid.ToString() );
                     }
+
+                    if ( String.IsNullOrWhiteSpace( tbConfirmationEmail.Text ) )
+                    {
+                        tbConfirmationEmail.Text = RegistrationState.ConfirmationEmail;
+                    }
                 }
                 // Check to see if this is an existing registration or information has already been entered
                 else
@@ -6188,7 +6215,7 @@ namespace Plugins.com_simpledonation.Event
 
         /* SimpleDonation.Start */
 
-        protected string _organizationName = GlobalAttributesCache.Value( "OrganizationName" );
+        protected string _organizationName = GlobalAttributesCache.Value( "OrganizationName" ).EscapeQuotes();
 
         public static class AttributeKeys
         {
@@ -6293,12 +6320,13 @@ namespace Plugins.com_simpledonation.Event
             {
                 accountInfo = new AccountInfo( com.SimpleDonation.Utils.Gateway.GetSimpleDonationStripePublicKey( financialGatewayId ), accountInfo.CardRate, accountInfo.AchRate, accountInfo.CapAch );
             }
+
             hfPublicKey.Value = accountInfo.PublicKey;
 
             hfAchRate.Value = accountInfo.AchRate.ToString();
             hfCardRate.Value = accountInfo.CardRate.ToString();
             hfCapAch.Value = accountInfo.CapAch.ToString();
-            hfOrganizationName.Value = GlobalAttributesCache.Value( "OrganizationName" );
+            hfOrganizationName.Value = GlobalAttributesCache.Value( "OrganizationName" ).EscapeQuotes();
         }
 
         /// <summary>
@@ -6583,5 +6611,6 @@ namespace Plugins.com_simpledonation.Event
         #endregion
 
         /* SimpleDonation.End */
+
     }
 }

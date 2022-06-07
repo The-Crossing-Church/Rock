@@ -294,7 +294,7 @@ namespace com_thecrossingchurch.LavaFilters
 
             if ( string.IsNullOrWhiteSpace( attribute ) )
             {
-                throw new Exception( "Must provide a attribute to group by." );
+                throw new Exception( "Must provide an attribute to group by." );
             }
 
             //Load Attribute for the Entities
@@ -307,7 +307,7 @@ namespace com_thecrossingchurch.LavaFilters
                     v => v.EntityId,
                     ( entity, v ) =>
                     {
-                        entity.AttributeValues.AddOrReplace( attribute, new AttributeValueCache( v ) );
+                        entity.AttributeValues[attribute] = new AttributeValueCache( v );
                         return entity;
                     }
                 );
