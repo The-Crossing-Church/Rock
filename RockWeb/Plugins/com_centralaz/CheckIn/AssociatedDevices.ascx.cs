@@ -221,12 +221,12 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
 
                 case "Print To":
 
-                    e.Value = ( (PrintTo)System.Enum.Parse( typeof( PrintTo ), e.Value ) ).ToString();
+                    e.Value = ( ( PrintTo ) System.Enum.Parse( typeof( PrintTo ), e.Value ) ).ToString();
                     break;
 
                 case "Print From":
 
-                    e.Value = ( (PrintFrom)System.Enum.Parse( typeof( PrintFrom ), e.Value ) ).ToString();
+                    e.Value = ( ( PrintFrom ) System.Enum.Parse( typeof( PrintFrom ), e.Value ) ).ToString();
                     break;
             }
         }
@@ -259,7 +259,8 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
         /// </summary>
         private void BindFilter()
         {
-            //ddlDeviceType.BindToDefinedType( DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.DEVICE_TYPE ) ) );
+            ddlDeviceType.DataSource = DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.DEVICE_TYPE ) );
+            ddlDeviceType.DataBind();
             ddlDeviceType.Items.Insert( 0, new ListItem( string.Empty, string.Empty ) );
 
             ddlPrintTo.BindToEnum<PrintTo>();
@@ -335,7 +336,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
 
                 if ( !string.IsNullOrWhiteSpace( fDevice.GetUserPreference( "Print To" ) ) )
                 {
-                    PrintTo printTo = (PrintTo)System.Enum.Parse( typeof( PrintTo ), fDevice.GetUserPreference( "Print To" ) ); ;
+                    PrintTo printTo = ( PrintTo ) System.Enum.Parse( typeof( PrintTo ), fDevice.GetUserPreference( "Print To" ) ); ;
                     queryable = queryable.Where( d => d.PrintToOverride == printTo );
                 }
 
@@ -347,7 +348,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
 
                 if ( !string.IsNullOrWhiteSpace( fDevice.GetUserPreference( "Print From" ) ) )
                 {
-                    PrintFrom printFrom = (PrintFrom)System.Enum.Parse( typeof( PrintFrom ), fDevice.GetUserPreference( "Print From" ) ); ;
+                    PrintFrom printFrom = ( PrintFrom ) System.Enum.Parse( typeof( PrintFrom ), fDevice.GetUserPreference( "Print From" ) ); ;
                     queryable = queryable.Where( d => d.PrintFrom == printFrom );
                 }
 
