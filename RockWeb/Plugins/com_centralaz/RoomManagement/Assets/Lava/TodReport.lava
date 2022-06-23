@@ -1,2 +1,0 @@
-{% assign reportDvId = 1700 %}
-{% include '~/Plugins/com_centralaz/RoomManagement/Assets/Lava/IndividualPageReservationReport.lava' %}
