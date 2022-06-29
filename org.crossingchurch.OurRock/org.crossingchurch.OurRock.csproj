@@ -56,6 +56,7 @@
     <Compile Include="Reporting\DataFilter\Person\GroupTypeFirstAttendance.cs" />
     <Compile Include="Reporting\DataTransform\Person\AllowCheckInByTransform.cs" />
     <Compile Include="Reporting\DataTransform\Person\CanCheckInTransform.cs" />
+    <Compile Include="Workflow\Action\Checkin\FilterGroupsForMultiAge.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotLiquid\DotLiquid.csproj">
