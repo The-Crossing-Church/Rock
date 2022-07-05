@@ -60,6 +60,7 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
                                 foreach ( var schedule in location.Schedules.ToList() )
                                 {
                                     bool isMultiAge = false;
+                                    bool removeMultiAge = false;
                                     var possibleGroups = person.GroupTypes.SelectMany( gt => gt.Groups.Select( g => g.Group.Name ) ).ToList();
 
                                     if ( person.Person.AgeClassification == AgeClassification.Child && possibleGroups.Contains( groupName ) )
@@ -69,9 +70,29 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
                                         {
                                             isMultiAge = true;
                                         }
+                                        else
+                                        {
+                                            removeMultiAge = true;
+                                        }
                                     }
 
                                     if ( isMultiAge && groupName != group.Group.Name )
+                                    {
+                                        if ( remove )
+                                        {
+                                            location.Schedules.Remove( schedule );
+                                        }
+                                        else
+                                        {
+                                            schedule.ExcludedByFilter = true;
+                                        }
+
+                                        continue;
+                                    }
+                                    // Remove multi-age from the first schedule selection
+                                    // Example, we have three services, multi-age is available at the second and third
+                                    // If child is attending second and third services, multi-age should not be an option for second service
+                                    if ( removeMultiAge && groupName == group.Group.Name )
                                     {
                                         if ( remove )
                                         {
