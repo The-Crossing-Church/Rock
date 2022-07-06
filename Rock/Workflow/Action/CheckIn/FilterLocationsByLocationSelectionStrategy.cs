@@ -79,8 +79,8 @@ namespace Rock.Workflow.Action.CheckIn
                 foreach ( var checkinGroupType in person.GroupTypes )
                 {
                     var attributeLocationSelectionStrategy = ( CheckinConfigurationHelper.LocationSelectionStrategy? ) checkinGroupType.GroupType.GetAttributeValue( GroupTypeAttributeKey.CHECKIN_GROUPTYPE_LOCATION_SELECTION_STRATEGY ).AsIntegerOrNull() ?? null;
-                    
-                    if ( attributeLocationSelectionStrategy == null ||  attributeLocationSelectionStrategy == CheckinConfigurationHelper.LocationSelectionStrategy.Ask )
+
+                    if ( attributeLocationSelectionStrategy == null || attributeLocationSelectionStrategy == CheckinConfigurationHelper.LocationSelectionStrategy.Ask )
                     {
                         // Either this is not set for some reason or the location should not be automatically selected, so don't filter the locations.
                         continue;
@@ -99,7 +99,7 @@ namespace Rock.Workflow.Action.CheckIn
         {
             // Order the list
             var checkinGroups = checkInGroupType.Groups.OrderBy( g => g.Group.Order ).ToList();
-            
+
             foreach ( var checkinGroup in checkinGroups )
             {
                 // Get a list of locations that have not reached their threshold.
@@ -125,31 +125,34 @@ namespace Rock.Workflow.Action.CheckIn
                 else
                 {
                     // Now we have to care about schedules.
-                    FilterLocationSchedules( checkinGroup, locationList, selectedSchedules, remove );
+                    FilterLocationSchedules( checkinGroup, locationList, selectedSchedules, remove, attributeLocationSelectionStrategy );
                 }
             }
         }
 
-        private void FilterLocationSchedules( CheckInGroup checkinGroup, List<CheckInLocation> locationList, List<CheckInSchedule> selectedSchedules, bool remove )
+        private void FilterLocationSchedules( CheckInGroup checkinGroup, List<CheckInLocation> locationList, List<CheckInSchedule> selectedSchedules, bool remove, CheckinConfigurationHelper.LocationSelectionStrategy attributeLocationSelectionStrategy )
         {
-            // Check the locations in the sorted or for the first one that has all the schedules available and use it if it exists.
-            var locationForSchedules = locationList.Where( l => l.Schedules.Select( s => s.Schedule.Id ).Intersect( selectedSchedules.Select( ss => ss.Schedule.Id ) ).Count() == selectedSchedules.Count ).FirstOrDefault();
-            if ( locationForSchedules != null )
+            if ( attributeLocationSelectionStrategy == CheckinConfigurationHelper.LocationSelectionStrategy.Balance )
             {
-                locationList.Remove( locationForSchedules );
-                foreach ( var location in locationList )
+                // Check the locations in the sorted or for the first one that has all the schedules available and use it if it exists.
+                var locationForSchedules = locationList.Where( l => l.Schedules.Select( s => s.Schedule.Id ).Intersect( selectedSchedules.Select( ss => ss.Schedule.Id ) ).Count() == selectedSchedules.Count ).FirstOrDefault();
+                if ( locationForSchedules != null )
                 {
-                    if ( remove )
+                    locationList.Remove( locationForSchedules );
+                    foreach ( var location in locationList )
                     {
-                        checkinGroup.Locations.Remove( location );
+                        if ( remove )
+                        {
+                            checkinGroup.Locations.Remove( location );
+                        }
+                        else
+                        {
+                            location.ExcludedByFilter = true;
+                        }
                     }
-                    else
-                    {
-                        location.ExcludedByFilter = true;
-                    }
-                }
 
-                return;
+                    return;
+                }
             }
 
             // There is no location that has all of the selected schedules for this person so we need to choose each schedule location in the sorted list order.
@@ -159,7 +162,7 @@ namespace Rock.Workflow.Action.CheckIn
                 var foundFirstMatch = false;
                 foreach ( var location in locationList )
                 {
-                    if ( location.Schedules.Contains( selectedSchedule ) )
+                    if ( location.Schedules.Select( s => s.Schedule.Id ).Contains( selectedSchedule.Schedule.Id ) )
                     {
                         if ( foundFirstMatch )
                         {
