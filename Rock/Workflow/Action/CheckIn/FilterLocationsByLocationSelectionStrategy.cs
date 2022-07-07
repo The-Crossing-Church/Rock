@@ -166,16 +166,15 @@ namespace Rock.Workflow.Action.CheckIn
                     {
                         if ( foundFirstMatch )
                         {
-                            foreach ( var checkinLocation in checkinGroup.Locations )
+                            var checkinLocation = checkinGroup.Locations.FirstOrDefault( l => l.Location.Id == location.Location.Id );
+                            var locationschedule = checkinLocation.Schedules.FirstOrDefault( s => s.Schedule.Id == selectedSchedule.Schedule.Id );
+                            if ( remove )
                             {
-                                if ( remove )
-                                {
-                                    checkinLocation.Schedules.Remove( selectedSchedule );
-                                }
-                                else
-                                {
-                                    selectedSchedule.ExcludedByFilter = true;
-                                }
+                                checkinLocation.Schedules.Remove( locationschedule );
+                            }
+                            else
+                            {
+                                locationschedule.ExcludedByFilter = true;
                             }
                         }
                         else
