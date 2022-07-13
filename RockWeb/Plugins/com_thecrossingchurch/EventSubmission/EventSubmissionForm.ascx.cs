@@ -587,13 +587,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 ).ToList();
             var dateAttrId = itm.Attributes["EventDates"].Id;
             var eventDates = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == dateAttrId ).ToList();
+            var startOfToday = new DateTime( RockDateTime.Now.Year, RockDateTime.Now.Month, RockDateTime.Now.Day, 0, 0, 0 ); 
             eventDates = eventDates.Where( e =>
             {
                 var dates = e.Value.Split( ',' );
                 foreach ( var d in dates )
                 {
                     DateTime dt = DateTime.Parse( d );
-                    if ( DateTime.Compare( dt, DateTime.Now ) >= 0 )
+                    if ( DateTime.Compare( dt, startOfToday ) >= 0 )
                     {
                         return true;
                     }
