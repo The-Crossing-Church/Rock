@@ -15,5 +15,5 @@
           </div>
         [[ enditem ]]
     {% endfor %}
-    [[ button url:'https://info.thecrossingchurch.com/blog' text:'Explore All' ]][[ endbutton ]]
+    [[ button url:'/Resources/Read' text:'Explore All' ]][[ endbutton ]]
 {[ endcarousel ]}
