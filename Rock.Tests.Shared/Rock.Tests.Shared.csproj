@@ -48,13 +48,13 @@
       <HintPath>..\packages\AWSSDK.S3.3.3.21.1\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
     <Reference Include="DDay.iCal">
-      <HintPath>..\RockWeb\Bin\DDay.iCal.dll</HintPath>
+      <HintPath>..\packages\DDay.iCal.1.0.2.575\lib\DDay.iCal.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework">
-      <HintPath>..\RockWeb\Bin\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\RockWeb\Bin\EntityFramework.SqlServer.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Ical.Net, Version=2.1.0.20780, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="Microsoft.CSharp" />

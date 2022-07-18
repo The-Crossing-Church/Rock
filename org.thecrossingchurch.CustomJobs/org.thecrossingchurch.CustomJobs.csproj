@@ -64,7 +64,7 @@
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="Quartz">
-      <HintPath>..\RockWeb\Bin\Quartz.dll</HintPath>
+      <HintPath>..\libs\Quartz\Quartz.dll</HintPath>
     </Reference>
     <Reference Include="RestSharp, Version=105.2.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RestSharp.105.2.3\lib\net46\RestSharp.dll</HintPath>
