@@ -58,6 +58,7 @@
             <Content>
                 <Rock:AttributeEditor ID="edtFilter" runat="server" ShowActions="false" />
                 <Rock:RockCheckBox ID="cbHideLabel" runat="server" Label="Hide Label" />
+                <Rock:RockCheckBox ID="cbEnableAutoPostback" runat="server" Label="Enable Auto PostBack" />
             </Content>
         </Rock:ModalDialog>
 
