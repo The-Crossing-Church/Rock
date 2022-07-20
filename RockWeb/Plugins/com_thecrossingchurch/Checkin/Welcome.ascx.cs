@@ -33,10 +33,10 @@ using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.CheckIn
+namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
 {
     [DisplayName( "Welcome" )]
-    [Category( "Check-in" )]
+    [Category( "com_thecrossingchurch > Check-in" )]
     [Description( "Welcome screen for check-in." )]
 
     [LinkedPage(
@@ -165,6 +165,12 @@ namespace RockWeb.Blocks.CheckIn
         Category = "Manager Settings",
         Order = 22 )]
 
+    /* CUSTOM SETTING */
+    [DefinedTypeField( "Disabled Check-in Times Defined Type",
+        Description = "A defined type to specify when kiosks should be disabled (even if check-in group types are active). Defined type requires a 'Schedule' and 'Check-in Configuration Type' attribute.",
+        IsRequired = false,
+        Key = AttributeKey.DisabledDefinedType )]
+
     public partial class Welcome : CheckInBlock
     {
         private readonly string _defaultScanButtonText = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 426 340.8\"><path d=\"M74 0H11A11 11 0 000 11v62a11 11 0 0010 11 11 11 0 0011-10V21h52a11 11 0 0011-10A11 11 0 0074 0zm-1 320H21v-52a11 11 0 00-10-11 11 11 0 00-11 11v63a11 11 0 0011 10h63a11 11 0 0010-11 11 11 0 00-11-10zM416 0h-63a11 11 0 00-11 10 11 11 0 0011 11h52v52a11 11 0 0010 11 11 11 0 0011-10V11a11 11 0 00-10-11zm-11 268v52h-52a11 11 0 00-11 10 11 11 0 0011 11h63a11 11 0 0010-10v-63a11 11 0 00-11-11 11 11 0 00-10 11zM64 76v189a11 11 0 0010 10 11 11 0 0011-10V76a11 11 0 00-11-11 11 11 0 00-10 11zm53-12h21a11 11 0 0111 11v191a11 11 0 01-11 11h-21a11 11 0 01-11-11V75a11 11 0 0111-11zm54 12v189a11 11 0 0010 10 11 11 0 0011-10V76a11 11 0 00-11-11 11 11 0 00-10 11zm53-12h21a11 11 0 0111 11v191a11 11 0 01-11 11h-21a11 11 0 01-11-11V75a11 11 0 0111-11zm53 11v191a11 11 0 0010 11 11 11 0 0011-11V75a11 11 0 00-11-11 11 11 0 00-10 11zm53-11h21a11 11 0 0111 11v191a11 11 0 01-11 11h-21a11 11 0 01-11-11V75a11 11 0 0111-11z\"/></svg>";
@@ -191,6 +197,7 @@ namespace RockWeb.Blocks.CheckIn
             public const string AllowOpeningAndClosingRooms = "AllowOpeningAndClosingRooms";
             public const string ShowLocationCounts = "ShowLocationCounts";
             public const string AllowLabelReprinting = "AllowLabelReprinting";
+            public const string DisabledDefinedType = "DisabledDefinedType";
         }
 
         private static class PageParameterKey
@@ -386,6 +393,9 @@ namespace RockWeb.Blocks.CheckIn
 
             var checkinStatus = CheckinConfigurationHelper.GetCheckinStatus( this.CurrentCheckInState );
 
+            // CUSTOM: Determine if check-in should be disabled.
+            DateTime? disabledUntil = GetDisabledStatus( this.CurrentCheckInState );
+
             switch ( checkinStatus )
             {
                 case CheckinConfigurationHelper.CheckinStatus.Inactive:
@@ -403,6 +413,12 @@ namespace RockWeb.Blocks.CheckIn
                         }
                         else
                         {
+                            // CUSTOM: if the disabled value is later than the activeAt, use that instead.
+                            if ( disabledUntil.HasValue && disabledUntil > activeAt )
+                            {
+                                activeAt = disabledUntil.Value;
+                            }
+
                             hfCountdownSecondsUntil.Value = ( ( int ) ( activeAt - RockDateTime.Now ).TotalSeconds ).ToString();
                             pnlNotActiveYet.Visible = true;
                         }
@@ -419,8 +435,17 @@ namespace RockWeb.Blocks.CheckIn
                 case CheckinConfigurationHelper.CheckinStatus.Active:
                 default:
                     {
-                        isActive = true;
-                        pnlActive.Visible = true;
+                        // CUSTOM: If check-in should be disabled, show the countdown timer instead of the check-in panel
+                        if ( disabledUntil.HasValue )
+                        {
+                            hfCountdownSecondsUntil.Value = ( ( int ) ( disabledUntil.Value - RockDateTime.Now ).TotalSeconds ).ToString();
+                            pnlNotActiveYet.Visible = true;
+                        }
+                        else
+                        {
+                            isActive = true;
+                            pnlActive.Visible = true;
+                        }
                         break;
                     }
             }
@@ -433,6 +458,75 @@ namespace RockWeb.Blocks.CheckIn
                 qryParams.AddOrReplace( PageParameterKey.IsActive, isActive.ToString() );
                 NavigateToCurrentPage( qryParams );
             }
+        }
+
+        /*
+         * CUSTOM METHOD to determine if check-in kiosk should be disabled.
+         */
+        private DateTime? GetDisabledStatus( CheckInState checkInState )
+        {
+            DateTime? dateTime = null;
+
+            var now = RockDateTime.Now;
+            var today = RockDateTime.Today;
+
+            var groupType = GroupTypeCache.Get( checkInState.CheckInType.Id );
+            if ( groupType == null )
+            {
+                return null;
+            }
+
+            Guid? definedTypeGuid = GetAttributeValue( AttributeKey.DisabledDefinedType ).AsGuidOrNull();
+            if ( !definedTypeGuid.HasValue )
+            {
+                return null;
+            }
+
+                var definedType = DefinedTypeCache.Get( definedTypeGuid.Value );
+            if ( definedType == null )
+            {
+                return null;
+            }
+
+            var rockContext = new RockContext();
+            foreach( var dv in definedType.DefinedValues )
+            {
+                var checkInConfigs = dv.GetAttributeValue( "CheckInAreas").SplitDelimitedValues(",").AsGuidOrNullList();
+                if ( !checkInConfigs.Any() || !checkInConfigs.Contains( groupType.Guid ) )
+                {
+                    continue;
+                }
+
+                var scheduleGuid = dv.GetAttributeValue( "Schedule" ).AsGuid();
+                if ( scheduleGuid == null )
+                {
+                    continue;
+                }
+
+                var schedule = new ScheduleService( rockContext ).Get( scheduleGuid );
+                if ( schedule == null || !schedule.IsActive )
+                {
+                    continue;
+                }
+
+                var calEvent = schedule.GetICalEvent();
+                if ( calEvent == null ||
+                    calEvent.DtStart == null ||
+                    now.TimeOfDay.TotalSeconds < calEvent.DtStart.Value.TimeOfDay.TotalSeconds ||
+                    now.TimeOfDay.TotalSeconds > calEvent.DtEnd.Value.TimeOfDay.TotalSeconds ||
+                    schedule.GetICalOccurrences( today ).Count <= 0 )
+                {
+                    continue;
+                }
+
+                var endTime = today.AddSeconds( calEvent.DtEnd.Value.TimeOfDay.TotalSeconds );
+                if ( !dateTime.HasValue || dateTime.Value < endTime )
+                {
+                    dateTime = endTime;
+                }
+            }
+
+            return dateTime;
         }
 
         /// <summary>
