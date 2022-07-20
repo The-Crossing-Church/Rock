@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Newtonsoft.Json;
@@ -134,11 +135,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
 
             // Print all available label types
             var possibleLabels = ZebraPrint.GetLabelTypesForPerson(personId, selectedAttendanceIds);
+
             //var fileGuids = new List<Guid>() { new Guid("779123b2-a54c-4c0e-8b26-d45a4a9a5097"), new Guid("c9a9e544-073c-4133-bafd-a360d6068434") };
-            var fileGuids = possibleLabels.Select(pl => pl.FileGuid).ToList(); 
+            var fileGuids = possibleLabels.Select(pl => pl.FileGuid).ToList();
 
             // Now, finally, re-print the labels.
-            List<string> messages = ZebraPrint.ReprintZebraLabels(fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, printer);
+            List<string> messages = ReprintLabels( fileGuids, personId, selectedAttendanceIds, printer );
             nbReprintMessage.Visible = true;
             nbReprintMessage.Text = messages.JoinStrings("<br>");
         }
@@ -180,6 +182,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
                     personAliasId = personAliasService.GetPrimaryAliasId( person.Id );
                 }
 
+                var date = DateTime.Today;
+
                 var attendanceIds = new AttendanceService(rockContext)
                     .Queryable("Occurrence.Schedule,Occurrence.Group,Occurrence.Location,AttendanceCode")
                     .Where(a =>
@@ -190,13 +194,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
                        a.Occurrence.LocationId.HasValue &&
                        a.DidAttend.HasValue &&
                        a.DidAttend.Value &&
-                       scheduleIds.Contains(a.Occurrence.ScheduleId.Value))
-                    .OrderByDescending(a => a.StartDateTime)
-                    .Take(20)
+                       scheduleIds.Contains(a.Occurrence.ScheduleId.Value) &&
+                       DateTime.Compare( a.Occurrence.OccurrenceDate, date ) == 0 )
                     .ToList()                                                             // Run query to get recent most 20 checkins
-                    .OrderByDescending(a => a.Occurrence.OccurrenceDate)                // Then sort again by start datetime and schedule start (which is not avail to sql query )
-                    .ThenByDescending(a => a.Occurrence.Schedule.StartTimeOfDay)
-                    .ToList()
+                    .OrderByDescending(a => a.Occurrence.Schedule.StartTimeOfDay)
                     .Select(a => a.Id)
                     .ToList();
 
@@ -204,7 +205,99 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn.Manager
             }
         }
 
+        public static List<string> ReprintLabels( List<Guid> fileGuids, int personId, List<int> selectedAttendanceIds, string printerAddress )
+        {
+            // Fetch the actual labels and print them
+            var rockContext = new RockContext();
+            var attendanceService = new AttendanceService( rockContext );
 
+            // Get the selected attendance records (but only the ones that have label data)
+            var labelDataList = attendanceService
+                .GetByIds( selectedAttendanceIds )
+                .Where( a => a.AttendanceData.LabelData != null )
+                .Select( a => a.AttendanceData.LabelData );
+
+            var printFromServer = new List<CheckInLabel>();
+
+            // Now grab only the selected label types (matching fileGuids) from those record's AttendanceData
+            // for the selected  person
+            foreach ( var labelData in labelDataList )
+            {
+                var json = labelData.Trim();
+
+                // skip if the return type is not an array
+                if ( json.Substring( 0, 1 ) != "[" )
+                {
+                    continue;
+                }
+
+                // De-serialize the JSON into a list of objects
+                var checkinLabels = JsonConvert.DeserializeObject<List<CheckInLabel>>( json );
+
+                // skip if no labels were found
+                if ( checkinLabels == null )
+                {
+                    continue;
+                }
+
+                // Take only the labels that match the selected person (or if they are Family type labels) and file guids).
+                checkinLabels = checkinLabels.Where( l => ( l.PersonId == personId || l.LabelType == KioskLabelType.Family ) && fileGuids.Contains( l.FileGuid ) ).ToList();
+
+                // Override the printer by printing to the given printerAddress?
+                checkinLabels.ToList().ForEach( l => l.PrinterAddress = printerAddress );
+                printFromServer.AddRange( checkinLabels );
+            }
+
+            // Remove Duplicates
+            var labelsToPrint = new List<CheckInLabel>();
+            var labelContents = new List<string>();
+
+            foreach( var label in printFromServer.ToList() )
+            {
+                var labelCache = KioskLabel.Get( label.FileGuid );
+                if ( labelCache != null )
+                {
+                    var labelContent = MergeLabelFields( labelCache.FileContent, label.MergeFields );
+                    if ( !labelContents.Contains( labelContent ) )
+                    {
+                        labelContents.Add( labelContent );
+                        labelsToPrint.Add( label );
+                    }
+                }
+            }
+
+            // Print server labels
+            var messages = ZebraPrint.PrintLabels( labelsToPrint );
+
+            // No messages is "good news".
+            if ( messages.Count == 0 )
+            {
+                messages.Add( "The labels have been printed." );
+            }
+
+            return messages;
+        }
+
+        private static string MergeLabelFields( string label, Dictionary<string, string> mergeFields )
+        {
+            foreach ( var mergeField in mergeFields )
+            {
+                if ( !string.IsNullOrWhiteSpace( mergeField.Value ) )
+                {
+                    label = Regex.Replace( label, string.Format( @"(?<=\^FD){0}(?=\^FS)", mergeField.Key ), mergeField.Value );
+                }
+                else
+                {
+                    // Remove the box preceding merge field
+                    label = Regex.Replace( label, string.Format( @"\^FO.*\^FS\s*(?=\^FT.*\^FD{0}\^FS)", mergeField.Key ), string.Empty );
+
+                    // Remove the merge field
+                    label = Regex.Replace( label, string.Format( @"\^FD{0}\^FS", mergeField.Key ), "^FD^FS" );
+                }
+            }
+
+            return label;
+        }
         #endregion
 
     }
