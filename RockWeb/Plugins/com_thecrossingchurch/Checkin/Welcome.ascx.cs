@@ -491,19 +491,29 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
             var rockContext = new RockContext();
             foreach( var dv in definedType.DefinedValues )
             {
+                var exclusionRoleGuid = dv.GetAttributeValue( "ExclusionRole" ).AsGuidOrNull();
+                if ( exclusionRoleGuid.HasValue )
+                {
+                    var exclusionRole = new GroupService( rockContext ).Get( exclusionRoleGuid.Value );
+                    if ( exclusionRole != null && exclusionRole.Members.Where( x => x.PersonId == CurrentPersonId ).Any() )
+                    {
+                        continue;
+                    }
+                }
+
                 var checkInConfigs = dv.GetAttributeValue( "CheckInAreas").SplitDelimitedValues(",").AsGuidOrNullList();
                 if ( !checkInConfigs.Any() || !checkInConfigs.Contains( groupType.Guid ) )
                 {
                     continue;
                 }
 
-                var scheduleGuid = dv.GetAttributeValue( "Schedule" ).AsGuid();
-                if ( scheduleGuid == null )
+                var scheduleGuid = dv.GetAttributeValue( "Schedule" ).AsGuidOrNull();
+                if ( !scheduleGuid.HasValue )
                 {
                     continue;
                 }
 
-                var schedule = new ScheduleService( rockContext ).Get( scheduleGuid );
+                var schedule = new ScheduleService( rockContext ).Get( scheduleGuid.Value );
                 if ( schedule == null || !schedule.IsActive )
                 {
                     continue;
