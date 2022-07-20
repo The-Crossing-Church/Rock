@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Welcome.ascx.cs" Inherits="RockWeb.Blocks.CheckIn.Welcome" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Welcome.ascx.cs" Inherits="RockWeb.Plugins.com_thecrossingchurch.CheckIn.Welcome" %>
 <style>
     .js-search-value {
         position: absolute;
@@ -104,33 +104,9 @@
 
                     isGettingConfigurationStatus = true;
 
-                    var getConfigurationStatusUrl = Rock.settings.get('baseUrl') + 'api/checkin/configuration/status';
+                    refreshKiosk();
 
-                    var localDeviceConfiguration = JSON.parse($('.js-local-device-configuration').val());
-                    var $configurationHash = $('.js-configuration-hash');
-
-                    // check if the configuration has changed by making a REST call. If it has changed, refresh the page.
-                    $.ajax({
-                        type: "POST",
-                        url: getConfigurationStatusUrl,
-                        timeout: 10000,
-                        data: localDeviceConfiguration,
-                        success: function (data) {
-
-                            var localConfigurationStatus = data;
-
-                            if ($configurationHash.val() != localConfigurationStatus.ConfigurationHash) {
-                                $configurationHash.val(localConfigurationStatus.ConfigurationHash);
-                                refreshKiosk();
-                            }
-                        },
-                        dataType: 'json'
-                    }).then(function () {
-                        isGettingConfigurationStatus = false;
-                    }).catch(function () {
-                        console.log('offline');
-                        isGettingConfigurationStatus = false;
-                    });
+                    isGettingConfigurationStatus = false;
                 }
 
                 function refreshKiosk () {
@@ -485,6 +461,7 @@
         <%-- Panel for checkin manager --%>
         <asp:Panel ID="pnlManager" runat="server" Visible="false">
             <asp:HiddenField ID="hfAllowOpenClose" runat="server" />
+            <asp:HiddenField ID="hfShowLocationCounts" runat="server" />
             <div class="checkin-header">
                 <h1>Locations</h1>
             </div>
@@ -503,9 +480,9 @@
                                     <div class="kioskmanager-location-label">
                                         <asp:Literal ID="lLocationName" runat="server" />
                                     </div>
-                                    <div class="badge badge-info kioskmanager-location-count">
+                                    <asp:Panel ID="pnlLocationCount" runat="server" class="badge badge-info kioskmanager-location-count">
                                         <asp:Literal ID="lLocationCount" runat="server" />
-                                    </div>
+                                    </asp:Panel>
                                 </div>
 
                                 <br />
