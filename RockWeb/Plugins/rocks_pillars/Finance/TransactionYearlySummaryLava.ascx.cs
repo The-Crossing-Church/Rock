@@ -37,7 +37,7 @@ namespace RockWeb.Plugins.rocks_pillars.Finance
     /// 
     /// </summary>
     /// <remarks>
-    /// This is a copy of the core block from v9.3 with the following changes
+    /// This is a copy of the core block from v12.7 with the following changes
     /// 1. Include Soft-Credit transactions
     /// </remarks>
     /// 
@@ -117,7 +117,7 @@ namespace RockWeb.Plugins.rocks_pillars.Finance
                 var personAliasService = new PersonAliasService( rockContext );
                 var qry = transactionDetailService.Queryable().AsNoTracking()
                     .Where( a =>
-                        a.Transaction.TransactionTypeValueId == contributionType.Id &&
+                        a.Account.IsTaxDeductible &&
                         a.Transaction.TransactionDateTime.HasValue );
 
                 var targetPerson = this.ContextEntity<Person>();
