@@ -237,10 +237,10 @@
                                         <a href="/About" class="text-white">About Us</a>
                                     </div>
                                     <div>
-                                        <a href="/FAQs" class="text-white">FAQs</a>
+                                        <a href="/Serving" class="text-white">Serving</a>
                                     </div>
                                     <div>
-                                        <a href="/Serving" class="text-white">Serving</a>
+                                        <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
                                     <div>
                                         <a href="/Staff" class="text-white">Staff</a>
@@ -331,10 +331,10 @@
                                         <a href="/Blog" class="text-white">The Crossing Blog</a>
                                     </div>-->
                                     <div class="sub-menu-item">
-                                        <a href="/FAQs" class="text-white">FAQs</a>
+                                        <a href="/Serving" class="text-white">Serving</a>
                                     </div>
                                     <div class="sub-menu-item">
-                                        <a href="/Serving" class="text-white">Serving</a>
+                                        <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Staff" class="text-white">Staff</a>
