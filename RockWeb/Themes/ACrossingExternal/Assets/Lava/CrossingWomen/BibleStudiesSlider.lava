@@ -1,5 +1,4 @@
-﻿<h2 class="text--centered py-custom-2x">SUMMER BOOK DISCUSSIONS</h2>
-<div class='justify-center'>
+﻿<div class='justify-center'>
     {[ imgslider sliderid:'bible-studies-slider' containerclass:'wbs-slider-wrapper']}
         {% for i in Items %}
             [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]

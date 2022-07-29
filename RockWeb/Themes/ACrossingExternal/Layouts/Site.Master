@@ -239,9 +239,9 @@
                                     <div>
                                         <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
-                                    <%--<div>
+                                    <div>
                                         <a href="/Serving" class="text-white">Serving</a>
-                                    </div>--%>
+                                    </div>
                                     <div>
                                         <a href="/Staff" class="text-white">Staff</a>
                                     </div>
@@ -333,9 +333,9 @@
                                     <div class="sub-menu-item">
                                         <a href="/FAQs" class="text-white">FAQs</a>
                                     </div>
-                                    <%--<div class="sub-menu-item">
+                                    <div class="sub-menu-item">
                                         <a href="/Serving" class="text-white">Serving</a>
-                                    </div>--%>
+                                    </div>
                                     <div class="sub-menu-item">
                                         <a href="/Staff" class="text-white">Staff</a>
                                     </div>
