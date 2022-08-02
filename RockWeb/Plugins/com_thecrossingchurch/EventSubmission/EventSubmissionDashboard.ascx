@@ -298,7 +298,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionD
             <template v-if="selected.needsPub || (selected.Changes && selected.Changes.needsPub)">
               <pub-details :request="selected" :approvalmode="false"></pub-details>
             </template>
-            <v-row v-if="selected.Notes">
+            <v-row v-if="selected.Notes || (selected.Changes && selected.Changes.Notes)">
               <v-col>
                 <div class="floating-title">Notes</div>
                 <template v-if="selected.Changes != null && selected.Notes != selected.Changes.Notes">
