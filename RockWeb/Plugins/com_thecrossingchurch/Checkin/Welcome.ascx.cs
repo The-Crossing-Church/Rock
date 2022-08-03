@@ -419,7 +419,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                                 activeAt = disabledUntil.Value;
                             }
 
-                            hfCountdownSecondsUntil.Value = ( ( int ) ( activeAt - RockDateTime.Now ).TotalSeconds ).ToString();
+                            hfCountdownSecondsUntil.Value = ( ( int ) ( activeAt - RockDateTime.Now ).TotalSeconds + 30 ).ToString();
                             pnlNotActiveYet.Visible = true;
                         }
 
@@ -438,7 +438,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                         // CUSTOM: If check-in should be disabled, show the countdown timer instead of the check-in panel
                         if ( disabledUntil.HasValue )
                         {
-                            hfCountdownSecondsUntil.Value = ( ( int ) ( disabledUntil.Value - RockDateTime.Now ).TotalSeconds ).ToString();
+                            hfCountdownSecondsUntil.Value = ( ( int ) ( disabledUntil.Value - RockDateTime.Now ).TotalSeconds + 30 ).ToString();
                             pnlNotActiveYet.Visible = true;
                         }
                         else
@@ -482,14 +482,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                 return null;
             }
 
-                var definedType = DefinedTypeCache.Get( definedTypeGuid.Value );
+            var definedType = DefinedTypeCache.Get( definedTypeGuid.Value );
             if ( definedType == null )
             {
                 return null;
             }
 
             var rockContext = new RockContext();
-            foreach( var dv in definedType.DefinedValues )
+            foreach( var dv in definedType.DefinedValues.Where( dv => dv.IsActive ) )
             {
                 var exclusionRoleGuid = dv.GetAttributeValue( "ExclusionRole" ).AsGuidOrNull();
                 if ( exclusionRoleGuid.HasValue )
