@@ -711,16 +711,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script type="module">
-    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.4';
-    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.4';
-    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.4';
-    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.4';
-    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.4';
-    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.4';
-    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.4';
-    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.4';
-    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.4';
-    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.4';
+    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.5';
+    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.5';
+    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.5';
+    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.5';
+    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.5';
+    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.5';
+    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.5';
+    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.5';
+    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.5';
+    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.5';
     document.addEventListener("DOMContentLoaded", function () {
         Vue.component("time-picker", timePickerVue);
         Vue.component("space", spaceVue);
@@ -942,6 +942,9 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                 this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
                 this.doors = JSON.parse($('[id$="hfDoors"]')[0].value)
                 this.ministries = JSON.parse($('[id$="hfMinistries"]')[0].value)
+                this.ministries.forEach(m => {
+                  m.IsDisabled = !m.IsActive
+                })
                 let isAd = $('[id$="hfIsAdmin"]')[0].value
                 if (isAd == 'True') {
                     this.isAdmin = true

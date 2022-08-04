@@ -332,7 +332,7 @@ export default {
   <template v-if="selected.needsCatering || (selected.Changes && selected.Changes.needsCatering)">
     <h6 :class='sectionHeaderClassName("Catering")'>Catering Information</h6>
     <v-row>
-      <v-col v-if="e.Vendor || (selected.Changes && selected.Changes.Events[idx].Vendor)">
+      <v-col>
         <div class="floating-title">Preferred Vendor</div>
         <template v-if="selected.Changes != null && e.Vendor != selected.Changes.Events[idx].Vendor">
           <template v-if="approvalmode">
@@ -347,7 +347,7 @@ export default {
           {{e.Vendor}}
         </template>
       </v-col>
-      <v-col v-if="e.BudgetLine || (selected.Changes && selected.Changes.Events[idx].BudgetLine)">
+      <v-col>
         <div class="floating-title">Budget Line</div>
         <template v-if="selected.Changes != null && e.BudgetLine != selected.Changes.Events[idx].BudgetLine">
           <template v-if="approvalmode">
@@ -363,7 +363,7 @@ export default {
         </template>
       </v-col>
     </v-row>
-    <v-row v-if="e.Menu || (selected.Changes && selected.Changes.Events[idx].Menu)">
+    <v-row>
       <v-col>
         <div class="floating-title">Preferred Menu</div>
         <template v-if="selected.Changes != null && e.Menu != selected.Changes.Events[idx].Menu">

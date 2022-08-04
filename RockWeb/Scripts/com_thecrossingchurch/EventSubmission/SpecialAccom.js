@@ -132,6 +132,7 @@ export default {
         v-model="e.Doors"
         item-text="Value"
         item-value="Id"
+        item-disabled="IsHeader"
         prepend-inner-icon="mdi-map"
         @click:prepend-inner="openMap"
         hint="You may choose specific doors, or leave this blank and the ops team will open doors that make sense for your event"

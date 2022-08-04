@@ -108,6 +108,7 @@ export default {
             :items="budgetLines"
             item-value="Id"
             item-text="Value"
+            item-disabled="IsDisabled"
             :rules="[rules.required(e.BudgetLine, 'Budget Line')]"
           ></v-autocomplete>
         </v-col>
@@ -240,6 +241,7 @@ export default {
               :items="budgetLines"
               item-value="Id"
               item-text="Value"
+              item-disabled="IsDisabled"
             ></v-autocomplete>
           </v-col>
         </v-row>
@@ -320,6 +322,9 @@ export default {
     this.allEvents = [];
     this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value);
     this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value);
+    this.budgetLines.forEach(b => {
+      b.IsDisabled = !b.IsActive
+    })
   },
   filters: {
     formatDate(val) {

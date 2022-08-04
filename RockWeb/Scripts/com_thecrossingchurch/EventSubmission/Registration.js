@@ -253,6 +253,9 @@ export default {
   created: function () {
     this.rooms = JSON.parse($('[id$="hfRooms"]')[0].value)
     this.budgetLines = JSON.parse($('[id$="hfBudgetLines"]')[0].value)
+    this.budgetLines.forEach(b => {
+      b.IsDisabled = !b.IsActive
+    })
   },
   methods: {
     formatRooms(val) {
