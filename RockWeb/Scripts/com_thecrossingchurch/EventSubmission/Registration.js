@@ -20,7 +20,7 @@ export default {
       :date="e.RegistrationDate"
       label="What date do you need the registration link to be ready and live?"
       clearable
-      :rules="[rules.required(e.RegistrationDate, 'Start Date')]"
+      :rules="[rules.required(e.RegistrationDate, 'Start Date'), rules.registrationStartDate(earliestRegDate, e.RegistrationDate)]"
       :min="earliestRegDate"
     ></date-picker>
   </v-col>
@@ -212,6 +212,9 @@ export default {
                       return !!val || `${field} is required`;
                   }
                   return true
+              },
+              registrationStartDate(earliestRegDate, startDate) {
+                return earliestRegDate <= startDate || `Registration cannot start before ${moment(earliestRegDate).format('MM/DD/yyyy')}`
               },
               registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare) {
                   let dates = eventDates.map(d => moment(d))
