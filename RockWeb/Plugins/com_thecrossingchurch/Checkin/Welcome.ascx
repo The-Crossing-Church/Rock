@@ -128,7 +128,8 @@
                     $CountdownTimer.countdown({
                         until: secondsUntil,
                         compact: true,
-                        onExpiry: refreshKiosk
+                        onExpiry: refreshKiosk,
+                        format: 'hh:mm:ss'
                     });
                 }
 
