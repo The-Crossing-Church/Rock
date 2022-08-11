@@ -18,6 +18,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using Rock.Lava;
 using System.Globalization;
+using Rock.Attribute;
+using Rock.Web.Cache;
 
 namespace com_thecrossingchurch.LavaFilters
 {
