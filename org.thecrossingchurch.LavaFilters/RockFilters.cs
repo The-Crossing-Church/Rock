@@ -209,119 +209,10 @@ namespace com_thecrossingchurch.LavaFilters
         /// <returns></returns>
         public static bool DateIsBetween( object input, object start, object end, string format = null )
         {
-            var type = input.GetType();
-            DateTime? target = null;
-            DateTime? rangeStart = null;
-            DateTime? rangeEnd = null;
-            if ( input.GetType() == typeof( string ) )
-            {
-                DateTime result;
-                if ( format != null )
-                {
-                    var isValid = DateTime.TryParseExact( input.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
-                    if ( isValid )
-                    {
-                        target = result;
-                    }
-                    else
-                    {
-                        throw new Exception( "Unable to parse target input as date as format: \"" + format + "\"." );
-                    }
-                }
-                else
-                {
-                    var isValid = DateTime.TryParse( input.ToString(), out result );
-                    if ( isValid )
-                    {
-                        target = new DateTime( result.Year, result.Month, result.Day, 0, 0, 0 );
-                    }
-                    else
-                    {
-                        throw new Exception( "Unable to parse target input as date." );
-                    }
-                }
-            }
-            else if ( type.FullName.Contains( "Date" ) )
-            {
-                target = ( DateTime ) input;
-            }
-            else
-            {
-                throw new Exception( "Invalid Input: target input must be of type string or date" );
-            }
-            if ( start.GetType() == typeof( string ) )
-            {
-                DateTime result;
-                if ( format != null )
-                {
-                    var isValid = DateTime.TryParseExact( start.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
-                    if ( isValid )
-                    {
-                        rangeStart = result;
-                    }
-                    else
-                    {
-                        throw new Exception( "Unable to parse start of range input as date as format: \"" + format + "\"." );
-                    }
+            DateTime? target = ParseInputForIsDateBetween( input, "target", format );
+            DateTime? rangeStart = ParseInputForIsDateBetween( start, "start", format );
+            DateTime? rangeEnd = ParseInputForIsDateBetween( end, "end", format );
 
-                }
-                else
-                {
-                    var isValid = DateTime.TryParse( start.ToString(), out result );
-                    if ( isValid )
-                    {
-                        rangeStart = result;
-                    }
-                    else
-                    {
-                        throw new Exception( "Unable to parse start of range input as date." );
-                    }
-                }
-            }
-            else if ( start.GetType().FullName.Contains( "Date" ) )
-            {
-                rangeStart = ( DateTime ) start;
-            }
-            else
-            {
-                throw new Exception( "Invalid Input: start of range must be of type string or date" );
-            }
-            if ( end.GetType() == typeof( string ) )
-            {
-                DateTime result;
-                if ( format != null )
-                {
-                    var isValid = DateTime.TryParseExact( end.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
-                    if ( isValid )
-                    {
-                        rangeEnd = result;
-                    }
-                    else
-                    {
-                        throw new Exception( "Unable to parse end of range input as date as format: \"" + format + "\"." );
-                    }
-                }
-                else
-                {
-                    var isValid = DateTime.TryParse( end.ToString(), out result );
-                    if ( isValid )
-                    {
-                        rangeEnd = new DateTime( result.Year, result.Month, result.Day, 23, 59, 59 );
-                    }
-                    else
-                    {
-                        throw new Exception( "Invalid Input: unable to parse end of range input as date." );
-                    }
-                }
-            }
-            else if ( end.GetType().FullName.Contains( "Date" ) )
-            {
-                rangeEnd = ( DateTime ) end;
-            }
-            else
-            {
-                throw new Exception( "Invalid Input: end of range must be of type string or date" );
-            }
             if ( target.HasValue && rangeEnd.HasValue && rangeStart.HasValue )
             {
                 if ( DateTime.Compare( target.Value, rangeStart.Value ) >= 0 && DateTime.Compare( target.Value, rangeEnd.Value ) <= 0 )
@@ -331,6 +222,127 @@ namespace com_thecrossingchurch.LavaFilters
                 return false;
             }
             throw new Exception( "Unable to parse input, start, and end" );
+        }
+        
+        /// <summary>
+        /// This filter parses the user input for the lava filter for the IsDateBetween method. Should not be modified without testing with that filter.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="parameter">Which parameter from lava filter, used to set time of day in some cases.</param>
+        /// <param name="format">Optional format string for parsing string to datetime.</param>
+        /// <returns></returns>
+        private static DateTime ParseInputForIsDateBetween( object input, string parameter, string format = null )
+        {
+            DateTime result;
+            if ( input.GetType() == typeof( string ) )
+            {
+                if ( format != null )
+                {
+                    var isValid = DateTime.TryParseExact( input.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
+                    if ( !isValid )
+                    {
+                        throw new Exception( "Unable to parse " + parameter + " input as date with format: \"" + format + "\"." );
+                    }
+                }
+                else
+                {
+                    var isValid = DateTime.TryParse( input.ToString(), out result );
+                    if ( isValid )
+                    {
+                        if ( parameter == "end" )
+                        {
+                            result = new DateTime( result.Year, result.Month, result.Day, 23, 59, 59 );
+                        }
+                        else if ( parameter == "start" )
+                        {
+                            result = new DateTime( result.Year, result.Month, result.Day, 0, 0, 0 );
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception( "Unable to parse " + parameter + " input as date." );
+                    }
+                }
+            }
+            else if ( input.GetType() == typeof( DateTimeOffset ) )
+            {
+                var offset = ( DateTimeOffset ) input;
+                result = offset.DateTime;
+            }
+            else if ( input.GetType() == typeof( DateTime ) )
+            {
+                result = ( DateTime ) input;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: " + parameter + " input must be of type string or date" );
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Takes a collection and groups it by the specified attribute value.
+        /// </summary>
+        /// <param name="input">A collection of objects to be grouped.</param>
+        /// <param name="attribute">The attribute key of the attribute value to use when grouping the objects.</param>
+        /// <returns>A dictionary of group keys and value collections.</returns>
+        /// <example><![CDATA[
+        /// {% assign members = group.Members | GroupByAttribute:'Position' %}
+        /// <ul>
+        /// {% for member in members %}
+        ///     {% assign parts = member | PropertyToKeyValue %}
+        ///     <li>{{ parts.Key }}</li>
+        ///     <ul>
+        ///         {% for m in parts.Value %}
+        ///             <li>{{ m.Person.FullName }}</li>
+        ///         {% endfor %}
+        ///     </ul>
+        /// {% endfor %}
+        /// </ul>
+        /// ]]></example>
+        public static object GroupByAttribute( object input, string attribute, int? limit = null )
+        {
+            IEnumerable<object> obj = input is IEnumerable<object> ? input as IEnumerable<object> : new List<object>( new[] { input } );
+
+            IEnumerable<IHasAttributes> e = obj.Cast<IHasAttributes>();
+
+            if ( !e.Any() )
+            {
+                return new Dictionary<string, List<IModel>>();
+            }
+
+            if ( string.IsNullOrWhiteSpace( attribute ) )
+            {
+                throw new Exception( "Must provide an attribute to group by." );
+            }
+
+            //Load Attribute for the Entities
+            var first = e.First();
+            first.LoadAttributes();
+            var attrId = first.Attributes[attribute].Id;
+            var values = new AttributeValueService( new RockContext() ).Queryable().Where( av => av.AttributeId == attrId );
+            var data = e.Join( values,
+                    entity => entity.Id,
+                    v => v.EntityId,
+                    ( entity, v ) =>
+                    {
+                        entity.AttributeValues[attribute] = new AttributeValueCache( v );
+                        return entity;
+                    }
+                );
+
+            var grouping = data.AsQueryable().GroupBy( x => x.GetAttributeValue( attribute ) );
+            Dictionary<string, object> groupedList;
+            if ( limit.HasValue )
+            {
+                groupedList = grouping.ToDictionary( g => g.Key != null ? g.Key.ToString() : string.Empty, g => ( object ) g.Take( limit.Value ).ToList() );
+            }
+            else
+            {
+                groupedList = grouping.ToDictionary( g => g.Key != null ? g.Key.ToString() : string.Empty, g => ( object ) g.ToList() );
+            }
+
+            return groupedList;
         }
     }
 }

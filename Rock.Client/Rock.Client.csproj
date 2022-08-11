@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\RockWeb\Bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -26,7 +26,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\RockWeb\Bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -83,6 +83,7 @@
     <Compile Include="CodeGenerated\Audit.cs" />
     <Compile Include="CodeGenerated\AuditDetail.cs" />
     <Compile Include="CodeGenerated\Auth.cs" />
+    <Compile Include="CodeGenerated\AuthAuditLog.cs" />
     <Compile Include="CodeGenerated\AuthClaim.cs" />
     <Compile Include="CodeGenerated\AuthClient.cs" />
     <Compile Include="CodeGenerated\AuthScope.cs" />
@@ -91,6 +92,8 @@
     <Compile Include="CodeGenerated\BenevolenceRequest.cs" />
     <Compile Include="CodeGenerated\BenevolenceRequestDocument.cs" />
     <Compile Include="CodeGenerated\BenevolenceResult.cs" />
+    <Compile Include="CodeGenerated\BenevolenceType.cs" />
+    <Compile Include="CodeGenerated\BenevolenceWorkflow.cs" />
     <Compile Include="CodeGenerated\BinaryFile.cs" />
     <Compile Include="CodeGenerated\BinaryFileData.cs" />
     <Compile Include="CodeGenerated\BinaryFileType.cs" />
@@ -116,6 +119,7 @@
     <Compile Include="CodeGenerated\ConnectionRequestActivity.cs" />
     <Compile Include="CodeGenerated\ConnectionRequestWorkflow.cs" />
     <Compile Include="CodeGenerated\ConnectionStatus.cs" />
+    <Compile Include="CodeGenerated\ConnectionStatusAutomation.cs" />
     <Compile Include="CodeGenerated\ConnectionType.cs" />
     <Compile Include="CodeGenerated\ConnectionWorkflow.cs" />
     <Compile Include="CodeGenerated\ContentChannel.cs" />
@@ -218,6 +222,7 @@
     <Compile Include="CodeGenerated\InteractionImport.cs" />
     <Compile Include="CodeGenerated\InteractionImportInteraction.cs" />
     <Compile Include="CodeGenerated\InteractionSession.cs" />
+    <Compile Include="CodeGenerated\InteractionSessionLocation.cs" />
     <Compile Include="CodeGenerated\InteractionsImport.cs" />
     <Compile Include="CodeGenerated\LavaShortcode.cs" />
     <Compile Include="CodeGenerated\Layout.cs" />

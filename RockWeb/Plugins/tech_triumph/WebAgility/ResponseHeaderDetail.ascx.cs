@@ -26,7 +26,7 @@ namespace RockWeb.Plugins.tech_triumph.WebAgility
     /// <summary>
     /// Block for editing Response Header Rules
     /// </summary>
-    [DisplayName( "ResponseHeader Rule Detail" )]
+    [DisplayName( "Response Header Rule Detail" )]
     [Category( "Triumph Tech > Web Agility" )]
     [Description( "Block for editing Response Header Rules." )]
     public partial class ResponseHeaderDetail : RockBlock

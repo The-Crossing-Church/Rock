@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -262,12 +262,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                 .Where( s => s.CheckInStartOffsetMinutes.HasValue && s.IsActive )
                 .ToList() )
             {
-                if ( schedule.WasCheckInActive( when ) || ( when.TimeOfDay.Ticks == 0 && schedule.GetOccurrences( when.Date ).Any() ) )
+                if ( schedule.WasCheckInActive( when ) || ( when.TimeOfDay.Ticks == 0 && schedule.GetICalOccurrences( when.Date ).Any() ) )
                 {
                     // Get the start/end times for the schedule
-                    var calEvent = schedule.GetCalenderEvent();
-                    var start = when.Date.Add( calEvent.DTStart.TimeOfDay );
-                    var end = when.Date.Add( calEvent.DTEnd.TimeOfDay );
+                    var calEvent = schedule.GetICalEvent();
+                    var start = when.Date.Add( calEvent.Start.Date.TimeOfDay );
+                    var end = when.Date.Add( calEvent.End.Date.TimeOfDay );
 
                     // Start a query for the group/locations linked to that schedule
                     var groupLocationQry = new GroupLocationService( rockContext )

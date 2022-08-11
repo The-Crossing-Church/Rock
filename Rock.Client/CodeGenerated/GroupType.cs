@@ -123,7 +123,7 @@ namespace Rock.Client
 
         /// <summary />
         public string GroupViewLavaTemplate { get; set; } = @"{% if Group.GroupType.GroupCapacityRule != 'None' and Group.GroupCapacity != '' %}
-		{% assign warningLevel = ''warning'' %}
+		{% assign warningLevel = 'warning' %}
 
 		{% if Group.GroupType.GroupCapacityRule == 'Hard' %}
 			{% assign warningLevel = 'danger' %}
@@ -298,6 +298,9 @@ namespace Rock.Client
         public int? InheritedGroupTypeId { get; set; }
 
         /// <summary />
+        public bool IsCapacityRequired { get; set; }
+
+        /// <summary />
         public bool IsIndexEnabled { get; set; }
 
         /// <summary />
@@ -444,6 +447,7 @@ namespace Rock.Client
             this.IconCssClass = source.IconCssClass;
             this.IgnorePersonInactivated = source.IgnorePersonInactivated;
             this.InheritedGroupTypeId = source.InheritedGroupTypeId;
+            this.IsCapacityRequired = source.IsCapacityRequired;
             this.IsIndexEnabled = source.IsIndexEnabled;
             this.IsSchedulingEnabled = source.IsSchedulingEnabled;
             this.IsSystem = source.IsSystem;

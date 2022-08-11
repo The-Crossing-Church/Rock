@@ -1051,7 +1051,7 @@ namespace RockWeb.com_bemaservices.Promotion
                 gfSettings.SaveUserPreference ( "Active Status", ddlActiveFilter.SelectedValue );
             }
 
-            gfSettings.SaveUserPreference ( "Group Type Purpose", ddlGroupTypePurpose.SelectedValue );
+            gfSettings.SaveUserPreference ( "Group Type Purpose", dvpGroupTypePurpose.SelectedValue );
 
             BindGrid ();
         }
@@ -1241,8 +1241,8 @@ namespace RockWeb.com_bemaservices.Promotion
                 gtpGroupType.SelectedValue = gfSettings.GetUserPreference ( "Group Type" );
             }
 
-            ddlGroupTypePurpose.BindToDefinedType ( DefinedTypeCache.Get ( Rock.SystemGuid.DefinedType.GROUPTYPE_PURPOSE.AsGuid () ), true );
-            ddlGroupTypePurpose.SetValue ( gfSettings.GetUserPreference ( "Group Type Purpose" ) );
+            dvpGroupTypePurpose.DefinedTypeId = DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.GROUPTYPE_PURPOSE ) ).Id;
+            dvpGroupTypePurpose.SetValue ( gfSettings.GetUserPreference ( "Group Type Purpose" ) );
 
             // Set the Active Status
             var itemActiveStatus = ddlActiveFilter.Items.FindByValue ( gfSettings.GetUserPreference ( "Active Status" ) );

@@ -40,6 +40,7 @@ namespace Rock.Financial
             public const string RenderMedium = "RenderMedium";
             public const string FinancialStatementTemplate = "FinancialStatementTemplate";
             public const string RenderedPageCount = "RenderedPageCount";
+            public const string Person = "Person";
             public const string PersonList = "PersonList";
             public const string StatementStartDate = "StatementStartDate";
             public const string StatementEndDate = "StatementEndDate";
@@ -382,6 +383,7 @@ namespace Rock.Financial
                 mergeFields.Add( MergeFieldKey.FinancialStatementTemplate, financialStatementTemplate );
                 mergeFields.Add( MergeFieldKey.RenderedPageCount, financialStatementGeneratorRecipientRequest.FinancialStatementGeneratorRecipient.RenderedPageCount );
 
+                mergeFields.Add( MergeFieldKey.Person, person );
                 mergeFields.Add( MergeFieldKey.PersonList, personList );
                 mergeFields.Add( MergeFieldKey.StatementStartDate, financialStatementGeneratorOptions.StartDate );
                 var humanFriendlyEndDate = financialStatementGeneratorOptions.EndDate.HasValue ? financialStatementGeneratorOptions.EndDate.Value.AddDays( -1 ) : RockDateTime.Now.Date;
@@ -488,14 +490,18 @@ namespace Rock.Financial
                             // remove the refund's original TransactionDetails from the results
                             if ( transactionDetailListAll.Contains( refundedOriginalTransactionDetail ) )
                             {
-                                transactionDetailListAll.Remove( refundedOriginalTransactionDetail );
                                 foreach ( var refundDetailId in refund.FinancialTransaction.TransactionDetails.Select( a => a.Id ) )
                                 {
-                                    // remove the refund's transaction from the results
                                     var refundDetail = transactionDetailListAll.FirstOrDefault( a => a.Id == refundDetailId );
                                     if ( refundDetail != null )
                                     {
-                                        transactionDetailListAll.Remove( refundDetail );
+                                        // If this is full refund, remove it from the list of transactions.
+                                        // If this is a partial refund, we'll need to keep it otherwise the totals won't match.
+                                        if ( ( refundDetail.AccountId == refundedOriginalTransactionDetail.AccountId ) && ( refundDetail.Amount + refundedOriginalTransactionDetail.Amount == 0 ) )
+                                        {
+                                            transactionDetailListAll.Remove( refundDetail );
+                                            transactionDetailListAll.Remove( refundedOriginalTransactionDetail );
+                                        }
                                     }
                                 }
                             }

@@ -27,8 +27,10 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
     [TextField( "Heading", "The text to display as the heading.", true, "Filters", "", 1 )]
     [TextField( "Heading Icon CSS Class", "The css class name to use for the heading icon. ", true, "fa fa-filter", "", 2 )]
     [BooleanField( "Show Reset Filters", "Determines if the Reset Filters button should be displayed", true, "", 3 )]
-    [TextField( "Filter Button Text", "Sets the button text for the filter button.", true, "Filter", "", 4)]
-    [LinkedPage( "Page Redirect", "If set, the filter button will redirect to the selected page.", false, "", "", 5 )]
+    [BooleanField( "Show Filter Button", "Determines if the Filter button should be displayed", true, "", 4 )]
+    [BooleanField( "Reset Page Parameters Upon Filter","If true, will reset any existing page parameters in the query string and only apply the new parameters.", false,"", 5, IsRequired = true)]
+    [TextField( "Filter Button Text", "Sets the button text for the filter button.", true, "Filter", "", 6)]
+    [LinkedPage( "Page Redirect", "If set, the filter button will redirect to the selected page.", false, "", "", 7 )]
 
     [TextField( "FilterAttributesExtendedSettings", "Internal JSON used for the additional filter attribute settings.", false, "", "CustomSetting" )]
     public partial class PageParameterFilters : RockBlock, IDynamicAttributesBlock
@@ -97,6 +99,7 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
             btnFilter.Text = filterButtonText.IsNotNullOrWhiteSpace() ? filterButtonText : "Filter";
 
             btnResetFilters.Visible = GetAttributeValue( "ShowResetFilters" ).AsBoolean();
+            btnFilter.Visible = GetAttributeValue( "ShowFilterButton" ).AsBoolean();
 
             var securityField = gFilters.ColumnsOfType<SecurityField>().FirstOrDefault();
             if ( securityField != null )
@@ -111,6 +114,7 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
             // this event gets fired after block settings are updated.
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
+
         }
 
         /// <summary>
@@ -164,12 +168,14 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
             {
                 // get extended settings
                 bool hideLabel = false;
+                bool enableAutoPostBack = false;
                 string preHtml = "";
                 string postHtml = "";
                 var filterAttribExtendedSetting = _filterAttributesExtendedSettings.GetValueOrNull( attribute.Guid );
                 if ( filterAttribExtendedSetting != null )
                 {
                     hideLabel = filterAttribExtendedSetting.HideLabel;
+                    enableAutoPostBack = filterAttribExtendedSetting.EnableAutoPostback;
                     preHtml = filterAttribExtendedSetting.PreHtml;
                     postHtml = filterAttribExtendedSetting.PostHtml;
                 }
@@ -183,16 +189,19 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
                 // build filter control (if allowed)
                 if ( attribute.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                 {
+                    Control control = null;
                     var attributeCache = AttributeCache.Get( attribute.Guid );
                     var value = Request.QueryString[attribute.Key];
                     if ( value != null )
                     {
-                        attributeCache.AddControl( phAttributes.Controls, value, BlockValidationGroup, true, true, false, hideLabel ? "" : attribute.Name, attribute.Description );
+                        control = attributeCache.AddControl( phAttributes.Controls, value, BlockValidationGroup, true, true, false, hideLabel ? "" : attribute.Name, attribute.Description );
                     }
                     else 
                     {
-                        attributeCache.AddControl( phAttributes.Controls, attribute.DefaultValue ?? "", BlockValidationGroup, true, true, false, hideLabel ? "" : attribute.Name, attribute.Description );
+                        control = attributeCache.AddControl( phAttributes.Controls, attribute.DefaultValue ?? "", BlockValidationGroup, true, true, false, hideLabel ? "" : attribute.Name, attribute.Description );
                     }
+
+                    SetAutoPostBack( control, enableAutoPostBack );
                 }
 
                 // post html
@@ -203,12 +212,63 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
             }
         }
 
+        private void SetAutoPostBack( Control control, bool enableAutoPostBack )
+        {
+            if ( control != null && enableAutoPostBack )
+            {
+                var lc = control as ListControl;
+                if ( lc != null )
+                {
+                    lc.AutoPostBack = true;
+                    lc.SelectedIndexChanged += btnFilter_Click;
+                }
+
+                var tb = control as TextBox;
+                if ( tb != null )
+                {
+                    tb.AutoPostBack = true;
+                    tb.TextChanged += btnFilter_Click;
+                }
+
+                var ip = control as ItemPicker;
+                if ( ip != null )
+                {
+                    ip.SelectItem += btnFilter_Click;
+                }
+
+                var cb = control as CheckBox;
+                if ( cb != null )
+                {
+                    cb.AutoPostBack = true;
+                    cb.CheckedChanged += btnFilter_Click;
+                }
+
+                foreach ( Control childControl in control.Controls )
+                {
+                    SetAutoPostBack( childControl, true );
+                }
+            }
+        }
+
         /// <summary>
         /// Resets the filters to their original state.  Any filters with default values will be set as well.
         /// </summary>
         private void ResetFilters()
         {
-            var queryString = HttpUtility.ParseQueryString( String.Empty );
+            IEnumerable<KeyValuePair<string,string>> originalQueryString = Request.QueryString.Cast<string>().Select(key => new KeyValuePair<string, string>(key, Request.QueryString[key]));
+            originalQueryString = originalQueryString.Where(q => _block.Attributes.Select(a => a.Key).Contains(q.Key) == false);
+
+            string originalQueryStringToParse = string.Empty;
+            for(int i=0; i < originalQueryString.Count(); i++)
+            {
+                originalQueryStringToParse += originalQueryString.ElementAt(i).Key + "=" + originalQueryString.ElementAt(i).Value;
+                if(i < originalQueryString.Count() - 1)
+                {
+                    originalQueryStringToParse += "&";
+                }
+            }
+
+            var queryString = GetAttributeValue("ResetPageParametersUponFilter").AsBoolean() ? HttpUtility.ParseQueryString(String.Empty) : HttpUtility.ParseQueryString(originalQueryStringToParse);
 
             BuildControls();
 
@@ -318,7 +378,8 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnFilter_Click( object sender, EventArgs e )
         {
-            var queryString = HttpUtility.ParseQueryString( String.Empty );
+            var queryString = GetAttributeValue("ResetPageParametersUponFilter").AsBoolean() ? HttpUtility.ParseQueryString(String.Empty) : HttpUtility.ParseQueryString(Request.QueryString.ToString());
+
             _block.LoadAttributes( new RockContext() );
 
             if ( _block.Attributes != null )
@@ -403,6 +464,7 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
             edtFilter.PreHtml = "";
             edtFilter.PostHtml = "";
             cbHideLabel.Checked = false;
+            cbEnableAutoPostback.Checked = false;
 
             edtFilter.ReservedKeyNames = attributeService.Get( _blockTypeEntityId, "Id", _block.Id.ToString() )
                  .Select( a => a.Key )
@@ -440,12 +502,14 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
                 edtFilter.PreHtml = filterAttribExtendedSetting.PreHtml;
                 edtFilter.PostHtml = filterAttribExtendedSetting.PostHtml;
                 cbHideLabel.Checked = filterAttribExtendedSetting.HideLabel;
+                cbEnableAutoPostback.Checked = filterAttribExtendedSetting.EnableAutoPostback;
             }
             else
             {
                 edtFilter.PreHtml = "";
                 edtFilter.PreHtml = "";
                 cbHideLabel.Checked = false;
+                cbEnableAutoPostback.Checked = false;
             }
 
             mdFilter.Title = "Edit Filter";
@@ -540,6 +604,7 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
 
             FilterAttributeExtendedSettings formFields = new FilterAttributeExtendedSettings();
             formFields.HideLabel = cbHideLabel.Checked;
+            formFields.EnableAutoPostback = cbEnableAutoPostback.Checked;
             formFields.PreHtml = edtFilter.PreHtml;
             formFields.PostHtml = edtFilter.PostHtml;
 
@@ -571,6 +636,11 @@ namespace RockWeb.Plugins.rocks_pillars.Cms
             /// The hide label setting.
             /// </value>
             public bool HideLabel { get; set; }
+
+            /// <summary>
+            /// Gets or sets the Enable Auto Post Back value
+            /// </summary>
+            public bool EnableAutoPostback { get; set; }
 
             /// <summary>
             /// Gets or sets the pre HTML.

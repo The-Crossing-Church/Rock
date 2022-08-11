@@ -172,7 +172,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
         protected void fDevice_ApplyFilterClick( object sender, EventArgs e )
         {
             fDevice.SaveUserPreference( "Name", tbName.Text );
-            fDevice.SaveUserPreference( "Device Type", ddlDeviceType.SelectedValue );
+            fDevice.SaveUserPreference( "Device Type", dvpDeviceType.SelectedValue );
             fDevice.SaveUserPreference( "IP Address", tbIPAddress.Text );
             fDevice.SaveUserPreference( "Print To", ddlPrintTo.SelectedValue );
             fDevice.SaveUserPreference( "Printer", ddlPrinter.SelectedValue );
@@ -221,12 +221,12 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
 
                 case "Print To":
 
-                    e.Value = ( (PrintTo)System.Enum.Parse( typeof( PrintTo ), e.Value ) ).ToString();
+                    e.Value = ( ( PrintTo ) System.Enum.Parse( typeof( PrintTo ), e.Value ) ).ToString();
                     break;
 
                 case "Print From":
 
-                    e.Value = ( (PrintFrom)System.Enum.Parse( typeof( PrintFrom ), e.Value ) ).ToString();
+                    e.Value = ( ( PrintFrom ) System.Enum.Parse( typeof( PrintFrom ), e.Value ) ).ToString();
                     break;
             }
         }
@@ -259,8 +259,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
         /// </summary>
         private void BindFilter()
         {
-            ddlDeviceType.BindToDefinedType( DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.DEVICE_TYPE ) ) );
-            ddlDeviceType.Items.Insert( 0, new ListItem( string.Empty, string.Empty ) );
+            dvpDeviceType.DefinedTypeId = DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.DEVICE_TYPE ) ).Id;
 
             ddlPrintTo.BindToEnum<PrintTo>();
             ddlPrintTo.Items.Insert( 0, new ListItem( string.Empty, string.Empty ) );
@@ -278,7 +277,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
             if ( !Page.IsPostBack )
             {
                 tbName.Text = fDevice.GetUserPreference( "Name" );
-                ddlDeviceType.SetValue( fDevice.GetUserPreference( "Device Type" ) );
+                dvpDeviceType.SetValue( fDevice.GetUserPreference( "Device Type" ) );
                 tbIPAddress.Text = fDevice.GetUserPreference( "IP Address" );
                 ddlPrintTo.SetValue( fDevice.GetUserPreference( "Print To" ) );
                 ddlPrinter.SetValue( fDevice.GetUserPreference( "Printer" ) );
@@ -335,7 +334,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
 
                 if ( !string.IsNullOrWhiteSpace( fDevice.GetUserPreference( "Print To" ) ) )
                 {
-                    PrintTo printTo = (PrintTo)System.Enum.Parse( typeof( PrintTo ), fDevice.GetUserPreference( "Print To" ) ); ;
+                    PrintTo printTo = ( PrintTo ) System.Enum.Parse( typeof( PrintTo ), fDevice.GetUserPreference( "Print To" ) ); ;
                     queryable = queryable.Where( d => d.PrintToOverride == printTo );
                 }
 
@@ -347,7 +346,7 @@ namespace RockWeb.Plugins.com_centralaz.CheckIn
 
                 if ( !string.IsNullOrWhiteSpace( fDevice.GetUserPreference( "Print From" ) ) )
                 {
-                    PrintFrom printFrom = (PrintFrom)System.Enum.Parse( typeof( PrintFrom ), fDevice.GetUserPreference( "Print From" ) ); ;
+                    PrintFrom printFrom = ( PrintFrom ) System.Enum.Parse( typeof( PrintFrom ), fDevice.GetUserPreference( "Print From" ) ); ;
                     queryable = queryable.Where( d => d.PrintFrom == printFrom );
                 }
 

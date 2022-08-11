@@ -33,12 +33,6 @@ namespace RockWeb.Plugins.rocks_pillars.Communication
     [TextField("Default Message","The initial default message to display.", false, "", "", 2)]
     public partial class SimpleSMSEntry : Rock.Web.UI.RockBlock
     {
-        #region Fields
-
-        private int _recipientCount;
-        private int _numbersSelectedCount;
-
-        #endregion
 
         #region Properties
 

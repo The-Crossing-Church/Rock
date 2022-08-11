@@ -62,8 +62,10 @@
 							ON sdstatusatt."Key" = 'SimpleDonationRecurringStatus'
 						LEFT JOIN AttributeValue sdstatusav
 							ON sdstatusav.AttributeId = sdstatusatt.Id AND sdstatusav.EntityId = st.Id
+						LEFT JOIN FinancialPaymentDetail fpd
+							ON fpd.Id = st.FinancialPaymentDetailId
 						WHERE av.Value = 'true'
-						AND st.FinancialPaymentDetailId IS NULL
+						AND fpd.AccountNumberMasked IS NULL
 					{% endsql %}
 
 					{% assign toUpdate = toBeUpdated | First  %}
@@ -89,8 +91,10 @@
 							ON sdstatusatt."Key" = 'SimpleDonationRecurringStatus'
 						LEFT JOIN AttributeValue sdstatusav
 							ON sdstatusav.AttributeId = sdstatusatt.Id AND sdstatusav.EntityId = st.Id
+						LEFT JOIN FinancialPaymentDetail fpd
+							ON fpd.Id = st.FinancialPaymentDetailId
 						WHERE av.Value = 'true'
-						AND st.FinancialPaymentDetailId IS NOT NULL
+						AND fpd.AccountNumberMasked IS NOT NULL
 						AND sdstatusav.Value IN ('Inactive','Cancelled')
 					{% endsql %}
 
@@ -117,8 +121,10 @@
 							ON sdstatusatt."Key" = 'SimpleDonationRecurringStatus'
 						LEFT JOIN AttributeValue sdstatusav
 							ON sdstatusav.AttributeId = sdstatusatt.Id AND sdstatusav.EntityId = st.Id
+						LEFT JOIN FinancialPaymentDetail fpd
+							ON fpd.Id = st.FinancialPaymentDetailId
 						WHERE av.Value = 'true'
-						AND st.FinancialPaymentDetailId IS NOT NULL
+						AND fpd.AccountNumberMasked IS NOT NULL
 						AND sdstatusav.Value = 'Active'
 					{% endsql %}
 
