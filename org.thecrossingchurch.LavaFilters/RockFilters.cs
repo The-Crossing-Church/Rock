@@ -17,23 +17,28 @@ using Rock.Model;
 using System.Drawing;
 using System.Drawing.Imaging;
 using Rock.Lava;
+using System.Globalization;
 
-namespace com_thecrossingchurch.LavaFilters {
+namespace com_thecrossingchurch.LavaFilters
+{
     /// <summary>
     /// Custom startup class used to register custom filters
     /// </summary>
-    public class Startup : IRockStartup {
+    public class Startup : IRockStartup
+    {
         public int StartupOrder => 0;
         /// <summary>
         /// Called when rock applicatoin starts up.
         /// </summary>
         /// <exception cref="System.NotImplementedException"></exception>
-        public void OnStartup() {
-            Template.RegisterFilter(typeof(RockFilters));
+        public void OnStartup()
+        {
+            Template.RegisterFilter( typeof( RockFilters ) );
         }
     }
 
-    public class RockFilters {
+    public class RockFilters
+    {
         /// <summary>
         /// Generate QR Code for URL.
         /// </summary>
@@ -41,15 +46,17 @@ namespace com_thecrossingchurch.LavaFilters {
         /// <param name="page">The page number.</param>
         /// <param name="query">The query string, = will be added to end before the input.</param>
         /// <returns></returns>
-        public static string QRCodeFromURL(object input, string page, string query) {
-            if (input == null || page == null || query == null) {
+        public static string QRCodeFromURL( object input, string page, string query )
+        {
+            if ( input == null || page == null || query == null )
+            {
                 return null;
             }
             QREncoder Encoder = new QREncoder();
             string host = ConfigurationManager.AppSettings["RockBaseUrl"];
             string url = host + "/page/" + page + "?" + query + "=" + input.ToString();
-            var qrCode = Encoder.Encode(ErrorCorrection.M, url);
-            return JsonConvert.SerializeObject(qrCode);
+            var qrCode = Encoder.Encode( ErrorCorrection.M, url );
+            return JsonConvert.SerializeObject( qrCode );
         }
 
         /// <summary>
@@ -57,14 +64,16 @@ namespace com_thecrossingchurch.LavaFilters {
         /// </summary>
         /// <param name="input">The input to turn into a qr.</param>
         /// <returns></returns>
-        public static string QRCodeFromString(object input) {
-            if (input == null) {
+        public static string QRCodeFromString( object input )
+        {
+            if ( input == null )
+            {
                 return null;
             }
             QREncoder Encoder = new QREncoder();
             string url = input.ToString();
-            var qrCode = Encoder.Encode(ErrorCorrection.M, url);
-            return JsonConvert.SerializeObject(qrCode);
+            var qrCode = Encoder.Encode( ErrorCorrection.M, url );
+            return JsonConvert.SerializeObject( qrCode );
         }
 
         /// <summary>
@@ -72,13 +81,15 @@ namespace com_thecrossingchurch.LavaFilters {
         /// </summary>
         /// <param name="input">The input to turn into a qr.</param>
         /// <returns></returns>
-        public static string QRCodeAsImage(object input, int? size = 3) {
-            if (input == null) {
+        public static string QRCodeAsImage( object input, int? size = 3 )
+        {
+            if ( input == null )
+            {
                 return null;
             }
             QREncoder Encoder = new QREncoder();
             string url = input.ToString();
-            var qrCode = Encoder.Encode(ErrorCorrection.M, url);
+            var qrCode = Encoder.Encode( ErrorCorrection.M, url );
 
             string html = @"
             <style>
@@ -94,32 +105,38 @@ namespace com_thecrossingchurch.LavaFilters {
                 }
             </style>
             <table>";
-            int x = qrCode.GetLength(0);
-            int y = qrCode.GetLength(1);
-            for (int i = 0; i < qrCode.GetLength(0); i++) {
+            int x = qrCode.GetLength( 0 );
+            int y = qrCode.GetLength( 1 );
+            for ( int i = 0; i < qrCode.GetLength( 0 ); i++ )
+            {
                 html += "<tr>";
-                for (int k = 0; k < qrCode.GetLength(1); k++) {
-                    if (qrCode[i, k]) {
+                for ( int k = 0; k < qrCode.GetLength( 1 ); k++ )
+                {
+                    if ( qrCode[i, k] )
+                    {
                         html += "<td class='qr qr-fill'></td>";
-                    } else {
+                    }
+                    else
+                    {
                         html += "<td class='qr'></td>";
                     }
                 }
                 html += "</tr>";
             }
             html += "</table>";
-            Bitmap m_Bitmap = new Bitmap(qrCode.GetLength(0) * size.Value, qrCode.GetLength(1) * size.Value);
-            PointF point = new PointF(0, 0);
-            SizeF maxSize = new System.Drawing.SizeF(500, 500);
-            TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.Render(Graphics.FromImage(m_Bitmap), html, point, maxSize);
+            Bitmap m_Bitmap = new Bitmap( qrCode.GetLength( 0 ) * size.Value, qrCode.GetLength( 1 ) * size.Value );
+            PointF point = new PointF( 0, 0 );
+            SizeF maxSize = new System.Drawing.SizeF( 500, 500 );
+            TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.Render( Graphics.FromImage( m_Bitmap ), html, point, maxSize );
             string dataUrl = "";
-            using (MemoryStream ms = new MemoryStream()) {
-                m_Bitmap.Save(ms, ImageFormat.Png);
+            using ( MemoryStream ms = new MemoryStream() )
+            {
+                m_Bitmap.Save( ms, ImageFormat.Png );
                 byte[] byteArr = ms.ToArray();
-                string b64Txt = Convert.ToBase64String(byteArr);
+                string b64Txt = Convert.ToBase64String( byteArr );
                 dataUrl = "data:image/png;base64," + b64Txt;
             }
-            Console.WriteLine("x");
+            Console.WriteLine( "x" );
             return dataUrl;
         }
 
@@ -128,20 +145,26 @@ namespace com_thecrossingchurch.LavaFilters {
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns></returns>
-        public static dynamic Pop(object input) {
+        public static dynamic Pop( object input )
+        {
             var type = input.GetType();
-            if (input.GetType() == typeof(string)) {
-                List<string> list = input.ToString().Split(',').ToList();
-                list.RemoveAt(0);
-                return string.Join(",", list);
-            } else if (type.FullName.Contains("Collection")) {
-                Type listType = typeof(List<>).MakeGenericType(new[] { type });
-                IList list = (IList)Activator.CreateInstance(listType);
-                list = (IList)input;
-                list.RemoveAt(0);
+            if ( input.GetType() == typeof( string ) )
+            {
+                List<string> list = input.ToString().Split( ',' ).ToList();
+                list.RemoveAt( 0 );
+                return string.Join( ",", list );
+            }
+            else if ( type.FullName.Contains( "Collection" ) )
+            {
+                Type listType = typeof( List<> ).MakeGenericType( new[] { type } );
+                IList list = ( IList ) Activator.CreateInstance( listType );
+                list = ( IList ) input;
+                list.RemoveAt( 0 );
                 return list;
-            } else {
-                throw new Exception("Invalid Input: input must be of type string or Collection");
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string or Collection" );
             }
         }
 
@@ -150,22 +173,30 @@ namespace com_thecrossingchurch.LavaFilters {
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns></returns>
-        public static dynamic Pronoun(object input) {
+        public static dynamic Pronoun( object input )
+        {
             var type = input.GetType();
-            if (input.GetType() == typeof(string)) {
-                List<string> list = input.ToString().Split(',').ToList();
-                if (list.Count() > 1) {
+            if ( input.GetType() == typeof( string ) )
+            {
+                List<string> list = input.ToString().Split( ',' ).ToList();
+                if ( list.Count() > 1 )
+                {
                     return new { Subject = "they", Object = "them", Posessive = "their" };
                 }
-                Person p = new PersonService(new RockContext()).Get(Int32.Parse(list[0]));
-                if (p.Gender == Gender.Female) {
+                Person p = new PersonService( new RockContext() ).Get( Int32.Parse( list[0] ) );
+                if ( p.Gender == Gender.Female )
+                {
                     return new { Subject = "she", Object = "her", Posessive = "her" };
-                } else if (p.Gender == Gender.Male) {
+                }
+                else if ( p.Gender == Gender.Male )
+                {
                     return new { Subject = "he", Object = "him", Posessive = "his" };
                 }
                 return new { Subject = "they", Object = "them", Posessive = "their" };
-            } else {
-                throw new Exception("Invalid Input: input must be of type string");
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: input must be of type string" );
             }
         }
 
@@ -176,39 +207,130 @@ namespace com_thecrossingchurch.LavaFilters {
         /// <param name="start">The range start date.</param>
         /// <param name="end">The range end date.</param>
         /// <returns></returns>
-        public static bool DateIsBetween(object input, object start, object end) {
+        public static bool DateIsBetween( object input, object start, object end, string format = null )
+        {
             var type = input.GetType();
             DateTime? target = null;
             DateTime? rangeStart = null;
             DateTime? rangeEnd = null;
-            if (input.GetType() == typeof(string)) {
-                target = DateTime.Parse(input.ToString());
-            } else if (type.FullName.Contains("Date")) {
-                target = (DateTime)input;
-            } else {
-                throw new Exception("Invalid Input: input must be of type string or date");
+            if ( input.GetType() == typeof( string ) )
+            {
+                DateTime result;
+                if ( format != null )
+                {
+                    var isValid = DateTime.TryParseExact( input.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
+                    if ( isValid )
+                    {
+                        target = result;
+                    }
+                    else
+                    {
+                        throw new Exception( "Unable to parse target input as date as format: \"" + format + "\"." );
+                    }
+                }
+                else
+                {
+                    var isValid = DateTime.TryParse( input.ToString(), out result );
+                    if ( isValid )
+                    {
+                        target = new DateTime( result.Year, result.Month, result.Day, 0, 0, 0 );
+                    }
+                    else
+                    {
+                        throw new Exception( "Unable to parse target input as date." );
+                    }
+                }
             }
-            if (start.GetType() == typeof(string)) {
-                rangeStart = DateTime.Parse(start.ToString());
-            } else if (start.GetType().FullName.Contains("Date")) {
-                rangeStart = (DateTime)start;
-            } else {
-                throw new Exception("Invalid Input: start of range must be of type string or date");
+            else if ( type.FullName.Contains( "Date" ) )
+            {
+                target = ( DateTime ) input;
             }
-            if (end.GetType() == typeof(string)) {
-                rangeEnd = DateTime.Parse(end.ToString());
-            } else if (end.GetType().FullName.Contains("Date")) {
-                rangeEnd = (DateTime)end;
-            } else {
-                throw new Exception("Invalid Input: end of range must be of type string or date");
+            else
+            {
+                throw new Exception( "Invalid Input: target input must be of type string or date" );
             }
-            if (target.HasValue && rangeEnd.HasValue && rangeStart.HasValue) {
-                if (DateTime.Compare(target.Value, rangeStart.Value) >= 0 && DateTime.Compare(target.Value, rangeEnd.Value) <= 0) {
+            if ( start.GetType() == typeof( string ) )
+            {
+                DateTime result;
+                if ( format != null )
+                {
+                    var isValid = DateTime.TryParseExact( start.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
+                    if ( isValid )
+                    {
+                        rangeStart = result;
+                    }
+                    else
+                    {
+                        throw new Exception( "Unable to parse start of range input as date as format: \"" + format + "\"." );
+                    }
+
+                }
+                else
+                {
+                    var isValid = DateTime.TryParse( start.ToString(), out result );
+                    if ( isValid )
+                    {
+                        rangeStart = result;
+                    }
+                    else
+                    {
+                        throw new Exception( "Unable to parse start of range input as date." );
+                    }
+                }
+            }
+            else if ( start.GetType().FullName.Contains( "Date" ) )
+            {
+                rangeStart = ( DateTime ) start;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: start of range must be of type string or date" );
+            }
+            if ( end.GetType() == typeof( string ) )
+            {
+                DateTime result;
+                if ( format != null )
+                {
+                    var isValid = DateTime.TryParseExact( end.ToString(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out result );
+                    if ( isValid )
+                    {
+                        rangeEnd = result;
+                    }
+                    else
+                    {
+                        throw new Exception( "Unable to parse end of range input as date as format: \"" + format + "\"." );
+                    }
+                }
+                else
+                {
+                    var isValid = DateTime.TryParse( end.ToString(), out result );
+                    if ( isValid )
+                    {
+                        rangeEnd = new DateTime( result.Year, result.Month, result.Day, 23, 59, 59 );
+                    }
+                    else
+                    {
+                        throw new Exception( "Invalid Input: unable to parse end of range input as date." );
+                    }
+                }
+            }
+            else if ( end.GetType().FullName.Contains( "Date" ) )
+            {
+                rangeEnd = ( DateTime ) end;
+            }
+            else
+            {
+                throw new Exception( "Invalid Input: end of range must be of type string or date" );
+            }
+            if ( target.HasValue && rangeEnd.HasValue && rangeStart.HasValue )
+            {
+                if ( DateTime.Compare( target.Value, rangeStart.Value ) >= 0 && DateTime.Compare( target.Value, rangeEnd.Value ) <= 0 )
+                {
                     return true;
                 }
                 return false;
             }
-            throw new Exception("Unable to parse input, start, and end");
+            throw new Exception( "Unable to parse input, start, and end" );
         }
     }
 }
