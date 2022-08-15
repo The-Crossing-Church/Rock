@@ -132,8 +132,8 @@ export default {
       </v-row>
       <v-row v-if="e.FoodDelivery">
         <v-col cols="12" md="6">
-          <strong>What time would you like food to be set up and ready?</strong>
-          <time-picker
+          <time-picker 
+            label="What time would you like food to be set up and ready?" 
             v-model="e.FoodTime"
             :value="e.FoodTime"
             :default="defaultFoodTime"
@@ -141,22 +141,17 @@ export default {
           ></time-picker>
         </v-col>
         <v-col cols="12" md="6">
-          <br />
-          <v-row>
-            <v-col>
-              <v-text-field
-                label="Where should the food be set up?"
-                v-model="e.FoodDropOff"
-                :rules="[rules.required(e.FoodDropOff, 'Location')]"
-              ></v-text-field>
-            </v-col>
-          </v-row>
+          <v-text-field
+            label="Where should the food be set up?"
+            v-model="e.FoodDropOff"
+            :rules="[rules.required(e.FoodDropOff, 'Location')]"
+          ></v-text-field>
         </v-col>
       </v-row>
       <v-row v-else>
         <v-col cols="12" md="6">
-          <strong>What time would you like to pick up your food?</strong>
-          <time-picker
+          <time-picker 
+            label="What time would you like to pick up your food?" 
             v-model="e.FoodTime"
             :value="e.FoodTime"
             :default="defaultFoodTime"
@@ -174,26 +169,22 @@ export default {
       </v-row>
       <v-row>
         <v-col cols="12" md="6">
-          <br />
-          <v-row>
-            <v-col>
-              <v-autocomplete
-                label="What drinks would you like to have?"
-                :items="['Coffee', 'Soda', 'Water']"
-                v-model="e.Drinks"
-                multiple
-                chips
-                attach
-              ></v-autocomplete>
-            </v-col>
-          </v-row>
+          <v-autocomplete
+            label="What drinks would you like to have?"
+            :items="['Coffee', 'Soda', 'Water']"
+            v-model="e.Drinks"
+            multiple
+            chips
+            attach
+          ></v-autocomplete>
         </v-col>
         <v-col cols="12" md="6">
-          <strong>What time would you like your drinks to be delivered?</strong>
-          <time-picker
+          <time-picker 
+            label="What time would you like your drinks to be delivered?" 
             v-model="e.DrinkTime"
             :value="e.DrinkTime"
             :default="defaultFoodTime"
+            :rules="[rules.required(e.DrinkTime, 'Time')]"
           ></time-picker>
         </v-col>
       </v-row>
@@ -256,10 +247,8 @@ export default {
         </v-row>
         <v-row>
           <v-col cols="12" md="6">
-            <strong>
-              What time would you like your childcare food delivered?
-            </strong>
-            <time-picker
+            <time-picker 
+              label="What time would you like your childcare food delivered?" 
               v-model="e.CCFoodTime"
               :value="e.CCFoodTime"
               :default="defaultFoodTime"

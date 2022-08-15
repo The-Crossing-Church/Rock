@@ -76,25 +76,20 @@ export default {
 </v-row>
 <v-row>
   <v-col cols="12" md="6">
-    <br/>
-    <v-row>
-      <v-col>
-        <date-picker
-          v-model="e.RegistrationEndDate"
-          :date="e.RegistrationEndDate"
-          label="What date should registration close?"
-          hint="We always default to 24 hours before your event if you have no reason to close registration earlier."
-          persistent-hint
-          clearable
-          :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.EventDate, e.RegistrationEndDate, request.needsChildCare)]"
-          :min="earliestRegDate"
-        ></date-picker>
-      </v-col>
-    </v-row>
+    <date-picker
+      v-model="e.RegistrationEndDate"
+      :date="e.RegistrationEndDate"
+      label="What date should registration close?"
+      hint="We always default to 24 hours before your event if you have no reason to close registration earlier."
+      persistent-hint
+      clearable
+      :rules="[rules.required(e.RegistrationEndDate, 'End Date'), rules.registrationCloseDate(request.EventDates, e.EventDate, e.RegistrationEndDate, request.needsChildCare)]"
+      :min="earliestRegDate"
+    ></date-picker>
   </v-col>
   <v-col cols="12" md="6">
-    <strong>What time should registration close?</strong>
     <time-picker
+      label="What time should registration close?" 
       v-model="e.RegistrationEndTime"
       :value="e.RegistrationEndTime"
       :default="e.StartTime"

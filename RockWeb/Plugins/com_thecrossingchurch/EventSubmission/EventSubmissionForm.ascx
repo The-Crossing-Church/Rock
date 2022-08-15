@@ -355,22 +355,33 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <strong>Start Time</strong>
-                  <time-picker
-                    v-model="request.Events[0].StartTime"
-                    :value="request.Events[0].StartTime"
-                    ref="startTime"
-                    :rules="[rules.required(request.Events[0].StartTime, 'Start Time'), rules.validTime(request.Events[0].StartTime, request.Events[0].EndTime, true)]"
+                  <time-picker 
+                    label="Start Time" 
+                    :rules="[rules.required(request.Events[0].StartTime, 'Start Time'), rules.validTime(request.Events[0].StartTime, request.Events[0].EndTime, true)]" 
+                    v-model="request.Events[0].StartTime" 
+                    :value="request.Events[0].StartTime" 
+                    :dates="request.EventDates" 
+                    @quicksettime="(t) => request.Events[0].EndTime = t"
+                    :quick-set-items='[
+                      {"mine": "08:20 AM", "theirs": "09:25 AM", "title": "1st Service"},
+                      {"mine": "09:35 AM", "theirs": "10:40 AM", "title": "2nd Service"},
+                      {"mine": "10:50 AM", "theirs": "11:55 AM", "title": "3rd Service"}
+                    ]'
                   ></time-picker>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <strong>End Time</strong>
-                  <time-picker
-                    v-model="request.Events[0].EndTime"
-                    :value="request.Events[0].EndTime"
-                    ref="endTime"
-                    :rules="[rules.required(request.Events[0].EndTime, 'End Time'), rules.validTime(request.Events[0].EndTime, request.Events[0].StartTime, false)]"
-                  ></time-picker>
+                  <time-picker 
+                    label="End Time" 
+                    :rules="[rules.required(request.Events[0].EndTime, 'End Time'), rules.validTime(request.Events[0].EndTime, request.Events[0].StartTime, false)]" 
+                    v-model="request.Events[0].EndTime" 
+                    :value="request.Events[0].EndTime" 
+                    :dates="request.EventDates" 
+                    :quick-set-items='[
+                      {"mine": "09:25 AM", "theirs": "08:20 AM", "title": "1st Service"},
+                      {"mine": "10:40 AM", "theirs": "09:35 AM", "title": "2nd Service"},
+                      {"mine": "11:55 AM", "theirs": "10:50 AM", "title": "3rd Service"}
+                    ]'
+                    @quicksettime="(t) => request.Events[0].StartTime = t"></time-picker>
                 </v-col>
               </v-row>
               <br/>
@@ -412,21 +423,33 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </v-row>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <strong>Start Time</strong>
-                      <time-picker
-                        v-model="e.StartTime"
-                        :value="e.StartTime"
-                        :ref="`startTimeLoop${3+idx}`"
-                        :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
+                      <time-picker 
+                        label="Start Time" 
+                        :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]" 
+                        v-model="e.StartTime" 
+                        :value="e.StartTime" 
+                        :dates="[e.EventDate]" 
+                        @quicksettime="(t) => e.EndTime = t"
+                        :quick-set-items='[
+                          {"mine": "08:20 AM", "theirs": "09:25 AM", "title": "1st Service"},
+                          {"mine": "09:35 AM", "theirs": "10:40 AM", "title": "2nd Service"},
+                          {"mine": "10:50 AM", "theirs": "11:55 AM", "title": "3rd Service"}
+                        ]'
                       ></time-picker>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <strong>End Time</strong>
-                      <time-picker
-                        v-model="e.EndTime"
-                        :value="e.EndTime"
-                        :ref="`endTimeLoop${3+idx}`"
-                        :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
+                      <time-picker 
+                        label="End Time" 
+                        :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]" 
+                        v-model="e.EndTime" 
+                        :value="e.EndTime" 
+                        :dates="[e.EventDate]" 
+                        :quick-set-items='[
+                          {"mine": "09:25 AM", "theirs": "08:20 AM", "title": "1st Service"},
+                          {"mine": "10:40 AM", "theirs": "09:35 AM", "title": "2nd Service"},
+                          {"mine": "11:55 AM", "theirs": "10:50 AM", "title": "3rd Service"}
+                        ]'
+                        @quicksettime="(t) => e.StartTime = t"
                       ></time-picker>
                     </v-col>
                   </v-row>
@@ -475,21 +498,33 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                   </v-row>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <strong>Start Time</strong>
-                      <time-picker
-                        v-model="e.StartTime"
-                        :value="e.StartTime"
-                        :ref="`startTimeLoop${2+idx}`"
-                        :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]"
+                      <time-picker 
+                        label="Start Time" 
+                        :rules="[rules.required(e.StartTime, 'Start Time'), rules.validTime(e.StartTime, e.EndTime, true)]" 
+                        v-model="e.StartTime" 
+                        :value="e.StartTime" 
+                        :dates="[e.EventDate]" 
+                        @quicksettime="(t) => e.EndTime = t"
+                        :quick-set-items='[
+                          {"mine": "08:20 AM", "theirs": "09:25 AM", "title": "1st Service"},
+                          {"mine": "09:35 AM", "theirs": "10:40 AM", "title": "2nd Service"},
+                          {"mine": "10:50 AM", "theirs": "11:55 AM", "title": "3rd Service"}
+                        ]'
                       ></time-picker>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <strong>End Time</strong>
-                      <time-picker
-                        v-model="e.EndTime"
-                        :value="e.EndTime"
-                        :ref="`endTimeLoop${2+idx}`"
-                        :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]"
+                      <time-picker 
+                        label="End Time" 
+                        :rules="[rules.required(e.EndTime, 'End Time'), rules.validTime(e.EndTime, e.StartTime, false)]" 
+                        v-model="e.EndTime" 
+                        :value="e.EndTime" 
+                        :dates="[e.EventDate]" 
+                        :quick-set-items='[
+                          {"mine": "09:25 AM", "theirs": "08:20 AM", "title": "1st Service"},
+                          {"mine": "10:40 AM", "theirs": "09:35 AM", "title": "2nd Service"},
+                          {"mine": "11:55 AM", "theirs": "10:50 AM", "title": "3rd Service"}
+                        ]'
+                        @quicksettime="(t) => e.StartTime = t"
                       ></time-picker>
                     </v-col>
                   </v-row>
@@ -711,16 +746,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script type="module">
-    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.5';
-    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.5';
-    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.5';
-    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.5';
-    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.5';
-    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.5';
-    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.5';
-    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.5';
-    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.5';
-    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.5';
+    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.6';
+    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.6';
+    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.6';
+    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.6';
+    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.6';
+    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.6';
+    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.6';
+    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.6';
+    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.6';
+    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.6';
     document.addEventListener("DOMContentLoaded", function () {
         Vue.component("time-picker", timePickerVue);
         Vue.component("space", spaceVue);
@@ -2254,5 +2289,25 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
       display: inline;
       padding-left: 16px;
     }
+  }
+  /* Time Picker */
+  .btn-time-wrapper {
+    margin-top: -10px;
+  }
+  .btn-time-wrapper div {
+    text-align: center;
+    padding: 4px 8px;
+    background-color: rgba(0,0,0,.12);
+    cursor: pointer;
+  }
+  .btn-time-wrapper .btn-am {
+    border-radius: 14px 14px 0px 0px;
+  }
+  .btn-time-wrapper .btn-pm {
+    border-radius: 0px 0px 14px 14px;
+  }
+  .btn-time-wrapper .active {
+    background-color: #347689;
+    color: white;
   }
 </style>

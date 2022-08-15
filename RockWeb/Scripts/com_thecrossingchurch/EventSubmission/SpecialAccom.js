@@ -62,8 +62,8 @@ export default {
         </v-row>
       </v-col>
       <v-col cols="12" md="6" v-if="e.Drinks.length > 0">
-        <strong>What time would you like your drinks to be delivered?</strong>
         <time-picker
+          label="What time would you like your drinks to be delivered?"
           v-model="e.DrinkTime"
           :value="e.DrinkTime"
           :default="defaultFoodTime"

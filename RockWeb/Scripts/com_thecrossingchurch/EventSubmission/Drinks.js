@@ -32,25 +32,19 @@ export default {
   </v-row>
   <v-row v-if="needsDrinks">
     <v-col cols="12" md="6">
-      <strong>What time would you like your drinks to be delivered?</strong>
-      <time-picker
+      <time-picker 
+        label="What time would you like your drinks to be delivered?" 
         v-model="e.DrinkTime"
         :value="e.DrinkTime"
-        :default="defaultFoodTime"
         :rules="[rules.required(e.DrinkTime, 'Time')]"
       ></time-picker>
     </v-col>
     <v-col cols="12" md="6">
-      <br/>
-      <v-row>
-        <v-col>
-          <v-text-field
-            label="Where would you like your drinks delivered?"
-            v-model="e.DrinkDropOff"
-            :rules="[rules.required(e.DrinkDropOff, 'Location')]"
-          ></v-text-field>
-        </v-col>
-      </v-row>
+      <v-text-field
+        label="Where would you like your drinks delivered?"
+        v-model="e.DrinkDropOff"
+        :rules="[rules.required(e.DrinkDropOff, 'Location')]"
+      ></v-text-field>
     </v-col>
   </v-row>
   <v-dialog

@@ -14,10 +14,8 @@ export default {
   </v-row>
   <v-row>
     <v-col cols="12" md="6">
-      <strong>
-        What time do you need childcare to start?
-      </strong>
-      <time-picker
+      <time-picker 
+        label="What time do you need childcare to start?" 
         v-model="e.CCStartTime"
         :value="e.CCStartTime"
         :default="defaultChildcareTime"
@@ -25,13 +23,10 @@ export default {
       ></time-picker>
     </v-col> 
     <v-col cols="12" md="6">
-      <strong>
-        What time will childcare end?
-      </strong>
-      <time-picker
+      <time-picker 
+        label="What time will childcare end?" 
         v-model="e.CCEndTime"
         :value="e.CCEndTime"
-        :default="e.EndTime"
         :rules="[rules.required(e.CCEndTime, 'Time')]"
       ></time-picker>
     </v-col> 
