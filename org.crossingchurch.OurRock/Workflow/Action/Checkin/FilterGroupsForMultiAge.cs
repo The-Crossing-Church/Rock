@@ -66,13 +66,16 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
                                     if ( person.Person.AgeClassification == AgeClassification.Child && possibleGroups.Contains( groupName ) )
                                     {
                                         var allSchedules = person.SelectedSchedules.OrderBy( s => s.StartTime ).ToList();
-                                        if ( schedule.Schedule.Id != allSchedules[0].Schedule.Id )
+                                        if(allSchedules.Count() > 0)
                                         {
-                                            isMultiAge = true;
-                                        }
-                                        else
-                                        {
-                                            removeMultiAge = true;
+                                            if ( schedule.Schedule.Id != allSchedules[0].Schedule.Id )
+                                            {
+                                                isMultiAge = true;
+                                            }
+                                            else
+                                            {
+                                                removeMultiAge = true;
+                                            }
                                         }
                                     }
 
