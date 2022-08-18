@@ -1543,14 +1543,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                                         if (compareTarget[x].MinsStartBuffer) {
                                             cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
                                         }
-                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute');
                                         if (compareTarget[x].MinsEndBuffer) {
                                             cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
                                         }
                                         let cRange = moment.range(cdStart, cdEnd);
                                         let current = moment.range(
                                             moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
-                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute')
                                         );
                                         if (cRange.overlaps(current)) {
                                             conflicts = true
