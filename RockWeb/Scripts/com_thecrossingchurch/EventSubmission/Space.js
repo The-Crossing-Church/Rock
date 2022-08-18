@@ -355,7 +355,7 @@ export default {
             if (event.MinsStartBuffer) {
                 cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
             }
-            let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`)
+            let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute')
             if (event.MinsEndBuffer) {
                 cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
             }
@@ -363,7 +363,7 @@ export default {
             for(let i=0; i<dates.length; i++) {
               let current = moment.range(
                   moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
-                  moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`)
+                  moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute')
               );
               if (cRange.overlaps(current)) {
                 overlaps = true
