@@ -140,7 +140,7 @@
               <div class='margin-t-sm' style='font-weight: bold;'>{{ registrationButtonText }}</div>
             {% else %}
               {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
-                <a href='{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-sm'>{{ registrationButtonText }}</a>
+                <a href='{{ RegistrationPage }}/{{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-sm'>{{ registrationButtonText }}</a>
               {% else %}
                 <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn margin-t-sm">{{ registrationButtonText }}</a>
               {% endif %}
