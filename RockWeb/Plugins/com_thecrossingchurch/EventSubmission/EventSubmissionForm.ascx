@@ -746,16 +746,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script type="module">
-    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.6';
-    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.6';
-    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.6';
-    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.6';
-    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.6';
-    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.6';
-    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.6';
-    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.6';
-    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.6';
-    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.6';
+    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.7';
+    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.7';
+    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.7';
+    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.7';
+    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.7';
+    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.7';
+    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.7';
+    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.7';
+    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.7';
+    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.7';
     document.addEventListener("DOMContentLoaded", function () {
         Vue.component("time-picker", timePickerVue);
         Vue.component("space", spaceVue);
