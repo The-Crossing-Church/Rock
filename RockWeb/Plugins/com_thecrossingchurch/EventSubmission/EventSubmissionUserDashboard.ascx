@@ -398,7 +398,7 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionU
           </v-card-text>
           <v-card-actions>
             <v-btn color="primary" @click="editRequest"
-              v-if="selected.RequestStatus == 'Draft' || selected.RequestStatus == 'Submitted' || selected.RequestStatus == 'Approved'"
+              v-if="selected.RequestStatus == 'Draft' || selected.RequestStatus == 'Submitted' || selected.RequestStatus == 'In Progress' || selected.RequestStatus == 'Approved'"
             >
               <v-icon>mdi-pencil</v-icon> Edit
             </v-btn>
