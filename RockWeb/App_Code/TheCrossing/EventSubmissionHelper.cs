@@ -24,19 +24,23 @@ namespace RockWeb.TheCrossing
         public string MinistriesJSON { get; set; }
         public List<DefinedValue> BudgetLines { get; set; }
         public string BudgetLinesJSON { get; set; }
-        public int ContentChannelId { get; set; }
-        public int ContentChannelTypeId { get; set; }
+        public int EventContentChannelId { get; set; }
+        public int EventContentChannelTypeId { get; set; }
+        public int EventDetailsContentChannelId { get; set; }
+        public int EventDetailsContentChannelTypeId { get; set; }
+        public int CommentsContentChannelId { get; set; }
+        public int CommentsContentChannelTypeId { get; set; }
         public string BaseURL { get; set; }
         #endregion
 
-        public EventSubmissionHelper( Guid? RoomDefinedTypeGuid, Guid? MinistryDefinedTypeGuid, Guid? BudgetDefinedTypeGuid, Guid? ContentChannelGuid )
+        public EventSubmissionHelper( Guid? RoomDefinedTypeGuid, Guid? MinistryDefinedTypeGuid, Guid? BudgetDefinedTypeGuid, Guid? EventContentChannelGuid, Guid? EventDetailsContentChannelGuid )
         {
             RockContext context = new RockContext();
 
             if ( RoomDefinedTypeGuid.HasValue )
             {
                 int RoomDefinedTypeId = new DefinedTypeService( context ).Get( RoomDefinedTypeGuid.Value ).Id;
-                Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == RoomDefinedTypeId ).ToList();
+                Rooms = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == RoomDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
                 Rooms.LoadAttributes();
                 Doors = Rooms.Where( dv => dv.AttributeValues.FirstOrDefault( av => av.Key == "IsDoor" ).Value.Value.AsBoolean() == true ).ToList();
                 Rooms = Rooms.Where( dv => dv.AttributeValues.FirstOrDefault( av => av.Key == "IsDoor" ).Value.Value.AsBoolean() == false ).ToList();
@@ -59,11 +63,18 @@ namespace RockWeb.TheCrossing
                 BudgetLinesJSON = JsonConvert.SerializeObject( BudgetLines.Select( dv => new { Id = dv.Id, Value = dv.Value, IsActive = dv.IsActive } ) );
             }
 
-            if ( ContentChannelGuid.HasValue )
+            if ( EventContentChannelGuid.HasValue )
             {
-                ContentChannel channel = new ContentChannelService( context ).Get( ContentChannelGuid.Value );
-                ContentChannelId = channel.Id;
-                ContentChannelTypeId = channel.ContentChannelTypeId;
+                ContentChannel channel = new ContentChannelService( context ).Get( EventContentChannelGuid.Value );
+                EventContentChannelId = channel.Id;
+                EventContentChannelTypeId = channel.ContentChannelTypeId;
+            }
+
+            if ( EventDetailsContentChannelGuid.HasValue )
+            {
+                ContentChannel channel = new ContentChannelService( context ).Get( EventDetailsContentChannelGuid.Value );
+                EventDetailsContentChannelId = channel.Id;
+                EventDetailsContentChannelTypeId = channel.ContentChannelTypeId;
             }
 
             Rock.Model.Attribute attr = new AttributeService( context ).Queryable().FirstOrDefault( a => a.Key == "InternalApplicationRoot" );
