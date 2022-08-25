@@ -21,6 +21,8 @@ export default {
         v-model="e.ExpectedAttendance"
         :rules="[rules.required(e.ExpectedAttendance, 'Expected Attendance'), rules.isInt(e.ExpectedAttendance, 'Expected Attendance')]"
         :hint="attHint"
+        id="abc"
+        runat="server"
       ></v-text-field>
     </v-col>
     <v-col cols="12" md="6">
@@ -44,7 +46,28 @@ export default {
         persistent-hint
       >
         <template v-slot:prepend-item>
-          <v-toolbar dense color="primary">Room (Capacity)</v-toolbar>
+          <v-toolbar dense color="primary" class="sticky">Room (Capacity)</v-toolbar>
+          <v-list-item @click="selectEntireCampus" class="hover">
+            <div style="display: flex; flex-direction: column;">
+              <div>
+                <v-list-item-content class="accent--text text-subtitle-2">
+                  <v-list-item-title>
+                    Entire Campus
+                  </v-list-item-title>
+                </v-list-item-content>
+              </div>
+              <div style="display: flex; width: 100%;">
+                <v-list-item-action style="margin: 0px; margin-right: 32px;">
+                  <v-checkbox :value="entireCampusChecked"></v-checkbox>
+                </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    Entire Campus
+                  </v-list-item-title>
+                </v-list-item-content>
+              </div>
+            </div>
+          </v-list-item>
         </template>
         <template v-slot:item="data">
           <template v-if="data.item.IsHeader">
@@ -413,15 +436,6 @@ export default {
           }
         })
       })
-      loc = loc.sort((a, b) => {
-        if (a.Type < b.Type) {
-          return -1
-        } else if (a.Type > b.Type) {
-          return 1
-        } else {
-          return 0
-        }
-      })
       let arr = []
       loc.forEach(l => {
         arr.push({ Value: l.Type, IsHeader: true, IsDisabled: false})
@@ -471,6 +485,17 @@ export default {
       }
       return false
     },
+    entireCampusChecked() {
+      let ids = this.groupedRooms.filter(r => { return !r.IsHeader && !r.IsDisabled && r.IsActive }).map(r => r.Id).sort()
+      let selectedRoomsInCategory = this.e.Rooms.filter(r => {
+        return ids.includes(r)
+      }).sort()
+      if(ids.toString() == selectedRoomsInCategory.toString()) {
+        return true
+      } else {
+        return false
+      }
+    }
   },
   watch: {
     groupedRooms: {
@@ -515,7 +540,7 @@ export default {
       event.preventDefault()
       //Select all/none of the rooms in the section
       let roomsInCategory = this.groupedRooms.filter(r => {
-        return r.Type == category && !r.IsDisabled
+        return r.Type == category && !r.IsDisabled && r.IsActive
       }).map(r => r.Id).sort()
       let selectedRoomsInCategory = this.e.Rooms.filter(r => {
         return roomsInCategory.includes(r)
@@ -532,6 +557,17 @@ export default {
           }
         }
         this.e.Rooms = this.e.Rooms.sort()
+      }
+    },
+    selectEntireCampus(event) {
+      //Don't add header to room list
+      event.preventDefault()
+      if (!this.entireCampusChecked) {
+        //Check all rooms
+        this.e.Rooms = this.groupedRooms.filter(r => { return !r.IsHeader && !r.IsDisabled && r.IsActive }).map(r => r.Id).sort()
+      } else {
+        //Uncheck all rooms
+        this.e.Rooms = []
       }
     },
     allAreChecked(category) {
