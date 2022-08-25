@@ -111,12 +111,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             Guid? BudgetDefinedTypeGuid = GetAttributeValue( "BudgetLines" ).AsGuidOrNull();
             Guid? ContentChannelGuid = GetAttributeValue( "ContentChannel" ).AsGuidOrNull();
 
-            eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid );
+            eventSubmissionHelper = new EventSubmissionHelper( RoomDefinedTypeGuid, MinistryDefinedTypeGuid, BudgetDefinedTypeGuid, ContentChannelGuid, null );
             hfRooms.Value = eventSubmissionHelper.RoomsJSON;
             hfDoors.Value = eventSubmissionHelper.DoorsJSON;
             hfMinistries.Value = eventSubmissionHelper.MinistriesJSON;
             hfBudgetLines.Value = eventSubmissionHelper.BudgetLinesJSON;
-            ContentChannelId = eventSubmissionHelper.ContentChannelId;
+            ContentChannelId = eventSubmissionHelper.EventContentChannelId;
             BaseURL = eventSubmissionHelper.BaseURL;
 
             Guid? RequestPageGuid = GetAttributeValue( "RequestPage" ).AsGuidOrNull();
