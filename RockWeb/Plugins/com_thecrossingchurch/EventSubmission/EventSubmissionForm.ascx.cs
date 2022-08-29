@@ -541,8 +541,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelItemService svc = new ContentChannelItemService( context );
             ContentChannelItem item = svc.Get( id );
             item.LoadAttributes();
+            List<string> sharedWithIds = item.GetAttributeValue( "SharedWith" ).Split( ',' ).ToList();
             bool canEdit = false;
-            if ( item.CreatedByPersonId == CurrentPersonId )
+            if ( item.CreatedByPersonId == CurrentPersonId || item.ModifiedByPersonId == CurrentPersonId || sharedWithIds.Contains( CurrentPersonId.ToString() ) )
             {
                 string status = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value;
                 if ( status == "Draft" || status == "Submitted" || status == "In Progress" || status == "Approved" )
@@ -587,7 +588,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 ).ToList();
             var dateAttrId = itm.Attributes["EventDates"].Id;
             var eventDates = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == dateAttrId ).ToList();
-            var startOfToday = new DateTime( RockDateTime.Now.Year, RockDateTime.Now.Month, RockDateTime.Now.Day, 0, 0, 0 ); 
+            var startOfToday = new DateTime( RockDateTime.Now.Year, RockDateTime.Now.Month, RockDateTime.Now.Day, 0, 0, 0 );
             eventDates = eventDates.Where( e =>
             {
                 var dates = e.Value.Split( ',' );
