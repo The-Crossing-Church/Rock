@@ -31,7 +31,6 @@ using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
-using HubSpot.NET.Core;
 using Newtonsoft.Json;
 using System.Net;
 using HubSpot.NET.Api.Contact.Dto;
@@ -41,6 +40,7 @@ using OfficeOpenXml;
 using System.Drawing;
 using OfficeOpenXml.Style;
 using System.Threading;
+using RestSharp;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -50,6 +50,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     [DisallowConcurrentExecution]
     public class HubspotIntegration : IJob
     {
+        private string key { get; set; }
+        private List<HSContactResult> contacts { get; set; }
+        private int request_count { get; set; }
 
         /// <summary> 
         /// Empty constructor for job initialization
@@ -73,7 +76,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         {
             JobDataMap dataMap = context.JobDetail.JobDataMap;
 
-            string key = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
+            //Bearer Token, but I didn't change the Attribute Key
+            key = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
 
             var current_id = 0;
 
@@ -97,49 +101,48 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 h++;
             }
 
-
-            //New instance of api 
-            HubSpotApi api = new HubSpotApi( key );
-
-            //Get custom contact properties from Hubspot 
-            WebRequest request = WebRequest.Create( $"https://api.hubapi.com/properties/v1/contacts/properties?hapikey={key}" );
-            var response = request.GetResponse();
+            //Get Hubspot Properties in Rock Information Group
+            //This will allow us to add properties temporarily to the sync and then not continue to have them forever
+            var propClient = new RestClient( "https://api.hubapi.com/crm/v3/properties/contacts?properties=name,label,createdUserId,groupName,options,fieldType" );
+            propClient.Timeout = -1;
+            var propRequest = new RestRequest( Method.GET );
+            propRequest.AddHeader( "Authorization", $"Bearer {key}" );
+            IRestResponse propResponse = propClient.Execute( propRequest );
             var props = new List<HubspotProperty>();
-            using ( Stream stream = response.GetResponseStream() )
-            {
-                using ( StreamReader reader = new StreamReader( stream ) )
-                {
-                    var jsonResponse = reader.ReadToEnd();
-                    props = JsonConvert.DeserializeObject<List<HubspotProperty>>( jsonResponse );
-                }
-            }
-            //Only care about the ones that are custom and could be valid Rock fields
-            props = props.Where( p => p.createdUserId != null ).ToList();
+            var propsQry = JsonConvert.DeserializeObject<HSPropertyQueryResult>( propResponse.Content );
+            props = propsQry.results;
+
+            //Filter to props in Rock Information Group
+            props = props.Where( p => p.groupName == "rock_information" ).ToList();
             //Business Unit hs_all_assigned_business_unit_ids
+            //Save a list of the ones that are Rock attributes
+            var attrs = props.Where( p => !p.label.Contains( "Rock " ) ).ToList();
+            RockContext _context = new RockContext();
+            List<string> attrKeys = attrs.Select( hs => hs.name ).ToList();
+            var rockAttributes = new AttributeService( _context ).Queryable().Where( a => a.EntityTypeId == 15 && attrKeys.Contains( a.Key.ToLower() ) );
+            var rockAttributeValues = new AttributeValueService( _context ).Queryable().Where( av => rockAttributes.Select( a => a.Id ).Contains( av.AttributeId ) );
+            foreach ( var av in rockAttributeValues )
+            {
+                av.Attribute = rockAttributes.FirstOrDefault( a => a.Id == av.AttributeId );
+            }
 
             //Get List of all contacts from Hubspot
-            List<HubSpotContact> contacts = new List<HubSpotContact>();
-            long offset = 0;
-            var hasmore = true;
-            while ( hasmore )
-            {
-                var list = GetContacts( api, offset, 0 );
-                hasmore = list.MoreResultsAvailable;
-                offset = list.ContinuationOffset;
-                contacts.AddRange( list.Contacts );
-            }
-            //Contacts with emails only 
-            var contacts_with_email = contacts.Where( c => c.Email != null ).ToList();
+            contacts = new List<HSContactResult>();
+            request_count = 0;
+            GetContacts( "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,phone,hs_all_assigned_business_unit_ids,rock_id,which_best_describes_your_involvement_with_the_crossing_,has_potential_rock_match,createdate,lastmodifieddate" );
+
+            //Contacts with emails only in The Crossing Business Unit
+            var contacts_with_email = contacts.Where( c => c.properties.email != null && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ',' ).Contains( "0" ) ).ToList();
 
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
             for ( var i = 0; i < contacts_with_email.Count(); i++ )
             {
                 //First Check if they have a rock Id in their hubspot data to use
                 Person person = null;
-                if ( !String.IsNullOrEmpty( contacts_with_email[i].rock_id ) )
+                if ( !String.IsNullOrEmpty( contacts_with_email[i].properties.rock_id ) )
                 {
                     int id;
-                    if ( Int32.TryParse( contacts_with_email[i].rock_id, out id ) )
+                    if ( Int32.TryParse( contacts_with_email[i].properties.rock_id, out id ) )
                     {
                         person = personService.Get( id );
                     }
@@ -148,22 +151,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //If there is not a value for Rock Id, proceed to run the query with HubSpot data
                 if ( person == null )
                 {
-                    var query = new PersonService.PersonMatchQuery( contacts_with_email[i].FirstName, contacts_with_email[i].LastName, contacts_with_email[i].Email, contacts_with_email[i].Phone );
-                    person = personService.FindPerson( query, false );
-                }
-
-                //If person is still null, attempt to use the Rock FirstName, Rock LastName, Rock Email for the query
-                if ( person == null && !String.IsNullOrEmpty( contacts_with_email[i].rock_firstname ) && !String.IsNullOrEmpty( contacts_with_email[i].rock_lastname ) && ( !String.IsNullOrEmpty( contacts_with_email[i].rock_email ) || !String.IsNullOrEmpty( contacts_with_email[i].Email ) ) )
-                {
-                    PersonService.PersonMatchQuery query;
-                    if ( !String.IsNullOrEmpty( contacts_with_email[i].rock_email ) )
-                    {
-                        query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].rock_email, "" );
-                    }
-                    else
-                    {
-                        query = new PersonService.PersonMatchQuery( contacts_with_email[i].rock_firstname, contacts_with_email[i].rock_lastname, contacts_with_email[i].Email, "" );
-                    }
+                    var query = new PersonService.PersonMatchQuery( contacts_with_email[i].properties.firstname, contacts_with_email[i].properties.lastname, contacts_with_email[i].properties.email, contacts_with_email[i].properties.phone );
                     person = personService.FindPerson( query, false );
                 }
 
@@ -171,27 +159,27 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //Attempt to match on email and one other piece of info if we are still null
                 if ( person == null )
                 {
-                    string email = contacts_with_email[i].Email.ToLower();
+                    string email = contacts_with_email[i].properties.email.ToLower();
                     var matches = personService.Queryable().Where( p => p.Email.ToLower() == email ).ToList();
                     if ( matches.Count() == 1 )
                     {
                         //1:1 Email match so we want to check other information, start by checking for a name match 
-                        if ( CustomEquals( matches.First().NickName, contacts_with_email[i].FirstName ) ||
-                            CustomEquals( matches.First().FirstName, contacts_with_email[i].FirstName ) ||
-                            CustomEquals( matches.First().LastName, contacts_with_email[i].LastName ) )
+                        if ( CustomEquals( matches.First().NickName, contacts_with_email[i].properties.firstname ) ||
+                            CustomEquals( matches.First().FirstName, contacts_with_email[i].properties.firstname ) ||
+                            CustomEquals( matches.First().LastName, contacts_with_email[i].properties.lastname ) )
                         {
                             person = matches.First();
                         }
-                        else if ( !String.IsNullOrEmpty( contacts_with_email[i].Phone ) )
+                        else if ( !String.IsNullOrEmpty( contacts_with_email[i].properties.phone ) )
                         {
                             //Try looking for a phone number
-                            if ( matches.First().PhoneNumbers.Select( p => p.Number ).Contains( contacts_with_email[i].Phone ) )
+                            if ( matches.First().PhoneNumbers.Select( p => p.Number ).Contains( contacts_with_email[i].properties.phone ) )
                             {
                                 person = matches.First();
                             }
                         }
                         //If 1:1 Email match and Hubspot has no other info, make it a match
-                        if ( person == null && String.IsNullOrEmpty( contacts_with_email[i].FirstName ) && String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        if ( person == null && String.IsNullOrEmpty( contacts_with_email[i].properties.firstname ) && String.IsNullOrEmpty( contacts_with_email[i].properties.lastname ) )
                         {
                             person = matches.First();
                         }
@@ -205,13 +193,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //Atempt to match 1:1 based on email history making sure we exclude emails with multiple matches in the person table
                 if ( person == null && !hasMultiEmail )
                 {
-                    string email = contacts_with_email[i].Email.ToLower();
+                    string email = contacts_with_email[i].properties.email.ToLower();
                     var history = new HistoryService( new RockContext() ).Queryable().Where( hist => hist.EntityTypeId == 15 && hist.ValueName == "Email" );
                     var matches = history.Where( hist => hist.NewValue.ToLower() == email ).ToList();
                     if ( matches.Count() == 1 )
                     {
                         //If 1:1 Email match and Hubspot has no other info, make it a match
-                        if ( String.IsNullOrEmpty( contacts_with_email[i].FirstName ) && String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].properties.firstname ) && String.IsNullOrEmpty( contacts_with_email[i].properties.lastname ) )
                         {
                             person = personService.Get( matches.First().EntityId );
                         }
@@ -224,12 +212,12 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 {
                     var contact = contacts_with_email[i];
                     //Matches phone number and one other piece of info
-                    if ( !String.IsNullOrEmpty( contact.Phone ) )
+                    if ( !String.IsNullOrEmpty( contact.properties.phone ) )
                     {
-                        var phone_matches = personService.Queryable().Where( p => p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ).ToList();
+                        var phone_matches = personService.Queryable().Where( p => p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.properties.phone ) ).ToList();
                         if ( phone_matches.Count() > 0 )
                         {
-                            phone_matches = phone_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || CustomEquals( p.Email, contact.Email ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
+                            phone_matches = phone_matches.Where( p => CustomEquals( p.FirstName, contact.properties.firstname ) || CustomEquals( p.NickName, contact.properties.firstname ) || CustomEquals( p.Email, contact.properties.email ) || CustomEquals( p.LastName, contact.properties.lastname ) ).ToList();
                             for ( var j = 0; j < phone_matches.Count(); j++ )
                             {
                                 //Save this information in the excel sheet....
@@ -242,11 +230,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     //Matches email and one other piece of info
                     var email_matches = personService.Queryable().ToList().Where( p =>
                     {
-                        return CustomEquals( p.Email, contact.Email );
+                        return CustomEquals( p.Email, contact.properties.email );
                     } ).ToList();
                     if ( email_matches.Count() > 0 )
                     {
-                        email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.FirstName ) || CustomEquals( p.NickName, contact.FirstName ) || ( !String.IsNullOrEmpty( contact.Phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.Phone ) ) || CustomEquals( p.LastName, contact.LastName ) ).ToList();
+                        email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.properties.firstname ) || CustomEquals( p.NickName, contact.properties.firstname ) || ( !String.IsNullOrEmpty( contact.properties.phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.properties.phone ) ) || CustomEquals( p.LastName, contact.properties.lastname ) ).ToList();
                         for ( var j = 0; j < email_matches.Count(); j++ )
                         {
                             //Save this information in the excel sheet....
@@ -258,13 +246,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
 
                 //For Testing
-                //if ( contacts_with_email[i].Email != "coolrobot@hubspot.com" )
+                //if ( contacts_with_email[i].properties.email != "coolrobot@hubspot.com" )
                 //{
                 //    person = null;
                 //}
                 //else
                 //{
-                //    person = personService.Get( 27460 );
+                //    person = personService.Get( 14659 );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
@@ -273,20 +261,26 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     try
                     {
                         current_id = person.Id;
-                        //Get the Attributes for that Person 
-                        person.LoadAttributes();
-                        //Limit to the non Field props we want
-                        var attrs = props.Where( p => !p.label.Contains( "Rock " ) ).ToList();
                         //Build the POST request and schedule in the db 10 at a time 
-                        var url = $"https://api.hubapi.com/contacts/v1/contact/vid/{contacts_with_email[i].Id}/profile?hapikey={key}";
+                        var url = $"https://api.hubapi.com/crm/v3/objects/contacts/{contacts_with_email[i].id}";
                         var properties = new List<HubspotPropertyUpdate>();
+                        var personAttributes = rockAttributeValues.Where( av => av.EntityId == person.Id );
                         //Add each Rock prop to the list with the Hubspot name
                         for ( var j = 0; j < attrs.Count(); j++ )
                         {
-                            AttributeCache current_prop = null;
+                            AttributeValue current_prop = null;
                             try
                             {
-                                current_prop = person.Attributes[attrs[j].label];
+                                current_prop = personAttributes.FirstOrDefault( av => av.Attribute.Key.ToLower() == attrs[j].name );
+                                if ( current_prop == null )
+                                {
+                                    //Try to get default value for this attr
+                                    var rockAttr = rockAttributes.FirstOrDefault( a => a.Key.ToLower() == attrs[j].name );
+                                    if ( rockAttr != null )
+                                    {
+                                        current_prop = new AttributeValue() { Value = rockAttr.DefaultValue, AttributeId = rockAttr.Id };
+                                    }
+                                }
                             }
                             catch
                             {
@@ -295,11 +289,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             //If the attribute is in our list of props from Hubspot
                             if ( current_prop != null )
                             {
-                                if ( current_prop.FieldType.Name == "Date" || current_prop.FieldType.Name == "Date Time" )
+                                if ( current_prop.Attribute.FieldType.Name == "Date" || current_prop.Attribute.FieldType.Name == "Date Time" )
                                 {
                                     //Get Epoc miliseconds 
                                     DateTime tryDate;
-                                    if ( DateTime.TryParse( person.GetAttributeValue( attrs[j].label ), out tryDate ) )
+                                    if ( DateTime.TryParse( current_prop.Value, out tryDate ) )
                                     {
                                         //Set date time to Midnight because HubSpot sucks 
                                         tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
@@ -309,7 +303,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                                 else
                                 {
-                                    properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = person.AttributeValues[attrs[j].label].ValueFormatted } );
+                                    properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = current_prop.ValueFormatted } );
                                 }
                             }
                         }
@@ -353,9 +347,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         {
                             //Direct Family Members
                             var child_ages_prop = props.FirstOrDefault( p => p.label == "Children's Age Groups" );
-                            var children = person.PrimaryFamily.Members.Where( m => m.GroupRole.Name == "Child" ).ToList();
+                            var children = person.PrimaryFamily.Members.Where( gm => gm.Person.AgeClassification == AgeClassification.Child ).ToList();
                             var agegroups = "";
                             //Known Relationships
+                            person.PrimaryFamily.Members.Where( gm => gm.Person.AgeClassification == AgeClassification.Child );
                             int pid = person.Id;
                             var krGroups = new GroupMemberService( new RockContext() ).Queryable().Where( gm => gm.PersonId == pid && gm.GroupRoleId == 5 ).Select( gm => gm.GroupId ).ToList();
                             var childRelationships = new List<int> { 4, 15, 17 };
@@ -428,12 +423,12 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 term = "summer";
                             }
                             //All current memberships for this year
-                            var memberships = person.Members.Where( m => m.Group != null && ( m.Group.Name.Contains( today.ToString( "yyyy" ) ) ||
+                            var memberships = person.Members.Where( m => m.Group != null && m.GroupMemberStatus == GroupMemberStatus.Active && m.Group.IsActive && ( m.Group.Name.Contains( today.ToString( "yyyy" ) ) ||
                                  m.Group.Name.Contains( $"{today.AddYears( -1 ).ToString( "yyyy" )}-{today.ToString( "yy" )}" ) ) ).ToList();
-                            //Where the group name has Fall/Winter/Summer
-                            var current_serving = memberships.Where( m => m.Group.Name.ToLower().Contains( term ) ).ToList();
-                            //All current groups with the words Small Group
-                            var current_sg = memberships.Where( m => m.Group.Name.ToLower().Contains( "small group" ) ).ToList();
+                            //Where the group name has Fall/Winter/Summer or Purpose == Serving Area
+                            var current_serving = memberships.Where( m => m.Group.Name.ToLower().Contains( term ) || ( m.Group.GroupType.GroupTypePurposeValue != null && m.Group.GroupType.GroupTypePurposeValue.Value == "Serving Area" ) ).ToList();
+                            //All current groups with the words Small Group, SG or Purpose == Small Group
+                            var current_sg = memberships.Where( m => m.Group.Name.ToLower().Contains( "small group" ) || m.Group.Name.ToLower().Contains( "sg" ) || ( m.Group.GroupType.GroupTypePurposeValue != null && m.Group.GroupType.GroupTypePurposeValue.Value == "Small Group" ) ).ToList();
 
                             var serving_prop = props.FirstOrDefault( p => p.label == "Currently Serving" );
                             var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
@@ -450,7 +445,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                             }
                             //figure out if they attend small group
-                            if ( current_sg.Count() > 0 )
+                            if ( current_sg.Count() > 0 && person.AgeClassification != AgeClassification.Child )
                             {
                                 if ( current_sg.Count() > 1 && current_sg.Where( sg => !sg.GroupRole.IsLeader ).Count() > 0 )
                                 { //See if we can get this to one small group hopefully
@@ -484,40 +479,18 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     properties.Add( new HubspotPropertyUpdate() { property = sg_prop.name, value = "false" } );
                                 }
                             }
-                            //List of all groups person is a member of (fingers crossed it's not too long) 
-                            var group_prop = props.FirstOrDefault( p => p.label == "Group Membership" );
-                            var grps = "";
-                            for ( var idx = 0; idx < person.Members.Count(); idx++ )
-                            {
-                                grps += person.Members.ToList()[idx].Group != null ? $"{person.Members.ToList()[idx].Group.Name}, " : "";
-                            }
-                            grps = grps.Substring( 0, grps.Length - 2 );
-                            properties.Add( new HubspotPropertyUpdate() { property = group_prop.name, value = grps } );
-                            //Figure out if the person is currently involved in connections 
-                            //Prod ID for Parent Group: 136298
-                            var conn_prop = props.FirstOrDefault( p => p.label == "Currently in Connections" );
-                            var groups = new GroupService( new RockContext() ).Queryable().AsNoTracking().Where( g => g.ParentGroupId == 103379 ).ToList(); //test with sg minitry group 
-                            var inConnections = FindGroup( groups, person, false );
-                            if ( inConnections )
-                            {
-                                properties.Add( new HubspotPropertyUpdate() { property = conn_prop.name, value = "true" } );
-                            }
-                            else
-                            {
-                                properties.Add( new HubspotPropertyUpdate() { property = conn_prop.name, value = "false" } );
-                            }
                         }
 
                         //If the Hubspot Contact does not have FirstName, LastName, or Phone Number we want to update those...
-                        if ( String.IsNullOrEmpty( contacts_with_email[i].FirstName ) )
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].properties.firstname ) )
                         {
                             properties.Add( new HubspotPropertyUpdate() { property = "firstname", value = person.NickName } );
                         }
-                        if ( String.IsNullOrEmpty( contacts_with_email[i].LastName ) )
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].properties.lastname ) )
                         {
                             properties.Add( new HubspotPropertyUpdate() { property = "lastname", value = person.LastName } );
                         }
-                        if ( String.IsNullOrEmpty( contacts_with_email[i].Phone ) )
+                        if ( String.IsNullOrEmpty( contacts_with_email[i].properties.phone ) )
                         {
                             PhoneNumber mobile = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == 12 );
                             if ( mobile != null && !mobile.IsUnlisted )
@@ -527,7 +500,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         }
 
                         //Update the Contact in Hubspot
-                        var alreadyKnown = contacts_with_email[i].has_potential_rock_match;
+                        var alreadyKnown = contacts_with_email[i].properties.has_potential_rock_match;
                         if ( alreadyKnown == "True" )
                         {
                             //Update the bucket prop to false since they are no longer in the potential matches, but actually matched.
@@ -547,13 +520,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 {
                     if ( inBucket )
                     {
-                        var alreadyKnown = contacts_with_email[i].has_potential_rock_match;
+                        var alreadyKnown = contacts_with_email[i].properties.has_potential_rock_match;
                         if ( alreadyKnown != "True" )
                         {
                             //We don't have an exact match but we have guesses, so update Hubspot to reflect that.
                             var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
                             var properties = new List<HubspotPropertyUpdate>() { new HubspotPropertyUpdate() { property = bucket_prop.name, value = "True" } };
-                            var url = $"https://api.hubapi.com/contacts/v1/contact/vid/{contacts_with_email[i].Id}/profile?hapikey={key}";
+                            var url = $"https://api.hubapi.com/crm/v3/objects/contacts/{contacts_with_email[i].id}";
                             MakeRequest( current_id, url, properties, 0 );
                         }
                         //If it is already known, do nothing
@@ -565,78 +538,22 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             System.IO.File.WriteAllBytes( path, sheetbytes );
         }
 
-        private ContactListHubSpotModel<HubSpotContact> GetContacts( HubSpotApi api, long offset, int attempt )
-        {
-            ContactListHubSpotModel<HubSpotContact> list = new ContactListHubSpotModel<HubSpotContact>();
-            try
-            {
-                list = api.Contact.List<HubSpotContact>( new ListRequestOptions
-                {
-                    PropertiesToInclude = new List<string> { "firstname", "lastname", "email", "phone", "rock_id", "rock_firstname", "rock_lastname", "rock_email", "which_best_describes_your_involvement_with_the_crossing_", "createdate", "lastmodifieddate", "has_potential_rock_match" },
-                    Limit = 100,
-                    Offset = offset
-                } );
-            }
-            catch ( Exception e )
-            {
-                HttpContext context2 = HttpContext.Current;
-                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Exception from Library:{Environment.NewLine}{e.Message}{Environment.NewLine}" ), context2 );
-                if ( attempt < 5 )
-                {
-                    Thread.Sleep( 60000 );
-                    GetContacts( api, offset, attempt + 1 );
-                }
-                else
-                {
-                    throw new Exception( "Hubspot Sync Error: Failed to get Hubspot Contacts", e );
-                }
-            }
-            return list;
-        }
-
         private void MakeRequest( int current_id, string url, List<HubspotPropertyUpdate> properties, int attempt )
         {
             //Update the Hubspot Contact
             try
             {
-                var webrequest = WebRequest.Create( url );
-                webrequest.Method = "POST";
-                webrequest.ContentType = "application/json";
-                using ( Stream requestStream = webrequest.GetRequestStream() )
+                var client = new RestClient( url );
+                client.Timeout = -1;
+                var request = new RestRequest( Method.PATCH );
+                request.AddHeader( "accept", "application/json" );
+                request.AddHeader( "content-type", "application/json" );
+                request.AddHeader( "Authorization", $"Bearer {key}" );
+                request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join(",", properties.Select(p => $"\"{p.property}\": \"{p.value}\""))} }} }}", ParameterType.RequestBody );
+                IRestResponse response = client.Execute( request );
+                if ( response.StatusCode == HttpStatusCode.BadRequest )
                 {
-                    var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                    byte[] bytes = Encoding.ASCII.GetBytes( json );
-                    requestStream.Write( bytes, 0, bytes.Length );
-                }
-                using ( WebResponse webResponse = webrequest.GetResponse() )
-                {
-                    using ( Stream responseStream = webResponse.GetResponseStream() )
-                    {
-                        using ( StreamReader reader = new StreamReader( responseStream ) )
-                        {
-                            var jsonResponse = reader.ReadToEnd();
-                        }
-                    }
-                }
-
-            }
-            catch ( WebException ex )
-            {
-                using ( Stream responseStream = ex.Response.GetResponseStream() )
-                {
-                    using ( StreamReader reader = new StreamReader( responseStream ) )
-                    {
-                        var jsonResponse = reader.ReadToEnd();
-                        HttpContext context2 = HttpContext.Current;
-                        var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{ex}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Response:{Environment.NewLine}{jsonResponse}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ), context2 );
-                        //Retry the request
-                        if ( attempt < 5 )
-                        {
-                            Thread.Sleep( 60000 );
-                            MakeRequest( current_id, url, properties, attempt + 1 );
-                        }
-                    }
+                    throw new Exception( response.Content );
                 }
             }
             catch ( Exception e )
@@ -647,63 +564,20 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
         }
 
-        private bool FindGroup( List<Group> groups, Person per, bool subOfYear )
+        private void GetContacts( string url )
         {
-            var today = DateTime.UtcNow;
-            var inConnections = false;
-            for ( var i = 0; i < groups.Count(); i++ )
+            request_count++;
+            var contactClient = new RestClient( url );
+            contactClient.Timeout = -1;
+            var contactRequest = new RestRequest( Method.GET );
+            contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
+            IRestResponse contactResponse = contactClient.Execute( contactRequest );
+            var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
+            contacts.AddRange( contactResults.results );
+            if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
             {
-                if ( groups[i].Name.Contains( today.ToString( "yyyy" ) ) || groups[i].Name.Contains( $"{today.AddYears( -1 ).ToString( "yyyy" )}-{today.ToString( "yy" )}" ) || subOfYear )
-                {
-                    if ( groups[i].Members.Count() > 0 )
-                    {
-                        var exists = groups[i].Members.FirstOrDefault( p => p.PersonId == per.Id );
-                        if ( exists != null )
-                        {
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        inConnections = FindGroup( groups[i].Groups.ToList(), per, true );
-                    }
-                }
-                else
-                {
-                    inConnections = FindGroup( groups[i].Groups.ToList(), per, false );
-                }
+                GetContacts( contactResults.paging.next.link );
             }
-            return inConnections;
-        }
-
-        private void WriteToLog( string message )
-        {
-            string logFile = System.Web.Hosting.HostingEnvironment.MapPath( "~/App_Data/Logs/HubSpotLog.txt" );
-
-            // Write to the log, but if an ioexception occurs wait a couple seconds and then try again (up to 3 times).
-            var maxRetry = 3;
-            for ( int retry = 0; retry < maxRetry; retry++ )
-            {
-                try
-                {
-                    using ( System.IO.FileStream fs = new System.IO.FileStream( logFile, System.IO.FileMode.Append, System.IO.FileAccess.Write ) )
-                    {
-                        using ( System.IO.StreamWriter sw = new System.IO.StreamWriter( fs ) )
-                        {
-                            sw.WriteLine( string.Format( "{0} - {1}", RockDateTime.Now.ToString(), message ) );
-                            return;
-                        }
-                    }
-                }
-                catch ( System.IO.IOException )
-                {
-                    if ( retry < maxRetry - 1 )
-                    {
-                        System.Threading.Tasks.Task.Delay( 2000 ).Wait();
-                    }
-                }
-            }
-
         }
 
         private ExcelWorksheet ColorCell( ExcelWorksheet worksheet, int row, int col )
@@ -715,68 +589,68 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             return worksheet;
         }
 
-        private ExcelWorksheet SaveData( ExcelWorksheet worksheet, int row, Person person, HubSpotContact contact )
+        private ExcelWorksheet SaveData( ExcelWorksheet worksheet, int row, Person person, HSContactResult contact )
         {
             //Add FirstNames
-            worksheet.Cells[row, 1].Value = contact.FirstName;
+            worksheet.Cells[row, 1].Value = contact.properties.firstname;
             worksheet.Cells[row, 2].Value = person.NickName;
             if ( person.NickName != person.FirstName )
             {
                 worksheet.Cells[row, 2].Value += " (" + person.FirstName + ")";
             }
             //Color cells if they match
-            if ( CustomEquals( contact.FirstName, person.FirstName ) || CustomEquals( contact.FirstName, person.NickName ) )
+            if ( CustomEquals( contact.properties.firstname, person.FirstName ) || CustomEquals( contact.properties.firstname, person.NickName ) )
             {
                 worksheet = ColorCell( worksheet, row, 1 );
                 worksheet = ColorCell( worksheet, row, 2 );
             }
 
             //Add LastNames
-            worksheet.Cells[row, 3].Value = contact.LastName;
+            worksheet.Cells[row, 3].Value = contact.properties.lastname;
             worksheet.Cells[row, 4].Value = person.LastName;
             //Color cells if they match 
-            if ( CustomEquals( contact.LastName, person.LastName ) )
+            if ( CustomEquals( contact.properties.lastname, person.LastName ) )
             {
                 worksheet = ColorCell( worksheet, row, 3 );
                 worksheet = ColorCell( worksheet, row, 4 );
             }
 
             //Add Emails
-            worksheet.Cells[row, 5].Value = contact.Email;
+            worksheet.Cells[row, 5].Value = contact.properties.email;
             worksheet.Cells[row, 6].Value = person.Email;
             //Color cells if they match
-            if ( CustomEquals( contact.Email, person.Email ) )
+            if ( CustomEquals( contact.properties.email, person.Email ) )
             {
                 worksheet = ColorCell( worksheet, row, 5 );
                 worksheet = ColorCell( worksheet, row, 6 );
             }
 
             //Add Phone Numbers
-            var num = person.PhoneNumbers.FirstOrDefault( pn => pn.Number == contact.Phone );
-            worksheet.Cells[row, 7].Value = contact.Phone;
+            var num = person.PhoneNumbers.FirstOrDefault( pn => pn.Number == contact.properties.phone );
+            worksheet.Cells[row, 7].Value = contact.properties.phone;
             worksheet.Cells[row, 8].Value = num != null ? num.Number : "No Matching Number";
             //Color cells if they match
-            if ( num != null && CustomEquals( contact.Phone, num.Number ) )
+            if ( num != null && CustomEquals( contact.properties.phone, num.Number ) )
             {
                 worksheet = ColorCell( worksheet, row, 7 );
                 worksheet = ColorCell( worksheet, row, 8 );
             }
 
             //Add Connection Statuses
-            worksheet.Cells[row, 9].Value = contact.which_best_describes_your_involvement_with_the_crossing_;
+            worksheet.Cells[row, 9].Value = contact.properties.which_best_describes_your_involvement_with_the_crossing_;
             worksheet.Cells[row, 10].Value = person.ConnectionStatusValue;
 
             //Add links
-            worksheet.Cells[row, 11].Value = "https://app.hubspot.com/contacts/6480645/contact/" + contact.Id;
+            worksheet.Cells[row, 11].Value = "https://app.hubspot.com/contacts/6480645/contact/" + contact.id;
             worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
 
             //Add Created Dates
             DateTime epoch = new DateTime( 1970, 1, 1, 0, 0, 0, DateTimeKind.Utc );
-            worksheet.Cells[row, 13].Value = epoch.AddMilliseconds( Double.Parse( contact.createdate ) ).ToString( "MM/dd/yyyy" );
+            worksheet.Cells[row, 13].Value = epoch.AddMilliseconds( Double.Parse( contact.properties.createdate ) ).ToString( "MM/dd/yyyy" );
             worksheet.Cells[row, 14].Value = person.CreatedDateTime.Value.ToString( "MM/dd/yyyy" );
 
             //Add Modified Dates
-            worksheet.Cells[row, 15].Value = epoch.AddMilliseconds( Double.Parse( contact.lastmodifieddate ) ).ToString( "MM/dd/yyyy" );
+            worksheet.Cells[row, 15].Value = epoch.AddMilliseconds( Double.Parse( contact.properties.lastmodifieddate ) ).ToString( "MM/dd/yyyy" );
             worksheet.Cells[row, 16].Value = person.ModifiedDateTime.Value.ToString( "MM/dd/yyyy" );
 
             //Add Rock Id
@@ -802,8 +676,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         public string name { get; set; }
         public string label { get; set; }
         public string fieldType { get; set; }
-        public bool? deleted { get; set; }
-        public int? createdUserId { get; set; }
+        public string groupName { get; set; }
     }
 
     public class HubspotPropertyUpdate
@@ -812,15 +685,51 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         public string value { get; set; }
     }
 
-    public class HubSpotContact : ContactHubSpotModel
+    public class HSContactProperties
     {
-        public string rock_firstname { get; set; }
-        public string rock_lastname { get; set; }
-        public string rock_email { get; set; }
+        public string createdate { get; set; }
+        public string email { get; set; }
+        public string firstname { get; set; }
+        public string has_potential_rock_match { get; set; }
+        public string hs_all_assigned_business_unit_ids { get; set; }
+        public string lastname { get; set; }
+        public string lastmodifieddate { get; set; }
+        private string _phone { get; set; }
+        public string phone
+        {
+            get
+            {
+                return !String.IsNullOrEmpty( _phone ) ? _phone.Replace( " ", "" ).Replace( "(", "" ).Replace( ")", "" ).Replace( "-", "" ) : "";
+            }
+            set
+            {
+                _phone = value;
+            }
+        }
         public string rock_id { get; set; }
         public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
-        public string has_potential_rock_match { get; set; }
-        public string lastmodifieddate { get; set; }
-        public string createdate { get; set; }
+    }
+    public class HSContactResult
+    {
+        public string id { get; set; }
+        public HSContactProperties properties { get; set; }
+        public string archived { get; set; }
+    }
+    public class HSResultPaging
+    {
+        public HSResultPagingNext next { get; set; }
+    }
+    public class HSResultPagingNext
+    {
+        public string link { get; set; }
+    }
+    public class HSContactQueryResult
+    {
+        public List<HSContactResult> results { get; set; }
+        public HSResultPaging paging { get; set; }
+    }
+    public class HSPropertyQueryResult
+    {
+        public List<HubspotProperty> results { get; set; }
     }
 }
