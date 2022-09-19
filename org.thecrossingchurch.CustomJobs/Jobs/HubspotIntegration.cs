@@ -48,6 +48,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     /// 
     /// </summary>
     [DisallowConcurrentExecution]
+    [TextField( "AttributeKey", "", true, "HubspotAPIKeyGlobal" )]
     public class HubspotIntegration : IJob
     {
         private string key { get; set; }
@@ -77,7 +78,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             JobDataMap dataMap = context.JobDetail.JobDataMap;
 
             //Bearer Token, but I didn't change the Attribute Key
-            key = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
+            string attrKey = dataMap.GetString( "AttributeKey" );
+            key = GlobalAttributesCache.Get().GetValue( attrKey );
 
             var current_id = 0;
 
@@ -549,7 +551,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 request.AddHeader( "accept", "application/json" );
                 request.AddHeader( "content-type", "application/json" );
                 request.AddHeader( "Authorization", $"Bearer {key}" );
-                request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join(",", properties.Select(p => $"\"{p.property}\": \"{p.value}\""))} }} }}", ParameterType.RequestBody );
+                request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
                 IRestResponse response = client.Execute( request );
                 if ( response.StatusCode == HttpStatusCode.BadRequest )
                 {
