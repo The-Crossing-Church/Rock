@@ -62,7 +62,7 @@
                 </div>
                 <div class="faq-collapse collapse {% if isActive == true %}in{% endif %}" id="collapse{{forloop.index0}}" aria-expanded="{% if isActive == true %}true{% else %}false{% endif %}">
                     <div style="display: block;" class="py-4">
-                        {[ tccaccordion accname:'faq-{{forloop.index0}}' ]}
+                        {[ tccaccordion accname:'faq-{{forloop.index0}}-mobile' ]}
                             {% for item in i.Items %}
                                 {% assign title = item | Attribute:'Question' %}
                                 [[ item title:'{{title}}' ]]
@@ -79,11 +79,15 @@
 </div>
 <br/><br/>
 <script>
-$('.collapse').on('shown.bs.collapse', function(e) {
-  var $panel = $(this).closest('.panel');
-  $('html,body').animate({
-    scrollTop: $panel.offset().top - 140
-  }, 500);
+$('.{{accname}}-collapse').unbind('shown.bs.collapse')
+$('.{{accname}}-collapse').on('shown.bs.collapse', function(e) {
+    console.log('scrolling')
+    var $panel = $(this).closest('.panel')
+    if ($(this).is(e.target)) {
+    $('html,body').animate({
+        scrollTop: $panel.offset().top - 140
+    }, 500);
+    } 
 });
 </script>
 <style>
