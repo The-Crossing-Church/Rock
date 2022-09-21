@@ -323,18 +323,20 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                                 else if ( propInfo.PropertyType.FullName.Contains( "Date" ) )
                                 {
-                                    //Get Epoc miliseconds 
+                                    //Get Epoc miliseconds
+                                    //Possibly not used anymore, switched to regular date format
                                     DateTime tryDate;
                                     if ( DateTime.TryParse( propInfo.GetValue( person ).ToString(), out tryDate ) )
                                     {
                                         //Set date time to Midnight because HubSpot sucks also verify the year is within 1000 years from today
-                                        DateTime today = RockDateTime.Now;
-                                        if ( today.Year - tryDate.Year < 1000 && today.Year - tryDate.Year > -1000 )
-                                        {
-                                            tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
-                                            var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
-                                            properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
-                                        }
+                                        //DateTime today = RockDateTime.Now;
+                                        //if ( today.Year - tryDate.Year < 1000 && today.Year - tryDate.Year > -1000 )
+                                        //{
+                                        //    tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
+                                        //    var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
+                                        //    properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
+                                        //}
+                                        properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = tryDate.ToString() } );
                                     }
                                 }
                                 else
@@ -349,7 +351,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         {
                             //Direct Family Members
                             var child_ages_prop = props.FirstOrDefault( p => p.label == "Children's Age Groups" );
-                            var children = person.PrimaryFamily.Members.Where( gm => gm.Person.AgeClassification == AgeClassification.Child ).ToList();
+                            var children = person.PrimaryFamily.Members.Where( gm => gm.Person != null && gm.Person.AgeClassification == AgeClassification.Child ).ToList();
                             var agegroups = "";
                             //Known Relationships
                             person.PrimaryFamily.Members.Where( gm => gm.Person.AgeClassification == AgeClassification.Child );
@@ -434,6 +436,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
                             var serving_prop = props.FirstOrDefault( p => p.label == "Currently Serving" );
                             var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
+                            Console.WriteLine( "x" );
                             //set the serving prop
                             if ( serving_prop != null )
                             {
@@ -456,6 +459,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 foreach ( var sg in current_sg )
                                 {
                                     var small_group = sg_props.FirstOrDefault( p => p.label == "Currently in Adult Small Group" );
+                                    Console.WriteLine( "x" );
                                     if ( sg.Group.ParentGroup.Name.ToLower().Contains( "veritas" ) )
                                     {
                                         small_group = sg_props.FirstOrDefault( p => p.label == "Currently in Veritas Small Group" );
@@ -647,12 +651,25 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
 
             //Add Created Dates
-            DateTime epoch = new DateTime( 1970, 1, 1, 0, 0, 0, DateTimeKind.Utc );
-            worksheet.Cells[row, 13].Value = epoch.AddMilliseconds( Double.Parse( contact.properties.createdate ) ).ToString( "MM/dd/yyyy" );
+            if ( !String.IsNullOrEmpty( contact.properties.createdate ) )
+            {
+                DateTime hubspotVal;
+                if ( DateTime.TryParse( contact.properties.createdate, out hubspotVal ) )
+                {
+                    worksheet.Cells[row, 13].Value = hubspotVal.ToString( "MM/dd/yyyy" );
+                }
+            }
             worksheet.Cells[row, 14].Value = person.CreatedDateTime.Value.ToString( "MM/dd/yyyy" );
 
             //Add Modified Dates
-            worksheet.Cells[row, 15].Value = epoch.AddMilliseconds( Double.Parse( contact.properties.lastmodifieddate ) ).ToString( "MM/dd/yyyy" );
+            if ( !String.IsNullOrEmpty( contact.properties.lastmodifieddate ) )
+            {
+                DateTime hubspotVal;
+                if ( DateTime.TryParse( contact.properties.lastmodifieddate, out hubspotVal ) )
+                {
+                    worksheet.Cells[row, 15].Value = hubspotVal.ToString( "MM/dd/yyyy" );
+                }
+            }
             worksheet.Cells[row, 16].Value = person.ModifiedDateTime.Value.ToString( "MM/dd/yyyy" );
 
             //Add Rock Id
