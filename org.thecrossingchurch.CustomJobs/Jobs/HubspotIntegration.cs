@@ -329,14 +329,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                     if ( DateTime.TryParse( propInfo.GetValue( person ).ToString(), out tryDate ) )
                                     {
                                         //Set date time to Midnight because HubSpot sucks also verify the year is within 1000 years from today
-                                        //DateTime today = RockDateTime.Now;
-                                        //if ( today.Year - tryDate.Year < 1000 && today.Year - tryDate.Year > -1000 )
-                                        //{
-                                        //    tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
-                                        //    var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
-                                        //    properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
-                                        //}
-                                        properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = tryDate.ToString() } );
+                                        DateTime today = RockDateTime.Now;
+                                        if ( today.Year - tryDate.Year < 1000 && today.Year - tryDate.Year > -1000 )
+                                        {
+                                            tryDate = new DateTime( tryDate.Year, tryDate.Month, tryDate.Day, 0, 0, 0 );
+                                            var d = tryDate.Subtract( new DateTime( 1970, 1, 1 ) ).TotalSeconds * 1000;
+                                            properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = d.ToString() } );
+                                        }
+                                        //properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = tryDate.ToString() } );
                                     }
                                 }
                                 else
