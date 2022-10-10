@@ -1,9 +1,10 @@
 ﻿<%@ Master Language="C#" AutoEventWireup="true" Inherits="Rock.Web.UI.RockMasterPage" %>
+
 <%@ Import Namespace="System.Web.Optimization" %>
 <!DOCTYPE html>
 
 <script runat="server">
-    
+
     // keep code below to call base class init method
 
     /// <summary>
@@ -13,8 +14,8 @@
     protected override void OnInit( EventArgs e )
     {
         base.OnInit( e );
-    }    
-    
+    }
+
 </script>
 
 <html class="no-js">
@@ -22,20 +23,19 @@
 
     <meta charset="utf-8">
     <title></title>
-    
+
     <script src="<%# ResolveRockUrl("~/Scripts/jquery-1.12.4.min.js" ) %>"></script>
 
     <!-- Set the viewport width to device width for mobile -->
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
     <asp:ContentPlaceHolder ID="css" runat="server" />
 
-	<!-- Included CSS Files -->
-    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>"/>
-	<link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>"/>
-	<link rel="stylesheet" href="<%# ResolveRockUrl("~/Styles/developer.css", true) %>"/>
+    <!-- Included CSS Files -->
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>" />
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>" />
 
-    <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>" ></script>
+    <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>"></script>
 
     <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
     <script>
@@ -113,7 +113,7 @@
 
         <!-- Page Header -->
         <header>
-			<div class="header-inset">
+            <div class="header-inset">
                 <div class="nav-menu left">
                     <div class="header-search">
                         <div class="search-icon-wrap" id="icoSearch" onclick="toggleSearch()">
@@ -124,30 +124,33 @@
                         </div>
                     </div>
                     <ul id="menu-left" class="main-navigation desktop-menu">
-                        <li class="menu-item main-nav-item">
+                        <%--<li class="menu-item main-nav-item">
                             <a href="/Veritas/what-we-do">What We Do</a>
-                        </li>
-                        <li class="menu-item main-nav-item ministry-nav dropdown">
+                        </li>--%>
+                        <li class="menu-item main-nav-item">
                             <a href="/Veritas/Staff">Get to Know Us</a>
+                        </li>
+                        <li class="menu-item main-nav-item">
+                            <a href="/Veritas/Resources">Messages</a>
                         </li>
                     </ul>
                 </div>
-				<div class="website-logo">
-					<a href="/Veritas" >
-						<img src="/Themes/Veritas/Assets/Logos/logo.png" class="header-image img-responsive" />
-					</a>
-				</div>
+                <div class="website-logo">
+                    <a href="/Veritas">
+                        <img src="/Themes/Veritas/Assets/Logos/logo.png" class="header-image img-responsive" />
+                    </a>
+                </div>
                 <div class="nav-menu right">
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
                             <li class="menu-item main-nav-item">
-                                <a href="/Veritas/Resources">Messages</a>
+                                <a href="/Veritas/Serving">Make an Impact</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Veritas/Events?aud=College">Events</a>
+                                <a href="/Registration/veritas-rides">Find a Ride</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a class="btn btn-accent" href="/Registration/veritas-rides">Find a Ride</a>
+                                <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
                             </li>
                         </ul>
                     </div>
@@ -157,9 +160,9 @@
                             <i class="fa fa-times"></i>
                         </div>
                         <ul class="main-navigation" id="menu-mobile-menu">
-                            <li class="menu-item">
+                            <%--<li class="menu-item">
                                 <a class="text-white" href="/Veritas/what-we-do">What We Do</a>
-                            </li>
+                            </li>--%>
                             <li class="menu-item">
                                 <a class="text-white" href="/Veritas/Staff">Get to Know Us</a>
                             </li>
@@ -167,10 +170,13 @@
                                 <a href="/Veritas/Resources" class="text-white">Messages</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Veritas/Events?aud=College" class="text-white">Events</a>
+                                <a href="/Veritas/Serving" class="text-white">Make an Impact</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Registration/veritas-rides" class="text-white">Find a Ride</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Veritas/Events?aud=College" class="text-white">Events</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Give/Veritas" class="text-white">Support Veritas Staff</a>
@@ -189,59 +195,59 @@
                         </ul>
                     </div>
                 </div>
-			</div>
+            </div>
 
             <!-- Brand Bar -->
             <nav class="navbar navbar-inverse navbar-static-top">
                 <div class="container">
-			        <div class="navbar-header">
+                    <div class="navbar-header">
                         <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
                             <i class="fa fa-bars"></i>
                         </button>
                         <Rock:Zone Name="Header" runat="server" />
-			        </div>	
-                    <div class="navbar-collapse collapse">   
+                    </div>
+                    <div class="navbar-collapse collapse">
                         <!-- Main Navigation -->
                         <div class="pull-right">
                             <Rock:Zone Name="Login" runat="server" />
                         </div>
                         <Rock:Zone Name="Navigation" runat="server" />
-			        </div>	
+                    </div>
                 </div>
             </nav>
 
         </header>
-		
+
         <asp:ContentPlaceHolder ID="feature" runat="server"></asp:ContentPlaceHolder>
 
         <asp:ContentPlaceHolder ID="main" runat="server"></asp:ContentPlaceHolder>
 
-	    <footer class="background--primary">
-			<div class="container">
-				<div class="row">
-			        <div class="col-md-12">
-				        <Rock:Zone Name="Footer" runat="server" />
-			        </div>
-		        </div>
-			</div>
-	    </footer>
-	
-        
-        <%-- controls for scriptmanager and update panel --%>
-        <asp:ScriptManager ID="sManager" runat="server"/>
-        <asp:UpdateProgress id="updateProgress" runat="server" DisplayAfter="800">
-		        <ProgressTemplate>
-		            <div class="updateprogress-status">
-                        <div class="spinner">
-                          <div class="rect1"></div>
-                          <div class="rect2"></div>
-                          <div class="rect3"></div>
-                          <div class="rect4"></div>
-                          <div class="rect5"></div>
-                        </div>
+        <footer class="background--primary">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <Rock:Zone Name="Footer" runat="server" />
                     </div>
-                    <div class="updateprogress-bg modal-backdrop"></div>
-		        </ProgressTemplate>
+                </div>
+            </div>
+        </footer>
+
+
+        <%-- controls for scriptmanager and update panel --%>
+        <asp:ScriptManager ID="sManager" runat="server" />
+        <asp:UpdateProgress ID="updateProgress" runat="server" DisplayAfter="800">
+            <ProgressTemplate>
+                <div class="updateprogress-status">
+                    <div class="spinner">
+                        <div class="rect1"></div>
+                        <div class="rect2"></div>
+                        <div class="rect3"></div>
+                        <div class="rect4"></div>
+                        <div class="rect5"></div>
+                    </div>
+                </div>
+                <div class="updateprogress-bg modal-backdrop"></div>
+            </ProgressTemplate>
         </asp:UpdateProgress>
 
     </form>
