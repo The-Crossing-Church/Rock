@@ -24,6 +24,7 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
 
     [BooleanField( "Remove", "Select 'Yes' if groups should be removed.  Select 'No' if they should just be marked as excluded.", true )]
     [TextField( "MultiAge Group Name", "The name of the group to match for multi-age", false, "Multi-Age" )]
+    [DefinedValueField( name: "Reference Location Value", definedTypeGuid: "3285DCEF-FAA4-43B9-9338-983F4A384ABA" )]
     public class FilterGroupsForMultiAge : CheckInActionComponent
     {
         /// <summary>
@@ -48,6 +49,8 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
             {
                 var remove = GetAttributeValue( action, "Remove" ).AsBoolean();
                 var groupName = GetAttributeValue( action, "MultiAgeGroupName" );
+                Guid? referenceLocationTypeGuid = GetAttributeValue( action, "ReferenceLocationValue" ).AsGuidOrNull();
+                DefinedValue referenceLocationType = new DefinedValueService( rockContext ).Get( referenceLocationTypeGuid.Value );
 
                 foreach ( var person in family.People )
                 {
@@ -66,11 +69,28 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
                                     if ( person.Person.AgeClassification == AgeClassification.Child && possibleGroups.Contains( groupName ) )
                                     {
                                         var allSchedules = person.SelectedSchedules.OrderBy( s => s.StartTime ).ToList();
-                                        if(allSchedules.Count() > 0)
+                                        if ( allSchedules.Count() > 0 )
                                         {
                                             if ( schedule.Schedule.Id != allSchedules[0].Schedule.Id )
                                             {
-                                                isMultiAge = true;
+                                                int idx = allSchedules.Select( s => s.Schedule.Id ).ToList().IndexOf( schedule.Schedule.Id );
+                                                if ( idx > 0 )
+                                                {
+                                                    var allLocations = person.GroupTypes.SelectMany( gt => gt.Groups ).SelectMany( g => g.Locations ).ToList();
+                                                    var locsForPreviousSchedule = allLocations.Where( l => !l.ExcludedByFilter && l.IsActiveAndNotFull && l.Schedules.Where( s => !s.ExcludedByFilter ).Select( s => s.Schedule.Id ).Contains( allSchedules[idx - 1].Schedule.Id ) ).OrderBy( l => l.Order ).ToList();
+                                                    if ( locsForPreviousSchedule[0].Location.LocationTypeValueId == referenceLocationType.Id )
+                                                    {
+                                                        removeMultiAge = true;
+                                                    }
+                                                    else
+                                                    {
+                                                        isMultiAge = true;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    removeMultiAge = true;
+                                                }
                                             }
                                             else
                                             {
