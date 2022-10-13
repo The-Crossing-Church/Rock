@@ -56,7 +56,7 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
                 {
                     foreach ( var groupType in person.GroupTypes.ToList() )
                     {
-                        foreach ( var group in groupType.Groups.ToList() )
+                        foreach ( var group in groupType.Groups.OrderByDescending( g => g.Group.Name ).ToList() )
                         {
                             foreach ( var location in group.Locations.ToList() )
                             {
@@ -77,7 +77,7 @@ namespace org.crossingchurch.OurRock.Workflow.Action.CheckIn
                                                 if ( idx > 0 )
                                                 {
                                                     var allLocations = person.GroupTypes.SelectMany( gt => gt.Groups ).SelectMany( g => g.Locations ).ToList();
-                                                    var locsForPreviousSchedule = allLocations.Where( l => !l.ExcludedByFilter && l.IsActiveAndNotFull && l.Location.Name != "Multi-Age" && l.Schedules.Where( s => !s.ExcludedByFilter ).Select( s => s.Schedule.Id ).Contains( allSchedules[idx - 1].Schedule.Id ) ).OrderBy( l => l.Order ).ToList();
+                                                    var locsForPreviousSchedule = allLocations.Where( l => !l.ExcludedByFilter && l.IsActiveAndNotFull && l.Schedules.Where( s => !s.ExcludedByFilter ).Select( s => s.Schedule.Id ).Contains( allSchedules[idx - 1].Schedule.Id ) ).OrderBy( l => l.Order ).ToList();
                                                     if ( locsForPreviousSchedule[0].Location.LocationTypeValueId == referenceLocationType.Id )
                                                     {
                                                         removeMultiAge = true;
