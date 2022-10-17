@@ -56,6 +56,8 @@
     <Compile Include="Core\Attributes.cs" />
     <Compile Include="Event\RegistrationEntry.cs" />
     <Compile Include="Example\FieldTypeGallery.cs" />
+    <Compile Include="Plugin\EventForm\AdminDashboard.cs" />
+    <Compile Include="Plugin\EventForm\SubmissionForm.cs" />
     <Compile Include="RockObsidianBlockType.cs" />
     <Compile Include="Example\ControlGallery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

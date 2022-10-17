@@ -58,6 +58,9 @@
     <Folder Include="Framework\Blocks\Finance\" />
     <Folder Include="Framework\Blocks\Groups\" />
     <Folder Include="Framework\Blocks\Core\" />
+    <Folder Include="Framework\Blocks\Plugin\" />
+    <Folder Include="Framework\Blocks\Plugin\EventForm\" />
+    <Folder Include="Framework\Blocks\Plugin\EventForm\Components\" />
     <Folder Include="Framework\Blocks\WorkFlow\" />
     <Folder Include="Framework\Blocks\Security\" />
     <Folder Include="Framework\Blocks\Utility\" />
@@ -117,6 +120,28 @@
     <TypeScriptCompile Include="Framework\Blocks\Example\personSecondary.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Finance\transactionEntry.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Groups\groupMemberList.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\autoComplete.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\basicInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\calendar.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\space.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\resourceSwitches.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\toggle.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\submissionForm.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\eventAttributeValuesViewModel.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\eventDetailsAttributeValuesViewModel.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\submissionFormBlockViewModel.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="Framework\Blocks\Security\login.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Utility\starkDetail.ts" />
     <TypeScriptCompile Include="Framework\Blocks\WorkFlow\FormBuilder\formBuilderDetail.ts" />

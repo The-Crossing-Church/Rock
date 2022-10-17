@@ -104,6 +104,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Jobs\EventFormConversion.cs" />
     <Compile Include="Jobs\HubspotQuickSync.cs" />
     <Compile Include="Jobs\HubspotGivingIntegration.cs" />
     <Compile Include="Jobs\HubspotIntegration.cs" />

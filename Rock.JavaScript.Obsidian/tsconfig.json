@@ -6,6 +6,7 @@
     "removeComments": true,
     "allowUnreachableCode": false,
     "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
     "target": "ES2016",
     "moduleResolution": "Node"
   }

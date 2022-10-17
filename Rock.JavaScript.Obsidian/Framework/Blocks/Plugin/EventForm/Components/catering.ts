@@ -1,0 +1,222 @@
+import { defineComponent, PropType } from "vue";
+import { ContentChannelItem } from "../../../../ViewModels"
+import { Menu, Dropdown } from "ant-design-vue";
+const { MenuItem } = Menu;
+import RockForm from "../../../../Controls/rockForm";
+import RockField from "../../../../Controls/rockField";
+import RockFormField from "../../../../Elements/rockFormField";
+import Toggle from "./toggle";
+import TimePicker from "./timePicker";
+
+
+export default defineComponent({
+    name: "EventForm.Components.Catering",
+    components: {
+      "rck-field": RockField,
+      "rck-form-field": RockFormField,
+      "rck-form": RockForm,
+      "a-dropdown": Dropdown,
+      "a-menu": Menu,
+      "a-menu-item": MenuItem,
+      "tcc-switch": Toggle,
+      "tcc-time": TimePicker,
+    },
+    props: {
+      e: {
+          type: Object as PropType<ContentChannelItem>,
+          required: false
+      },
+    },
+    setup() {
+
+    },
+    data() {
+        return {
+          
+        };
+    },
+    computed: {
+
+    },
+    methods: {
+
+    },
+    watch: {
+      'e.attributeValues.FoodSetupLocation'(val) {
+        if(this.e?.attributeValues) {
+          if(this.e.attributeValues.SetupFoodandDrinkTogether == "True") {
+            this.e.attributeValues.DrinkSetupLocation = val
+          }
+        }
+      },
+      'e.attributeValues.SetupFoodandDrinkTogether'(val) {
+        if(val == 'True' && this.e?.attributeValues) {
+          this.e.attributeValues.DrinkSetupLocation = this.e.attributeValues.FoodSetupLocation
+        }
+      }
+    },
+    mounted() {
+      
+    },
+    template: `
+<div>
+  <a-dropdown :trigger="['click']">
+    <div class="hover font-weight-bold">For a list of our preferred vendors - <span class="text-accent">please click here.</span></div>
+    <template #overlay>
+      <a-menu class="tcc-dropdown">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Arris’'">
+          Arris’
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'B&B'">
+          B&B
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Chick-fil-A'">
+          Chick-fil-A
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Como Smoke and Fire'">
+          Como Smoke and Fire
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'D-Rowe’s'">
+          D-Rowe’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Freddy’s'">
+          Freddy’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Honey Baked Ham'">
+          Honey Baked Ham
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hoss’'">
+          Hoss’
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hy-Vee Catering'">
+          Hy-Vee Catering
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Italian Village'">
+          Italian Village
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Jimmy John’s'">
+          Jimmy John’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Lee’s'">
+          Lee’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Mrs. Tammie'">
+          Mrs. Tammie
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Panera'">
+          Panera
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Papa John’s'">
+          Papa John’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Picklemans'">
+          Pickleman's
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Pizza Tree'">
+          Pizza Tree
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Popeye’s'">
+          Popeye’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Shakespeare’s'">
+          Shakespeare’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Sophia’s'">
+          Sophia’s
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Tropical Smoothie Cafe'">
+          Tropical Smoothie Cafe
+        </a-menu-item>
+      </a-menu>
+    </template>
+  </a-dropdown>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.PreferredVendor"
+        :attribute="e.attributes.PreferredVendor"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.FoodBudgetLine"
+        :attribute="e.attributes.FoodBudgetLine"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="e.attributeValues.PreferredMenu"
+        :attribute="e.attributes.PreferredMenu"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsDelivery"
+        :label="e.attributes.NeedsDelivery.name"
+      ></tcc-switch>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.NeedsDelivery == 'True'">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-time 
+        :label="e.attributes.FoodTime.name"
+        v-model="e.attributeValues.FoodTime"
+      ></tcc-time>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.FoodSetupLocation"
+        :attribute="e.attributes.FoodSetupLocation"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row" v-else>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-time 
+        :label="e.attributes.FoodTime.name"
+        v-model="e.attributeValues.FoodTime"
+      ></tcc-time>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.Drinks"
+        :attribute="e.attributes.Drinks"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-time 
+        :label="e.attributes.DrinkTime.name"
+        v-model="e.attributeValues.DrinkTime"
+      ></tcc-time>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsDelivery == 'True'">
+      <rck-field
+        v-model="e.attributeValues.SetupFoodandDrinkTogether"
+        :attribute="e.attributes.SetupFoodandDrinkTogether"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.DrinkSetupLocation"
+        :attribute="e.attributes.DrinkSetupLocation"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+</div>
+`
+});
