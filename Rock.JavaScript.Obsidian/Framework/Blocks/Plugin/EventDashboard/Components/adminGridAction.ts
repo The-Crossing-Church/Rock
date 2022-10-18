@@ -10,7 +10,8 @@ export default defineComponent({
       "a-pop": Popover,
     },
     props: {
-      request: Object as PropType<ContentChannelItem>
+      request: Object as PropType<ContentChannelItem>,
+      url: String
     },
     setup() {
 
@@ -22,19 +23,13 @@ export default defineComponent({
     },
     computed: {
       btnColor() {
-        if(this.request?.attributeValues?.RequestStatus == "Submitted") {
-          return "primary"
-        }
-        if(this.request?.attributeValues?.RequestStatus == "In Progress") {
-          return "inprogress"
-        }
-        if(this.request?.attributeValues?.RequestStatus == "Pending Changes") {
-          return "pendingchanges"
-        }
+        return this.request?.attributeValues?.RequestStatus.replace(" ", "").replace(" ", "").toLowerCase()
       }
     },
     methods: {
-
+      requestAction(action: string) {
+        window.location.href = this.url + `?Id=${this.request?.id}&Action=${action}`
+      }
     },
     watch: {
       
@@ -45,7 +40,7 @@ export default defineComponent({
     template: `
 <a-pop v-model:visible="visible" trigger="click" placement="right">
   <template #content>
-    <a-btn shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'">
+    <a-btn shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="requestAction('In Progress')">
       <i class="fas fa-tasks"></i>
     </a-btn>
     <a-btn shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'">

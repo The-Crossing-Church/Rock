@@ -11,4 +11,5 @@ export type AdminDashboardBlockViewModel = {
     drinks: DefinedValue[];
     requestStatus: Attribute;
     requestType: Attribute;
+    workflowURL: string;
 };

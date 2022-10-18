@@ -3,7 +3,7 @@ import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/bloc
 import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels";
 import { AdminDashboardBlockViewModel } from "./adminDashboardBlockViewModel";
 import { useStore } from "../../../Store/index";
-import { DateTime } from "luxon"
+import { DateTime, Duration } from "luxon"
 import { Table, Modal, Button, Popover } from "ant-design-vue"
 import GridAction from "./Components/adminGridAction"
 import TCCModal from "./Components/dashboardModal"
@@ -12,6 +12,7 @@ import TCCDropDownList from "./Components/dropDownList"
 import RockText from "../../../Elements/textBox"
 import RockField from "../../../Controls/rockField"
 import DateRangePicker from "../../../Elements/dateRangePicker"
+import PersonPicker from "../../../Controls/personPicker"
 
 const store = useStore();
 
@@ -29,7 +30,8 @@ export default defineComponent({
     "tcc-ddl": TCCDropDownList,
     "rck-text": RockText,
     "rck-field": RockField,
-    "rck-date-range": DateRangePicker
+    "rck-date-range": DateRangePicker,
+    "rck-person": PersonPicker,
   },
   setup() {
       const invokeBlockAction = useInvokeBlockAction();
@@ -37,6 +39,19 @@ export default defineComponent({
       viewModel?.events.forEach((e: any) => {
         e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
       })
+
+      let filters = {
+        title: "",
+        statuses: ["Submitted", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User"],
+        resources: [] as string[],
+        ministry: "",
+        submitter: { value: "", text: ""},
+        eventDates:  { lowerValue: "", upperValue: "" },
+        eventModified: { lowerValue: "", upperValue: "" }
+      }
+      filters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
+      let twoWeeks = Duration.fromObject({weeks: 2})
+      filters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
 
       /** A method to load a specific request's details */
       const loadDetails: (id: number) => Promise<any> = async (id) => {
@@ -57,6 +72,7 @@ export default defineComponent({
 
       return {
           viewModel,
+          filters,
           loadDetails,
           filterRequests
       }
@@ -116,12 +132,6 @@ export default defineComponent({
           "Production",
           "Publicity"
         ],
-        filters: {
-          title: "",
-          statuses: ["Submitted", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User"],
-          resources: [] as string[],
-          ministry: ""
-        },
         loading: false
       };
   },
@@ -180,16 +190,43 @@ export default defineComponent({
             e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
           })
         }
+      }).catch((err) => {
+        console.log(err)
+      }).finally(() => {
         this.loading = false
-        console.log('Success!')
       })
+    },
+    resetFilters() {
+      this.filters = {
+        title: "",
+        statuses: ["Submitted", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User"],
+        resources: [] as string[],
+        ministry: "",
+        submitter: { value: "", text: ""},
+        eventDates:  { lowerValue: "", upperValue: "" },
+        eventModified: { lowerValue: "", upperValue: "" }
+      }
+      this.filters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
+      let twoWeeks = Duration.fromObject({weeks: 2})
+      this.filters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
+    },
+    clearFilters() {
+      this.filters = {
+        title: "",
+        statuses: [] as string[],
+        resources: [] as string[],
+        ministry: "",
+        submitter: { value: "", text: ""},
+        eventDates:  { lowerValue: "", upperValue: "" },
+        eventModified: { lowerValue: "", upperValue: "" }
+      }
     }
   },
   watch: {
     
   },
   mounted() {
-    
+
   },
   template: `
 <div class="card">
@@ -199,36 +236,67 @@ export default defineComponent({
   </h4>
   <div class="collapse" id="filterCollapse">
     <div class="row">
-      <div class="col col-xs-12 col-md-3">
+      <div class="col col-xs-12 col-md-4">
         <rck-text
           label="Request Name"
           v-model="filters.title"
         ></rck-text>
       </div>
-      <div class="col col-xs-12 col-md-3" v-if="ministryAttr">
+      <div class="col col-xs-12 col-md-4">
+        <rck-person
+          label="Submitter/Modifier"
+          v-model="filters.submitter"
+        ></rck-person>
+      </div>
+      <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
         <rck-field
           v-model="filters.ministry"
           :attribute="ministryAttr"
           :is-edit-mode="true"
         ></rck-field>
       </div>
-      <div class="col col-xs-12 col-md-3">
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 col-md-4">
         <tcc-ddl
           label="Request Status"
           :items="requestStatuses"
           v-model="filters.statuses"
         ></tcc-ddl>
       </div>
-      <div class="col col-xs-12 col-md-3">
+      <div class="col col-xs-12 col-md-4">
         <tcc-ddl
           label="Requested Resources"
           :items="resources"
           v-model="filters.resources"
         ></tcc-ddl>
       </div>
+      <div class="col col-xs-12 col-md-4">
+        <rck-date-range
+          label="Has Event Date in Range"
+          v-model="filters.eventDates"
+        ></rck-date-range>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 font-weight-light hr">
+        OR
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 col-md-4">
+        <rck-date-range
+          label="Modified in Range"
+          v-model="filters.eventModified"
+        ></rck-date-range>
+      </div>
     </div>
     <div class="row">
       <div class="col col-xs-12">
+        <!--
+        <a-btn class="mr-1" type="accent" @click="resetFilters">Reset Defaults</a-btn>
+        <a-btn type="grey" @click="clearFilters">Clear Filters</a-btn>
+        -->
         <a-btn class="pull-right" type="primary" @click="filter" :loading="loading">Filter</a-btn>
       </div>
     </div>
@@ -244,7 +312,7 @@ export default defineComponent({
       {{ formatDates(dates) }}
     </template>
     <template #action="{ record: r }">
-      <tcc-grid :request="r"></tcc-grid>
+      <tcc-grid :request="r" :url="viewModel.workflowURL"></tcc-grid>
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
@@ -335,7 +403,11 @@ label, .control-label {
   background-color: #347689;
   border-color: #347689;
 }
-.ant-btn-accent, .ant-btn-approved{
+.ant-btn-draft {
+  background-color: #A18276;
+  border-color: #A18276;
+}
+.ant-btn-accent, .ant-btn-approved {
   background-color: #8ED2C9;
   border-color: #8ED2C9;
 }
@@ -347,13 +419,17 @@ label, .control-label {
   background-color: #61a4a9;
   border-color: #61a4a9;
 }
-.ant-btn-cancelled, .ant-btn-grey {
+.ant-btn-cancelled, .ant-btn-cancelledbyuser, .ant-btn-grey {
   background-color: #9e9e9e;
   border-color: #9e9e9e;
 }
-.ant-btn-denied, .ant-btn-red {
+.ant-btn-denied, .ant-btn-red, .ant-btn-proposedchangesdenied {
   background-color: #f44336;
   border-color: #f44336;
+}
+.ant-btn-draft:focus, .ant-btn-draft:hover {
+  background-color: #96786E;
+  border-color: #96786E;
 }
 .ant-btn-primary:focus, .ant-btn-primary:hover, .ant-btn-submitted:focus, .ant-btn-submitted:hover {
   background-color: rgba(52, 118, 137, .85);
@@ -375,12 +451,12 @@ label, .control-label {
   border-color: #5B999E;
   color: black;
 }
-.ant-btn-grey:focus, .ant-btn-grey:hover, .ant-btn-cancelled:focus, .ant-btn-cancelled:hover {
+.ant-btn-grey:focus, .ant-btn-grey:hover, .ant-btn-cancelled:focus, .ant-btn-cancelled:hover, .ant-btn-cancelledbyuser:focus, .ant-btn-cancelledbyuser:hover {
   background-color: #929392;
   border-color: #929392;
   color: black;
 }
-.ant-btn-red:focus, .ant-btn-red:hover, .ant-btn-denied:focus, .ant-btn-denied:hover {
+.ant-btn-red:focus, .ant-btn-red:hover, .ant-btn-denied:focus, .ant-btn-denied:hover, .ant-btn-proposedchangesdenied:focus, .ant-btn-proposedchangesdenied:hover {
   background-color: #E43F32;
   border-color: #E43F32;
   color: black;
@@ -442,6 +518,26 @@ td .ant-btn {
   flex-direction: column;
   align-items: start;
   justify-content: center;
+}
+/* Custom hr lines on filters text */
+.hr {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  text-align: center;
+}
+.hr:before, .hr:after {
+  position: absolute;
+  top: 51%;
+  overflow: hidden;
+  width: 50%;
+  height: 1px;
+  content: '\a0';
+  background-color: grey;
+}
+.hr:before {
+  margin-left: -50%;
+  text-align: right;
 }
 </v-style>
 `

@@ -135,13 +135,13 @@ export default defineComponent({
                             date = intersect[idx].trim()
                         }
                         let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-                        if (event.childContentChannelItem.attributeValues?.MinsStartBuffer) {
-                            let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.MinsStartBuffer.value) })
+                        if (event.childContentChannelItem.attributeValues?.StartBuffer) {
+                            let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.StartBuffer.value) })
                             cdStart = cdStart.minus(span)
                         }
                         let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-                        if (event.childContentChannelItem.attributeValues?.MinsEndBuffer) {
-                            let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.MinsEndBuffer.value) })
+                        if (event.childContentChannelItem.attributeValues?.EndBuffer) {
+                            let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.EndBuffer.value) })
                             cdEnd = cdEnd.plus(span)
                         }
                         let cRange = Interval.fromDateTimes(cdStart, cdEnd)

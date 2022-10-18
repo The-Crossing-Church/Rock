@@ -40,6 +40,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Submitted,Pending Changes,Proposed Changes Denied,Changes Accepted by User,Cancelled by User", required: true, order: 0 )]
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
     [TextField( "Requested Resources Attribute Key", key: AttributeKey.RequestedResourcesAttrKey, category: "Filters", defaultValue: "RequestType", required: true, order: 2 )]
+    [TextField( "Event Dates Attribute Key", key: AttributeKey.EventDatesAttrKey, category: "Filters", defaultValue: "EventDates", required: true, order: 3 )]
+    [WorkflowTypeField( "Request Action Worfklow", "Workflow to update request status", true, key: AttributeKey.RequestActionWorkflow, category: "Workflow" )]
     #endregion Block Attributes
 
     public class AdminDashboard : RockObsidianBlockType
@@ -66,6 +68,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public const string DefaultStatuses = "DefaultStatuses";
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
+            public const string EventDatesAttrKey = "EventDatesAttrKey";
+            public const string RequestActionWorkflow = "RequestActionWorkflow";
         }
 
         /// <summary>
@@ -157,6 +161,12 @@ namespace Rock.Blocks.Plugin.EventDashboard
                             viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == cc.ContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
                         }
                     }
+                    Guid? workflowGuid = GetAttributeValue( AttributeKey.RequestActionWorkflow ).AsGuidOrNull();
+                    if ( workflowGuid.HasValue )
+                    {
+                        WorkflowType wf = new WorkflowTypeService( rockContext ).Get( workflowGuid.Value );
+                        viewModel.workflowURL = "/WorkflowEntry/" + wf.Id;
+                    }
                 }
 
                 return viewModel;
@@ -226,6 +236,22 @@ namespace Rock.Blocks.Plugin.EventDashboard
             return ActionOk( viewModel );
         }
 
+        [BlockAction]
+        public BlockActionResult ChangeStatus( int id, string status )
+        {
+            try
+            {
+                ContentChannelItem item = new ContentChannelItemService( new RockContext() ).Get( id );
+                item.SetAttributeValue( "RequestStatus", status );
+                item.SaveAttributeValue( "RequestStatus" );
+                return ActionOk( new { status = item.GetAttributeValue( "RequestStatus" ) } );
+            }
+            catch ( Exception e )
+            {
+                return ActionBadRequest( e.Message );
+            }
+        }
+
         #region Helpers
         /// <summary>
         /// Loads the requests
@@ -236,7 +262,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             DashboardViewModel viewModel = new DashboardViewModel();
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
             ContentChannelItem item = new ContentChannelItem();
-            List<ContentChannelItem> items = new List<ContentChannelItem>();
+            List<ContentChannelItem> itemList = new List<ContentChannelItem>();
+            IEnumerable<ContentChannelItem> items = null;
             RockContext context = new RockContext();
             AttributeValueService av_svc = new AttributeValueService( context );
             var p = GetCurrentPerson();
@@ -247,47 +274,130 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 filters = new Filters()
                 {
                     statuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Select( i => i.Trim() ).ToList(),
-                    modifiedDate = RockDateTime.Now.AddDays( -7 ).ToString( "yyyy-MM-dd" )
+                };
+                filters.eventModified = new DateRangeParts()
+                {
+                    lowerValue = RockDateTime.Now.AddDays( -14 ).ToString( "yyyy-MM-dd" ),
+                    upperValue = RockDateTime.Now.ToString( "yyyy-MM-dd" )
                 };
             }
-            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId ).ToList();
-            items[0].LoadAttributes();
 
-            IEnumerable<ContentChannelItem> items_status_match = null;
+            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );//.ToList();
+            items.First().LoadAttributes();
+
+            IEnumerable<ContentChannelItem> filtered_items = null;
             IEnumerable<ContentChannelItem> items_modified_match = null;
-            var requestStatusAttr = items[0].Attributes["RequestStatus"];
-            var requestResourcesAttr = items[0].Attributes["RequestType"];
+            string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+            var requestStatusAttr = items.First().Attributes[requestStatusAttrKey];
+            string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
+            var requestResourcesAttr = items.First().Attributes[resourcesAttrKey];
+            string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
+            var eventDatesAttr = items.First().Attributes[eventDatesAttrKey];
 
-            //OR Filters
-            if ( filters.statuses.Count() > 0 )
+            //OR Filter
+            if ( filters.eventModified != null )
             {
-                var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && filters.statuses.Contains( av.Value ) );
-                items_status_match = items.Join( requestStatuses,
-                        i => i.Id,
-                        av => av.EntityId,
-                        ( i, av ) => i
-                    );
+                if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) && !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
+                {
+                    items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ) );
+                }
+                else
+                {
+                    if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) )
+                    {
+                        items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) );
+                    }
+                    if ( !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
+                    {
+                        items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ) );
+                    }
+                }
             }
-            if ( !String.IsNullOrEmpty( filters.modifiedDate ) )
+            Person submitter = null;
+            if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
             {
-                items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.modifiedDate ) );
+                submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter.value ) );
             }
-            items = items.Where( i => ( items_status_match != null && items_status_match.Select( itm => itm.Id ).Contains( i.Id ) ) || ( items_modified_match != null && items_modified_match.Select( itm => itm.Id ).Contains( i.Id ) ) ).ToList();
-
             //AND Filters
-            var drafts = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && av.Value == "Draft" ).Select( i => i.EntityId );
-            items = items.Where( i => !drafts.Contains( i.Id ) ).ToList();
-            if ( filters.submitter.HasValue )
+            filtered_items = items.Where( i =>
             {
-                items = items.Where( i => i.CreatedByPersonAliasId == filters.submitter || i.ModifiedByPersonAliasId == filters.submitter ).ToList();
-            }
-            if ( !String.IsNullOrEmpty( filters.title ) )
+                bool meetsCriteria = true;
+                if ( submitter != null )
+                {
+                    if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
+                    {
+                        meetsCriteria = false;
+                    }
+                }
+                if ( !String.IsNullOrEmpty( filters.title ) )
+                {
+                    if ( !i.Title.ToLower().Contains( filters.title.ToLower() ) )
+                    {
+                        meetsCriteria = false;
+                    }
+                }
+
+                return meetsCriteria;
+            } );
+            if ( filters.eventDates != null )
             {
-                items = items.Where( i => i.Title.ToLower().Contains( filters.title.ToLower() ) ).ToList();
+                DateTime? lowerValue = null;
+                DateTime? upperValue = null;
+                if ( !String.IsNullOrEmpty( filters.eventDates.lowerValue ) )
+                {
+                    lowerValue = DateTime.Parse( filters.eventDates.lowerValue );
+                }
+                if ( !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
+                {
+                    upperValue = DateTime.Parse( filters.eventDates.upperValue );
+                }
+                if ( lowerValue.HasValue || upperValue.HasValue )
+                {
+                    var eventDates = av_svc.Queryable().Where( av => av.AttributeId == eventDatesAttr.Id ).ToList().Where( av =>
+                    {
+                        bool dateInRange = false;
+
+                        List<DateTime> dates = av.Value != "" ? av.Value.Split( ',' ).Select( d => DateTime.Parse( d.Trim() ) ).ToList() : new List<DateTime>();
+                        for ( int i = 0; i < dates.Count(); i++ )
+                        {
+                            if ( lowerValue.HasValue && upperValue.HasValue )
+                            {
+                                if ( dates[i] >= lowerValue.Value && dates[i] <= upperValue.Value )
+                                {
+                                    dateInRange = true;
+                                }
+                            }
+                            else
+                            {
+                                if ( lowerValue.HasValue )
+                                {
+                                    if ( dates[i] >= lowerValue.Value )
+                                    {
+                                        dateInRange = true;
+                                    }
+                                }
+                                if ( upperValue.HasValue )
+                                {
+                                    if ( dates[i] <= upperValue.Value )
+                                    {
+                                        dateInRange = true;
+                                    }
+                                }
+                            }
+
+                        }
+                        return dateInRange;
+                    } );
+                    filtered_items = filtered_items.Join( eventDates,
+                            i => i.Id,
+                            av => av.EntityId,
+                            ( i, av ) => i
+                        );
+                }
             }
             if ( filters.resources != null && filters.resources.Count() > 0 )
             {
-                var requestedResources = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id ).ToList().Where( av =>
+                var requestedResources = av_svc.Queryable().Where( av => av.AttributeId == requestResourcesAttr.Id ).ToList().Where( av =>
                 {
                     var resources = av.Value.Split( ',' ).Select( v => v.Trim() ).ToList();
                     var intersect = filters.resources.Intersect( resources );
@@ -297,11 +407,33 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     }
                     return false;
                 } );
-                items_status_match = items.Join( requestedResources,
+                filtered_items = filtered_items.Join( requestedResources,
                         i => i.Id,
                         av => av.EntityId,
                         ( i, av ) => i
                     );
+            }
+            if ( filters.statuses.Count() > 0 )
+            {
+                var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && filters.statuses.Contains( av.Value ) );
+                filtered_items = filtered_items.Join( requestStatuses,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
+            }
+            if ( items_modified_match != null && filtered_items != null )
+            {
+                itemList = filtered_items.Union( items_modified_match ).Distinct().ToList();
+
+            }
+            else if ( items_modified_match != null )
+            {
+                itemList = items_modified_match.ToList();
+            }
+            else
+            {
+                itemList = filtered_items.ToList();
             }
 
             //Make sure desired item is in list
@@ -311,11 +443,11 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 if ( exists == null )
                 {
                     item = new ContentChannelItemService( context ).Get( id.Value );
-                    items.Add( item );
+                    itemList.Add( item );
                 }
             }
-            viewModel.events = items.Select( i => i.ToViewModel( p, true ) ).ToList();
-            viewModel.eventDetails = items.SelectMany( i => i.ChildItems ).ToList();
+            viewModel.events = itemList.Select( i => i.ToViewModel( p, true ) ).ToList();
+            viewModel.eventDetails = itemList.SelectMany( i => i.ChildItems ).ToList();
             return viewModel;
         }
 
@@ -377,6 +509,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public List<Rock.Model.DefinedValue> drinks { get; set; }
             public AttributeViewModel requestStatus { get; set; }
             public AttributeViewModel requestType { get; set; }
+            public string workflowURL { get; set; }
         }
 
         public class GetRequestResponse
@@ -390,11 +523,22 @@ namespace Rock.Blocks.Plugin.EventDashboard
         public class Filters
         {
             public string title { get; set; }
-            public int? submitter { get; set; }
+            public string ministry { get; set; }
             public List<string> statuses { get; set; }
             public List<string> resources { get; set; }
-            public string date { get; set; }
-            public string modifiedDate { get; set; }
+            public DateRangeParts eventDates { get; set; }
+            public DateRangeParts eventModified { get; set; }
+            public Submitter submitter { get; set; }
+        }
+        public class Submitter
+        {
+            public string value { get; set; }
+            public string text { get; set; }
+        }
+        public class DateRangeParts
+        {
+            public string lowerValue { get; set; }
+            public string upperValue { get; set; }
         }
     }
 }
