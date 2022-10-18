@@ -242,6 +242,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             try
             {
                 ContentChannelItem item = new ContentChannelItemService( new RockContext() ).Get( id );
+                item.LoadAttributes();
                 item.SetAttributeValue( "RequestStatus", status );
                 item.SaveAttributeValue( "RequestStatus" );
                 return ActionOk( new { status = item.GetAttributeValue( "RequestStatus" ) } );

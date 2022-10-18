@@ -27,8 +27,11 @@ export default defineComponent({
       }
     },
     methods: {
-      requestAction(action: string) {
-        window.location.href = this.url + `?Id=${this.request?.id}&Action=${action}`
+      updateStatus(id: number, status: string) {
+        this.$emit("updatestatus", id, status)
+      },
+      approve() {
+        window.location.href = this.url + `?Id=${this.request?.id}&Action=Approved`
       }
     },
     watch: {
@@ -40,10 +43,10 @@ export default defineComponent({
     template: `
 <a-pop v-model:visible="visible" trigger="click" placement="right">
   <template #content>
-    <a-btn shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="requestAction('In Progress')">
+    <a-btn shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
       <i class="fas fa-tasks"></i>
     </a-btn>
-    <a-btn shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'">
+    <a-btn shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="approve">
       <i class="fas fa-check-circle"></i>
     </a-btn>
     <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'">

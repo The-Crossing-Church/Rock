@@ -70,11 +70,20 @@ export default defineComponent({
       }
       provide("filterRequests", filterRequests);
 
+      const changeStatus: (id: number, status: string) => Promise<any> = async (id, status) => {
+        const response = await invokeBlockAction("ChangeStatus", {
+            id: id, status: status
+        });
+        return response
+      }
+      provide("changeStatus", changeStatus);
+
       return {
           viewModel,
           filters,
           loadDetails,
-          filterRequests
+          filterRequests,
+          changeStatus
       }
   },
   data() {
@@ -132,7 +141,11 @@ export default defineComponent({
           "Production",
           "Publicity"
         ],
-        loading: false
+        loading: false,
+        btnLoading: {
+          inprogress: false,
+          cancelled: false
+        }
       };
   },
   computed: {
@@ -220,6 +233,39 @@ export default defineComponent({
         eventDates:  { lowerValue: "", upperValue: "" },
         eventModified: { lowerValue: "", upperValue: "" }
       }
+    },
+    updateFromGridAction(id: number, status: string) {
+      this.selected.id = id
+      this.updateStatus(status)
+    },
+    updateStatus(status: string) {
+      if(status == "In Progress") {
+        this.btnLoading.inprogress = true
+      } else {
+        this.btnLoading.cancelled = true
+      }
+      this.changeStatus(this.selected.id, status).then((res) => {
+        if(res.data.status) {
+          if(this.selected.attributeValues) {
+            this.selected.attributeValues.RequestStatus = res.data.status
+          }
+          this.viewModel?.events.forEach((event: any) => {
+            if(event.id == this.selected.id) {
+              event.attributeValues.RequestStatus = res.data.status
+            }
+          })
+        }
+      }).catch((err) => {
+        console.log('[Change Status Error]')
+        console.log(err)
+        //TODO: Alert User
+      }).finally(() => {
+        this.btnLoading.inprogress = false
+        this.btnLoading.cancelled = false
+      })
+    },
+    requestAction(status: string) {
+      window.location.href = this.viewModel?.workflowURL + `?Id=${this.selected?.id}&Action=${status}`
     }
   },
   watch: {
@@ -312,7 +358,7 @@ export default defineComponent({
       {{ formatDates(dates) }}
     </template>
     <template #action="{ record: r }">
-      <tcc-grid :request="r" :url="viewModel.workflowURL"></tcc-grid>
+      <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
@@ -323,22 +369,26 @@ export default defineComponent({
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
         </a-btn>
-        <a-btn type="accent" v-if="selectedStatus != 'Approved'">
+        <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="requestAction('Approved')">
           <i class="mr-1 fa fa-check"></i>
           Approve
+        </a-btn>
+        <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')">
+          <i class="mr-1 fas fa-tasks"></i>
+          In Progress
         </a-btn>
         <a-pop v-model:visible="visible" trigger="click" placement="top" v-if="selectedStatus != 'Denied'">
           <template #content>
             <div style="display: flex; flex-direction: column;">
-              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'">
+              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="requestAction('Proposed Changes Denied')">
                 <i class="mr-1 fa fa-times"></i>
                 Changes w/ Comment
               </a-btn>
-              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'">
+              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied')">
                 <i class="mr-1 fa fa-times"></i>
                 Changes w/o Comment
               </a-btn>
-              <a-btn type="red">
+              <a-btn type="red" @click="requestAction('Denied')">
                 <i class="mr-1 fa fa-times"></i>
                 Request
               </a-btn>
@@ -349,7 +399,7 @@ export default defineComponent({
             Deny
           </a-btn>
         </a-pop>
-        <a-btn type="grey" v-if="selectedStatus != 'Cancelled'">
+        <a-btn type="grey" v-if="selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled')">
           <i class="mr-1 fa fa-ban"></i>
           Cancel
         </a-btn>
