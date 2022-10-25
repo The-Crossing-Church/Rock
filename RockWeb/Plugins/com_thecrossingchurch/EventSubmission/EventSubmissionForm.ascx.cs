@@ -667,6 +667,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     message = CurrentPerson.FullName + " has submitted a room request for " + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + ".<br/>";
                 }
+                message += "<strong>Meeting Listing on the Calendar:</strong> " + request.Name + "<br/>";
                 message += "<strong>Ministry Contact:</strong> " + request.Contact + "<br/>";
                 for ( int i = 0; i < request.Events.Count(); i++ )
                 {

@@ -209,7 +209,7 @@ export default {
                   return true
               },
               registrationStartDate(earliestRegDate, startDate) {
-                return earliestRegDate <= startDate || `Registration cannot start before ${moment(earliestRegDate).format('MM/DD/yyyy')}`
+                return (moment(startDate).isAfter(moment(earliestRegDate)) || moment(startDate).format("yyyy-MM-dd") == moment(earliestRegDate).format("yyyy-MM-dd") ) || `Registration cannot start before ${moment(earliestRegDate).format('MM/DD/yyyy')}`
               },
               registrationCloseDate(eventDates, eventDate, closeDate, needsChildCare) {
                   let dates = eventDates.map(d => moment(d))
