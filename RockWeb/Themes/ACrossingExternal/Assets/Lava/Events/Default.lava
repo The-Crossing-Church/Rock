@@ -92,8 +92,12 @@
         </ul>
       {% endif %}
     {% endif %}
+    {% assign ledBy = EventItemOccurrence | Attribute:'LedBy' %}
+    {% if ledBy != '' %}
+        Led By: {{ ledBy }} <br/><br/>
+    {% endif %}
     {% if EventItemOccurrence.Location != '' %}
-        {% comment %}<span class="floating-event-title">Location</span> <br />{% endcomment %}
+    {% comment %}<span class="floating-event-title">Location</span> <br />{% endcomment %}
         {{ EventItemOccurrence.Location }} <br/><br/>
     {% endif %}
     {% comment %}<span class="floating-event-title">Description</span> <br />{% endcomment %}

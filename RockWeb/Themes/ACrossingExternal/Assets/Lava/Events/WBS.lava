@@ -82,6 +82,15 @@
         {% endeventitemoccurrence %}
       {% endif %}
     {% endif %}
+    {% assign ledBy = EventItemOccurrence | Attribute:'LedBy' %}
+    {% if ledBy != '' %}
+        <br/>
+        Led By: {{ ledBy }} <br/><br/>
+    {% endif %}
+    {% if EventItemOccurrence.Location != '' %}
+    {% comment %}<span class="floating-event-title">Location</span> <br />{% endcomment %}
+        {{ EventItemOccurrence.Location }} <br/><br/>
+    {% endif %}
     <br/>
     <div class="wbs-title background--grey text--upper">About This Book</div>
     {{ Event.Description }} 
