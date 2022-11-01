@@ -23,13 +23,25 @@ export default defineComponent({
         if(this.details?.attributes && this.details.attributeValues) {
           for(let key in this.details.attributes) {
             let attr = this.details.attributes[key]
+            let item = { attr: attr, value: "", changeValue: "" }
             let categories = attr.categories.map((c: any) => c.name)
             let parsedval = " "
             if(this.details.attributeValues[key].includes("{")) {
               parsedval = JSON.parse(this.details.attributeValues[key]).text
             }
-            if(categories.includes("Event Ops Requests") && this.details.attributeValues[key] != "" && parsedval != "") {
-              attrs.push({attr: attr, value: this.details.attributeValues[key]})
+            let hasValue = false
+            if(this.details.attributeValues[key] != "" && parsedval != "") {
+              hasValue = true
+            }
+            if(this.details.changes && this.details.changes.attributeValues[key] != "") {
+              hasValue = true
+            }
+            if(categories.includes("Event Ops Requests") && hasValue) {
+              item.value = this.details.attributeValues[key]
+              if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
+                item.changeValue = this.details.changes.attributeValues[key]
+              }
+              attrs.push(item)
             }
           }
         }
@@ -49,10 +61,34 @@ export default defineComponent({
   <h3 class="text-accent">Ops Accomodations Information</h3>
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in opsAttrs">
-      <rck-field
-        v-model="av.value"
-        :attribute="av.attr"
-      ></rck-field>
+      <template v-if="av.changeValue != ''">
+        <div class="row">
+          <div class="col col-xs-6">
+            <rck-field
+              v-model="av.value"
+              :attribute="av.attr"
+              class="text-red"
+              :showEmptyValue="true"
+            ></rck-field>
+          </div>
+          <div class="col col-xs-6">
+            <rck-field
+              v-model="av.changeValue"
+              :attribute="av.attr"
+              class="text-primary"
+              :showEmptyValue="true"
+              :showLabel="false"
+              style="padding-top: 18px;"
+            ></rck-field>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <rck-field
+          v-model="av.value"
+          :attribute="av.attr"
+        ></rck-field>
+      </template>
     </div>
   </div>
 </div>

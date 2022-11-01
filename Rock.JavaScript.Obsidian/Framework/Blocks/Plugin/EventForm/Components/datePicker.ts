@@ -1,7 +1,6 @@
 import { defineComponent } from "vue"
-import RockForm from "../../../../Controls/rockForm"
 import RockField from "../../../../Controls/rockField"
-import RockFormField from "../../../../Elements/rockFormField"
+import RockLabel from "../../../../Elements/rockLabel"
 import TextBox from "../../../../Elements/textBox"
 import Calendar from "./calendar"
 import { DateTime } from "luxon"
@@ -12,8 +11,7 @@ export default defineComponent({
     name: "EventForm.Components.DatePicker",
     components: {
       "rck-field": RockField,
-      "rck-form-field": RockFormField,
-      "rck-form": RockForm,
+      "rck-lbl": RockLabel,
       "rck-text": TextBox,
       "tcc-calendar": Calendar,
       "a-btn": Button,
@@ -51,7 +49,17 @@ export default defineComponent({
     computed: {
       displayDate() {
         if(this.modelValue) {
-          return DateTime.fromFormat(this.modelValue, "yyyy-MM-dd").toFormat("MM/dd/yyyy")
+          let regex = new RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]') 
+          if(regex.test(this.modelValue)) {
+            return DateTime.fromFormat(this.modelValue, 'yyyy-MM-dd HH:mm:ss').toFormat("MM/dd/yyyy")
+          } else {
+            regex = new RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
+            if(regex.test(this.modelValue)) {
+              return DateTime.fromFormat(this.modelValue, 'yyyy-MM-dd').toFormat("MM/dd/yyyy")
+            } else {
+              return DateTime.fromISO(this.modelValue).toFormat("MM/dd/yyyy")
+            }
+          }
         }
         return ""
       }
@@ -73,24 +81,22 @@ export default defineComponent({
       }
     },
     template: `
-<rck-form>
-  <rck-form-field>
-    <rck-lbl>{{label}}</rck-lbl>
-    <rck-text
-      v-model="displayDate"
-      inputClasses="tcc-text-display"
-      @click="menu = true"
-    ></rck-text>
-    <a-modal v-model:visible="menu" @ok="menu = false">
-      <br/>
-      <tcc-calendar
-        v-model="date"
-        :multiple="false"
-        :noBorder="true"
-        v-on:closemenu="menu = false"
-      ></tcc-calendar>
-    </a-modal>
-  </rck-form-field>
-</rck-form>
+<div>
+  <rck-lbl>{{label}}</rck-lbl>
+  <rck-text
+    v-model="displayDate"
+    inputClasses="tcc-text-display"
+    @click="menu = true"
+  ></rck-text>
+  <a-modal v-model:visible="menu" @ok="menu = false">
+    <br/>
+    <tcc-calendar
+      v-model="date"
+      :multiple="false"
+      :noBorder="true"
+      v-on:closemenu="menu = false"
+    ></tcc-calendar>
+  </a-modal>
+</div>
 `
 });

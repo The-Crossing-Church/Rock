@@ -2,19 +2,18 @@ import { defineComponent, PropType } from "vue";
 import { ContentChannelItem } from "../../../../ViewModels"
 import { Menu, Dropdown } from "ant-design-vue";
 const { MenuItem } = Menu;
-import RockForm from "../../../../Controls/rockForm";
 import RockField from "../../../../Controls/rockField";
 import RockFormField from "../../../../Elements/rockFormField";
 import Toggle from "./toggle";
 import TimePicker from "./timePicker";
+import Validator from "./validator"
 
 
 export default defineComponent({
     name: "EventForm.Components.Catering",
     components: {
       "rck-field": RockField,
-      "rck-form-field": RockFormField,
-      "rck-form": RockForm,
+      "tcc-validator": Validator,
       "a-dropdown": Dropdown,
       "a-menu": Menu,
       "a-menu-item": MenuItem,
@@ -26,19 +25,47 @@ export default defineComponent({
           type: Object as PropType<ContentChannelItem>,
           required: false
       },
+      showValidation: Boolean
     },
     setup() {
 
     },
     data() {
         return {
-          
+          rules: {
+            required: (value: any, key: string) => {
+              if(typeof value === 'string') {
+                if(value.includes("{")) {
+                  let obj = JSON.parse(value)
+                  return obj.value != '' || `${key} is required`
+                } 
+              } 
+              return !!value || `${key} is required`
+            },
+          }
         };
     },
     computed: {
-
+      errors() {
+        let formRef = this.$refs as any
+        let errs = [] as string[]
+        for(let r in formRef) {
+          if(formRef[r].className?.includes("validator")) {
+            errs.push(...formRef[r].errors)
+          }
+        }
+        return errs
+      }
     },
     methods: {
+      validate() {
+        let formRef = this.$refs as any
+        for(let r in formRef) {
+          if(formRef[r].className?.includes("validator")) {
+            formRef[r].validate()
+          }
+        }
+      }
 
     },
     watch: {
@@ -56,6 +83,9 @@ export default defineComponent({
       }
     },
     mounted() {
+      if(this.showValidation) {
+        this.validate()
+      }
       
     },
     template: `
@@ -132,27 +162,33 @@ export default defineComponent({
   </a-dropdown>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="e.attributeValues.PreferredVendor"
-        :attribute="e.attributes.PreferredVendor"
-        :is-edit-mode="true"
-      ></rck-field>
+      <tcc-validator :rules="[rules.required(e.attributeValues.PreferredVendor, e.attributes.PreferredVendor.name)]" ref="validator_vendor">
+        <rck-field
+          v-model="e.attributeValues.PreferredVendor"
+          :attribute="e.attributes.PreferredVendor"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="e.attributeValues.FoodBudgetLine"
-        :attribute="e.attributes.FoodBudgetLine"
-        :is-edit-mode="true"
-      ></rck-field>
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetLine, e.attributes.FoodBudgetLine.name)]" ref="validator_budget">
+        <rck-field
+          v-model="e.attributeValues.FoodBudgetLine"
+          :attribute="e.attributes.FoodBudgetLine"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
     </div>
   </div>
-  <div class="row">
+  <div class="row mb-2">
     <div class="col col-xs-12">
-      <rck-field
-        v-model="e.attributeValues.PreferredMenu"
-        :attribute="e.attributes.PreferredMenu"
-        :is-edit-mode="true"
-      ></rck-field>
+      <tcc-validator :rules="[rules.required(e.attributeValues.PreferredMenu, e.attributes.PreferredMenu.name)]" ref="validator_menu">
+        <rck-field
+          v-model="e.attributeValues.PreferredMenu"
+          :attribute="e.attributes.PreferredMenu"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
     </div>
   </div>
   <div class="row">
@@ -165,25 +201,31 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.NeedsDelivery == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-time 
-        :label="e.attributes.FoodTime.name"
-        v-model="e.attributeValues.FoodTime"
-      ></tcc-time>
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime">
+        <tcc-time 
+          :label="e.attributes.FoodTime.name"
+          v-model="e.attributeValues.FoodTime"
+        ></tcc-time>
+      </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="e.attributeValues.FoodSetupLocation"
-        :attribute="e.attributes.FoodSetupLocation"
-        :is-edit-mode="true"
-      ></rck-field>
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodSetupLocation, e.attributes.FoodSetupLocation.name)]" ref="validator_foodloc">
+        <rck-field
+          v-model="e.attributeValues.FoodSetupLocation"
+          :attribute="e.attributes.FoodSetupLocation"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
     </div>
   </div>
   <div class="row" v-else>
     <div class="col col-xs-12 col-md-6">
-      <tcc-time 
-        :label="e.attributes.FoodTime.name"
-        v-model="e.attributeValues.FoodTime"
-      ></tcc-time>
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime">
+        <tcc-time 
+          :label="e.attributes.FoodTime.name"
+          v-model="e.attributeValues.FoodTime"
+        ></tcc-time>
+      </tcc-validator>
     </div>
   </div>
   <div class="row">
@@ -195,10 +237,12 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-time 
-        :label="e.attributes.DrinkTime.name"
-        v-model="e.attributeValues.DrinkTime"
-      ></tcc-time>
+      <tcc-validator>
+        <tcc-time 
+          :label="e.attributes.DrinkTime.name"
+          v-model="e.attributeValues.DrinkTime"
+        ></tcc-time>
+      </tcc-validator>
     </div>
   </div>
   <div class="row">

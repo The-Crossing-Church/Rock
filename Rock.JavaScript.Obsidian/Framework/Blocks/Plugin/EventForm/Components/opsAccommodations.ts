@@ -1,8 +1,7 @@
 import { defineComponent, PropType } from "vue";
 import { ContentChannelItem } from "../../../../ViewModels"
-import RockForm from "../../../../Controls/rockForm";
 import RockField from "../../../../Controls/rockField";
-import RockFormField from "../../../../Elements/rockFormField";
+import Validator from "./validator";
 import Toggle from "./toggle";
 
 
@@ -10,8 +9,7 @@ export default defineComponent({
     name: "EventForm.Components.Ops",
     components: {
       "rck-field": RockField,
-      "rck-form-field": RockFormField,
-      "rck-form": RockForm,
+      "tcc-validator": Validator,
       "tcc-switch": Toggle
     },
     props: {
@@ -19,26 +17,55 @@ export default defineComponent({
           type: Object as PropType<ContentChannelItem>,
           required: false
       },
+      showValidation: Boolean
     },
     setup() {
 
     },
     data() {
         return {
-          
+          rules: {
+            required: (value: any, key: string) => {
+              if(typeof value === 'string') {
+                if(value.includes("{")) {
+                  let obj = JSON.parse(value)
+                  return obj.value != '' || `${key} is required`
+                } 
+              } 
+              return !!value || `${key} is required`
+            },
+          }
         };
     },
     computed: {
-
+      errors() {
+        let formRef = this.$refs as any
+        let errs = [] as string[]
+        for(let r in formRef) {
+          if(formRef[r].className?.includes("validator")) {
+            errs.push(...formRef[r].errors)
+          }
+        }
+        return errs
+      }
     },
     methods: {
-
+      validate() {
+        let formRef = this.$refs as any
+        for(let r in formRef) {
+          if(formRef[r].className?.includes("validator")) {
+            formRef[r].validate()
+          }
+        }
+      }
     },
     watch: {
       
     },
     mounted() {
-      
+      if(this.showValidation) {
+        this.validate()
+      }
     },
     template: `
 <div>

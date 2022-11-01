@@ -30,6 +30,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
     [ContentChannelField( "Event Content Channel", key: AttributeKey.EventContentChannel, category: "General", required: true, order: 0 )]
     [ContentChannelField( "Event Details Content Channel", key: AttributeKey.EventDetailsContentChannel, category: "General", required: true, order: 1 )]
+    [ContentChannelField( "Event Changes Content Channel", key: AttributeKey.EventChangesContentChannel, category: "General", required: true, order: 2 )]
+    [ContentChannelField( "Event Details Changes Content Channel", key: AttributeKey.EventDetailsChangesContentChannel, category: "General", required: true, order: 3 )]
+    [ContentChannelField( "Event Comments Content Channel", key: AttributeKey.EventCommentsContentChannel, category: "General", required: true, order: 4 )]
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
@@ -54,13 +57,17 @@ namespace Rock.Blocks.Plugin.EventDashboard
         private static class AttributeKey
         {
             public const string EventContentChannel = "EventContentChannel";
+            public const string EventChangesContentChannel = "EventChangesContentChannel";
             public const string EventDetailsContentChannel = "EventDetailsContentChannel";
+            public const string EventDetailsChangesContentChannel = "EventDetailsChangesContentChannel";
+            public const string EventCommentsContentChannel = "EventCommentsContentChannel";
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
             public const string MinistryBudgetList = "MinistryBudgetList";
             public const string DrinksList = "DrinksList";
             public const string SubmissionPage = "SubmissionPage";
+            public const string WorkflowEntryPage = "WorkflowEntryPage";
             public const string AdminDashboard = "AdminDashboard";
             public const string UserDashboard = "UserDashboard";
             public const string EventAdminRole = "EventAdminRole";
@@ -94,73 +101,64 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             using ( var rockContext = new RockContext() )
             {
-                Guid eventCCGuid = Guid.Empty;
-                Guid eventDetailsCCGuid = Guid.Empty;
                 Guid eventDatesAttrGuid = Guid.Empty;
                 Guid requestStatusAttrGuid = Guid.Empty;
                 Guid isSameAttrGuid = Guid.Empty;
                 DashboardViewModel viewModel = null;
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
+
+                SetProperties();
+                if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 && EventChangesContentChannelId > 0 && EventDetailsChangesContentChannelId > 0 )
                 {
-                    ContentChannel cc = new ContentChannelService( rockContext ).Get( eventCCGuid );
-                    EventContentChannelId = cc.Id;
-                    EventContentChannelTypeId = cc.ContentChannelTypeId;
-                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
+                    viewModel = LoadRequests();
+                    viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
+                    viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
+
+                    //Lists
+                    Guid locationGuid = Guid.Empty;
+                    Guid ministryGuid = Guid.Empty;
+                    Guid budgetLineGuid = Guid.Empty;
+                    Guid drinksGuid = Guid.Empty;
+                    var p = GetCurrentPerson();
+                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
                     {
-                        ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsCCGuid );
-                        EventDetailsContentChannelId = dCC.Id;
-                        EventDetailsContentChannelTypeId = dCC.ContentChannelTypeId;
-
-                        viewModel = LoadRequests();
-                        viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
-                        viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
-
-                        //Lists
-                        Guid locationGuid = Guid.Empty;
-                        Guid ministryGuid = Guid.Empty;
-                        Guid budgetLineGuid = Guid.Empty;
-                        Guid drinksGuid = Guid.Empty;
-                        var p = GetCurrentPerson();
-                        if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
-                        {
-                            DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                            var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
-                            viewModel.locations = locs.ToList();
-                        }
-                        if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-                        {
-                            DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
-                            var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
-                            min.LoadAttributes();
-                            viewModel.ministries = min.ToList();
-                        }
-                        if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
-                        {
-                            DefinedType budgetDT = new DefinedTypeService( rockContext ).Get( budgetLineGuid );
-                            var budget = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
-                            budget.LoadAttributes();
-                            viewModel.budgetLines = budget.ToList();
-                        }
-                        if ( Guid.TryParse( GetAttributeValue( AttributeKey.DrinksList ), out drinksGuid ) )
-                        {
-                            DefinedType drinkDT = new DefinedTypeService( rockContext ).Get( drinksGuid );
-                            var drinks = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == drinkDT.Id );
-                            drinks.LoadAttributes();
-                            viewModel.drinks = drinks.ToList();
-                        }
-
-                        //Attributes
-                        string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-                        if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
-                        {
-                            viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == cc.ContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).ToViewModel();
-                        }
-                        string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-                        if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
-                        {
-                            viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == cc.ContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
-                        }
+                        DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
+                        var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
+                        viewModel.locations = locs.ToList();
                     }
+                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+                    {
+                        DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
+                        var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                        min.LoadAttributes();
+                        viewModel.ministries = min.ToList();
+                    }
+                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
+                    {
+                        DefinedType budgetDT = new DefinedTypeService( rockContext ).Get( budgetLineGuid );
+                        var budget = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
+                        budget.LoadAttributes();
+                        viewModel.budgetLines = budget.ToList();
+                    }
+                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.DrinksList ), out drinksGuid ) )
+                    {
+                        DefinedType drinkDT = new DefinedTypeService( rockContext ).Get( drinksGuid );
+                        var drinks = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == drinkDT.Id );
+                        drinks.LoadAttributes();
+                        viewModel.drinks = drinks.ToList();
+                    }
+
+                    //Attributes
+                    string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+                    if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
+                    {
+                        viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).ToViewModel();
+                    }
+                    string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
+                    if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
+                    {
+                        viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
+                    }
+
                     Guid? workflowGuid = GetAttributeValue( AttributeKey.RequestActionWorkflow ).AsGuidOrNull();
                     if ( workflowGuid.HasValue )
                     {
@@ -181,6 +179,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
         private int EventContentChannelTypeId { get; set; }
         private int EventDetailsContentChannelId { get; set; }
         private int EventDetailsContentChannelTypeId { get; set; }
+        private int EventChangesContentChannelId { get; set; }
+        private int EventDetailsChangesContentChannelId { get; set; }
+        private int EventCommentsContentChannelId { get; set; }
 
         #endregion
 
@@ -199,16 +200,30 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
         }
 
-        #endregion Block Actions
-
         [BlockAction]
         public BlockActionResult GetRequestDetails( int id )
         {
             GetRequestResponse response = new GetRequestResponse();
             RockContext context = new RockContext();
+            SetProperties();
             var item = new ContentChannelItemService( context ).Get( id );
             response.request = item.ToViewModel( null, true );
-            response.details = item.ChildItems.Select( i => i.ChildContentChannelItem.ToViewModel( null, true ) ).ToList();
+            var requestchanges = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).FirstOrDefault();
+            if ( requestchanges != null )
+            {
+                response.requestPendingChanges = requestchanges.ChildContentChannelItem.ToViewModel( null, true );
+            }
+            var details = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( i => i.ChildContentChannelItem ).ToList();
+            response.details = details.Select( i => new Details() { detail = i.ToViewModel( null, true ) } ).ToList();
+            for ( int i = 0; i < details.Count(); i++ )
+            {
+                var detailChanges = details[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                if ( detailChanges != null )
+                {
+                    response.details[i].detailPendingChanges = detailChanges.ChildContentChannelItem.ToViewModel( null, true );
+                }
+            }
+            response.comments = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).Select( ci => new Comment { comment = ci.ChildContentChannelItem.ToViewModel( null, true ), createdBy = ci.ChildContentChannelItem.CreatedByPersonName } ).ToList();
             response.createdBy = item.CreatedByPersonAlias.Person.ToViewModel( null, false );
             response.modifiedBy = item.ModifiedByPersonAlias.Person.ToViewModel( null, false );
             return ActionOk( response );
@@ -252,6 +267,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 return ActionBadRequest( e.Message );
             }
         }
+        #endregion Block Actions
 
         #region Helpers
         /// <summary>
@@ -447,7 +463,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     itemList.Add( item );
                 }
             }
-            viewModel.events = itemList.Select( i => i.ToViewModel( p, true ) ).ToList();
+            viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
             viewModel.eventDetails = itemList.SelectMany( i => i.ChildItems ).ToList();
             return viewModel;
         }
@@ -496,6 +512,45 @@ namespace Rock.Blocks.Plugin.EventDashboard
             return item;
         }
 
+        private void SetProperties()
+        {
+            RockContext rockContext = new RockContext();
+            Guid eventCCGuid = Guid.Empty;
+            Guid eventDetailsCCGuid = Guid.Empty;
+            Guid eventChangesCCGuid = Guid.Empty;
+            Guid eventDetailsChangesCCGuid = Guid.Empty;
+            Guid eventCommentsCCGuid = Guid.Empty;
+
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
+            {
+                ContentChannel cc = new ContentChannelService( rockContext ).Get( eventCCGuid );
+                EventContentChannelId = cc.Id;
+                EventContentChannelTypeId = cc.ContentChannelTypeId;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
+            {
+                ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsCCGuid );
+                EventDetailsContentChannelId = dCC.Id;
+                EventDetailsContentChannelTypeId = dCC.ContentChannelTypeId;
+
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventChangesContentChannel ), out eventChangesCCGuid ) )
+            {
+                ContentChannel cc = new ContentChannelService( rockContext ).Get( eventChangesCCGuid );
+                EventChangesContentChannelId = cc.Id;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsChangesContentChannel ), out eventDetailsChangesCCGuid ) )
+            {
+                ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsChangesCCGuid );
+                EventDetailsChangesContentChannelId = dCC.Id;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventCommentsContentChannel ), out eventCommentsCCGuid ) )
+            {
+                ContentChannel cCC = new ContentChannelService( rockContext ).Get( eventCommentsCCGuid );
+                EventCommentsContentChannelId = cCC.Id;
+            }
+        }
+
         #endregion Helpers
 
         public class DashboardViewModel
@@ -516,9 +571,23 @@ namespace Rock.Blocks.Plugin.EventDashboard
         public class GetRequestResponse
         {
             public ContentChannelItemViewModel request { get; set; }
-            public List<ContentChannelItemViewModel> details { get; set; }
+            public ContentChannelItemViewModel requestPendingChanges { get; set; }
+            public List<Comment> comments { get; set; }
+            public List<Details> details { get; set; }
             public PersonViewModel createdBy { get; set; }
             public PersonViewModel modifiedBy { get; set; }
+        }
+
+        public class Comment
+        {
+            public ContentChannelItemViewModel comment { get; set; }
+            public string createdBy { get; set; }
+        }
+
+        public class Details
+        {
+            public ContentChannelItemViewModel detail { get; set; }
+            public ContentChannelItemViewModel detailPendingChanges { get; set; }
         }
 
         public class Filters

@@ -13,7 +13,8 @@ import Ops from "./Components/opsAccommodations"
 import Registration from "./Components/registration"
 import Publicity from "./Components/publicity"
 import BasicInfo from "./Components/basicInfo"
-import { DateTime } from "luxon";
+import CCCatering from "./Components/childcareCatering"
+import { DateTime } from "luxon"
 
 const store = useStore();
 const { Step } = Steps;
@@ -32,6 +33,7 @@ export default defineComponent({
       "tcc-online": Online,
       "tcc-catering": Catering,
       "tcc-childcare": Childcare,
+      "tcc-childcare-catering": CCCatering,
       "tcc-ops": Ops,
       "tcc-registration": Registration,
       "tcc-publicity": Publicity,
@@ -76,7 +78,8 @@ export default defineComponent({
           modal: false,
           id: 0,
           isSave: false,
-          resources: [] as string[]
+          resources: [] as string[],
+          pagesViewed: [] as number[]
       };
   },
   computed: {
@@ -236,6 +239,29 @@ export default defineComponent({
         }
       }
     },
+    next() {
+      this.pagesViewed.push(this.step)
+      this.step++
+      if(this.step == 1 && this.pagesViewed.includes(1)) {
+        let ref = this.$refs.basicInfoRef as any
+        ref.validate()
+      }
+    },
+    prev() {
+      this.pagesViewed.push(this.step)
+      this.step--
+      if(this.step == 1 && this.pagesViewed.includes(1)) {
+        let ref = this.$refs.basicInfoRef as any
+        ref.validate()
+      }
+    },
+    jumpTo(s: number) {
+      this.pagesViewed.push(this.step)
+      this.step = s
+    },
+    getRefName(name: string, idx: number) {
+      return `${name}_${idx}`
+    }
   },
   watch: {
     'viewModel.request.attributeValues.IsSame'(val) {
@@ -433,65 +459,68 @@ export default defineComponent({
   template: `
 <div class="card">
   <a-steps :current="step">
-    <a-step class="hover" :key="0" @click="step = 0" title="Resources" />
-    <a-step class="hover" :key="1" @click="step = 1" title="Basic Info" />
+    <a-step class="hover" :key="0" @click="jumpTo(0)" title="Resources" />
+    <a-step class="hover" :key="1" @click="jumpTo(1)" title="Basic Info" />
     <template v-if="hasEventData">
       <template v-if="viewModel.request.attributeValues.IsSame == 'True'">
-        <a-step class="hover" v-if="hasEventData" :key="2" @click="step = 2" title="Event Info" />
+        <a-step class="hover" v-if="hasEventData" :key="2" @click="jumpTo(2)" title="Event Info" />
       </template>
       <template v-else>
-          <a-step class="hover" v-for="(e, idx) in viewModel.events" :key="(idx + 2)" @click="step = (idx + 2)" :title="formatDate(e.attributeValues.EventDate)" />
+          <a-step class="hover" v-for="(e, idx) in viewModel.events" :key="(idx + 2)" @click="jumpTo((idx + 2))" :title="formatDate(e.attributeValues.EventDate)" />
       </template>
     </template>
-    <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'" :key="publicityStep" @click="step = (3 + viewModel.events.length)" title="Publicity" />
+    <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'" :key="publicityStep" @click="jumpTo((3 + viewModel.events.length))" title="Publicity" />
   </a-steps>
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
-    <tcc-basic v-if="step == 1" :view-model="viewModel"></tcc-basic>
+    <tcc-basic v-if="step == 1" :view-model="viewModel" :showValidation="pagesViewed.includes(1)" ref="basic"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
           <h3 class="text-primary">Space Information</h3>
-          <tcc-space :e="e" :request="viewModel.request" :locations="viewModel.locations" :existing="viewModel.existing"></tcc-space>
+          <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('space', idx)"></tcc-space>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
           <h3 class="text-primary">Zoom Information</h3>
-          <tcc-online :e="e"></tcc-online>
+          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('online', idx)"></tcc-online>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
           <h3 class="text-primary">Catering Information</h3>
-          <tcc-catering :e="e"></tcc-catering>
+          <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('catering', idx)"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
           <h3 class="text-primary">Childcare Information</h3>
-          <tcc-childcare :e="e" :request="viewModel.request"></tcc-childcare>
+          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('childcare', idx)"></tcc-childcare>
+          <br v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" />
+          <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">Childcare Catering Information</h4>
+          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
           <h3 class="text-primary">Other Accomodations</h3>
-          <tcc-ops :e="e"></tcc-ops>
+          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
           <h3 class="text-primary">Registration Information</h3>
-          <tcc-registration :e="e"></tcc-registration>
+          <tcc-registration :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
       </template>
     </template>
     <template v-if="(viewModel.request.attributeValues.IsSame == 'True' && step == 3) || (step == (3 + viewModel.events.length))">
       <h3 class="text-primary">Publicity Information</h3>
-      <tcc-publicity :request="viewModel.request"></tcc-publicity>
+      <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="publicity"></tcc-publicity>
     </template>
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
       <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit">Submit</a-btn>
-      <a-btn v-else class="pull-right" type="primary" @click="step++">Next</a-btn>
+      <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
       <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
     </div>
   </div>
@@ -550,6 +579,9 @@ label, .control-label {
 .input-label {
   font-weight: bold;
 }
+.has-errors input, .has-errors .chosen-single, .has-errors .chosen-choices, .has-errors textarea, .has-errors select {
+  border-color: #cc3f0c;
+}
 .card {
   box-shadow: 0 0 1px 0 rgb(0 0 0 / 8%), 0 1px 3px 0 rgb(0 0 0 / 15%);
   padding: 32px;
@@ -587,6 +619,12 @@ label, .control-label {
 .text-accent {
   color: #8ED2C9;
 }
+.text-red, .text-errors, .has-errors label {
+  color: #cc3f0c;
+}
+.text-errors {
+  font-size: .85em;
+}
 .tcc-dropdown {
   display: flex;
   flex-direction: column;
@@ -603,6 +641,9 @@ label, .control-label {
   flex-direction: column;
   align-items: start;
   justify-content: center;
+}
+.form-group {
+  margin-bottom: 0px;
 }
 </v-style>
 `

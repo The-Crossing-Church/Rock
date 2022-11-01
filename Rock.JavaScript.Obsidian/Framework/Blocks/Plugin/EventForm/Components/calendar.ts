@@ -207,7 +207,7 @@ export default defineComponent({
         },
         modelValue(val) {
             if(val != this.selectedDates.join(",")) {
-                this.selectedDates = val.split(",").filter((d: string) => { return d != "" })
+                this.selectedDates = val.split(",").map((d: string) => d.trim()).filter((d: string) => { return d != "" })
             }
         }
     },

@@ -28,13 +28,13 @@ export default defineComponent({
             if (this.viewModel?.request.attributeValues) {
                 let av = this.viewModel?.request?.attributeValues.EventDates
                 if (av) {
-                    let dates = av?.split(",")
+                    let dates = av?.split(",").map(d => d.trim())
                     if (dates && dates.length > 0) {
                         let today = DateTime.now()
                         let span = Duration.fromObject({ days: numDays })
                         let first = dates.map((i) => {
-                            return DateTime.fromString(i, 'yyyy-MM-dd')
-                        })?.sort().pop()?.minus(span)
+                            return DateTime.fromFormat(i, 'yyyy-MM-dd')
+                        })?.sort().shift()?.minus(span)
                         if (this.isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
                             return 'is'
                         }
@@ -47,17 +47,24 @@ export default defineComponent({
         findDate(numDays: any): String {
             if (this.viewModel?.request.attributeValues) {
                 let av = this.viewModel?.request?.attributeValues.EventDates
-                let dates = av?.split(",")
+                let dates = av?.split(",").map(d => d.trim())
                 if (dates && dates.length > 0) {
-                    let today = DateTime.now()
                     let span = Duration.fromObject({ days: numDays })
                     let first = dates.map((i) => {
-                        return DateTime.fromString(i, 'yyyy-MM-dd')
-                    })?.sort().pop()
+                        return DateTime.fromFormat(i, 'yyyy-MM-dd')
+                    })?.sort().shift()
                     return first != null ? first.minus(span).toFormat("EEEE, MMMM d") : ''
                 }
             }
             return ''
+        },
+        switchIsDisabled(tense: string, key: string) {
+          if(this.viewModel?.originalRequest?.attributeValues) {
+            let val = this.viewModel.originalRequest.attributeValues[key]
+            return val == 'False'
+          } else {
+            return tense == 'was'
+          }
         }
     },
     computed: {
@@ -97,7 +104,7 @@ export default defineComponent({
                 let av = (this.viewModel.request.attributeValues['Status'])
                 if (this.viewModel.request?.id > 0 && av != 'Draft') {
                     if (this.viewModel.request.startDateTime) {
-                        eDate = DateTime.fromString(this.viewModel.request.startDateTime, 'yyyy-MM-DD')
+                        eDate = DateTime.fromFormat(this.viewModel.request.startDateTime, 'yyyy-MM-DD')
                     }
                 }
                 let span = Duration.fromObject({ days: 21 })
@@ -130,12 +137,12 @@ export default defineComponent({
       :persistent-hint="viewModel.request.attributeValues.NeedsSpace == 'True'"
     ></tcc-switch>
   </div>
-</div >
+</div>
 <div class="row" style="padding-bottom:16px;">
   <div class="col">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsOnline"
-      :disabled="twoWeeksTense == 'was'"
+      :disabled="switchIsDisabled(twoWeeksTense, 'NeedsOnline')"
       :label="viewModel.request.attributes.NeedsOnline.name"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsOnline == 'True'"
@@ -144,13 +151,13 @@ export default defineComponent({
       The last possible date to request zoom {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
     </div>
   </div>
-</div >
+</div>
 <div class="row" style="padding-bottom:16px;">
   <div class="col">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsCatering"
       :label="viewModel.request.attributes.NeedsCatering.name"
-      :disabled="twoWeeksTense == 'was'"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsCatering')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsCatering == 'True'"
     ></tcc-switch>
@@ -158,7 +165,7 @@ export default defineComponent({
       The last possible date to request catering {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
     </div>
   </div>
-</div >
+</div>
 <div class="row" style="padding-bottom:16px;">
   <div class="col">
     <tcc-switch
@@ -172,7 +179,7 @@ export default defineComponent({
       The last possible date to request childcare {{thirtyDaysTense}} {{thirtyDaysBeforeEventStart}}
     </div>
   </div>
-</div >
+</div>
 <div class="row" style="padding-bottom:16px;">
   <div class="col">
     <tcc-switch
@@ -186,7 +193,7 @@ export default defineComponent({
       The last possible date to request ops accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
     </div>
   </div>
-</div >
+</div>
 <div class="row" style="padding-bottom:16px;">
   <div class="col">
     <tcc-switch
@@ -242,7 +249,7 @@ export default defineComponent({
       The last possible date to request publicity {{sixWeeksTense}} {{sixWeeksBeforeEventStart}}
     </div>
   </div>
-</div >
+</div>
 <v-style>
   .date-warning {
     color: #CC3F0C !important;

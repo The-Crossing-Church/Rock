@@ -3,8 +3,7 @@ import TextBox from "../../../../Elements/textBox";
 import RockLabel from "../../../../Elements/rockLabel";
 import { DateTime } from "luxon";
 import { Button, Modal } from "ant-design-vue";
-import RockForm from "../../../../Controls/rockForm";
-import RockFormField from "../../../../Elements/rockFormField";
+import Validator from "./validator";
 import Chip from "./chip"
 
 export default defineComponent({
@@ -13,8 +12,7 @@ export default defineComponent({
       "tcc-chip": Chip,
       "rck-lbl": RockLabel,
       "rck-text": TextBox,
-      "rck-form": RockForm,
-      "rck-form-field": RockFormField,
+      "tcc-validator": Validator,
       "a-btn": Button,
       "a-modal": Modal
     },
@@ -93,9 +91,11 @@ export default defineComponent({
       modelValue(val) {
         if (val) {
           let time = DateTime.fromFormat(val, "HH:mm:ss")
-          this.hour = time.toFormat("hh")
-          this.minute = time.toFormat("mm")
-          this.meridiem = time.toFormat("a")
+          if(time.isValid) {
+            this.hour = time.toFormat("hh")
+            this.minute = time.toFormat("mm")
+            this.meridiem = time.toFormat("a")
+          }
         }
       },
       minute(val) {
@@ -145,6 +145,8 @@ export default defineComponent({
           val = "0" + val
         }
         this.hour = val
+        let ref = this.$refs.hour as any
+        ref.validate()
       },
       validateMinute(val: any) {
         val = parseInt(val)
@@ -156,6 +158,8 @@ export default defineComponent({
           val = "0" + val
         }
         this.minute = val
+        let ref = this.$refs.min as any
+        ref.validate()
       },
       quickSet(start: string, end: string) {
         let time = DateTime.fromFormat(start, "hh:mm a")
@@ -191,15 +195,15 @@ export default defineComponent({
       })
     },
     template: `
-<rck-form>
-  <rck-form-field :rules="required">
+<div>
+  <tcc-validator :rules="required">
     <rck-lbl>{{label}}</rck-lbl>
     <rck-text
       v-model="displayTime"
       inputClasses="tcc-text-display"
       @click="menu = true"
     ></rck-text>
-  </rck-form-field>
+  </tcc-validator>
   <a-modal v-model:visible="menu" @ok="menu = false">
     <div class="time-menu">
       <div class="row">
@@ -219,33 +223,30 @@ export default defineComponent({
       </div >
       <div style="display: flex; align-items: flex-end;">
         <div style="padding: 0px 4px;">
-          <rck-form-field :rules="required">
+          <tcc-validator :rules="[defaultrules.required(hour, 'Hour'), defaultrules.isValidHour(hour)]" ref="hour">
             <rck-lbl>Hour</rck-lbl>
             <rck-text
               v-model="hour"
               class="txt-round txt-hour"
               type="number"
               autofocus
-              :rules="[defaultrules.required(hour, 'Hour'), defaultrules.isValidHour(hour)]"
               @blur="validateHour(hour)"
             ></rck-text>
-          </rck-form-field>
+          </tcc-validator>
         </div>
         <div>
           <div style="font-size: 34px; margin-top: -5px;">:</div>
         </div>
         <div style="padding: 0px 4px;">
-          <rck-form-field :rules="required">
+          <tcc-validator :rules="[defaultrules.required(minute, 'Minute'), defaultrules.isValidMinute(minute)]" ref="min">
             <rck-lbl>Minute</rck-lbl>
             <rck-text
               v-model="minute"
               class="txt-round"
               type="number"
-              autofocus
-              :rules="[defaultrules.required(minute, 'Minute'), defaultrules.isValidMinute(minute)]"
               @blur="validateMinute(minute)"
             ></rck-text>
-          </rck-form-field>
+          </tcc-validator>
         </div>
         <div style="padding: 0px 4px;">
           <div class='btn-time-wrapper'>
@@ -260,7 +261,7 @@ export default defineComponent({
       </div>
     </div>
   </a-modal>
-</rck-form>
+</div>
 
 <v-style>
   .time-menu {

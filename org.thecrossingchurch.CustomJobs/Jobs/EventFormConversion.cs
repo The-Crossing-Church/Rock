@@ -35,12 +35,21 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
     /// 
     /// </summary>
     [IntegerField( "Event Request Id", "", false )]
-    [ContentChannelField( "Event CC" )]
-    [ContentChannelField( "Event Details CC" )]
-    [DefinedTypeField( "Ministry" )]
-    [DefinedTypeField( "Budget Line" )]
-    [DefinedTypeField( "Locations" )]
-    [IntegerField( "Matrix Id" )]
+    [ContentChannelField( "Event CC", category: "Content Channels", order: 0 )]
+    [ContentChannelField( "Event Pending Changes CC", category: "Content Channels", order: 1 )]
+    [ContentChannelField( "Event Details CC", category: "Content Channels", order: 2 )]
+    [ContentChannelField( "Event Details Pending Changes CC", category: "Content Channels", order: 3 )]
+    [ContentChannelField( "Comments CC", category: "Content Channels", order: 4 )]
+    [DefinedTypeField( "Ministry", category: "Lists", order: 0 )]
+    [DefinedTypeField( "Budget Line", category: "Lists", order: 1 )]
+    [DefinedTypeField( "Locations", category: "Lists", order: 2 )]
+    [DefinedTypeField( "Drinks", category: "Lists", order: 3 )]
+    [IntegerField( "Matrix Id", "", false )]
+    [PersonField( "Andrew", category: "Users", order: 0 )]
+    [PersonField( "Christian", category: "Users", order: 1 )]
+    [PersonField( "Kaelyn", category: "Users", order: 2 )]
+    [IntegerField( "Skip", defaultValue: 391 )]
+    [IntegerField( "Event Date Attribute Id", "Attribute Id of the Event Date Attribute on the Event Details CC" )]
     [DisallowConcurrentExecution]
     public class EventFormConversion : IJob
     {
@@ -72,6 +81,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             _context = new RockContext();
             _cci_svc = new ContentChannelItemService( _context );
             _cc_svc = new ContentChannelService( _context );
+            var _ccia_svc = new ContentChannelItemAssociationService( _context );
 
             JobDataMap dataMap = context.JobDetail.JobDataMap;
             int? eventid = null;
@@ -81,6 +91,10 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             }
             Guid eventGuid = Guid.Parse( dataMap.GetString( "EventCC" ) );
             Guid eventDetailsGuid = Guid.Parse( dataMap.GetString( "EventDetailsCC" ) );
+            Guid eventChangesGuid = Guid.Parse( dataMap.GetString( "EventPendingChangesCC" ) );
+            Guid eventDetailsChangesGuid = Guid.Parse( dataMap.GetString( "EventDetailsPendingChangesCC" ) );
+            Guid commentsGuid = Guid.Parse( dataMap.GetString( "CommentsCC" ) );
+            int? eventDateAttrId = dataMap.GetString( "EventDateAttributeId" ).AsIntegerOrNull();
 
             //Defined Types
             Guid ministryListGuid = Guid.Parse( dataMap.GetString( "Ministry" ) );
@@ -95,11 +109,28 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             int LocationDefinedTypeId = new DefinedTypeService( _context ).Get( locationListGuid ).Id;
             List<DefinedValue> locations = new DefinedValueService( _context ).Queryable().Where( dv => dv.DefinedTypeId == LocationDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
             locations.LoadAttributes();
+            Guid drinkListGuid = Guid.Parse( dataMap.GetString( "Drinks" ) );
+            int DrinkDefinedTypeId = new DefinedTypeService( _context ).Get( drinkListGuid ).Id;
+            List<DefinedValue> drinks = new DefinedValueService( _context ).Queryable().Where( dv => dv.DefinedTypeId == DrinkDefinedTypeId ).OrderBy( dv => dv.Order ).ToList();
+
+            //For Comments
+            Guid andrewGuid = Guid.Parse( dataMap.GetString( "Andrew" ) );
+            Guid christianGuid = Guid.Parse( dataMap.GetString( "Christian" ) );
+            Guid kaelynGuid = Guid.Parse( dataMap.GetString( "Kaelyn" ) );
+            PersonAliasService per_svc = new PersonAliasService( _context );
+            Person andrew = per_svc.Get( andrewGuid ).Person;
+            Person christian = per_svc.Get( christianGuid ).Person;
+            Person kaelyn = per_svc.Get( kaelynGuid ).Person;
 
             int matrixId = Int32.Parse( dataMap.GetString( "MatrixId" ) );
 
             ContentChannel eventCC = _cc_svc.Get( eventGuid );
             ContentChannel eventDetailsCC = _cc_svc.Get( eventDetailsGuid );
+            ContentChannel eventChangesCC = _cc_svc.Get( eventChangesGuid );
+            ContentChannel eventDetailsChangesCC = _cc_svc.Get( eventDetailsChangesGuid );
+            ContentChannel commentsCC = _cc_svc.Get( commentsGuid );
+
+            AttributeValueService _av_svc = new AttributeValueService( _context );
 
             List<ContentChannelItem> items = new List<ContentChannelItem>();
             if ( eventid.HasValue )
@@ -108,82 +139,122 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             }
             else
             {
-                items = _cci_svc.Queryable().Where( cci => cci.ContentChannelId == eventCC.Id ).OrderByDescending( "Id" ).ToList();
+                int skip = dataMap.GetIntegerFromString( "Skip" );
+                items = _cci_svc.Queryable().Where( cci => cci.ContentChannelId == eventCC.Id ).OrderByDescending( "Id" ).Skip( skip ).ToList();
             }
 
             for ( int i = 0; i < items.Count(); i++ )
             {
                 var item = items[i];
                 item.LoadAttributes();
-                item.ChildItems.Select( ci => ci.ChildContentChannelItem ).LoadAttributes();
+                //item.ChildItems.Select( ci => ci.ChildContentChannelItem ).LoadAttributes();
+                var itemChanges = item.ChildItems.Select( ci => ci.ChildContentChannelItem ).FirstOrDefault( ci => ci.ContentChannelId == eventChangesCC.Id );
                 EventRequest req = JsonConvert.DeserializeObject<EventRequest>( item.GetAttributeValue( "RequestJSON" ) );
-
-                //Set Base Event Attributes
-                UpdateAttribute( item, "NeedsSpace", req.needsSpace.ToString() );
-                UpdateAttribute( item, "NeedsOnline", req.needsOnline.ToString() );
-                UpdateAttribute( item, "NeedsPublicity", req.needsPub.ToString() );
-                UpdateAttribute( item, "NeedsRegistration", req.needsReg.ToString() );
-                UpdateAttribute( item, "NeedsChildCare", req.needsChildCare.ToString() );
-                UpdateAttribute( item, "NeedsCatering", req.needsCatering.ToString() );
-                UpdateAttribute( item, "NeedsOpsAccommodations", req.needsAccom.ToString() );
-
-                var ministry = ministries.FirstOrDefault( m => m.Id.ToString() == req.Ministry );
-                if ( ministry != null )
+                var changesJSON = item.GetAttributeValue( "ProposedChangesJSON" );
+                EventRequest changes = null;
+                if ( !String.IsNullOrEmpty( changesJSON ) )
                 {
-                    UpdateAttribute( item, "Ministry", ministry.Guid.ToString() );
-                }
-                UpdateAttribute( item, "Contact", req.Contact );
-                UpdateAttribute( item, "Notes", req.Notes );
-
-                //Publicity
-                UpdateAttribute( item, "WhyAttend", req.WhyAttendSixtyFive );
-                UpdateAttribute( item, "TargetAudience", req.TargetAudience.Split( ' ' )[0] );
-                UpdateAttribute( item, "EventisSticky", req.EventIsSticky.ToString() );
-                UpdateAttribute( item, "PublicityStartDate", req.PublicityStartDate.ToString() );
-                UpdateAttribute( item, "PublicityEndDate", req.PublicityEndDate.ToString() );
-                if ( req.PublicityStrategies != null )
-                {
-                    List<string> pubStrategies = new List<string>();
-                    if ( req.PublicityStrategies.Contains( "Social Media/Google Ads" ) )
+                    changes = JsonConvert.DeserializeObject<EventRequest>( item.GetAttributeValue( "ProposedChangesJSON" ) );
+                    if ( itemChanges == null )
                     {
-                        pubStrategies.Add( "Ads" );
+                        itemChanges = new ContentChannelItem() { ContentChannelId = eventChangesCC.Id, ContentChannelTypeId = eventChangesCC.ContentChannelTypeId };
+                        itemChanges.Title = item.Title + " Changes";
+                        itemChanges.CreatedByPersonAliasId = item.CreatedByPersonAliasId;
+                        itemChanges.ModifiedByPersonAliasId = item.ModifiedByPersonAliasId;
+                        itemChanges.CreatedDateTime = item.CreatedDateTime;
+                        itemChanges.ModifiedDateTime = item.ModifiedDateTime;
+                        itemChanges.LoadAttributes();
                     }
-                    if ( req.PublicityStrategies.Contains( "Mobile Worship Folder" ) )
-                    {
-                        pubStrategies.Add( "MWF" );
-                    }
-                    if ( req.PublicityStrategies.Contains( "Announcement" ) )
-                    {
-                        pubStrategies.Add( "Announcement" );
-                    }
-                    UpdateAttribute( item, "PublicityStrategies", pubStrategies.Count() > 0 ? String.Join( ",", pubStrategies ) : "" );
                 }
 
-                //Web Cal
-                UpdateAttribute( item, "NeedsWebCalendar", req.Events[0].ShowOnCalendar.ToString() );
-                UpdateAttribute( item, "WebCalendarDescription", req.Events[0].PublicityBlurb );
-
-                //Production
-                if ( req.Events[0].TechNeeds != null && ( req.Events[0].TechNeeds.Contains( "Worship Team" ) || req.Events[0].TechNeeds.Contains( "Stage Set-Up" ) || req.Events[0].TechNeeds.Contains( "Basic Live Stream ($)" ) || req.Events[0].TechNeeds.Contains( "Advanced Live Stream ($)" ) || req.Events[0].TechNeeds.Contains( "Special Lighting" ) ) )
+                //Comments
+                string commentsJSON = item.GetAttributeValue( "Comments" );
+                if ( commentsJSON != "[]" )
                 {
-                    UpdateAttribute( item, "NeedsProductionAccommodations", "true" );
-                    UpdateAttribute( item, "ProductionTech", req.Events[0].TechNeeds != null ? String.Join( ",", req.Events[0].TechNeeds ) : "" );
-                }
-                else
-                {
-                    UpdateAttribute( item, "NeedsProductionAccommodations", "false" );
+                    List<Comment> comments = JsonConvert.DeserializeObject<List<Comment>>( commentsJSON );
+                    var existingComments = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == commentsCC.Id ).Select( ci => ci.ChildContentChannelItem ).ToList();
+                    for ( int k = 0; k < comments.Count(); k++ )
+                    {
+                        var exists = existingComments.FirstOrDefault( c => c.Content == comments[k].Message );
+                        if ( exists == null )
+                        {
+                            ContentChannelItem comment = new ContentChannelItem() { ContentChannelId = commentsCC.Id, ContentChannelTypeId = commentsCC.ContentChannelTypeId };
+                            comment.Title = "Comment From " + comments[k].CreatedBy;
+                            comment.Content = comments[k].Message;
+                            comment.CreatedDateTime = comments[k].CreatedOn;
+                            comment.ModifiedDateTime = comments[k].CreatedOn;
+                            if ( comments[k].CreatedBy == item.CreatedByPersonAlias.Person.FullName )
+                            {
+                                comment.CreatedByPersonAliasId = item.CreatedByPersonAliasId;
+                                comment.ModifiedByPersonAliasId = item.CreatedByPersonAliasId;
+                            }
+                            else
+                            {
+                                if ( comments[k].CreatedBy == andrew.FullName )
+                                {
+                                    comment.CreatedByPersonAliasId = andrew.PrimaryAliasId;
+                                    comment.ModifiedByPersonAliasId = andrew.PrimaryAliasId;
+                                }
+                                else if ( comments[k].CreatedBy == christian.FullName )
+                                {
+                                    comment.CreatedByPersonAliasId = christian.PrimaryAliasId;
+                                    comment.ModifiedByPersonAliasId = christian.PrimaryAliasId;
+                                }
+                                else if ( comments[k].CreatedBy == kaelyn.FullName )
+                                {
+                                    comment.CreatedByPersonAliasId = kaelyn.PrimaryAliasId;
+                                    comment.ModifiedByPersonAliasId = kaelyn.PrimaryAliasId;
+                                }
+                            }
+                            _cci_svc.Add( comment );
+                            _context.SaveChanges();
+
+                            //Add Child Item Comment to Event Request
+                            var comment_exists = _ccia_svc.Queryable().Where( ccia => ccia.ContentChannelItemId == item.Id && ccia.ChildContentChannelItemId == comment.Id );
+                            if ( !comment_exists.Any() )
+                            {
+                                var order = _ccia_svc.Queryable().AsNoTracking()
+                                    .Where( a => a.ContentChannelItemId == item.Id )
+                                    .Select( a => ( int? ) a.Order )
+                                    .DefaultIfEmpty()
+                                    .Max();
+                                var assoc = new ContentChannelItemAssociation();
+                                assoc.ContentChannelItemId = item.Id;
+                                assoc.ChildContentChannelItemId = comment.Id;
+                                assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                                _ccia_svc.Add( assoc );
+                            }
+                        }
+                    }
                 }
 
+                //Set Attributes on Item
+                item = SetRequestAttributes( item, req, ministries );
+                //Set Attributes on Proposed Changes Item
+                if ( itemChanges != null )
+                {
+                    itemChanges = SetRequestAttributes( itemChanges, changes, ministries );
+                }
                 //Event Details
                 for ( int k = 0; k < req.Events.Count(); k++ )
                 {
                     ContentChannelItem detail = new ContentChannelItem() { ContentChannelId = eventDetailsCC.Id, ContentChannelTypeId = eventDetailsCC.ContentChannelTypeId };
-                    detail.LoadAttributes();
-                    if ( item.ChildItems.Count() > 0 )
+                    if ( item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == eventDetailsCC.Id ).Count() > 0 )
                     {
                         if ( !String.IsNullOrEmpty( req.Events[k].EventDate ) )
                         {
-                            var temp = item.ChildItems.FirstOrDefault( c => c.ChildContentChannelItem != null && c.ChildContentChannelItem.GetAttributeValue( "EventDate" ) == req.Events[k].EventDate );
+                            var temp = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == eventDetailsCC.Id ).ToList().FirstOrDefault( c =>
+                            {
+                                if ( c.ChildContentChannelItem != null )
+                                {
+                                    var eDate = _av_svc.Queryable().FirstOrDefault( av => av.AttributeId == eventDateAttrId.Value && av.EntityId == c.ChildContentChannelItemId );
+                                    if ( eDate.Value == req.Events[k].EventDate )
+                                    {
+                                        return true;
+                                    }
+                                }
+                                return false;
+                            } );
                             if ( temp != null )
                             {
                                 detail = temp.ChildContentChannelItem;
@@ -191,181 +262,64 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                         }
                         else
                         {
-                            detail = item.ChildItems.First().ChildContentChannelItem;
+                            detail = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == eventDetailsCC.Id ).First().ChildContentChannelItem;
                         }
                     }
-
-                    UpdateAttribute( detail, "EventDate", req.Events[k].EventDate );
-                    detail.Title = item.Title + ( req.Events[k].EventDate != "" ? ": " + req.Events[k].EventDate.ToString() : "" );
-                    detail.CreatedByPersonAliasId = item.CreatedByPersonAliasId;
-                    detail.CreatedDateTime = item.CreatedDateTime;
-                    detail.ModifiedByPersonAliasId = item.ModifiedByPersonAliasId;
-                    detail.ModifiedDateTime = item.ModifiedDateTime;
-                    UpdateAttribute( detail, "StartTime", !String.IsNullOrEmpty( req.Events[k].StartTime ) && !req.Events[k].StartTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].StartTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "EndTime", !String.IsNullOrEmpty( req.Events[k].EndTime ) && !req.Events[k].EndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].EndTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "StartBuffer", req.Events[k].MinsStartBuffer.ToString() );
-                    UpdateAttribute( detail, "EndBuffer", req.Events[k].MinsEndBuffer.ToString() );
-
-                    //Space Info
-                    UpdateAttribute( detail, "ExpectedAttendance", req.Events[k].ExpectedAttendance.ToString() );
-                    var rooms = locations.Where( l => req.Events[k].Rooms.Contains( l.Id.ToString() ) ).ToList();
-                    if ( req.Events[k].Rooms != null && req.Events[k].Rooms.Count() > 0 )
+                    ContentChannelItem detailChanges = null;
+                    if ( !String.IsNullOrEmpty( changesJSON ) )
                     {
-                        if ( rooms.Any() )
+                        if ( detail.ChildItems.Count() > 0 )
                         {
-                            UpdateAttribute( detail, "Rooms", String.Join( ",", rooms.Select( r => r.Guid.ToString() ) ) );
+                            detailChanges = detail.ChildItems.Select( ci => ci.ChildContentChannelItem ).First();
                         }
-                    }
-                    UpdateAttribute( detail, "InfrastructureSpace", req.Events[k].InfrastructureSpace );
-                    //Room Set Up
-                    //AttributeMatrix matrix = new AttributeMatrix() { AttributeMatrixTemplateId = matrixId };
-                    //AttributeMatrixService ams = new AttributeMatrixService( _context );
-                    //ams.Add( matrix );
-                    //_context.SaveChanges();
-
-                    List<TableSetUp> setUp = new List<TableSetUp>();
-                    for ( int j = 0; j < rooms.Count(); j++ )
-                    {
-                        TableSetUp roundSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Round" };
-                        TableSetUp rectSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Rectangular" };
-                        roundSetUp.NumberofTables = req.Events[k].NumTablesRound.HasValue ? req.Events[k].NumTablesRound.Value : 0;
-                        roundSetUp.NumberofChairs = req.Events[k].NumChairsRound.HasValue ? req.Events[k].NumChairsRound.Value : 0;
-                        rectSetUp.NumberofTables = req.Events[k].NumTablesRect.HasValue ? req.Events[k].NumTablesRect.Value : 0;
-                        rectSetUp.NumberofChairs = req.Events[k].NumChairsRect.HasValue ? req.Events[k].NumChairsRect.Value : 0;
-                        setUp.Add( roundSetUp );
-                        setUp.Add( rectSetUp );
-                    }
-                    UpdateAttribute( detail, "RoomSetUp", JsonConvert.SerializeObject( setUp ) );
-
-                    //For Matrix - Not yet available
-                    //for ( int j = 0; j < rooms.Count(); j++ )
-                    //{
-                    //    if ( req.Events[k].TableType.Contains( "Round" ) )
-                    //    {
-                    //        AttributeMatrixItem matrixItem = new AttributeMatrixItem();
-                    //        matrixItem.AttributeMatrix = matrix;
-                    //        matrixItem.LoadAttributes();
-
-                    //        matrixItem.SetAttributeValue( "Room", rooms[j].Guid.ToString() );
-                    //        matrixItem.SetAttributeValue( "TypeofTable", "Round" );
-                    //        matrixItem.SetAttributeValue( "NumberofTables", req.Events[k].NumTablesRound.ToString() );
-                    //        matrixItem.SetAttributeValue( "NumberofChairs", req.Events[k].NumChairsRound.ToString() );
-
-                    //        AttributeMatrixItemService amis = new AttributeMatrixItemService( _context );
-                    //        amis.Add( matrixItem );
-                    //        _context.SaveChanges();
-                    //        matrixItem.SaveAttributeValues();
-
-                    //    }
-                    //    if ( req.Events[k].TableType.Contains( "Rectangular" ) )
-                    //    {
-                    //        AttributeMatrixItem matrixItem = new AttributeMatrixItem();
-                    //        matrixItem.AttributeMatrix = matrix;
-                    //        matrixItem.LoadAttributes();
-
-                    //        matrixItem.SetAttributeValue( "Room", rooms[j].Guid.ToString() );
-                    //        matrixItem.SetAttributeValue( "TypeofTable", "Rectangular" );
-                    //        matrixItem.SetAttributeValue( "NumberofTables", req.Events[k].NumTablesRect.ToString() );
-                    //        matrixItem.SetAttributeValue( "NumberofChairs", req.Events[k].NumChairsRect.ToString() );
-
-                    //        AttributeMatrixItemService amis = new AttributeMatrixItemService( _context );
-                    //        amis.Add( matrixItem );
-                    //        _context.SaveChanges();
-                    //        matrixItem.SaveAttributeValues();
-                    //    }
-                    //}
-
-                    //UpdateAttribute( detail, "RoomSetup", matrix.Guid.ToString() );
-
-                    //Online
-                    UpdateAttribute( detail, "EventURL", req.Events[k].EventURL );
-                    UpdateAttribute( detail, "Password", req.Events[k].ZoomPassword );
-
-                    //Registration
-                    UpdateAttribute( detail, "RegistrationStartDate", req.Events[k].RegistrationDate.ToString() );
-                    UpdateAttribute( detail, "RegistrationEndDate", req.Events[k].RegistrationEndDate.ToString() );
-                    UpdateAttribute( detail, "RegistrationEndTime", !String.IsNullOrEmpty( req.Events[k].RegistrationEndTime ) && !req.Events[k].RegistrationEndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].RegistrationEndTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "RegistrationFeeType", req.Events[k].FeeType != null ? String.Join( ",", req.Events[k].FeeType ) : "" );
-                    var regBudget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].FeeBudgetLine );
-                    if ( regBudget != null )
-                    {
-                        UpdateAttribute( detail, "RegistrationFeeBudgetLine", regBudget.Guid.ToString() );
-                    }
-                    UpdateAttribute( detail, "IndividualRegistrationFee", req.Events[k].Fee );
-                    UpdateAttribute( detail, "CoupleRegistrationFee", req.Events[k].CoupleFee );
-                    UpdateAttribute( detail, "OnlineRegistrationFee", req.Events[k].OnlineFee );
-                    UpdateAttribute( detail, "RegistrationConfirmationEmailSender", req.Events[k].Sender );
-                    UpdateAttribute( detail, "RegistrationConfirmationEmailFromAddress", req.Events[k].SenderEmail );
-                    UpdateAttribute( detail, "RegistrationConfirmationEmailAdditionalDetails", req.Events[k].AdditionalDetails );
-                    UpdateAttribute( detail, "NeedsReminderEmail", req.Events[k].NeedsReminderEmail.ToString() );
-                    UpdateAttribute( detail, "RegistrationReminderEmailAdditionalDetails", req.Events[k].ReminderAdditionalDetails );
-                    UpdateAttribute( detail, "NeedsCheckin", req.Events[k].Checkin.ToString() );
-                    UpdateAttribute( detail, "NeedsDatabaseSupportTeam", req.Events[k].SupportTeam.ToString() );
-
-                    //Catering
-                    UpdateAttribute( detail, "PreferredVendor", req.Events[k].Vendor );
-                    UpdateAttribute( detail, "PreferredMenu", req.Events[k].Menu );
-                    var budget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].BudgetLine );
-                    if ( budget != null )
-                    {
-                        UpdateAttribute( detail, "FoodBudgetLine", budget.Guid.ToString() );
-                    }
-                    UpdateAttribute( detail, "NeedsDelivery", req.Events[k].FoodDelivery.ToString() );
-                    UpdateAttribute( detail, "FoodTime", !String.IsNullOrEmpty( req.Events[k].FoodTime ) && !req.Events[k].FoodTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].FoodTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "FoodSetupLocation", req.Events[k].FoodDropOff );
-                    //TODO DEFINED TYPE!!!!!
-                    UpdateAttribute( detail, "Drinks", req.Events[k].Drinks != null ? String.Join( ",", req.Events[k].Drinks ) : "" );
-                    UpdateAttribute( detail, "DrinkTime", !String.IsNullOrEmpty( req.Events[k].DrinkTime ) && !req.Events[k].DrinkTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].DrinkTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "SetupFoodandDrinkTogether", ( req.Events[k].FoodDropOff == req.Events[k].DrinkDropOff ).ToString() );
-                    UpdateAttribute( detail, "DrinkSetupLocation", req.Events[k].DrinkDropOff );
-
-                    UpdateAttribute( detail, "ChildcareVendor", req.Events[k].CCVendor );
-                    budget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].CCBudgetLine );
-                    if ( budget != null )
-                    {
-                        UpdateAttribute( detail, "ChildcareCateringBudgetLine", budget.Guid.ToString() );
-                    }
-                    UpdateAttribute( detail, "ChildcarePreferredMenu", req.Events[k].CCMenu );
-                    UpdateAttribute( detail, "ChildcareFoodTime", !String.IsNullOrEmpty( req.Events[k].CCFoodTime ) && !req.Events[k].CCFoodTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].CCFoodTime ).ToString( "HH:mm:ss" ) : "" );
-
-                    //Childcare
-                    UpdateAttribute( detail, "ChildcareStartTime", !String.IsNullOrEmpty( req.Events[k].CCStartTime ) && !req.Events[k].CCStartTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].CCStartTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "ChildcareEndTime", !String.IsNullOrEmpty( req.Events[k].CCEndTime ) && !req.Events[k].CCEndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].CCEndTime ).ToString( "HH:mm:ss" ) : "" );
-                    UpdateAttribute( detail, "ChildcareOptions", req.Events[k].ChildCareOptions != null ? String.Join( ",", req.Events[k].ChildCareOptions ) : "" );
-                    UpdateAttribute( detail, "EstimatedNumberofKids", req.Events[k].EstimatedKids.ToString() );
-
-                    //Special Accomm
-                    if ( !item.GetAttributeValue( "NeedsProductionAccommodations" ).AsBoolean() )
-                    {
-                        UpdateAttribute( detail, "RoomTech", req.Events[k].TechNeeds != null ? String.Join( ",", req.Events[k].TechNeeds ) : "" );
-                    }
-                    UpdateAttribute( detail, "TechNeeds", req.Events[k].TechDescription );
-                    UpdateAttribute( detail, "NeedsDoorsUnlocked", req.Events[k].NeedsDoorsUnlocked.ToString() );
-                    if ( req.Events[k].Doors != null && req.Events[k].Doors.Count() > 0 )
-                    {
-                        var doors = locations.Where( l => req.Events[k].Doors.Contains( l.Id.ToString() ) );
-                        if ( doors.Any() )
+                        else
                         {
-                            UpdateAttribute( detail, "Doors", String.Join( ",", doors.Select( r => r.Guid.ToString() ) ) );
+                            detailChanges = new ContentChannelItem() { ContentChannelId = eventDetailsChangesCC.Id, ContentChannelTypeId = eventDetailsChangesCC.ContentChannelTypeId };
                         }
+                        detailChanges.LoadAttributes();
                     }
-                    UpdateAttribute( detail, "Setup", req.Events[k].SetUp );
-                    UpdateAttribute( detail, "NeedsMedical", req.Events[k].NeedsMedical.ToString() );
-                    UpdateAttribute( detail, "NeedsSecurity", req.Events[k].NeedsSecurity.ToString() );
+                    detail.LoadAttributes();
+                    detail = SetDetailAttributes( detail, item, k, req, locations, budgets, drinks );
+                    if ( detailChanges != null )
+                    {
+                        detailChanges = SetDetailAttributes( detailChanges, itemChanges, k, changes, locations, budgets, drinks );
+                    }
 
                     if ( detail.Id < 1 )
                     {
                         _cci_svc.Add( detail );
                     }
+                    if ( detailChanges != null && detailChanges.Id < 1 )
+                    {
+                        _cci_svc.Add( detailChanges );
+                    }
                     _context.SaveChanges();
                     detail.SaveAttributeValues( _context );
+                    if ( detailChanges != null )
+                    {
+                        detailChanges.SaveAttributeValues( _context );
+                        //Add Child Item Event Detail Changes to Event Details
+                        var chng_exists = _ccia_svc.Queryable().Where( ccia => ccia.ContentChannelItemId == detail.Id && ccia.ChildContentChannelItemId == detailChanges.Id );
+                        if ( !chng_exists.Any() )
+                        {
+                            var order = _ccia_svc.Queryable().AsNoTracking()
+                                .Where( a => a.ContentChannelItemId == detail.Id )
+                                .Select( a => ( int? ) a.Order )
+                                .DefaultIfEmpty()
+                                .Max();
+                            var assoc = new ContentChannelItemAssociation();
+                            assoc.ContentChannelItemId = detail.Id;
+                            assoc.ChildContentChannelItemId = detailChanges.Id;
+                            assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                            _ccia_svc.Add( assoc );
+                        }
+                    }
 
-                    //Add Child Item
-                    var service = new ContentChannelItemAssociationService( _context );
-                    var exists = service.Queryable().Where( ccia => ccia.ContentChannelItemId == item.Id && ccia.ChildContentChannelItemId == detail.Id );
+                    //Add Child Item Event Detail to Event Request
+                    var exists = _ccia_svc.Queryable().Where( ccia => ccia.ContentChannelItemId == item.Id && ccia.ChildContentChannelItemId == detail.Id );
                     if ( !exists.Any() )
                     {
-                        var order = service.Queryable().AsNoTracking()
+                        var order = _ccia_svc.Queryable().AsNoTracking()
                             .Where( a => a.ContentChannelItemId == item.Id )
                             .Select( a => ( int? ) a.Order )
                             .DefaultIfEmpty()
@@ -374,13 +328,286 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                         assoc.ContentChannelItemId = item.Id;
                         assoc.ChildContentChannelItemId = detail.Id;
                         assoc.Order = order.HasValue ? order.Value + 1 : 0;
-                        service.Add( assoc );
+                        _ccia_svc.Add( assoc );
                     }
-
                     _context.SaveChanges();
                 }
+
+                if ( itemChanges != null && itemChanges.Id < 1 )
+                {
+                    _cci_svc.Add( itemChanges );
+                    _context.SaveChanges();
+                    //Add Child Item Event Changes to Event Request
+                    var assoc_exists = _ccia_svc.Queryable().Where( ccia => ccia.ContentChannelItemId == item.Id && ccia.ChildContentChannelItemId == itemChanges.Id );
+                    if ( !assoc_exists.Any() )
+                    {
+                        var order = _ccia_svc.Queryable().AsNoTracking()
+                            .Where( a => a.ContentChannelItemId == item.Id )
+                            .Select( a => ( int? ) a.Order )
+                            .DefaultIfEmpty()
+                            .Max();
+                        var assoc = new ContentChannelItemAssociation();
+                        assoc.ContentChannelItemId = item.Id;
+                        assoc.ChildContentChannelItemId = itemChanges.Id;
+                        assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                        _ccia_svc.Add( assoc );
+                    }
+                }
+                _context.SaveChanges();
                 item.SaveAttributeValues( _context );
+                if ( itemChanges != null )
+                {
+                    itemChanges.SaveAttributeValues( _context );
+                }
             }
+        }
+
+        private ContentChannelItem SetRequestAttributes( ContentChannelItem item, EventRequest req, List<DefinedValue> ministries )
+        {
+            //Set Base Event Attributes
+            UpdateAttribute( item, "NeedsSpace", req.needsSpace.ToString() );
+            UpdateAttribute( item, "NeedsOnline", req.needsOnline.ToString() );
+            UpdateAttribute( item, "NeedsPublicity", req.needsPub.ToString() );
+            UpdateAttribute( item, "NeedsRegistration", req.needsReg.ToString() );
+            UpdateAttribute( item, "NeedsChildCare", req.needsChildCare.ToString() );
+            UpdateAttribute( item, "NeedsCatering", req.needsCatering.ToString() );
+            UpdateAttribute( item, "NeedsOpsAccommodations", req.needsAccom.ToString() );
+            UpdateAttribute( item, "IsSame", req.IsSame.ToString() );
+            string EventDates = item.GetAttributeValue( "EventDates" );
+            if ( String.IsNullOrEmpty( EventDates ) )
+            {
+                //Set Event Dates on proposed changes item
+                UpdateAttribute( item, "EventDates", String.Join( ",", req.EventDates ) );
+            }
+
+            var ministry = ministries.FirstOrDefault( m => m.Id.ToString() == req.Ministry );
+            if ( ministry != null )
+            {
+                UpdateAttribute( item, "Ministry", ministry.Guid.ToString() );
+            }
+            UpdateAttribute( item, "Contact", req.Contact );
+            UpdateAttribute( item, "Notes", req.Notes );
+
+            //Publicity
+            UpdateAttribute( item, "WhyAttend", req.WhyAttendSixtyFive );
+            UpdateAttribute( item, "TargetAudience", req.TargetAudience.Split( ' ' )[0] );
+            UpdateAttribute( item, "EventisSticky", req.EventIsSticky.ToString() );
+            UpdateAttribute( item, "PublicityStartDate", req.PublicityStartDate.ToString() );
+            UpdateAttribute( item, "PublicityEndDate", req.PublicityEndDate.ToString() );
+            if ( req.PublicityStrategies != null )
+            {
+                List<string> pubStrategies = new List<string>();
+                if ( req.PublicityStrategies.Contains( "Social Media/Google Ads" ) )
+                {
+                    pubStrategies.Add( "Ads" );
+                }
+                if ( req.PublicityStrategies.Contains( "Mobile Worship Folder" ) )
+                {
+                    pubStrategies.Add( "MWF" );
+                }
+                if ( req.PublicityStrategies.Contains( "Announcement" ) )
+                {
+                    pubStrategies.Add( "Announcement" );
+                }
+                UpdateAttribute( item, "PublicityStrategies", pubStrategies.Count() > 0 ? String.Join( ",", pubStrategies ) : "" );
+            }
+
+            //Web Cal
+            UpdateAttribute( item, "NeedsWebCalendar", req.Events[0].ShowOnCalendar.ToString() );
+            UpdateAttribute( item, "WebCalendarDescription", req.Events[0].PublicityBlurb );
+
+            //Production
+            if ( req.Events[0].TechNeeds != null && ( req.Events[0].TechNeeds.Contains( "Worship Team" ) || req.Events[0].TechNeeds.Contains( "Stage Set-Up" ) || req.Events[0].TechNeeds.Contains( "Basic Live Stream ($)" ) || req.Events[0].TechNeeds.Contains( "Advanced Live Stream ($)" ) || req.Events[0].TechNeeds.Contains( "Special Lighting" ) ) )
+            {
+                UpdateAttribute( item, "NeedsProductionAccommodations", "true" );
+                UpdateAttribute( item, "ProductionTech", req.Events[0].TechNeeds != null ? String.Join( ",", req.Events[0].TechNeeds ) : "" );
+            }
+            else
+            {
+                UpdateAttribute( item, "NeedsProductionAccommodations", "false" );
+            }
+
+            return item;
+        }
+
+        private ContentChannelItem SetDetailAttributes( ContentChannelItem detail, ContentChannelItem item, int k, EventRequest req, List<DefinedValue> locations, List<DefinedValue> budgets, List<DefinedValue> drinks )
+        {
+            UpdateAttribute( detail, "EventDate", req.Events[k].EventDate );
+            detail.Title = item.Title + ( req.Events[k].EventDate != "" ? ": " + req.Events[k].EventDate.ToString() : "" );
+            detail.CreatedByPersonAliasId = item.CreatedByPersonAliasId;
+            detail.CreatedDateTime = item.CreatedDateTime;
+            detail.ModifiedByPersonAliasId = item.ModifiedByPersonAliasId;
+            detail.ModifiedDateTime = item.ModifiedDateTime;
+            if ( req.IsValid )
+            {
+                UpdateAttribute( detail, "EventIsValid", "True" );
+            }
+            UpdateAttribute( detail, "StartTime", !String.IsNullOrEmpty( req.Events[k].StartTime ) && !req.Events[k].StartTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].StartTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "EndTime", !String.IsNullOrEmpty( req.Events[k].EndTime ) && !req.Events[k].EndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].EndTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "StartBuffer", req.Events[k].MinsStartBuffer.ToString() );
+            UpdateAttribute( detail, "EndBuffer", req.Events[k].MinsEndBuffer.ToString() );
+
+            //Space Info
+            UpdateAttribute( detail, "ExpectedAttendance", req.Events[k].ExpectedAttendance.ToString() );
+            List<DefinedValue> rooms = new List<DefinedValue>();
+            if ( req.Events[k].Rooms != null )
+            {
+                rooms = locations.Where( l => req.Events[k].Rooms.Contains( l.Id.ToString() ) ).ToList();
+                if ( req.Events[k].Rooms != null && req.Events[k].Rooms.Count() > 0 )
+                {
+                    if ( rooms.Any() )
+                    {
+                        UpdateAttribute( detail, "Rooms", String.Join( ",", rooms.Select( r => r.Guid.ToString() ) ) );
+                    }
+                }
+            }
+            UpdateAttribute( detail, "InfrastructureSpace", req.Events[k].InfrastructureSpace );
+            //Room Set Up
+            //AttributeMatrix matrix = new AttributeMatrix() { AttributeMatrixTemplateId = matrixId };
+            //AttributeMatrixService ams = new AttributeMatrixService( _context );
+            //ams.Add( matrix );
+            //_context.SaveChanges();
+
+            List<TableSetUp> setUp = new List<TableSetUp>();
+            for ( int j = 0; j < rooms.Count(); j++ )
+            {
+                TableSetUp roundSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Round" };
+                TableSetUp rectSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Rectangular" };
+                roundSetUp.NumberofTables = req.Events[k].NumTablesRound.HasValue ? req.Events[k].NumTablesRound.Value : 0;
+                roundSetUp.NumberofChairs = req.Events[k].NumChairsRound.HasValue ? req.Events[k].NumChairsRound.Value : 0;
+                rectSetUp.NumberofTables = req.Events[k].NumTablesRect.HasValue ? req.Events[k].NumTablesRect.Value : 0;
+                rectSetUp.NumberofChairs = req.Events[k].NumChairsRect.HasValue ? req.Events[k].NumChairsRect.Value : 0;
+                setUp.Add( roundSetUp );
+                setUp.Add( rectSetUp );
+            }
+            UpdateAttribute( detail, "RoomSetUp", JsonConvert.SerializeObject( setUp ) );
+
+            //For Matrix - Not yet available
+            //for ( int j = 0; j < rooms.Count(); j++ )
+            //{
+            //    if ( req.Events[k].TableType.Contains( "Round" ) )
+            //    {
+            //        AttributeMatrixItem matrixItem = new AttributeMatrixItem();
+            //        matrixItem.AttributeMatrix = matrix;
+            //        matrixItem.LoadAttributes();
+
+            //        matrixItem.SetAttributeValue( "Room", rooms[j].Guid.ToString() );
+            //        matrixItem.SetAttributeValue( "TypeofTable", "Round" );
+            //        matrixItem.SetAttributeValue( "NumberofTables", req.Events[k].NumTablesRound.ToString() );
+            //        matrixItem.SetAttributeValue( "NumberofChairs", req.Events[k].NumChairsRound.ToString() );
+
+            //        AttributeMatrixItemService amis = new AttributeMatrixItemService( _context );
+            //        amis.Add( matrixItem );
+            //        _context.SaveChanges();
+            //        matrixItem.SaveAttributeValues();
+
+            //    }
+            //    if ( req.Events[k].TableType.Contains( "Rectangular" ) )
+            //    {
+            //        AttributeMatrixItem matrixItem = new AttributeMatrixItem();
+            //        matrixItem.AttributeMatrix = matrix;
+            //        matrixItem.LoadAttributes();
+
+            //        matrixItem.SetAttributeValue( "Room", rooms[j].Guid.ToString() );
+            //        matrixItem.SetAttributeValue( "TypeofTable", "Rectangular" );
+            //        matrixItem.SetAttributeValue( "NumberofTables", req.Events[k].NumTablesRect.ToString() );
+            //        matrixItem.SetAttributeValue( "NumberofChairs", req.Events[k].NumChairsRect.ToString() );
+
+            //        AttributeMatrixItemService amis = new AttributeMatrixItemService( _context );
+            //        amis.Add( matrixItem );
+            //        _context.SaveChanges();
+            //        matrixItem.SaveAttributeValues();
+            //    }
+            //}
+
+            //UpdateAttribute( detail, "RoomSetup", matrix.Guid.ToString() );
+
+            //Online
+            UpdateAttribute( detail, "EventURL", req.Events[k].EventURL );
+            UpdateAttribute( detail, "Password", req.Events[k].ZoomPassword );
+
+            //Registration
+            UpdateAttribute( detail, "RegistrationStartDate", req.Events[k].RegistrationDate.HasValue ? req.Events[k].RegistrationDate.Value.ToString( "yyyy-MM-dd HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "RegistrationEndDate", req.Events[k].RegistrationEndDate.HasValue ? req.Events[k].RegistrationEndDate.Value.ToString( "yyyy-MM-dd HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "RegistrationEndTime", !String.IsNullOrEmpty( req.Events[k].RegistrationEndTime ) && !req.Events[k].RegistrationEndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].RegistrationEndTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "RegistrationFeeType", req.Events[k].FeeType != null ? String.Join( ",", req.Events[k].FeeType ) : "" );
+            var regBudget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].FeeBudgetLine );
+            if ( regBudget != null )
+            {
+                UpdateAttribute( detail, "RegistrationFeeBudgetLine", regBudget.Guid.ToString() );
+            }
+            UpdateAttribute( detail, "IndividualRegistrationFee", req.Events[k].Fee );
+            UpdateAttribute( detail, "CoupleRegistrationFee", req.Events[k].CoupleFee );
+            UpdateAttribute( detail, "OnlineRegistrationFee", req.Events[k].OnlineFee );
+            UpdateAttribute( detail, "RegistrationConfirmationEmailSender", req.Events[k].Sender );
+            UpdateAttribute( detail, "RegistrationConfirmationEmailFromAddress", req.Events[k].SenderEmail );
+            UpdateAttribute( detail, "RegistrationConfirmationEmailAdditionalDetails", req.Events[k].AdditionalDetails );
+            UpdateAttribute( detail, "NeedsReminderEmail", req.Events[k].NeedsReminderEmail.ToString() );
+            UpdateAttribute( detail, "RegistrationReminderEmailAdditionalDetails", req.Events[k].ReminderAdditionalDetails );
+            UpdateAttribute( detail, "NeedsCheckin", req.Events[k].Checkin.ToString() );
+            UpdateAttribute( detail, "NeedsDatabaseSupportTeam", req.Events[k].SupportTeam.ToString() );
+
+            //Catering
+            UpdateAttribute( detail, "PreferredVendor", req.Events[k].Vendor );
+            UpdateAttribute( detail, "PreferredMenu", req.Events[k].Menu );
+            var budget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].BudgetLine );
+            if ( budget != null )
+            {
+                UpdateAttribute( detail, "FoodBudgetLine", budget.Guid.ToString() );
+            }
+            UpdateAttribute( detail, "NeedsDelivery", req.Events[k].FoodDelivery.ToString() );
+            UpdateAttribute( detail, "FoodTime", !String.IsNullOrEmpty( req.Events[k].FoodTime ) && !req.Events[k].FoodTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].FoodTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "FoodSetupLocation", req.Events[k].FoodDropOff );
+            if ( req.Events[k].Drinks != null )
+            {
+                var selectedDrinks = drinks.Where( d => req.Events[k].Drinks.Contains( d.Value ) ).ToList();
+                if ( req.Events[k].Drinks.Contains( "Water" ) )
+                {
+                    var water = drinks.FirstOrDefault( d => d.Value == "Bottled Water" );
+                    selectedDrinks.Add( water );
+                }
+                UpdateAttribute( detail, "Drinks", String.Join( ",", selectedDrinks.Select( d => d.Guid.ToString() ) ) );
+            }
+            //UpdateAttribute( detail, "Drinks", req.Events[k].Drinks != null ? String.Join( ",", req.Events[k].Drinks ) : "" );
+            UpdateAttribute( detail, "DrinkTime", !String.IsNullOrEmpty( req.Events[k].DrinkTime ) && !req.Events[k].DrinkTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].DrinkTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "SetupFoodandDrinkTogether", ( req.Events[k].FoodDropOff == req.Events[k].DrinkDropOff ).ToString() );
+            UpdateAttribute( detail, "DrinkSetupLocation", req.Events[k].DrinkDropOff );
+
+            UpdateAttribute( detail, "ChildcareVendor", req.Events[k].CCVendor );
+            budget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].CCBudgetLine );
+            if ( budget != null )
+            {
+                UpdateAttribute( detail, "ChildcareCateringBudgetLine", budget.Guid.ToString() );
+            }
+            UpdateAttribute( detail, "ChildcarePreferredMenu", req.Events[k].CCMenu );
+            UpdateAttribute( detail, "ChildcareFoodTime", !String.IsNullOrEmpty( req.Events[k].CCFoodTime ) && !req.Events[k].CCFoodTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].CCFoodTime ).ToString( "HH:mm:ss" ) : "" );
+
+            //Childcare
+            UpdateAttribute( detail, "ChildcareStartTime", !String.IsNullOrEmpty( req.Events[k].CCStartTime ) && !req.Events[k].CCStartTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].CCStartTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "ChildcareEndTime", !String.IsNullOrEmpty( req.Events[k].CCEndTime ) && !req.Events[k].CCEndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].CCEndTime ).ToString( "HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "ChildcareOptions", req.Events[k].ChildCareOptions != null ? String.Join( ",", req.Events[k].ChildCareOptions ) : "" );
+            UpdateAttribute( detail, "EstimatedNumberofKids", req.Events[k].EstimatedKids.ToString() );
+
+            //Special Accomm
+            if ( !item.GetAttributeValue( "NeedsProductionAccommodations" ).AsBoolean() )
+            {
+                UpdateAttribute( detail, "RoomTech", req.Events[k].TechNeeds != null ? String.Join( ",", req.Events[k].TechNeeds ) : "" );
+            }
+            UpdateAttribute( detail, "TechNeeds", req.Events[k].TechDescription );
+            UpdateAttribute( detail, "NeedsDoorsUnlocked", req.Events[k].NeedsDoorsUnlocked.ToString() );
+            if ( req.Events[k].Doors != null && req.Events[k].Doors.Count() > 0 )
+            {
+                var doors = locations.Where( l => req.Events[k].Doors.Contains( l.Id.ToString() ) );
+                if ( doors.Any() )
+                {
+                    UpdateAttribute( detail, "Doors", String.Join( ",", doors.Select( r => r.Guid.ToString() ) ) );
+                }
+            }
+            UpdateAttribute( detail, "Setup", req.Events[k].SetUp );
+            UpdateAttribute( detail, "NeedsMedical", req.Events[k].NeedsMedical.ToString() );
+            UpdateAttribute( detail, "NeedsSecurity", req.Events[k].NeedsSecurity.ToString() );
+
+            return detail;
         }
 
         private void UpdateAttribute( ContentChannelItem item, string attr, string value )

@@ -13,6 +13,7 @@ import RockText from "../../../Elements/textBox"
 import RockField from "../../../Controls/rockField"
 import DateRangePicker from "../../../Elements/dateRangePicker"
 import PersonPicker from "../../../Controls/personPicker"
+import Comment from "./Components/comment"
 
 const store = useStore();
 
@@ -28,6 +29,7 @@ export default defineComponent({
     "tcc-model": TCCModal,
     "tcc-details": Details,
     "tcc-ddl": TCCDropDownList,
+    "tcc-comment": Comment,
     "rck-text": RockText,
     "rck-field": RockField,
     "rck-date-range": DateRangePicker,
@@ -183,7 +185,12 @@ export default defineComponent({
     selectItem(item: any) { 
       this.loadDetails(item.id).then((response: any) => {
         if(response.data) {
-          response.data.request.childItems = response.data.details
+          response.data.details.forEach((detail: any) => {
+            detail.detail.changes = detail.detailPendingChanges
+          })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
+          response.data.request.changes = response.data.requestPendingChanges
+          response.data.request.comments = response.data.comments
           this.selected = response.data.request
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
@@ -347,7 +354,7 @@ export default defineComponent({
       </div>
     </div>
   </div>
-  <a-table :columns="columns" :data-source="viewModel.events">
+  <a-table :columns="columns" :data-source="viewModel.events" :pagination="{ pageSize: 30 }">
     <template #title="{ text: title, record: r }">
       <div class="hover" @click="selectItem(r)">{{ title }}</div>
     </template>
@@ -363,6 +370,10 @@ export default defineComponent({
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
     <tcc-details :request="selected" :rooms="viewModel.locations" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
+    <h3 class="text-accent">Comments</h3>
+    <div>
+      <tcc-comment v-for="c in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :key="c.comment.id"></tcc-comment>
+    </div>
     <template #footer>
       <div class="text-left">
         <a-btn type="primary" @click="editItem(selected.id)">
@@ -452,6 +463,7 @@ label, .control-label {
 .ant-switch-checked, .ant-btn-primary, .ant-btn-submitted {
   background-color: #347689;
   border-color: #347689;
+  color: #fff;
 }
 .ant-btn-draft {
   background-color: #A18276;
@@ -468,6 +480,7 @@ label, .control-label {
 .ant-btn-pendingchanges {
   background-color: #61a4a9;
   border-color: #61a4a9;
+  color: #fff;
 }
 .ant-btn-cancelled, .ant-btn-cancelledbyuser, .ant-btn-grey {
   background-color: #9e9e9e;
@@ -499,7 +512,7 @@ label, .control-label {
 .ant-btn-pendingchanges:focus, .ant-btn-pendingchanges:hover {
   background-color: #5B999E;
   border-color: #5B999E;
-  color: black;
+  color: #fff;
 }
 .ant-btn-grey:focus, .ant-btn-grey:hover, .ant-btn-cancelled:focus, .ant-btn-cancelled:hover, .ant-btn-cancelledbyuser:focus, .ant-btn-cancelledbyuser:hover {
   background-color: #929392;
@@ -546,11 +559,14 @@ td .ant-btn {
 .border-cancelled, .border-cancelledbyuser {
   border-color: #3d3d3d;
 }
-.text-denied {
+.text-denied, .text-red {
   color: #cc3f0c;
 }
 .border-denied {
   border-color: #cc3f0c;
+}
+.text-strikethrough {
+  text-decoration: line-through;
 }
 .tcc-dropdown {
   display: flex;

@@ -31,6 +31,8 @@ namespace Rock.Blocks.Plugin.EventForm
 
     [ContentChannelField( "Event Content Channel", key: AttributeKey.EventContentChannel, category: "General", required: true, order: 0 )]
     [ContentChannelField( "Event Details Content Channel", key: AttributeKey.EventDetailsContentChannel, category: "General", required: true, order: 1 )]
+    [ContentChannelField( "Event Changes Content Channel", key: AttributeKey.EventChangesContentChannel, category: "General", required: true, order: 2 )]
+    [ContentChannelField( "Event Details Changes Content Channel", key: AttributeKey.EventDetailsChangesContentChannel, category: "General", required: true, order: 3 )]
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
@@ -62,6 +64,8 @@ namespace Rock.Blocks.Plugin.EventForm
         {
             public const string EventContentChannel = "EventContentChannel";
             public const string EventDetailsContentChannel = "EventDetailsContentChannel";
+            public const string EventChangesContentChannel = "EventChangesContentChannel";
+            public const string EventDetailsChangesContentChannel = "EventDetailsChangesContentChannel";
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
@@ -103,74 +107,43 @@ namespace Rock.Blocks.Plugin.EventForm
         /// </returns>
         public override object GetObsidianBlockInitialization()
         {
-            using ( var rockContext = new RockContext() )
+            SetProperties();
+
+            SubmissionFormViewModel viewModel = LoadRequest();
+            viewModel.isSuperUser = CheckSecurityRole( context, AttributeKey.SuperUserRole );
+            viewModel.isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
+            viewModel.isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
+            viewModel.permissions = SetPermissions( viewModel.request, viewModel.isEventAdmin );
+            viewModel.existing = LoadExisting( viewModel.request.Id );
+            viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
+
+            //Lists
+            Guid locationGuid = Guid.Empty;
+            Guid ministryGuid = Guid.Empty;
+            Guid budgetLineGuid = Guid.Empty;
+            var p = GetCurrentPerson();
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
             {
-                Guid eventCCGuid = Guid.Empty;
-                Guid eventDetailsCCGuid = Guid.Empty;
-                Guid eventDatesAttrGuid = Guid.Empty;
-                Guid requestStatusAttrGuid = Guid.Empty;
-                Guid isSameAttrGuid = Guid.Empty;
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
-                {
-                    ContentChannel cc = new ContentChannelService( rockContext ).Get( eventCCGuid );
-                    EventContentChannelId = cc.Id;
-                    EventContentChannelTypeId = cc.ContentChannelTypeId;
-                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
-                    {
-                        ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsCCGuid );
-                        EventDetailsContentChannelId = dCC.Id;
-                        EventDetailsContentChannelTypeId = dCC.ContentChannelTypeId;
-                    }
-                }
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDatesAttr ), out eventDatesAttrGuid ) )
-                {
-                    EventDatesAttrGuid = eventDatesAttrGuid;
-                }
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.RequestStatusAttr ), out requestStatusAttrGuid ) )
-                {
-                    RequestStatusAttrGuid = requestStatusAttrGuid;
-                }
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.IsSameAttr ), out isSameAttrGuid ) )
-                {
-                    IsSameAttrGuid = isSameAttrGuid;
-                }
-
-                SubmissionFormViewModel viewModel = LoadRequest();
-                viewModel.isSuperUser = CheckSecurityRole( rockContext, AttributeKey.SuperUserRole );
-                viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
-                viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
-                viewModel.permissions = SetPermissions( viewModel.request, viewModel.isEventAdmin );
-                viewModel.existing = LoadExisting( viewModel.request.Id );
-                viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
-
-                //Lists
-                Guid locationGuid = Guid.Empty;
-                Guid ministryGuid = Guid.Empty;
-                Guid budgetLineGuid = Guid.Empty;
-                var p = GetCurrentPerson();
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
-                {
-                    Rock.Model.DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                    var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
-                    viewModel.locations = locs.ToList();
-                }
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-                {
-                    Rock.Model.DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
-                    var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
-                    min.LoadAttributes();
-                    viewModel.ministries = min.ToList();
-                }
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
-                {
-                    Rock.Model.DefinedType budgetDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                    var budget = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
-                    budget.LoadAttributes();
-                    viewModel.budgetLines = budget.ToList();
-                }
-
-                return viewModel;
+                Rock.Model.DefinedType locationDT = new DefinedTypeService( context ).Get( locationGuid );
+                var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
+                viewModel.locations = locs.ToList();
             }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+            {
+                Rock.Model.DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
+                var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                min.LoadAttributes();
+                viewModel.ministries = min.ToList();
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
+            {
+                Rock.Model.DefinedType budgetDT = new DefinedTypeService( context ).Get( locationGuid );
+                var budget = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
+                budget.LoadAttributes();
+                viewModel.budgetLines = budget.ToList();
+            }
+
+            return viewModel;
         }
 
         #endregion Obsidian Block Type Overrides
@@ -181,9 +154,12 @@ namespace Rock.Blocks.Plugin.EventForm
         private int EventContentChannelTypeId { get; set; }
         private int EventDetailsContentChannelId { get; set; }
         private int EventDetailsContentChannelTypeId { get; set; }
+        private int EventChangesContentChannelId { get; set; }
+        private int EventDetailsChangesContentChannelId { get; set; }
         private Guid EventDatesAttrGuid { get; set; }
         private Guid RequestStatusAttrGuid { get; set; }
         private Guid IsSameAttrGuid { get; set; }
+        private RockContext context { get; set; }
 
         #endregion
 
@@ -232,13 +208,21 @@ namespace Rock.Blocks.Plugin.EventForm
             if ( id.HasValue )
             {
                 item = new ContentChannelItemService( new RockContext() ).Get( id.Value );
-                //item.ChildItems.Select( ci => ci.ChildContentChannelItem ).LoadAttributes();
-                //item.LoadAttributes();
-                return new SubmissionFormViewModel
+                var viewModel = new SubmissionFormViewModel
                 {
                     request = item.ToViewModel( p, true ),
                     events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList()
                 };
+                var changes = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
+                if ( changes != null )
+                {
+                    viewModel.originalRequest = viewModel.request;
+                    viewModel.request = changes.ChildContentChannelItem.ToViewModel( p, true );
+                    //Don't want the tite to show as "Changes"
+                    viewModel.request.Title = viewModel.request.Title.Replace( " Changes", "" );
+                    viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).SelectMany( i => i.ChildContentChannelItem.ChildItems ).Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList();
+                }
+                return viewModel;
             }
             else
             {
@@ -256,7 +240,6 @@ namespace Rock.Blocks.Plugin.EventForm
         private List<ContentChannelItem> LoadExisting( int id )
         {
             List<ContentChannelItem> items = new List<ContentChannelItem>();
-            RockContext context = new RockContext();
             ContentChannelItemService svc = new ContentChannelItemService( context );
             AttributeValueService av_svc = new AttributeValueService( context );
             AttributeService attr_svc = new AttributeService( context );
@@ -367,48 +350,52 @@ namespace Rock.Blocks.Plugin.EventForm
                         {
                             i.AttributeValues.Add( isSameAttr.Key, new AttributeValueCache() { Value = isSame.Value, AttributeId = isSameAttr.Id } );
                         }
-                        i.ChildItems = i.ChildItems.Select( ci =>
-                        {
-                            if ( ci.ChildContentChannelItem.AttributeValues == null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues = new Dictionary<string, AttributeValueCache>();
-                            }
-                            var date = dates.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
-                            if ( date != null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues.Add( eventDateAttr.Key, new AttributeValueCache() { Value = date.Value, AttributeId = eventDateAttr.Id } );
-                            }
-                            var startTime = startTimes.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
-                            if ( startTime != null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues.Add( startTimeAttr.Key, new AttributeValueCache() { Value = startTime.Value, AttributeId = startTimeAttr.Id } );
-                            }
-                            var endTime = endTimes.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
-                            if ( endTime != null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues.Add( endTimeAttr.Key, new AttributeValueCache() { Value = endTime.Value, AttributeId = endTimeAttr.Id } );
-                            }
-                            var room = rooms.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
-                            if ( room != null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues.Add( roomAttr.Key, new AttributeValueCache() { Value = room.Value, AttributeId = roomAttr.Id } );
-                            }
-                            var sBuffer = sBuffers.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
-                            if ( sBuffer != null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues.Add( sBufferAttr.Key, new AttributeValueCache() { Value = sBuffer.Value, AttributeId = sBufferAttr.Id } );
-                            }
-                            var eBuffer = eBuffers.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
-                            if ( eBuffer != null )
-                            {
-                                ci.ChildContentChannelItem.AttributeValues.Add( eBufferAttr.Key, new AttributeValueCache() { Value = eBuffer.Value, AttributeId = eBufferAttr.Id } );
-                            }
+                        i.ChildItems = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci =>
+                          {
+                              if ( ci.ChildContentChannelItem.AttributeValues == null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues = new Dictionary<string, AttributeValueCache>();
+                              }
+                              var date = dates.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( date != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( eventDateAttr.Key, new AttributeValueCache() { Value = date.Value, AttributeId = eventDateAttr.Id } );
+                              }
+                              var startTime = startTimes.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( startTime != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( startTimeAttr.Key, new AttributeValueCache() { Value = startTime.Value, AttributeId = startTimeAttr.Id } );
+                              }
+                              var endTime = endTimes.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( endTime != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( endTimeAttr.Key, new AttributeValueCache() { Value = endTime.Value, AttributeId = endTimeAttr.Id } );
+                              }
+                              var room = rooms.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( room != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( roomAttr.Key, new AttributeValueCache() { Value = room.Value, AttributeId = roomAttr.Id } );
+                              }
+                              else
+                              {
+                                  //Need to be able to filter out requests without rooms
+                                  ci.ChildContentChannelItem.AttributeValues.Add( roomAttr.Key, new AttributeValueCache() { Value = "", AttributeId = roomAttr.Id } );
+                              }
+                              var sBuffer = sBuffers.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( sBuffer != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( sBufferAttr.Key, new AttributeValueCache() { Value = sBuffer.Value, AttributeId = sBufferAttr.Id } );
+                              }
+                              var eBuffer = eBuffers.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( eBuffer != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( eBufferAttr.Key, new AttributeValueCache() { Value = eBuffer.Value, AttributeId = eBufferAttr.Id } );
+                              }
 
-                            return ci;
-                        } ).ToList();
-
+                              return ci;
+                          } ).ToList();
                         return i;
-                    } ).ToList();
+                    } ).Where( i => !i.ChildItems.Any( ci => ci.ChildContentChannelItem.AttributeValues[roomAttr.Key].Value == "" ) ).ToList();
                 }
             }
             return items;
@@ -416,14 +403,26 @@ namespace Rock.Blocks.Plugin.EventForm
 
         private int SaveRequest( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
         {
-            RockContext context = new RockContext();
+            SetProperties();
             ContentChannelItem item = FromViewModel( viewModel );
             var cciSvc = new ContentChannelItemService( context );
+            var p = GetCurrentPerson();
+            item.ModifiedByPersonAliasId = p.PrimaryAliasId;
+            item.ModifiedDateTime = RockDateTime.Now;
+
+            if ( item.ContentChannelId == EventChangesContentChannelId )
+            {
+                item.Title += " Changes";
+            }
+
             if ( item.Id == 0 )
             {
+                item.CreatedByPersonAliasId = p.PrimaryAliasId;
+                item.CreatedDateTime = item.ModifiedDateTime;
                 cciSvc.Add( item );
-                context.SaveChanges();
             }
+            context.SaveChanges();
+
             for ( int i = 0; i < events.Count(); i++ )
             {
                 var detail = FromViewModel( events[i] );
@@ -467,7 +466,7 @@ namespace Rock.Blocks.Plugin.EventForm
         /// Return true/false is the current person a member of the given Security Role
         /// </summary>
         /// <returns></returns>
-        private bool CheckSecurityRole( RockContext rockContext, string attrKey )
+        private bool CheckSecurityRole( RockContext context, string attrKey )
         {
             bool hasRole = false;
             Rock.Model.Person p = GetCurrentPerson();
@@ -475,7 +474,7 @@ namespace Rock.Blocks.Plugin.EventForm
             //A role was configured and the current person is not null
             if ( Guid.TryParse( GetAttributeValue( attrKey ), out securityRoleGuid ) && p != null )
             {
-                Rock.Model.Group securityRole = new GroupService( rockContext ).Get( securityRoleGuid );
+                Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
                 if ( securityRole.Members.Select( gm => gm.PersonId ).Contains( p.Id ) )
                 {
                     hasRole = true;
@@ -500,9 +499,17 @@ namespace Rock.Blocks.Plugin.EventForm
             //TODO Cooksey: Finish Permissions for View vs Edit access
             if ( item.Id > 0 )
             {
-                Rock.Model.Person createdBy = new PersonAliasService( new RockContext() ).Get( item.CreatedByPersonAliasId.Value ).Person;
-                Rock.Model.Person modifiedBy = new PersonAliasService( new RockContext() ).Get( item.ModifiedByPersonAliasId.Value ).Person;
-                if ( createdBy.Id == p.Id || modifiedBy.Id == p.Id )
+                Rock.Model.PersonAlias createdBy = null;
+                if ( item.CreatedByPersonAliasId.HasValue )
+                {
+                    createdBy = new PersonAliasService( new RockContext() ).Get( item.CreatedByPersonAliasId.Value );
+                }
+                Rock.Model.PersonAlias modifiedBy = null;
+                if ( item.ModifiedByPersonAliasId.HasValue )
+                {
+                    modifiedBy = new PersonAliasService( new RockContext() ).Get( item.ModifiedByPersonAliasId.Value );
+                }
+                if ( ( createdBy != null && createdBy.PersonId == p.Id ) || ( modifiedBy != null && modifiedBy.PersonId == p.Id ) )
                 {
                     permissions.Add( "Edit" );
                 }
@@ -520,7 +527,6 @@ namespace Rock.Blocks.Plugin.EventForm
 
         private ContentChannelItem FromViewModel( ContentChannelItemViewModel viewModel )
         {
-            RockContext context = new RockContext();
             Rock.Model.Person p = GetCurrentPerson();
             ContentChannelItem item = new ContentChannelItem()
             {
@@ -541,11 +547,58 @@ namespace Rock.Blocks.Plugin.EventForm
             return item;
         }
 
+        private void SetProperties()
+        {
+            context = new RockContext();
+            Guid eventCCGuid = Guid.Empty;
+            Guid eventDetailsCCGuid = Guid.Empty;
+            Guid eventChangesCCGuid = Guid.Empty;
+            Guid eventDetailsChangesCCGuid = Guid.Empty;
+            Guid eventDatesAttrGuid = Guid.Empty;
+            Guid requestStatusAttrGuid = Guid.Empty;
+            Guid isSameAttrGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
+            {
+                ContentChannel cc = new ContentChannelService( context ).Get( eventCCGuid );
+                EventContentChannelId = cc.Id;
+                EventContentChannelTypeId = cc.ContentChannelTypeId;
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
+                {
+                    ContentChannel dCC = new ContentChannelService( context ).Get( eventDetailsCCGuid );
+                    EventDetailsContentChannelId = dCC.Id;
+                    EventDetailsContentChannelTypeId = dCC.ContentChannelTypeId;
+                }
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventChangesContentChannel ), out eventChangesCCGuid ) )
+            {
+                ContentChannel cc = new ContentChannelService( context ).Get( eventChangesCCGuid );
+                EventChangesContentChannelId = cc.Id;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsChangesContentChannel ), out eventDetailsChangesCCGuid ) )
+            {
+                ContentChannel cc = new ContentChannelService( context ).Get( eventDetailsChangesCCGuid );
+                EventDetailsChangesContentChannelId = cc.Id;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDatesAttr ), out eventDatesAttrGuid ) )
+            {
+                EventDatesAttrGuid = eventDatesAttrGuid;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.RequestStatusAttr ), out requestStatusAttrGuid ) )
+            {
+                RequestStatusAttrGuid = requestStatusAttrGuid;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.IsSameAttr ), out isSameAttrGuid ) )
+            {
+                IsSameAttrGuid = isSameAttrGuid;
+            }
+
+        }
         #endregion Helpers
 
         public class SubmissionFormViewModel
         {
             public ContentChannelItemViewModel request { get; set; }
+            public ContentChannelItemViewModel originalRequest { get; set; }
             public List<ContentChannelItemViewModel> events { get; set; }
             public List<ContentChannelItem> existing { get; set; }
             public List<ContentChannelItemAssociation> existingDetails { get; set; }

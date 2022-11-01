@@ -2,6 +2,7 @@ import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation } from 
 
 export type SubmissionFormBlockViewModel = {
     request: ContentChannelItem;
+    originalRequest: ContentChannelItem;
     events: ContentChannelItem[];
     existing: ContentChannelItem[];
     existingDetails: ContentChannelItemAssociation[];

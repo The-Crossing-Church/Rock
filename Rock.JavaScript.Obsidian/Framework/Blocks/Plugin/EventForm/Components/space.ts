@@ -5,9 +5,8 @@ import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel";
 import { DateTime, Duration, Interval } from "luxon";
 import { useStore } from "../../../../Store/index";
 import { Switch } from "ant-design-vue";
-import RockForm from "../../../../Controls/rockForm";
 import RockField from "../../../../Controls/rockField";
-import RockFormField from "../../../../Elements/rockFormField";
+import Validator from "./validator";
 import TextBox from "../../../../Elements/textBox";
 import RockLabel from "../../../../Elements/rockLabel";
 import RoomPicker from "./roomPicker"
@@ -42,8 +41,7 @@ export default defineComponent({
     components: {
         "a-switch": Switch,
         "rck-field": RockField,
-        "rck-form-field": RockFormField,
-        "rck-form": RockForm,
+        "tcc-validator": Validator,
         "rck-lbl": RockLabel,
         "rck-text": TextBox,
         "tcc-room": RoomPicker,
@@ -57,14 +55,27 @@ export default defineComponent({
         },
         locations: Array as PropType<DefinedValue[]>,
         request: Object as PropType<ContentChannelItem>,
-        existing: Array as PropType<any[]>
+        originalRequest: Object as PropType<ContentChannelItem>,
+        existing: Array as PropType<any[]>,
+        showValidation: Boolean
     },
     setup() {
 
     },
     data() {
         return {
-            roomSetUp: [] as RoomSetUp[]
+            roomSetUp: [] as RoomSetUp[],
+            rules: {
+                required: (value: any, key: string) => {
+                  if(typeof value === 'string') {
+                    if(value.includes("{")) {
+                      let obj = JSON.parse(value)
+                      return obj.value != '' || `${key} is required`
+                    } 
+                  } 
+                  return !!value || `${key} is required`
+                },
+            }
         };
     },
     computed: {
@@ -110,18 +121,18 @@ export default defineComponent({
             let loc = [] as any[]
             let dates = [] as any[]
             if(this.request?.attributeValues?.IsSame == "True") {
-                dates = this.request.attributeValues.EventDates.split(",")
+                dates = this.request.attributeValues.EventDates.split(",").map(d => d.trim())
             } else {
                 dates.push(this.e?.attributeValues?.EventDate)
             }
             let existingOnDate = this.existing?.filter(e => {
-                if(e.id == this.request?.id) {
+                if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
                     return false
                 }
-                let intersect = e.attributeValues?.EventDates.value.split(",").filter((date: string) => dates.includes(date.trim()))
+                let intersect = e.attributeValues?.EventDates.value.split(",").map((d: string) => d.trim()).filter((date: string) => dates.includes(date))
                 if(intersect && intersect.length > 0) {
                     //Filter to events object for the matching dates
-                    let events = []
+                    let events = [] as any[]
                     if(e.attributeValues?.IsSame.value == "True") {
                         events = e.childItems
                     } else {
@@ -129,44 +140,64 @@ export default defineComponent({
                     }
                     //Check if the times overlap
                     let overlaps = false
-                    events.forEach((event: any, idx: number) => {
-                        let date = event.childContentChannelItem.attributeValues?.EventDate?.value.trim()
-                        if(e.attributeValues?.IsSame.value == 'True' && intersect) {
-                            date = intersect[idx].trim()
-                        }
-                        let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-                        if (event.childContentChannelItem.attributeValues?.StartBuffer) {
-                            let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.StartBuffer.value) })
-                            cdStart = cdStart.minus(span)
-                        }
-                        let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-                        if (event.childContentChannelItem.attributeValues?.EndBuffer) {
-                            let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.EndBuffer.value) })
-                            cdEnd = cdEnd.plus(span)
-                        }
-                        let cRange = Interval.fromDateTimes(cdStart, cdEnd)
-                        for(let i=0; i<dates.length; i++) {
-                            let current = Interval.fromDateTimes(
-                                DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`),
-                                DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
-                            )
-                            if (cRange.overlaps(current)) {
-                                overlaps = true
+                    if(e.attributeValues?.IsSame.value == 'True') {
+                        intersect.forEach((date: string) => {
+                            let cdStart = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
+                            if (events[0].childContentChannelItem.attributeValues?.StartBuffer) {
+                                let span = Duration.fromObject({ minutes: parseInt(events[0].childContentChannelItem.attributeValues.StartBuffer.value) })
+                                cdStart = cdStart.minus(span)
                             }
-                        }
-                    })
+                            let cdEnd = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
+                            if (events[0].childContentChannelItem.attributeValues?.EndBuffer) {
+                                let span = Duration.fromObject({ minutes: parseInt(events[0].childContentChannelItem.attributeValues.EndBuffer.value) })
+                                cdEnd = cdEnd.plus(span)
+                            }
+                            let cRange = Interval.fromDateTimes(cdStart, cdEnd)
+                            for(let i=0; i<dates.length; i++) {
+                                let current = Interval.fromDateTimes(
+                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`),
+                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                )
+                                if (cRange.overlaps(current)) {
+                                    overlaps = true
+                                }
+                            }
+                        })
+                    } else {
+                        events.forEach((event: any) => {
+                            let date = event.childContentChannelItem.attributeValues?.EventDate?.value.trim()
+                            let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
+                            if (event.childContentChannelItem.attributeValues?.StartBuffer) {
+                                let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.StartBuffer.value) })
+                                cdStart = cdStart.minus(span)
+                            }
+                            let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
+                            if (event.childContentChannelItem.attributeValues?.EndBuffer) {
+                                let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.EndBuffer.value) })
+                                cdEnd = cdEnd.plus(span)
+                            }
+                            let cRange = Interval.fromDateTimes(cdStart, cdEnd)
+                            for(let i=0; i<dates.length; i++) {
+                                let current = Interval.fromDateTimes(
+                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`),
+                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                )
+                                if (cRange.overlaps(current)) {
+                                    overlaps = true
+                                }
+                            }
+                        })
+                    }
                     return overlaps
                 }
                 return false
             })
-            console.log(existingOnDate)
             let existingRooms = [] as any[]
             existingOnDate?.forEach(e => {
                 e.childItems.forEach((ev: any) => {
                     existingRooms.push(...ev.childContentChannelItem.attributeValues?.Rooms?.value.split(","))
                 })
             })
-            console.log(existingRooms)
             this.rooms?.forEach(l => {
                 let idx = -1
                 loc.forEach((i, x) => {
@@ -242,6 +273,16 @@ export default defineComponent({
                 return ministry.text
             }
             return ''
+        },
+        errors() {
+          let formRef = this.$refs as any
+          let errs = [] as string[]
+          for(let r in formRef) {
+            if(formRef[r].className?.includes("validator")) {
+              errs.push(...formRef[r].errors)
+            }
+          }
+          return errs
         }
     },
     methods: {
@@ -270,6 +311,14 @@ export default defineComponent({
                 }
             }
             return ""
+        },
+        validate() {
+          let formRef = this.$refs as any
+          for(let r in formRef) {
+            if(formRef[r].className?.includes("validator")) {
+              formRef[r].validate()
+            }
+          }
         }
     },
     watch: {
@@ -295,39 +344,42 @@ export default defineComponent({
             }
             this.matchRoomsToSetup()
         }
+        if(this.showValidation) {
+          this.validate()
+        }
     },
     template: `
-<rck-form>
+<div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <rck-form-field name="ExpectedAttendance">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
         <rck-lbl>How many people are you expecting to attend?</rck-lbl>
         <rck-text
           v-model="e.attributeValues.ExpectedAttendance"
           type="number"
         ></rck-text>
-      </rck-form-field>
+      </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <rck-form-field name="Rooms">
+      <tcc-validator :rules="[rules.required(e.attributeValues.Rooms, e.attributes.Rooms.name)]" ref="validator_room">
         <tcc-room
           v-model="e.attributeValues.Rooms"
           :label="e.attributes.Rooms.name"
           :items="groupedRooms"
           :multiple="true"
         ></tcc-room>
-      </rck-form-field>
+      </tcc-validator>
     </div>
   </div>
   <div class="row" v-if="ministry == 'Infrastructure'">
     <div class="col col-xs-12 col-md-6">
-      <rck-form-field>
+      <tcc-validator>
         <rck-field
           v-model="e.attributeValues.InfrastructureSpace"
           :attribute="e.attributes.InfrastructureSpace"
           :is-edit-mode="true"
         ></rck-field>
-      </rck-form-field>
+      </tcc-validator>
     </div>
   </div>
   <br />
@@ -351,6 +403,6 @@ export default defineComponent({
       :label="e.attributes.Tablecloths.name"
     ></tcc-switch>
   </template>
-</rck-form>
+</div>
 `
 });
