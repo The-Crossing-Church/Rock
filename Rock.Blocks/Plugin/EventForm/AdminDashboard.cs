@@ -38,6 +38,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
     [DefinedTypeField( "Drinks Defined Type", key: AttributeKey.DrinksList, category: "Lists", required: true, order: 3 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
+    [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 1 )]
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Submitted,Pending Changes,Proposed Changes Denied,Changes Accepted by User,Cancelled by User", required: true, order: 0 )]
@@ -256,11 +257,58 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             try
             {
-                ContentChannelItem item = new ContentChannelItemService( new RockContext() ).Get( id );
+                RockContext rockContext = new RockContext();
+                var p = GetCurrentPerson();
+                SetProperties();
+                string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+                string url = "";
+                var cci_svc = new ContentChannelItemService( rockContext );
+                var ccia_svc = new ContentChannelItemAssociationService( rockContext );
+                ContentChannelItem item = cci_svc.Get( id );
                 item.LoadAttributes();
-                item.SetAttributeValue( "RequestStatus", status );
-                item.SaveAttributeValue( "RequestStatus" );
-                return ActionOk( new { status = item.GetAttributeValue( "RequestStatus" ) } );
+                string currentStatus = item.GetAttributeValue( requestStatusAttrKey );
+                if ( status == "Approved" )
+                {
+                    if ( currentStatus == "Pending Changes" )
+                    {
+                        //From Pending to Approved, update all attribute values and delete the pending changes items 
+                        var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
+                        if ( changesAssoc != null )
+                        {
+                            var changes = changesAssoc.ChildContentChannelItem;
+                            changes.LoadAttributes();
+                            item.Title = changes.Title.Replace( " Changes", "" );
+                            item.ModifiedByPersonAliasId = p.PrimaryAliasId;
+                            item.ModifiedDateTime = RockDateTime.Now;
+                            foreach ( var av in item.AttributeValues )
+                            {
+                                item.SetAttributeValue( av.Key, changes.AttributeValues[av.Key].Value );
+                            }
+                            item.SaveAttributeValues();
+                            cci_svc.Delete( changes );
+                            ccia_svc.Delete( changesAssoc );
+                            var events = item.ChildItems.Where( ci => ci.ChildContentChannelItem != null && ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ToList();
+                            for ( int i = 0; i < events.Count(); i++ )
+                            {
+                                events[i].ChildContentChannelItem.LoadAttributes();
+                                var eventChanges = events[i].ChildContentChannelItem.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                                eventChanges.ChildContentChannelItem.LoadAttributes();
+                                foreach ( var av in events[i].ChildContentChannelItem.AttributeValues )
+                                {
+                                    events[i].ChildContentChannelItem.SetAttributeValue( av.Key, eventChanges.ChildContentChannelItem.AttributeValues[av.Key].Value );
+                                }
+                                events[i].ChildContentChannelItem.SaveAttributeValues();
+                                cci_svc.Delete( eventChanges.ChildContentChannelItem );
+                                ccia_svc.Delete( eventChanges );
+                            }
+                            rockContext.SaveChanges();
+                        }
+                    }
+                    url = LaunchWorkflow( item.Id, status );
+                }
+                item.SetAttributeValue( requestStatusAttrKey, status );
+                item.SaveAttributeValue( requestStatusAttrKey );
+                return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ), url = url } );
             }
             catch ( Exception e )
             {
@@ -316,7 +364,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             {
                 if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) && !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
                 {
-                    items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ) );
+                    items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
                 }
                 else
                 {
@@ -326,7 +374,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     }
                     if ( !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
                     {
-                        items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ) );
+                        items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
                     }
                 }
             }
@@ -356,7 +404,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
                 return meetsCriteria;
             } );
-            if ( filters.eventDates != null )
+            if ( filters.eventDates != null && !String.IsNullOrEmpty( filters.eventDates.lowerValue ) && !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
             {
                 DateTime? lowerValue = null;
                 DateTime? upperValue = null;
@@ -439,6 +487,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         ( i, av ) => i
                     );
             }
+            filtered_items = filtered_items.OrderBy( i => i.Title );
             if ( items_modified_match != null && filtered_items != null )
             {
                 itemList = filtered_items.Union( items_modified_match ).Distinct().ToList();
@@ -549,6 +598,14 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 ContentChannel cCC = new ContentChannelService( rockContext ).Get( eventCommentsCCGuid );
                 EventCommentsContentChannelId = cCC.Id;
             }
+        }
+
+        private string LaunchWorkflow( int id, string action )
+        {
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            queryParams.Add( "Id", id.ToString() );
+            queryParams.Add( "Action", action );
+            return this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
         }
 
         #endregion Helpers

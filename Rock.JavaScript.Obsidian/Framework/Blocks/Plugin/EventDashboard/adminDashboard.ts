@@ -370,17 +370,19 @@ export default defineComponent({
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
     <tcc-details :request="selected" :rooms="viewModel.locations" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
-    <h3 class="text-accent">Comments</h3>
-    <div>
-      <tcc-comment v-for="c in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :key="c.comment.id"></tcc-comment>
-    </div>
+    <template v-if="selected.comments && selected.comments.length > 0">
+      <h3 class="text-accent">Comments</h3>
+      <div>
+        <tcc-comment v-for="c in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :key="c.comment.id"></tcc-comment>
+      </div>
+    </template>
     <template #footer>
       <div class="text-left">
         <a-btn type="primary" @click="editItem(selected.id)">
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
         </a-btn>
-        <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="requestAction('Approved')">
+        <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="updateStatus('Approved')">
           <i class="mr-1 fa fa-check"></i>
           Approve
         </a-btn>
