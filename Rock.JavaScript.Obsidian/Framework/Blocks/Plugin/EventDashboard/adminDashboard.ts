@@ -252,6 +252,9 @@ export default defineComponent({
         this.btnLoading.cancelled = true
       }
       this.changeStatus(this.selected.id, status).then((res) => {
+        if(res.data.url) {
+          window.location.href = res.data.url
+        }
         if(res.data.status) {
           if(this.selected.attributeValues) {
             this.selected.attributeValues.RequestStatus = res.data.status

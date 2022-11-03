@@ -253,7 +253,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
         }
 
         [BlockAction]
-        public BlockActionResult ChangeStatus( int id, string status )
+        public BlockActionResult ChangeStatus( int id, string status, bool denyWithComments = false )
         {
             try
             {
@@ -267,6 +267,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 ContentChannelItem item = cci_svc.Get( id );
                 item.LoadAttributes();
                 string currentStatus = item.GetAttributeValue( requestStatusAttrKey );
+                item.ModifiedByPersonAliasId = p.PrimaryAliasId;
+                item.ModifiedDateTime = RockDateTime.Now;
                 if ( status == "Approved" )
                 {
                     if ( currentStatus == "Pending Changes" )
@@ -278,8 +280,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
                             var changes = changesAssoc.ChildContentChannelItem;
                             changes.LoadAttributes();
                             item.Title = changes.Title.Replace( " Changes", "" );
-                            item.ModifiedByPersonAliasId = p.PrimaryAliasId;
-                            item.ModifiedDateTime = RockDateTime.Now;
                             foreach ( var av in item.AttributeValues )
                             {
                                 item.SetAttributeValue( av.Key, changes.AttributeValues[av.Key].Value );
@@ -301,11 +301,34 @@ namespace Rock.Blocks.Plugin.EventDashboard
                                 cci_svc.Delete( eventChanges.ChildContentChannelItem );
                                 ccia_svc.Delete( eventChanges );
                             }
-                            rockContext.SaveChanges();
                         }
                     }
                     url = LaunchWorkflow( item.Id, status );
                 }
+                if ( status == "Proposed Changes Denied" )
+                {
+                    //Remove Pending Changes items because they were not approved
+                    var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
+                    if ( changesAssoc != null )
+                    {
+                        var changes = changesAssoc.ChildContentChannelItem;
+                        cci_svc.Delete( changes );
+                        ccia_svc.Delete( changesAssoc );
+                        var events = item.ChildItems.Where( ci => ci.ChildContentChannelItem != null && ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ToList();
+                        for ( int i = 0; i < events.Count(); i++ )
+                        {
+                            var eventChanges = events[i].ChildContentChannelItem.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                            cci_svc.Delete( eventChanges.ChildContentChannelItem );
+                            ccia_svc.Delete( eventChanges );
+                        }
+                    }
+                }
+                if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) )
+                {
+                    url = LaunchWorkflow( item.Id, status );
+                }
+                //TODO cooksey: Possible notifications for other statuses
+                rockContext.SaveChanges();
                 item.SetAttributeValue( requestStatusAttrKey, status );
                 item.SaveAttributeValue( requestStatusAttrKey );
                 return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ), url = url } );
@@ -603,9 +626,19 @@ namespace Rock.Blocks.Plugin.EventDashboard
         private string LaunchWorkflow( int id, string action )
         {
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            queryParams.Add( "Id", id.ToString() );
-            queryParams.Add( "Action", action );
-            return this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
+            Guid workflowGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.RequestActionWorkflow ), out workflowGuid ) )
+            {
+                WorkflowType wt = new WorkflowTypeService( new RockContext() ).Get( workflowGuid );
+                queryParams.Add( "WorkflowTypeId", wt.Id.ToString() );
+                queryParams.Add( "Id", id.ToString() );
+                queryParams.Add( "Action", action );
+                return this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
+            }
+            else
+            {
+                throw new Exception( "Unable to locate workflow type" );
+            }
         }
 
         #endregion Helpers
