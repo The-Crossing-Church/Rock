@@ -197,7 +197,7 @@ export default defineComponent({
           }
         }, 
         deep: true
-      }
+      },
     },
     mounted() {
       if(this.showValidation) {
@@ -298,36 +298,6 @@ export default defineComponent({
           v-model="viewModel.request.attributeValues.EventsNeedSeparateLinks"
           :label="viewModel.request.attributes.EventsNeedSeparateLinks.name"
         ></tcc-switch>
-      </div>
-    </div>
-    <br/>
-  </template>
-  <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
-    <h3 class="text-primary">Web Calendar Information</h3>
-    <div class="row">
-      <div class="col col-xs-12">
-        <tcc-validator :rules="[rules.required(viewModel.request.attributeValues.WebCalendarDescription, viewModel.request.attributes.WebCalendarDescription.name)]" ref="validators_webcal">
-          <rck-field
-            v-model="viewModel.request.attributeValues.WebCalendarDescription"
-            :attribute="viewModel.request.attributes.WebCalendarDescription"
-            :is-edit-mode="true"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-    </div>
-    <br/>
-  </template>
-  <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
-    <h3 class="text-primary">Production Tech Information</h3>
-    <div class="row">
-      <div class="col col-xs-12">
-        <tcc-validator :rules="[rules.required(viewModel.request.attributeValues.ProductionTech, viewModel.request.attributes.ProductionTech.name)]" ref="validators_prodTech">
-          <rck-field
-            v-model="viewModel.request.attributeValues.ProductionTech"
-            :attribute="viewModel.request.attributes.ProductionTech"
-            :is-edit-mode="true"
-          ></rck-field>
-        </tcc-validator>
       </div>
     </div>
     <br/>

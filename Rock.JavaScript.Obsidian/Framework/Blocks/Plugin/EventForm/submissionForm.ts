@@ -12,8 +12,11 @@ import Childcare from "./Components/childcare"
 import Ops from "./Components/opsAccommodations"
 import Registration from "./Components/registration"
 import Publicity from "./Components/publicity"
+import WebCal from "./Components/webCal"
+import ProdTech from "./Components/productionTech"
 import BasicInfo from "./Components/basicInfo"
 import CCCatering from "./Components/childcareCatering"
+import EventTime from "./Components/eventTime"
 import { DateTime } from "luxon"
 
 const store = useStore();
@@ -37,6 +40,9 @@ export default defineComponent({
       "tcc-ops": Ops,
       "tcc-registration": Registration,
       "tcc-publicity": Publicity,
+      "tcc-web-cal": WebCal,
+      "tcc-prod-tech": ProdTech,
+      "tcc-event-time": EventTime,
   },
   setup() {
       const viewModel = useConfigurationValues<SubmissionFormBlockViewModel | null>();
@@ -79,7 +85,18 @@ export default defineComponent({
           id: 0,
           isSave: false,
           resources: [] as string[],
-          pagesViewed: [] as number[]
+          pagesViewed: [] as number[],
+          rules: {
+            required: (value: any, key: string) => {
+              if(typeof value === 'string') {
+                if(value.includes("{")) {
+                  let obj = JSON.parse(value)
+                  return obj.value != '' || `${key} is required`
+                } 
+              } 
+              return !!value || `${key} is required`
+            }
+          }
       };
   },
   computed: {
@@ -242,18 +259,10 @@ export default defineComponent({
     next() {
       this.pagesViewed.push(this.step)
       this.step++
-      if(this.step == 1 && this.pagesViewed.includes(1)) {
-        let ref = this.$refs.basicInfoRef as any
-        ref.validate()
-      }
     },
     prev() {
       this.pagesViewed.push(this.step)
       this.step--
-      if(this.step == 1 && this.pagesViewed.includes(1)) {
-        let ref = this.$refs.basicInfoRef as any
-        ref.validate()
-      }
     },
     jumpTo(s: number) {
       this.pagesViewed.push(this.step)
@@ -469,7 +478,7 @@ export default defineComponent({
           <a-step class="hover" v-for="(e, idx) in viewModel.events" :key="(idx + 2)" @click="jumpTo((idx + 2))" :title="formatDate(e.attributeValues.EventDate)" />
       </template>
     </template>
-    <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'" :key="publicityStep" @click="jumpTo((3 + viewModel.events.length))" title="Publicity" />
+    <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True' || viewModel.request.attributeValues.NeedsWebCalendar == 'True' || viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'" :key="publicityStep" @click="jumpTo((3 + viewModel.events.length))" title="Additional Requests" />
   </a-steps>
   <div class="steps-content">
     <br/>
@@ -477,6 +486,10 @@ export default defineComponent({
     <tcc-basic v-if="step == 1" :view-model="viewModel" :showValidation="pagesViewed.includes(1)" ref="basic"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
+        <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
+          <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
+          <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('time', idx)"></tcc-event-time>
+        </template>
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
           <h3 class="text-primary">Space Information</h3>
           <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('space', idx)"></tcc-space>
@@ -507,14 +520,24 @@ export default defineComponent({
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
           <h3 class="text-primary">Registration Information</h3>
-          <tcc-registration :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
       </template>
     </template>
     <template v-if="(viewModel.request.attributeValues.IsSame == 'True' && step == 3) || (step == (3 + viewModel.events.length))">
-      <h3 class="text-primary">Publicity Information</h3>
-      <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="publicity"></tcc-publicity>
+      <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
+        <h3 class="text-primary">Publicity Information</h3>
+        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="publicity"></tcc-publicity>
+      </template>
+      <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
+        <h3 class="text-primary">Web Calendar Information</h3>
+        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="webcal"></tcc-web-cal>
+      </template>
+      <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
+        <h3 class="text-primary">Production Tech Information</h3>
+        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="prodtech"></tcc-prod-tech>
+      </template>
     </template>
   </div>
   <div class="row steps-action pt-2">

@@ -75,6 +75,26 @@ export default defineComponent({
                   } 
                   return !!value || `${key} is required`
                 },
+                attendance: (value: number, rooms: string, key: string) => {
+                    let selectedRooms = JSON.parse(rooms)
+                    if(selectedRooms && selectedRooms.value) {
+                        let roomGuids = selectedRooms.value.split(',')
+                        let locations = this.locations?.filter(l => {
+                            return roomGuids.includes(l.guid)
+                        })
+                        if(locations && locations.length > 0) {
+                            let capacity = locations.map(l => {
+                                if(l.attributeValues?.Capacity) {
+                                    return parseInt(l.attributeValues.Capacity)
+                                }
+                            }).reduce((partialSum: any, a: any) => partialSum + a, 0)
+                            return value <= capacity || `${key} cannot exceed ${capacity}`
+                        } else {
+                            return true
+                        }
+                    }
+                    return true
+                }
             }
         };
     },
@@ -352,7 +372,7 @@ export default defineComponent({
 <div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
         <rck-lbl>How many people are you expecting to attend?</rck-lbl>
         <rck-text
           v-model="e.attributeValues.ExpectedAttendance"

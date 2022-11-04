@@ -5,6 +5,7 @@ import RockField from "../../../../Controls/rockField";
 import Validator from "./validator";
 import Toggle from "./toggle";
 import TimePicker from "./timePicker"
+import { DateTime } from "luxon"
 
 
 export default defineComponent({
@@ -69,6 +70,18 @@ export default defineComponent({
     mounted() {
       if(this.showValidation) {
         this.validate()
+      }
+      if(this.e?.attributeValues?.StartTime) {
+        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+        let defaultTime = dt.minus({minutes: 15})
+        if(this.e.attributeValues.ChildcareStartTime == '') {
+          this.e.attributeValues.ChildcareStartTime = defaultTime.toFormat("HH:mm:ss")
+        }
+      }
+      if(this.e?.attributeValues?.EndTime) {
+        if(this.e.attributeValues.ChildcareEndTime == '') {
+          this.e.attributeValues.ChildcareEndTime = this.e?.attributeValues?.EndTime
+        }
       }
     },
     template: `

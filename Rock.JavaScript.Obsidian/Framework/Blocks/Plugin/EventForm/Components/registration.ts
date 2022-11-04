@@ -5,6 +5,7 @@ import Validator from "./validator"
 import TimePicker from "./timePicker"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
+import { DateTime } from "luxon"
 
 
 export default defineComponent({
@@ -18,6 +19,10 @@ export default defineComponent({
     },
     props: {
       e: {
+          type: Object as PropType<ContentChannelItem>,
+          required: false
+      },
+      request: {
           type: Object as PropType<ContentChannelItem>,
           required: false
       },
@@ -76,6 +81,29 @@ export default defineComponent({
     mounted() {
       if(this.showValidation) {
         this.validate()
+      }
+      if(this.e?.attributeValues?.StartTime) {
+        let dt = {} as DateTime
+        if(this.e?.attributeValues?.EventDate) {
+          dt = DateTime.fromFormat(`${this.e?.attributeValues?.EventDate} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+        } else if(this.request?.attributeValues?.EventDates) {
+          let dates = this.request?.attributeValues?.EventDates.split(",").map(d => {
+            return DateTime.fromFormat(d.trim(), "yyyy-MM-dd")
+          }).sort()
+          console.log(dates)
+          dt = DateTime.fromFormat(`${dates[0].toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+        }
+        let defaultTime = dt.minus({days: 1})
+        //If Childcare close one week before event
+        if(this.request?.attributeValues?.NeedsChildCare == 'True') {
+          defaultTime = dt.minus({weeks: 1})
+        }
+        if(this.e.attributeValues.RegistrationEndDate == '') {
+          this.e.attributeValues.RegistrationEndDate = defaultTime.toFormat("yyyy-MM-dd")
+        }
+        if(this.e.attributeValues.RegistrationEndTime == '') {
+          this.e.attributeValues.RegistrationEndTime = defaultTime.toFormat("HH:mm:ss")
+        }
       }
     },
     template: `

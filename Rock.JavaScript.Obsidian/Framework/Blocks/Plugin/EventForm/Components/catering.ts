@@ -7,6 +7,7 @@ import RockFormField from "../../../../Elements/rockFormField";
 import Toggle from "./toggle";
 import TimePicker from "./timePicker";
 import Validator from "./validator"
+import { DateTime } from "luxon"
 
 
 export default defineComponent({
@@ -42,6 +43,17 @@ export default defineComponent({
               } 
               return !!value || `${key} is required`
             },
+            drinkTimeRequired: (value: string, drinkStr: string, key: string) => {
+              let drinks = JSON.parse(drinkStr)
+              if(drinks && drinks.value) {
+                let selected = drinks.value.split(',')
+                if(selected.length > 0) {
+                  //Required
+                  return !!value || `${key} is required`
+                }
+              }
+              return true
+            }
           }
         };
     },
@@ -86,7 +98,16 @@ export default defineComponent({
       if(this.showValidation) {
         this.validate()
       }
-      
+      if(this.e?.attributeValues?.StartTime) {
+        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+        let defaultTime = dt.minus({minutes: 30})
+        if(this.e.attributeValues.DrinkTime == '') {
+          this.e.attributeValues.DrinkTime = defaultTime.toFormat("HH:mm:ss")
+        }
+        if(this.e.attributeValues.FoodTime == '') {
+          this.e.attributeValues.FoodTime = defaultTime.toFormat("HH:mm:ss")
+        }
+      }
     },
     template: `
 <div>
@@ -237,7 +258,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator>
+      <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime">
         <tcc-time 
           :label="e.attributes.DrinkTime.name"
           v-model="e.attributeValues.DrinkTime"

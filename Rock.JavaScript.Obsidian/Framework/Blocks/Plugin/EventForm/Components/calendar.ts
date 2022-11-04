@@ -220,7 +220,26 @@ export default defineComponent({
         if (this.modelValue) {
             let dates = this.modelValue.split(",").map((d: string) => d.trim())
             this.selectedDates = dates
-            this.startDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
+            let today = DateTime.now()
+            let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
+            if(this.min) {
+                if(this.startDate.startOf('day') < today.startOf('day')) {
+                    //Our original minimum date is in the past
+                    if(firstDate.startOf('day') < today.startOf('day')) {
+                        //Looking at historical event
+                        this.startDate = firstDate
+                    } else {
+                        this.startDate = today
+                    }
+                }
+            } else {
+                if(firstDate.startOf('day') < today.startOf('day')) {
+                    //Looking at historical event
+                    this.startDate = firstDate
+                } else {
+                    this.startDate = today
+                }
+            }
         }
         this.currentMonth = this.startDate.month
         this.currentYear = this.startDate.year

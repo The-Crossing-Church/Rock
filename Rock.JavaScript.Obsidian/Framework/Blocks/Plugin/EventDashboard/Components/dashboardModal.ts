@@ -217,6 +217,22 @@ export default defineComponent({
           <i class='fa expand-icon pull-right'></i></h5>
         </a>
         <div class='collapse collapse body' :id="getCollapseName(ci.id)" aria-expanded="false">
+          <div class="row">
+            <div class="col col-xs-12 col-md-6">
+              <rck-field
+                v-model="ci.attributeValues.StartTime"
+                :attribute="ci.attributes.StartTime"
+                :showEmptyValue="true"
+              ></rck-field>
+            </div>
+            <div class="col col-xs-12 col-md-6">
+              <rck-field
+                v-model="ci.attributeValues.EndTime"
+                :attribute="ci.attributes.EndTime"
+                :showEmptyValue="true"
+              ></rck-field>
+            </div>
+          </div>
           <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
           <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>
           <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci"></tcc-catering>
