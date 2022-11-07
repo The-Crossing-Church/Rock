@@ -251,6 +251,12 @@ export default defineComponent({
         :label="e.attributes.NeedsDatabaseSupportTeam.name"
       ></tcc-switch>
     </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.EventNeedsSeparateLink"
+        :label="e.attributes.EventNeedsSeparateLink.name"
+      ></tcc-switch>
+    </div>
   </div>
 </div>
 `

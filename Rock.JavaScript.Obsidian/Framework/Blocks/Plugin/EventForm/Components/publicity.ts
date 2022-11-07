@@ -5,6 +5,7 @@ import Validator from "./validator"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
 import PubDDL from "./publicityDropDown"
+import { DateTime, Interval } from "luxon"
 
 
 export default defineComponent({
@@ -38,6 +39,60 @@ export default defineComponent({
               } 
               return !!value || `${key} is required`
             },
+            pubStartIsValid(value: string, end: string, minPubStartDate: string, maxPubStartDate: string) {
+              if(value && end) {
+                let startDt = DateTime.fromFormat(value, "yyyy-MM-dd")
+                let endDt = DateTime.fromFormat(end, "yyyy-MM-dd")
+                let duration = Interval.fromDateTimes(startDt, endDt)
+                let days = duration.count('days')
+                if(days < 21) {
+                  return 'Publicity must run for a minimum of 3 weeks'
+                }
+                if(minPubStartDate) {
+                  let minStartDt = DateTime.fromFormat(minPubStartDate, "yyyy-MM-dd")
+                  if(startDt < minStartDt) {
+                    return `Publicity cannot start before ${minStartDt.toFormat("MM/dd/yyyy")}`
+                  }
+                }
+                if(maxPubStartDate) {
+                  let maxStartDt = DateTime.fromFormat(maxPubStartDate, "yyyy-MM-dd")
+                  if(startDt > maxStartDt) {
+                    return `Publicity cannot start after ${maxStartDt.toFormat("MM/dd/yyyy")}`
+                  }
+                }
+              }
+              return true
+            },
+            pubEndIsValid(value: string, start: string, eventDates: string, minPubEndDate: string, maxPubEndDate: string) {
+              if(value && start) {
+                let startDt = DateTime.fromFormat(start, "yyyy-MM-dd")
+                let endDt = DateTime.fromFormat(value, "yyyy-MM-dd")
+                let duration = Interval.fromDateTimes(startDt, endDt)
+                let days = duration.count('days')
+                if(days < 21) {
+                  return 'Publicity must run for a minimum of 3 weeks'
+                }
+                if(minPubEndDate) {
+                  let minEndDt = DateTime.fromFormat(minPubEndDate, "yyyy-MM-dd")
+                  if(endDt < minEndDt) {
+                    return `Publicity cannot end before ${minEndDt.toFormat("MM/dd/yyyy")}`
+                  }
+                }
+                if(maxPubEndDate) {
+                  let maxEndDt = DateTime.fromFormat(maxPubEndDate, "yyyy-MM-dd")
+                  if(endDt > maxEndDt) {
+                    return `Publicity cannot end after ${maxEndDt.toFormat("MM/dd/yyyy")}`
+                  }
+                }
+                if(eventDates) {
+                  let dates = eventDates.split(",").map(d => DateTime.fromFormat(d.trim(), "yyyy-MM-dd")).sort()
+                  if(endDt > dates[dates.length - 1]) {
+                    return 'Publicity cannot end after event'
+                  }
+                }
+              }
+              return true
+            }
           }
         };
     },
@@ -51,7 +106,42 @@ export default defineComponent({
           }
         }
         return errs
-      }
+      },
+      minPubStartDate() {
+        let submittedDate = DateTime.now()
+        if(this.request?.attributeValues?.RequestStatus != 'Draft') {
+          if(this.request?.startDateTime) {
+            submittedDate = DateTime.fromISO(this.request?.startDateTime)
+          }
+        }
+        let minStart = submittedDate.plus({weeks: 3})
+        return minStart.toFormat("yyyy-MM-dd")
+      },
+      maxPubStartDate() {
+        if(this.request?.attributeValues && this.request?.attributeValues.EventDates) {
+          let dates = this.request?.attributeValues.EventDates.split(',').map((d) => DateTime.fromFormat(d.trim(), 'yyyy-MM-dd')).sort()
+          if(dates && dates.length > 0) {
+            return dates[0].minus({weeks: 3}).toFormat("yyyy-MM-dd")
+          }
+        }
+        return ""
+      },
+      minPubEndDate() {
+        if(this.request?.attributeValues && this.request?.attributeValues.PublicityStartDate) {
+          let date = DateTime.fromFormat(this.request?.attributeValues.PublicityStartDate, "yyyy-MM-dd")
+          return date.plus({weeks: 3}).toFormat("yyyy-MM-dd")
+        }
+        return ""
+      },
+      maxPubEndDate() {
+        if(this.request?.attributeValues && this.request?.attributeValues.EventDates) {
+          let dates = this.request?.attributeValues.EventDates.split(',').map((d) => DateTime.fromFormat(d.trim(), 'yyyy-MM-dd')).sort()
+          if(dates && dates.length > 0) {
+            return dates[dates.length - 1].toFormat("yyyy-MM-dd")
+          }
+        }
+        return ""
+      },
     },
     methods: {
       validate() {
@@ -103,18 +193,22 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name)]" ref="validators_start">
+      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start">
         <tcc-date-pkr
           v-model="request.attributeValues.PublicityStartDate"
           :label="request.attributes.PublicityStartDate.name"
+          :min="minPubStartDate"
+          :max="maxPubStartDate"
         ></tcc-date-pkr>
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityEndDate, request.attributes.PublicityEndDate.name)]" ref="validators_end">
+      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityEndDate, request.attributes.PublicityEndDate.name), rules.pubEndIsValid(request.attributeValues.PublicityEndDate, request.attributeValues.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate)]" ref="validators_end">
         <tcc-date-pkr
           v-model="request.attributeValues.PublicityEndDate"
           :label="request.attributes.PublicityEndDate.name"
+          :min="minPubEndDate"
+          :max="maxPubEndDate"
         ></tcc-date-pkr>
       </tcc-validator>
     </div>

@@ -94,9 +94,16 @@ export default defineComponent({
       v-model="date"
       :multiple="false"
       :noBorder="true"
+      :min="min"
+      :max="max"
       v-on:closemenu="menu = false"
     ></tcc-calendar>
   </a-modal>
 </div>
+<v-style>
+.ant-modal-close-x {
+  height: 40px;
+}
+</v-style>
 `
 });

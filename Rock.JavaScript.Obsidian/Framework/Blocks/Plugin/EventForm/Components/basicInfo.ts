@@ -142,7 +142,7 @@ export default defineComponent({
         labelIsSame() {
           return `Will each occurrence of your ${this.requestType} have the exact same start and end time? (${this.viewModel?.request?.attributeValues?.IsSame == 'True' ? 'Yes' : 'No'})`
         },
-        errors() {
+        errors(): string[] {
           let formRef = this.$refs as any
           let errs = [] as string[]
           for(let r in formRef) {

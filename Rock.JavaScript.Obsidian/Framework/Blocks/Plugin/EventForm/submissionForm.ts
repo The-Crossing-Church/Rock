@@ -86,17 +86,7 @@ export default defineComponent({
           isSave: false,
           resources: [] as string[],
           pagesViewed: [] as number[],
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            }
-          }
+          requestErrors: [] as any[]
       };
   },
   computed: {
@@ -163,7 +153,7 @@ export default defineComponent({
           hasTitle = this.viewModel.request.title.trim() != ''
         }
         return !hasTitle
-      }
+      },
   },
   methods: {
     matchMultiEvent() {
@@ -259,17 +249,53 @@ export default defineComponent({
     next() {
       this.pagesViewed.push(this.step)
       this.step++
+      window.scrollTo(0, 0)
+      this.validate()
     },
     prev() {
       this.pagesViewed.push(this.step)
       this.step--
+      window.scrollTo(0, 0)
     },
     jumpTo(s: number) {
       this.pagesViewed.push(this.step)
       this.step = s
+      window.scrollTo(0, 0)
+      this.validate()
     },
     getRefName(name: string, idx: number) {
       return `${name}_${idx}`
+    },
+    validate() {
+      this.pagesViewed = [0,1,2,3,4,5]
+      let formRef = this.$refs as any
+      for(let r in formRef) {
+        if(formRef[r]) {
+          let exists = false
+          this.requestErrors.forEach((e: any) => {
+            if(e.ref == r) {
+              if(Array.isArray(formRef[r])) {
+                if(formRef[r].length > 0) {
+                  e.errors = formRef[r][0].errors
+                }
+              } else {
+                e.errors = formRef[r].errors
+              }
+              exists = true
+            }
+          })
+          if(!exists) {
+            if(Array.isArray(formRef[r])) {
+              if(formRef[r].length > 0) {
+                this.requestErrors.push({ ref: r, errors: formRef[r][0].errors})
+              }
+            } else {
+              this.requestErrors.push({ ref: r, errors: formRef[r].errors})
+            }
+          }
+        }
+      }
+      console.log(this.requestErrors)
     }
   },
   watch: {

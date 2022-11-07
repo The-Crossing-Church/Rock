@@ -164,7 +164,7 @@ export default defineComponent({
             if(this.readonly) {
                 return
             }
-            if (day.month == this.displayMonth.month && day >= this.startDate && day < this.endDate) {
+            if (day.month == this.displayMonth.month && day >= this.startDate && day <= this.endDate) {
                 let exists = this.selectedDates.indexOf(day.toFormat('yyyy-MM-dd'))
                 let dates = this.selectedDates
                 if(this.multiple) {
@@ -193,6 +193,46 @@ export default defineComponent({
                     this.currentMonth = month
                 }
             }
+        },
+        initializeData() {
+            //Set the min date available on the calendar
+            if (this.min) {
+                this.startDate = DateTime.fromFormat(this.min, "yyyy-MM-dd")
+            }
+            //Set the selecte dates
+            if (this.modelValue) {
+                let dates = this.modelValue.split(",").map((d: string) => d.trim())
+                this.selectedDates = dates
+                let today = DateTime.now()
+                let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
+                if(this.min) {
+                    if(this.startDate.startOf('day') < today.startOf('day')) {
+                        //Our original minimum date is in the past
+                        if(firstDate.startOf('day') < today.startOf('day')) {
+                            //Looking at historical event
+                            this.startDate = firstDate
+                        } else {
+                            this.startDate = today
+                        }
+                    }
+                } else {
+                    if(firstDate.startOf('day') < today.startOf('day')) {
+                        //Looking at historical event
+                        this.startDate = firstDate
+                    } else {
+                        this.startDate = today
+                    }
+                }
+            }
+            this.currentMonth = this.startDate.month
+            this.currentYear = this.startDate.year
+            //Set the max date available on the calendar 
+            if (this.max) {
+                this.endDate = DateTime.fromFormat(this.max, "yyyy-MM-dd")
+            } else {
+                let span = Duration.fromObject({ months: 18 })
+                this.endDate = this.endDate.plus(span)
+            }
         }
     },
     watch: {
@@ -209,47 +249,16 @@ export default defineComponent({
             if(val != this.selectedDates.join(",")) {
                 this.selectedDates = val.split(",").map((d: string) => d.trim()).filter((d: string) => { return d != "" })
             }
+        },
+        min(val) {
+            this.initializeData()
+        },
+        max(val) {
+            this.initializeData()
         }
     },
     mounted() {
-        //Set the min date available on the calendar
-        if (this.min) {
-            this.startDate = DateTime.fromFormat(this.min, "yyyy-MM-dd")
-        }
-        //Set the selecte dates
-        if (this.modelValue) {
-            let dates = this.modelValue.split(",").map((d: string) => d.trim())
-            this.selectedDates = dates
-            let today = DateTime.now()
-            let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
-            if(this.min) {
-                if(this.startDate.startOf('day') < today.startOf('day')) {
-                    //Our original minimum date is in the past
-                    if(firstDate.startOf('day') < today.startOf('day')) {
-                        //Looking at historical event
-                        this.startDate = firstDate
-                    } else {
-                        this.startDate = today
-                    }
-                }
-            } else {
-                if(firstDate.startOf('day') < today.startOf('day')) {
-                    //Looking at historical event
-                    this.startDate = firstDate
-                } else {
-                    this.startDate = today
-                }
-            }
-        }
-        this.currentMonth = this.startDate.month
-        this.currentYear = this.startDate.year
-        //Set the max date available on the calendar 
-        if (this.max) {
-            this.endDate = DateTime.fromFormat(this.max, "yyyy-MM-dd")
-        } else {
-            let span = Duration.fromObject({ months: 18 })
-            this.endDate = this.endDate.plus(span)
-        }
+        this.initializeData()
     },
     template: `
 <div :class="wrapperClassName">
