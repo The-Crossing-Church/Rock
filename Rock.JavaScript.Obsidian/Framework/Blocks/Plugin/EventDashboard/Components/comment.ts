@@ -64,8 +64,8 @@ export default defineComponent({
     width: 80%;
   }
   .my-note {
-    text-align: right;
     display: flex;
+    text-align: right;
     justify-content: flex-end;
   }
 </v-style>

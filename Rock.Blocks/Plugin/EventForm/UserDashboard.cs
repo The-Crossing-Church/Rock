@@ -21,9 +21,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
     /// </summary>
     /// <seealso cref="Rock.Blocks.RockObsidianBlockType" />
 
-    [DisplayName( "Admin Dashboard" )]
+    [DisplayName( "User Dashboard" )]
     [Category( "Obsidian > Plugin > Event Form" )]
-    [Description( "Obsidian Event Admin Dashboard" )]
+    [Description( "Obsidian Event User Dashboard" )]
     [IconCssClass( "fa fa-calendar-check" )]
 
     #region Block Attributes
@@ -41,14 +41,18 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 1 )]
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
-    [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Submitted,In Progress,Pending Changes,Proposed Changes Denied,Changes Accepted by User", required: true, order: 0 )]
+    [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Draft,Submitted,In Progress,Pending Changes,Proposed Changes Denied", required: true, order: 0 )]
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
     [TextField( "Requested Resources Attribute Key", key: AttributeKey.RequestedResourcesAttrKey, category: "Filters", defaultValue: "RequestType", required: true, order: 2 )]
     [TextField( "Event Dates Attribute Key", key: AttributeKey.EventDatesAttrKey, category: "Filters", defaultValue: "EventDates", required: true, order: 3 )]
+    [TextField( "Ministry Attribute Key", key: AttributeKey.MinistryAttrKey, category: "Filters", defaultValue: "Ministry", required: true, order: 4 )]
     [WorkflowTypeField( "Request Action Worfklow", "Workflow to update request status", true, key: AttributeKey.RequestActionWorkflow, category: "Workflow" )]
+    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
+    [SecurityRoleField( "Staff Group", "The role of people you can share requests with", false, "", "Sharing", 2, AttributeKey.StaffGroup )]
+    [TextField( "Shared With Attribut Key", category: "Sharing", order: 3, key: AttributeKey.SharedWithAttr )]
     #endregion Block Attributes
 
-    public class AdminDashboard : RockObsidianBlockType
+    public class UserDashboard : RockObsidianBlockType
     {
         #region Keys
 
@@ -77,7 +81,11 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
             public const string EventDatesAttrKey = "EventDatesAttrKey";
+            public const string MinistryAttrKey = "MinistryAttrKey";
             public const string RequestActionWorkflow = "RequestActionWorkflow";
+            public const string SharingGroupType = "SharingGroupType";
+            public const string StaffGroup = "StaffGroup";
+            public const string SharedWithAttr = "SharedWithAttr";
         }
 
         /// <summary>
@@ -192,19 +200,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
         #region Block Actions
 
         [BlockAction]
-        public BlockActionResult Save()
-        {
-            try
-            {
-                return ActionOk( new { success = true } );
-            }
-            catch ( Exception e )
-            {
-                return ActionInternalServerError( e.Message );
-            }
-        }
-
-        [BlockAction]
         public BlockActionResult GetRequestDetails( int id )
         {
             GetRequestResponse response = new GetRequestResponse();
@@ -264,7 +259,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 var p = GetCurrentPerson();
                 SetProperties();
                 string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-                string url = "";
                 var cci_svc = new ContentChannelItemService( rockContext );
                 var ccia_svc = new ContentChannelItemAssociationService( rockContext );
                 ContentChannelItem item = cci_svc.Get( id );
@@ -272,69 +266,14 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 string currentStatus = item.GetAttributeValue( requestStatusAttrKey );
                 item.ModifiedByPersonAliasId = p.PrimaryAliasId;
                 item.ModifiedDateTime = RockDateTime.Now;
-                if ( status == "Approved" )
+                if ( status != "Cancelled by User" )
                 {
-                    if ( currentStatus == "Pending Changes" )
-                    {
-                        //From Pending to Approved, update all attribute values and delete the pending changes items 
-                        var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
-                        if ( changesAssoc != null )
-                        {
-                            var changes = changesAssoc.ChildContentChannelItem;
-                            changes.LoadAttributes();
-                            item.Title = changes.Title.Replace( " Changes", "" );
-                            foreach ( var av in item.AttributeValues )
-                            {
-                                item.SetAttributeValue( av.Key, changes.AttributeValues[av.Key].Value );
-                            }
-                            item.SaveAttributeValues();
-                            cci_svc.Delete( changes );
-                            ccia_svc.Delete( changesAssoc );
-                            var events = item.ChildItems.Where( ci => ci.ChildContentChannelItem != null && ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ToList();
-                            for ( int i = 0; i < events.Count(); i++ )
-                            {
-                                events[i].ChildContentChannelItem.LoadAttributes();
-                                var eventChanges = events[i].ChildContentChannelItem.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
-                                eventChanges.ChildContentChannelItem.LoadAttributes();
-                                foreach ( var av in events[i].ChildContentChannelItem.AttributeValues )
-                                {
-                                    events[i].ChildContentChannelItem.SetAttributeValue( av.Key, eventChanges.ChildContentChannelItem.AttributeValues[av.Key].Value );
-                                }
-                                events[i].ChildContentChannelItem.SaveAttributeValues();
-                                cci_svc.Delete( eventChanges.ChildContentChannelItem );
-                                ccia_svc.Delete( eventChanges );
-                            }
-                        }
-                    }
-                    url = LaunchWorkflow( item.Id, status );
+                    throw new Exception( "You do not have permission to mark a request: " + status );
                 }
-                if ( status == "Proposed Changes Denied" )
-                {
-                    //Remove Pending Changes items because they were not approved
-                    var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
-                    if ( changesAssoc != null )
-                    {
-                        var changes = changesAssoc.ChildContentChannelItem;
-                        cci_svc.Delete( changes );
-                        ccia_svc.Delete( changesAssoc );
-                        var events = item.ChildItems.Where( ci => ci.ChildContentChannelItem != null && ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ToList();
-                        for ( int i = 0; i < events.Count(); i++ )
-                        {
-                            var eventChanges = events[i].ChildContentChannelItem.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
-                            cci_svc.Delete( eventChanges.ChildContentChannelItem );
-                            ccia_svc.Delete( eventChanges );
-                        }
-                    }
-                }
-                if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) )
-                {
-                    url = LaunchWorkflow( item.Id, status );
-                }
-                //TODO cooksey: Possible notifications for other statuses
                 rockContext.SaveChanges();
                 item.SetAttributeValue( requestStatusAttrKey, status );
                 item.SaveAttributeValue( requestStatusAttrKey );
-                return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ), url = url } );
+                return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ) } );
             }
             catch ( Exception e )
             {
@@ -373,7 +312,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 };
             }
 
-            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );//.ToList();
+            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
             items.First().LoadAttributes();
 
             IEnumerable<ContentChannelItem> filtered_items = null;
@@ -384,6 +323,60 @@ namespace Rock.Blocks.Plugin.EventDashboard
             var requestResourcesAttr = items.First().Attributes[resourcesAttrKey];
             string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
             var eventDatesAttr = items.First().Attributes[eventDatesAttrKey];
+            string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttr );
+            var sharedWithAttr = items.First().Attributes[sharedWithAttrKey];
+            string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
+            var ministryAttr = items.First().Attributes[ministryAttrKey];
+            Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+            List<int?> aliasIds = new List<int?>() { p.PrimaryAliasId };
+
+            //Only Requests Created By the Current Person or Shared With the Current Person
+            if ( sharedRequestGroupTypeGuid.HasValue )
+            {
+                //Shared requests are configured, find any for the current user.
+                var SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
+                var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == p.Id && gm.GroupRole.Name == "Can View" );
+                groups = from g in groups
+                         join gm in groupMembers on g.Id equals gm.GroupId
+                         select g;
+                var grpList = groups.ToList();
+                for ( int k = 0; k < grpList.Count(); k++ )
+                {
+                    var ids = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Request Creator" ).Select( gm => gm.Person.PrimaryAliasId );
+                    aliasIds.AddRange( ids );
+                }
+            }
+            List<int?> sharedRequests = new List<int?>();
+            if ( sharedWithAttr != null )
+            {
+                sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
+            }
+            Guid ministryGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+            {
+                DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
+                var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                var personalRequest = min.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
+                if ( personalRequest != null )
+                {
+                    //filter out personal requests from the shared requests list
+                    var personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
+                    sharedRequests = sharedRequests.Where( r => !personalRequests.Contains( r ) ).ToList();
+                }
+            }
+            items = items.Where( i =>
+             {
+                 if ( aliasIds.Contains( i.CreatedByPersonAliasId ) )
+                 {
+                     return true;
+                 }
+                 if ( sharedRequests.Contains( i.Id ) )
+                 {
+                     return true;
+                 }
+                 return false;
+             } );
 
             //OR Filter
             if ( filters.eventModified != null )
@@ -623,24 +616,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
             {
                 ContentChannel cCC = new ContentChannelService( rockContext ).Get( eventCommentsCCGuid );
                 EventCommentsContentChannelId = cCC.Id;
-            }
-        }
-
-        private string LaunchWorkflow( int id, string action )
-        {
-            Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            Guid workflowGuid = Guid.Empty;
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.RequestActionWorkflow ), out workflowGuid ) )
-            {
-                WorkflowType wt = new WorkflowTypeService( new RockContext() ).Get( workflowGuid );
-                queryParams.Add( "WorkflowTypeId", wt.Id.ToString() );
-                queryParams.Add( "Id", id.ToString() );
-                queryParams.Add( "Action", action );
-                return this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
-            }
-            else
-            {
-                throw new Exception( "Unable to locate workflow type" );
             }
         }
 

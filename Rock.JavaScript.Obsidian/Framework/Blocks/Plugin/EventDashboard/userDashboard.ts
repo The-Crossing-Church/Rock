@@ -1,11 +1,10 @@
-import { defineComponent, provide, PropType } from "vue";
+import { defineComponent, provide } from "vue";
 import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block";
 import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels";
-import { AdminDashboardBlockViewModel } from "./adminDashboardBlockViewModel";
+import { UserDashboardBlockViewModel } from "./userDashboardBlockViewModel";
 import { useStore } from "../../../Store/index";
 import { DateTime, Duration } from "luxon"
-import { Table, Modal, Button, Popover } from "ant-design-vue"
-import GridAction from "./Components/adminGridAction"
+import { Table, Modal, Button } from "ant-design-vue"
 import TCCModal from "./Components/dashboardModal"
 import Details from "./Components/dashboardModal"
 import TCCDropDownList from "./Components/dropDownList"
@@ -19,13 +18,11 @@ const store = useStore();
 
 
 export default defineComponent({
-  name: "EventDashboard.AdminDashboard",
+  name: "EventDashboard.UserDashboard",
   components: {
     "a-table": Table,
     "a-modal": Modal,
     "a-btn": Button,
-    "a-pop": Popover,
-    "tcc-grid": GridAction,
     "tcc-model": TCCModal,
     "tcc-details": Details,
     "tcc-ddl": TCCDropDownList,
@@ -37,7 +34,7 @@ export default defineComponent({
   },
   setup() {
       const invokeBlockAction = useInvokeBlockAction();
-      const viewModel = useConfigurationValues<AdminDashboardBlockViewModel | null>();
+      const viewModel = useConfigurationValues<UserDashboardBlockViewModel | null>();
       viewModel?.events.forEach((e: any) => {
         e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
       })
@@ -274,9 +271,6 @@ export default defineComponent({
         this.btnLoading.cancelled = false
       })
     },
-    requestAction(status: string) {
-      window.location.href = this.viewModel?.workflowURL + `?Id=${this.selected?.id}&Action=${status}`
-    }
   },
   watch: {
     
@@ -368,7 +362,7 @@ export default defineComponent({
       {{ formatDates(dates) }}
     </template>
     <template #action="{ record: r }">
-      <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+      To Do
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
@@ -385,37 +379,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
         </a-btn>
-        <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="updateStatus('Approved')">
-          <i class="mr-1 fa fa-check"></i>
-          Approve
-        </a-btn>
-        <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')">
-          <i class="mr-1 fas fa-tasks"></i>
-          In Progress
-        </a-btn>
-        <a-pop v-model:visible="visible" trigger="click" placement="top" v-if="selectedStatus != 'Denied'">
-          <template #content>
-            <div style="display: flex; flex-direction: column;">
-              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="requestAction('Proposed Changes Denied')">
-                <i class="mr-1 fa fa-times"></i>
-                Changes w/ Comment
-              </a-btn>
-              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied')">
-                <i class="mr-1 fa fa-times"></i>
-                Changes w/o Comment
-              </a-btn>
-              <a-btn type="red" @click="requestAction('Denied')">
-                <i class="mr-1 fa fa-times"></i>
-                Request
-              </a-btn>
-            </div>
-          </template>
-          <a-btn type="red">
-            <i class="mr-1 fa fa-times"></i>
-            Deny
-          </a-btn>
-        </a-pop>
-        <a-btn type="grey" v-if="selectedStatus != 'Cancelled' && selectedStatus != 'Cancelled by User'" @click="updateStatus('Cancelled')">
+        <a-btn type="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled by User')">
           <i class="mr-1 fa fa-ban"></i>
           Cancel
         </a-btn>

@@ -1,6 +1,6 @@
 import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, Attribute } from "../../../ViewModels"
 
-export type AdminDashboardBlockViewModel = {
+export type UserDashboardBlockViewModel = {
     events: ContentChannelItem[];
     eventDetails: ContentChannelItemAssociation[];
     comments: ContentChannelItem[];
