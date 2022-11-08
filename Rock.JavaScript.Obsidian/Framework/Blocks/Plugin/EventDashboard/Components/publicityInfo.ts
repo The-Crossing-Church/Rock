@@ -87,6 +87,7 @@ export default defineComponent({
         <rck-field
           v-model="av.value"
           :attribute="av.attr"
+          :showEmptyValue="true"
         ></rck-field>
       </template>
     </div>

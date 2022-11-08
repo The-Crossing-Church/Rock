@@ -13,4 +13,6 @@ export type SubmissionFormBlockViewModel = {
     locations: DefinedValue[];
     ministries: DefinedValue[];
     budgetLines: DefinedValue[];
+    adminDashboardURL: string;
+    userDashboardURL: string;
 };

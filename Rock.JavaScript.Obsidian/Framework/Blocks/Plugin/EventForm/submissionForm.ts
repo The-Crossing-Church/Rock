@@ -1,9 +1,9 @@
-import { defineComponent, provide, reactive, ref } from "vue";
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block";
-import { Person } from "../../../ViewModels";
-import { SubmissionFormBlockViewModel } from "./submissionFormBlockViewModel";
-import { useStore } from "../../../Store/index";
-import { Steps, Button, Modal } from "ant-design-vue";
+import { defineComponent, provide } from "vue"
+import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
+import { Person } from "../../../ViewModels"
+import { SubmissionFormBlockViewModel } from "./submissionFormBlockViewModel"
+import { useStore } from "../../../Store/index"
+import { Steps, Button, Modal } from "ant-design-vue"
 import ResourceSwitches from "./Components/resourceSwitches"
 import Space from "./Components/space"
 import Online from "./Components/online"
@@ -198,6 +198,7 @@ export default defineComponent({
     },
     saveDraft() {
       if(this.viewModel) {
+        this.validate()
         this.save(this.viewModel).then((res: any) => {
           this.id = res?.data?.id
           this.isSave = true
@@ -210,6 +211,7 @@ export default defineComponent({
         if(this.viewModel?.request?.attributeValues?.RequestStatus == "Draft") {
           this.viewModel.request.attributeValues.RequestStatus = "Submitted"
         }
+        this.validate()
         this.submit(this.viewModel).then((res: any) => {
           this.id = res?.data?.id
           this.isSave = false
@@ -223,6 +225,21 @@ export default defineComponent({
         url += "?Id=" + this.id
       }
       window.location.assign(url)
+    },
+    openInDashboard() {
+      let url = ""
+      if(this.viewModel?.isEventAdmin) {
+        if(this.viewModel.adminDashboardURL) {
+          url = "https://" + window.location.host + "/" + this.viewModel.adminDashboardURL + "?Id=" + this.viewModel.request.id
+        }
+      } else {
+        if(this.viewModel?.userDashboardURL) {
+          url = "https://" + window.location.host + "/" + this.viewModel.userDashboardURL + "?Id=" + this.viewModel.request.id
+        }
+      }
+      if(url) {
+        window.location.assign(url)
+      }
     },
     clearEventDetailsData(category: string) {
       if(this.viewModel?.events) {
@@ -250,7 +267,6 @@ export default defineComponent({
       this.pagesViewed.push(this.step)
       this.step++
       window.scrollTo(0, 0)
-      this.validate()
     },
     prev() {
       this.pagesViewed.push(this.step)
@@ -261,41 +277,66 @@ export default defineComponent({
       this.pagesViewed.push(this.step)
       this.step = s
       window.scrollTo(0, 0)
-      this.validate()
     },
     getRefName(name: string, idx: number) {
       return `${name}_${idx}`
     },
     validate() {
-      this.pagesViewed = [0,1,2,3,4,5]
-      let formRef = this.$refs as any
-      for(let r in formRef) {
-        if(formRef[r]) {
-          let exists = false
-          this.requestErrors.forEach((e: any) => {
-            if(e.ref == r) {
-              if(Array.isArray(formRef[r])) {
-                if(formRef[r].length > 0) {
-                  e.errors = formRef[r][0].errors
-                }
+      if(this.requestErrors && this.requestErrors.length > 0) {
+        let reqErrs = this.requestErrors.filter((err: any) => {
+          return (err.ref == "basic" || err.ref == "publicity" || err.ref == "webcal" || err.ref == "prodtech") && err.errors.length > 0
+        })
+        let reqErrsExist = this.requestErrors.filter((err: any) => {
+          return (err.ref == "basic" || err.ref == "publicity" || err.ref == "webcal" || err.ref == "prodtech")
+        })
+        let hasEventErrors = false
+        if(this.viewModel?.events) {
+          for(let i=0; i<this.viewModel.events.length; i++) {
+            let eventErrs = this.requestErrors.filter((err: any) => {
+              return err.ref.includes(i.toString()) && err.errors.length > 0
+            })
+            let eventErrsExist = this.requestErrors.filter((err: any) => {
+              return err.ref.includes(i.toString())
+            })
+            let event = this.viewModel?.events[i]
+            if(event.attributeValues) {
+              if(eventErrs.length > 0) {
+                event.attributeValues.EventIsValid = "False"
+                hasEventErrors = true
               } else {
-                e.errors = formRef[r].errors
+                //Only want to update to true if we know it has been verified
+                //Don't want to update to true if someone skipped over the section
+                if(eventErrsExist.length > 0) {
+                  event.attributeValues.EventIsValid = "True"
+                }
               }
-              exists = true
             }
-          })
-          if(!exists) {
-            if(Array.isArray(formRef[r])) {
-              if(formRef[r].length > 0) {
-                this.requestErrors.push({ ref: r, errors: formRef[r][0].errors})
-              }
-            } else {
-              this.requestErrors.push({ ref: r, errors: formRef[r].errors})
+          }
+        }
+        if(this.viewModel?.request?.attributeValues) {
+          if(reqErrs.length > 0 || hasEventErrors) {
+            this.viewModel.request.attributeValues.RequestIsValid = "False"
+          } else {
+            //Only want to update to true if we know it has been verified
+            //Don't want to update to true if someone skipped over the section
+            if(reqErrsExist.length > 0) {
+              this.viewModel.request.attributeValues.RequestIsValid = "True"
             }
           }
         }
       }
-      console.log(this.requestErrors)
+    },
+    validationChange(errs: any) {
+      let exists = false
+      this.requestErrors.forEach((e: any) => {
+        if(e.ref == errs.ref) {
+          e.errors = errs.errors
+          exists = true
+        }
+      })
+      if(!exists) {
+        this.requestErrors.push(errs)
+      }
     }
   },
   watch: {
@@ -509,44 +550,44 @@ export default defineComponent({
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
-    <tcc-basic v-if="step == 1" :view-model="viewModel" :showValidation="pagesViewed.includes(1)" ref="basic"></tcc-basic>
+    <tcc-basic v-if="step == 1" :view-model="viewModel" :showValidation="pagesViewed.includes(1)" refName="basic" @validation-change="validationChange" ref="basic"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
-          <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('time', idx)"></tcc-event-time>
+          <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
           <h3 class="text-primary">Space Information</h3>
-          <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('space', idx)"></tcc-space>
+          <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
           <h3 class="text-primary">Zoom Information</h3>
-          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('online', idx)"></tcc-online>
+          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)"></tcc-online>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
           <h3 class="text-primary">Catering Information</h3>
-          <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('catering', idx)"></tcc-catering>
+          <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
           <h3 class="text-primary">Childcare Information</h3>
-          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('childcare', idx)"></tcc-childcare>
+          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)"></tcc-childcare>
           <br v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" />
           <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">Childcare Catering Information</h4>
-          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
+          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
           <h3 class="text-primary">Other Accomodations</h3>
-          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
           <h3 class="text-primary">Registration Information</h3>
-          <tcc-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
       </template>
@@ -554,15 +595,15 @@ export default defineComponent({
     <template v-if="(viewModel.request.attributeValues.IsSame == 'True' && step == 3) || (step == (3 + viewModel.events.length))">
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>
-        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="publicity"></tcc-publicity>
+        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
-        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="webcal"></tcc-web-cal>
+        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="webcal" @validation-change="validationChange" ref="webcal"></tcc-web-cal>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
         <h3 class="text-primary">Production Tech Information</h3>
-        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" ref="prodtech"></tcc-prod-tech>
+        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="prodtech" @validation-change="validationChange" ref="prodtech"></tcc-prod-tech>
       </template>
     </template>
   </div>
@@ -585,7 +626,7 @@ export default defineComponent({
     </div>
     <template #footer>
       <a-btn type="accent" @click="continueEdit">Continue Editing</a-btn>
-      <a-btn type="primary">Open Dasboard</a-btn>
+      <a-btn type="primary" @click="openInDashboard">Open Dashboard</a-btn>
     </template>
   </a-modal>
 </div>
@@ -628,7 +669,7 @@ label, .control-label {
 .input-label {
   font-weight: bold;
 }
-.has-errors input, .has-errors .chosen-single, .has-errors .chosen-choices, .has-errors textarea, .has-errors select {
+.has-error input, .has-error .chosen-single, .has-error .chosen-choices, .has-error textarea, .has-error select {
   border-color: #cc3f0c;
 }
 .card {
@@ -668,7 +709,7 @@ label, .control-label {
 .text-accent {
   color: #8ED2C9;
 }
-.text-red, .text-errors, .has-errors label {
+.text-red, .text-errors, .has-error label {
   color: #cc3f0c;
 }
 .text-errors {

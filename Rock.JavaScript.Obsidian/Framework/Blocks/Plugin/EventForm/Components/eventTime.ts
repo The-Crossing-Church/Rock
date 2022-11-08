@@ -1,15 +1,17 @@
-import { defineComponent, PropType } from "vue";
+import { defineComponent, PropType } from "vue"
 import { ContentChannelItem } from "../../../../ViewModels"
-import RockField from "../../../../Controls/rockField";
-import Validator from "./validator";
-import { DateTime, Interval } from "luxon";
-import TimePicker from "./timePicker";
+import RockField from "../../../../Controls/rockField"
+import RockForm from "../../../../Controls/rockForm"
+import Validator from "./validator"
+import { DateTime, Interval } from "luxon"
+import TimePicker from "./timePicker"
 
 
 export default defineComponent({
     name: "EventForm.Components.EventTime",
     components: {
       "rck-field": RockField,
+      "rck-form": RockForm,
       "tcc-validator": Validator,
       "tcc-time": TimePicker,
     },
@@ -22,7 +24,8 @@ export default defineComponent({
           type: Object as PropType<ContentChannelItem>,
           required: false
       },
-      showValidation: Boolean
+      showValidation: Boolean,
+      refName: String
     },
     setup() {
 
@@ -55,20 +58,12 @@ export default defineComponent({
                 }
               }
             },
-          }
+          },
+          errors: [] as Record<string, string>[]
         };
     },
     computed: {
-      errors() {
-        let formRef = this.$refs as any
-        let errs = [] as string[]
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            errs.push(...formRef[r].errors)
-          }
-        }
-        return errs
-      }
+      
     },
     methods: {
       validate() {
@@ -78,10 +73,18 @@ export default defineComponent({
             formRef[r].validate()
           }
         }
+      },
+      validationChange(errs: Record<string, string>[]) {
+        this.errors = errs
       }
     },
     watch: {
-      
+      errors: {
+        handler(val) {
+          this.$emit("validation-change", { ref: this.refName, errors: val})
+        },
+        deep: true
+      }
     },
     mounted() {
       if(this.showValidation) {
@@ -89,7 +92,7 @@ export default defineComponent({
       }
     },
     template: `
-<div>
+<rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.StartTime, 'Start Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, true)]" ref="validators_start">
@@ -123,6 +126,6 @@ export default defineComponent({
     </div>
   </div>
   <br/>
-</div>
+</rck-form>
 `
 });

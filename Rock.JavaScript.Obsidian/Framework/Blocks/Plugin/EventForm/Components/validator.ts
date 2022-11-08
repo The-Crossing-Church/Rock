@@ -1,4 +1,6 @@
-import { defineComponent } from "vue";
+import { defineComponent, ref, onBeforeUnmount } from "vue";
+import { useFormState } from "../../../../Util/form";
+import { newGuid } from "../../../../Util/guid";
 
 export default defineComponent({
     name: "EventForm.Components.Validator",
@@ -6,10 +8,25 @@ export default defineComponent({
       
     },
     props: {
-        rules: Array
+        rules: Array, 
+        name: String
     },
-    setup() {
+    setup(props) {
+      /** The reactive state of the form. */
+      const formState = useFormState();
 
+      /** The unique identifier used to identify this form field. */
+      const uniqueId = `rock-${props.name}-${newGuid()}`;
+
+      // If we are removed from the DOM completely, clear the error before we go.
+      onBeforeUnmount(() => {
+          formState?.setError(uniqueId, "", "");
+      });
+
+      return {
+          formState,
+          uniqueId,
+      };
     },
     data() {
       return {
@@ -19,13 +36,15 @@ export default defineComponent({
     computed: {
       className() {
         if(this.errors.length > 0 && this.needsValidation) {
-          return "validator text-red has-errors"
+          return "validator text-red has-error"
         }
         return "validator"
       },
       errors() {
-        if(this.rules && this.rules.length > 0 && this.needsValidation) {
-          let errs = this.rules.filter(r => typeof r === 'string');
+        if(this.rules && this.rules.length > 0) {
+          let errs = this.rules.filter(r => typeof r === 'string') as string[]
+          let name = this.name as string
+          this.formState?.setError(this.uniqueId, name, errs[0]);
           return errs
         }
         return []

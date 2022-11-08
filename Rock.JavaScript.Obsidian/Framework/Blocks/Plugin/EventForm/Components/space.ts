@@ -1,14 +1,14 @@
-import { defineComponent, PropType} from "vue";
-import { Person } from "../../../../ViewModels";
-import { ContentChannelItem, DefinedValue, AttributeValue } from "../../../../ViewModels"
-import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel";
-import { DateTime, Duration, Interval } from "luxon";
-import { useStore } from "../../../../Store/index";
-import { Switch } from "ant-design-vue";
-import RockField from "../../../../Controls/rockField";
-import Validator from "./validator";
-import TextBox from "../../../../Elements/textBox";
-import RockLabel from "../../../../Elements/rockLabel";
+import { defineComponent, PropType} from "vue"
+import { Person } from "../../../../ViewModels"
+import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
+import { DateTime, Duration, Interval } from "luxon"
+import { useStore } from "../../../../Store/index"
+import { Switch } from "ant-design-vue"
+import RockField from "../../../../Controls/rockField"
+import RockForm from "../../../../Controls/rockForm"
+import Validator from "./validator"
+import TextBox from "../../../../Elements/textBox"
+import RockLabel from "../../../../Elements/rockLabel"
 import RoomPicker from "./roomPicker"
 import RoomSetUp from "./roomSetUp"
 import Toggle from "./toggle"
@@ -41,6 +41,7 @@ export default defineComponent({
     components: {
         "a-switch": Switch,
         "rck-field": RockField,
+        "rck-form": RockForm,
         "tcc-validator": Validator,
         "rck-lbl": RockLabel,
         "rck-text": TextBox,
@@ -57,7 +58,8 @@ export default defineComponent({
         request: Object as PropType<ContentChannelItem>,
         originalRequest: Object as PropType<ContentChannelItem>,
         existing: Array as PropType<any[]>,
-        showValidation: Boolean
+        showValidation: Boolean,
+        refName: String
     },
     setup() {
 
@@ -95,7 +97,8 @@ export default defineComponent({
                     }
                     return true
                 }
-            }
+            },
+            errors: [] as Record<string, string>[]
         };
     },
     computed: {
@@ -294,16 +297,6 @@ export default defineComponent({
             }
             return ''
         },
-        errors() {
-          let formRef = this.$refs as any
-          let errs = [] as string[]
-          for(let r in formRef) {
-            if(formRef[r].className?.includes("validator")) {
-              errs.push(...formRef[r].errors)
-            }
-          }
-          return errs
-        }
     },
     methods: {
         matchRoomsToSetup() {
@@ -339,6 +332,9 @@ export default defineComponent({
               formRef[r].validate()
             }
           }
+        },
+        validationChange(errs: Record<string, string>[]) {
+          this.errors = errs
         }
     },
     watch: {
@@ -355,6 +351,12 @@ export default defineComponent({
                 }
             },
             deep: true
+        },
+        errors: {
+          handler(val) {
+            this.$emit("validation-change", { ref: this.refName, errors: val})
+          },
+          deep: true
         }
     },
     mounted() {
@@ -369,7 +371,7 @@ export default defineComponent({
         }
     },
     template: `
-<div>
+<rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
@@ -423,6 +425,6 @@ export default defineComponent({
       :label="e.attributes.Tablecloths.name"
     ></tcc-switch>
   </template>
-</div>
+</rck-form>
 `
 });

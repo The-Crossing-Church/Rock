@@ -1,20 +1,20 @@
-import { defineComponent, PropType, reactive, ref, UnwrapRef } from "vue";
-import { Person, ContentChannelItem } from "../../../../ViewModels";
-import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel";
-import { useStore } from "../../../../Store/index";
-import { Switch } from "ant-design-vue";
-import { DateTime, Duration, Interval } from "luxon";
-import RockForm from "../../../../Controls/rockForm";
-import RockField from "../../../../Controls/rockField";
-import RockFormField from "../../../../Elements/rockFormField";
-import TextBox from "../../../../Elements/textBox";
-import RockLabel from "../../../../Elements/rockLabel";
+import { defineComponent, PropType } from "vue"
+import { Person } from "../../../../ViewModels"
+import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel"
+import { useStore } from "../../../../Store/index"
+import { Switch } from "ant-design-vue"
+import { DateTime, Duration, Interval } from "luxon"
+import RockForm from "../../../../Controls/rockForm"
+import RockField from "../../../../Controls/rockField"
+import RockFormField from "../../../../Elements/rockFormField"
+import TextBox from "../../../../Elements/textBox"
+import RockLabel from "../../../../Elements/rockLabel"
 import Validator from "./validator"
 import DatePicker from "./calendar"
 import AutoComplete from "./roomPicker"
 import Chip from "./chip"
-import Toggle from "./toggle";
-import TimePicker from "./timePicker";
+import Toggle from "./toggle"
+import TimePicker from "./timePicker"
 
 const store = useStore();
 
@@ -39,7 +39,8 @@ export default defineComponent({
             type: Object as PropType<SubmissionFormBlockViewModel>,
             required: false
         },
-        showValidation: Boolean
+        showValidation: Boolean,
+        refName: String
     },
     setup() {
       
@@ -72,7 +73,8 @@ export default defineComponent({
                 }
               }
             },
-          }
+          },
+          errors: [] as Record<string, string>[]
         };
     },
     computed: {
@@ -142,16 +144,6 @@ export default defineComponent({
         labelIsSame() {
           return `Will each occurrence of your ${this.requestType} have the exact same start and end time? (${this.viewModel?.request?.attributeValues?.IsSame == 'True' ? 'Yes' : 'No'})`
         },
-        errors(): string[] {
-          let formRef = this.$refs as any
-          let errs = [] as string[]
-          for(let r in formRef) {
-            if(formRef[r].className?.includes("validator")) {
-              errs.push(...formRef[r].errors)
-            }
-          }
-          return errs
-        }
     },
     methods: {
       removeDate(date: string) {
@@ -185,6 +177,9 @@ export default defineComponent({
             formRef[r].validate()
           }
         }
+      },
+      validationChange(errs: Record<string, string>[]) {
+        this.errors = errs
       }
     },
     watch: {
@@ -198,6 +193,12 @@ export default defineComponent({
         }, 
         deep: true
       },
+      errors: {
+        handler(val) {
+          this.$emit("validation-change", { ref: this.refName, errors: val})
+        },
+        deep: true
+      }
     },
     mounted() {
       if(this.showValidation) {
@@ -206,10 +207,10 @@ export default defineComponent({
     },
     template: `
 <h3>Basic Information</h3>
-<div>
+<rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(viewModel.request.title, 'Name')]" ref="validators_name">
+      <tcc-validator name="name" :rules="[rules.required(viewModel.request.title, 'Name')]" ref="validators_name">
         <rck-lbl>Name of {{requestType}} on calendar</rck-lbl>
         <rck-text
           v-model="viewModel.request.title"
@@ -219,7 +220,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(viewModel.request.attributeValues.Ministry, 'Ministry')]" ref="validators_ministry">
+      <tcc-validator name="ministry" :rules="[rules.required(viewModel.request.attributeValues.Ministry, 'Ministry')]" ref="validators_ministry">
         <rck-field
           v-model="viewModel.request.attributeValues.Ministry"
           :attribute="viewModel.request.attributes.Ministry"
@@ -228,7 +229,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(viewModel.request.attributeValues.Contact, 'Contact')]" ref="validators_contact">
+      <tcc-validator :name="contact" :rules="[rules.required(viewModel.request.attributeValues.Contact, 'Contact')]" ref="validators_contact">
         <rck-field
           v-model="viewModel.request.attributeValues.Contact"
           :attribute="viewModel.request.attributes.Contact"
@@ -259,7 +260,7 @@ export default defineComponent({
   </div>
   <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(viewModel.events[0].attributeValues.StartTime, 'Start Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, true)]" ref="validators_start">
+      <tcc-validator name="starttime" :rules="[rules.required(viewModel.events[0].attributeValues.StartTime, 'Start Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, true)]" ref="validators_start">
         <tcc-time 
           :label="viewModel.events[0].attributes.StartTime.name"
           v-model="viewModel.events[0].attributeValues.StartTime"
@@ -274,7 +275,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(viewModel.events[0].attributeValues.EndTime, 'End Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, false)]" ref="validators_end">
+      <tcc-validator name="endtime" :rules="[rules.required(viewModel.events[0].attributeValues.EndTime, 'End Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, false)]" ref="validators_end">
         <tcc-time 
           :label="viewModel.events[0].attributes.EndTime.name"
           v-model="viewModel.events[0].attributeValues.EndTime"
@@ -290,18 +291,6 @@ export default defineComponent({
     </div>
   </div>
   <br/>
-  <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True' && eventDates.length > 1">
-    <h3 class="text-primary">Registration Information</h3>
-    <div class="row">
-      <div class="col col-xs-12">
-        <tcc-switch
-          v-model="viewModel.request.attributeValues.EventsNeedSeparateLinks"
-          :label="viewModel.request.attributes.EventsNeedSeparateLinks.name"
-        ></tcc-switch>
-      </div>
-    </div>
-    <br/>
-  </template>
-</div>
+</rck-form>
 `
 });

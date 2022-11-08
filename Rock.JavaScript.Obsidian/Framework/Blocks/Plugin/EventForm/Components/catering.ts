@@ -1,11 +1,11 @@
-import { defineComponent, PropType } from "vue";
+import { defineComponent, PropType } from "vue"
 import { ContentChannelItem } from "../../../../ViewModels"
-import { Menu, Dropdown } from "ant-design-vue";
-const { MenuItem } = Menu;
-import RockField from "../../../../Controls/rockField";
-import RockFormField from "../../../../Elements/rockFormField";
-import Toggle from "./toggle";
-import TimePicker from "./timePicker";
+import { Menu, Dropdown } from "ant-design-vue"
+const { MenuItem } = Menu
+import RockField from "../../../../Controls/rockField"
+import RockForm from "../../../../Controls/rockForm"
+import Toggle from "./toggle"
+import TimePicker from "./timePicker"
 import Validator from "./validator"
 import { DateTime } from "luxon"
 
@@ -14,6 +14,7 @@ export default defineComponent({
     name: "EventForm.Components.Catering",
     components: {
       "rck-field": RockField,
+      "rck-form": RockForm,
       "tcc-validator": Validator,
       "a-dropdown": Dropdown,
       "a-menu": Menu,
@@ -26,7 +27,8 @@ export default defineComponent({
           type: Object as PropType<ContentChannelItem>,
           required: false
       },
-      showValidation: Boolean
+      showValidation: Boolean,
+      refName: String
     },
     setup() {
 
@@ -54,20 +56,12 @@ export default defineComponent({
               }
               return true
             }
-          }
+          },
+          errors: [] as Record<string, string>[]
         };
     },
     computed: {
-      errors() {
-        let formRef = this.$refs as any
-        let errs = [] as string[]
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            errs.push(...formRef[r].errors)
-          }
-        }
-        return errs
-      }
+      
     },
     methods: {
       validate() {
@@ -77,8 +71,10 @@ export default defineComponent({
             formRef[r].validate()
           }
         }
+      },
+      validationChange(errs: Record<string, string>[]) {
+        this.errors = errs
       }
-
     },
     watch: {
       'e.attributeValues.FoodSetupLocation'(val) {
@@ -92,6 +88,12 @@ export default defineComponent({
         if(val == 'True' && this.e?.attributeValues) {
           this.e.attributeValues.DrinkSetupLocation = this.e.attributeValues.FoodSetupLocation
         }
+      },
+      errors: {
+        handler(val) {
+          this.$emit("validation-change", { ref: this.refName, errors: val})
+        },
+        deep: true
       }
     },
     mounted() {
@@ -110,7 +112,7 @@ export default defineComponent({
       }
     },
     template: `
-<div>
+<rck-form ref="form" @validationChanged="validationChange">
   <a-dropdown :trigger="['click']">
     <div class="hover font-weight-bold">For a list of our preferred vendors - <span class="text-accent">please click here.</span></div>
     <template #overlay>
@@ -282,6 +284,6 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-</div>
+</rck-form>
 `
 });

@@ -59,6 +59,7 @@ export default defineComponent({
         <rck-field
           v-model="request.attributeValues.WebCalendarDescription"
           :attribute="request.attributes.WebCalendarDescription"
+          :showEmptyValue="true"
         ></rck-field>
       </template>
     </div>

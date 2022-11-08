@@ -202,17 +202,62 @@ namespace Rock.Blocks.Plugin.EventForm
         /// <returns></returns>
         private SubmissionFormViewModel LoadRequest()
         {
+            RockContext context = new RockContext();
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
             ContentChannelItem item = new ContentChannelItem();
             var p = GetCurrentPerson();
+            SubmissionFormViewModel viewModel = new SubmissionFormViewModel();
+            //Linked Page URLs
+            string adminVal = GetAttributeValue( AttributeKey.AdminDashboard );
+            List<Guid> adminGuids = new List<Guid>();
+            if ( adminVal.Contains( "," ) )
+            {
+                adminGuids = adminVal.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                adminGuids.Add( Guid.Parse( adminVal ) );
+            }
+            if ( adminGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminGuids.Last() );
+                viewModel.adminDashboardURL = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( adminGuids.First() );
+                viewModel.adminDashboardURL = "page/" + page.Id.ToString();
+            }
+            string userVal = GetAttributeValue( AttributeKey.UserDashboard );
+            List<Guid> userGuids = new List<Guid>();
+            if ( userVal.Contains( "," ) )
+            {
+                userGuids = userVal.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                userGuids.Add( Guid.Parse( userVal ) );
+            }
+            if ( userGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userGuids.Last() );
+                viewModel.userDashboardURL = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( userGuids.First() );
+                viewModel.userDashboardURL = "page/" + page.Id.ToString();
+            }
+
             if ( id.HasValue )
             {
-                item = new ContentChannelItemService( new RockContext() ).Get( id.Value );
-                var viewModel = new SubmissionFormViewModel
-                {
-                    request = item.ToViewModel( p, true ),
-                    events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList()
-                };
+                item = new ContentChannelItemService( context ).Get( id.Value );
+                viewModel.request = item.ToViewModel( p, true );
+                viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList();
                 var changes = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
                 if ( changes != null )
                 {
@@ -229,11 +274,9 @@ namespace Rock.Blocks.Plugin.EventForm
                 item.ContentChannelId = EventContentChannelId;
                 item.ContentChannelTypeId = EventContentChannelTypeId;
                 var details = new ContentChannelItem() { ContentChannelId = EventDetailsContentChannelId, ContentChannelTypeId = EventDetailsContentChannelTypeId };
-                return new SubmissionFormViewModel
-                {
-                    request = item.ToViewModel( p, true ),
-                    events = new List<ContentChannelItemViewModel>() { details.ToViewModel( p, true ) }
-                };
+                viewModel.request = item.ToViewModel( p, true );
+                viewModel.events = new List<ContentChannelItemViewModel>() { details.ToViewModel( p, true ) };
+                return viewModel;
             }
         }
 
@@ -609,6 +652,8 @@ namespace Rock.Blocks.Plugin.EventForm
             public List<DefinedValueViewModel> locations { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
+            public string adminDashboardURL { get; set; }
+            public string userDashboardURL { get; set; }
         }
     }
 }
