@@ -328,7 +328,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
             var ministryAttr = items.First().Attributes[ministryAttrKey];
             Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-            List<int?> aliasIds = new List<int?>() { p.PrimaryAliasId };
+            List<int?> aliasIds = new List<int?>();
 
             //Only Requests Created By the Current Person or Shared With the Current Person
             if ( sharedRequestGroupTypeGuid.HasValue )
@@ -353,6 +353,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
             }
             Guid ministryGuid = Guid.Empty;
+            List<int?> personalRequests = new List<int?>();
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
             {
                 DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
@@ -361,22 +362,29 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 if ( personalRequest != null )
                 {
                     //filter out personal requests from the shared requests list
-                    var personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
-                    sharedRequests = sharedRequests.Where( r => !personalRequests.Contains( r ) ).ToList();
+                    personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
                 }
             }
             items = items.Where( i =>
-             {
-                 if ( aliasIds.Contains( i.CreatedByPersonAliasId ) )
-                 {
-                     return true;
-                 }
-                 if ( sharedRequests.Contains( i.Id ) )
-                 {
-                     return true;
-                 }
-                 return false;
-             } );
+            {
+                if ( i.CreatedByPersonAliasId == p.PrimaryAliasId )
+                {
+                    return true;
+                }
+                //We don't want personal requests in the group based sharing, but if we specifically share it with a person that's ok
+                if ( sharedRequests.Contains( i.Id ) )
+                {
+                    return true;
+                }
+                if ( !personalRequests.Contains( i.Id ) )
+                {
+                    if ( aliasIds.Contains( i.CreatedByPersonAliasId ) )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            } );
 
             //OR Filter
             if ( filters.eventModified != null )
