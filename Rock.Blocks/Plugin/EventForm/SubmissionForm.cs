@@ -267,6 +267,14 @@ namespace Rock.Blocks.Plugin.EventForm
                     viewModel.request.Title = viewModel.request.Title.Replace( " Changes", "" );
                     viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).SelectMany( i => i.ChildContentChannelItem.ChildItems ).Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList();
                 }
+                string status = "";
+                if ( viewModel.request.AttributeValues.TryGetValue( "RequestStatus", out status ) )
+                {
+                    if ( status == "Approved" )
+                    {
+                        viewModel.originalRequest = viewModel.request;
+                    }
+                }
                 return viewModel;
             }
             else

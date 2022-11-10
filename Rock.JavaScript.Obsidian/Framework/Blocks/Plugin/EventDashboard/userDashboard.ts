@@ -13,9 +13,9 @@ import RockField from "../../../Controls/rockField"
 import DateRangePicker from "../../../Elements/dateRangePicker"
 import PersonPicker from "../../../Controls/personPicker"
 import Comment from "./Components/comment"
+import UserGridAction from "./Components/userGridAction"
 
 const store = useStore();
-
 
 export default defineComponent({
   name: "EventDashboard.UserDashboard",
@@ -27,6 +27,7 @@ export default defineComponent({
     "tcc-details": Details,
     "tcc-ddl": TCCDropDownList,
     "tcc-comment": Comment,
+    "tcc-grid": UserGridAction,
     "rck-text": RockText,
     "rck-field": RockField,
     "rck-date-range": DateRangePicker,
@@ -163,6 +164,12 @@ export default defineComponent({
           return this.viewModel.events[0].attributes?.Ministry
         }
         return undefined
+      },
+      canEdit(): boolean {
+        if(this.selected && this.selected?.attributeValues?.RequestStatus) {
+          return this.selected.attributeValues.RequestStatus == 'Submitted' || this.selected.attributeValues.RequestStatus == 'In Progress' || this.selected.attributeValues.RequestStatus == 'Approved' || this.selected.attributeValues.RequestStatus == 'Pending Changes'
+        }
+        return false
       }
   },
   methods: {
@@ -362,7 +369,7 @@ export default defineComponent({
       {{ formatDates(dates) }}
     </template>
     <template #action="{ record: r }">
-      To Do
+      <tcc-grid :request="r"></tcc-grid>
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
@@ -375,7 +382,7 @@ export default defineComponent({
     </template>
     <template #footer>
       <div class="text-left">
-        <a-btn type="primary" @click="editItem(selected.id)">
+        <a-btn v-if="canEdit" type="primary" @click="editItem(selected.id)">
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
         </a-btn>
@@ -386,6 +393,10 @@ export default defineComponent({
         <a-btn type="accent">
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
+        </a-btn>
+        <a-btn type="med-blue">
+          <i class="mr-1 fas fa-history"></i>
+          Resubmit
         </a-btn>
       </div>
     </template>
@@ -446,7 +457,7 @@ label, .control-label {
   background-color: #ecc30b;
   border-color: #ecc30b;
 }
-.ant-btn-pendingchanges {
+.ant-btn-pendingchanges, .ant-btn-med-blue {
   background-color: #61a4a9;
   border-color: #61a4a9;
   color: #fff;
@@ -478,7 +489,7 @@ label, .control-label {
   border-color: #DDB70D;
   color: black;
 }
-.ant-btn-pendingchanges:focus, .ant-btn-pendingchanges:hover {
+.ant-btn-pendingchanges:focus, .ant-btn-pendingchanges:hover, .ant-btn-med-blue:focus, .ant-btn-med-blue:hover {
   background-color: #5B999E;
   border-color: #5B999E;
   color: #fff;

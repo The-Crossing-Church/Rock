@@ -94,7 +94,6 @@ export default defineComponent({
           let dates = this.request?.attributeValues?.EventDates.split(",").map(d => {
             return DateTime.fromFormat(d.trim(), "yyyy-MM-dd")
           }).sort()
-          console.log(dates)
           dt = DateTime.fromFormat(`${dates[0].toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
         }
         let defaultTime = dt.minus({days: 1})

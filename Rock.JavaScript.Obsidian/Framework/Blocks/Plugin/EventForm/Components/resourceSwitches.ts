@@ -171,7 +171,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsChildCare"
       :label="viewModel.request.attributes.NeedsChildCare.name"
-      :disabled="thirtyDaysTense == 'was'"
+      :disabled="switchIsDisabled(thirtyDaysTense,'NeedsChildCare')"
       hint="Requests involving childcare must be made at least 30 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsChildCare == 'True'"
     ></tcc-switch>
@@ -185,7 +185,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsOpsAccommodations"
       :label="viewModel.request.attributes.NeedsOpsAccommodations.name"
-      :disabled="twoWeeksTense == 'was'"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsOpsAccommodations')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'"
     ></tcc-switch>
@@ -199,7 +199,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsRegistration"
       :label="viewModel.request.attributes.NeedsRegistration.name"
-      :disabled="twoWeeksTense == 'was'"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsRegistration')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsRegistration == 'True'"
     ></tcc-switch>
@@ -213,7 +213,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsWebCalendar"
       :label="viewModel.request.attributes.NeedsWebCalendar.name"
-      :disabled="twoWeeksTense == 'was'"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsWebCalendar')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsWebCalendar == 'True'"
     ></tcc-switch>
@@ -227,7 +227,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsProductionAccommodations"
       :label="viewModel.request.attributes.NeedsProductionAccommodations.name"
-      :disabled="twoWeeksTense == 'was'"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsProductionAccommodations')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'"
     ></tcc-switch>
@@ -241,7 +241,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsPublicity"
       :label="viewModel.request.attributes.NeedsPublicity.name"
-      :disabled="sixWeeksTense == 'was'"
+      :disabled="switchIsDisabled(sixWeeksTense,'NeedsPublicity')"
       hint="Requests involving publicity must be made at least 6 weeks in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsPublicity == 'True'"
     ></tcc-switch>

@@ -156,6 +156,29 @@ export default defineComponent({
           this.$emit("validation-change", { ref: this.refName, errors: val})
         },
         deep: true
+      },
+      'request.attributeValues.EventisSticky'(val) {
+        if(val == 'False') {
+          //Cannot request announcement
+          if(this.request?.attributeValues?.PublicityStrategies) {
+            let strategies = this.request.attributeValues.PublicityStrategies.split(',')
+            strategies = strategies.filter((s: string) => {
+              return s != "Announcement"
+            })
+            this.request.attributeValues.PublicityStrategies = strategies.join(',')
+          }
+        } 
+      }, 
+      'request.attributeValues.PublicityStrategies'(val) {
+        if(this.request?.attributeValues?.EventisSticky == 'False') {
+          let strategies = val.split(',')
+          strategies = strategies.filter((s: string) => {
+            return s != "Announcement"
+          })
+          if(val != strategies.join(',')) {
+            this.request.attributeValues.PublicityStrategies = strategies.join(',')
+          }
+        }
       }
     },
     mounted() {
@@ -217,13 +240,15 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStrategies, request.attributes.PublicityStrategies.name)]" ref="validators_strategies">
-        <rck-field
-          v-model="request.attributeValues.PublicityStrategies"
-          :attribute="request.attributes.PublicityStrategies"
-          :is-edit-mode="true"
-        ></rck-field>
-      </tcc-validator>
+      <div id="pubStrat">
+        <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStrategies, request.attributes.PublicityStrategies.name)]" ref="validators_strategies">
+          <rck-field
+            v-model="request.attributeValues.PublicityStrategies"
+            :attribute="request.attributes.PublicityStrategies"
+            :is-edit-mode="true"
+          ></rck-field>
+        </tcc-validator>
+      </div>
     </div>
   </div>
   <br/>

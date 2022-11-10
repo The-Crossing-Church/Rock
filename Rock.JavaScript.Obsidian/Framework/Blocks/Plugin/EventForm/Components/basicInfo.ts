@@ -99,6 +99,12 @@ export default defineComponent({
         },
         minEventDate() {
           let date = DateTime.now()
+          if(this.viewModel?.request?.attributeValues) {
+            if(this.viewModel.request?.attributeValues.RequestStatus != "Draft") {
+              let val = this.viewModel.request.startDateTime as string
+              date = DateTime.fromISO(val)
+            }
+          }
           let span = Duration.fromObject({days: 0})
           if(this.viewModel) {
             if( this.viewModel.request?.attributeValues?.NeedsOnline == "True"

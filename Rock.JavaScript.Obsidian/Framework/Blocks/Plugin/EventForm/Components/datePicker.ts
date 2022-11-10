@@ -49,17 +49,9 @@ export default defineComponent({
     computed: {
       displayDate() {
         if(this.modelValue) {
-          let regex = new RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]') 
-          if(regex.test(this.modelValue)) {
-            return DateTime.fromFormat(this.modelValue, 'yyyy-MM-dd HH:mm:ss').toFormat("MM/dd/yyyy")
-          } else {
-            regex = new RegExp('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
-            if(regex.test(this.modelValue)) {
-              return DateTime.fromFormat(this.modelValue, 'yyyy-MM-dd').toFormat("MM/dd/yyyy")
-            } else {
-              return DateTime.fromISO(this.modelValue).toFormat("MM/dd/yyyy")
-            }
-          }
+          let val = this.modelValue as string
+          let dt = new Date(Date.parse(val))
+          return dt.toLocaleDateString('en-US')
         }
         return ""
       }

@@ -56,6 +56,7 @@ export default defineComponent({
     methods: {
       select(item: ListItem) {
         this.selectedValue = item
+        this.menuOpen = false
       },
       getClassName(item: ListItem) {
         let className = "tcc-dropdown-item"
@@ -92,7 +93,7 @@ export default defineComponent({
     },
     template: `
 <div style="width: 100%;">
-  <a-dropdown :trigger="['click']" v-on:visibleChange="menuChange">
+  <a-dropdown :trigger="['click']" v-on:visibleChange="menuChange" v-model="menuOpen">
     <div>
       <rck-lbl>{{label}}</rck-lbl>
       <rck-text
