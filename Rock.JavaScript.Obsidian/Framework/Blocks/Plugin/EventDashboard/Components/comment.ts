@@ -13,7 +13,8 @@ export default defineComponent({
     },
     props: {
       comment: Object,
-      createdBy: String
+      createdBy: String,
+      next: Object
     },
     setup() {
 
@@ -29,10 +30,27 @@ export default defineComponent({
           return store.state.currentPerson
       },
       className() {
-        if(this.createdBy == this.currentPerson?.fullName) {
-          return "note-wrapper my-note"
+        let cname = "note-wrapper"
+        if(this.next && this.next?.createdBy != this.createdBy) {
+          cname += " mb-2"
         }
-        return "note-wrapper"
+        if(this.createdBy == this.currentPerson?.fullName) {
+          cname += " note-wrapper my-note"
+        }
+        return cname
+      },
+      avatarName() {
+        if(this.createdBy) {
+          let nameParts = this.createdBy.split(" ")
+          return nameParts[0][0] + nameParts[1][0]
+        }
+        return ""
+      },
+      collapseName() {
+        return "collapse_" + this.comment?.id
+      },
+      collapseId() {
+        return "#collapse_" + this.comment?.id
       }
     },
     methods: {
@@ -48,25 +66,68 @@ export default defineComponent({
     },
     template: `
 <div :class="className">
+  <div class="avatar-wrapper" v-if="!className.includes('my-note')" data-toggle="collapse" :data-target="collapseId" aria-expanded="false" :aria-controls="collapseName">
+    <div class="avatar hover" v-if="next == null || next.createdBy != createdBy">
+      {{avatarName}}
+    </div>
+    <div style="width: 30px;" v-else></div>
+  </div>
   <div class="note">
-    <div><strong>{{createdBy}}</strong> - {{formatDateTime(comment.createdDateTime)}}</div>
+    <div><small>{{formatDateTime(comment.createdDateTime)}}</small></div>
     <div class="content">
       {{comment.content}}
     </div>
   </div>
+  <div class="avatar-wrapper" v-if="className.includes('my-note')" data-toggle="collapse" :data-target="collapseId" aria-expanded="false" :aria-controls="collapseName">
+    <div class="avatar hover" v-if="next == null || next.createdBy != createdBy">
+      {{avatarName}}
+    </div>
+    <div style="width: 30px;" v-else></div>
+  </div>
+</div>
+<div :id="collapseName" class="collapse avatar-fullName" v-if="(next == null || next.createdBy != createdBy)">
+  {{createdBy}}
 </div>
 <v-style>
   .note {
     background-color: lightgrey;
     padding: 8px;
-    border-radius: 6px;
+    border-radius: 6px 6px 6px 0px;
     margin: 4px 0px;
-    width: 80%;
+    max-width: 80%;
+    width: fit-content;
   }
-  .my-note {
+  .note-wrapper {
     display: flex;
+  }
+  .note-wrapper.my-note {
     text-align: right;
     justify-content: flex-end;
+  }
+  .my-note .note {
+    border-radius: 6px 6px 0px 6px;
+  }
+  .my-note + .avatar-fullName {
+    text-align: right;
+  }
+  .avatar-wrapper {
+    padding-right: 4px;
+    display: flex;
+    align-items: end;
+  }
+  .my-note .avatar-wrapper {
+    padding-right: 0px;
+    padding-left: 4px;
+  }
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    background-color: lightgrey;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 </v-style>
 `

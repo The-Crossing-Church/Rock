@@ -341,6 +341,58 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 return ActionBadRequest( e.Message );
             }
         }
+
+        [BlockAction]
+        public BlockActionResult AddComment( int id, string message )
+        {
+            try
+            {
+                RockContext rockContext = new RockContext();
+                SetProperties();
+                Person p = GetCurrentPerson();
+                ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
+                ContentChannel commentChannel = new ContentChannelService( rockContext ).Get( EventCommentsContentChannelId );
+                ContentChannelItem comment = new ContentChannelItem()
+                {
+                    ContentChannelId = EventCommentsContentChannelId,
+                    ContentChannelTypeId = commentChannel.ContentChannelTypeId,
+                    Title = "Comment From " + p.FullName,
+                    Content = message,
+                    CreatedByPersonAliasId = p.PrimaryAliasId,
+                    ModifiedByPersonAliasId = p.PrimaryAliasId,
+                    CreatedDateTime = RockDateTime.Now,
+                    ModifiedDateTime = RockDateTime.Now
+                };
+                cci_svc.Add( comment );
+                rockContext.SaveChanges();
+
+                //We want the request to move to the top of the stack when a note is added
+                ContentChannelItem request = cci_svc.Get( id );
+                request.ModifiedDateTime = RockDateTime.Now;
+
+                //Add association between comment and request
+                var assocSvc = new ContentChannelItemAssociationService( rockContext );
+                var order = assocSvc.Queryable().AsNoTracking()
+                    .Where( a => a.ContentChannelItemId == id )
+                    .Select( a => ( int? ) a.Order )
+                    .DefaultIfEmpty()
+                    .Max();
+                var assoc = new ContentChannelItemAssociation();
+                assoc.ContentChannelItemId = id;
+                assoc.ChildContentChannelItemId = comment.Id;
+                assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                assocSvc.Add( assoc );
+
+                rockContext.SaveChanges();
+
+                //TODO Cooksey: Send Notification
+                return ActionOk( new { createdBy = p.FullName, comment = comment } );
+            }
+            catch ( Exception e )
+            {
+                return ActionBadRequest( e.Message );
+            }
+        }
         #endregion Block Actions
 
         #region Helpers

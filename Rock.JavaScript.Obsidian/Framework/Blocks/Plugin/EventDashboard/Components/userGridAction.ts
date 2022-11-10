@@ -49,14 +49,11 @@ export default defineComponent({
     template: `
 <a-pop v-model:visible="visible" trigger="click" placement="right">
   <template #content>
-    <a-btn shape="circle" type="primary" v-if="canEdit" @click="">
+    <a-btn class="mr-1" shape="circle" type="primary" v-if="canEdit" @click="">
       <i class="fa fa-pencil-alt"></i>
     </a-btn>
-    <a-btn shape="circle" type="grey" v-if="!request.attributeValues.RequestStatus.includes('Cancelled')" @click="updateStatus(request.id, 'Cancelled By User')">
+    <a-btn class="mr-1" shape="circle" type="grey" v-if="!request.attributeValues.RequestStatus.includes('Cancelled')" @click="updateStatus(request.id, 'Cancelled By User')">
       <i class="fa fa-ban"></i>
-    </a-btn>
-    <a-btn shape="circle" type="accent">
-      <i class="fas fa-comment-alt"></i>
     </a-btn>
     <a-btn shape="circle" type="med-blue">
       <i class="fas fa-history"></i>

@@ -43,10 +43,10 @@ export default defineComponent({
     template: `
 <a-pop v-model:visible="visible" trigger="click" placement="right">
   <template #content>
-    <a-btn shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
+    <a-btn class="mr-1" shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
       <i class="fas fa-tasks"></i>
     </a-btn>
-    <a-btn shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="approve">
+    <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="approve">
       <i class="fas fa-check-circle"></i>
     </a-btn>
     <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'">

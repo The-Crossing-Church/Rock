@@ -9,6 +9,7 @@ import TCCModal from "./Components/dashboardModal"
 import Details from "./Components/dashboardModal"
 import TCCDropDownList from "./Components/dropDownList"
 import RockText from "../../../Elements/textBox"
+import RockLabel from "../../../Elements/rockLabel"
 import RockField from "../../../Controls/rockField"
 import DateRangePicker from "../../../Elements/dateRangePicker"
 import PersonPicker from "../../../Controls/personPicker"
@@ -29,6 +30,7 @@ export default defineComponent({
     "tcc-comment": Comment,
     "tcc-grid": UserGridAction,
     "rck-text": RockText,
+    "rck-lbl": RockLabel,
     "rck-field": RockField,
     "rck-date-range": DateRangePicker,
     "rck-person": PersonPicker,
@@ -78,12 +80,21 @@ export default defineComponent({
       }
       provide("changeStatus", changeStatus);
 
+      const addComment: (id: number, message: string) => Promise<any> = async (id, message) => {
+        const response = await invokeBlockAction("AddComment", {
+          id: id, message: message
+        });
+        return response
+      }
+      provide("addComment", addComment);
+
       return {
           viewModel,
           filters,
           loadDetails,
           filterRequests,
-          changeStatus
+          changeStatus,
+          addComment
       }
   },
   data() {
@@ -117,6 +128,8 @@ export default defineComponent({
         createdBy: {},
         modifiedBy: {},
         modal: false,
+        commentModal: false,
+        comment: "",
         visible: false,
         requestStatuses: [
           "Draft",
@@ -145,7 +158,8 @@ export default defineComponent({
         btnLoading: {
           inprogress: false,
           cancelled: false
-        }
+        },
+        toastMessage: ""
       };
   },
   computed: {
@@ -278,6 +292,37 @@ export default defineComponent({
         this.btnLoading.cancelled = false
       })
     },
+    getNextComment(idx: number) {
+      let req = this.selected as any
+      if(idx < (req.comments.length - 1)) {
+        return req.comments[idx + 1]
+      }
+      return null
+    },
+    newComment() {
+      this.comment = ""
+      this.commentModal = true
+    },
+    createComment() {
+      this.addComment(this.selected.id, this.comment).then((res: any) => {
+        if(res.isSuccess) {
+          if(res.data?.comment) {
+            let req = this.selected as any
+            req.comments.push(res.data)
+          }
+        } else if (res.isError) {
+          this.toastMessage = res.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+        this.commentModal = false
+        this.comment = ""
+      })
+    },
+    hideToast() {
+      let el = document.getElementById('toast')
+      el?.classList.remove("show")
+    }
   },
   watch: {
     
@@ -377,7 +422,7 @@ export default defineComponent({
     <template v-if="selected.comments && selected.comments.length > 0">
       <h3 class="text-accent">Comments</h3>
       <div>
-        <tcc-comment v-for="c in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :key="c.comment.id"></tcc-comment>
+        <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.id"></tcc-comment>
       </div>
     </template>
     <template #footer>
@@ -390,7 +435,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-ban"></i>
           Cancel
         </a-btn>
-        <a-btn type="accent">
+        <a-btn type="accent" @click="newComment">
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
         </a-btn>
@@ -401,6 +446,33 @@ export default defineComponent({
       </div>
     </template>
   </a-modal>
+  <a-modal v-model:visible="commentModal" width="80%" :closable="false" style="z-index: 2000 !important;">
+    <rck-lbl>New Comment</rck-lbl>
+    <rck-text
+      v-model="comment"
+      textMode="multiline"
+    ></rck-text>
+    <template #footer>
+      <a-btn type="accent" @click="createComment">
+        <i class="mr-1 fa fa-comment-alt"></i>
+        Add Comment
+      </a-btn>
+      <a-btn type="grey" @click="commentModal = false;">
+        <i class="mr-1 fa fa-ban"></i>
+        Cancel
+      </a-btn>
+    </template>
+  </a-modal>
+</div>
+<div id="toast" role="alert">
+  <div class="toast-header text-red">
+    <i class="fas fa-exclamation-triangle mr-1"></i>
+    <strong>System Exception</strong>
+    <i class="fa fa-times pull-right hover" @click="hideToast"></i>
+  </div>
+  <div class="toast-body">
+    {{toastMessage}}
+  </div>
 </div>
 <v-style>
 label, .control-label {
@@ -584,6 +656,28 @@ td .ant-btn {
 .hr:before {
   margin-left: -50%;
   text-align: right;
+}
+/* Toast Message */
+#toast {
+  display: none; 
+  opacity: 0;
+  min-width: 250px; 
+  background-color: #f8d7da; 
+  color: #333;
+  border-radius: 2px; 
+  padding: 8px; 
+  position: fixed; 
+  z-index: 5000; 
+  left: 30px; 
+  bottom: 30px; 
+  border: 1px solid #f4bec2;
+  transition: opacity 1s ease;
+  box-shadow: 0 0 1px 0 rgb(0 0 0 / 8%), 0 1px 3px 0 rgb(0 0 0 / 15%);
+}
+#toast.show {
+  display: block;
+  opacity: 1;
+  transition: opacity 1s ease;
 }
 </v-style>
 `
