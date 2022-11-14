@@ -94,78 +94,80 @@ export default defineComponent({
     },
     methods: {
         select(item: ListItem) {
-          let selectedItems = this.items.filter((i: any) => {
-            return this.selectedValue.value.split(",").includes(i.value)
-          }).sort((a: any, b: any) => {
-            if(a.order > b.order) {
-              return 1
-            } else if(a.order < b.order) {
-              return -1
-            }
-            return 0
-          })
-          let orderedGuids = selectedItems.filter((i: any) => {
-            return i.type == item.value
-          }).map((i: any) => {
-            return i.value
-          })
-          if(item.isHeader) {
-            if (this.multiple) {
-              //Filter to items in that category and then select or unselect all
-              let itemsInCategory = this.items.filter((i: any) => {
-                return i.type == item.value && !i.isDisabled
-              })
-              let orderedGuidsInCategory = itemsInCategory.map((i: any) => {
-                return i.value
-              })
-              //Check if all items are selected
-              if(orderedGuids.join(",") == orderedGuidsInCategory.join(",")){
-                //Need to unselect all
-                selectedItems = selectedItems.filter((i: any) => {
-                  return !orderedGuids.includes(i.value)
+          if(!item.isDisabled) {
+            let selectedItems = this.items.filter((i: any) => {
+              return this.selectedValue.value.split(",").includes(i.value)
+            }).sort((a: any, b: any) => {
+              if(a.order > b.order) {
+                return 1
+              } else if(a.order < b.order) {
+                return -1
+              }
+              return 0
+            })
+            let orderedGuids = selectedItems.filter((i: any) => {
+              return i.type == item.value
+            }).map((i: any) => {
+              return i.value
+            })
+            if(item.isHeader) {
+              if (this.multiple) {
+                //Filter to items in that category and then select or unselect all
+                let itemsInCategory = this.items.filter((i: any) => {
+                  return i.type == item.value && !i.isDisabled
                 })
-              } else {
-                //Make sure all are selected
-                itemsInCategory.forEach((i: any) => {
-                  let idx = -1
-                  selectedItems.forEach((si: any, index: number) => {
-                    if(si.value == i.value) {
-                      idx = index
+                let orderedGuidsInCategory = itemsInCategory.map((i: any) => {
+                  return i.value
+                })
+                //Check if all items are selected
+                if(orderedGuids.join(",") == orderedGuidsInCategory.join(",")){
+                  //Need to unselect all
+                  selectedItems = selectedItems.filter((i: any) => {
+                    return !orderedGuids.includes(i.value)
+                  })
+                } else {
+                  //Make sure all are selected
+                  itemsInCategory.forEach((i: any) => {
+                    let idx = -1
+                    selectedItems.forEach((si: any, index: number) => {
+                      if(si.value == i.value) {
+                        idx = index
+                      }
+                    })
+                    if(idx < 0) {
+                      selectedItems.push(i)
                     }
                   })
-                  if(idx < 0) {
-                    selectedItems.push(i)
-                  }
-                })
-              }
-              selectedItems = selectedItems.sort((a: any, b: any) => {
-                if(a.order > b.order) {
-                  return 1
-                } else if(a.order < b.order) {
-                  return -1
                 }
-                return 0
-              })
-              this.selectedValue.text = selectedItems.map((i: any) => i.text).join(", ")
-              this.selectedValue.value = selectedItems.map((i: any) => i.value).join(",")
-            }
-          } else {
-            if (this.multiple) {
-              let vals = this.selectedValue.value ? this.selectedValue.value.split(",") : []
-              let display = this.selectedValue.text ? this.selectedValue.text.split(", ") : []
-              let idx = vals.indexOf(item.value)
-              if (idx < 0) {
-                //Add item
-                vals.push(item.value)
-                display.push(item.text.split(" (")[0])
-              } else {
-                //Remove item
-                vals.splice(idx, 1)
-                display.splice(idx, 1)
+                selectedItems = selectedItems.sort((a: any, b: any) => {
+                  if(a.order > b.order) {
+                    return 1
+                  } else if(a.order < b.order) {
+                    return -1
+                  }
+                  return 0
+                })
+                this.selectedValue.text = selectedItems.map((i: any) => i.text).join(", ")
+                this.selectedValue.value = selectedItems.map((i: any) => i.value).join(",")
               }
-              this.selectedValue = { value: vals.join(","), text: display.join(", "), description: "" }
             } else {
-              this.selectedValue = { value: item.value, text: item.text.split(" (")[0], description: "" }
+              if (this.multiple) {
+                let vals = this.selectedValue.value ? this.selectedValue.value.split(",") : []
+                let display = this.selectedValue.text ? this.selectedValue.text.split(", ") : []
+                let idx = vals.indexOf(item.value)
+                if (idx < 0) {
+                  //Add item
+                  vals.push(item.value)
+                  display.push(item.text.split(" (")[0])
+                } else {
+                  //Remove item
+                  vals.splice(idx, 1)
+                  display.splice(idx, 1)
+                }
+                this.selectedValue = { value: vals.join(","), text: display.join(", "), description: "" }
+              } else {
+                this.selectedValue = { value: item.value, text: item.text.split(" (")[0], description: "" }
+              }
             }
           }
         },

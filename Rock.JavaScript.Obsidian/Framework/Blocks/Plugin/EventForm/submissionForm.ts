@@ -3,7 +3,7 @@ import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/bloc
 import { Person } from "../../../ViewModels"
 import { SubmissionFormBlockViewModel } from "./submissionFormBlockViewModel"
 import { useStore } from "../../../Store/index"
-import { Steps, Button, Modal } from "ant-design-vue"
+import { Steps, Button, Modal, Select } from "ant-design-vue"
 import ResourceSwitches from "./Components/resourceSwitches"
 import Space from "./Components/space"
 import Online from "./Components/online"
@@ -18,9 +18,11 @@ import BasicInfo from "./Components/basicInfo"
 import CCCatering from "./Components/childcareCatering"
 import EventTime from "./Components/eventTime"
 import { DateTime } from "luxon"
+import RockLabel from "../../../Elements/rockLabel"
 
-const store = useStore();
-const { Step } = Steps;
+const store = useStore()
+const { Step } = Steps
+const { Option } = Select 
 
 
 export default defineComponent({
@@ -30,6 +32,8 @@ export default defineComponent({
       "a-step": Step,
       "a-btn": Button,
       "a-modal": Modal,
+      "a-select": Select,
+      "a-select-option": Option,
       "tcc-resources": ResourceSwitches,
       "tcc-basic": BasicInfo,
       "tcc-space": Space,
@@ -43,6 +47,7 @@ export default defineComponent({
       "tcc-web-cal": WebCal,
       "tcc-prod-tech": ProdTech,
       "tcc-event-time": EventTime,
+      "rck-lbl": RockLabel,
   },
   setup() {
       const viewModel = useConfigurationValues<SubmissionFormBlockViewModel | null>();
@@ -86,7 +91,11 @@ export default defineComponent({
           isSave: false,
           resources: [] as string[],
           pagesViewed: [] as number[],
-          requestErrors: [] as any[]
+          requestErrors: [] as any[],
+          preFillModal: false,
+          preFillModalOption: "",
+          preFillTarget: "",
+          preFillSource: ""
       };
   },
   computed: {
@@ -337,7 +346,31 @@ export default defineComponent({
       if(!exists) {
         this.requestErrors.push(errs)
       }
-    }
+    },
+    preFill() {
+      let source = this.viewModel?.events.filter((e: any) => {
+        return e.attributeValues.EventDate == this.preFillSource
+      })[0]
+      let target = this.viewModel?.events.filter((e: any) => {
+        return e.attributeValues.EventDate == this.preFillTarget
+      })[0] 
+      if(source?.attributeValues && target?.attributeValues) {
+        for(let attr in target?.attributes) {
+          if(attr != 'EventDate') {
+            if(this.preFillModalOption != '') {
+              let categories = target.attributes[attr].categories.map((c: any) => c.name)
+              if(categories.includes(this.preFillModalOption)) {
+                target.attributeValues[attr] = source.attributeValues[attr]
+              }
+            } else {
+              target.attributeValues[attr] = source.attributeValues[attr]
+            }
+          }
+        }
+      }
+      this.preFillModal = false
+      this.preFillSource = ""
+    }, 
   },
   watch: {
     'viewModel.request.attributeValues.IsSame'(val) {
@@ -554,26 +587,44 @@ export default defineComponent({
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
+          <h2 class="text-accent" style="display: flex; align-items: center;">
+            Information for {{formatDate(e.attributeValues.EventDate)}}
+            <a-btn class="ml-1" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event</a-btn>
+          </h2>
+        </template>
+        <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
           <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
-          <h3 class="text-primary">Space Information</h3>
+          <h3 class="text-primary">
+            Space Information
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Space'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
           <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
-          <h3 class="text-primary">Zoom Information</h3>
+          <h3 class="text-primary">
+            Zoom Information
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
           <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)"></tcc-online>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
-          <h3 class="text-primary">Catering Information</h3>
+          <h3 class="text-primary">
+            Catering Information
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
           <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
-          <h3 class="text-primary">Childcare Information</h3>
+          <h3 class="text-primary">
+            Childcare Information
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
           <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)"></tcc-childcare>
           <br v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" />
           <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">Childcare Catering Information</h4>
@@ -581,12 +632,18 @@ export default defineComponent({
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
-          <h3 class="text-primary">Other Accomodations</h3>
+          <h3 class="text-primary">
+            Other Accomodations
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
           <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
-          <h3 class="text-primary">Registration Information</h3>
+          <h3 class="text-primary">
+            Registration Information
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
           <tcc-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
@@ -627,6 +684,35 @@ export default defineComponent({
     <template #footer>
       <a-btn type="accent" @click="continueEdit">Continue Editing</a-btn>
       <a-btn type="primary" @click="openInDashboard">Open Dashboard</a-btn>
+    </template>
+  </a-modal>
+  <!-- Prefill Modal --> 
+  <a-modal v-model:visible="preFillModal">
+    <div class="pt-2">
+      <rck-lbl v-if="preFillModalOption">
+        Select the date of the event you wish to use to prefill the {{preFillModalOption}} information for your event on {{formatDate(preFillTarget)}}
+      </rck-lbl>
+      <rck-lbl v-else>
+        Select the date of the event you wish to use to prefill all information for your event on {{formatDate(preFillTarget)}}
+      </rck-lbl>
+      <div class="row">
+        <div class="col col-xs-12">
+          <a-select
+            v-model:value="preFillSource"
+            style="width: 100%;"
+          >
+            <template v-for="(e, idx) in viewModel.events">
+              <a-select-option v-if="e.attributeValues.EventDate != preFillTarget" :key="idx" :value="e.attributeValues.EventDate">
+                {{formatDate(e.attributeValues.EventDate)}}
+              </a-select-option>
+            </template>
+          </a-select>
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <a-btn type="primary" @click="preFill">Prefill</a-btn>
+      <a-btn type="grey" @click="preFillModal = false;">Cancel</a-btn>
     </template>
   </a-modal>
 </div>
@@ -685,6 +771,10 @@ label, .control-label {
   background-color: #8ED2C9;
   border-color: #8ED2C9;
 }
+.ant-btn-accent-outlined {
+  color: #8ED2C9;
+  border-color: #8ED2C9;
+}
 .ant-steps-item-finish .ant-steps-item-icon, .dp__today {
   border-color: #347689;
 }
@@ -698,6 +788,19 @@ label, .control-label {
 .ant-btn-accent:focus, .ant-btn-accent:hover {
   background-color: hsl(172deg 30% 55%);
   border-color: hsl(172deg 30% 55%);
+  color: black;
+}
+.ant-btn-accent-outlined:focus, .ant-btn-accent-outlined:hover {
+  border-color: hsl(172deg 30% 55%);
+  color: hsl(172deg 30% 55%);
+}
+.ant-btn-cancelled, .ant-btn-cancelledbyuser, .ant-btn-grey {
+  background-color: #9e9e9e;
+  border-color: #9e9e9e;
+}
+.ant-btn-grey:focus, .ant-btn-grey:hover, .ant-btn-cancelled:focus, .ant-btn-cancelled:hover, .ant-btn-cancelledbyuser:focus, .ant-btn-cancelledbyuser:hover {
+  background-color: #929392;
+  border-color: #929392;
   color: black;
 }
 .hover {

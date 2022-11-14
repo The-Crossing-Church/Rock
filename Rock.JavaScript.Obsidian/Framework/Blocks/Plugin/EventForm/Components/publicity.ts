@@ -7,7 +7,9 @@ import Toggle from "./toggle"
 import DatePicker from "./datePicker"
 import PubDDL from "./publicityDropDown"
 import { DateTime, Interval } from "luxon"
+import { Select } from "ant-design-vue"
 
+const { Option } = Select
 
 export default defineComponent({
     name: "EventForm.Components.Publicity",
@@ -17,7 +19,9 @@ export default defineComponent({
       "tcc-validator": Validator,
       "tcc-switch": Toggle,
       "tcc-date-pkr": DatePicker,
-      "tcc-pub-ddl": PubDDL
+      "tcc-pub-ddl": PubDDL,
+      "a-select": Select,
+      "a-select-option": Option,
     },
     props: {
       request: {
@@ -136,6 +140,20 @@ export default defineComponent({
         }
         return ""
       },
+      pubStrategiesNotSticky() {
+        if(this.request?.attributes?.PublicityStrategies) {
+          let attr = JSON.parse(JSON.stringify(this.request.attributes.PublicityStrategies))
+          if(attr.configurationValues) {
+            let values = JSON.parse(attr.configurationValues.values)
+            values = values.filter((v: any) => {
+              return v.value != 'Announcement'
+            })
+            attr.configurationValues.values = JSON.stringify(values)
+          }
+          return attr
+        }
+        return null
+      }
     },
     methods: {
       validate() {
@@ -243,6 +261,13 @@ export default defineComponent({
       <div id="pubStrat">
         <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStrategies, request.attributes.PublicityStrategies.name)]" ref="validators_strategies">
           <rck-field
+            v-if="request.attributeValues.EventisSticky == 'False'"
+            v-model="request.attributeValues.PublicityStrategies"
+            :attribute="pubStrategiesNotSticky"
+            :is-edit-mode="true"
+          ></rck-field>
+          <rck-field
+            v-else
             v-model="request.attributeValues.PublicityStrategies"
             :attribute="request.attributes.PublicityStrategies"
             :is-edit-mode="true"

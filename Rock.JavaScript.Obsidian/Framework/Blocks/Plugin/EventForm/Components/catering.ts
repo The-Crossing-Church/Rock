@@ -57,7 +57,8 @@ export default defineComponent({
               return true
             }
           },
-          errors: [] as Record<string, string>[]
+          errors: [] as Record<string, string>[],
+          vendorMenu: false
         };
     },
     computed: {
@@ -113,71 +114,71 @@ export default defineComponent({
     },
     template: `
 <rck-form ref="form" @validationChanged="validationChange">
-  <a-dropdown :trigger="['click']">
+  <a-dropdown :trigger="['click']" v-model:visible="vendorMenu">
     <div class="hover font-weight-bold">For a list of our preferred vendors - <span class="text-accent">please click here.</span></div>
     <template #overlay>
       <a-menu class="tcc-dropdown">
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Arris’'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Arris’'; vendorMenu = false;">
           Arris’
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'B&B'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'B&B'; vendorMenu = false;">
           B&B
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Chick-fil-A'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Chick-fil-A'; vendorMenu = false;">
           Chick-fil-A
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Como Smoke and Fire'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Como Smoke and Fire'; vendorMenu = false;">
           Como Smoke and Fire
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'D-Rowe’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'D-Rowe’s'; vendorMenu = false;">
           D-Rowe’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Freddy’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Freddy’s'; vendorMenu = false;">
           Freddy’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Honey Baked Ham'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Honey Baked Ham'; vendorMenu = false;">
           Honey Baked Ham
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hoss’'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hoss’'; vendorMenu = false;">
           Hoss’
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hy-Vee Catering'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hy-Vee Catering'; vendorMenu = false;">
           Hy-Vee Catering
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Italian Village'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Italian Village'; vendorMenu = false;">
           Italian Village
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Jimmy John’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Jimmy John’s'; vendorMenu = false;">
           Jimmy John’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Lee’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Lee’s'; vendorMenu = false;">
           Lee’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Mrs. Tammie'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Mrs. Tammie'; vendorMenu = false;">
           Mrs. Tammie
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Panera'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Panera'; vendorMenu = false;">
           Panera
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Papa John’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Papa John’s'; vendorMenu = false;">
           Papa John’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Picklemans'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Picklemans'; vendorMenu = false;">
           Pickleman's
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Pizza Tree'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Pizza Tree'; vendorMenu = false;">
           Pizza Tree
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Popeye’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Popeye’s'; vendorMenu = false;">
           Popeye’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Shakespeare’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Shakespeare’s'; vendorMenu = false;">
           Shakespeare’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Sophia’s'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Sophia’s'; vendorMenu = false;">
           Sophia’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Tropical Smoothie Cafe'">
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Tropical Smoothie Cafe'; vendorMenu = false;">
           Tropical Smoothie Cafe
         </a-menu-item>
       </a-menu>
