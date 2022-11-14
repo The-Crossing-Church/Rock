@@ -421,6 +421,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             {
                 UpdateAttribute( item, "NeedsProductionAccommodations", "true" );
                 UpdateAttribute( item, "ProductionTech", req.Events[0].TechNeeds != null ? String.Join( ",", req.Events[0].TechNeeds ) : "" );
+                UpdateAttribute( item, "ProductionSetup", req.Events[0].SetUp );
             }
             else
             {
