@@ -32,6 +32,7 @@ using CSScriptLibrary;
 using System.Data.Entity.Migrations;
 using Z.EntityFramework.Plus;
 using Newtonsoft.Json;
+using RestSharp;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
@@ -41,17 +42,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Related Resources" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Pulls Watch, Listen, Read Content with similar tags" )]
-    [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
-    [ContentChannelField( "Watch Content Channel", required: true, order: 2 )]
-    [ContentChannelField( "Listen Content Channel", required: true, order: 3 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 4 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 5 )]
+    [TextField( "Hubspot Key Attribute", "", true, "HubspotPrivateAppKey", order: 1 )]
+    [IntegerField( "Number of Posts", required: true, order: 2, defaultValue: 6 )]
+    [ContentChannelField( "Watch Content Channel", required: true, order: 3 )]
+    [ContentChannelField( "Listen Content Channel", required: true, order: 4 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 6 )]
 
     public partial class RelatedResources : Rock.Web.UI.RockBlock
     {
         #region Variables
         private RockContext _context { get; set; }
-        private string apiKey { get; set; }
+        private string key { get; set; }
         private int numPosts { get; set; }
         private ContentChannel ccWatch { get; set; }
         private ContentChannel ccListen { get; set; }
@@ -84,7 +86,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         {
             base.OnLoad( e );
             _context = new RockContext();
-            apiKey = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
+            string attrKey = GetAttributeValue( "HubspotKeyAttribute" );
+            key = GlobalAttributesCache.Get().GetValue( attrKey );
             numPosts = GetAttributeValue( "NumberofPosts" ).AsInteger();
             string watchGuid = GetAttributeValue( "WatchContentChannel" );
             if ( !String.IsNullOrEmpty( watchGuid ) )
@@ -108,11 +111,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 {
                     GetContent();
                 }
-                //var attrVal = item.AttributeValues.FirstOrDefault( av => av.Key == "Tags" );
-                //if ( attrVal.Value != null )
-                //{
-                //    tags = attrVal.Value.Value.Split( ',' ).ToList();
-                //}
             }
         }
 
@@ -125,7 +123,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             List<Post> read = new List<Post>();
             List<Post> watch = new List<Post>();
             List<Post> listen = new List<Post>();
-            if ( !String.IsNullOrEmpty( apiKey ) )
+            if ( !String.IsNullOrEmpty( key ) )
             {
                 read = GetBlogPosts();
             }
@@ -187,7 +185,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 if ( i.Id != itemId )
                 {
-                    //var itemTag = i.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                     var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                     var intersect = tags.Intersect( itemTag );
                     if ( intersect.Count() > 0 )
@@ -200,7 +197,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             return items.Select( e =>
             {
                 var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId };
-                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                 var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
@@ -216,7 +212,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 if ( i.Id != itemId )
                 {
-                    //var itemTag = i.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                     var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                     var intersect = tags.Intersect( itemTag );
                     if ( intersect.Count() > 0 )
@@ -229,7 +224,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             return items.Select( e =>
             {
                 var p = new Post() { Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId };
-                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                 var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
@@ -239,66 +233,53 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private List<Post> GetBlogPosts()
         {
-            //TODO: Chnage the blog search so it only pulls Crossing Blog Posts not ToT 
-
-
             //Get the Hubspot Tags
             List<string> tag_ids = new List<string>();
             Dictionary<string, string> tagDict = new Dictionary<string, string>();
             for ( int i = 0; i < tags.Count(); i++ )
             {
-                WebRequest tagrequest = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/tags?hapikey=" + apiKey + "&name=" + tags[i] );
-                var tagresponse = tagrequest.GetResponse();
-                HubspotTagResponse tagResponse = new HubspotTagResponse();
-                using ( Stream stream = tagresponse.GetResponseStream() )
+                var tagClient = new RestClient( "https://api.hubapi.com/cms/v3/blogs/tags?name=" + tags[i] );
+                tagClient.Timeout = -1;
+                var tagRequest = new RestRequest( Method.GET );
+                tagRequest.AddHeader( "Authorization", $"Bearer {key}" );
+                IRestResponse jsonResponse = tagClient.Execute( tagRequest );
+                HubspotTagResponse tagResponse = JsonConvert.DeserializeObject<HubspotTagResponse>( jsonResponse.Content );
+                if ( tagResponse.results.Count() > 0 )
                 {
-                    using ( StreamReader reader = new StreamReader( stream ) )
-                    {
-                        var jsonResponse = reader.ReadToEnd();
-                        tagResponse = JsonConvert.DeserializeObject<HubspotTagResponse>( jsonResponse );
-                        if ( tagResponse.results.Count() > 0 )
-                        {
-                            tag_ids.Add( tagResponse.results[0].id );
-                            tagDict.Add( tagResponse.results[0].id, tags[i] );
-                        }
-                    }
+                    tag_ids.Add( tagResponse.results[0].id );
+                    tagDict.Add( tagResponse.results[0].id, tags[i] );
                 }
             }
 
             if ( tag_ids.Count() > 0 )
             {
                 //Get blog posts that match
-                string url = "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED";
+                string url = "https://api.hubapi.com/cms/v3/blogs/posts?sort=-publishDate&state=PUBLISHED&content_group_id=14822403917";
                 for ( int i = 0; i < tag_ids.Count(); i++ )
                 {
                     url += "&topic_id__in=" + tag_ids[i];
                 }
-                WebRequest request = WebRequest.Create( url );
-                var response = request.GetResponse();
-                HubspotBlogResponse blogResponse = new HubspotBlogResponse();
-                using ( Stream stream = response.GetResponseStream() )
+                var postClient = new RestClient( url );
+                postClient.Timeout = -1;
+                var postRequest = new RestRequest( Method.GET );
+                postRequest.AddHeader( "Authorization", $"Bearer {key}" );
+                IRestResponse jsonResponse = postClient.Execute( postRequest );
+                HubspotBlogResponse blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse.Content );
+                var posts = blogResponse.results.Select( e =>
                 {
-                    using ( StreamReader reader = new StreamReader( stream ) )
+                    var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, PublishDate = e.publishDate.Value };
+                    List<string> matchingTags = new List<string>();
+                    for ( var k = 0; k < e.tagIds.Count(); k++ )
                     {
-                        var jsonResponse = reader.ReadToEnd();
-                        blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
-                        var posts = blogResponse.results.Select( e =>
+                        if ( tagDict.ContainsKey( e.tagIds[k] ) )
                         {
-                            var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, PublishDate = e.publishDate.Value };
-                            List<string> matchingTags = new List<string>();
-                            for ( var k = 0; k < e.tagIds.Count(); k++ )
-                            {
-                                if ( tagDict.ContainsKey( e.tagIds[k] ) )
-                                {
-                                    matchingTags.Add( tagDict[e.tagIds[k]] );
-                                }
-                            }
-                            p.MatchingTags = matchingTags;
-                            return p;
-                        } );
-                        return posts.ToList();
+                            matchingTags.Add( tagDict[e.tagIds[k]] );
+                        }
                     }
-                }
+                    p.MatchingTags = matchingTags;
+                    return p;
+                } );
+                return posts.ToList();
             }
             return new List<Post>();
         }

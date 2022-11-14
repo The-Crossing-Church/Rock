@@ -32,6 +32,7 @@ using CSScriptLibrary;
 using System.Data.Entity.Migrations;
 using Z.EntityFramework.Plus;
 using Newtonsoft.Json;
+using RestSharp;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
@@ -41,14 +42,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Featured Blog Posts" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Pulls most recently published blog posts from HubSpot" )]
-    [IntegerField( "Number of Posts", required: true, order: 1, defaultValue: 6 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 2 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 3 )]
+    [TextField( "Hubspot Key Attribute", "", true, "HubspotPrivateAppKey", order: 1 )]
+    [IntegerField( "Number of Posts", required: true, order: 2, defaultValue: 6 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 3 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 4 )]
 
     public partial class FeaturedBlogPosts : Rock.Web.UI.RockBlock
     {
         #region Variables
-        private string apiKey { get; set; }
+        private string key { get; set; }
         private int numPosts { get; set; }
         #endregion
 
@@ -75,9 +77,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
-            apiKey = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
+            string attrKey = GetAttributeValue( "HubspotKeyAttribute" );
+            key = GlobalAttributesCache.Get().GetValue( attrKey );
             numPosts = GetAttributeValue( "NumberofPosts" ).AsInteger();
-            if ( !String.IsNullOrEmpty( apiKey ) )
+            if ( !String.IsNullOrEmpty( key ) )
             {
                 GetPosts();
             }
@@ -93,20 +96,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private void GetPosts()
         {
             //Get custom contact properties from Hubspot 
-            //WebRequest request = WebRequest.Create( "https://api.hubapi.com/cms/v3/blogs/posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&limit=" + numPosts );
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/content/api/v2/blog-posts?hapikey=" + apiKey + "&sort=-publishDate&state=PUBLISHED&content_group_id=14822403917&limit=" + numPosts );
-            var response = request.GetResponse();
-            BlogResponse blogResponse = new BlogResponse();
+            var postClient = new RestClient( "https://api.hubapi.com/content/api/v2/blog-posts?sort=-publishDate&state=PUBLISHED&content_group_id=14822403917&limit=" + numPosts );
+            postClient.Timeout = -1;
+            var postRequest = new RestRequest( Method.GET );
+            postRequest.AddHeader( "Authorization", $"Bearer {key}" );
+            IRestResponse jsonResponse = postClient.Execute( postRequest );
+            BlogResponse blogResponse = JsonConvert.DeserializeObject<BlogResponse>( jsonResponse.Content );
             DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
-
-            using ( Stream stream = response.GetResponseStream() )
-            {
-                using ( StreamReader reader = new StreamReader( stream ) )
-                {
-                    var jsonResponse = reader.ReadToEnd();
-                    blogResponse = JsonConvert.DeserializeObject<BlogResponse>( jsonResponse );
-                }
-            }
 
             var posts = blogResponse.objects.Select( b => new BlogPost() { name = b.name, authorName = b.blog_post_author.display_name, url = b.url, featured_image = b.featured_image, publishDate = start.AddMilliseconds( b.publish_date_local_time.Value ) } );
 
@@ -138,15 +134,5 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         {
             public string display_name { get; set; }
         }
-
-        //[DotLiquid.LiquidType( "name", "authorName", "url", "publishDate", "featuredImage" )]
-        //public class BlogPost
-        //{
-        //    public string name { get; set; }
-        //    public string authorName { get; set; }
-        //    public string url { get; set; }
-        //    public string featuredImage { get; set; }
-        //    public DateTime? publishDate { get; set; }
-        //}
     }
 }
