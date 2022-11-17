@@ -6,8 +6,9 @@ import Validator from "./validator"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
 import PubDDL from "./publicityDropDown"
-import { DateTime, Interval } from "luxon"
+import { DateTime } from "luxon"
 import { Select } from "ant-design-vue"
+import rules from "../Rules/rules"
 
 const { Option } = Select
 
@@ -36,71 +37,7 @@ export default defineComponent({
     },
     data() {
         return {
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            },
-            pubStartIsValid(value: string, end: string, minPubStartDate: string, maxPubStartDate: string) {
-              if(value && end) {
-                let startDt = DateTime.fromFormat(value, "yyyy-MM-dd")
-                let endDt = DateTime.fromFormat(end, "yyyy-MM-dd")
-                let duration = Interval.fromDateTimes(startDt, endDt)
-                let days = duration.count('days')
-                if(days < 21) {
-                  return 'Publicity must run for a minimum of 3 weeks'
-                }
-                if(minPubStartDate) {
-                  let minStartDt = DateTime.fromFormat(minPubStartDate, "yyyy-MM-dd")
-                  if(startDt < minStartDt) {
-                    return `Publicity cannot start before ${minStartDt.toFormat("MM/dd/yyyy")}`
-                  }
-                }
-                if(maxPubStartDate) {
-                  let maxStartDt = DateTime.fromFormat(maxPubStartDate, "yyyy-MM-dd")
-                  if(startDt > maxStartDt) {
-                    return `Publicity cannot start after ${maxStartDt.toFormat("MM/dd/yyyy")}`
-                  }
-                }
-              }
-              return true
-            },
-            pubEndIsValid(value: string, start: string, eventDates: string, minPubEndDate: string, maxPubEndDate: string) {
-              if(value && start) {
-                let startDt = DateTime.fromFormat(start, "yyyy-MM-dd")
-                let endDt = DateTime.fromFormat(value, "yyyy-MM-dd")
-                let duration = Interval.fromDateTimes(startDt, endDt)
-                let days = duration.count('days')
-                if(days < 21) {
-                  return 'Publicity must run for a minimum of 3 weeks'
-                }
-                if(minPubEndDate) {
-                  let minEndDt = DateTime.fromFormat(minPubEndDate, "yyyy-MM-dd")
-                  if(endDt < minEndDt) {
-                    return `Publicity cannot end before ${minEndDt.toFormat("MM/dd/yyyy")}`
-                  }
-                }
-                if(maxPubEndDate) {
-                  let maxEndDt = DateTime.fromFormat(maxPubEndDate, "yyyy-MM-dd")
-                  if(endDt > maxEndDt) {
-                    return `Publicity cannot end after ${maxEndDt.toFormat("MM/dd/yyyy")}`
-                  }
-                }
-                if(eventDates) {
-                  let dates = eventDates.split(",").map(d => DateTime.fromFormat(d.trim(), "yyyy-MM-dd")).sort()
-                  if(endDt > dates[dates.length - 1]) {
-                    return 'Publicity cannot end after event'
-                  }
-                }
-              }
-              return true
-            }
-          },
+          rules: rules,
           errors: [] as Record<string, string>[]
         };
     },

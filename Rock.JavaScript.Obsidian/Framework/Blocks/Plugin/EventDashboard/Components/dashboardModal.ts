@@ -250,6 +250,7 @@ export default defineComponent({
         <rck-field
           v-model="request.attributeValues.Notes"
           :attribute="request.attributes.Notes"
+          :showEmptyValue="true"
         ></rck-field>
       </div>
     </div>

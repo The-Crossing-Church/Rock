@@ -3,6 +3,7 @@ import { ContentChannelItem } from "../../../../ViewModels"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import Validator from "./validator"
+import rules from "../Rules/rules"
 
 
 export default defineComponent({
@@ -25,17 +26,7 @@ export default defineComponent({
     },
     data() {
         return {
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            },
-          },
+          rules: rules,
           errors: [] as Record<string, string>[]
         };
     },

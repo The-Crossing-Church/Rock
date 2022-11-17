@@ -15,6 +15,7 @@ import AutoComplete from "./roomPicker"
 import Chip from "./chip"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
+import rules from "../Rules/rules"
 
 const store = useStore();
 
@@ -47,33 +48,7 @@ export default defineComponent({
     },
     data() {
         return {
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            },
-            timeIsValid:(startTime: string, endTime: string, isStart: boolean) => {
-              if(startTime && endTime) {
-                let start = DateTime.fromFormat(startTime, 'HH:mm:ss')
-                let end = DateTime.fromFormat(endTime, 'HH:mm:ss')
-                let span = end.plus({ minutes: 1 })
-                let interval = Interval.fromDateTimes(end, span)
-                if(interval.isAfter(start)) {
-                  return true
-                }
-                if(isStart) {
-                  return `Start Time must be before ${end.toFormat('hh:mm a')}`
-                } else {
-                  return `End Time must be after ${start.toFormat('hh:mm a')}`
-                }
-              }
-            },
-          },
+          rules: rules,
           errors: [] as Record<string, string>[]
         };
     },

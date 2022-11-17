@@ -7,6 +7,7 @@ import TimePicker from "./timePicker"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
 import { DateTime } from "luxon"
+import rules from "../Rules/rules"
 
 
 export default defineComponent({
@@ -36,17 +37,7 @@ export default defineComponent({
     },
     data() {
         return {
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            },
-          },
+          rules: rules,
           errors: [] as Record<string, string>[]
         };
     },

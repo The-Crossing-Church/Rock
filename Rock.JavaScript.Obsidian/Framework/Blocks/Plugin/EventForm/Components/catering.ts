@@ -8,6 +8,7 @@ import Toggle from "./toggle"
 import TimePicker from "./timePicker"
 import Validator from "./validator"
 import { DateTime } from "luxon"
+import rules from "../Rules/rules"
 
 
 export default defineComponent({
@@ -35,28 +36,7 @@ export default defineComponent({
     },
     data() {
         return {
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            },
-            drinkTimeRequired: (value: string, drinkStr: string, key: string) => {
-              let drinks = JSON.parse(drinkStr)
-              if(drinks && drinks.value) {
-                let selected = drinks.value.split(',')
-                if(selected.length > 0) {
-                  //Required
-                  return !!value || `${key} is required`
-                }
-              }
-              return true
-            }
-          },
+          rules: rules,
           errors: [] as Record<string, string>[],
           vendorMenu: false
         };

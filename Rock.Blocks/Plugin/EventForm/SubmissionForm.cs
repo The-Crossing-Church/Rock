@@ -127,6 +127,13 @@ namespace Rock.Blocks.Plugin.EventForm
                 Rock.Model.DefinedType locationDT = new DefinedTypeService( context ).Get( locationGuid );
                 var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
                 viewModel.locations = locs.ToList();
+                var guids = viewModel.locations.Select( l => l.AttributeValues["StandardSetUp"] ).ToList();
+                AttributeMatrixService am_svc = new AttributeMatrixService( context );
+                var ams = am_svc.Queryable().Where( am => am.AttributeMatrixTemplateId == 10 && guids.Contains( am.Guid.ToString() ) );
+                var amis = ams.SelectMany( am => am.AttributeMatrixItems ).ToList();
+                viewModel.locationSetupMatrix = ams.ToList().Select( am => am.ToViewModel( null, false ) ).ToList();
+                viewModel.locationSetupMatrixItem = amis.ToList().Select( ami => ami.ToViewModel( null, true ) ).ToList();
+                Console.WriteLine( "a" );
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
             {
@@ -658,6 +665,8 @@ namespace Rock.Blocks.Plugin.EventForm
             public bool isRoomAdmin { get; set; }
             public List<string> permissions { get; set; }
             public List<DefinedValueViewModel> locations { get; set; }
+            public List<AttributeMatrixViewModel> locationSetupMatrix { get; set; }
+            public List<AttributeMatrixItemViewModel> locationSetupMatrixItem { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public string adminDashboardURL { get; set; }

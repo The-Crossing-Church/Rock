@@ -24,7 +24,6 @@ const store = useStore()
 const { Step } = Steps
 const { Option } = Select 
 
-
 export default defineComponent({
   name: "EventForm.SubmissionForm",
   components: {
@@ -53,6 +52,9 @@ export default defineComponent({
       const viewModel = useConfigurationValues<SubmissionFormBlockViewModel | null>();
       viewModel?.existing.forEach((e: any) => {
         e.childItems = viewModel.existingDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
+      })
+      viewModel?.locationSetupMatrix?.forEach((l: any) => {
+        l.matrixItems = viewModel.locationSetupMatrixItem.filter((mi: any) => { return mi.attributeMatrixId == l.id })
       })
       const invokeBlockAction = useInvokeBlockAction();
       /** A method to save a submission draft */
@@ -89,6 +91,7 @@ export default defineComponent({
           modal: false,
           id: 0,
           isSave: false,
+          isSubmitting: false,
           resources: [] as string[],
           pagesViewed: [] as number[],
           requestErrors: [] as any[],
@@ -209,22 +212,32 @@ export default defineComponent({
       if(this.viewModel) {
         this.validate()
         this.save(this.viewModel).then((res: any) => {
-          this.id = res?.data?.id
-          this.isSave = true
-          this.modal = true
+          if(res.isSuccess){
+            this.id = res?.data?.id
+            this.isSave = true
+            this.modal = true
+          } else if (res.isError) {
+
+          }
         })
       }
     },
     submitRequest() {
+      this.isSubmitting = true
       if(this.viewModel) {
         if(this.viewModel?.request?.attributeValues?.RequestStatus == "Draft") {
           this.viewModel.request.attributeValues.RequestStatus = "Submitted"
         }
         this.validate()
         this.submit(this.viewModel).then((res: any) => {
-          this.id = res?.data?.id
-          this.isSave = false
-          this.modal = true
+          if(res.isSuccess){
+            this.id = res?.data?.id
+            this.isSave = false
+            this.modal = true
+          } else if (res.isError) {
+
+          }
+          this.isSubmitting = false
         })
       }
     },
@@ -239,11 +252,11 @@ export default defineComponent({
       let url = ""
       if(this.viewModel?.isEventAdmin) {
         if(this.viewModel.adminDashboardURL) {
-          url = "https://" + window.location.host + "/" + this.viewModel.adminDashboardURL + "?Id=" + this.viewModel.request.id
+          url = "https://" + window.location.host + "/" + this.viewModel.adminDashboardURL + "?Id=" + this.id
         }
       } else {
         if(this.viewModel?.userDashboardURL) {
-          url = "https://" + window.location.host + "/" + this.viewModel.userDashboardURL + "?Id=" + this.viewModel.request.id
+          url = "https://" + window.location.host + "/" + this.viewModel.userDashboardURL + "?Id=" + this.id
         }
       }
       if(url) {
@@ -636,7 +649,7 @@ export default defineComponent({
             Other Accomodations
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
@@ -666,7 +679,7 @@ export default defineComponent({
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
-      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit">Submit</a-btn>
+      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting">Submit</a-btn>
       <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
       <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
     </div>

@@ -4,7 +4,8 @@ import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import Validator from "./validator"
 import TimePicker from "./timePicker"
-import { DateTime, Interval } from "luxon"
+import { DateTime } from "luxon"
+import rules from "../Rules/rules"
 
 export default defineComponent({
     name: "EventForm.Components.ChildcareCatering",
@@ -27,29 +28,7 @@ export default defineComponent({
     },
     data() {
         return {
-          rules: {
-            required: (value: any, key: string) => {
-              if(typeof value === 'string') {
-                if(value.includes("{")) {
-                  let obj = JSON.parse(value)
-                  return obj.value != '' || `${key} is required`
-                } 
-              } 
-              return !!value || `${key} is required`
-            },
-            timeIsValid: (value: string, endTime: string, key: string) => {
-              if(value && endTime) {
-                let time = DateTime.fromFormat(value, "HH:mm:ss")
-                let end = DateTime.fromFormat(endTime, "HH:mm:ss")
-                let span = end.minus({ minutes: 1 })
-                let interval = Interval.fromDateTimes(span, end)
-                if(interval.isBefore(time)) {
-                  return `${key} must be before ${end.toFormat("hh:mm a")}`
-                }
-              }
-              return true
-            }
-          },
+          rules: rules,
           errors: [] as Record<string, string>[]
         };
     },
@@ -124,7 +103,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareFoodTime, e.attributes.ChildcareFoodTime.name), rules.timeIsValid(e.attributeValues.ChildcareFoodTime, e.attributeValues.EndTime,  e.attributes.ChildcareFoodTime.name)]" ref="validators_time">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareFoodTime, e.attributes.ChildcareFoodTime.name), rules.ccCateringTimeIsValid(e.attributeValues.ChildcareFoodTime, e.attributeValues.EndTime,  e.attributes.ChildcareFoodTime.name)]" ref="validators_time">
         <tcc-time 
           :label="e.attributes.ChildcareFoodTime.name"
           v-model="e.attributeValues.ChildcareFoodTime"

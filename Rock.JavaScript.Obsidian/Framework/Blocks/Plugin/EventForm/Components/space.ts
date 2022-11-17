@@ -12,8 +12,10 @@ import RockLabel from "../../../../Elements/rockLabel"
 import RoomPicker from "./roomPicker"
 import RoomSetUp from "./roomSetUp"
 import Toggle from "./toggle"
+import rules from "../Rules/rules"
 
 const store = useStore();
+
 type ListItem = {
     text: string,
     value: string,
@@ -29,22 +31,15 @@ type SelectedListItem = {
   description: string
 }
 
-type RoomSetUp = {
-    Room: string,
-    TypeofTable: string,
-    NumberofTables: number,
-    NumberofChairs: number
-}
-
 export default defineComponent({
     name: "EventForm.Components.Space",
     components: {
         "a-switch": Switch,
         "rck-field": RockField,
         "rck-form": RockForm,
-        "tcc-validator": Validator,
         "rck-lbl": RockLabel,
         "rck-text": TextBox,
+        "tcc-validator": Validator,
         "tcc-room": RoomPicker,
         "tcc-setup": RoomSetUp,
         "tcc-switch": Toggle
@@ -66,38 +61,7 @@ export default defineComponent({
     },
     data() {
         return {
-            roomSetUp: [] as RoomSetUp[],
-            rules: {
-                required: (value: any, key: string) => {
-                  if(typeof value === 'string') {
-                    if(value.includes("{")) {
-                      let obj = JSON.parse(value)
-                      return obj.value != '' || `${key} is required`
-                    } 
-                  } 
-                  return !!value || `${key} is required`
-                },
-                attendance: (value: number, rooms: string, key: string) => {
-                    let selectedRooms = JSON.parse(rooms)
-                    if(selectedRooms && selectedRooms.value) {
-                        let roomGuids = selectedRooms.value.split(',')
-                        let locations = this.locations?.filter(l => {
-                            return roomGuids.includes(l.guid)
-                        })
-                        if(locations && locations.length > 0) {
-                            let capacity = locations.map(l => {
-                                if(l.attributeValues?.Capacity) {
-                                    return parseInt(l.attributeValues.Capacity)
-                                }
-                            }).reduce((partialSum: any, a: any) => partialSum + a, 0)
-                            return value <= capacity || `${key} cannot exceed ${capacity}`
-                        } else {
-                            return true
-                        }
-                    }
-                    return true
-                }
-            },
+            rules: rules,
             errors: [] as Record<string, string>[]
         };
     },
@@ -121,8 +85,8 @@ export default defineComponent({
                 if(l.attributeValues?.Type) {
                     x.type = l.attributeValues.Type
                 }
-                if(l.attributeValues?.StandardSetUp) {
-                    x.description = l.attributeValues.StandardSetUp
+                if(l.attributeValues?.StandardSetUpDescription) {
+                    x.description = l.attributeValues.StandardSetUpDescription
                 }
                 if(!l.isActive) {
                     x.isDisabled = true
@@ -267,29 +231,6 @@ export default defineComponent({
                 return guids.includes(r.value)
             })
         },
-        canRequestTables() {
-            let submissionDate = DateTime.now()
-            if(this.request?.id && this.request?.id > 0 && this.request?.startDateTime && this.request?.attributeValues?.RequestStatus != "Draft") {
-                submissionDate = DateTime.fromFormat(this.request?.startDateTime.split("T")[0], "yyyy-MM-dd")
-            }
-            let eventDate = {} as DateTime 
-            if(this.e?.attributeValues?.EventDate) {
-                eventDate = DateTime.fromFormat(this.e?.attributeValues?.EventDate, "yyyy-MM-dd")
-            } else {
-                let dates = this.request?.attributeValues?.EventDates.split(",").map((d: any) => {
-                    return DateTime.fromFormat(d, "yyyy-MM-dd")
-                }).sort()
-                if(dates && dates.length > 0) {
-                    eventDate = dates[0]
-                }
-            }
-            let span = Duration.fromObject({days: 14})
-            submissionDate = submissionDate.plus(span)
-            if(eventDate >= submissionDate) {
-                return true
-            }
-            return false
-        },
         ministry() {
             if(this.request?.attributeValues) {
                 let ministry = JSON.parse(this.request.attributeValues.Ministry) as SelectedListItem
@@ -299,32 +240,6 @@ export default defineComponent({
         },
     },
     methods: {
-        matchRoomsToSetup() {
-            this.selectedRooms?.forEach((r: any) => {
-                let exists = this.roomSetUp?.filter((s: any) => {
-                    return s.Room == r.value
-                })
-                if(exists.length == 0) {
-                    this.roomSetUp.push({Room: r.value, TypeofTable: "Round", NumberofTables: 0, NumberofChairs: 0})
-                    this.roomSetUp.push({Room: r.value, TypeofTable: "Rectangular", NumberofTables: 0, NumberofChairs: 0})
-                }
-            })
-            let roomGuids = this.selectedRooms?.map((r: any) => { return r.value})
-            this.roomSetUp = this.roomSetUp.filter((r: any) => {
-                return roomGuids?.includes(r.Room)
-            })
-        },
-        getRoomName(guid: string) {
-            if(this.selectedRooms) {
-                let rooms = this.selectedRooms?.filter((r: any) => {
-                    return r.value == guid
-                })
-                if(rooms) {
-                    return rooms[0]?.text
-                }
-            }
-            return ""
-        },
         validate() {
           let formRef = this.$refs as any
           for(let r in formRef) {
@@ -338,20 +253,6 @@ export default defineComponent({
         }
     },
     watch: {
-        selectedRooms: {
-            handler(val) {
-                this.matchRoomsToSetup()
-            },
-            deep: true
-        },
-        roomSetUp: {
-            handler(val){
-                if(this.e?.attributeValues) {
-                    this.e.attributeValues.RoomSetUp = JSON.stringify(val)
-                }
-            },
-            deep: true
-        },
         errors: {
           handler(val) {
             this.$emit("validation-change", { ref: this.refName, errors: val})
@@ -360,12 +261,6 @@ export default defineComponent({
         }
     },
     mounted() {
-        if(this.e?.attributeValues) {
-            if(this.e.attributeValues.RoomSetUp) {
-                this.roomSetUp = JSON.parse(this.e.attributeValues.RoomSetUp)
-            }
-            this.matchRoomsToSetup()
-        }
         if(this.showValidation) {
           this.validate()
         }
@@ -374,7 +269,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
         <rck-lbl>How many people are you expecting to attend?</rck-lbl>
         <rck-text
           v-model="e.attributeValues.ExpectedAttendance"

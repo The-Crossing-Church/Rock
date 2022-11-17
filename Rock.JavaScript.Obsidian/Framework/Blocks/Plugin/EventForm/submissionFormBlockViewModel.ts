@@ -1,4 +1,4 @@
-import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation } from "../../../ViewModels"
+import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, AttributeMatrix, AttributeMatrixItem } from "../../../ViewModels"
 
 export type SubmissionFormBlockViewModel = {
     request: ContentChannelItem;
@@ -11,6 +11,8 @@ export type SubmissionFormBlockViewModel = {
     isRoomAdmin: boolean;
     permissions: string[];
     locations: DefinedValue[];
+    locationSetupMatrix: AttributeMatrix[];
+    locationSetupMatrixItem: AttributeMatrixItem[];
     ministries: DefinedValue[];
     budgetLines: DefinedValue[];
     adminDashboardURL: string;

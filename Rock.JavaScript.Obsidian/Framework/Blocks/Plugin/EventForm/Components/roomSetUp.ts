@@ -1,6 +1,8 @@
-import { defineComponent, PropType } from "vue";
-import TextBox from "../../../../Elements/textBox";
-import RockLabel from "../../../../Elements/rockLabel";
+import { defineComponent, PropType } from "vue"
+import TextBox from "../../../../Elements/textBox"
+import RockLabel from "../../../../Elements/rockLabel"
+import DDL from "../../../../Elements/dropDownList"
+import { Button } from "ant-design-vue"
 
 type RoomSetUp = {
     Room: string,
@@ -14,6 +16,8 @@ export default defineComponent({
     components: {
         "rck-text": TextBox,
         "rck-lbl": RockLabel,
+        "rck-ddl": DDL,
+        "a-btn": Button,
     },
     props: {
         modelValue: Object as PropType<RoomSetUp>,
@@ -41,7 +45,9 @@ export default defineComponent({
     computed: {
     },
     methods: {
-
+        removeConfiguration() {
+            this.$emit('removeconfig')
+        }
     },
     watch: {
         roomSetUp(val) {
@@ -58,24 +64,30 @@ export default defineComponent({
         }
     },
     template: `
-<div class="row">
-  <div class="col col-xs-4">
+<div class="row" style="display: flex; align-items: end;">
+  <div class="col col-xs-3">
     <rck-lbl>Type of Table</rck-lbl>
-    <div>
-      {{roomSetUp.TypeofTable}}
-    </div>
+    <rck-ddl
+      v-model="roomSetUp.TypeofTable"
+      :options="[{value: 'Round', text: 'Round'}, {value: 'Rectangular', text: 'Rectangular'}]"
+    ></rck-ddl>
   </div>
   <div class="col col-xs-4">
     <rck-lbl>Number of Tables</rck-lbl>
     <rck-text
-        v-model="roomSetUp.NumberofTables"
+      v-model="roomSetUp.NumberofTables"
     ></rck-text>
   </div>
   <div class="col col-xs-4">
     <rck-lbl>Number of Chairs</rck-lbl>
     <rck-text
-        v-model="roomSetUp.NumberofChairs"
+      v-model="roomSetUp.NumberofChairs"
     ></rck-text>
+  </div>
+  <div class="col col-xs-1">
+    <a-btn type="red" @click="removeConfiguration">
+      <i class="fas fa-trash"></i>
+    </a-btn>
   </div>
 </div>
 `

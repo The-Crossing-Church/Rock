@@ -472,14 +472,20 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             List<TableSetUp> setUp = new List<TableSetUp>();
             for ( int j = 0; j < rooms.Count(); j++ )
             {
-                TableSetUp roundSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Round" };
-                TableSetUp rectSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Rectangular" };
-                roundSetUp.NumberofTables = req.Events[k].NumTablesRound.HasValue ? req.Events[k].NumTablesRound.Value : 0;
-                roundSetUp.NumberofChairs = req.Events[k].NumChairsRound.HasValue ? req.Events[k].NumChairsRound.Value : 0;
-                rectSetUp.NumberofTables = req.Events[k].NumTablesRect.HasValue ? req.Events[k].NumTablesRect.Value : 0;
-                rectSetUp.NumberofChairs = req.Events[k].NumChairsRect.HasValue ? req.Events[k].NumChairsRect.Value : 0;
-                setUp.Add( roundSetUp );
-                setUp.Add( rectSetUp );
+                if ( req.Events[k].NumTablesRound.HasValue )
+                {
+                    TableSetUp roundSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Round" };
+                    roundSetUp.NumberofTables = req.Events[k].NumTablesRound.HasValue ? req.Events[k].NumTablesRound.Value : 0;
+                    roundSetUp.NumberofChairs = req.Events[k].NumChairsRound.HasValue ? req.Events[k].NumChairsRound.Value : 0;
+                    setUp.Add( roundSetUp );
+                }
+                if ( req.Events[k].NumTablesRect.HasValue )
+                {
+                    TableSetUp rectSetUp = new TableSetUp() { Room = rooms[j].Guid.ToString(), TypeofTable = "Rectangular" };
+                    rectSetUp.NumberofTables = req.Events[k].NumTablesRect.HasValue ? req.Events[k].NumTablesRect.Value : 0;
+                    rectSetUp.NumberofChairs = req.Events[k].NumChairsRect.HasValue ? req.Events[k].NumChairsRect.Value : 0;
+                    setUp.Add( rectSetUp );
+                }
             }
             UpdateAttribute( detail, "RoomSetUp", JsonConvert.SerializeObject( setUp ) );
 

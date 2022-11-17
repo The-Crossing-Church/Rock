@@ -81,6 +81,17 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-validator :rules="[rules.required(request.attributeValues.ProductionSetup, request.attributes.ProductionSetup.name)]" ref="validators_prodSetup">
+        <rck-field
+          v-model="request.attributeValues.ProductionSetup"
+          :attribute="request.attributes.ProductionSetup"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
   <br/>
 </rck-form>
 `
