@@ -88,6 +88,13 @@ export default defineComponent({
           return guids.includes(r.guid)
         })
       },
+      groupedSetUp() {
+        let arr = [] as any[]
+        this.selectedRooms.forEach((r: any) => {
+          arr.push({room: r.value, guid: r.guid, items: this.setUpForRoom(r.guid), standard: this.getSetUpDesc(r.guid)})
+        })
+        return arr
+      }
     },
     methods: {
       matchRoomsToSetup() {
@@ -116,7 +123,7 @@ export default defineComponent({
       setUpForRoom(guid: string) {
         if(this.roomSetUp) {
           let setUp = this.roomSetUp.filter((r: any) => {
-            return r.Room = guid
+            return r.Room == guid
           })
           if(setUp && setUp.length > 0) {
             return setUp
@@ -126,11 +133,14 @@ export default defineComponent({
       },
       configureRoomSetUp(guid: string) {
         let setup = this.roomSetUp.filter((r: any) => {
-          return r.Room = guid
+          return r.Room == guid
         })
+        console.log('setup')
+        console.log(setup)
         if(setup.length == 0) {
           //Set to default if exists
           let def = this.getSetUpDesc(guid)
+          console.log('default')
           console.log(def)
           if(def.length == 0) {
             setup = [{ Room: guid, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0}]
@@ -141,7 +151,9 @@ export default defineComponent({
             })
           }
         }
-        this.selectedRoomSetUp = setup
+        console.log('setup end')
+        console.log(setup)
+        this.selectedRoomSetUp = JSON.parse(JSON.stringify(setup))
         this.modal = true
       },
       addSetUpConfiguration() {
@@ -228,11 +240,11 @@ export default defineComponent({
       </rck-lbl>
     </template>
     <template v-else>
-      <div class="row py-2 mx-2 setup-row" v-for="r in selectedRooms" :key="r.id">
-        <template v-if="setUpForRoom(r.guid) == null">
+      <div class="row py-2 mx-2 setup-row" v-for="gsu in groupedSetUp" :key="gsu.guid">
+        <template v-if="gsu.items == null">
           <div class="col col-xs-11">
-            <rck-lbl>Standard Set-Up will be used for {{r.value}}</rck-lbl> <br/>
-            <div v-for="(su, idx) in getSetUpDesc(r.guid)" :key="idx">
+            <rck-lbl>Standard Set-Up will be used for {{gsu.room}}</rck-lbl> <br/>
+            <div v-for="(su, idx) in gsu.standard" :key="idx">
               <template v-if="su.attributeValues.NumberofTables > 1">
                 {{su.attributeValues.NumberofTables}} {{su.attributeValues.TypeofTable}} tables with {{su.attributeValues.NumberofChairs}} chairs each.
               </template>
@@ -242,15 +254,15 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(r.guid)">
+            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)">
               <i class="fa fa-pencil-alt"></i>
             </a-btn>
           </div>
         </template>
         <template v-else>
           <div class="col col-xs-11">
-            <rck-lbl>Custom Set-Up for {{r.value}}: </rck-lbl><br/>
-            <div v-for="(su, idx) in setUpForRoom(r.guid)" :key="idx">
+            <rck-lbl>Custom Set-Up for {{gsu.room}}: </rck-lbl><br/>
+            <div v-for="(su, idx) in gsu.items" :key="idx">
               <template v-if="su.NumberofTables > 1">
                 {{su.NumberofTables}} {{su.TypeofTable}} tables with {{su.NumberofChairs}} chairs each.
               </template>
@@ -260,7 +272,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(r.Guid)">
+            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)">
               <i class="fa fa-pencil-alt"></i>
             </a-btn>
           </div>
@@ -269,6 +281,12 @@ export default defineComponent({
     </template>
   </div>
   <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.Tablecloths"
+        :label="e.attributes.Tablecloths.name"
+      ></tcc-switch>
+    </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.NeedsDoorsUnlocked"

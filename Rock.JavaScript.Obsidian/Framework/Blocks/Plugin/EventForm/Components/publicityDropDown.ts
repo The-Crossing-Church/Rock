@@ -1,7 +1,9 @@
-import { defineComponent, PropType } from "vue";
-import { Input, Menu, Dropdown } from "ant-design-vue";
-import TextBox from "../../../../Elements/textBox";
-import RockLabel from "../../../../Elements/rockLabel";
+import { defineComponent, PropType } from "vue"
+import { Input, Menu, Dropdown } from "ant-design-vue"
+import TextBox from "../../../../Elements/textBox"
+import RockLabel from "../../../../Elements/rockLabel"
+import RockDDL from "../../../../Elements/dropDownList"
+// import { ListItem } from "../../../../ViewModels"
 
 const { MenuItem } = Menu;
 
@@ -19,7 +21,8 @@ export default defineComponent({
       "a-menu": Menu,
       "a-menu-item": MenuItem,
       "rck-text": TextBox,
-      "rck-lbl": RockLabel,      
+      "rck-lbl": RockLabel,   
+      "rck-ddl": RockDDL   
     },
     props: {
         modelValue: String,
@@ -38,7 +41,7 @@ export default defineComponent({
     },
     data() {
         return {
-          selectedValue: {} as ListItem,
+          selectedValue: {} as any,
           menuOpen: false
         };
     },
@@ -73,7 +76,7 @@ export default defineComponent({
       selectedValue: { 
         handler (val) {
           if (val) {
-            this.$emit('update:modelValue', val.value)
+            this.$emit('update:modelValue', val)
           }
         },
         deep: true
@@ -93,7 +96,7 @@ export default defineComponent({
     },
     template: `
 <div style="width: 100%;">
-  <a-dropdown :trigger="['click']" v-on:visibleChange="menuChange" v-model="menuOpen">
+  <a-dropdown :trigger="['click']" v-on:visibleChange="menuChange" v-model:visible="menuOpen">
     <div>
       <rck-lbl>{{label}}</rck-lbl>
       <rck-text
@@ -116,18 +119,17 @@ export default defineComponent({
   </a-dropdown>
 </div>
 <v-style>
+  .tcc-dropdown {
+    overflow-y: hidden !important;
+  }
   .tcc-dropdown-item {
     padding: 4px;
     cursor: pointer;
     display: flex;
     align-items: center;
   }
-  .tcc-dropdown-item-content {
-    font-weight: 500;
-    font-size: 16px;
-  }
   .tcc-dropdown-item-description {
-    font-size: .875rem;
+    font-size: .8rem;
     line-height: 1.2;
     font-weight: normal;
   }
@@ -141,26 +143,6 @@ export default defineComponent({
   .tcc-dropdown-item.active {
     color: #347689;
     background-color: #E8EEF1;
-  }
-  /* Scrollbar */
-  ul.tcc-dropdown::-webkit-scrollbar {
-    width: 5px;
-    border-radius: 3px;
-  }
-  ul.tcc-dropdown::-webkit-scrollbar-track {
-    background: #bfbfbf;
-    -webkit-box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
-  }
-  ul.tcc-dropdown::-webkit-scrollbar-thumb {
-    background: rgb(224, 224, 224);
-    -webkit-box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
-  }
-  ul.tcc-dropdown::-webkit-scrollbar-thumb:hover {
-    background: #AAA;
-  }
-  ul.tcc-dropdown::-webkit-scrollbar-thumb:active {
-    background: #888;
-    -webkit-box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3);
   }
 </v-style>
 `

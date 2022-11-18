@@ -299,27 +299,6 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
-  <br />
-  <template v-if="canRequestTables && selectedRooms.length > 0">
-    <h6 class="hover" data-toggle="collapse" data-target="#setUpCollapse" aria-expanded="false" aria-controls="setUpCollapse">Room Set-up (Click to Expand)</h6>
-    <div class="collapse" id="setUpCollapse">
-      <template v-for="(r, idx) in roomSetUp" :key="idx">
-        <div class="row">
-          <div class="col col-xs-12">
-          <rck-lbl v-if="idx%2 == 0">Set Up for {{getRoomName(r.Room)}}</rck-lbl>
-          <tcc-setup 
-            v-model="r"
-          ></tcc-setup>
-          </div>
-        </div>
-      </template>
-    </div>
-    <br/>
-    <tcc-switch
-      v-model="e.attributeValues.Tablecloths"
-      :label="e.attributes.Tablecloths.name"
-    ></tcc-switch>
-  </template>
 </rck-form>
 `
 });
