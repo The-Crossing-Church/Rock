@@ -25,18 +25,7 @@ export default defineComponent({
             let attr = this.request.attributes[key]
             let item = { attr: attr, value: "", changeValue: "" }
             let categories = attr.categories.map((c: any) => c.name)
-            let parsedval = " "
-            if(this.request.attributeValues[key].includes("{")) {
-              parsedval = JSON.parse(this.request.attributeValues[key]).text
-            }
-            let hasValue = false
-            if(this.request.attributeValues[key] != "" && parsedval != "") {
-              hasValue = true
-            }
-            if(this.request.changes && this.request.changes.attributeValues[key] != "") {
-              hasValue = true
-            }
-            if(categories.includes("Event Production") && hasValue) {
+            if(categories.includes("Event Production")) {
               item.value = this.request.attributeValues[key]
               if(this.request.changes && this.request.changes.attributeValues[key] != this.request.attributeValues[key]) {
                 item.changeValue = this.request.changes.attributeValues[key]

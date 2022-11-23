@@ -149,7 +149,12 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                 item.LoadAttributes();
                 //item.ChildItems.Select( ci => ci.ChildContentChannelItem ).LoadAttributes();
                 var itemChanges = item.ChildItems.Select( ci => ci.ChildContentChannelItem ).FirstOrDefault( ci => ci.ContentChannelId == eventChangesCC.Id );
-                EventRequest req = JsonConvert.DeserializeObject<EventRequest>( item.GetAttributeValue( "RequestJSON" ) );
+                var reqJSON = item.GetAttributeValue( "RequestJSON" );
+                if ( String.IsNullOrEmpty( reqJSON ) )
+                {
+                    continue;
+                }
+                EventRequest req = JsonConvert.DeserializeObject<EventRequest>( reqJSON );
                 var changesJSON = item.GetAttributeValue( "ProposedChangesJSON" );
                 EventRequest changes = null;
                 if ( !String.IsNullOrEmpty( changesJSON ) )
@@ -370,6 +375,14 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             UpdateAttribute( item, "NeedsPublicity", req.needsPub.ToString() );
             UpdateAttribute( item, "NeedsRegistration", req.needsReg.ToString() );
             UpdateAttribute( item, "NeedsChildCare", req.needsChildCare.ToString() );
+            if ( req.needsCatering && req.needsChildCare )
+            {
+                UpdateAttribute( item, "NeedsChildCareCatering", "True" );
+            }
+            else
+            {
+                UpdateAttribute( item, "NeedsChildCareCatering", "False" );
+            }
             UpdateAttribute( item, "NeedsCatering", req.needsCatering.ToString() );
             UpdateAttribute( item, "NeedsOpsAccommodations", req.needsAccom.ToString() );
             UpdateAttribute( item, "IsSame", req.IsSame.ToString() );

@@ -332,6 +332,67 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 return ActionBadRequest( e.Message );
             }
         }
+
+        [BlockAction]
+        public BlockActionResult DuplicateEvent( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
+        {
+            try
+            {
+                RockContext context = new RockContext();
+                SetProperties();
+                ContentChannelItem item = FromViewModel( viewModel );
+                var cciSvc = new ContentChannelItemService( context );
+                var p = GetCurrentPerson();
+                item.ModifiedByPersonAliasId = p.PrimaryAliasId;
+                item.ModifiedDateTime = RockDateTime.Now;
+                item.CreatedByPersonAliasId = p.PrimaryAliasId;
+                item.CreatedDateTime = item.ModifiedDateTime;
+                cciSvc.Add( item );
+                context.SaveChanges();
+
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    var detail = FromViewModel( events[i] );
+                    var needsAssociation = false;
+                    if ( detail.Id == 0 )
+                    {
+                        if ( !String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ) )
+                        {
+                            detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
+                        }
+                        else
+                        {
+                            detail.Title = item.Title;
+                        }
+                        cciSvc.Add( detail );
+                        needsAssociation = true;
+                    }
+                    context.SaveChanges();
+                    if ( needsAssociation )
+                    {
+                        var assocSvc = new ContentChannelItemAssociationService( context );
+                        var order = assocSvc.Queryable().AsNoTracking()
+                            .Where( a => a.ContentChannelItemId == item.Id )
+                            .Select( a => ( int? ) a.Order )
+                            .DefaultIfEmpty()
+                            .Max();
+                        var assoc = new ContentChannelItemAssociation();
+                        assoc.ContentChannelItemId = item.Id;
+                        assoc.ChildContentChannelItemId = detail.Id;
+                        assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                        assocSvc.Add( assoc );
+                        context.SaveChanges();
+                    }
+                    detail.SaveAttributeValues( context );
+                }
+                item.SaveAttributeValues( context );
+                return ActionOk( new { id = item.Id } );
+            }
+            catch ( Exception e )
+            {
+                return ActionBadRequest( e.Message );
+            }
+        }
         #endregion Block Actions
 
         #region Helpers

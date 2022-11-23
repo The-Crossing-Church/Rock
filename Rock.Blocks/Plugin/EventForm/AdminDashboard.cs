@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Rock.Attribute;
 using Rock.Data;
@@ -282,7 +283,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         {
                             var changes = changesAssoc.ChildContentChannelItem;
                             changes.LoadAttributes();
-                            item.Title = changes.Title.Replace( " Changes", "" );
+                            item.Title = changes.Title.Substring( 0, changes.Title.Length - 8 );
                             foreach ( var av in item.AttributeValues )
                             {
                                 item.SetAttributeValue( av.Key, changes.AttributeValues[av.Key].Value );

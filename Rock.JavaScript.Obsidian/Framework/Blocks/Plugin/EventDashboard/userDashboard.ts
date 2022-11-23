@@ -5,6 +5,9 @@ import { UserDashboardBlockViewModel } from "./userDashboardBlockViewModel";
 import { useStore } from "../../../Store/index";
 import { DateTime, Duration } from "luxon"
 import { Table, Modal, Button } from "ant-design-vue"
+import DatePicker from "../EventForm/Components/datePicker"
+import Calendar from "../EventForm/Components/calendar"
+import Chip from "../EventForm/Components/chip"
 import TCCModal from "./Components/dashboardModal"
 import Details from "./Components/dashboardModal"
 import TCCDropDownList from "./Components/dropDownList"
@@ -29,6 +32,9 @@ export default defineComponent({
     "tcc-ddl": TCCDropDownList,
     "tcc-comment": Comment,
     "tcc-grid": UserGridAction,
+    "tcc-date-picker": DatePicker,
+    "tcc-chip": Chip,
+    "tcc-calendar": Calendar,
     "rck-text": RockText,
     "rck-lbl": RockLabel,
     "rck-field": RockField,
@@ -88,13 +94,25 @@ export default defineComponent({
       }
       provide("addComment", addComment);
 
+      /** Resubmit a Copy of an Event */
+      const resubmitEvent: (viewModel: ContentChannelItem, events: Array<ContentChannelItem>) => Promise<any> = async (viewModel, events) => {
+          const response = await invokeBlockAction<{ expirationDateTime: string }>("DuplicateEvent", {
+              viewModel: viewModel, events: events
+          });
+          if (response.data) {
+              return response
+          }
+      };
+      provide("resubmitEvent", resubmitEvent);
+
       return {
           viewModel,
           filters,
           loadDetails,
           filterRequests,
           changeStatus,
-          addComment
+          addComment,
+          resubmitEvent
       }
   },
   data() {
@@ -125,10 +143,13 @@ export default defineComponent({
           },
         ],
         selected: {} as ContentChannelItem,
+        copy: {} as ContentChannelItem,
+        copyDates: [] as any[],
         createdBy: {},
         modifiedBy: {},
         modal: false,
         commentModal: false,
+        resubmissionModal: false,
         comment: "",
         visible: false,
         requestStatuses: [
@@ -181,9 +202,28 @@ export default defineComponent({
       },
       canEdit(): boolean {
         if(this.selected && this.selected?.attributeValues?.RequestStatus) {
-          return this.selected.attributeValues.RequestStatus == 'Submitted' || this.selected.attributeValues.RequestStatus == 'In Progress' || this.selected.attributeValues.RequestStatus == 'Approved' || this.selected.attributeValues.RequestStatus == 'Pending Changes'
+          return this.selected.attributeValues.RequestStatus == 'Draft' || this.selected.attributeValues.RequestStatus == 'Submitted' || this.selected.attributeValues.RequestStatus == 'In Progress' || this.selected.attributeValues.RequestStatus == 'Approved' || this.selected.attributeValues.RequestStatus == 'Pending Changes'
         }
         return false
+      },
+      minResubmissionDate() {
+        let date = DateTime.now()
+        if(this.copy && this.copy.attributeValues) {
+          if(this.copy.attributeValues.NeedsPublicity == 'True') {
+            date = date.plus({weeks: 6})
+          } else if(this.copy.attributeValues.NeedsChildCare == 'True') {
+            date = date.plus({days: 30})
+          } else if (this.copy.attributeValues.NeedsOnline == 'True' ||
+            this.copy.attributeValues.NeedsCatering == 'True' ||
+            this.copy.attributeValues.NeedsOpsAccommodations == 'True' ||
+            this.copy.attributeValues.NeedsProductionAccommodations == 'True' ||
+            this.copy.attributeValues.NeedsRegistration == 'True' ||
+            this.copy.attributeValues.NeedsWebCalendar == 'True'
+          ) {
+            date = date.plus({days: 14})
+          }
+        }
+        return date.toFormat("yyyy-MM-dd")
       }
   },
   methods: {
@@ -192,6 +232,15 @@ export default defineComponent({
         return DateTime.fromISO(date).toFormat("MM/dd/yyyy hh:mm a");
       }
       return ""
+    },
+    formatDate(date: any): string {
+      if(date) {
+        return DateTime.fromISO(date).toFormat("MM/dd/yyyy");
+      }
+      return ""
+    },
+    formatLongDate(date: any): string {
+      return DateTime.fromFormat(date, "yyyy-MM-dd").toFormat("DDDD")
     },
     formatDates(dates: string): string {
       if(dates) {
@@ -322,6 +371,44 @@ export default defineComponent({
     hideToast() {
       let el = document.getElementById('toast')
       el?.classList.remove("show")
+    },
+    copyRequest() {
+      this.copy = JSON.parse(JSON.stringify(this.selected)) 
+      this.copy.id = 0
+      let cp = this.copy as any
+      for(let i = 0; i < cp.childItems.length; i++) {
+        cp.childItems[i].id = 0
+      }
+      if(cp && cp.childItems && cp.attributeValues.IsSame == 'False') {
+        this.copyDates = cp.attributeValues.EventDates.split(",").map((d: string) => { 
+          return { original: d.trim(), new: ""}
+        })
+      }
+      this.resubmissionModal = true
+    },
+    removeCopyDate(date: string) {
+      let cp = this.copy as any
+      let idx = -1
+      for(let i=0; i<cp.childItems.length; i++) {
+        if(cp.childItems[i].attributeValues.EventDate == date) {
+          idx = i
+        }
+      }
+      cp.childItems.splice(idx, 1)
+      this.copyDates.splice(idx, 1)
+    },
+    removeChipDate(date: string) {
+      if (this.copy.attributeValues?.EventDates) {
+        let dates = this.copy.attributeValues.EventDates.split(',')
+        let idx = dates.indexOf(date)
+        dates.splice(idx, 1)
+        this.copy.attributeValues.EventDates = dates.join(",")
+      }
+    },
+    resubmit() {
+      console.log(this.copy)
+      console.log(this.copyDates)
+      //this.resubmitEvent()
     }
   },
   watch: {
@@ -439,7 +526,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
         </a-btn>
-        <a-btn type="med-blue">
+        <a-btn type="med-blue" @click="copyRequest">
           <i class="mr-1 fas fa-history"></i>
           Resubmit
         </a-btn>
@@ -456,6 +543,81 @@ export default defineComponent({
       <a-btn type="accent" @click="createComment">
         <i class="mr-1 fa fa-comment-alt"></i>
         Add Comment
+      </a-btn>
+      <a-btn type="grey" @click="commentModal = false;">
+        <i class="mr-1 fa fa-ban"></i>
+        Cancel
+      </a-btn>
+    </template>
+  </a-modal>
+  <a-modal v-model:visible="resubmissionModal" width="75%" :closable="false" style="z-index: 2000 !important;">
+    <h3>Resubmit {{copy.title}}</h3>
+    <div>To resubmit a request, please select the new date(s) for your event.</div>
+    <rck-lbl style="text-transform: uppercase;">Resources Requested for {{copy.title}}</rck-lbl>
+    <div style="display: flex; flex-wrap: wrap; align-content: flex-start;">
+      <tcc-chip v-if="copy.attributeValues.NeedsSpace == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsSpace = 'False'">Space</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsOnline == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOnline = 'False'">Zoom</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsCatering = 'False'">Catering</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsChildCare == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCare = 'False'">Childcare</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsChildCareCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCareCatering = 'False'">Childcare Catering</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsRegistration == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsRegistration = 'False'">Registration</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsOpsAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOpsAccommodations = 'False'">Ops Accommodations</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsProductionAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsProductionAccommodations = 'False'">Production Accommodations</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsWebCalendar == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsWebCalendar = 'False'">Web Calendar</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues.NeedsPublicity == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsPublicity = 'False'">Publicity</tcc-chip>
+    </div>
+    <div class="pb-2">Remove any you won't need for your re-submission of this event</div>
+    <template v-if="copy?.attributeValues && copy.attributeValues.IsSame == 'True'">
+      <div class="row">
+        <div class="col col-xs-4">
+          <tcc-calendar
+            :min="minResubmissionDate"
+            :multiple="true"
+            v-model="copy.attributeValues.EventDates"
+          ></tcc-calendar>
+        </div>
+        <div class="col col-xs-12 col-md-8" style="display: flex; flex-wrap: wrap; align-content: flex-start;">
+          <template v-if="copy?.attributeValues?.EventDates != ''">
+            <tcc-chip v-for="d in copy.attributeValues.EventDates.split(',')" :key="d" v-on:chipdeleted="removeChipDate(d)">
+              {{formatLongDate(d)}}
+            </tcc-chip>
+          </template>
+        </div>
+      </div>
+    </template>
+    <template v-else>
+      <div class="row text-center">
+        <div class="col col-xs-4">
+          <rck-lbl>Original Date</rck-lbl>
+        </div>
+        <div class="col col-xs-4">
+          <rck-lbl>New Date</rck-lbl>
+        </div>
+        <div class="col col-xs-4">
+          <rck-lbl>Remove Date</rck-lbl>
+        </div>
+      </div>
+      <div class="row text-center" v-for="(cd, idx) in copyDates" :key="idx" style="display: flex; align-items: end;">
+        <div class="col col-xs-4">
+          {{formatDate(cd.original)}}
+        </div>
+        <div class="col col-xs-4">
+          <tcc-date-picker
+            v-model="cd.new"
+            :min="minResubmissionDate"
+          ></tcc-date-picker>
+        </div>
+        <div class="col col-xs-4">
+          <a-btn shape="circle" type="red" @click="removeCopyDate(cd.original)">
+            <i class="fas fa-trash"></i>
+          </a-btn>
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <a-btn type="med-blue" @click="resubmit" :disabled="copy?.attributeValues?.IsSame != 'True' && copyDates.length == 0">
+        <i class="mr-1 fas fa-history"></i>
+        Resubmit Event
       </a-btn>
       <a-btn type="grey" @click="commentModal = false;">
         <i class="mr-1 fa fa-ban"></i>
@@ -598,6 +760,12 @@ td .ant-btn {
 }
 .border-inprogress {
   boarder-color: #ecc30b;
+}
+.text-draft {
+  color: #A18276;
+}
+.border-draft {
+  border-color: #A18276;
 }
 .text-pendingchanges {
   color: #61a4a9;

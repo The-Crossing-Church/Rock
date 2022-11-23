@@ -42,7 +42,17 @@ export default defineComponent({
         };
     },
     computed: {
-      
+      lastDate() {
+        if(this.e?.attributeValues?.EventDate) {
+          return this.e.attributeValues?.EventDate
+        } else {
+          let dates = this.request?.attributeValues?.EventDates.split(",").map((d: string) => d.trim)
+          if(dates && dates.length > 0) {
+            return dates[dates.length - 1]
+          }
+        }
+        return ""
+      }
     },
     methods: {
       validate() {
@@ -104,7 +114,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), , rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start">
         <tcc-date-pkr
           :label="e.attributes.RegistrationStartDate.name"
           v-model="e.attributeValues.RegistrationStartDate"
@@ -161,7 +171,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationEndDate, lastDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end">
         <tcc-date-pkr
           :label="e.attributes.RegistrationEndDate.name"
           v-model="e.attributeValues.RegistrationEndDate"
@@ -169,7 +179,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name), rules.timeCannotBeAfterEvent(e.attributeValues.RegistrationEndTime, e.attributeValues.EndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime">
         <tcc-time 
           :label="e.attributes.RegistrationEndTime.name"
           v-model="e.attributeValues.RegistrationEndTime"

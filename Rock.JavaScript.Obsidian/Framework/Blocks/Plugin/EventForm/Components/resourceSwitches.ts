@@ -31,10 +31,9 @@ export default defineComponent({
                     let dates = av?.split(",").map(d => d.trim())
                     if (dates && dates.length > 0) {
                         let today = DateTime.now()
-                        let span = Duration.fromObject({ days: numDays })
                         let first = dates.map((i) => {
                             return DateTime.fromFormat(i, 'yyyy-MM-dd')
-                        })?.sort().shift()?.minus(span)
+                        })?.sort().shift()?.minus({ days: numDays })
                         if (this.isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
                             return 'is'
                         }
@@ -71,11 +70,14 @@ export default defineComponent({
         isFuneralRequest() {
             if (this.viewModel?.request.attributeValues) {
                 var av = (this.viewModel.request.attributeValues['Ministry'])
-                var min = this.viewModel.ministries.filter(m => {
-                    return m.id.toString() == av
-                })[0] as DefinedValue
-                if (min?.value?.toLowerCase().includes("funeral")) {
-                    return true
+                if(av != '') {
+                  let val = JSON.parse(av)
+                  var min = this.viewModel.ministries.filter(m => {
+                      return m.guid == val.value
+                  })[0] as DefinedValue
+                  if (min?.value?.toLowerCase().includes("funeral")) {
+                      return true
+                  }
                 }
             }
             return false
@@ -129,7 +131,7 @@ export default defineComponent({
 <br />
 <br />
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsSpace"
       :label="viewModel.request.attributes.NeedsSpace.name"
@@ -139,7 +141,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsOnline"
       :disabled="switchIsDisabled(twoWeeksTense, 'NeedsOnline')"
@@ -153,7 +155,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsCatering"
       :label="viewModel.request.attributes.NeedsCatering.name"
@@ -167,7 +169,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12 col-md-6">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsChildCare"
       :label="viewModel.request.attributes.NeedsChildCare.name"
@@ -179,9 +181,21 @@ export default defineComponent({
       The last possible date to request childcare {{thirtyDaysTense}} {{thirtyDaysBeforeEventStart}}
     </div>
   </div>
+  <div class="col col-xs-12 col-md-6" v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
+    <tcc-switch
+      v-model="viewModel.request.attributeValues.NeedsChildCareCatering"
+      :label="viewModel.request.attributes.NeedsChildCareCatering.name"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsChildCareCatering')"
+      hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
+      :persistent-hint="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'"
+    ></tcc-switch>
+    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsChildCareCatering == 'False'">
+      The last possible date to request catering for childcare {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+    </div>
+  </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsOpsAccommodations"
       :label="viewModel.request.attributes.NeedsOpsAccommodations.name"
@@ -195,7 +209,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsRegistration"
       :label="viewModel.request.attributes.NeedsRegistration.name"
@@ -209,7 +223,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsWebCalendar"
       :label="viewModel.request.attributes.NeedsWebCalendar.name"
@@ -223,7 +237,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsProductionAccommodations"
       :label="viewModel.request.attributes.NeedsProductionAccommodations.name"
@@ -237,7 +251,7 @@ export default defineComponent({
   </div>
 </div>
 <div class="row" style="padding-bottom:16px;">
-  <div class="col">
+  <div class="col col-xs-12">
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsPublicity"
       :label="viewModel.request.attributes.NeedsPublicity.name"

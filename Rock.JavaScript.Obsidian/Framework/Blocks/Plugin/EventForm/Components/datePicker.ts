@@ -50,8 +50,14 @@ export default defineComponent({
       displayDate() {
         if(this.modelValue) {
           let val = this.modelValue as string
-          let dt = new Date(Date.parse(val))
-          return dt.toLocaleDateString('en-US')
+          if(val.includes("T")) {
+            val = val.split("T")[0]
+          }
+          if(val.includes(" ")) {
+            val = val.split(" ")[0]
+          }
+          let dt = DateTime.fromFormat(val, "yyyy-MM-dd")
+          return dt.toFormat("MM/dd/yyyy")
         }
         return ""
       }

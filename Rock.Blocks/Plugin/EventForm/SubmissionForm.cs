@@ -271,7 +271,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     viewModel.originalRequest = viewModel.request;
                     viewModel.request = changes.ChildContentChannelItem.ToViewModel( p, true );
                     //Don't want the tite to show as "Changes"
-                    viewModel.request.Title = viewModel.request.Title.Replace( " Changes", "" );
+                    viewModel.request.Title = viewModel.request.Title.Substring( 0, viewModel.request.Title.Length - 8 );
                     viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).SelectMany( i => i.ChildContentChannelItem.ChildItems ).Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList();
                 }
                 string status = "";
@@ -280,6 +280,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     if ( status == "Approved" )
                     {
                         viewModel.originalRequest = viewModel.request;
+                        viewModel.request.ContentChannelId = EventChangesContentChannelId;
                     }
                 }
                 return viewModel;
@@ -464,13 +465,31 @@ namespace Rock.Blocks.Plugin.EventForm
             SetProperties();
             ContentChannelItem item = FromViewModel( viewModel );
             var cciSvc = new ContentChannelItemService( context );
+            var assocSvc = new ContentChannelItemAssociationService( context );
             var p = GetCurrentPerson();
             item.ModifiedByPersonAliasId = p.PrimaryAliasId;
             item.ModifiedDateTime = RockDateTime.Now;
+            ContentChannelItem original = null;
+            var currentStatus = item.GetAttributeValue( "RequestStatus" );
 
-            if ( item.ContentChannelId == EventChangesContentChannelId )
+            if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Approved" )
             {
-                item.Title += " Changes";
+                ContentChannelItem changes = new ContentChannelItem()
+                {
+                    ContentChannelTypeId = item.ContentChannelTypeId,
+                    ContentChannelId = viewModel.ContentChannelId,
+                    Title = item.Title + " Changes"
+                };
+                changes.LoadAttributes();
+                foreach ( var av in item.AttributeValues )
+                {
+                    changes.SetAttributeValue( av.Key, av.Value.Value );
+                }
+                changes.SetAttributeValue( "RequestStatus", "Pending Changes" );
+                original = cciSvc.Get( item.Id );
+                original.SetAttributeValue( "RequestStatus", "Pending Changes" );
+                original.SaveAttributeValue( "RequestStatus" );
+                item = changes;
             }
 
             if ( item.Id == 0 )
@@ -478,6 +497,21 @@ namespace Rock.Blocks.Plugin.EventForm
                 item.CreatedByPersonAliasId = p.PrimaryAliasId;
                 item.CreatedDateTime = item.ModifiedDateTime;
                 cciSvc.Add( item );
+                if ( original != null )
+                {
+                    //Create Association for Pending Changes
+                    var order = assocSvc.Queryable().AsNoTracking()
+                        .Where( a => a.ContentChannelItemId == original.Id )
+                        .Select( a => ( int? ) a.Order )
+                        .DefaultIfEmpty()
+                        .Max();
+                    var assoc = new ContentChannelItemAssociation();
+                    assoc.ContentChannelItemId = original.Id;
+                    assoc.ChildContentChannelItemId = item.Id;
+                    assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                    assocSvc.Add( assoc );
+                    context.SaveChanges();
+                }
             }
             context.SaveChanges();
 
@@ -485,6 +519,23 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 var detail = FromViewModel( events[i] );
                 var needsAssociation = false;
+                ContentChannelItem originalDetail = null;
+                if ( original != null )
+                {
+                    ContentChannelItem changes = new ContentChannelItem()
+                    {
+                        ContentChannelTypeId = detail.ContentChannelTypeId,
+                        ContentChannelId = EventDetailsChangesContentChannelId,
+                        Title = detail.Title
+                    };
+                    changes.LoadAttributes();
+                    foreach ( var av in detail.AttributeValues )
+                    {
+                        changes.SetAttributeValue( av.Key, av.Value.Value );
+                    }
+                    originalDetail = cciSvc.Get( detail.Id );
+                    detail = changes;
+                }
                 if ( detail.Id == 0 )
                 {
                     if ( !String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ) )
@@ -501,14 +552,26 @@ namespace Rock.Blocks.Plugin.EventForm
                 context.SaveChanges();
                 if ( needsAssociation )
                 {
-                    var assocSvc = new ContentChannelItemAssociationService( context );
-                    var order = assocSvc.Queryable().AsNoTracking()
-                        .Where( a => a.ContentChannelItemId == item.Id )
-                        .Select( a => ( int? ) a.Order )
-                        .DefaultIfEmpty()
-                        .Max();
+                    int? order;
                     var assoc = new ContentChannelItemAssociation();
-                    assoc.ContentChannelItemId = item.Id;
+                    if ( original != null )
+                    {
+                        order = assocSvc.Queryable().AsNoTracking()
+                            .Where( a => a.ContentChannelItemId == originalDetail.Id )
+                            .Select( a => ( int? ) a.Order )
+                            .DefaultIfEmpty()
+                            .Max();
+                        assoc.ContentChannelItemId = originalDetail.Id;
+                    }
+                    else
+                    {
+                        order = assocSvc.Queryable().AsNoTracking()
+                            .Where( a => a.ContentChannelItemId == item.Id )
+                            .Select( a => ( int? ) a.Order )
+                            .DefaultIfEmpty()
+                            .Max();
+                        assoc.ContentChannelItemId = item.Id;
+                    }
                     assoc.ChildContentChannelItemId = detail.Id;
                     assoc.Order = order.HasValue ? order.Value + 1 : 0;
                     assocSvc.Add( assoc );

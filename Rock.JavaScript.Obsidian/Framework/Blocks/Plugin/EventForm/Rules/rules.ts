@@ -47,17 +47,19 @@ const rules = {
       return true
   },
   drinkTimeRequired: (value: string, drinkStr: string, key: string) => {
-    let drinks = JSON.parse(drinkStr)
-    if(drinks && drinks.value) {
-      let selected = drinks.value.split(',')
-      if(selected.length > 0) {
-        //Required
-        return !!value || `${key} is required`
+    if(drinkStr != '') {
+      let drinks = JSON.parse(drinkStr)
+      if(drinks && drinks.value) {
+        let selected = drinks.value.split(',')
+        if(selected.length > 0) {
+          //Required
+          return !!value || `${key} is required`
+        }
       }
     }
     return true
   },
-  ccCateringTimeIsValid: (value: string, endTime: string, key: string) => {
+  timeCannotBeAfterEvent: (value: string, endTime: string, key: string) => {
     if(value && endTime) {
       let time = DateTime.fromFormat(value, "HH:mm:ss")
       let end = DateTime.fromFormat(endTime, "HH:mm:ss")
@@ -65,6 +67,18 @@ const rules = {
       let interval = Interval.fromDateTimes(span, end)
       if(interval.isBefore(time)) {
         return `${key} must be before ${end.toFormat("hh:mm a")}`
+      }
+    }
+    return true
+  },
+  dateCannotBeAfterEvent: (value: string, endDate: string, key: string) =>  {
+    if(value && endDate) {
+      let date = DateTime.fromFormat(`${value} 00:00:00`, "yyyy-MM-dd HH:mm:ss")
+      let end = DateTime.fromFormat(`${endDate} 23:58:59`, "yyyy-MM-dd HH:mm:ss")
+      let span = end.minus({ minutes: 1 })
+      let interval = Interval.fromDateTimes(span, end)
+      if(interval.isBefore(date)) {
+        return `${key} must be before ${end.toFormat("MM/dd/yyyy")}`
       }
     }
     return true

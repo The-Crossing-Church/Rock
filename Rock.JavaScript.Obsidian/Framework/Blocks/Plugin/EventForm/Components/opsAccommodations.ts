@@ -135,13 +135,9 @@ export default defineComponent({
         let setup = this.roomSetUp.filter((r: any) => {
           return r.Room == guid
         })
-        console.log('setup')
-        console.log(setup)
         if(setup.length == 0) {
           //Set to default if exists
           let def = this.getSetUpDesc(guid)
-          console.log('default')
-          console.log(def)
           if(def.length == 0) {
             setup = [{ Room: guid, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0}]
           } else {
@@ -151,8 +147,6 @@ export default defineComponent({
             })
           }
         }
-        console.log('setup end')
-        console.log(setup)
         this.selectedRoomSetUp = JSON.parse(JSON.stringify(setup))
         this.modal = true
       },
