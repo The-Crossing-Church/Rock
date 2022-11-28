@@ -334,13 +334,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
         }
 
         [BlockAction]
-        public BlockActionResult DuplicateEvent( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
+        public BlockActionResult DuplicateEvent( DuplicateRequestViewModel viewModel )
         {
             try
             {
                 RockContext context = new RockContext();
                 SetProperties();
-                ContentChannelItem item = FromViewModel( viewModel );
+                ContentChannelItem item = FromViewModel( viewModel.request );
                 var cciSvc = new ContentChannelItemService( context );
                 var p = GetCurrentPerson();
                 item.ModifiedByPersonAliasId = p.PrimaryAliasId;
@@ -350,9 +350,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 cciSvc.Add( item );
                 context.SaveChanges();
 
-                for ( int i = 0; i < events.Count(); i++ )
+                for ( int i = 0; i < viewModel.events.Count(); i++ )
                 {
-                    var detail = FromViewModel( events[i] );
+                    var detail = FromViewModel( viewModel.events[i] );
                     var needsAssociation = false;
                     if ( detail.Id == 0 )
                     {
@@ -756,6 +756,12 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public AttributeViewModel requestType { get; set; }
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
+        }
+
+        public class DuplicateRequestViewModel
+        {
+            public ContentChannelItemViewModel request { get; set; }
+            public List<ContentChannelItemViewModel> events { get; set; }
         }
 
         public class GetRequestResponse
