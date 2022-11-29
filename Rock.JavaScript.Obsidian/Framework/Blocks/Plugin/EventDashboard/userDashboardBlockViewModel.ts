@@ -15,3 +15,8 @@ export type UserDashboardBlockViewModel = {
     workflowURL: string;
     defaultStatuses: string[];
 };
+
+export type DuplicateRequestViewModel = {
+    request: ContentChannelItem;
+    events: ContentChannelItem[];
+}

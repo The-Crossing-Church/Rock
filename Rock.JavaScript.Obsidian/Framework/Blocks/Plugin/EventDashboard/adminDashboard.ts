@@ -1,8 +1,8 @@
-import { defineComponent, provide, PropType } from "vue";
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block";
-import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels";
-import { AdminDashboardBlockViewModel } from "./adminDashboardBlockViewModel";
-import { useStore } from "../../../Store/index";
+import { defineComponent, provide } from "vue"
+import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
+import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels"
+import { AdminDashboardBlockViewModel } from "./adminDashboardBlockViewModel"
+import { useStore } from "../../../Store/index"
 import { DateTime, Duration } from "luxon"
 import { Table, Modal, Button, Popover } from "ant-design-vue"
 import GridAction from "./Components/adminGridAction"
@@ -15,8 +15,9 @@ import RockField from "../../../Controls/rockField"
 import DateRangePicker from "../../../Elements/dateRangePicker"
 import PersonPicker from "../../../Controls/personPicker"
 import Comment from "./Components/comment"
+import TCCTable from "./Components/requestTable"
 
-const store = useStore();
+const store = useStore()
 
 
 export default defineComponent({
@@ -30,6 +31,7 @@ export default defineComponent({
     "tcc-model": TCCModal,
     "tcc-details": Details,
     "tcc-ddl": TCCDropDownList,
+    "tcc-table": TCCTable,
     "tcc-comment": Comment,
     "rck-text": RockText,
     "rck-lbl": RockLabel,
@@ -40,11 +42,8 @@ export default defineComponent({
   setup() {
       const invokeBlockAction = useInvokeBlockAction();
       const viewModel = useConfigurationValues<AdminDashboardBlockViewModel | null>();
-      viewModel?.events.forEach((e: any) => {
-        e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
-      })
 
-      let filters = {
+      let defaultFilters = {
         title: "",
         statuses: viewModel?.defaultStatuses,
         resources: [] as string[],
@@ -53,9 +52,9 @@ export default defineComponent({
         eventDates:  { lowerValue: "", upperValue: "" },
         eventModified: { lowerValue: "", upperValue: "" }
       }
-      filters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
+      defaultFilters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
       let twoWeeks = Duration.fromObject({weeks: 2})
-      filters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
+      defaultFilters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
 
       /** A method to load a specific request's details */
       const loadDetails: (id: number) => Promise<any> = async (id) => {
@@ -66,9 +65,9 @@ export default defineComponent({
       };
       provide("loadDetails", loadDetails);
 
-      const filterRequests: (filters: any) => Promise<any> = async (filters) => {
+      const filterRequests: (option: string, filters: any) => Promise<any> = async (option, filters) => {
         const response = await invokeBlockAction("FilterRequests", {
-            filters: filters
+            opt: option, filters: filters
         });
         return response
       }
@@ -92,7 +91,7 @@ export default defineComponent({
 
       return {
           viewModel,
-          filters,
+          defaultFilters,
           loadDetails,
           filterRequests,
           changeStatus,
@@ -161,7 +160,8 @@ export default defineComponent({
           inprogress: false,
           cancelled: false
         },
-        toastMessage: ""
+        toastMessage: "",
+        filters: {} as any
       };
   },
   computed: {
@@ -215,14 +215,16 @@ export default defineComponent({
     editItem (id: string) {
       window.location.href = "/eventform?Id=" + id
     },
-    filter() {
+    filter(option: string) {
       this.loading = true
-      this.filterRequests(this.filters).then((response: any) => {
+      let reqFilter = JSON.parse(JSON.stringify(this.filters))
+      if(reqFilter.ministry) {
+        let ministry = JSON.parse(reqFilter.ministry)
+        reqFilter.ministry = ministry.value
+      }
+      this.filterRequests(option, reqFilter).then((response: any) => {
         if(this.viewModel) {
           this.viewModel.events = response.data.events
-          this.viewModel?.events.forEach((e: any) => {
-            e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
-          })
         }
       }).catch((err) => {
         console.log(err)
@@ -230,10 +232,31 @@ export default defineComponent({
         this.loading = false
       })
     },
+    filterTables(option: string, filters: any) {
+      let reqFilter = JSON.parse(JSON.stringify(filters))
+      if(reqFilter.ministry) {
+        let ministry = JSON.parse(reqFilter.ministry)
+        reqFilter.ministry = ministry.value
+      }
+      this.filterRequests(option, reqFilter).then((response: any) => {
+        console.log(response)
+        if(this.viewModel) {
+          if(option == 'Submitted') {
+            this.viewModel.submittedEvents = response.data.submittedEvents
+          } else if (option == 'PendingChanges') {
+            this.viewModel.changedEvents = response.data.changedEvents
+          } else if (option == 'InProgress') {
+            this.viewModel.inprogressEvents = response.data.inprogressEvents
+          } else {
+            this.viewModel.events = response.data.events
+          }
+        }
+      })
+    },
     resetFilters() {
       this.filters = {
         title: "",
-        statuses: ["Submitted", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User"],
+        statuses: this.viewModel?.defaultStatuses.map((s: string) => { return s.trim() }),
         resources: [] as string[],
         ministry: "",
         submitter: { value: "", text: ""},
@@ -241,8 +264,7 @@ export default defineComponent({
         eventModified: { lowerValue: "", upperValue: "" }
       }
       this.filters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
-      let twoWeeks = Duration.fromObject({weeks: 2})
-      this.filters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
+      this.filters.eventModified.lowerValue = DateTime.now().minus({weeks: 2}).toFormat("yyyy-MM-dd")
     },
     clearFilters() {
       this.filters = {
@@ -327,168 +349,177 @@ export default defineComponent({
     
   },
   mounted() {
-
+    this.filters = this.defaultFilters
   },
   template: `
+<div class="card mb-2">
+  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+</div>
+<div class="card mb-2">
+  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+</div>
+<div class="card mb-2">
+  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+</div>
 <div class="card">
-  <h4 class="hover" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-    <i class="fa fa-filter mr-2"></i>
-    Filters
-  </h4>
-  <div class="collapse" id="filterCollapse">
-    <div class="row">
-      <div class="col col-xs-12 col-md-4">
-        <rck-text
-          label="Request Name"
-          v-model="filters.title"
-        ></rck-text>
-      </div>
-      <div class="col col-xs-12 col-md-4">
-        <rck-person
-          label="Submitter/Modifier"
-          v-model="filters.submitter"
-        ></rck-person>
-      </div>
-      <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
-        <rck-field
-          v-model="filters.ministry"
-          :attribute="ministryAttr"
-          :is-edit-mode="true"
-        ></rck-field>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-xs-12 col-md-4">
-        <tcc-ddl
-          label="Request Status"
-          :items="requestStatuses"
-          v-model="filters.statuses"
-        ></tcc-ddl>
-      </div>
-      <div class="col col-xs-12 col-md-4">
-        <tcc-ddl
-          label="Requested Resources"
-          :items="resources"
-          v-model="filters.resources"
-        ></tcc-ddl>
-      </div>
-      <div class="col col-xs-12 col-md-4">
-        <rck-date-range
-          label="Has Event Date in Range"
-          v-model="filters.eventDates"
-        ></rck-date-range>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-xs-12 font-weight-light hr">
-        OR
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-xs-12 col-md-4">
-        <rck-date-range
-          label="Modified in Range"
-          v-model="filters.eventModified"
-        ></rck-date-range>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-xs-12">
-        <!--
-        <a-btn class="mr-1" type="accent" @click="resetFilters">Reset Defaults</a-btn>
-        <a-btn type="grey" @click="clearFilters">Clear Filters</a-btn>
-        -->
-        <a-btn class="pull-right" type="primary" @click="filter" :loading="loading">Filter</a-btn>
-      </div>
-    </div>
+  <div style="display: flex; align-items: center;">
+    <i class="fa fa-filter mr-2 mb-2 hover fa-lg" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse"></i>
+    <h2 style="width: 90%;" class="text-primary hover" data-toggle="collapse" data-target="#allCollapse" aria-expanded="false" aria-controls="allCollapse">Everything Else</h2>
   </div>
-  <a-table :columns="columns" :data-source="viewModel.events" :pagination="{ pageSize: 30 }">
-    <template #title="{ text: title, record: r }">
-      <div class="hover" @click="selectItem(r)">{{ title }}</div>
-    </template>
-    <template #start="{ text: start }">
-      {{ formatDateTime(start) }}
-    </template>
-    <template #dates="{ text: dates }">
-      {{ formatDates(dates) }}
-    </template>
-    <template #action="{ record: r }">
-      <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
-    </template>
-  </a-table>
-  <a-modal v-model:visible="modal" width="80%" :closable="false">
-    <tcc-details :request="selected" :rooms="viewModel.locations" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
-    <template v-if="selected.comments && selected.comments.length > 0">
-      <h3 class="text-accent">Comments</h3>
-      <div>
-        <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.id"></tcc-comment>
+  <div class="collapse" id="allCollapse">
+    <div class="collapse" id="filterCollapse">
+      <div class="row">
+        <div class="col col-xs-12 col-md-4">
+          <rck-text
+            label="Request Name"
+            v-model="filters.title"
+          ></rck-text>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <rck-person
+            label="Submitter/Modifier"
+            v-model="filters.submitter"
+          ></rck-person>
+        </div>
+        <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
+          <rck-field
+            v-model="filters.ministry"
+            :attribute="ministryAttr"
+            :is-edit-mode="true"
+          ></rck-field>
+        </div>
       </div>
-    </template>
-    <template #footer>
-      <div class="text-left">
-        <a-btn type="primary" @click="editItem(selected.id)">
-          <i class="mr-1 fa fa-pencil-alt"></i>
-          Edit
-        </a-btn>
-        <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="updateStatus('Approved')">
-          <i class="mr-1 fa fa-check"></i>
-          Approve
-        </a-btn>
-        <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')">
-          <i class="mr-1 fas fa-tasks"></i>
-          In Progress
-        </a-btn>
-        <a-pop v-model:visible="visible" trigger="click" placement="top" v-if="selectedStatus != 'Denied'">
-          <template #content>
-            <div style="display: flex; flex-direction: column;">
-              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="requestAction('Proposed Changes Denied')">
-                <i class="mr-1 fa fa-times"></i>
-                Changes w/ Comment
-              </a-btn>
-              <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied')">
-                <i class="mr-1 fa fa-times"></i>
-                Changes w/o Comment
-              </a-btn>
-              <a-btn type="red" @click="requestAction('Denied')">
-                <i class="mr-1 fa fa-times"></i>
-                Request
-              </a-btn>
-            </div>
-          </template>
-          <a-btn type="red">
-            <i class="mr-1 fa fa-times"></i>
-            Deny
-          </a-btn>
-        </a-pop>
-        <a-btn type="grey" v-if="selectedStatus != 'Cancelled' && selectedStatus != 'Cancelled by User'" @click="updateStatus('Cancelled')">
-          <i class="mr-1 fa fa-ban"></i>
-          Cancel
-        </a-btn>
-        <a-btn type="accent" @click="newComment">
-          <i class="mr-1 fa fa-comment-alt"></i>
-          Add Comment
-        </a-btn>
+      <div class="row">
+        <div class="col col-xs-12 col-md-4">
+          <tcc-ddl
+            label="Request Status"
+            :items="requestStatuses"
+            v-model="filters.statuses"
+          ></tcc-ddl>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <tcc-ddl
+            label="Requested Resources"
+            :items="resources"
+            v-model="filters.resources"
+          ></tcc-ddl>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <rck-date-range
+            label="Has Event Date in Range"
+            v-model="filters.eventDates"
+          ></rck-date-range>
+        </div>
       </div>
-    </template>
-  </a-modal>
-  <a-modal v-model:visible="commentModal" width="80%" :closable="false" style="z-index: 2000 !important;">
-    <rck-lbl>New Comment</rck-lbl>
-    <rck-text
-      v-model="comment"
-      textMode="multiline"
-    ></rck-text>
-    <template #footer>
-      <a-btn type="accent" @click="createComment">
-        <i class="mr-1 fa fa-comment-alt"></i>
-        Add Comment
+      <div class="row">
+        <div class="col col-xs-12 font-weight-light hr">
+          OR
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-xs-12 col-md-4">
+          <rck-date-range
+            label="Modified in Range"
+            v-model="filters.eventModified"
+          ></rck-date-range>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-xs-12">
+          <a-btn class="mr-1" type="accent" @click="resetFilters">Reset Defaults</a-btn>
+          <a-btn type="grey" @click="clearFilters">Clear Filters</a-btn>
+          <a-btn class="pull-right" type="primary" @click="filter('All')" :loading="loading">Filter</a-btn>
+        </div>
+      </div>
+    </div>
+    <a-table :columns="columns" :data-source="viewModel.events" :pagination="{ pageSize: 30 }">
+      <template #title="{ text: title, record: r }">
+        <div class="hover" @click="selectItem(r)">{{ title }}</div>
+      </template>
+      <template #start="{ text: start }">
+        {{ formatDateTime(start) }}
+      </template>
+      <template #dates="{ text: dates }">
+        {{ formatDates(dates) }}
+      </template>
+      <template #action="{ record: r }">
+        <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+      </template>
+    </a-table>
+  </div>
+</div>
+<a-modal v-model:visible="modal" width="80%" :closable="false">
+  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
+  <template v-if="selected.comments && selected.comments.length > 0">
+    <h3 class="text-accent">Comments</h3>
+    <div>
+      <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.id"></tcc-comment>
+    </div>
+  </template>
+  <template #footer>
+    <div class="text-left">
+      <a-btn type="primary" @click="editItem(selected.id)">
+        <i class="mr-1 fa fa-pencil-alt"></i>
+        Edit
       </a-btn>
-      <a-btn type="grey" @click="commentModal = false;">
+      <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="updateStatus('Approved')">
+        <i class="mr-1 fa fa-check"></i>
+        Approve
+      </a-btn>
+      <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')">
+        <i class="mr-1 fas fa-tasks"></i>
+        In Progress
+      </a-btn>
+      <a-pop v-model:visible="visible" trigger="click" placement="top" v-if="selectedStatus != 'Denied'">
+        <template #content>
+          <div style="display: flex; flex-direction: column;">
+            <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="requestAction('Proposed Changes Denied')">
+              <i class="mr-1 fa fa-times"></i>
+              Changes w/ Comment
+            </a-btn>
+            <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied')">
+              <i class="mr-1 fa fa-times"></i>
+              Changes w/o Comment
+            </a-btn>
+            <a-btn type="red" @click="requestAction('Denied')">
+              <i class="mr-1 fa fa-times"></i>
+              Request
+            </a-btn>
+          </div>
+        </template>
+        <a-btn type="red">
+          <i class="mr-1 fa fa-times"></i>
+          Deny
+        </a-btn>
+      </a-pop>
+      <a-btn type="grey" v-if="selectedStatus != 'Cancelled' && selectedStatus != 'Cancelled by User'" @click="updateStatus('Cancelled')">
         <i class="mr-1 fa fa-ban"></i>
         Cancel
       </a-btn>
-    </template>
-  </a-modal>
-</div>
+      <a-btn type="accent" @click="newComment">
+        <i class="mr-1 fa fa-comment-alt"></i>
+        Add Comment
+      </a-btn>
+    </div>
+  </template>
+</a-modal>
+<a-modal v-model:visible="commentModal" width="80%" :closable="false" style="z-index: 2000 !important;">
+  <rck-lbl>New Comment</rck-lbl>
+  <rck-text
+    v-model="comment"
+    textMode="multiline"
+  ></rck-text>
+  <template #footer>
+    <a-btn type="accent" @click="createComment">
+      <i class="mr-1 fa fa-comment-alt"></i>
+      Add Comment
+    </a-btn>
+    <a-btn type="grey" @click="commentModal = false;">
+      <i class="mr-1 fa fa-ban"></i>
+      Cancel
+    </a-btn>
+  </template>
+</a-modal>
 <div id="toast" role="alert">
   <div class="toast-header text-red">
     <i class="fas fa-exclamation-triangle mr-1"></i>
@@ -534,7 +565,7 @@ label, .control-label {
 }
 .card {
   box-shadow: 0 0 1px 0 rgb(0 0 0 / 8%), 0 1px 3px 0 rgb(0 0 0 / 15%);
-  padding: 32px;
+  padding: 16px;
   border-radius: 4px;
 }
 .ant-switch-checked, .ant-btn-primary, .ant-btn-submitted {

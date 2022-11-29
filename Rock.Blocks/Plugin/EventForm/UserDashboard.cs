@@ -334,59 +334,247 @@ namespace Rock.Blocks.Plugin.EventDashboard
         }
 
         [BlockAction]
-        public BlockActionResult DuplicateEvent( DuplicateRequestViewModel viewModel )
+        public BlockActionResult DuplicateEvent( int? id, string eventDates, List<string> removedResources, List<DuplicateDates> copyDates )
         {
             try
             {
                 RockContext context = new RockContext();
                 SetProperties();
-                ContentChannelItem item = FromViewModel( viewModel.request );
                 var cciSvc = new ContentChannelItemService( context );
-                var p = GetCurrentPerson();
-                item.ModifiedByPersonAliasId = p.PrimaryAliasId;
-                item.ModifiedDateTime = RockDateTime.Now;
-                item.CreatedByPersonAliasId = p.PrimaryAliasId;
-                item.CreatedDateTime = item.ModifiedDateTime;
-                cciSvc.Add( item );
-                context.SaveChanges();
-
-                for ( int i = 0; i < viewModel.events.Count(); i++ )
+                if ( id.HasValue )
                 {
-                    var detail = FromViewModel( viewModel.events[i] );
-                    var needsAssociation = false;
-                    if ( detail.Id == 0 )
+                    var p = GetCurrentPerson();
+                    ContentChannelItem original = cciSvc.Get( id.Value );
+                    original.LoadAttributes();
+                    ContentChannelItem item = new ContentChannelItem()
                     {
-                        if ( !String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ) )
-                        {
-                            detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
-                        }
-                        else
-                        {
-                            detail.Title = item.Title;
-                        }
-                        cciSvc.Add( detail );
-                        needsAssociation = true;
-                    }
+                        Title = original.Title,
+                        ContentChannelId = original.ContentChannelId,
+                        ContentChannelTypeId = original.ContentChannelTypeId,
+                        ModifiedByPersonAliasId = p.PrimaryAliasId,
+                        ModifiedDateTime = RockDateTime.Now,
+                        CreatedByPersonAliasId = p.PrimaryAliasId,
+                        CreatedDateTime = RockDateTime.Now
+                    };
+                    cciSvc.Add( item );
                     context.SaveChanges();
-                    if ( needsAssociation )
+
+                    item.LoadAttributes();
+                    item.SetAttributeValue( "IsSame", original.GetAttributeValue( "IsSame" ) );
+                    item.SetAttributeValue( "Ministry", original.GetAttributeValue( "Ministry" ) );
+                    item.SetAttributeValue( "Contact", original.GetAttributeValue( "Contact" ) );
+                    item.SetAttributeValue( "RequestStatus", "Draft" );
+                    List<ContentChannelItem> children = new List<ContentChannelItem>();
+                    var originalChildren = original.ChildItems.Where( cci => cci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( cci => cci.ChildContentChannelItem ).ToList();
+                    originalChildren.LoadAttributes();
+                    for ( var i = 0; i < originalChildren.Count(); i++ )
                     {
-                        var assocSvc = new ContentChannelItemAssociationService( context );
-                        var order = assocSvc.Queryable().AsNoTracking()
-                            .Where( a => a.ContentChannelItemId == item.Id )
-                            .Select( a => ( int? ) a.Order )
-                            .DefaultIfEmpty()
-                            .Max();
-                        var assoc = new ContentChannelItemAssociation();
-                        assoc.ContentChannelItemId = item.Id;
-                        assoc.ChildContentChannelItemId = detail.Id;
-                        assoc.Order = order.HasValue ? order.Value + 1 : 0;
-                        assocSvc.Add( assoc );
-                        context.SaveChanges();
+                        ContentChannelItem c = new ContentChannelItem()
+                        {
+                            ContentChannelId = originalChildren[0].ContentChannelId,
+                            ContentChannelTypeId = originalChildren[0].ContentChannelTypeId,
+                            ModifiedByPersonAliasId = p.PrimaryAliasId,
+                            ModifiedDateTime = RockDateTime.Now,
+                            CreatedByPersonAliasId = p.PrimaryAliasId,
+                            CreatedDateTime = RockDateTime.Now
+                        };
+                        c.LoadAttributes();
+                        c.SetAttributeValue( "EventDate", originalChildren[i].GetAttributeValue( "EventDate" ) );
+                        children.Add( c );
                     }
-                    detail.SaveAttributeValues( context );
+
+                    List<string> requestType = new List<string>();
+
+                    item.SetAttributeValue( "NeedsSpace", removedResources.Contains( "NeedsSpace" ) ? "False" : original.GetAttributeValue( "NeedsSpace" ) );
+                    if ( item.GetAttributeValue( "NeedsSpace" ) == "True" )
+                    {
+                        requestType.Add( "Room" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Space" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsOnline", removedResources.Contains( "NeedsOnline" ) ? "False" : original.GetAttributeValue( "NeedsOnline" ) );
+                    if ( item.GetAttributeValue( "NeedsOnline" ) == "True" )
+                    {
+                        requestType.Add( "Online Event" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Online" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsRegistration", removedResources.Contains( "NeedsRegistration" ) ? "False" : original.GetAttributeValue( "NeedsRegistration" ) );
+                    if ( item.GetAttributeValue( "NeedsRegistration" ) == "True" )
+                    {
+                        requestType.Add( "Registration" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Registration" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsChildCare", removedResources.Contains( "NeedsChildCare" ) ? "False" : original.GetAttributeValue( "NeedsChildCare" ) );
+                    if ( item.GetAttributeValue( "NeedsChildCare" ) == "True" )
+                    {
+                        requestType.Add( "Childcare" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Childcare" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsCatering", removedResources.Contains( "NeedsCatering" ) ? "False" : original.GetAttributeValue( "NeedsCatering" ) );
+                    if ( item.GetAttributeValue( "NeedsCatering" ) == "True" )
+                    {
+                        requestType.Add( "Catering" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Catering" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsChildCareCatering", removedResources.Contains( "NeedsChildCareCatering" ) ? "False" : original.GetAttributeValue( "NeedsChildCareCatering" ) );
+                    if ( item.GetAttributeValue( "NeedsChildCareCatering" ) == "True" )
+                    {
+                        requestType.Add( "Childcare Catering" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Childcare Catering" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsOpsAccommodations", removedResources.Contains( "NeedsOpsAccommodations" ) ? "False" : original.GetAttributeValue( "NeedsOpsAccommodations" ) );
+                    if ( item.GetAttributeValue( "NeedsOpsAccommodations" ) == "True" )
+                    {
+                        requestType.Add( "Extra Resources" );
+                        var attrs = originalChildren[0].Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Ops Requests" ) );
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            foreach ( var attr in attrs )
+                            {
+                                children[i].SetAttributeValue( attr.Key, originalChildren[i].GetAttributeValue( attr.Key ) );
+                            }
+                        }
+                    }
+
+                    item.SetAttributeValue( "NeedsPublicity", removedResources.Contains( "NeedsPublicity" ) ? "False" : original.GetAttributeValue( "NeedsPublicity" ) );
+                    if ( item.GetAttributeValue( "NeedsPublicity" ) == "True" )
+                    {
+                        requestType.Add( "Publicity" );
+                        var attrs = item.Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Publicity" ) );
+                        foreach ( var attr in attrs )
+                        {
+                            item.SetAttributeValue( attr.Key, original.GetAttributeValue( attr.Key ) );
+                        }
+                    }
+                    item.SetAttributeValue( "NeedsWebCalendar", removedResources.Contains( "NeedsWebCalendar" ) ? "False" : original.GetAttributeValue( "NeedsWebCalendar" ) );
+                    if ( item.GetAttributeValue( "NeedsWebCalendar" ) == "True" )
+                    {
+                        requestType.Add( "Web Calendar" );
+                        item.SetAttributeValue( "WebCalendarDescription", original.GetAttributeValue( "WebCalendarDescription" ) );
+                    }
+                    item.SetAttributeValue( "NeedsProductionAccommodations", removedResources.Contains( "NeedsProductionAccommodations" ) ? "False" : original.GetAttributeValue( "NeedsProductionAccommodations" ) );
+                    if ( item.GetAttributeValue( "NeedsProductionAccommodations" ) == "True" )
+                    {
+                        requestType.Add( "Production" );
+                        var attrs = item.Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Production" ) );
+                        foreach ( var attr in attrs )
+                        {
+                            item.SetAttributeValue( attr.Key, original.GetAttributeValue( attr.Key ) );
+                        }
+                    }
+                    if ( String.IsNullOrEmpty( eventDates ) )
+                    {
+                        eventDates = String.Join( ",", copyDates.Select( cd => DateTime.Parse( cd.newDate ) ).OrderBy( cd => cd ).Select( cd => cd.ToString( "yyyy-MM-dd" ) ) );
+                    }
+                    item.SetAttributeValue( "EventDates", eventDates );
+                    item.SetAttributeValue( "RequestType", String.Join( ",", requestType ) );
+                    List<ContentChannelItem> updated = new List<ContentChannelItem>();
+                    if ( item.GetAttributeValue( "IsSame" ) == "False" )
+                    {
+                        for ( var i = 0; i < children.Count(); i++ )
+                        {
+                            var date = children[i].GetAttributeValue( "EventDate" );
+                            var idx = copyDates.Select( cd => cd.originalDate ).ToList().IndexOf( date );
+                            if ( idx >= 0 )
+                            {
+                                children[i].SetAttributeValue( "EventDate", copyDates[idx].newDate );
+                                children[i].SetAttributeValue( "StartTime", originalChildren[idx].GetAttributeValue( "StartTime" ) );
+                                children[i].SetAttributeValue( "EndTime", originalChildren[idx].GetAttributeValue( "EndTime" ) );
+                                updated.Add( children[i] );
+                            }
+                        }
+                        children = updated.OrderBy( cci => DateTime.Parse( cci.GetAttributeValue( "EventDate" ) ) ).ToList();
+                    }
+                    else
+                    {
+                        children[0].SetAttributeValue( "StartTime", originalChildren[0].GetAttributeValue( "StartTime" ) );
+                        children[0].SetAttributeValue( "EndTime", originalChildren[0].GetAttributeValue( "EndTime" ) );
+                    }
+
+                    for ( int i = 0; i < children.Count(); i++ )
+                    {
+                        var detail = children[i];
+                        var needsAssociation = false;
+                        if ( detail.Id == 0 )
+                        {
+                            if ( !String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ) )
+                            {
+                                detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
+                            }
+                            else
+                            {
+                                detail.Title = item.Title;
+                            }
+                            cciSvc.Add( detail );
+                            needsAssociation = true;
+                        }
+                        context.SaveChanges();
+                        if ( needsAssociation )
+                        {
+                            var assocSvc = new ContentChannelItemAssociationService( context );
+                            var order = assocSvc.Queryable().AsNoTracking()
+                                .Where( a => a.ContentChannelItemId == item.Id )
+                                .Select( a => ( int? ) a.Order )
+                                .DefaultIfEmpty()
+                                .Max();
+                            var assoc = new ContentChannelItemAssociation();
+                            assoc.ContentChannelItemId = item.Id;
+                            assoc.ChildContentChannelItemId = detail.Id;
+                            assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                            assocSvc.Add( assoc );
+                            context.SaveChanges();
+                        }
+                        detail.SaveAttributeValues( context );
+                    }
+                    item.SaveAttributeValues( context );
+                    return ActionOk( new { id = item.Id } );
                 }
-                item.SaveAttributeValues( context );
-                return ActionOk( new { id = item.Id } );
+                else
+                {
+                    throw new Exception( "Id is required" );
+                }
+
             }
             catch ( Exception e )
             {
@@ -758,12 +946,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public List<string> defaultStatuses { get; set; }
         }
 
-        public class DuplicateRequestViewModel
-        {
-            public ContentChannelItemViewModel request { get; set; }
-            public List<ContentChannelItemViewModel> events { get; set; }
-        }
-
         public class GetRequestResponse
         {
             public ContentChannelItemViewModel request { get; set; }
@@ -805,6 +987,11 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             public string lowerValue { get; set; }
             public string upperValue { get; set; }
+        }
+        public class DuplicateDates
+        {
+            public string originalDate { get; set; }
+            public string newDate { get; set; }
         }
     }
 }

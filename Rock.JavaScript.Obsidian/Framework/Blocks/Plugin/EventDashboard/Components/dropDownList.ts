@@ -84,6 +84,9 @@ export default defineComponent({
         }
       },
       deep: true
+    },
+    modelValue(val) {
+      this.selectedValue = val
     }
   },
   mounted() {

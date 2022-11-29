@@ -2,7 +2,9 @@ import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, Attrib
 
 export type AdminDashboardBlockViewModel = {
     events: ContentChannelItem[];
-    eventDetails: ContentChannelItemAssociation[];
+    submittedEvents: ContentChannelItem[];
+    changedEvents: ContentChannelItem[];
+    inprogressEvents: ContentChannelItem[];
     comments: ContentChannelItem[];
     isEventAdmin: boolean;
     isRoomAdmin: boolean;

@@ -46,6 +46,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
     [TextField( "Requested Resources Attribute Key", key: AttributeKey.RequestedResourcesAttrKey, category: "Filters", defaultValue: "RequestType", required: true, order: 2 )]
     [TextField( "Event Dates Attribute Key", key: AttributeKey.EventDatesAttrKey, category: "Filters", defaultValue: "EventDates", required: true, order: 3 )]
+    [TextField( "Ministry Attribute Key", key: AttributeKey.MinistryAttrKey, category: "Filters", defaultValue: "Ministry", required: true, order: 4 )]
     [WorkflowTypeField( "Request Action Worfklow", "Workflow to update request status", true, key: AttributeKey.RequestActionWorkflow, category: "Workflow" )]
     #endregion Block Attributes
 
@@ -78,6 +79,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
             public const string EventDatesAttrKey = "EventDatesAttrKey";
+            public const string MinistryAttrKey = "MinistryAttrKey";
             public const string RequestActionWorkflow = "RequestActionWorkflow";
         }
 
@@ -112,6 +114,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 && EventChangesContentChannelId > 0 && EventDetailsChangesContentChannelId > 0 )
                 {
                     viewModel = LoadRequests();
+                    viewModel.submittedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Submitted" } } );
+                    viewModel.changedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Pending Changes", "Changes Accepted By User" } } );
+                    viewModel.inprogressEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "In Progress" } } );
                     viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
                     viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
 
@@ -235,24 +240,29 @@ namespace Rock.Blocks.Plugin.EventDashboard
         }
 
         [BlockAction]
-        public BlockActionResult FilterRequests( Filters filters = null )
+        public BlockActionResult FilterRequests( string opt, Filters filters = null )
         {
-            RockContext rockContext = new RockContext();
-            Guid eventCCGuid = Guid.Empty;
-            Guid eventDetailsCCGuid = Guid.Empty;
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
+            SetProperties();
+            DashboardViewModel viewModel = new DashboardViewModel();
+            if ( opt == "Submitted" )
             {
-                ContentChannel cc = new ContentChannelService( rockContext ).Get( eventCCGuid );
-                EventContentChannelId = cc.Id;
-                EventContentChannelTypeId = cc.ContentChannelTypeId;
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
-                {
-                    ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsCCGuid );
-                    EventDetailsContentChannelId = dCC.Id;
-                    EventDetailsContentChannelTypeId = dCC.ContentChannelTypeId;
-                }
+                filters.statuses = new List<string>() { "Submitted" };
+                viewModel.submittedEvents = LoadByStatus( filters );
             }
-            DashboardViewModel viewModel = LoadRequests( filters );
+            else if ( opt == "Changed" )
+            {
+                filters.statuses = new List<string>() { "Pending Changes", "Changes Accepted By User" };
+                viewModel.changedEvents = LoadByStatus( filters );
+            }
+            else if ( opt == "In Progress" )
+            {
+                filters.statuses = new List<string>() { "In Progress" };
+                viewModel.inprogressEvents = LoadByStatus( filters );
+            }
+            else
+            {
+                viewModel = LoadRequests( filters );
+            }
             return ActionOk( viewModel );
         }
 
@@ -437,6 +447,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             var requestResourcesAttr = items.First().Attributes[resourcesAttrKey];
             string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
             var eventDatesAttr = items.First().Attributes[eventDatesAttrKey];
+            string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
+            var ministryAttr = items.First().Attributes[ministryAttrKey];
 
             //OR Filter
             if ( filters.eventModified != null )
@@ -456,6 +468,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
                     }
                 }
+                //Don't include drafts in the recently modified
+                var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && av.Value != "Draft" );
+                items_modified_match = items_modified_match.Join( requestStatuses,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
             }
             Person submitter = null;
             if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
@@ -566,7 +585,16 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         ( i, av ) => i
                     );
             }
-            filtered_items = filtered_items.OrderBy( i => i.Title );
+            if ( !String.IsNullOrEmpty( filters.ministry ) )
+            {
+                var ministries = av_svc.Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value.ToLower() == filters.ministry.ToLower() );
+                filtered_items = filtered_items.Join( ministries,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
+            }
+
             if ( items_modified_match != null && filtered_items != null )
             {
                 itemList = filtered_items.Union( items_modified_match ).Distinct().ToList();
@@ -592,8 +620,151 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 }
             }
             viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
-            viewModel.eventDetails = itemList.SelectMany( i => i.ChildItems ).ToList();
             return viewModel;
+        }
+
+        private List<ContentChannelItemViewModel> LoadByStatus( Filters filters )
+        {
+            int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
+            ContentChannelItem item = new ContentChannelItem();
+            List<ContentChannelItem> itemList = new List<ContentChannelItem>();
+            IEnumerable<ContentChannelItem> items = null;
+            RockContext context = new RockContext();
+            AttributeValueService av_svc = new AttributeValueService( context );
+            var p = GetCurrentPerson();
+
+            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );//.ToList();
+            items.First().LoadAttributes();
+
+            IEnumerable<ContentChannelItem> filtered_items = null;
+            string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+            var requestStatusAttr = items.First().Attributes[requestStatusAttrKey];
+            string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
+            var requestResourcesAttr = items.First().Attributes[resourcesAttrKey];
+            string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
+            var eventDatesAttr = items.First().Attributes[eventDatesAttrKey];
+            string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
+            var ministryAttr = items.First().Attributes[ministryAttrKey];
+
+            var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && filters.statuses.Contains( av.Value ) );
+            filtered_items = items.Join( requestStatuses,
+                    i => i.Id,
+                    av => av.EntityId,
+                    ( i, av ) => i
+                );
+
+            Person submitter = null;
+            if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
+            {
+                submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter.value ) );
+            }
+            filtered_items = filtered_items.Where( i =>
+            {
+                bool meetsCriteria = true;
+                if ( submitter != null )
+                {
+                    if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
+                    {
+                        meetsCriteria = false;
+                    }
+                }
+                if ( !String.IsNullOrEmpty( filters.title ) )
+                {
+                    if ( !i.Title.ToLower().Contains( filters.title.ToLower() ) )
+                    {
+                        meetsCriteria = false;
+                    }
+                }
+
+                return meetsCriteria;
+            } );
+            if ( filters.eventDates != null && !String.IsNullOrEmpty( filters.eventDates.lowerValue ) && !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
+            {
+                DateTime? lowerValue = null;
+                DateTime? upperValue = null;
+                if ( !String.IsNullOrEmpty( filters.eventDates.lowerValue ) )
+                {
+                    lowerValue = DateTime.Parse( filters.eventDates.lowerValue );
+                }
+                if ( !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
+                {
+                    upperValue = DateTime.Parse( filters.eventDates.upperValue );
+                }
+                if ( lowerValue.HasValue || upperValue.HasValue )
+                {
+                    var eventDates = av_svc.Queryable().Where( av => av.AttributeId == eventDatesAttr.Id ).ToList().Where( av =>
+                    {
+                        bool dateInRange = false;
+
+                        List<DateTime> dates = av.Value != "" ? av.Value.Split( ',' ).Select( d => DateTime.Parse( d.Trim() ) ).ToList() : new List<DateTime>();
+                        for ( int i = 0; i < dates.Count(); i++ )
+                        {
+                            if ( lowerValue.HasValue && upperValue.HasValue )
+                            {
+                                if ( dates[i] >= lowerValue.Value && dates[i] <= upperValue.Value )
+                                {
+                                    dateInRange = true;
+                                }
+                            }
+                            else
+                            {
+                                if ( lowerValue.HasValue )
+                                {
+                                    if ( dates[i] >= lowerValue.Value )
+                                    {
+                                        dateInRange = true;
+                                    }
+                                }
+                                if ( upperValue.HasValue )
+                                {
+                                    if ( dates[i] <= upperValue.Value )
+                                    {
+                                        dateInRange = true;
+                                    }
+                                }
+                            }
+
+                        }
+                        return dateInRange;
+                    } );
+                    filtered_items = filtered_items.Join( eventDates,
+                            i => i.Id,
+                            av => av.EntityId,
+                            ( i, av ) => i
+                        );
+                }
+            }
+
+            if ( !String.IsNullOrEmpty( filters.ministry ) )
+            {
+                var ministries = av_svc.Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value.ToLower() == filters.ministry.ToLower() );
+                filtered_items = filtered_items.Join( ministries,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
+            }
+
+            if ( filters.resources != null && filters.resources.Count() > 0 )
+            {
+                var requestedResources = av_svc.Queryable().Where( av => av.AttributeId == requestResourcesAttr.Id ).ToList().Where( av =>
+                {
+                    var resources = av.Value.Split( ',' ).Select( v => v.Trim() ).ToList();
+                    var intersect = filters.resources.Intersect( resources );
+                    if ( intersect.Count() > 0 )
+                    {
+                        return true;
+                    }
+                    return false;
+                } );
+                filtered_items = filtered_items.Join( requestedResources,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
+            }
+
+            return filtered_items.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
         }
 
         /// <summary>
@@ -702,7 +873,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
         public class DashboardViewModel
         {
             public List<ContentChannelItemViewModel> events { get; set; }
-            public List<ContentChannelItemAssociation> eventDetails { get; set; }
+            public List<ContentChannelItemViewModel> submittedEvents { get; set; }
+            public List<ContentChannelItemViewModel> changedEvents { get; set; }
+            public List<ContentChannelItemViewModel> inprogressEvents { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
             public List<DefinedValueViewModel> locations { get; set; }

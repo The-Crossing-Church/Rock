@@ -1,8 +1,8 @@
-import { defineComponent, provide } from "vue";
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block";
-import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels";
-import { UserDashboardBlockViewModel } from "./userDashboardBlockViewModel";
-import { useStore } from "../../../Store/index";
+import { defineComponent, provide } from "vue"
+import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
+import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels"
+import { UserDashboardBlockViewModel, DuplicateRequestViewModel } from "./userDashboardBlockViewModel"
+import { useStore } from "../../../Store/index"
 import { DateTime, Duration } from "luxon"
 import { Table, Modal, Button } from "ant-design-vue"
 import DatePicker from "../EventForm/Components/datePicker"
@@ -48,7 +48,7 @@ export default defineComponent({
         e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
       })
 
-      let filters = {
+      let defaultFilters = {
         title: "",
         statuses: viewModel?.defaultStatuses,
         resources: [] as string[],
@@ -57,9 +57,9 @@ export default defineComponent({
         eventDates:  { lowerValue: "", upperValue: "" },
         eventModified: { lowerValue: "", upperValue: "" }
       }
-      filters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
+      defaultFilters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
       let twoWeeks = Duration.fromObject({weeks: 2})
-      filters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
+      defaultFilters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
 
       /** A method to load a specific request's details */
       const loadDetails: (id: number) => Promise<any> = async (id) => {
@@ -95,9 +95,9 @@ export default defineComponent({
       provide("addComment", addComment);
 
       /** Resubmit a Copy of an Event */
-      const resubmitEvent: (viewModel: ContentChannelItem, events: Array<ContentChannelItem>) => Promise<any> = async (viewModel, events) => {
+      const resubmitEvent: (id: number, eventDates: string, removedResources: string[], copyDates: any[]) => Promise<any> = async (id, eventDates, removedResources, copyDates) => {
           const response = await invokeBlockAction<{ expirationDateTime: string }>("DuplicateEvent", {
-              viewModel: viewModel, events: events
+            id: id, eventDates: eventDates, removedResources: removedResources, copyDates: copyDates
           });
           if (response.data) {
               return response
@@ -107,7 +107,7 @@ export default defineComponent({
 
       return {
           viewModel,
-          filters,
+          defaultFilters,
           loadDetails,
           filterRequests,
           changeStatus,
@@ -145,6 +145,7 @@ export default defineComponent({
         selected: {} as ContentChannelItem,
         copy: {} as ContentChannelItem,
         copyDates: [] as any[],
+        removedResources: [] as string[],
         createdBy: {},
         modifiedBy: {},
         modal: false,
@@ -180,7 +181,8 @@ export default defineComponent({
           inprogress: false,
           cancelled: false
         },
-        toastMessage: ""
+        toastMessage: "",
+        filters: {} as any
       };
   },
   computed: {
@@ -284,18 +286,7 @@ export default defineComponent({
       })
     },
     resetFilters() {
-      this.filters = {
-        title: "",
-        statuses: ["Submitted", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User"],
-        resources: [] as string[],
-        ministry: "",
-        submitter: { value: "", text: ""},
-        eventDates:  { lowerValue: "", upperValue: "" },
-        eventModified: { lowerValue: "", upperValue: "" }
-      }
-      this.filters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
-      let twoWeeks = Duration.fromObject({weeks: 2})
-      this.filters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
+      this.filters = this.defaultFilters
     },
     clearFilters() {
       this.filters = {
@@ -374,15 +365,14 @@ export default defineComponent({
     },
     copyRequest() {
       this.copy = JSON.parse(JSON.stringify(this.selected)) 
-      this.copy.id = 0
       let cp = this.copy as any
-      for(let i = 0; i < cp.childItems.length; i++) {
-        cp.childItems[i].id = 0
-      }
       if(cp && cp.childItems && cp.attributeValues.IsSame == 'False') {
         this.copyDates = cp.attributeValues.EventDates.split(",").map((d: string) => { 
-          return { original: d.trim(), new: ""}
+          return { originalDate: d.trim(), newDate: ""}
         })
+      }
+      if(this.copy?.attributeValues?.IsSame == 'True') {
+        this.copy.attributeValues.EventDates = ""
       }
       this.resubmissionModal = true
     },
@@ -390,7 +380,7 @@ export default defineComponent({
       let cp = this.copy as any
       let idx = -1
       for(let i=0; i<cp.childItems.length; i++) {
-        if(cp.childItems[i].attributeValues.EventDate == date) {
+        if(cp.childItems[i].originalDate == date) {
           idx = i
         }
       }
@@ -406,16 +396,42 @@ export default defineComponent({
       }
     },
     resubmit() {
-      console.log(this.copy)
-      console.log(this.copyDates)
-      //this.resubmitEvent()
+      if(this.copy.attributeValues) {
+        let eventDates = ""
+        if(this.copy.attributeValues.IsSame == 'True') {
+          eventDates = this.copy.attributeValues.EventDates
+        }
+        this.resubmitEvent(this.copy.id, eventDates, this.removedResources, this.copyDates).then((res: any) => {
+          if(res) {
+            if(res.isSuccess) {
+              this.resubmissionModal = false
+              this.copy = {} as ContentChannelItem
+              this.copyDates = []
+              this.removedResources = []
+              if(res.data.id) {
+                window.location.href = "/eventform?Id=" + res.data.id
+              }
+            } else if(res.isError) {
+              this.toastMessage = res.errorMessage
+              let el = document.getElementById('toast')
+              el?.classList.add("show")
+            }
+          } else {
+            this.toastMessage = "Unable to resubmit event"
+            let el = document.getElementById('toast')
+            el?.classList.add("show")
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      }
     }
   },
   watch: {
     
   },
   mounted() {
-
+    this.filters = this.defaultFilters
   },
   template: `
 <div class="card">
@@ -482,10 +498,8 @@ export default defineComponent({
     </div>
     <div class="row">
       <div class="col col-xs-12">
-        <!--
         <a-btn class="mr-1" type="accent" @click="resetFilters">Reset Defaults</a-btn>
         <a-btn type="grey" @click="clearFilters">Clear Filters</a-btn>
-        -->
         <a-btn class="pull-right" type="primary" @click="filter" :loading="loading">Filter</a-btn>
       </div>
     </div>
@@ -505,7 +519,7 @@ export default defineComponent({
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
-    <tcc-details :request="selected" :rooms="viewModel.locations" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
+    <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
     <template v-if="selected.comments && selected.comments.length > 0">
       <h3 class="text-accent">Comments</h3>
       <div>
@@ -555,16 +569,16 @@ export default defineComponent({
     <div>To resubmit a request, please select the new date(s) for your event.</div>
     <rck-lbl style="text-transform: uppercase;">Resources Requested for {{copy.title}}</rck-lbl>
     <div style="display: flex; flex-wrap: wrap; align-content: flex-start;">
-      <tcc-chip v-if="copy.attributeValues.NeedsSpace == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsSpace = 'False'">Space</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsOnline == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOnline = 'False'">Zoom</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsCatering = 'False'">Catering</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsChildCare == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCare = 'False'">Childcare</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsChildCareCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCareCatering = 'False'">Childcare Catering</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsRegistration == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsRegistration = 'False'">Registration</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsOpsAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOpsAccommodations = 'False'">Ops Accommodations</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsProductionAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsProductionAccommodations = 'False'">Production Accommodations</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsWebCalendar == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsWebCalendar = 'False'">Web Calendar</tcc-chip>
-      <tcc-chip v-if="copy.attributeValues.NeedsPublicity == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsPublicity = 'False'">Publicity</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsSpace == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsSpace = 'False'; removedResources.push('NeedsSpace')">Space</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsOnline == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOnline = 'False'; removedResources.push('NeedsOnline')">Zoom</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsCatering = 'False'; removedResources.push('NeedsCatering')">Catering</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsChildCare == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCare = 'False'; removedResources.push('NeedsChildCare')">Childcare</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsChildCareCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCareCatering = 'False'; removedResources.push('NeedsChildCareCatering')">Childcare Catering</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsRegistration == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsRegistration = 'False'; removedResources.push('NeedsRegistration')">Registration</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsOpsAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOpsAccommodations = 'False'; removedResources.push('NeedsOpsAccommodations')">Ops Accommodations</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsProductionAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsProductionAccommodations = 'False'; removedResources.push('NeedsProductionAccommodations')">Production Accommodations</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsWebCalendar == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsWebCalendar = 'False'; removedResources.push('NeedsWebCalendar')">Web Calendar</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsPublicity == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsPublicity = 'False'; removedResources.push('NeedsPublicity')">Publicity</tcc-chip>
     </div>
     <div class="pb-2">Remove any you won't need for your re-submission of this event</div>
     <template v-if="copy?.attributeValues && copy.attributeValues.IsSame == 'True'">
@@ -599,16 +613,16 @@ export default defineComponent({
       </div>
       <div class="row text-center" v-for="(cd, idx) in copyDates" :key="idx" style="display: flex; align-items: end;">
         <div class="col col-xs-4">
-          {{formatDate(cd.original)}}
+          {{formatDate(cd.originalDate)}}
         </div>
         <div class="col col-xs-4">
           <tcc-date-picker
-            v-model="cd.new"
+            v-model="cd.newDate"
             :min="minResubmissionDate"
           ></tcc-date-picker>
         </div>
         <div class="col col-xs-4">
-          <a-btn shape="circle" type="red" @click="removeCopyDate(cd.original)">
+          <a-btn shape="circle" type="red" @click="removeCopyDate(cd.originalDate)">
             <i class="fas fa-trash"></i>
           </a-btn>
         </div>

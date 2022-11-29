@@ -44,26 +44,30 @@ export default defineComponent({
             return 'is'
         },
         findDate(numDays: any): String {
-            if (this.viewModel?.request.attributeValues) {
-                let av = this.viewModel?.request?.attributeValues.EventDates
-                let dates = av?.split(",").map(d => d.trim())
-                if (dates && dates.length > 0) {
-                    let span = Duration.fromObject({ days: numDays })
-                    let first = dates.map((i) => {
-                        return DateTime.fromFormat(i, 'yyyy-MM-dd')
-                    })?.sort().shift()
-                    return first != null ? first.minus(span).toFormat("EEEE, MMMM d") : ''
-                }
+          if (this.viewModel?.request.attributeValues) {
+            let av = this.viewModel?.request?.attributeValues.EventDates
+            let dates = av?.split(",").map(d => d.trim())
+            if (dates && dates.length > 0) {
+              let span = Duration.fromObject({ days: numDays })
+              let first = dates.map((i) => {
+                return DateTime.fromFormat(i, 'yyyy-MM-dd')
+              })?.sort().shift()
+              return first != null ? first.minus(span).toFormat("EEEE, MMMM d") : ''
             }
-            return ''
+          }
+          return ''
         },
         switchIsDisabled(tense: string, key: string) {
-          if(this.viewModel?.originalRequest?.attributeValues) {
-            let val = this.viewModel.originalRequest.attributeValues[key]
-            return val == 'False'
-          } else {
-            return tense == 'was'
+          if(tense == 'was') {
+            //We are past the date you can request new resources
+            //Allow toggle if the original request has the resource
+            if(this.viewModel?.originalRequest?.attributeValues) {
+              let val = this.viewModel.originalRequest.attributeValues[key]
+              return val == 'False'
+            } 
+            return true
           }
+          return false
         }
     },
     computed: {

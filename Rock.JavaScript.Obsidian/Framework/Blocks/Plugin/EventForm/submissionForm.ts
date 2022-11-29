@@ -643,7 +643,7 @@ export default defineComponent({
                 return dv.guid == min.value
               })[0]
             }
-            if(ministry.value?.toLowerCase().includes("funeral")) {
+            if(ministry?.value?.toLowerCase().includes("funeral")) {
               isFuneralRequest = true
             }
             if (isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
@@ -708,6 +708,10 @@ export default defineComponent({
           this.resources.splice(idx, 1)
         }
       } else {
+        //Auto-true for CC Catering
+        if(this.viewModel?.request.attributeValues?.NeedsChildCare == 'True') {
+          this.viewModel.request.attributeValues.NeedsChildCareCatering = 'True'
+        }
         //Add Catering to Requested Resources List
         if(idx < 0) {
           this.resources.push('Catering')
@@ -723,10 +727,34 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove CC Catering 
+        if(this.viewModel?.request.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsChildCareCatering = 'False'
+        }
       } else {
+        //Auto-true for CC Catering
+        if(this.viewModel?.request.attributeValues?.NeedsCatering == 'True') {
+          this.viewModel.request.attributeValues.NeedsChildCareCatering = 'True'
+        }
         //Add Childcare to Requested Resources List
         if(idx < 0) {
           this.resources.push('Childcare')
+        }
+      }
+    },
+    'viewModel.request.attributeValues.NeedsChildCareCatering'(val) {
+      let idx = this.resources.indexOf('Childcare Catering')
+      if(val == 'False') {
+        //Remove all Childcare Catering data
+        this.clearEventDetailsData("Event Childcare Catering")
+        //Remove Childcare from Requested Resources List
+        if(idx > -1) {
+          this.resources.splice(idx, 1)
+        }
+      } else {
+        //Add Childcare to Requested Resources List
+        if(idx < 0) {
+          this.resources.push('Childcare Catering')
         }
       }
     },
@@ -910,9 +938,9 @@ export default defineComponent({
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
           <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)"></tcc-childcare>
-          <br v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" />
-          <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">Childcare Catering Information</h4>
-          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
+          <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
+          <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
+          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
