@@ -161,11 +161,6 @@
         {% endfor %}
       {% endif %}
     </div>
-    {% if EventItemOccurrence.Location != '' %}
-        <br/>
-        <span class="floating-event-title">Location</span> <br />
-        {{ EventItemOccurrence.Location }} <br/><br/>
-    {% endif %}
     <br/>
     <div class="row">
       <div class="col col-xs-12">
@@ -198,7 +193,7 @@
       </div>
     </div>
   </div>
-  <div class="col col-xs-12 col-md-4">
+  <div class="col col-xs-4 d-none d-md-block">
     {% if Event.Photo.Guid %}
       <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
       {% capture metaimg %}https://thecrossingchurch.com/GetImage.ashx?Guid={{ Event.Photo.Guid }}{% endcapture %}
