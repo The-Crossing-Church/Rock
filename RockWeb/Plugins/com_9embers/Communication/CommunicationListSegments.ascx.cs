@@ -84,6 +84,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
+
+            gPreview.GridRebind += GPreview_GridRebind;
         }
 
         protected override void LoadViewState( object savedState )
@@ -136,11 +138,15 @@ namespace RockWeb.Plugins.com_9embers.Communication
             ShowPreview();
         }
 
-
-
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
         }
+
+        private void GPreview_GridRebind( object sender, GridRebindEventArgs e )
+        {
+            ShowPreview();
+        }
+
 
         #endregion
 
@@ -224,7 +230,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 string controlId = string.Format( "{0}_{1}", dcpContainer.ID, propertyField.EntityField.UniqueName );
 
-                var control = propertyField.EntityField.FieldType.Field.FilterControl( propertyField.EntityField.FieldConfig, controlId, true, FilterMode.AdvancedFilter );
+                var control = propertyField.EntityField.FieldType.Field.FilterControl( propertyField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
                 if ( control != null )
                 {
                     dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = propertyField.Property, CssClass = "control-label", AssociatedControlID = control.ID } );
@@ -238,7 +244,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 string controlId = string.Format( "{0}_{1}", dcpContainer.ID, attributeField.EntityField.UniqueName );
 
-                var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, true, FilterMode.AdvancedFilter );
+                var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
                 if ( control != null )
                 {
                     dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = attributeField.Attribute.Name, CssClass = "control-label cust-label", AssociatedControlID = control.ID } );
@@ -519,7 +525,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
                 //If you leave a filter blank it will still run
                 //So create a comparison control to see if the current values == default values
-                var compairsonControl = entityField.FieldType.Field.FilterControl( entityField.FieldConfig, "", true, FilterMode.AdvancedFilter );
+                var compairsonControl = entityField.FieldType.Field.FilterControl( entityField.FieldConfig, "", false, FilterMode.AdvancedFilter );
                 var comparisonValues = entityField.FieldType.Field.GetFilterValues( compairsonControl, entityField.FieldConfig, FilterMode.AdvancedFilter );
 
                 bool isSame = true;
