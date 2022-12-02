@@ -16,6 +16,7 @@ import DateRangePicker from "../../../Elements/dateRangePicker"
 import PersonPicker from "../../../Controls/personPicker"
 import Comment from "./Components/comment"
 import TCCTable from "./Components/requestTable"
+import PartialApproval from "./Components/partialApproval"
 
 const store = useStore()
 
@@ -33,6 +34,7 @@ export default defineComponent({
     "tcc-ddl": TCCDropDownList,
     "tcc-table": TCCTable,
     "tcc-comment": Comment,
+    "tcc-partial": PartialApproval,
     "rck-text": RockText,
     "rck-lbl": RockLabel,
     "rck-field": RockField,
@@ -88,6 +90,14 @@ export default defineComponent({
         return response
       }
       provide("addComment", addComment);
+      
+      const completePartialApproval: (id: number, approved: string[], denied: string[], events: any[]) => Promise<any> = async (id, approved, denied, events) => {
+        const response = await invokeBlockAction("PartialApproval", {
+          id: id, approved: approved, denied: denied, events: events
+        });
+        return response
+      }
+      provide("completePartialApproval", completePartialApproval);
 
       return {
           viewModel,
@@ -95,7 +105,8 @@ export default defineComponent({
           loadDetails,
           filterRequests,
           changeStatus,
-          addComment
+          addComment,
+          completePartialApproval
       }
   },
   data() {
@@ -130,8 +141,10 @@ export default defineComponent({
         modifiedBy: {},
         modal: false,
         commentModal: false,
+        partialApprovalModal: false,
         comment: "",
         visible: false,
+        approvePop: false,
         requestStatuses: [
           "Draft",
           "Submitted",
@@ -288,23 +301,29 @@ export default defineComponent({
         this.btnLoading.cancelled = true
       }
       this.changeStatus(this.selected.id, status).then((res) => {
-        if(res.data.url) {
-          window.location.href = res.data.url
-        }
-        if(res.data.status) {
-          if(this.selected.attributeValues) {
-            this.selected.attributeValues.RequestStatus = res.data.status
+        if(res.isSuccess) {
+          if(res.data.url) {
+            window.location.href = res.data.url
           }
-          this.viewModel?.events.forEach((event: any) => {
-            if(event.id == this.selected.id) {
-              event.attributeValues.RequestStatus = res.data.status
+          if(res.data.status) {
+            if(this.selected.attributeValues) {
+              this.selected.attributeValues.RequestStatus = res.data.status
             }
-          })
+            this.viewModel?.events.forEach((event: any) => {
+              if(event.id == this.selected.id) {
+                event.attributeValues.RequestStatus = res.data.status
+              }
+            })
+          }
+        } else if(res.isError) {
+          this.toastMessage = res.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
         }
       }).catch((err) => {
-        console.log('[Change Status Error]')
-        console.log(err)
-        //TODO: Alert User
+        this.toastMessage = err
+        let el = document.getElementById('toast')
+        el?.classList.add("show")
       }).finally(() => {
         this.btnLoading.inprogress = false
         this.btnLoading.cancelled = false
@@ -338,6 +357,27 @@ export default defineComponent({
         }
         this.commentModal = false
         this.comment = ""
+      })
+    },
+    partialApproval() {
+      let ref = this.$refs.partialApprovalInfo as any
+      let approved = ref.approvedAttributes as string[]
+      let denied = ref.deniedAttributes as string[]
+      let events = ref.eventChanges as any[]
+      
+      this.completePartialApproval(this.selected.id, approved, denied, events).then((res) => {
+        this.partialApprovalModal = false
+        if(res.isSuccess) {
+          if(res.data?.id) {
+            this.selectItem(res.data)
+            this.filterTables("Changed", null)
+            this.filter("All")
+          }
+        } else if (res.isError) {
+          this.toastMessage = res.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
       })
     },
     hideToast() {
@@ -412,11 +452,6 @@ export default defineComponent({
         </div>
       </div>
       <div class="row">
-        <div class="col col-xs-12 font-weight-light hr">
-          OR
-        </div>
-      </div>
-      <div class="row">
         <div class="col col-xs-12 col-md-4">
           <rck-date-range
             label="Modified in Range"
@@ -462,10 +497,28 @@ export default defineComponent({
         <i class="mr-1 fa fa-pencil-alt"></i>
         Edit
       </a-btn>
-      <a-btn type="accent" v-if="selectedStatus != 'Approved'" @click="updateStatus('Approved')">
+      <a-btn type="accent" v-if="selectedStatus != 'Approved' && selectedStatus != 'Pending Changes'" @click="updateStatus('Approved')">
         <i class="mr-1 fa fa-check"></i>
         Approve
       </a-btn>
+      <a-pop v-model:visible="approvePop" trigger="click" placement="top" v-if="selectedStatus == 'Pending Changes'">
+        <template #content>
+          <div style="display: flex; flex-direction: column;">
+            <a-btn class="mb-1" type="accent" @click="updateStatus('Approved')">
+              <i class="mr-1 fa fa-check"></i>
+              Request
+            </a-btn>
+            <a-btn type="accent" @click="approvePop = false; partialApprovalModal = true;">
+              <i class="mr-1 fas fa-tasks"></i>
+              Partial
+            </a-btn>
+          </div>
+        </template>
+        <a-btn type="accent">
+          <i class="mr-1 fa fa-check"></i>
+          Approve
+        </a-btn>
+      </a-pop>
       <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')">
         <i class="mr-1 fas fa-tasks"></i>
         In Progress
@@ -515,6 +568,19 @@ export default defineComponent({
       Add Comment
     </a-btn>
     <a-btn type="grey" @click="commentModal = false;">
+      <i class="mr-1 fa fa-ban"></i>
+      Cancel
+    </a-btn>
+  </template>
+</a-modal>
+<a-modal v-model:visible="partialApprovalModal" width="70%" :closable="false">
+  <tcc-partial :request="selected" ref="partialApprovalInfo"></tcc-partial>
+  <template #footer>
+    <a-btn type="accent" @click="partialApproval">
+      <i class="mr-1 fa fa-check"></i>
+      Complete
+    </a-btn>
+    <a-btn type="grey" @click="partialApprovalModal = false;">
       <i class="mr-1 fa fa-ban"></i>
       Cancel
     </a-btn>

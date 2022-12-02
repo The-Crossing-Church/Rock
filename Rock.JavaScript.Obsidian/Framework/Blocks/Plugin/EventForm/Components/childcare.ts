@@ -32,7 +32,8 @@ export default defineComponent({
     data() {
         return {
           rules: rules,
-          errors: [] as Record<string, string>[]
+          errors: [] as Record<string, string>[],
+          childcareOptsAttr: {} as any
         };
     },
     computed: {
@@ -57,6 +58,16 @@ export default defineComponent({
           this.$emit("validation-change", { ref: this.refName, errors: val})
         },
         deep: true
+      },
+      'e.attributeValues.ChildcareOptions': {
+        handler(val) {
+          if(val.includes("All") && this.e?.attributes?.ChildcareOptions && this.e?.attributeValues?.ChildcareOptions) {
+            let rawConfigValues = this.e?.attributes?.ChildcareOptions?.configurationValues?.values as string
+            let values = JSON.parse(rawConfigValues)
+            this.e.attributeValues.ChildcareOptions = values.map((v: any) => { return v.value }).join(",")
+          }
+        },
+        deep: true
       }
     },
     mounted() {
@@ -74,6 +85,12 @@ export default defineComponent({
         if(this.e.attributeValues.ChildcareEndTime == '') {
           this.e.attributeValues.ChildcareEndTime = this.e?.attributeValues?.EndTime
         }
+      }
+      if(this.e?.attributes?.ChildcareOptions) {
+        this.childcareOptsAttr = JSON.parse(JSON.stringify(this.e?.attributes?.ChildcareOptions))
+        let configValues = JSON.parse(this.childcareOptsAttr.configurationValues.values)
+        configValues.push({"value": "All", "text": "Select All"})
+        this.childcareOptsAttr.configurationValues.values = JSON.stringify(configValues)
       }
     },
     template: `
@@ -101,7 +118,7 @@ export default defineComponent({
       <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareOptions, e.attributes.ChildcareOptions.name)]" ref="validators_ops">
         <rck-field
           v-model="e.attributeValues.ChildcareOptions"
-          :attribute="e.attributes.ChildcareOptions"
+          :attribute="childcareOptsAttr"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>

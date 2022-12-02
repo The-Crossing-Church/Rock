@@ -50,8 +50,14 @@ export default defineComponent({
             {
               title: 'Title',
               dataIndex: 'title',
-              key: 'title',
-              slots: { customRender: 'title' },
+              key: 'reqtitle',
+              slots: { customRender: 'reqtitle' },
+            },
+            {
+              title: 'Submitted By',
+              dataIndex: 'createdByPersonAliasId',
+              key: 'submitter',
+              slots: { customRender: 'submitter' },
             },
             {
               title: 'Submitted On',
@@ -64,6 +70,12 @@ export default defineComponent({
               dataIndex: 'attributeValues.EventDates',
               key: 'dates',
               slots: { customRender: 'dates' }
+            },
+            {
+              title: 'Requested Resources',
+              dataIndex: 'attributeValues.RequestType',
+              key: 'resources',
+              slots: { customRender: 'resources' },
             },
             {
               title: 'Status',
@@ -139,6 +151,9 @@ export default defineComponent({
       filter() {
         this.loading = true
         this.$emit("filter", this.option?.replace(" ", ""), this.filters)
+      },
+      getIsValid(r: any) {
+        return r?.attributeValues?.RequestIsValid == 'True'
       }
     },
     watch: {
@@ -207,14 +222,24 @@ export default defineComponent({
     </div>
   </div>
   <a-table :columns="columns" :data-source="events" :pagination="{ pageSize: 30 }">
-    <template #title="{ text: title, record: r }">
-      <div class="hover" @click="selectItem(r)">{{ title }}</div>
+    <template #reqtitle="{ text: reqtitle, record: r }">
+      <div class="hover" @click="selectItem(r)">
+        <i v-if="getIsValid(r)" class="fa fa-check-circle text-accent mr-2"></i>
+        <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i>
+        {{ reqtitle }}
+      </div>
+    </template>
+    <template #submitter="{ text: submitter }">
+      {{ submitter }}
     </template>
     <template #start="{ text: start }">
       {{ formatDateTime(start) }}
     </template>
     <template #dates="{ text: dates }">
       {{ formatDates(dates) }}
+    </template>
+    <template #resources="{ text: resources }">
+      {{ resources }}
     </template>
     <template #action="{ record: r }">
       <tcc-grid :request="r" :url="workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>

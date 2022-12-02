@@ -22,7 +22,7 @@ export default defineComponent({
       "tcc-catering": CateringInfo,
       "tcc-childcare": ChildcareInfo,
       "tcc-ops": OpsAccomInfo,
-      "tcc-registrations": RegistrationInfo,
+      "tcc-registration": RegistrationInfo,
       "tcc-web-cal": WebCalInfo,
       "tcc-production": ProdAccomInfo,
       "tcc-publicity": PublicityInfo,

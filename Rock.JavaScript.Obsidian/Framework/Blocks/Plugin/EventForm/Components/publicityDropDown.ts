@@ -76,7 +76,7 @@ export default defineComponent({
       selectedValue: { 
         handler (val) {
           if (val) {
-            this.$emit('update:modelValue', val)
+            this.$emit('update:modelValue', val.value)
           }
         },
         deep: true

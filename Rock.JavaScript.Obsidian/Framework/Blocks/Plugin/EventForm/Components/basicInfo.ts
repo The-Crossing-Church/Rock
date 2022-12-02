@@ -113,14 +113,29 @@ export default defineComponent({
             && (this.viewModel?.request?.attributeValues?.NeedsOnline == "False"
               && this.viewModel?.request?.attributeValues?.NeedsCatering == "False"
               && this.viewModel?.request?.attributeValues?.NeedsChildCare == "False"
+              && this.viewModel?.request?.attributeValues?.NeedsChildCareCatering == "False"
               && this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == "False"
               && this.viewModel?.request?.attributeValues?.NeedsRegistration == "False"
               && this.viewModel?.request?.attributeValues?.NeedsPublicity == "False"
+              && this.viewModel?.request?.attributeValues?.NeedsProductionAccommodations == "False"
+              && this.viewModel?.request?.attributeValues?.NeedsWebCalendar == "False"
             )
           ) {
             return "meeting"
           }
           return "event"
+        },
+        hasEventSpecificRequests() {
+          if(this.viewModel?.request?.attributeValues?.NeedsSpace == "True"
+            || this.viewModel?.request?.attributeValues?.NeedsOnline == "True"
+            || this.viewModel?.request?.attributeValues?.NeedsCatering == "True"
+            || this.viewModel?.request?.attributeValues?.NeedsChildCare == "True"
+            || this.viewModel?.request?.attributeValues?.NeedsChildCareCatering == "True"
+            || this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == "True"
+            || this.viewModel?.request?.attributeValues?.NeedsRegistration == "True") {
+              return true
+          }
+          return false
         },
         labelIsSame() {
           return `Will each occurrence of your ${this.requestType} have the exact same start and end time? (${this.viewModel?.request?.attributeValues?.IsSame == 'True' ? 'Yes' : 'No'})`
@@ -231,7 +246,7 @@ export default defineComponent({
     </div>
   </div>
   <br/><br/>
-  <div class="row" v-if="eventDates.length > 1">
+  <div class="row" v-if="eventDates.length > 1 && hasEventSpecificRequests">
     <div class="col col-xs-12">
       <tcc-switch
         v-model="viewModel.request.attributeValues.IsSame"

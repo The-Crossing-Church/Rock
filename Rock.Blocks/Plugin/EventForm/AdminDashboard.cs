@@ -198,15 +198,72 @@ namespace Rock.Blocks.Plugin.EventDashboard
         #region Block Actions
 
         [BlockAction]
-        public BlockActionResult Save()
+        public BlockActionResult PartialApproval( int id, List<string> approved, List<string> denied, List<EventPartialApproval> events )
         {
             try
             {
-                return ActionOk( new { success = true } );
+                SetProperties();
+                var p = GetCurrentPerson();
+                RockContext rockContext = new RockContext();
+                ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
+                ContentChannelItemAssociationService ccia_svc = new ContentChannelItemAssociationService( rockContext );
+                ContentChannelItem item = cci_svc.Get( id );
+                ContentChannelItemAssociation changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
+                ContentChannelItem changes = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).ChildContentChannelItem;
+                List<ContentChannelItem> details = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
+
+                item.LoadAttributes();
+                changes.LoadAttributes();
+
+                //Update that our admin has made a change to this request
+                item.ModifiedByPersonAliasId = p.PrimaryAliasId;
+                item.ModifiedDateTime = RockDateTime.Now;
+
+                //Request Approved Changes
+                for ( var i = 0; i < approved.Count(); i++ )
+                {
+                    if ( approved[i] == "Title" )
+                    {
+                        item.Title = changes.Title.Substring( 0, changes.Title.Length - 8 );
+                    }
+                    else
+                    {
+                        item.SetAttributeValue( approved[i], changes.GetAttributeValue( approved[i] ) );
+                    }
+                }
+                item.SetAttributeValue( "RequestStatus", "Approved" );
+                item.SaveAttributeValues();
+                cci_svc.Delete( changes );
+                ccia_svc.Delete( changesAssoc );
+
+                //Event Details Approved Changes
+                for ( var i = 0; i < details.Count(); i++ )
+                {
+                    var eventChanges = events.FirstOrDefault( e => e.eventid == details[i].Id );
+                    var detailChangesAssoc = details[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                    var detailChanges = detailChangesAssoc.ChildContentChannelItem;
+                    if ( eventChanges != null )
+                    {
+                        details.LoadAttributes();
+                        detailChanges.LoadAttributes();
+                        for ( var k = 0; k < eventChanges.approvedAttrs.Count(); k++ )
+                        {
+                            details[i].SetAttributeValue( eventChanges.approvedAttrs[k], detailChanges.GetAttributeValue( eventChanges.approvedAttrs[k] ) );
+                        }
+                        details[i].SaveAttributeValues();
+                    }
+                    cci_svc.Delete( detailChanges );
+                    ccia_svc.Delete( detailChangesAssoc );
+                }
+                rockContext.SaveChanges();
+
+                //TODO cooksey: Notifications
+
+                return ActionOk( new { id = id } );
             }
             catch ( Exception e )
             {
-                return ActionInternalServerError( e.Message );
+                return ActionBadRequest( e.Message );
             }
         }
 
@@ -440,7 +497,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
             items.First().LoadAttributes();
 
             IEnumerable<ContentChannelItem> filtered_items = null;
-            IEnumerable<ContentChannelItem> items_modified_match = null;
             string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
             var requestStatusAttr = items.First().Attributes[requestStatusAttrKey];
             string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
@@ -450,27 +506,26 @@ namespace Rock.Blocks.Plugin.EventDashboard
             string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
             var ministryAttr = items.First().Attributes[ministryAttrKey];
 
-            //OR Filter
             if ( filters.eventModified != null )
             {
                 if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) && !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
                 {
-                    items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
+                    filtered_items = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
                 }
                 else
                 {
                     if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) )
                     {
-                        items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) );
+                        filtered_items = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) );
                     }
                     if ( !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
                     {
-                        items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
+                        filtered_items = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
                     }
                 }
                 //Don't include drafts in the recently modified
                 var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && av.Value != "Draft" );
-                items_modified_match = items_modified_match.Join( requestStatuses,
+                filtered_items = filtered_items.Join( requestStatuses,
                         i => i.Id,
                         av => av.EntityId,
                         ( i, av ) => i
@@ -481,8 +536,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             {
                 submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter.value ) );
             }
-            //AND Filters
-            filtered_items = items.Where( i =>
+            filtered_items = filtered_items.Where( i =>
             {
                 bool meetsCriteria = true;
                 if ( submitter != null )
@@ -595,19 +649,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     );
             }
 
-            if ( items_modified_match != null && filtered_items != null )
-            {
-                itemList = filtered_items.Union( items_modified_match ).Distinct().ToList();
-
-            }
-            else if ( items_modified_match != null )
-            {
-                itemList = items_modified_match.ToList();
-            }
-            else
-            {
-                itemList = filtered_items.ToList();
-            }
+            itemList = filtered_items.ToList();
 
             //Make sure desired item is in list
             if ( id.HasValue )
@@ -929,6 +971,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             public string lowerValue { get; set; }
             public string upperValue { get; set; }
+        }
+
+        public class EventPartialApproval
+        {
+            public int eventid { get; set; }
+            public List<string> approvedAttrs { get; set; }
+            public List<string> deniedAttrs { get; set; }
         }
     }
 }

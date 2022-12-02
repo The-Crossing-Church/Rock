@@ -405,8 +405,8 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             UpdateAttribute( item, "WhyAttend", req.WhyAttendSixtyFive );
             UpdateAttribute( item, "TargetAudience", req.TargetAudience.Split( ' ' )[0] );
             UpdateAttribute( item, "EventisSticky", req.EventIsSticky.ToString() );
-            UpdateAttribute( item, "PublicityStartDate", req.PublicityStartDate.ToString() );
-            UpdateAttribute( item, "PublicityEndDate", req.PublicityEndDate.ToString() );
+            UpdateAttribute( item, "PublicityStartDate", req.PublicityStartDate.HasValue ? req.PublicityStartDate.Value.ToString( "yyyy-MM-dd" ) : "" );
+            UpdateAttribute( item, "PublicityEndDate", req.PublicityEndDate.HasValue ? req.PublicityEndDate.Value.ToString( "yyyy-MM-dd" ) : "" );
             if ( req.PublicityStrategies != null )
             {
                 List<string> pubStrategies = new List<string>();
@@ -547,8 +547,8 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
             UpdateAttribute( detail, "Password", req.Events[k].ZoomPassword );
 
             //Registration
-            UpdateAttribute( detail, "RegistrationStartDate", req.Events[k].RegistrationDate.HasValue ? req.Events[k].RegistrationDate.Value.ToString( "yyyy-MM-dd HH:mm:ss" ) : "" );
-            UpdateAttribute( detail, "RegistrationEndDate", req.Events[k].RegistrationEndDate.HasValue ? req.Events[k].RegistrationEndDate.Value.ToString( "yyyy-MM-dd HH:mm:ss" ) : "" );
+            UpdateAttribute( detail, "RegistrationStartDate", req.Events[k].RegistrationDate.HasValue ? req.Events[k].RegistrationDate.Value.ToString( "yyyy-MM-dd" ) : "" );
+            UpdateAttribute( detail, "RegistrationEndDate", req.Events[k].RegistrationEndDate.HasValue ? req.Events[k].RegistrationEndDate.Value.ToString( "yyyy-MM-dd" ) : "" );
             UpdateAttribute( detail, "RegistrationEndTime", !String.IsNullOrEmpty( req.Events[k].RegistrationEndTime ) && !req.Events[k].RegistrationEndTime.Contains( "null" ) ? DateTime.Parse( req.Events[k].RegistrationEndTime ).ToString( "HH:mm:ss" ) : "" );
             UpdateAttribute( detail, "RegistrationFeeType", req.Events[k].FeeType != null ? String.Join( ",", req.Events[k].FeeType ) : "" );
             var regBudget = budgets.FirstOrDefault( b => b.Id.ToString() == req.Events[k].FeeBudgetLine );

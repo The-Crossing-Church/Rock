@@ -1,4 +1,4 @@
-import { defineComponent, PropType } from "vue";
+import { defineComponent } from "vue"
 import RockField from "../../../../Controls/rockField"
 
 export default defineComponent({

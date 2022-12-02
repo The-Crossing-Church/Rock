@@ -4,7 +4,7 @@ import { Person } from "../../../ViewModels"
 import { SubmissionFormBlockViewModel } from "./submissionFormBlockViewModel"
 import { useStore } from "../../../Store/index"
 import { Steps, Button, Modal, Select } from "ant-design-vue"
-import { ListItem, DefinedValue } from "../../../ViewModels"
+import { ListItem, DefinedValue, ContentChannelItem } from "../../../ViewModels"
 import ResourceSwitches from "./Components/resourceSwitches"
 import Space from "./Components/space"
 import Online from "./Components/online"
@@ -142,12 +142,21 @@ export default defineComponent({
         if(this.viewModel?.isEventAdmin || this.viewModel?.isRoomAdmin || this.viewModel?.isSuperUser) {
           step++
         }
-        if(this.viewModel?.request.attributeValues?.IsSame == "True") {
-          step++
-        } else {
-          step += this.viewModel?.events ? this.viewModel.events.length : 0
+        if(this.viewModel?.request.attributeValues?.NeedsSpace == "True" ||
+          this.viewModel?.request.attributeValues?.NeedsOnline == "True" ||
+          this.viewModel?.request.attributeValues?.NeedsCatering == "True" ||
+          this.viewModel?.request.attributeValues?.NeedsChildCare == "True" ||
+          this.viewModel?.request.attributeValues?.NeedsChildCareCatering == "True" ||
+          this.viewModel?.request.attributeValues?.NeedsRegistration == "True" ||
+          this.viewModel?.request.attributeValues?.NeedsOpsAccommodations == "True"
+        ) {
+          if(this.viewModel?.request.attributeValues?.IsSame == "True") {
+            step++
+          } else {
+            step += this.viewModel?.events ? this.viewModel.events.length : 0
+          }
         }
-        if(this.viewModel?.request.attributeValues?.NeedsPublicity == "True") {
+        if(this.viewModel?.request.attributeValues?.NeedsPublicity == "True" || this.viewModel?.request.attributeValues?.NeedsProductionAccommodations == "True" || this.viewModel?.request.attributeValues?.NeedsWebCalendar == "True") {
           step++
         }
         return step
@@ -890,7 +899,7 @@ export default defineComponent({
           <a-step class="hover" v-for="(e, idx) in viewModel.events" :key="(idx + 2)" @click="jumpTo((idx + 2))" :title="formatDate(e.attributeValues.EventDate)" />
       </template>
     </template>
-    <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True' || viewModel.request.attributeValues.NeedsWebCalendar == 'True' || viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'" :key="publicityStep" @click="jumpTo((3 + viewModel.events.length))" title="Additional Requests" />
+    <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True' || viewModel.request.attributeValues.NeedsWebCalendar == 'True' || viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'" :key="publicityStep" @click="jumpTo(publicityStep)" title="Additional Requests" />
   </a-steps>
   <div class="steps-content">
     <br/>
@@ -961,7 +970,7 @@ export default defineComponent({
         </template>
       </template>
     </template>
-    <template v-if="(viewModel.request.attributeValues.IsSame == 'True' && step == 3) || (step == (3 + viewModel.events.length))">
+    <template v-if="step == publicityStep">
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>
         <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
@@ -978,7 +987,7 @@ export default defineComponent({
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
-      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting">Submit</a-btn>
+      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting">Submit</a-btn> 
       <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
       <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
     </div>
