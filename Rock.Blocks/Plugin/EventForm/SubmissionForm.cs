@@ -125,15 +125,24 @@ namespace Rock.Blocks.Plugin.EventForm
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
             {
                 Rock.Model.DefinedType locationDT = new DefinedTypeService( context ).Get( locationGuid );
-                var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
-                viewModel.locations = locs.ToList();
-                var guids = viewModel.locations.Select( l => l.AttributeValues["StandardSetUp"] ).ToList();
-                AttributeMatrixService am_svc = new AttributeMatrixService( context );
-                var ams = am_svc.Queryable().Where( am => am.AttributeMatrixTemplateId == 10 && guids.Contains( am.Guid.ToString() ) );
-                var amis = ams.SelectMany( am => am.AttributeMatrixItems ).ToList();
-                viewModel.locationSetupMatrix = ams.ToList().Select( am => am.ToViewModel( null, false ) ).ToList();
-                viewModel.locationSetupMatrixItem = amis.ToList().Select( ami => ami.ToViewModel( null, true ) ).ToList();
-                Console.WriteLine( "a" );
+                var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
+                viewModel.locations = locs.Select( l => l.ToViewModel( p, true ) ).ToList();
+                string templateIdVal;
+                int templateid;
+                var setUpAttr = locs.First().Attributes["StandardSetUp"];
+                setUpAttr.ConfigurationValues.TryGetValue( "attributematrixtemplate", out templateIdVal );
+                if ( !String.IsNullOrEmpty( templateIdVal ) )
+                {
+                    if ( Int32.TryParse( templateIdVal, out templateid ) )
+                    {
+                        var guids = viewModel.locations.Select( l => l.AttributeValues["StandardSetUp"] ).ToList();
+                        AttributeMatrixService am_svc = new AttributeMatrixService( context );
+                        var ams = am_svc.Queryable().Where( am => am.AttributeMatrixTemplateId == templateid && guids.Contains( am.Guid.ToString() ) );
+                        var amis = ams.SelectMany( am => am.AttributeMatrixItems ).ToList();
+                        viewModel.locationSetupMatrix = ams.ToList().Select( am => am.ToViewModel( null, false ) ).ToList();
+                        viewModel.locationSetupMatrixItem = amis.ToList().Select( ami => ami.ToViewModel( null, true ) ).ToList();
+                    }
+                }
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
             {
