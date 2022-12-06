@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Rock.Attribute;
+using Rock.Communication;
 using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
@@ -40,6 +41,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [DefinedTypeField( "Drinks Defined Type", key: AttributeKey.DrinksList, category: "Lists", required: true, order: 3 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 1 )]
+    [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Submitted,In Progress,Pending Changes,Proposed Changes Denied,Changes Accepted by User", required: true, order: 0 )]
@@ -47,7 +49,17 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [TextField( "Requested Resources Attribute Key", key: AttributeKey.RequestedResourcesAttrKey, category: "Filters", defaultValue: "RequestType", required: true, order: 2 )]
     [TextField( "Event Dates Attribute Key", key: AttributeKey.EventDatesAttrKey, category: "Filters", defaultValue: "EventDates", required: true, order: 3 )]
     [TextField( "Ministry Attribute Key", key: AttributeKey.MinistryAttrKey, category: "Filters", defaultValue: "Ministry", required: true, order: 4 )]
+    [TextField( "Shared With Attribute Key", key: AttributeKey.SharedWithAttrKey, category: "Sharing", defaultValue: "SharedWith", required: true, order: 0 )]
+    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
     [WorkflowTypeField( "Request Action Worfklow", "Workflow to update request status", true, key: AttributeKey.RequestActionWorkflow, category: "Workflow" )]
+    [WorkflowTypeField( "User Action Worfklow", "Workflow to update request status", true, key: AttributeKey.UserActionWorkflow, category: "Workflow" )]
+    [TextField( "Details are Same Key", "Attribute Key for Is Same", key: AttributeKey.IsSameAttrKey, defaultValue: "IsSame", category: "Attributes", order: 1 )]
+    [TextField( "Details Event Date", "Attribute Key for Event Date on Details", key: AttributeKey.DetailsEventDate, defaultValue: "EventDate", category: "Attributes", order: 3 )]
+    [TextField( "Start Time Key", "Attribute Key for Start Time", key: AttributeKey.StartDateTime, defaultValue: "StartTime", category: "Attributes", order: 4 )]
+    [TextField( "End Time Key", "Attribute Key for End Time", key: AttributeKey.EndDateTime, defaultValue: "EndTime", category: "Attributes", order: 5 )]
+    [TextField( "Room", "Attribute Key for Room", key: AttributeKey.Rooms, defaultValue: "Rooms", category: "Attributes", order: 6 )]
+    [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
+    [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     #endregion Block Attributes
 
     public class AdminDashboard : RockObsidianBlockType
@@ -80,7 +92,17 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
             public const string EventDatesAttrKey = "EventDatesAttrKey";
             public const string MinistryAttrKey = "MinistryAttrKey";
+            public const string SharedWithAttrKey = "SharedWithAttrKey";
             public const string RequestActionWorkflow = "RequestActionWorkflow";
+            public const string UserActionWorkflow = "UserActionWorkflow";
+            public const string SharingGroupType = "SharingGroupType";
+            public const string IsSameAttrKey = "IsSameAttrKey";
+            public const string DetailsEventDate = "DetailsEventDate";
+            public const string StartDateTime = "StartDateTime";
+            public const string EndDateTime = "EndDateTime";
+            public const string Rooms = "Rooms";
+            public const string StartBuffer = "StartBuffer";
+            public const string EndBuffer = "EndBuffer";
         }
 
         /// <summary>
@@ -103,82 +125,86 @@ namespace Rock.Blocks.Plugin.EventDashboard
         /// </returns>
         public override object GetObsidianBlockInitialization()
         {
-            using ( var rockContext = new RockContext() )
+            var rockContext = new RockContext();
+            Guid eventDatesAttrGuid = Guid.Empty;
+            Guid requestStatusAttrGuid = Guid.Empty;
+            Guid isSameAttrGuid = Guid.Empty;
+            DashboardViewModel viewModel = null;
+
+            SetProperties();
+            if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 && EventChangesContentChannelId > 0 && EventDetailsChangesContentChannelId > 0 )
             {
-                Guid eventDatesAttrGuid = Guid.Empty;
-                Guid requestStatusAttrGuid = Guid.Empty;
-                Guid isSameAttrGuid = Guid.Empty;
-                DashboardViewModel viewModel = null;
+                viewModel = LoadRequests();
+                viewModel.submittedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Submitted" } } );
+                viewModel.changedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Pending Changes", "Changes Accepted by User", "Cancelled by User" } } );
+                viewModel.inprogressEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "In Progress" } } );
+                viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
+                viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
 
-                SetProperties();
-                if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 && EventChangesContentChannelId > 0 && EventDetailsChangesContentChannelId > 0 )
+                var ids = viewModel.submittedEvents.Select( e => e.CreatedByPersonAliasId ).ToList();
+                ids.AddRange( viewModel.changedEvents.Select( e => e.CreatedByPersonAliasId ) );
+                ids.AddRange( viewModel.inprogressEvents.Select( e => e.CreatedByPersonAliasId ) );
+                ids.AddRange( viewModel.events.Select( e => e.CreatedByPersonAliasId ) );
+                ids = ids.Distinct().ToList();
+                viewModel.users = new PersonAliasService( rockContext ).Queryable().Where( pa => ids.Contains( pa.Id ) ).Select( pa => pa.Person ).ToList(); ;
+
+                //Lists
+                Guid locationGuid = Guid.Empty;
+                Guid ministryGuid = Guid.Empty;
+                Guid budgetLineGuid = Guid.Empty;
+                Guid drinksGuid = Guid.Empty;
+                var p = GetCurrentPerson();
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
                 {
-                    viewModel = LoadRequests();
-                    viewModel.submittedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Submitted" } } );
-                    viewModel.changedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Pending Changes", "Changes Accepted By User" } } );
-                    viewModel.inprogressEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "In Progress" } } );
-                    viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
-                    viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
-
-                    //Lists
-                    Guid locationGuid = Guid.Empty;
-                    Guid ministryGuid = Guid.Empty;
-                    Guid budgetLineGuid = Guid.Empty;
-                    Guid drinksGuid = Guid.Empty;
-                    var p = GetCurrentPerson();
-                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
-                    {
-                        DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                        var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
-                        viewModel.locations = locs.ToList();
-                    }
-                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-                    {
-                        DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
-                        var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
-                        min.LoadAttributes();
-                        viewModel.ministries = min.ToList();
-                    }
-                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
-                    {
-                        DefinedType budgetDT = new DefinedTypeService( rockContext ).Get( budgetLineGuid );
-                        var budget = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
-                        budget.LoadAttributes();
-                        viewModel.budgetLines = budget.ToList();
-                    }
-                    if ( Guid.TryParse( GetAttributeValue( AttributeKey.DrinksList ), out drinksGuid ) )
-                    {
-                        DefinedType drinkDT = new DefinedTypeService( rockContext ).Get( drinksGuid );
-                        var drinks = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == drinkDT.Id );
-                        drinks.LoadAttributes();
-                        viewModel.drinks = drinks.ToList();
-                    }
-
-                    //Attributes
-                    string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-                    if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
-                    {
-                        viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).ToViewModel();
-                    }
-                    string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-                    if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
-                    {
-                        viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
-                    }
-
-                    List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).ToList();
-                    viewModel.defaultStatuses = defaultStatuses;
-
-                    Guid? workflowGuid = GetAttributeValue( AttributeKey.RequestActionWorkflow ).AsGuidOrNull();
-                    if ( workflowGuid.HasValue )
-                    {
-                        WorkflowType wf = new WorkflowTypeService( rockContext ).Get( workflowGuid.Value );
-                        viewModel.workflowURL = "/WorkflowEntry/" + wf.Id;
-                    }
+                    DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
+                    var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
+                    viewModel.locations = locs.ToList();
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+                {
+                    DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
+                    var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                    min.LoadAttributes();
+                    viewModel.ministries = min.ToList();
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
+                {
+                    DefinedType budgetDT = new DefinedTypeService( rockContext ).Get( budgetLineGuid );
+                    var budget = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
+                    budget.LoadAttributes();
+                    viewModel.budgetLines = budget.ToList();
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.DrinksList ), out drinksGuid ) )
+                {
+                    DefinedType drinkDT = new DefinedTypeService( rockContext ).Get( drinksGuid );
+                    var drinks = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == drinkDT.Id );
+                    drinks.LoadAttributes();
+                    viewModel.drinks = drinks.ToList();
                 }
 
-                return viewModel;
+                //Attributes
+                string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+                if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
+                {
+                    viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).ToViewModel();
+                }
+                string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
+                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
+                {
+                    viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
+                }
+
+                List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).ToList();
+                viewModel.defaultStatuses = defaultStatuses;
+
+                Guid? workflowGuid = GetAttributeValue( AttributeKey.RequestActionWorkflow ).AsGuidOrNull();
+                if ( workflowGuid.HasValue )
+                {
+                    WorkflowType wf = new WorkflowTypeService( rockContext ).Get( workflowGuid.Value );
+                    viewModel.workflowURL = "/WorkflowEntry/" + wf.Id;
+                }
             }
+            return viewModel;
         }
 
         #endregion Obsidian Block Type Overrides
@@ -257,7 +283,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 }
                 rockContext.SaveChanges();
 
-                //TODO cooksey: Notifications
+                //Notifications
+                PartialApprovalNotifications( item, approved, denied, events );
+
 
                 return ActionOk( new { id = id } );
             }
@@ -293,6 +321,14 @@ namespace Rock.Blocks.Plugin.EventDashboard
             response.comments = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).Select( ci => new Comment { comment = ci.ChildContentChannelItem.ToViewModel( null, true ), createdBy = ci.ChildContentChannelItem.CreatedByPersonName } ).ToList();
             response.createdBy = item.CreatedByPersonAlias.Person.ToViewModel( null, false );
             response.modifiedBy = item.ModifiedByPersonAlias.Person.ToViewModel( null, false );
+
+            //Get Conflicts
+            response.conflicts = GetConflicts( item, details );
+            if ( requestchanges != null )
+            {
+                response.changesConflicts = GetConflicts( requestchanges.ChildContentChannelItem, details.Select( cci => cci.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).ChildContentChannelItem ).ToList() );
+            }
+
             return ActionOk( response );
         }
 
@@ -300,18 +336,22 @@ namespace Rock.Blocks.Plugin.EventDashboard
         public BlockActionResult FilterRequests( string opt, Filters filters = null )
         {
             SetProperties();
+            if ( filters == null )
+            {
+                filters = new Filters();
+            }
             DashboardViewModel viewModel = new DashboardViewModel();
             if ( opt == "Submitted" )
             {
                 filters.statuses = new List<string>() { "Submitted" };
                 viewModel.submittedEvents = LoadByStatus( filters );
             }
-            else if ( opt == "Changed" )
+            else if ( opt == "PendingChanges" )
             {
-                filters.statuses = new List<string>() { "Pending Changes", "Changes Accepted By User" };
+                filters.statuses = new List<string>() { "Pending Changes", "Changes Accepted by User", "Cancelled by User" };
                 viewModel.changedEvents = LoadByStatus( filters );
             }
-            else if ( opt == "In Progress" )
+            else if ( opt == "InProgress" )
             {
                 filters.statuses = new List<string>() { "In Progress" };
                 viewModel.inprogressEvents = LoadByStatus( filters );
@@ -398,7 +438,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 {
                     url = LaunchWorkflow( item.Id, status );
                 }
-                //TODO cooksey: Possible notifications for other statuses
+                else
+                {
+                    StatusChangeNotification( item, status );
+                }
                 rockContext.SaveChanges();
                 item.SetAttributeValue( requestStatusAttrKey, status );
                 item.SaveAttributeValue( requestStatusAttrKey );
@@ -453,7 +496,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
                 rockContext.SaveChanges();
 
-                //TODO Cooksey: Send Notification
+                CommentNotification( comment, request );
                 return ActionOk( new { createdBy = p.FullName, comment = comment } );
             }
             catch ( Exception e )
@@ -461,6 +504,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 return ActionBadRequest( e.Message );
             }
         }
+
         #endregion Block Actions
 
         #region Helpers
@@ -506,7 +550,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
             var ministryAttr = items.First().Attributes[ministryAttrKey];
 
-            if ( filters.eventModified != null )
+            if ( filters.eventModified != null && ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) || !String.IsNullOrEmpty( filters.eventModified.upperValue ) ) )
             {
                 if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) && !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
                 {
@@ -530,6 +574,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         av => av.EntityId,
                         ( i, av ) => i
                     );
+            }
+            if ( filtered_items == null )
+            {
+                filtered_items = items;
             }
             Person submitter = null;
             if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
@@ -632,6 +680,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             if ( filters.statuses.Count() > 0 )
             {
+                filters.statuses = filters.statuses.Select( s => s.Trim() ).ToList();
                 var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && filters.statuses.Contains( av.Value ) );
                 filtered_items = filtered_items.Join( requestStatuses,
                         i => i.Id,
@@ -910,6 +959,449 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
         }
 
+        private List<Person> GetRequestUsers( ContentChannelItem item )
+        {
+            List<Person> users = new List<Person>();
+            RockContext context = new RockContext();
+            PersonService p_svc = new PersonService( context );
+            string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
+            var sharedWithAttr = item.GetAttributeValue( sharedWithAttrKey );
+            Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+            if ( sharedRequestGroupTypeGuid.HasValue )
+            {
+                //Shared requests are configured, find any for the current user.
+                var SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
+                var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == item.CreatedByPersonId && gm.GroupRole.Name == "Request Creator" );
+                groups = from g in groups
+                         join gm in groupMembers on g.Id equals gm.GroupId
+                         select g;
+                var grpList = groups.ToList();
+                for ( int k = 0; k < grpList.Count(); k++ )
+                {
+                    users.AddRange( grpList[k].Members.Where( gm => gm.GroupRole.Name == "Can View" ).Select( gm => gm.Person ) );
+                }
+            }
+            List<int?> sharedRequests = new List<int?>();
+            if ( !String.IsNullOrEmpty( sharedWithAttr ) )
+            {
+                List<int> ids = sharedWithAttr.Split( ',' ).Select( i => Int32.Parse( i ) ).ToList();
+                for ( int k = 0; k < ids.Count(); k++ )
+                {
+                    users.Add( p_svc.Get( ids[k] ) );
+                }
+            }
+            users.Add( item.CreatedByPersonAlias.Person );
+            users = users.Distinct().ToList();
+            return users;
+        }
+
+        private List<ContentChannelItemViewModel> GetConflicts( ContentChannelItem item, List<ContentChannelItem> events )
+        {
+            item.LoadAttributes();
+            events.LoadAttributes();
+            List<ContentChannelItem> conflicts = new List<ContentChannelItem>();
+            RockContext context = new RockContext();
+            AttributeValueService avSvc = new AttributeValueService( context );
+            ContentChannelItemService cciSvc = new ContentChannelItemService( context );
+            List<ConflictData> eventDates = new List<ConflictData>();
+            string isSameKey = GetAttributeValue( AttributeKey.IsSameAttrKey );
+            string statusKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+            string eventDatesKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
+            string eventDateKey = GetAttributeValue( AttributeKey.DetailsEventDate );
+            string startKey = GetAttributeValue( AttributeKey.StartDateTime );
+            string endKey = GetAttributeValue( AttributeKey.EndDateTime );
+            string startBufferKey = GetAttributeValue( AttributeKey.StartBuffer );
+            string endBufferKey = GetAttributeValue( AttributeKey.EndBuffer );
+            string roomKey = GetAttributeValue( AttributeKey.Rooms );
+            for ( int k = 0; k < events.Count(); k++ )
+            {
+                List<string> dates = item.GetAttributeValue( eventDatesKey ).Split( ',' ).ToList();
+                if ( !String.IsNullOrEmpty( events[k].GetAttributeValue( eventDateKey ) ) )
+                {
+                    dates = new List<string>() { events[k].GetAttributeValue( eventDateKey ) };
+                }
+                for ( int i = 0; i < dates.Count(); i++ )
+                {
+                    ConflictData d = new ConflictData() { range = new DateRange() };
+                    d.range.Start = DateTime.Parse( $"{dates[i]} {events[k].GetAttributeValue( startKey )}" );
+                    d.range.End = DateTime.Parse( $"{dates[i]} {events[k].GetAttributeValue( endKey )}" );
+                    var startBuffer = events[0].GetAttributeValue( startBufferKey );
+                    if ( !String.IsNullOrEmpty( startBuffer ) )
+                    {
+                        int buffer = Int32.Parse( startBuffer );
+                        d.range.Start.Value.AddMinutes( buffer * -1 );
+                    }
+                    var endBuffer = events[0].GetAttributeValue( endBufferKey );
+                    if ( !String.IsNullOrEmpty( endBuffer ) )
+                    {
+                        int buffer = Int32.Parse( endBuffer );
+                        d.range.Start.Value.AddMinutes( buffer );
+                    }
+                    d.rooms = events[k].GetAttributeValue( roomKey );
+                    //Only care about events we have rooms, dates, and times for
+                    if ( !String.IsNullOrEmpty( events[k].GetAttributeValue( startKey ) ) && !String.IsNullOrEmpty( events[k].GetAttributeValue( endKey ) ) && !String.IsNullOrEmpty( events[k].GetAttributeValue( roomKey ) ) )
+                    {
+                        eventDates.Add( d );
+                    }
+                }
+            }
+            for ( int i = 0; i < eventDates.Count(); i++ )
+            {
+                string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
+                var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id ).OrderBy( cci => cci.Title );
+                //Requests that are on the calendar
+                var statusAttr = item.Attributes[statusKey];
+                var statusValues = avSvc.Queryable().Where( av => av.AttributeId == statusAttr.Id && ( av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" ) ) );
+                items = items.Join( statusValues,
+                    itm => itm.Id,
+                    av => av.EntityId,
+                    ( itm, av ) => itm
+                ).OrderBy( cci => cci.Title );
+                var eventDetails = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem );
+                //Filter items to isSame, others will be in the eventDetails list
+                var isSameAttr = item.Attributes[isSameKey];
+                var isSameValues = avSvc.Queryable().Where( av => av.AttributeId == isSameAttr.Id && av.Value == "True" );
+                items = items.Join( isSameValues,
+                    itm => itm.Id,
+                    av => av.EntityId,
+                    ( itm, av ) => itm
+                ).OrderBy( cci => cci.Title );
+                //Events on same date
+                var eventAttr = events[0].Attributes[eventDateKey];
+                var eventDateAttr = item.Attributes[eventDatesKey];
+                var eventDateValues = avSvc.Queryable().Where( av => ( av.AttributeId == eventAttr.Id && av.Value == dateCompareVal ) || ( av.AttributeId == eventDateAttr.Id && av.Value.Contains( dateCompareVal ) ) );
+                eventDetails = eventDetails.Join( eventDateValues,
+                    itm => itm.Id,
+                    av => av.EntityId,
+                    ( itm, av ) => itm
+                );
+                items = items.Join( eventDateValues,
+                    itm => itm.Id,
+                    av => av.EntityId,
+                    ( itm, av ) => itm
+                ).OrderBy( cci => cci.Title );
+                var ccItems = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem ).ToList();
+                ccItems.AddRange( eventDetails );
+                var roomAttr = events[0].Attributes[roomKey];
+                //Events with overlapping rooms
+                var roomValues = avSvc.Queryable().Where( av => av.AttributeId == roomAttr.Id ).ToList().Where( av =>
+                {
+                    if ( av.AttributeId == roomAttr.Id )
+                    {
+                        var intersection = av.Value.Split( ',' ).Intersect( eventDates[i].rooms.Split( ',' ) );
+                        if ( intersection.Count() > 0 )
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                } );
+                ccItems = ccItems.Join( roomValues,
+                    itm => itm.Id,
+                    av => av.EntityId,
+                    ( itm, av ) => itm
+                ).ToList();
+                //Check Times overlap
+                ccItems.LoadAttributes();
+                ccItems = ccItems.Where( itm =>
+                {
+                    DateRange r = new DateRange();
+                    r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
+                    r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" );
+                    var startBuffer = itm.GetAttributeValue( startBufferKey );
+                    var endBuffer = itm.GetAttributeValue( endBufferKey );
+                    if ( !String.IsNullOrEmpty( startBuffer ) )
+                    {
+                        int buffer = Int32.Parse( startBuffer );
+                        r.Start.Value.AddMinutes( buffer * -1 );
+                    }
+                    if ( !String.IsNullOrEmpty( endBuffer ) )
+                    {
+                        int buffer = Int32.Parse( endBuffer );
+                        r.End.Value.AddMinutes( buffer );
+                    }
+                    if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
+                    {
+                        return true;
+                    }
+                    return false;
+                } ).ToList();
+                conflicts.AddRange( ccItems );
+            }
+            return conflicts.Distinct().Select( c =>
+            {
+                var x = c.ToViewModel( null, true );
+                if ( String.IsNullOrEmpty( c.GetAttributeValue( eventDateKey ) ) )
+                {
+                    var parent = c.ParentItems.FirstOrDefault();
+                    if ( parent != null )
+                    {
+                        parent.ContentChannelItem.LoadAttributes();
+                        x.AttributeValues.Add( eventDatesKey, parent.ContentChannelItem.GetAttributeValue( eventDatesKey ) );
+                        x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.Id.ToString() );
+                    }
+                }
+                return x;
+            } ).ToList();
+        }
+
+        private void CommentNotification( ContentChannelItem comment, ContentChannelItem item )
+        {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
+            List<Guid> userDashGuids = new List<Guid>();
+            string url;
+            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            if ( userDashGuid.Contains( "," ) )
+            {
+                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                userDashGuids.Add( Guid.Parse( userDashGuid ) );
+            }
+            if ( userDashGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
+                url = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
+                url = "page/" + page.Id.ToString();
+            }
+            string subject = p.FullName + " Has Added a Comment to " + item.Title;
+            string message = "<p>This comment has been added to your request:</p>" +
+                "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            var users = GetRequestUsers( item );
+            users.Remove( p );
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+
+        private void StatusChangeNotification( ContentChannelItem item, string status )
+        {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
+            List<Guid> userDashGuids = new List<Guid>();
+            string url;
+            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            if ( userDashGuid.Contains( "," ) )
+            {
+                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                userDashGuids.Add( Guid.Parse( userDashGuid ) );
+            }
+            if ( userDashGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
+                url = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
+                url = "page/" + page.Id.ToString();
+            }
+            string subject = p.FullName + " Has Changed the Status of " + item.Title;
+            string message = "<p>Your request has been marked: " + status + ".</p><br/>" +
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            if ( status == "Proposed Changes Denied" )
+            {
+                Guid? workflowGuid = GetAttributeValue( AttributeKey.UserActionWorkflow ).AsGuidOrNull();
+                if ( workflowGuid.HasValue )
+                {
+                    WorkflowType wf = new WorkflowTypeService( context ).Get( workflowGuid.Value );
+                    url = "/WorkflowEntry/" + wf.Id;
+                }
+                subject = "Proposed Changes for " + item.Title + " have been Denied";
+                message = "<p>We regret to inform you the changes you have requested to your event request have been denied.</p> <br/>" +
+                "<p>Please select one of the following options for your request. You can...</p>" +
+                "<ul>" +
+                    "<li> Continue with the originally approved request </li>" +
+                    "<li> Cancel your request entirely </li>" +
+                "</ul>" +
+                "<table>" +
+                    "<tr>" +
+                        "<td style='tect-align: center;'>" +
+                            "<a href='" + baseUrl + url + item.Id + "&Action=Original' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Use Original</a>" +
+                        "</td>" +
+                        "<td style='tect-align: center;'>" +
+                            "<a href='" + baseUrl + url + item.Id + "&Action=Cancelled' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Cancel Request </a>" +
+                        "</td>" +
+                    "</tr>" +
+                "</table>";
+            }
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            var users = GetRequestUsers( item );
+            users.Remove( p );
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+
+        private void PartialApprovalNotifications( ContentChannelItem item, List<string> approved, List<string> denied, List<EventPartialApproval> events )
+        {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
+            List<Guid> userDashGuids = new List<Guid>();
+            string url;
+            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            if ( userDashGuid.Contains( "," ) )
+            {
+                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                userDashGuids.Add( Guid.Parse( userDashGuid ) );
+            }
+            if ( userDashGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
+                url = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
+                url = "page/" + page.Id.ToString();
+            }
+            item.LoadAttributes();
+            string subject = "Some of Your Changes Have Been Approved";
+            string message = "Please see below which modifications have been approved or denied:<br/>";
+            message += "<strong>Approved Modifications</strong><br/>";
+            message += "<ul>";
+            for ( int i = 0; i < approved.Count(); i++ )
+            {
+                if ( approved[i] != "Title" )
+                {
+                    message += "<li>" + item.Attributes[approved[i]].Name + "</li>";
+                }
+            }
+            if ( events.Count() == 1 )
+            {
+                var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId );
+                if ( e != null )
+                {
+                    for ( int i = 0; i < events[0].approvedAttrs.Count(); i++ )
+                    {
+                        message += "<li>" + e.ChildContentChannelItem.Attributes[events[0].approvedAttrs[i]].Name + "</li>";
+                    }
+                }
+            }
+            message += "</ul>";
+            message += "<strong>Denied Modifications</strong><br/>";
+            message += "<ul>";
+            for ( int i = 0; i < denied.Count(); i++ )
+            {
+                if ( denied[i] != "Title" )
+                {
+                    message += "<li>" + item.Attributes[denied[i]].Name + "</li>";
+                }
+            }
+            if ( events.Count() == 1 )
+            {
+                var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId );
+                if ( e != null )
+                {
+                    for ( int i = 0; i < events[0].deniedAttrs.Count(); i++ )
+                    {
+                        message += "<li>" + e.ChildContentChannelItem.Attributes[events[0].deniedAttrs[i]].Name + "</li>";
+                    }
+                }
+            }
+            message += "</ul>";
+            if ( events.Count() > 1 )
+            {
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItemId == events[i].eventid );
+                    if ( e != null )
+                    {
+                        e.ChildContentChannelItem.LoadAttributes();
+                        message += "<strong>Approved Modifications for " + DateTime.Parse( e.GetAttributeValue( "EventDate" ) ).ToString( "MM/dd/yyyy" ) + "</strong><br/>";
+                        message += "<ul>";
+                        for ( int k = 0; i < events[i].approvedAttrs.Count(); k++ )
+                        {
+                            message += "<li>" + e.ChildContentChannelItem.Attributes[events[i].approvedAttrs[k]].Name + "</li>";
+                        }
+                        message += "</ul>";
+                        message += "<strong>Denied Modifications for " + DateTime.Parse( e.GetAttributeValue( "EventDate" ) ).ToString( "MM/dd/yyyy" ) + "</strong><br/>";
+                        message += "<ul>";
+                        for ( int k = 0; i < events[i].deniedAttrs.Count(); k++ )
+                        {
+                            message += "<li>" + e.ChildContentChannelItem.Attributes[events[i].deniedAttrs[k]].Name + "</li>";
+                        }
+                        message += "</ul>";
+                    }
+                }
+            }
+            message +=
+                "<table style='width: 100%;'>" +
+                    "<tr>" +
+                        "<td></td>" +
+                        "<td style='text-align:center;'>" +
+                            "<a href='" + baseUrl + url + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>View Updated Event</a>" +
+                        "</td>" +
+                        "<td style='text-align:center;'>" +
+                            "<a href='" + baseUrl + url + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Continue Modifying</a>" +
+                        "</td>" +
+                        "<td></td>" +
+                    "</tr>" +
+                "</table>";
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            var users = GetRequestUsers( item );
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+
         #endregion Helpers
 
         public class DashboardViewModel
@@ -928,6 +1420,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public AttributeViewModel requestType { get; set; }
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
+            public List<Person> users { get; set; }
         }
 
         public class GetRequestResponse
@@ -938,6 +1431,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public List<Details> details { get; set; }
             public PersonViewModel createdBy { get; set; }
             public PersonViewModel modifiedBy { get; set; }
+            public List<ContentChannelItemViewModel> conflicts { get; set; }
+            public List<ContentChannelItemViewModel> changesConflicts { get; set; }
         }
 
         public class Comment
@@ -978,6 +1473,12 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public int eventid { get; set; }
             public List<string> approvedAttrs { get; set; }
             public List<string> deniedAttrs { get; set; }
+        }
+
+        public class ConflictData
+        {
+            public DateRange range { get; set; }
+            public string rooms { get; set; }
         }
     }
 }

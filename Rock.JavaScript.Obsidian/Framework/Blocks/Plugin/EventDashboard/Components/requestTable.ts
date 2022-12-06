@@ -29,7 +29,8 @@ export default defineComponent({
       workflowURL: String,
       defaultFilters: Object as any,
       option: String,
-      openByDefault: Boolean
+      openByDefault: Boolean,
+      users: Array as PropType<any[]>
     },
     setup() {
 
@@ -154,6 +155,16 @@ export default defineComponent({
       },
       getIsValid(r: any) {
         return r?.attributeValues?.RequestIsValid == 'True'
+      },
+      getSubmitter(id: number) {
+        if(this.users && this.users.length > 0) {
+          let submitter = this.users.filter(u => {
+            return u.primaryAliasId == id
+          })
+          if(submitter) {
+            return submitter[0].fullName
+          }
+        }
       }
     },
     watch: {
@@ -230,7 +241,7 @@ export default defineComponent({
       </div>
     </template>
     <template #submitter="{ text: submitter }">
-      {{ submitter }}
+      {{ getSubmitter(submitter) }}
     </template>
     <template #start="{ text: start }">
       {{ formatDateTime(start) }}

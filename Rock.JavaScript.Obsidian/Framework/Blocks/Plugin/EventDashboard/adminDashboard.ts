@@ -115,8 +115,14 @@ export default defineComponent({
           {
             title: 'Title',
             dataIndex: 'title',
-            key: 'title',
-            slots: { customRender: 'title' },
+            key: 'reqtitle',
+            slots: { customRender: 'reqtitle' },
+          },
+          {
+            title: 'Submitted By',
+            dataIndex: 'createdByPersonAliasId',
+            key: 'submitter',
+            slots: { customRender: 'submitter' },
           },
           {
             title: 'Submitted On',
@@ -129,6 +135,12 @@ export default defineComponent({
             dataIndex: 'attributeValues.EventDates',
             key: 'dates',
             slots: { customRender: 'dates' }
+          },
+          {
+            title: 'Requested Resources',
+            dataIndex: 'attributeValues.RequestType',
+            key: 'resources',
+            slots: { customRender: 'resources' },
           },
           {
             title: 'Status',
@@ -210,6 +222,10 @@ export default defineComponent({
       return ""
     },
     selectItem(item: any) { 
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       this.loadDetails(item.id).then((response: any) => {
         if(response.data) {
           response.data.details.forEach((detail: any) => {
@@ -218,10 +234,16 @@ export default defineComponent({
           response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
           response.data.request.changes = response.data.requestPendingChanges
           response.data.request.comments = response.data.comments
+          response.data.request.conflicts = response.data.conflicts
+          response.data.request.changesConflicts = response.data.changesConflicts
           this.selected = response.data.request
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
+        }
+      }).finally(() =>{
+        if(el) {
+          el.style.display = 'none'
         }
       })
     },
@@ -231,7 +253,7 @@ export default defineComponent({
     filter(option: string) {
       this.loading = true
       let reqFilter = JSON.parse(JSON.stringify(this.filters))
-      if(reqFilter.ministry) {
+      if(reqFilter?.ministry) {
         let ministry = JSON.parse(reqFilter.ministry)
         reqFilter.ministry = ministry.value
       }
@@ -247,7 +269,7 @@ export default defineComponent({
     },
     filterTables(option: string, filters: any) {
       let reqFilter = JSON.parse(JSON.stringify(filters))
-      if(reqFilter.ministry) {
+      if(reqFilter?.ministry) {
         let ministry = JSON.parse(reqFilter.ministry)
         reqFilter.ministry = ministry.value
       }
@@ -297,7 +319,7 @@ export default defineComponent({
     updateStatus(status: string) {
       if(status == "In Progress") {
         this.btnLoading.inprogress = true
-      } else {
+      } else if (status == "Cancelled") {
         this.btnLoading.cancelled = true
       }
       this.changeStatus(this.selected.id, status).then((res) => {
@@ -306,14 +328,13 @@ export default defineComponent({
             window.location.href = res.data.url
           }
           if(res.data.status) {
-            if(this.selected.attributeValues) {
+            if(this.selected?.attributeValues) {
               this.selected.attributeValues.RequestStatus = res.data.status
             }
-            this.viewModel?.events.forEach((event: any) => {
-              if(event.id == this.selected.id) {
-                event.attributeValues.RequestStatus = res.data.status
-              }
-            })
+            this.filterTables("Submitted", null)
+            this.filterTables("PendingChanges", null)
+            this.filterTables("InProgress", null)
+            this.filter("All")
           }
         } else if(res.isError) {
           this.toastMessage = res.errorMessage
@@ -321,6 +342,7 @@ export default defineComponent({
           el?.classList.add("show")
         }
       }).catch((err) => {
+        console.log(err)
         this.toastMessage = err
         let el = document.getElementById('toast')
         el?.classList.add("show")
@@ -370,7 +392,7 @@ export default defineComponent({
         if(res.isSuccess) {
           if(res.data?.id) {
             this.selectItem(res.data)
-            this.filterTables("Changed", null)
+            this.filterTables("PendingChanges", null)
             this.filter("All")
           }
         } else if (res.isError) {
@@ -383,6 +405,20 @@ export default defineComponent({
     hideToast() {
       let el = document.getElementById('toast')
       el?.classList.remove("show")
+    },
+    getIsValid(r: any) {
+      return r?.attributeValues?.RequestIsValid == 'True'
+    },
+    getSubmitter(id: number) {
+      if(this.viewModel?.users && this.viewModel.users.length > 0) {
+        let users = this.viewModel.users as any[]
+        let submitter = users.filter(u => {
+          return u.primaryAliasId == id
+        })
+        if(submitter) {
+          return submitter[0].fullName
+        }
+      }
     }
   },
   watch: {
@@ -393,13 +429,13 @@ export default defineComponent({
   },
   template: `
 <div class="card mb-2">
-  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card mb-2">
-  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card mb-2">
-  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card">
   <div style="display: flex; align-items: center;">
@@ -468,14 +504,24 @@ export default defineComponent({
       </div>
     </div>
     <a-table :columns="columns" :data-source="viewModel.events" :pagination="{ pageSize: 30 }">
-      <template #title="{ text: title, record: r }">
-        <div class="hover" @click="selectItem(r)">{{ title }}</div>
+      <template #reqtitle="{ text: reqtitle, record: r }">
+        <div class="hover" @click="selectItem(r)">
+          <i v-if="getIsValid(r)" class="fa fa-check-circle text-accent mr-2"></i>
+          <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i>
+          {{ reqtitle }}
+        </div>
+      </template>
+      <template #submitter="{ text: submitter }">
+        {{ getSubmitter(submitter) }}
       </template>
       <template #start="{ text: start }">
         {{ formatDateTime(start) }}
       </template>
       <template #dates="{ text: dates }">
         {{ formatDates(dates) }}
+      </template>
+      <template #resources="{ text: resources }">
+        {{ resources }}
       </template>
       <template #action="{ record: r }">
         <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
@@ -484,7 +530,7 @@ export default defineComponent({
   </div>
 </div>
 <a-modal v-model:visible="modal" width="80%" :closable="false">
-  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
+  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :createdBy="createdBy" :modifiedBy="modifiedBy" v-on:openrequest="selectItem"></tcc-details>
   <template v-if="selected.comments && selected.comments.length > 0">
     <h3 class="text-accent">Comments</h3>
     <div>
@@ -519,7 +565,7 @@ export default defineComponent({
           Approve
         </a-btn>
       </a-pop>
-      <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')">
+      <a-btn type="yellow" v-if="selectedStatus != 'In Progress'" @click="updateStatus('In Progress')" :loading="btnLoading.inprogress">
         <i class="mr-1 fas fa-tasks"></i>
         In Progress
       </a-btn>
@@ -545,7 +591,7 @@ export default defineComponent({
           Deny
         </a-btn>
       </a-pop>
-      <a-btn type="grey" v-if="selectedStatus != 'Cancelled' && selectedStatus != 'Cancelled by User'" @click="updateStatus('Cancelled')">
+      <a-btn type="grey" v-if="selectedStatus != 'Cancelled' && selectedStatus != 'Cancelled by User'" @click="updateStatus('Cancelled')" :loading="btnLoading.cancelled">
         <i class="mr-1 fa fa-ban"></i>
         Cancel
       </a-btn>

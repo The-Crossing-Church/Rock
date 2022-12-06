@@ -1,4 +1,4 @@
-import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, Attribute } from "../../../ViewModels"
+import { DefinedValue, ContentChannelItem, Person, Attribute } from "../../../ViewModels"
 
 export type AdminDashboardBlockViewModel = {
     events: ContentChannelItem[];
@@ -16,4 +16,5 @@ export type AdminDashboardBlockViewModel = {
     requestType: Attribute;
     workflowURL: string;
     defaultStatuses: string[];
+    users: Person[];
 };

@@ -198,6 +198,14 @@ export default defineComponent({
       selectedValue: { 
         handler (val) {
           if (val) {
+            let selectedGuids = val.value.split(",")
+            let selectedRooms = this.items.filter((i: any) => {
+              if(!i.isDisabled) {
+                return selectedGuids.includes(i.value)
+              }
+            }).sort((i: any) => i.order)
+            val.value = selectedRooms.map((i: any) => i.value).join(",")
+            val.text = selectedRooms.map((i: any) => i.text.split(" (")[0]).join(", ")
             this.$emit('update:modelValue', JSON.stringify(val))
           }
         },

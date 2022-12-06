@@ -5,6 +5,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using Rock.Attribute;
+using Rock.Communication;
 using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
@@ -39,6 +40,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [DefinedTypeField( "Drinks Defined Type", key: AttributeKey.DrinksList, category: "Lists", required: true, order: 3 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 1 )]
+    [LinkedPage( "Event Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 2 )]
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Draft,Submitted,In Progress,Pending Changes,Proposed Changes Denied", required: true, order: 0 )]
@@ -273,6 +275,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 rockContext.SaveChanges();
                 item.SetAttributeValue( requestStatusAttrKey, status );
                 item.SaveAttributeValue( requestStatusAttrKey );
+                StatusChangeNotification( item, status );
                 return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ) } );
             }
             catch ( Exception e )
@@ -324,7 +327,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
                 rockContext.SaveChanges();
 
-                //TODO Cooksey: Send Notification
+                CommentNotification( request, comment );
                 return ActionOk( new { createdBy = p.FullName, comment = comment } );
             }
             catch ( Exception e )
@@ -926,6 +929,121 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 ContentChannel cCC = new ContentChannelService( rockContext ).Get( eventCommentsCCGuid );
                 EventCommentsContentChannelId = cCC.Id;
             }
+        }
+
+        private void StatusChangeNotification( ContentChannelItem item, string status )
+        {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            string adminDashGuid = GetAttributeValue( AttributeKey.AdminDashboard );
+            List<Guid> adminDashGuids = new List<Guid>();
+            string url;
+            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            if ( adminDashGuid.Contains( "," ) )
+            {
+                adminDashGuids = adminDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                adminDashGuids.Add( Guid.Parse( adminDashGuid ) );
+            }
+            if ( adminDashGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminDashGuids.Last() );
+                url = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( adminDashGuids.First() );
+                url = "page/" + page.Id.ToString();
+            }
+            string subject = p.FullName + " Has Changed the Status of " + item.Title;
+            string message = "<p>This request has been marked: " + status + ".</p><br/>" +
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            var users = GetAdminUsers();
+            users.Remove( p );
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+
+        private void CommentNotification( ContentChannelItem comment, ContentChannelItem item )
+        {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            string adminDashGuid = GetAttributeValue( AttributeKey.AdminDashboard );
+            List<Guid> adminDashGuids = new List<Guid>();
+            string url;
+            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            if ( adminDashGuid.Contains( "," ) )
+            {
+                adminDashGuids = adminDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
+            }
+            else
+            {
+                adminDashGuids.Add( Guid.Parse( adminDashGuid ) );
+            }
+            if ( adminDashGuids.Count() > 1 )
+            {
+                //Use Page Route
+                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminDashGuids.Last() );
+                url = route.Route;
+            }
+            else
+            {
+                //Use Page Id
+                Rock.Model.Page page = new PageService( context ).Get( adminDashGuids.First() );
+                url = "page/" + page.Id.ToString();
+            }
+            string subject = p.FullName + " Has Added a Comment to " + item.Title;
+            string message = "<p>This comment has been added to " + item.ModifiedByPersonName + "'s request:</p>" +
+                "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            var users = GetAdminUsers();
+            users.Remove( p );
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+
+        private List<Person> GetAdminUsers()
+        {
+            List<Person> users = new List<Person>();
+            RockContext context = new RockContext();
+            Guid securityRoleGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventAdminRole ), out securityRoleGuid ) )
+            {
+                Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
+                users.AddRange( securityRole.Members.Select( gm => gm.Person ) );
+            }
+            users = users.Distinct().ToList();
+            return users;
         }
 
         #endregion Helpers

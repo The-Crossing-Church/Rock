@@ -191,7 +191,8 @@ namespace Rock.Blocks.Plugin.EventForm
             try
             {
                 int id = SaveRequest( viewModel, events );
-                //Send Notifications
+                //todo Send Notifications
+
                 return ActionOk( new { success = true, id = id } );
             }
             catch ( Exception e )
@@ -466,6 +467,7 @@ namespace Rock.Blocks.Plugin.EventForm
             ContentChannelItem item = FromViewModel( viewModel );
             var cciSvc = new ContentChannelItemService( context );
             var assocSvc = new ContentChannelItemAssociationService( context );
+            var avSvc = new AttributeValueService( context );
             var p = GetCurrentPerson();
             item.ModifiedByPersonAliasId = p.PrimaryAliasId;
             item.ModifiedDateTime = RockDateTime.Now;
@@ -515,11 +517,50 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             context.SaveChanges();
 
+            //For Pre-Approval Check
+            List<PreApprovalData> eventDates = new List<PreApprovalData>();
+            AttributeCache roomAttr = null;
+            AttributeCache eventDateAttr = null;
+            AttributeCache startTimeAttr = null;
+            AttributeCache endTimeAttr = null;
+            AttributeCache startBufferAttr = null;
+            AttributeCache endBufferAttr = null;
+
             for ( int i = 0; i < events.Count(); i++ )
             {
                 var detail = FromViewModel( events[i] );
                 var needsAssociation = false;
                 ContentChannelItem originalDetail = null;
+
+                //For Pre-Approval Check
+                roomAttr = detail.Attributes[GetAttributeValue( AttributeKey.Rooms )];
+                eventDateAttr = detail.Attributes[GetAttributeValue( AttributeKey.DetailsEventDate )];
+                startTimeAttr = detail.Attributes[GetAttributeValue( AttributeKey.StartDateTime )];
+                endTimeAttr = detail.Attributes[GetAttributeValue( AttributeKey.EndDateTime )];
+                startBufferAttr = detail.Attributes[GetAttributeValue( AttributeKey.StartBuffer )];
+                endBufferAttr = detail.Attributes[GetAttributeValue( AttributeKey.EndBuffer )];
+
+                if ( events.Count() == 1 )
+                {
+                    var dates = item.GetAttributeValue( "EventDates" ).Split( ',' );
+                    for ( int k = 0; k < dates.Length; k++ )
+                    {
+                        DateTime start = DateTime.Parse( $"{dates[k]} {detail.GetAttributeValue( "StartTime" )}" );
+                        DateTime end = DateTime.Parse( $"{dates[k]} {detail.GetAttributeValue( "EndTime" )}" );
+                        DateRange r = new DateRange() { Start = start, End = end };
+                        PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
+                        eventDates.Add( d );
+                    }
+                }
+                else
+                {
+                    DateTime start = DateTime.Parse( $"{detail.GetAttributeValue( "EventDate" )} {detail.GetAttributeValue( "StartTime" )}" );
+                    DateTime end = DateTime.Parse( $"{detail.GetAttributeValue( "EventDate" )} {detail.GetAttributeValue( "EndTime" )}" );
+                    DateRange r = new DateRange() { Start = start, End = end };
+                    PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
+                    eventDates.Add( d );
+                }
+
                 if ( original != null )
                 {
                     ContentChannelItem changes = new ContentChannelItem()
@@ -579,6 +620,200 @@ namespace Rock.Blocks.Plugin.EventForm
                 }
                 detail.SaveAttributeValues( context );
             }
+
+            //Pre-Approval Check
+            List<string> notValidForPreApprovalReasons = new List<string>();
+            item.SetAttributeValue( "IsPreApproved", "False" );
+            //Request is Valid
+            if ( item.GetAttributeValue( "RequestIsValid" ) == "True" )
+            {
+                //Room Request Only
+                if ( item.GetAttributeValue( "RequestType" ) == "Room" )
+                {
+                    //Analyze Date Details
+                    DateRange twoWeeks = new DateRange() { Start = DateTime.Now, End = DateTime.Now.AddDays( 14 ) };
+                    twoWeeks.Start = twoWeeks.Start.Value.StartOfDay();
+                    twoWeeks.End = twoWeeks.End.Value.EndOfDay();
+                    bool inRange = true;
+                    bool validRooms = true;
+                    bool validAttendance = true;
+                    bool noConflicts = true;
+                    for ( int i = 0; i < eventDates.Count(); i++ )
+                    {
+                        if ( inRange )
+                        {
+                            if ( !twoWeeks.Contains( eventDates[i].range.Start.Value ) )
+                            {
+                                inRange = false;
+                                notValidForPreApprovalReasons.Add( "Request is not within the next 14 days." );
+                            }
+                            else
+                            {
+                                if ( eventDates[i].range.Start.Value.DayOfWeek == DayOfWeek.Saturday )
+                                {
+                                    //out of range
+                                    inRange = false;
+                                    notValidForPreApprovalReasons.Add( "Request is not within normal business hours." );
+                                }
+                                else
+                                {
+                                    DateRange businessHours = new DateRange();
+                                    businessHours.End = DateTime.Parse( $"{eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" )} 21:00:00" );
+                                    if ( eventDates[i].range.Start.Value.DayOfWeek == DayOfWeek.Sunday )
+                                    {
+                                        //1pm to 9pm
+                                        businessHours.Start = DateTime.Parse( $"{eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" )} 13:00:00" );
+                                    }
+                                    else
+                                    {
+                                        //9am to 9pm
+                                        businessHours.Start = DateTime.Parse( $"{eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" )} 09:00:00" );
+                                    }
+
+                                    //Check within business hours
+                                    if ( !businessHours.Contains( eventDates[i].range.Start.Value ) || !businessHours.Contains( eventDates[i].range.End.Value ) )
+                                    {
+                                        inRange = false;
+                                        notValidForPreApprovalReasons.Add( "Request is not within normal business hours." );
+                                    }
+                                }
+                            }
+                        }
+                        //Attendance <= 30
+                        if ( validAttendance )
+                        {
+                            if ( !String.IsNullOrEmpty( eventDates[i].attendance ) )
+                            {
+                                int attendance = Int32.Parse( eventDates[i].attendance );
+                                if ( attendance > 30 )
+                                {
+                                    validAttendance = false;
+                                    notValidForPreApprovalReasons.Add( "Attendance can not be more than 30 people." );
+                                }
+                            }
+                        }
+                        //Not Gym or Aud
+                        if ( validRooms )
+                        {
+                            if ( !String.IsNullOrEmpty( eventDates[i].rooms ) )
+                            {
+                                var rooms = eventDates[i].rooms.Split( ',' );
+                                //todo change to guid
+                                if ( rooms.Contains( "Auditorium" ) || rooms.Contains( "Gym" ) )
+                                {
+                                    validRooms = false;
+                                    notValidForPreApprovalReasons.Add( "Request is for spaces that require approval." );
+                                }
+                            }
+                        }
+                        //Conflicts
+                        if ( noConflicts )
+                        {
+                            if ( roomAttr != null && eventDateAttr != null && startTimeAttr != null && endTimeAttr != null && startBufferAttr != null && endBufferAttr != null )
+                            {
+                                if ( EventDatesAttrGuid != Guid.Empty && RequestStatusAttrGuid != Guid.Empty && IsSameAttrGuid != Guid.Empty )
+                                {
+                                    string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
+                                    var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id );
+                                    //Requests that are on the calendar
+                                    var statusAttr = new AttributeService( context ).Get( RequestStatusAttrGuid );
+                                    var statusValues = avSvc.Queryable().Where( av => av.AttributeId == statusAttr.Id && ( av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" ) ) );
+                                    items = items.Join( statusValues,
+                                        itm => itm.Id,
+                                        av => av.EntityId,
+                                        ( itm, av ) => itm
+                                    );
+                                    var eventDetails = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem );
+                                    //Filter items to isSame, others will be in the eventDetails list
+                                    var isSameAttr = new AttributeService( context ).Get( IsSameAttrGuid );
+                                    var isSameValues = avSvc.Queryable().Where( av => av.AttributeId == isSameAttr.Id && av.Value == "True" );
+                                    items = items.Join( isSameValues,
+                                        itm => itm.Id,
+                                        av => av.EntityId,
+                                        ( itm, av ) => itm
+                                    );
+                                    //Events on same date
+                                    var eventAttr = new AttributeService( context ).Get( EventDatesAttrGuid );
+                                    var eventDateValues = avSvc.Queryable().Where( av => ( av.AttributeId == eventDateAttr.Id && av.Value == dateCompareVal ) || ( av.AttributeId == eventAttr.Id && av.Value.Contains( dateCompareVal ) ) );
+                                    eventDetails = eventDetails.Join( eventDateValues,
+                                        itm => itm.Id,
+                                        av => av.EntityId,
+                                        ( itm, av ) => itm
+                                    );
+                                    items = items.Join( eventDateValues,
+                                        itm => itm.Id,
+                                        av => av.EntityId,
+                                        ( itm, av ) => itm
+                                    );
+                                    var ccItems = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem ).ToList();
+                                    ccItems.AddRange( eventDetails );
+                                    //Events with overlapping rooms
+                                    var roomValues = avSvc.Queryable().Where( av => av.AttributeId == roomAttr.Id ).ToList().Where( av =>
+                                     {
+                                         if ( av.AttributeId == roomAttr.Id )
+                                         {
+                                             var intersection = av.Value.Split( ',' ).Intersect( eventDates[i].rooms.Split( ',' ) );
+                                             if ( intersection.Count() > 0 )
+                                             {
+                                                 return true;
+                                             }
+                                         }
+                                         return false;
+                                     } );
+                                    ccItems = ccItems.Join( roomValues,
+                                        itm => itm.Id,
+                                        av => av.EntityId,
+                                        ( itm, av ) => itm
+                                    ).ToList();
+                                    //Check Times overlap
+                                    ccItems.LoadAttributes();
+                                    ccItems = ccItems.Where( itm =>
+                                     {
+                                         DateRange r = new DateRange();
+                                         r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
+                                         r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" );
+                                         var startBuffer = itm.GetAttributeValue( startBufferAttr.Key );
+                                         var endBuffer = itm.GetAttributeValue( endBufferAttr.Key );
+                                         if ( !String.IsNullOrEmpty( startBuffer ) )
+                                         {
+                                             int buffer = Int32.Parse( startBuffer );
+                                             r.Start.Value.AddMinutes( buffer * -1 );
+                                         }
+                                         if ( !String.IsNullOrEmpty( endBuffer ) )
+                                         {
+                                             int buffer = Int32.Parse( endBuffer );
+                                             r.End.Value.AddMinutes( buffer );
+                                         }
+                                         if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
+                                         {
+                                             return true;
+                                         }
+                                         return false;
+                                     } ).ToList();
+                                    if ( ccItems.Count() > 0 )
+                                    {
+                                        noConflicts = false;
+                                        notValidForPreApprovalReasons.Add( "Request conflicts with another request." );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if ( inRange && validAttendance && validRooms && noConflicts )
+                    {
+                        item.SetAttributeValue( "IsPreApproved", "True" );
+                    }
+                }
+                else
+                {
+                    notValidForPreApprovalReasons.Add( "More than a physical space was requested." );
+                }
+            }
+            else
+            {
+                notValidForPreApprovalReasons.Add( "All information was not filled out." );
+            }
+            notValidForPreApprovalReasons = notValidForPreApprovalReasons.Distinct().ToList();
             item.SaveAttributeValues( context );
             return item.Id;
         }
@@ -712,6 +947,10 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 IsSameAttrGuid = isSameAttrGuid;
             }
+        }
+
+        private void SubmittedNotifications( ContentChannelItem item )
+        {
 
         }
         #endregion Helpers
@@ -734,6 +973,13 @@ namespace Rock.Blocks.Plugin.EventForm
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
+        }
+
+        public class PreApprovalData
+        {
+            public DateRange range { get; set; }
+            public string rooms { get; set; }
+            public string attendance { get; set; }
         }
     }
 }

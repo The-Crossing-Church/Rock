@@ -1,4 +1,5 @@
-import { defineComponent, PropType } from "vue";
+import { defineComponent, PropType } from "vue"
+import { ContentChannelItem } from "../../../../ViewModels"
 import RockField from "../../../../Controls/rockField"
 import RockLabel from "../../../../Elements/rockLabel"
 import SpaceInfo from "./spaceInfo"
@@ -143,6 +144,50 @@ export default defineComponent({
         if(date) {
           return date.toFormat("MM/dd/yyyy hh:mm a")
         }
+      },
+      getConflictingDates(conflict: any) {
+        if(conflict.attributeValues) {
+          if(conflict.attributeValues.EventDate != "") {
+            return DateTime.fromFormat(conflict.attributeValues.EventDate.trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy")
+          } else if(conflict.attributeValues.EventDates) {
+            let dates = conflict.attributeValues.EventDates.split(",").map((d: string) => d.trim())
+            let selectedDates = this.request?.attributeValues.EventDates.split(",").map((d: string) => d.trim())
+            return selectedDates.filter((d: string) => { return dates.includes(d) }).map((d: string) => {
+              return DateTime.fromFormat(d, "yyyy-MM-dd").toFormat("MM/dd/yyyy")
+            }).join(", ")
+          }
+        }
+        return ""
+      },
+      getConflictingRooms(conflict: any) {
+        if(conflict.attributeValues) {
+          if(conflict.attributeValues.Rooms) {
+            let obj = JSON.parse(conflict.attributeValues.Rooms)
+            let conflictRooms = obj.text.split(", ")
+            let selectedRooms = [] as string[]
+            this.request?.childItems.forEach((ci: any) => {
+              if(ci.attributeValues.Rooms) {
+                let val = JSON.parse(ci.attributeValues.Rooms)
+                let rooms = val.text.split(", ").filter((r: string) => {
+                  return conflictRooms.includes(r)
+                })
+                rooms.forEach((r: string) => {
+                  if(selectedRooms.indexOf(r) < 0) {
+                    selectedRooms.push(r)
+                  }
+                })
+              }
+            })
+            return selectedRooms.join(", ")
+          }
+        }
+        return ""
+      },
+      openRelated(request: any) {
+        if(request.attributeValues.ParentId && request.attributeValues.ParentId != "") {
+          request.id = request.attributeValues.ParentId
+        }
+        this.$emit("openrequest", request)
       }
     },
     watch: {
@@ -220,18 +265,66 @@ export default defineComponent({
         <div class='collapse collapse body' :id="getCollapseName(ci.id)" aria-expanded="false">
           <div class="row">
             <div class="col col-xs-12 col-md-6">
-              <rck-field
-                v-model="ci.attributeValues.StartTime"
-                :attribute="ci.attributes.StartTime"
-                :showEmptyValue="true"
-              ></rck-field>
+              <template v-if="ci.changes && ci.changes.attributeValues.StartTime != ci.attributeValues.StartTime">
+                <div class="row">
+                  <div class="col col-xs-6">
+                    <rck-field
+                      v-model="ci.attributeValues.StartTime"
+                      :attribute="ci.attributes.StartTime"
+                      class="text-red"
+                      :showEmptyValue="true"
+                    ></rck-field>
+                  </div>
+                  <div class="col col-xs-6">
+                    <rck-field
+                      v-model="ci.changes.attributeValues.StartTime"
+                      :attribute="ci.attributes.StartTime"
+                      class="text-primary"
+                      :showEmptyValue="true"
+                      :showLabel="false"
+                      style="padding-top: 18px;"
+                    ></rck-field>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <rck-field
+                  v-model="ci.attributeValues.StartTime"
+                  :attribute="ci.attributes.StartTime"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </template>
             </div>
             <div class="col col-xs-12 col-md-6">
-              <rck-field
-                v-model="ci.attributeValues.EndTime"
-                :attribute="ci.attributes.EndTime"
-                :showEmptyValue="true"
-              ></rck-field>
+              <template v-if="ci.changes && ci.changes.attributeValues.EndTime != ci.attributeValues.EndTime">
+                <div class="row">
+                  <div class="col col-xs-6">
+                    <rck-field
+                      v-model="ci.attributeValues.EndTime"
+                      :attribute="ci.attributes.EndTime"
+                      class="text-red"
+                      :showEmptyValue="true"
+                    ></rck-field>
+                  </div>
+                  <div class="col col-xs-6">
+                    <rck-field
+                      v-model="ci.changes.attributeValues.EndTime"
+                      :attribute="ci.attributes.EndTime"
+                      class="text-primary"
+                      :showEmptyValue="true"
+                      :showLabel="false"
+                      style="padding-top: 18px;"
+                    ></rck-field>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <rck-field
+                  v-model="ci.attributeValues.EndTime"
+                  :attribute="ci.attributes.EndTime"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </template>
             </div>
           </div>
           <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
@@ -255,6 +348,24 @@ export default defineComponent({
         ></rck-field>
       </div>
     </div>
+    <template v-if="request.conflicts && request.conflicts.length > 0">
+      <h3 class="text-red">Conflicts</h3>
+      <div class="row">
+        <div class="col col-xs-4 hover" v-for="c in request.conflicts" :key="c.id" @click="openRelated(c)">
+          {{c.title}}<br/> 
+          {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
+        </div>
+      </div>
+    </template>
+    <template v-if="request.changesConflicts && request.changesConflicts.length > 0">
+      <h3 class="text-red">Conflicts With Requested Changes</h3>
+      <div class="row">
+        <div class="col col-xs-4 hover" v-for="c in request.changesConflicts" :key="c.id" @click="openRelated(c)">
+          {{c.title}}<br/> 
+          {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
+        </div>
+      </div>
+    </template>
   </div>
 </div>
 <a-modal v-model:visible="modal" width="50%">
