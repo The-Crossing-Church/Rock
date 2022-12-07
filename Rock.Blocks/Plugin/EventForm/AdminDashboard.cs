@@ -414,7 +414,6 @@ namespace Rock.Blocks.Plugin.EventDashboard
                             }
                         }
                     }
-                    url = LaunchWorkflow( item.Id, status );
                 }
                 if ( status == "Proposed Changes Denied" )
                 {
@@ -434,7 +433,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         }
                     }
                 }
-                if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) )
+                if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) || status == "Approved" )
                 {
                     url = LaunchWorkflow( item.Id, status );
                 }

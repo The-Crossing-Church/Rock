@@ -60,6 +60,10 @@ export function toNumberOrNull(str?: string | null): number | null {
         return null;
     }
 
+    if (typeof str === "number") {
+        return str;
+    }
+    
     const replaced = str.replace(/[$,]/g, "");
     const num = Number(replaced);
 

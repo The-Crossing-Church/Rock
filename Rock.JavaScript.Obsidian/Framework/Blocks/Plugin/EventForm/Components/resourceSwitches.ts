@@ -147,20 +147,6 @@ export default defineComponent({
 <div class="row" style="padding-bottom:16px;">
   <div class="col col-xs-12">
     <tcc-switch
-      v-model="viewModel.request.attributeValues.NeedsOnline"
-      :disabled="switchIsDisabled(twoWeeksTense, 'NeedsOnline')"
-      :label="viewModel.request.attributes.NeedsOnline.name"
-      hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
-      :persistent-hint="viewModel.request.attributeValues.NeedsOnline == 'True'"
-    ></tcc-switch>
-    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsOnline == 'False'">
-      The last possible date to request zoom {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
-    </div>
-  </div>
-</div>
-<div class="row" style="padding-bottom:16px;">
-  <div class="col col-xs-12">
-    <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsCatering"
       :label="viewModel.request.attributes.NeedsCatering.name"
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsCatering')"
@@ -169,6 +155,20 @@ export default defineComponent({
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsCatering == 'False'">
       The last possible date to request catering {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+    </div>
+  </div>
+</div>
+<div class="row" style="padding-bottom:16px;">
+  <div class="col col-xs-12">
+    <tcc-switch
+      v-model="viewModel.request.attributeValues.NeedsOpsAccommodations"
+      :label="viewModel.request.attributes.NeedsOpsAccommodations.name"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsOpsAccommodations')"
+      hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
+      :persistent-hint="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'"
+    ></tcc-switch>
+    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsOpsAccommodations == 'False'">
+      The last possible date to request ops accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
     </div>
   </div>
 </div>
@@ -195,20 +195,6 @@ export default defineComponent({
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsChildCareCatering == 'False'">
       The last possible date to request catering for childcare {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
-    </div>
-  </div>
-</div>
-<div class="row" style="padding-bottom:16px;">
-  <div class="col col-xs-12">
-    <tcc-switch
-      v-model="viewModel.request.attributeValues.NeedsOpsAccommodations"
-      :label="viewModel.request.attributes.NeedsOpsAccommodations.name"
-      :disabled="switchIsDisabled(twoWeeksTense,'NeedsOpsAccommodations')"
-      hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
-      :persistent-hint="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'"
-    ></tcc-switch>
-    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsOpsAccommodations == 'False'">
-      The last possible date to request ops accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
     </div>
   </div>
 </div>
@@ -243,6 +229,20 @@ export default defineComponent({
 <div class="row" style="padding-bottom:16px;">
   <div class="col col-xs-12">
     <tcc-switch
+      v-model="viewModel.request.attributeValues.NeedsPublicity"
+      :label="viewModel.request.attributes.NeedsPublicity.name"
+      :disabled="switchIsDisabled(sixWeeksTense,'NeedsPublicity')"
+      hint="Requests involving publicity must be made at least 6 weeks in advance."
+      :persistent-hint="viewModel.request.attributeValues.NeedsPublicity == 'True'"
+    ></tcc-switch>
+    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsPublicity == 'False'">
+      The last possible date to request publicity {{sixWeeksTense}} {{sixWeeksBeforeEventStart}}
+    </div>
+  </div>
+</div>
+<div class="row" style="padding-bottom:16px;">
+  <div class="col col-xs-12">
+    <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsProductionAccommodations"
       :label="viewModel.request.attributes.NeedsProductionAccommodations.name"
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsProductionAccommodations')"
@@ -257,14 +257,14 @@ export default defineComponent({
 <div class="row" style="padding-bottom:16px;">
   <div class="col col-xs-12">
     <tcc-switch
-      v-model="viewModel.request.attributeValues.NeedsPublicity"
-      :label="viewModel.request.attributes.NeedsPublicity.name"
-      :disabled="switchIsDisabled(sixWeeksTense,'NeedsPublicity')"
-      hint="Requests involving publicity must be made at least 6 weeks in advance."
-      :persistent-hint="viewModel.request.attributeValues.NeedsPublicity == 'True'"
+      v-model="viewModel.request.attributeValues.NeedsOnline"
+      :disabled="switchIsDisabled(twoWeeksTense, 'NeedsOnline')"
+      :label="viewModel.request.attributes.NeedsOnline.name"
+      hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
+      :persistent-hint="viewModel.request.attributeValues.NeedsOnline == 'True'"
     ></tcc-switch>
-    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsPublicity == 'False'">
-      The last possible date to request publicity {{sixWeeksTense}} {{sixWeeksBeforeEventStart}}
+    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsOnline == 'False'">
+      The last possible date to request zoom {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
     </div>
   </div>
 </div>

@@ -78,6 +78,16 @@ export default defineComponent({
       },
     },
     watch: {
+      menu(val) {
+        if(val) {
+          setTimeout(() => {
+            let el = document.querySelector('.txt-hour') as any
+            if(el) {
+              el.focus()
+            }
+          }, 500)
+        }
+      },
       time(val) {
         this.$emit("update:modelValue", val);
       },
@@ -229,7 +239,6 @@ export default defineComponent({
               v-model="hour"
               class="txt-round txt-hour"
               type="number"
-              autofocus
               @blur="validateHour(hour)"
             ></rck-text>
           </tcc-validator>

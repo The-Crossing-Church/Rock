@@ -30,9 +30,6 @@ export default defineComponent({
       updateStatus(id: number, status: string) {
         this.$emit("updatestatus", id, status)
       },
-      approve() {
-        window.location.href = this.url + `?Id=${this.request?.id}&Action=Approved`
-      }
     },
     watch: {
       
@@ -46,7 +43,7 @@ export default defineComponent({
     <a-btn class="mr-1" shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
       <i class="fas fa-tasks"></i>
     </a-btn>
-    <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="approve">
+    <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="updateStatus(request.id, 'Approved')">
       <i class="fas fa-check-circle"></i>
     </a-btn>
     <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'">

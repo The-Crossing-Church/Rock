@@ -241,7 +241,7 @@ export default defineComponent({
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
         }
-      }).finally(() =>{
+      }).finally(() => {
         if(el) {
           el.style.display = 'none'
         }
@@ -426,6 +426,11 @@ export default defineComponent({
   },
   mounted() {
     this.filters = this.defaultFilters
+    let params = new URLSearchParams(window.location.search)
+    let id = params.get("Id")
+    if(id) {
+      this.selectItem({id: id})
+    }
   },
   template: `
 <div class="card mb-2">

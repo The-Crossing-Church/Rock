@@ -93,6 +93,7 @@ export default defineComponent({
           step: 0,
           modal: false,
           id: 0,
+          response: {} as any,
           isSave: false,
           isSubmitting: false,
           resources: [] as string[],
@@ -131,7 +132,7 @@ export default defineComponent({
             }
           } else {
             if(this.hasEventData) {
-              step = (3 + this.viewModel.events.length)
+              step += this.viewModel.events.length
             }
           }
         }
@@ -139,7 +140,7 @@ export default defineComponent({
       },
       lastStep(): any {
         let step = 0
-        if(this.viewModel?.isEventAdmin || this.viewModel?.isRoomAdmin || this.viewModel?.isSuperUser) {
+        if(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser) {
           step++
         }
         if(this.viewModel?.request.attributeValues?.NeedsSpace == "True" ||
@@ -228,6 +229,7 @@ export default defineComponent({
         this.save(this.viewModel).then((res: any) => {
           if(res.isSuccess){
             this.id = res?.data?.id
+            this.response = res.data
             this.isSave = true
             this.modal = true
           } else if (res.isError) {
@@ -239,13 +241,14 @@ export default defineComponent({
     submitRequest() {
       this.isSubmitting = true
       if(this.viewModel) {
-        if(this.viewModel?.request?.attributeValues?.RequestStatus == "Draft") {
-          this.viewModel.request.attributeValues.RequestStatus = "Submitted"
-        }
+        // if(this.viewModel?.request?.attributeValues?.RequestStatus == "Draft") {
+        //   this.viewModel.request.attributeValues.RequestStatus = "Submitted"
+        // }
         this.validate()
         this.submit(this.viewModel).then((res: any) => {
           if(res.isSuccess){
             this.id = res?.data?.id
+            this.response = res.data
             this.isSave = false
             this.modal = true
           } else if (res.isError) {
@@ -385,6 +388,13 @@ export default defineComponent({
         if(this.viewModel?.events && this.viewModel.events.length > 0) {
           for(let i=0; i < this.viewModel.events.length; i++) {
             let eventIsValid = true
+            if(this.rules.required(this.viewModel.events[i].attributeValues?.StartTime, '') != true ||
+              this.rules.required(this.viewModel.events[i].attributeValues?.EndTime, '') != true ||
+              this.rules.timeIsValid(this.viewModel.events[i].attributeValues?.StartTime as string, this.viewModel.events[i].attributeValues?.EndTime as string, true) != true 
+            ) {
+              requestIsValid = false
+              eventIsValid = false
+            }
             if(this.viewModel.request.attributeValues.NeedsSpace == 'True') {
               let attendance = this.viewModel.events[i].attributeValues?.ExpectedAttendance as string
               let numAttendance = parseInt(attendance)
@@ -925,20 +935,20 @@ export default defineComponent({
           <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
           <br/>
         </template>
-        <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
-          <h3 class="text-primary">
-            Zoom Information
-            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</a-btn>
-          </h3>
-          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)"></tcc-online>
-          <br/>
-        </template>
         <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
           <h3 class="text-primary">
             Catering Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
           <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
+          <br/>
+        </template>
+        <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
+          <h3 class="text-primary">
+            Other Accomodations
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
+          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -952,14 +962,6 @@ export default defineComponent({
           <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
           <br/>
         </template>
-        <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
-          <h3 class="text-primary">
-            Other Accomodations
-            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
-          </h3>
-          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
-          <br/>
-        </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
           <h3 class="text-primary">
             Registration Information
@@ -968,16 +970,24 @@ export default defineComponent({
           <tcc-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
+        <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
+          <h3 class="text-primary">
+            Zoom Information
+            <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</a-btn>
+          </h3>
+          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)"></tcc-online>
+          <br/>
+        </template>
       </template>
     </template>
     <template v-if="step == publicityStep">
-      <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
-        <h3 class="text-primary">Publicity Information</h3>
-        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
-      </template>
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
         <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="webcal" @validation-change="validationChange" ref="webcal"></tcc-web-cal>
+      </template>
+      <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
+        <h3 class="text-primary">Publicity Information</h3>
+        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
         <h3 class="text-primary">Production Tech Information</h3>
@@ -987,7 +997,17 @@ export default defineComponent({
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
-      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting">Submit</a-btn> 
+      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting">
+        <template v-if="viewModel.request.attributeValues.RequestStatus == 'Approved'">
+          Request Changes
+        </template>  
+        <template v-else-if="viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress' || viewModel.request.attributeValues.RequestStatus == 'Pending Changes'">
+          Update
+        </template>
+        <template v-else>
+          Submit
+        </template>  
+      </a-btn> 
       <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
       <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
     </div>
@@ -995,11 +1015,17 @@ export default defineComponent({
   <!-- Confirmation Modal -->
   <a-modal v-model:visible="modal">
     <div class="pt-2">
-      <div v-if="isSave">
-        Your draft has been saved.
+      <strong class="mb-2">
+        {{response.message}}
+      </strong>
+      <div v-if="response.isPreApproved">
+        Due to the nature of your request, it has been pre-approved. 
       </div>
       <div v-else>
-        Your request has been submitted.
+        This request is not eligible for pre-approval based on the following criteria: 
+        <ul>
+          <li v-for="(r, idx) in response.notValidForPreApprovalReasons" :key="idx">{{r}}</li>
+        </ul>
       </div>
     </div>
     <template #footer>
