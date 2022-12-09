@@ -51,6 +51,13 @@ export default defineComponent({
             } else {
                 this.$emit('update:modelValue', "False")
             }
+        },
+        modelValue(val) {
+            if (val.toLowerCase() == "false" || val.toLowerCase() == "no") {
+                this.valueAsBool = false
+            } else {
+                this.valueAsBool = true
+            }
         }
     },
     mounted() {

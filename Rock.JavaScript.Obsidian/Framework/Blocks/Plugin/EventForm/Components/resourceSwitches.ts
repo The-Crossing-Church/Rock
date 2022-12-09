@@ -130,7 +130,14 @@ export default defineComponent({
             this.viewModel.request.attributeValues.NeedsSpace = "True"
           }
         }
-      }
+      },
+      'viewModel.request.attributeValues.NeedsSpace': {
+        handler(val) {
+          if(val == 'False' && this.viewModel?.request?.attributeValues) {
+            this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
+          }
+        }
+      },
     },
     mounted() {
 
