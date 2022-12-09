@@ -935,33 +935,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
-            string adminDashGuid = GetAttributeValue( AttributeKey.AdminDashboard );
-            List<Guid> adminDashGuids = new List<Guid>();
             string url;
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( adminDashGuid.Contains( "," ) )
-            {
-                adminDashGuids = adminDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                adminDashGuids.Add( Guid.Parse( adminDashGuid ) );
-            }
-            if ( adminDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( adminDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
             string subject = p.FullName + " Has Changed the Status of " + item.Title;
             string message = "<p>This request has been marked: " + status + ".</p><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
             message = header + message + footer;
@@ -985,34 +965,14 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
-            string adminDashGuid = GetAttributeValue( AttributeKey.AdminDashboard );
-            List<Guid> adminDashGuids = new List<Guid>();
             string url;
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( adminDashGuid.Contains( "," ) )
-            {
-                adminDashGuids = adminDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                adminDashGuids.Add( Guid.Parse( adminDashGuid ) );
-            }
-            if ( adminDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( adminDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
             string subject = p.FullName + " Has Added a Comment to " + item.Title;
-            string message = "<p>This comment has been added to " + item.ModifiedByPersonName + "'s request:</p>" +
+            string message = "<p>This comment has been added to " + p.FullName + "'s request:</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
             message = header + message + footer;

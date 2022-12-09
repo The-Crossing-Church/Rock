@@ -201,7 +201,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 if ( workflowGuid.HasValue )
                 {
                     WorkflowType wf = new WorkflowTypeService( rockContext ).Get( workflowGuid.Value );
-                    viewModel.workflowURL = "/WorkflowEntry/" + wf.Id;
+                    Dictionary<string, string> queryParams = new Dictionary<string, string>();
+                    queryParams.Add( "WorkflowTypeId", wf.Id.ToString() );
+                    viewModel.workflowURL = this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
                 }
             }
             return viewModel;
@@ -1149,34 +1151,14 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
-            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
-            List<Guid> userDashGuids = new List<Guid>();
             string url;
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( userDashGuid.Contains( "," ) )
-            {
-                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                userDashGuids.Add( Guid.Parse( userDashGuid ) );
-            }
-            if ( userDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
             string subject = p.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>This comment has been added to your request:</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
             message = header + message + footer;
@@ -1200,40 +1182,22 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
-            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
-            List<Guid> userDashGuids = new List<Guid>();
             string url;
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( userDashGuid.Contains( "," ) )
-            {
-                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                userDashGuids.Add( Guid.Parse( userDashGuid ) );
-            }
-            if ( userDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> udqueryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, udqueryParams );
             string subject = p.FullName + " Has Changed the Status of " + item.Title;
             string message = "<p>Your request has been marked: " + status + ".</p><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             if ( status == "Proposed Changes Denied" )
             {
                 Guid? workflowGuid = GetAttributeValue( AttributeKey.UserActionWorkflow ).AsGuidOrNull();
                 if ( workflowGuid.HasValue )
                 {
                     WorkflowType wf = new WorkflowTypeService( context ).Get( workflowGuid.Value );
-                    url = "/WorkflowEntry/" + wf.Id;
+                    Dictionary<string, string> queryParams = new Dictionary<string, string>();
+                    queryParams.Add( "WorkflowTypeId", wf.Id.ToString() );
+                    url = this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
                 }
                 subject = "Proposed Changes for " + item.Title + " have been Denied";
                 message = "<p>We regret to inform you the changes you have requested to your event request have been denied.</p> <br/>" +
@@ -1276,30 +1240,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
-            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
-            List<Guid> userDashGuids = new List<Guid>();
             string url;
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( userDashGuid.Contains( "," ) )
-            {
-                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                userDashGuids.Add( Guid.Parse( userDashGuid ) );
-            }
-            if ( userDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             item.LoadAttributes();
             string subject = "Some of Your Changes Have Been Approved";
             string message = "Please see below which modifications have been approved or denied:<br/>";
@@ -1375,10 +1319,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + baseUrl + url + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>View Updated Event</a>" +
+                            "<a href='" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>View Updated Event</a>" +
                         "</td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + baseUrl + url + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Continue Modifying</a>" +
+                            "<a href='" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Continue Modifying</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +

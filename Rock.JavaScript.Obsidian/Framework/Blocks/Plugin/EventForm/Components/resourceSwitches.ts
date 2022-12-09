@@ -124,7 +124,13 @@ export default defineComponent({
         },
     },
     watch: {
-
+      'viewModel.request.attributeValues.NeedsOpsAccommodations': {
+        handler(val) {
+          if(val == 'True' && this.viewModel?.request?.attributeValues) {
+            this.viewModel.request.attributeValues.NeedsSpace = "True"
+          }
+        }
+      }
     },
     mounted() {
 

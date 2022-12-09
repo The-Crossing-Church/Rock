@@ -65,8 +65,8 @@ export default defineComponent({
           const response = await invokeBlockAction<{ expirationDateTime: string }>("Save", {
               viewModel: viewModel.request, events: viewModel.events
           });
-          if (response.data) {
-              return response
+          if (response) {
+            return response
           }
       };
       provide("save", save);
@@ -76,8 +76,8 @@ export default defineComponent({
           const response = await invokeBlockAction<{ expirationDateTime: string }>("Submit", {
               viewModel: viewModel.request, events: viewModel.events
           });
-          if (response.data) {
-              return response
+          if (response) {
+            return response
           }
       };
       provide("submit", submit);
@@ -104,7 +104,8 @@ export default defineComponent({
           preFillTarget: "",
           preFillSource: "",
           rules: rules,
-          readonlySections: [] as string[]
+          readonlySections: [] as string[],
+          toastMessage: "",
       };
   },
   computed: {
@@ -181,6 +182,18 @@ export default defineComponent({
         }
         return !hasTitle
       },
+      errorList(): string[] {
+        let errors = [] as string[]
+        this.requestErrors.forEach((error: any) => {
+          error.errors.forEach((e: any) => {
+            let idx = errors.indexOf(e.text)
+            if(idx < 0) {
+              errors.push(e.text)
+            }
+          })
+        })
+        return errors
+      }
   },
   methods: {
     matchMultiEvent() {
@@ -239,6 +252,10 @@ export default defineComponent({
       }
     },
     submitRequest() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       this.isSubmitting = true
       if(this.viewModel) {
         // if(this.viewModel?.request?.attributeValues?.RequestStatus == "Draft") {
@@ -246,15 +263,30 @@ export default defineComponent({
         // }
         this.validate()
         this.submit(this.viewModel).then((res: any) => {
-          if(res.isSuccess){
-            this.id = res?.data?.id
-            this.response = res.data
-            this.isSave = false
-            this.modal = true
-          } else if (res.isError) {
-
+          if(res) {
+            if(res.isSuccess){
+              this.id = res?.data?.id
+              this.response = res.data
+              this.isSave = false
+              this.modal = true
+            } else if (res.isError || res.Message) {
+              this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
+              let el = document.getElementById('toast')
+              el?.classList.add("show")
+            }
           }
           this.isSubmitting = false
+        }).catch((err: any) => {
+          console.log('catch error')
+          if(err.Message) {
+            this.toastMessage = err.Message
+            let el = document.getElementById('toast')
+            el?.classList.add("show")
+          }
+        }).finally(() => {
+          if(el) {
+            el.style.display = 'none'
+          }
         })
       }
     },
@@ -319,6 +351,10 @@ export default defineComponent({
     },
     getRefName(name: string, idx: number) {
       return `${name}_${idx}`
+    },
+    hideToast() {
+      let el = document.getElementById('toast')
+      el?.classList.remove("show")
     },
     validate() {
       let requestIsValid = true
@@ -864,6 +900,9 @@ export default defineComponent({
     },
     resources: {
       handler(val) {
+        val = val.filter((r: string) => {
+          return r != ""
+        })
         if(val && this.viewModel?.request?.attributeValues) {
           this.viewModel.request.attributeValues.RequestType = val.join(',')
         }
@@ -893,6 +932,10 @@ export default defineComponent({
     } else {
       if(this.viewModel?.request.attributeValues) {
         this.resources = this.viewModel.request.attributeValues.RequestType.split(",").map((t: string) => t.trim())
+      }
+      //Show Validation
+      for(let i=0; i<= this.lastStep; i++) {
+        this.pagesViewed.push(i)
       }
     }
   },
@@ -1013,7 +1056,7 @@ export default defineComponent({
     </div>
   </div>
   <!-- Confirmation Modal -->
-  <a-modal v-model:visible="modal">
+  <a-modal v-model:visible="modal" width="80%">
     <div class="pt-2">
       <strong class="mb-2">
         {{response.message}}
@@ -1025,6 +1068,12 @@ export default defineComponent({
         This request is not eligible for pre-approval based on the following criteria: 
         <ul>
           <li v-for="(r, idx) in response.notValidForPreApprovalReasons" :key="idx">{{r}}</li>
+        </ul>
+      </div>
+      <div class="text-red" v-if="errorList && errorList.length > 0">
+        Please correct the following errors in your request:
+        <ul>
+          <li v-for="(e, idx) in errorList" :key="idx">{{e}}</li>
         </ul>
       </div>
     </div>
@@ -1062,6 +1111,16 @@ export default defineComponent({
       <a-btn type="grey" @click="preFillModal = false;">Cancel</a-btn>
     </template>
   </a-modal>
+</div>
+<div id="toast" role="alert">
+  <div class="toast-header text-red">
+    <i class="fas fa-exclamation-triangle mr-1"></i>
+    <strong>System Exception</strong>
+    <i class="fa fa-times pull-right hover" @click="hideToast"></i>
+  </div>
+  <div class="toast-body">
+    {{toastMessage}}
+  </div>
 </div>
 <v-style>
 label, .control-label {
@@ -1184,6 +1243,28 @@ label, .control-label {
 }
 .form-group {
   margin-bottom: 0px;
+}
+/* Toast Message */
+#toast {
+  display: none; 
+  opacity: 0;
+  min-width: 250px; 
+  background-color: #f8d7da; 
+  color: #333;
+  border-radius: 2px; 
+  padding: 8px; 
+  position: fixed; 
+  z-index: 5000; 
+  left: 30px; 
+  bottom: 30px; 
+  border: 1px solid #f4bec2;
+  transition: opacity 1s ease;
+  box-shadow: 0 0 1px 0 rgb(0 0 0 / 8%), 0 1px 3px 0 rgb(0 0 0 / 15%);
+}
+#toast.show {
+  display: block;
+  opacity: 1;
+  transition: opacity 1s ease;
 }
 </v-style>
 `

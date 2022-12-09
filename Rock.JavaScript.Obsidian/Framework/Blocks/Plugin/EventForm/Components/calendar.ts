@@ -205,21 +205,12 @@ export default defineComponent({
                 this.selectedDates = dates
                 let today = DateTime.now()
                 let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
-                if(this.min) {
-                    if(this.startDate.startOf('day') < today.startOf('day')) {
-                        //Our original minimum date is in the past
-                        if(firstDate.startOf('day') < today.startOf('day')) {
-                            //Looking at historical event
-                            this.startDate = firstDate
-                        } else {
-                            this.startDate = today
-                        }
-                    }
+                //Our original minimum date is in the past
+                if(firstDate.startOf('day') <= today.startOf('day')) {
+                    //Looking at historical event
+                    this.startDate = firstDate
                 } else {
-                    if(firstDate.startOf('day') < today.startOf('day')) {
-                        //Looking at historical event
-                        this.startDate = firstDate
-                    } else {
+                    if(!this.min) {
                         this.startDate = today
                     }
                 }

@@ -15,6 +15,7 @@ using Rock.ViewModel.NonEntities;
 using Rock.Web.Cache;
 using Rock.SystemGuid;
 using Rock.Communication;
+using Newtonsoft.Json;
 
 namespace Rock.Blocks.Plugin.EventForm
 {
@@ -201,25 +202,32 @@ namespace Rock.Blocks.Plugin.EventForm
         {
             try
             {
+                string originalStatus = viewModel.AttributeValues["RequestStatus"];
                 FormResponse r = SaveRequest( viewModel, events );
                 ContentChannelItem item = new ContentChannelItemService( context ).Get( r.id );
                 item.LoadAttributes();
-                string status = item.GetAttributeValue( "RequestStatus" );
-                if ( status == "Draft" )
+                string currentStatus = item.GetAttributeValue( "RequestStatus" );
+                if ( originalStatus == "Approved" || currentStatus == "Approved" )
+                {
+                    SubmittedNotifications( item );
+                    SubmittedConfirmation( item );
+                    r.message = "Your changes have been submitted.";
+                }
+                else if ( originalStatus == "Draft" )
                 {
                     item.SetAttributeValue( "RequestStatus", "Submitted" );
                     item.SaveAttributeValue( "RequestStatus" );
                     SubmittedNotifications( item );
                     SubmittedConfirmation( item );
-                    r.message = "Your request has been submitted";
+                    r.message = "Your request has been submitted.";
                 }
-                else if ( status == "Submitted" || status == "In Progress" )
+                else if ( originalStatus == "Submitted" || originalStatus == "In Progress" )
                 {
                     r.message = "Your request has been updated.";
                 }
                 else
                 {
-                    r.message = "Tour changes have been submitted.";
+                    r.message = "Your changes have been submitted.";
                 }
 
                 return ActionOk( r );
@@ -245,50 +253,9 @@ namespace Rock.Blocks.Plugin.EventForm
             var p = GetCurrentPerson();
             SubmissionFormViewModel viewModel = new SubmissionFormViewModel();
             //Linked Page URLs
-            string adminVal = GetAttributeValue( AttributeKey.AdminDashboard );
-            List<Guid> adminGuids = new List<Guid>();
-            if ( adminVal.Contains( "," ) )
-            {
-                adminGuids = adminVal.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                adminGuids.Add( Guid.Parse( adminVal ) );
-            }
-            if ( adminGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminGuids.Last() );
-                viewModel.adminDashboardURL = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( adminGuids.First() );
-                viewModel.adminDashboardURL = "page/" + page.Id.ToString();
-            }
-            string userVal = GetAttributeValue( AttributeKey.UserDashboard );
-            List<Guid> userGuids = new List<Guid>();
-            if ( userVal.Contains( "," ) )
-            {
-                userGuids = userVal.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                userGuids.Add( Guid.Parse( userVal ) );
-            }
-            if ( userGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userGuids.Last() );
-                viewModel.userDashboardURL = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( userGuids.First() );
-                viewModel.userDashboardURL = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            viewModel.adminDashboardURL = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
+            viewModel.userDashboardURL = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
 
             if ( id.HasValue )
             {
@@ -301,7 +268,10 @@ namespace Rock.Blocks.Plugin.EventForm
                     viewModel.originalRequest = viewModel.request;
                     viewModel.request = changes.ChildContentChannelItem.ToViewModel( p, true );
                     //Don't want the tite to show as "Changes"
-                    viewModel.request.Title = viewModel.request.Title.Substring( 0, viewModel.request.Title.Length - 8 );
+                    if ( viewModel.request.Title.EndsWith( "Changes" ) )
+                    {
+                        viewModel.request.Title = viewModel.request.Title.Substring( 0, viewModel.request.Title.Length - 8 );
+                    }
                     viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).SelectMany( i => i.ChildContentChannelItem.ChildItems ).Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList();
                 }
                 string status = "";
@@ -503,50 +473,179 @@ namespace Rock.Blocks.Plugin.EventForm
             ContentChannelItem original = null;
             var currentStatus = item.GetAttributeValue( "RequestStatus" );
 
-            if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Approved" )
-            {
-                ContentChannelItem changes = new ContentChannelItem()
-                {
-                    ContentChannelTypeId = item.ContentChannelTypeId,
-                    ContentChannelId = viewModel.ContentChannelId,
-                    Title = item.Title + " Changes"
-                };
-                changes.LoadAttributes();
-                foreach ( var av in item.AttributeValues )
-                {
-                    changes.SetAttributeValue( av.Key, av.Value.Value );
-                }
-                changes.SetAttributeValue( "RequestStatus", "Pending Changes" );
-                original = cciSvc.Get( item.Id );
-                original.SetAttributeValue( "RequestStatus", "Pending Changes" );
-                original.SaveAttributeValue( "RequestStatus" );
-                item = changes;
-            }
+            //Pre-Approval Check
+            var notValidForPreApprovalReasons = PreApprovalCheck( item, events );
+            var isPreApproved = item.GetAttributeValue( "IsPreApproved" );
 
-            if ( item.Id == 0 )
+            if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Pending Changes" && isPreApproved == "True" )
             {
-                item.CreatedByPersonAliasId = p.PrimaryAliasId;
-                item.CreatedDateTime = item.ModifiedDateTime;
-                cciSvc.Add( item );
-                if ( original != null )
+                //The changes being requested qualify for pre-approval, go ahead and change the event
+                var changesAssoc = item.ParentItems.FirstOrDefault( ci => ci.ContentChannelItem.ContentChannelId == EventContentChannelId );
+                if ( changesAssoc != null )
                 {
-                    //Create Association for Pending Changes
-                    var order = assocSvc.Queryable().AsNoTracking()
-                        .Where( a => a.ContentChannelItemId == original.Id )
-                        .Select( a => ( int? ) a.Order )
-                        .DefaultIfEmpty()
-                        .Max();
-                    var assoc = new ContentChannelItemAssociation();
-                    assoc.ContentChannelItemId = original.Id;
-                    assoc.ChildContentChannelItemId = item.Id;
-                    assoc.Order = order.HasValue ? order.Value + 1 : 0;
-                    assocSvc.Add( assoc );
+                    original = changesAssoc.ContentChannelItem;
+                    original.LoadAttributes();
+                    if ( item.Title.EndsWith( "Changes" ) )
+                    {
+                        original.Title = item.Title.Substring( 0, item.Title.Length - 8 );
+                    }
+                    else
+                    {
+                        original.Title = item.Title;
+                    }
+                    foreach ( var av in item.AttributeValues )
+                    {
+                        original.SetAttributeValue( av.Key, item.AttributeValues[av.Key].Value );
+                    }
+                    original.SetAttributeValue( "RequestStatus", "Approved" );
+                    original.SaveAttributeValues();
+                }
+                cciSvc.Delete( item );
+                assocSvc.Delete( changesAssoc );
+                item = original;
+
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    var detail = FromViewModel( events[i] );
+                    var originalEventAssoc = detail.ParentItems.FirstOrDefault();
+                    if ( originalEventAssoc != null )
+                    {
+                        var originalEvent = originalEventAssoc.ContentChannelItem;
+                        originalEvent.LoadAttributes();
+                        foreach ( var av in detail.AttributeValues )
+                        {
+                            originalEvent.SetAttributeValue( av.Key, detail.AttributeValues[av.Key].Value );
+                        }
+                        originalEvent.SaveAttributeValues();
+                        cciSvc.Delete( detail );
+                        assocSvc.Delete( originalEventAssoc );
+                    }
+                }
+                context.SaveChanges();
+            }
+            else
+            {
+                if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Approved" )
+                {
+                    if ( isPreApproved != "True" )
+                    {
+                        ContentChannelItem changes = new ContentChannelItem()
+                        {
+                            ContentChannelTypeId = item.ContentChannelTypeId,
+                            ContentChannelId = viewModel.ContentChannelId,
+                            Title = item.Title + " Changes"
+                        };
+                        changes.LoadAttributes();
+                        foreach ( var av in item.AttributeValues )
+                        {
+                            changes.SetAttributeValue( av.Key, av.Value.Value );
+                        }
+                        changes.SetAttributeValue( "RequestStatus", "Pending Changes" );
+                        original = cciSvc.Get( item.Id );
+                        original.SetAttributeValue( "RequestStatus", "Pending Changes" );
+                        original.SaveAttributeValue( "RequestStatus" );
+                        item = changes;
+                    }
+                }
+
+                if ( item.Id == 0 )
+                {
+                    item.CreatedByPersonAliasId = p.PrimaryAliasId;
+                    item.CreatedDateTime = item.ModifiedDateTime;
+                    cciSvc.Add( item );
+                    if ( original != null )
+                    {
+                        //Create Association for Pending Changes
+                        var order = assocSvc.Queryable().AsNoTracking()
+                            .Where( a => a.ContentChannelItemId == original.Id )
+                            .Select( a => ( int? ) a.Order )
+                            .DefaultIfEmpty()
+                            .Max();
+                        var assoc = new ContentChannelItemAssociation();
+                        assoc.ContentChannelItemId = original.Id;
+                        assoc.ChildContentChannelItemId = item.Id;
+                        assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                        assocSvc.Add( assoc );
+                    }
                     context.SaveChanges();
                 }
-            }
-            context.SaveChanges();
+                item.SaveAttributeValues();
 
-            //For Pre-Approval Check
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    var detail = FromViewModel( events[i] );
+                    var needsAssociation = false;
+                    ContentChannelItem originalDetail = null;
+
+                    if ( original != null )
+                    {
+                        ContentChannelItem changes = new ContentChannelItem()
+                        {
+                            ContentChannelTypeId = detail.ContentChannelTypeId,
+                            ContentChannelId = EventDetailsChangesContentChannelId,
+                            Title = detail.Title
+                        };
+                        changes.LoadAttributes();
+                        foreach ( var av in detail.AttributeValues )
+                        {
+                            changes.SetAttributeValue( av.Key, av.Value.Value );
+                        }
+                        originalDetail = cciSvc.Get( detail.Id );
+                        detail = changes;
+                    }
+                    if ( detail.Id == 0 )
+                    {
+                        if ( !String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ) )
+                        {
+                            detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
+                        }
+                        else
+                        {
+                            detail.Title = item.Title;
+                        }
+                        cciSvc.Add( detail );
+                        needsAssociation = true;
+                    }
+                    context.SaveChanges();
+                    if ( needsAssociation )
+                    {
+                        int? order;
+                        var assoc = new ContentChannelItemAssociation();
+                        if ( original != null )
+                        {
+                            order = assocSvc.Queryable().AsNoTracking()
+                                .Where( a => a.ContentChannelItemId == originalDetail.Id )
+                                .Select( a => ( int? ) a.Order )
+                                .DefaultIfEmpty()
+                                .Max();
+                            assoc.ContentChannelItemId = originalDetail.Id;
+                        }
+                        else
+                        {
+                            order = assocSvc.Queryable().AsNoTracking()
+                                .Where( a => a.ContentChannelItemId == item.Id )
+                                .Select( a => ( int? ) a.Order )
+                                .DefaultIfEmpty()
+                                .Max();
+                            assoc.ContentChannelItemId = item.Id;
+                        }
+                        assoc.ChildContentChannelItemId = detail.Id;
+                        assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                        assocSvc.Add( assoc );
+                        context.SaveChanges();
+                    }
+                    detail.SaveAttributeValues( context );
+                }
+            }
+
+            FormResponse res = new FormResponse() { id = item.Id, notValidForPreApprovalReasons = notValidForPreApprovalReasons, isPreApproved = notValidForPreApprovalReasons.Count() == 0 };
+            return res;
+        }
+
+        private List<string> PreApprovalCheck( ContentChannelItem item, List<ContentChannelItemViewModel> events )
+        {
+            var cciSvc = new ContentChannelItemService( context );
+            var avSvc = new AttributeValueService( context );
             List<PreApprovalData> eventDates = new List<PreApprovalData>();
             AttributeCache roomAttr = null;
             AttributeCache eventDateAttr = null;
@@ -554,14 +653,11 @@ namespace Rock.Blocks.Plugin.EventForm
             AttributeCache endTimeAttr = null;
             AttributeCache startBufferAttr = null;
             AttributeCache endBufferAttr = null;
+            List<string> notValidForPreApprovalReasons = new List<string>();
 
             for ( int i = 0; i < events.Count(); i++ )
             {
                 var detail = FromViewModel( events[i] );
-                var needsAssociation = false;
-                ContentChannelItem originalDetail = null;
-
-                //For Pre-Approval Check
                 roomAttr = detail.Attributes[GetAttributeValue( AttributeKey.Rooms )];
                 eventDateAttr = detail.Attributes[GetAttributeValue( AttributeKey.DetailsEventDate )];
                 startTimeAttr = detail.Attributes[GetAttributeValue( AttributeKey.StartDateTime )];
@@ -589,69 +685,8 @@ namespace Rock.Blocks.Plugin.EventForm
                     PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
                     eventDates.Add( d );
                 }
-
-                if ( original != null )
-                {
-                    ContentChannelItem changes = new ContentChannelItem()
-                    {
-                        ContentChannelTypeId = detail.ContentChannelTypeId,
-                        ContentChannelId = EventDetailsChangesContentChannelId,
-                        Title = detail.Title
-                    };
-                    changes.LoadAttributes();
-                    foreach ( var av in detail.AttributeValues )
-                    {
-                        changes.SetAttributeValue( av.Key, av.Value.Value );
-                    }
-                    originalDetail = cciSvc.Get( detail.Id );
-                    detail = changes;
-                }
-                if ( detail.Id == 0 )
-                {
-                    if ( !String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ) )
-                    {
-                        detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
-                    }
-                    else
-                    {
-                        detail.Title = item.Title;
-                    }
-                    cciSvc.Add( detail );
-                    needsAssociation = true;
-                }
-                context.SaveChanges();
-                if ( needsAssociation )
-                {
-                    int? order;
-                    var assoc = new ContentChannelItemAssociation();
-                    if ( original != null )
-                    {
-                        order = assocSvc.Queryable().AsNoTracking()
-                            .Where( a => a.ContentChannelItemId == originalDetail.Id )
-                            .Select( a => ( int? ) a.Order )
-                            .DefaultIfEmpty()
-                            .Max();
-                        assoc.ContentChannelItemId = originalDetail.Id;
-                    }
-                    else
-                    {
-                        order = assocSvc.Queryable().AsNoTracking()
-                            .Where( a => a.ContentChannelItemId == item.Id )
-                            .Select( a => ( int? ) a.Order )
-                            .DefaultIfEmpty()
-                            .Max();
-                        assoc.ContentChannelItemId = item.Id;
-                    }
-                    assoc.ChildContentChannelItemId = detail.Id;
-                    assoc.Order = order.HasValue ? order.Value + 1 : 0;
-                    assocSvc.Add( assoc );
-                    context.SaveChanges();
-                }
-                detail.SaveAttributeValues( context );
             }
 
-            //Pre-Approval Check
-            List<string> notValidForPreApprovalReasons = new List<string>();
             item.SetAttributeValue( "IsPreApproved", "False" );
             //Request is Valid
             if ( item.GetAttributeValue( "RequestIsValid" ) == "True" )
@@ -749,7 +784,16 @@ namespace Rock.Blocks.Plugin.EventForm
                                 if ( EventDatesAttrGuid != Guid.Empty && RequestStatusAttrGuid != Guid.Empty && IsSameAttrGuid != Guid.Empty )
                                 {
                                     string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
-                                    var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id );
+                                    int originalId = 0;
+                                    if ( item.ContentChannelId == EventChangesContentChannelId )
+                                    {
+                                        var parent = item.ParentItems.FirstOrDefault();
+                                        if ( parent != null )
+                                        {
+                                            originalId = parent.ContentChannelItemId;
+                                        }
+                                    }
+                                    var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id && cci.Id != originalId );
                                     //Requests that are on the calendar
                                     var statusAttr = new AttributeService( context ).Get( RequestStatusAttrGuid );
                                     var statusValues = avSvc.Queryable().Where( av => av.AttributeId == statusAttr.Id && ( av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" ) ) );
@@ -784,17 +828,17 @@ namespace Rock.Blocks.Plugin.EventForm
                                     ccItems.AddRange( eventDetails );
                                     //Events with overlapping rooms
                                     var roomValues = avSvc.Queryable().Where( av => av.AttributeId == roomAttr.Id ).ToList().Where( av =>
-                                     {
-                                         if ( av.AttributeId == roomAttr.Id )
-                                         {
-                                             var intersection = av.Value.Split( ',' ).Intersect( eventDates[i].rooms.Split( ',' ) );
-                                             if ( intersection.Count() > 0 )
-                                             {
-                                                 return true;
-                                             }
-                                         }
-                                         return false;
-                                     } );
+                                    {
+                                        if ( av.AttributeId == roomAttr.Id )
+                                        {
+                                            var intersection = av.Value.Split( ',' ).Intersect( eventDates[i].rooms.Split( ',' ) );
+                                            if ( intersection.Count() > 0 )
+                                            {
+                                                return true;
+                                            }
+                                        }
+                                        return false;
+                                    } );
                                     ccItems = ccItems.Join( roomValues,
                                         itm => itm.Id,
                                         av => av.EntityId,
@@ -803,28 +847,28 @@ namespace Rock.Blocks.Plugin.EventForm
                                     //Check Times overlap
                                     ccItems.LoadAttributes();
                                     ccItems = ccItems.Where( itm =>
-                                     {
-                                         DateRange r = new DateRange();
-                                         r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
-                                         r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" );
-                                         var startBuffer = itm.GetAttributeValue( startBufferAttr.Key );
-                                         var endBuffer = itm.GetAttributeValue( endBufferAttr.Key );
-                                         if ( !String.IsNullOrEmpty( startBuffer ) )
-                                         {
-                                             int buffer = Int32.Parse( startBuffer );
-                                             r.Start.Value.AddMinutes( buffer * -1 );
-                                         }
-                                         if ( !String.IsNullOrEmpty( endBuffer ) )
-                                         {
-                                             int buffer = Int32.Parse( endBuffer );
-                                             r.End.Value.AddMinutes( buffer );
-                                         }
-                                         if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
-                                         {
-                                             return true;
-                                         }
-                                         return false;
-                                     } ).ToList();
+                                    {
+                                        DateRange r = new DateRange();
+                                        r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
+                                        r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" );
+                                        var startBuffer = itm.GetAttributeValue( startBufferAttr.Key );
+                                        var endBuffer = itm.GetAttributeValue( endBufferAttr.Key );
+                                        if ( !String.IsNullOrEmpty( startBuffer ) )
+                                        {
+                                            int buffer = Int32.Parse( startBuffer );
+                                            r.Start.Value.AddMinutes( buffer * -1 );
+                                        }
+                                        if ( !String.IsNullOrEmpty( endBuffer ) )
+                                        {
+                                            int buffer = Int32.Parse( endBuffer );
+                                            r.End.Value.AddMinutes( buffer );
+                                        }
+                                        if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
+                                        {
+                                            return true;
+                                        }
+                                        return false;
+                                    } ).ToList();
                                     if ( ccItems.Count() > 0 )
                                     {
                                         noConflicts = false;
@@ -837,6 +881,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     if ( inRange && validAttendance && validRooms && noConflicts )
                     {
                         item.SetAttributeValue( "IsPreApproved", "True" );
+                        item.SetAttributeValue( "RequestStatus", "Approved" );
                     }
                 }
                 else
@@ -850,8 +895,7 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             notValidForPreApprovalReasons = notValidForPreApprovalReasons.Distinct().ToList();
             item.SaveAttributeValues( context );
-            FormResponse res = new FormResponse() { id = item.Id, notValidForPreApprovalReasons = notValidForPreApprovalReasons, isPreApproved = notValidForPreApprovalReasons.Count() == 0 };
-            return res;
+            return notValidForPreApprovalReasons;
         }
 
         /// <summary>
@@ -989,6 +1033,15 @@ namespace Rock.Blocks.Plugin.EventForm
         {
             item.LoadAttributes();
             var events = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
+            if ( item.ContentChannelId == EventChangesContentChannelId )
+            {
+                var parentAssoc = item.ParentItems.FirstOrDefault();
+                if ( parentAssoc != null )
+                {
+                    var parent = parentAssoc.ContentChannelItem;
+                    events = parent.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem.ChildItems.FirstOrDefault().ChildContentChannelItem ).ToList();
+                }
+            }
             Rock.Model.Person p = GetCurrentPerson();
             events.LoadAttributes();
             string message = "";
@@ -996,8 +1049,9 @@ namespace Rock.Blocks.Plugin.EventForm
             List<GroupMember> groupMembers = new List<GroupMember>();
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
-                subject = "New Room Request from " + p.FullName;
-                message = p.FullName + " has submitted a room request. Details of the request are as follows:<br/>";
+                subject = "Room Request from " + p.FullName;
+                message = p.FullName + " has submitted a room request. This request meets criteria for pre-approval. Details of the request are as follows:<br/><br/>";
+
                 Guid? securityRoleGuid = GetAttributeValue( AttributeKey.RoomAdminRole ).AsGuidOrNull();
                 if ( securityRoleGuid.HasValue )
                 {
@@ -1007,7 +1061,7 @@ namespace Rock.Blocks.Plugin.EventForm
             else
             {
                 subject = "New Event Request from " + p.FullName;
-                message = "Details of the request are as follows: <br/>";
+                message = "Details of the request are as follows: <br/><br/>";
                 Guid? securityRoleGuid = GetAttributeValue( AttributeKey.EventAdminRole ).AsGuidOrNull();
                 if ( securityRoleGuid.HasValue )
                 {
@@ -1017,44 +1071,24 @@ namespace Rock.Blocks.Plugin.EventForm
             if ( item.GetAttributeValue( "RequestStatus" ) == "Pending Changes" )
             {
                 subject = p.FullName + " is Requesting Changes to " + item.Title;
-                message = "Details of the changes are as follows: <br/>";
+                message = "Details of the changes are as follows: <br/><br/>";
             }
             message += GetRequestDetails( item, events );
 
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
 
-            string adminDashGuid = GetAttributeValue( AttributeKey.AdminDashboard );
-            List<Guid> adminDashGuids = new List<Guid>();
             string url = "";
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( adminDashGuid.Contains( "," ) )
-            {
-                adminDashGuids = adminDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                adminDashGuids.Add( Guid.Parse( adminDashGuid ) );
-            }
-            if ( adminDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( adminDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( adminDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
 
             message += "<br/>" +
                 "<table style='width: 100%;'>" +
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + baseUrl + url + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
+                            "<a href='" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Open Request</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -1085,11 +1119,12 @@ namespace Rock.Blocks.Plugin.EventForm
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
                 subject = "Your Request has been approved";
-                message = "Your room/space request has been approved. The details of your request are as follows: <br/>";
+                message = "Your room/space request has been approved. The details of your request are as follows: <br/><br/>";
             }
             else
             {
-                message = "Your Event Request has been submitted and is pending approval. You can expect a response from the Events Director within 48 hours and/or 2 business days, if not sooner. Thank you! <br/>The details of your request are as follows: <br/>";
+                subject = "Your Request has been submitted";
+                message = "Your Event Request has been submitted and is pending approval. You can expect a response from the Events Director within 48 hours and/or 2 business days, if not sooner. Thank you! <br/>The details of your request are as follows: <br/><br/>";
             }
             message += GetRequestDetails( item, events );
 
@@ -1158,37 +1193,17 @@ namespace Rock.Blocks.Plugin.EventForm
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
 
-            string userDashGuid = GetAttributeValue( AttributeKey.UserDashboard );
-            List<Guid> userDashGuids = new List<Guid>();
             string url;
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
-            if ( userDashGuid.Contains( "," ) )
-            {
-                userDashGuids = userDashGuid.Split( ',' ).Select( g => Guid.Parse( g ) ).ToList();
-            }
-            else
-            {
-                userDashGuids.Add( Guid.Parse( userDashGuid ) );
-            }
-            if ( userDashGuids.Count() > 1 )
-            {
-                //Use Page Route
-                Rock.Model.PageRoute route = new PageRouteService( context ).Get( userDashGuids.Last() );
-                url = route.Route;
-            }
-            else
-            {
-                //Use Page Id
-                Rock.Model.Page page = new PageService( context ).Get( userDashGuids.First() );
-                url = "page/" + page.Id.ToString();
-            }
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             message += "<br/>" +
                 "<table style='width: 100%;'>" +
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
                             "<strong>See a mistake? You can modify your request using the link below. If your request was already approved the changes you make will have to be approved as well.</strong><br/><br/><br/>" +
-                            "<a href='" + baseUrl + url + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Modify Request</a>" +
+                            "<a href='" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Modify Request</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -1207,66 +1222,92 @@ namespace Rock.Blocks.Plugin.EventForm
 
         private string GetRequestDetails( ContentChannelItem item, List<ContentChannelItem> events )
         {
+            ContentChannelItem itemChanges = null;
+            ContentChannelItemAssociation itemChangesAssoc = item.ParentItems.FirstOrDefault( ci => ci.ContentChannelItem.ContentChannelId == EventContentChannelId );
+            if ( item.ContentChannelId == EventChangesContentChannelId && itemChangesAssoc != null )
+            {
+                itemChanges = item;
+                item = itemChangesAssoc.ContentChannelItem;
+                events = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
+                events.LoadAttributes();
+                item.LoadAttributes();
+                itemChanges.LoadAttributes();
+            }
             string message = "";
-            message += "<strong>Ministry:</strong> " + item.AttributeValues["Ministry"].ValueFormatted + "<br/>";
+            message += RenderValue( "Ministry", item.AttributeValues["Ministry"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Ministry"].ValueFormatted : "" );
+            string changeTitle = itemChanges != null ? itemChanges.Title : "";
+            if ( itemChanges != null && itemChanges.Title.EndsWith( "Changes" ) )
+            {
+                changeTitle = itemChanges.Title.Substring( 0, itemChanges.Title.Length - 8 );
+            }
             if ( item.AttributeValues["RequestType"].Value == "Room" )
             {
-                message += "<strong>Meeting Listing on Calendar:</strong> " + item.Title + "<br/>";
+                message += RenderValue( "Meeting Listing on Calendar", item.Title, itemChanges != null ? changeTitle : "" );
             }
             else
             {
-                message += "<strong>Event Name on Calendar:</strong> " + item.Title + "<br/>";
+                message += RenderValue( "Event Name on Calendar", item.Title, itemChanges != null ? changeTitle : "" );
+
             }
-            message += "<strong>Ministry Contact:</strong> " + item.AttributeValues["Contact"].ValueFormatted + "<br/><br/>";
+            message += RenderValue( "Ministry Contact", item.AttributeValues["Contact"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Contact"].ValueFormatted : "" );
+            message += "<br/>";
 
             for ( int i = 0; i < events.Count(); i++ )
             {
+                ContentChannelItem eventChanges = null;
+                ContentChannelItemAssociation eventChangesAssoc = events[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                if ( eventChangesAssoc != null )
+                {
+                    eventChanges = eventChangesAssoc.ChildContentChannelItem;
+                    eventChanges.LoadAttributes();
+                }
                 message += "<div style='font-size: 18px;'><strong style='color: #6485b3;'>Date Information</strong><br/>";
                 if ( events.Count() == 1 )
                 {
-                    message += "<strong>Event Dates:</strong> " + String.Join( ", ", item.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ) + "<br/>";
+                    message += RenderValue( "Event Dates", String.Join( ", ", item.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ), itemChanges != null ? String.Join( ", ", itemChanges.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ) : "" );
+
                 }
                 else
                 {
-                    message += "<strong>Event Date:</strong> " + DateTime.Parse( events[i].AttributeValues["EventDate"].Value ).ToString( "MM/dd/yyyy" ) + "<br/>";
+                    message += RenderValue( "Event Date", DateTime.Parse( events[i].AttributeValues["EventDate"].Value ).ToString( "MM/dd/yyyy" ), eventChanges != null ? DateTime.Parse( eventChanges.AttributeValues["EventDate"].Value ).ToString( "MM/dd/yyyy" ) : "" );
                 }
-                if ( !String.IsNullOrEmpty( events[i].AttributeValues["StartTime"].Value ) )
+                if ( !String.IsNullOrEmpty( events[i].AttributeValues["StartTime"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["StartTime"].Value ) ) )
                 {
-                    message += "<strong>Start Time:</strong> " + events[i].AttributeValues["StartTime"].ValueFormatted + "<br/>";
+                    message += RenderValue( "Start Time", events[i].AttributeValues["StartTime"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["StartTime"].ValueFormatted : "" );
                 }
-                if ( !String.IsNullOrEmpty( events[i].AttributeValues["EndTime"].Value ) )
+                if ( !String.IsNullOrEmpty( events[i].AttributeValues["EndTime"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["EndTime"].Value ) ) )
                 {
-                    message += "<strong>End Time:</strong> " + events[i].AttributeValues["EndTime"].ValueFormatted + "<br/>";
+                    message += RenderValue( "End Time", events[i].AttributeValues["EndTime"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["EndTime"].ValueFormatted : "" );
                 }
                 message += "</div>";
 
                 if ( item.AttributeValues["NeedsSpace"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Space", "Space", events[i] );
+                    message += GetCategoryDetails( "Event Space", "Space", events[i], eventChanges );
                 }
                 if ( item.AttributeValues["NeedsCatering"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Catering", "Catering", events[i] );
+                    message += GetCategoryDetails( "Event Catering", "Catering", events[i], eventChanges );
                 }
                 if ( item.AttributeValues["NeedsOpsAccommodations"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Ops Requests", "Ops Accommodations", events[i] );
+                    message += GetCategoryDetails( "Event Ops Requests", "Ops Accommodations", events[i], eventChanges );
                 }
                 if ( item.AttributeValues["NeedsChildCare"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Childcare", "Childcare", events[i] );
+                    message += GetCategoryDetails( "Event Childcare", "Childcare", events[i], eventChanges );
                 }
                 if ( item.AttributeValues["NeedsChildCareCatering"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Childcare Catering", "Childcare Catering", events[i] );
+                    message += GetCategoryDetails( "Event Childcare Catering", "Childcare Catering", events[i], eventChanges );
                 }
                 if ( item.AttributeValues["NeedsRegistration"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Registration", "Registration", events[i] );
+                    message += GetCategoryDetails( "Event Registration", "Registration", events[i], eventChanges );
                 }
                 if ( item.AttributeValues["NeedsOnline"].Value == "True" )
                 {
-                    message += GetCategoryDetails( "Event Online", "Zoom", events[i] );
+                    message += GetCategoryDetails( "Event Online", "Zoom", events[i], eventChanges );
                 }
                 message += "<br/>";
             }
@@ -1276,28 +1317,28 @@ namespace Rock.Blocks.Plugin.EventForm
                 if ( !String.IsNullOrEmpty( item.AttributeValues["WebCalendarDescription"].Value ) )
                 {
                     message += "<div style='font-size: 18px;'><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
-                    message += "<strong>" + item.Attributes["WebCalendarDescription"].Name + ":</strong> " + item.AttributeValues["WebCalendarDescription"].Value;
+                    message += RenderValue( item.Attributes["WebCalendarDescription"].Name, item.AttributeValues["WebCalendarDescription"].Value, itemChanges != null ? itemChanges.AttributeValues["WebCalendarDescription"].Value : "" );
                     message += "</div>";
                 }
             }
             if ( item.AttributeValues["NeedsPublicity"].Value == "True" )
             {
-                message += GetCategoryDetails( "Event Publicity", "Publicity", item );
+                message += GetCategoryDetails( "Event Publicity", "Publicity", item, itemChanges );
             }
             if ( item.AttributeValues["NeedsProductionAccommodations"].Value == "True" )
             {
-                message += GetCategoryDetails( "Event Production", "Production Accommodations", item );
+                message += GetCategoryDetails( "Event Production", "Production Accommodations", item, itemChanges );
             }
             if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) )
             {
                 message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";
-                message += "<strong>Notes:</strong> " + item.AttributeValues["Notes"].Value + "<br/>";
+                message += RenderValue( "Notes", item.AttributeValues["Notes"].Value, itemChanges != null ? itemChanges.AttributeValues["Notes"].Value : "" );
             }
 
             return message;
         }
 
-        private string GetCategoryDetails( string category, string sectionTitle, ContentChannelItem item )
+        private string GetCategoryDetails( string category, string sectionTitle, ContentChannelItem item, ContentChannelItem itemChanges )
         {
             string message = "";
             var attrs = item.Attributes.Where( a => a.Value.Categories.Select( c => c.Name ).Contains( category ) ).OrderBy( a => a.Value.Order ).Select( a => a.Key ).ToList();
@@ -1307,11 +1348,69 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             for ( int k = 0; k < attrs.Count(); k++ )
             {
-                message += "<strong>" + item.Attributes[attrs[k]].Name + ":</strong> " + item.AttributeValues[attrs[k]].ValueFormatted + "<br/>";
+                message += RenderValue( item.Attributes[attrs[k]].Name, item.AttributeValues[attrs[k]].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues[attrs[k]].ValueFormatted : "", attrs[k] == "RoomSetUp" ? true : false );
             }
             if ( attrs.Count() > 0 )
             {
                 message += "</div>";
+            }
+            return message;
+        }
+
+        private string RenderValue( string title, string original, string current, bool isRoomSetUp = false )
+        {
+            string message = "";
+            if ( !String.IsNullOrEmpty( current ) && original != current )
+            {
+                if ( isRoomSetUp )
+                {
+                    List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
+                    List<TableSetUp> currentSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( current );
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    for ( int i = 0; i < originalSetUp.Count(); i++ )
+                    {
+                        if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
+                        {
+                            var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
+                            message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                        }
+                    }
+                    message += "</ul> <ul style='color: #347689;'>";
+                    for ( int i = 0; i < currentSetUp.Count(); i++ )
+                    {
+                        if ( !String.IsNullOrEmpty( currentSetUp[i].Room ) )
+                        {
+                            var room = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].Room ) );
+                            message += $"<li>{room}: {currentSetUp[i].NumberofTables} {currentSetUp[i].TypeofTable} tables with {currentSetUp[i].NumberofChairs} each.</li>";
+                        }
+                    }
+                    message += "</ul>";
+                }
+                else
+                {
+                    message = "<strong>" + title + ":</strong> <span style='color: #cc3f0c;'>" + original + "</span> <span style='color: #347689;'>" + current + "</span><br/>";
+                }
+            }
+            else
+            {
+                if ( isRoomSetUp )
+                {
+                    List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
+                    message = "<strong>" + title + ":</strong> <ul>";
+                    for ( int i = 0; i < originalSetUp.Count(); i++ )
+                    {
+                        if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
+                        {
+                            var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
+                            message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                        }
+                    }
+                    message += "</ul>";
+                }
+                else
+                {
+                    message = "<strong>" + title + ":</strong> " + original + "<br/>";
+                }
             }
             return message;
         }
@@ -1351,6 +1450,13 @@ namespace Rock.Blocks.Plugin.EventForm
             public List<string> notValidForPreApprovalReasons { get; set; }
             public bool isPreApproved { get; set; }
             public string message { get; set; }
+        }
+        public class TableSetUp
+        {
+            public string Room { get; set; }
+            public string TypeofTable { get; set; }
+            public int NumberofTables { get; set; }
+            public int NumberofChairs { get; set; }
         }
     }
 }

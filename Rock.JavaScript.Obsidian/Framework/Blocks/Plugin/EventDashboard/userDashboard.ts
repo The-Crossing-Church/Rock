@@ -252,6 +252,10 @@ export default defineComponent({
       return ""
     },
     selectItem(item: any) { 
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       this.loadDetails(item.id).then((response: any) => {
         if(response.data) {
           response.data.details.forEach((detail: any) => {
@@ -264,6 +268,15 @@ export default defineComponent({
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
+        }
+        if(response.isError) {
+          this.toastMessage = response.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
         }
       })
     },
@@ -278,6 +291,11 @@ export default defineComponent({
           this.viewModel?.events.forEach((e: any) => {
             e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
           })
+        }
+        if(response.isError) {
+          this.toastMessage = response.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
         }
       }).catch((err) => {
         console.log(err)
@@ -323,10 +341,15 @@ export default defineComponent({
             }
           })
         }
+        if(res.isError) {
+          this.toastMessage = res.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
       }).catch((err) => {
-        console.log('[Change Status Error]')
-        console.log(err)
-        //TODO: Alert User
+        this.toastMessage = err
+        let el = document.getElementById('toast')
+        el?.classList.add("show")
       }).finally(() => {
         this.btnLoading.inprogress = false
         this.btnLoading.cancelled = false
@@ -344,6 +367,10 @@ export default defineComponent({
       this.commentModal = true
     },
     createComment() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       this.addComment(this.selected.id, this.comment).then((res: any) => {
         if(res.isSuccess) {
           if(res.data?.comment) {
@@ -357,6 +384,10 @@ export default defineComponent({
         }
         this.commentModal = false
         this.comment = ""
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
       })
     },
     hideToast() {
@@ -396,6 +427,10 @@ export default defineComponent({
       }
     },
     resubmit() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       if(this.copy.attributeValues) {
         let eventDates = ""
         if(this.copy.attributeValues.IsSame == 'True') {
@@ -423,6 +458,10 @@ export default defineComponent({
           }
         }).catch((err) => {
           console.log(err)
+        }).finally(() => {
+          if(el) {
+            el.style.display = 'none'
+          }
         })
       }
     }
@@ -432,6 +471,11 @@ export default defineComponent({
   },
   mounted() {
     this.filters = this.defaultFilters
+    let params = new URLSearchParams(window.location.search)
+    let id = params.get("Id")
+    if(id) {
+      this.selectItem({id: id})
+    }
   },
   template: `
 <div class="card">

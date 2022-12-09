@@ -274,7 +274,6 @@ export default defineComponent({
         reqFilter.ministry = ministry.value
       }
       this.filterRequests(option, reqFilter).then((response: any) => {
-        console.log(response)
         if(this.viewModel) {
           if(option == 'Submitted') {
             this.viewModel.submittedEvents = response.data.submittedEvents
@@ -366,6 +365,10 @@ export default defineComponent({
       this.commentModal = true
     },
     createComment() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       this.addComment(this.selected.id, this.comment).then((res: any) => {
         if(res.isSuccess) {
           if(res.data?.comment) {
@@ -379,6 +382,10 @@ export default defineComponent({
         }
         this.commentModal = false
         this.comment = ""
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
       })
     },
     partialApproval() {
@@ -386,6 +393,10 @@ export default defineComponent({
       let approved = ref.approvedAttributes as string[]
       let denied = ref.deniedAttributes as string[]
       let events = ref.eventChanges as any[]
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       
       this.completePartialApproval(this.selected.id, approved, denied, events).then((res) => {
         this.partialApprovalModal = false
@@ -399,6 +410,10 @@ export default defineComponent({
           this.toastMessage = res.errorMessage
           let el = document.getElementById('toast')
           el?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
         }
       })
     },
@@ -596,7 +611,7 @@ export default defineComponent({
           Deny
         </a-btn>
       </a-pop>
-      <a-btn type="grey" v-if="selectedStatus != 'Cancelled' && selectedStatus != 'Cancelled by User'" @click="updateStatus('Cancelled')" :loading="btnLoading.cancelled">
+      <a-btn type="grey" v-if="selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled')" :loading="btnLoading.cancelled">
         <i class="mr-1 fa fa-ban"></i>
         Cancel
       </a-btn>

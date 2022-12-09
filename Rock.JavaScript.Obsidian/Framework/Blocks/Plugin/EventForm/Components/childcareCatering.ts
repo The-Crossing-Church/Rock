@@ -54,6 +54,13 @@ export default defineComponent({
           this.$emit("validation-change", { ref: this.refName, errors: val})
         },
         deep: true
+      }, 
+      'e.attributeValues.ChildcareVendor': {
+        handler(val) {
+          if(val == 'Pizza' && this.e?.attributeValues && this.e.attributeValues.ChildcarePreferredMenu == '') {
+            this.e.attributeValues.ChildcarePreferredMenu = 'Pizza'
+          }
+        }
       }
     },
     mounted() {
