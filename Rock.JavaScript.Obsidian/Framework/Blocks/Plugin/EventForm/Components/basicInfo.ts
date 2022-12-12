@@ -176,7 +176,21 @@ export default defineComponent({
       },
       validationChange(errs: Record<string, string>[]) {
         this.errors = errs
-      }
+      },
+      previewStartBuffer(time: string, buffer: any) {
+        if(time && buffer) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
+        } else if (time) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+        }
+      },
+      previewEndBuffer(time: string, buffer: any) {
+        if(time && buffer) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
+        } else if (time) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+        }
+      },
     },
     watch: {
       eventDates: {
@@ -284,6 +298,34 @@ export default defineComponent({
           ]'
         ></tcc-time>
       </tcc-validator>
+    </div>
+  </div>
+  <br/>
+  <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)">
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="viewModel.events[0].attributeValues.StartBuffer"
+        :attribute="viewModel.events[0].attributes.StartBuffer"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="viewModel.events[0].attributeValues.EndBuffer"
+        :attribute="viewModel.events[0].attributes.EndBuffer"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+  <br/>
+  <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)">
+    <div class="col col-xs-6" v-if="viewModel.events[0].attributeValues.StartBuffer != ''">
+      <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
+      {{viewModel.events[0].attributeValues.StartBuffer}} minutes: {{previewStartBuffer(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.StartBuffer)}}
+    </div>
+    <div class="col col-xs-6" v-if="viewModel.events[0].attributeValues.EndBuffer != ''">
+      <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
+      {{viewModel.events[0].attributeValues.EndBuffer}} minutes: {{previewEndBuffer(viewModel.events[0].attributeValues.EndTime, viewModel.events[0].attributeValues.EndBuffer)}}
     </div>
   </div>
   <br/>

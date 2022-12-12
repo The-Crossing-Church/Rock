@@ -81,7 +81,7 @@ export default defineComponent({
       menu(val) {
         if(val) {
           setTimeout(() => {
-            let el = document.querySelector('.txt-hour') as any
+            let el = document.querySelector('.ant-modal:not([style*="display: none"]) .txt-hour') as any
             if(el) {
               el.focus()
             }
@@ -89,13 +89,13 @@ export default defineComponent({
         }
       },
       time(val) {
-        this.$emit("update:modelValue", val);
+        this.$emit("update:modelValue", val)
       },
       default(val) {
         if (!this.originalValue && (!this.modelValue || this.modelValue.includes("null"))) {
-          this.hour = val.split(":")[0];
-          this.minute = val.split(":")[1].split(" ")[0];
-          this.meridiem = val.split(" ")[1];
+          this.hour = val.split(":")[0]
+          this.minute = val.split(":")[1].split(" ")[0]
+          this.meridiem = val.split(" ")[1]
         }
       },
       modelValue(val) {

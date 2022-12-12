@@ -146,6 +146,9 @@ export default defineComponent({
       updateFromGridAction(id: number, status: string) {
         this.$emit("updatestatus", id, status)
       },
+      addBuffer(id: number) {
+        this.$emit("addbuffer", id)
+      },
       selectItem(item: any) {
         this.$emit("selectitem", item)
       },
@@ -253,7 +256,7 @@ export default defineComponent({
       {{ resources }}
     </template>
     <template #action="{ record: r }">
-      <tcc-grid :request="r" :url="workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+      <tcc-grid :request="r" :url="workflowURL" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBuffer"></tcc-grid>
     </template>
   </a-table>
 </div>

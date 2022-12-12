@@ -30,6 +30,10 @@ export default defineComponent({
       updateStatus(id: number, status: string) {
         this.$emit("updatestatus", id, status)
       },
+      addBuffer(id: number) {
+        this.$emit("addbuffer", id)
+        this.visible = false
+      }
     },
     watch: {
       
@@ -46,7 +50,7 @@ export default defineComponent({
     <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="updateStatus(request.id, 'Approved')">
       <i class="fas fa-check-circle"></i>
     </a-btn>
-    <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'">
+    <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="addBuffer(request.id)">
       <i class="far fa-clock"></i>
     </a-btn>
   </template>

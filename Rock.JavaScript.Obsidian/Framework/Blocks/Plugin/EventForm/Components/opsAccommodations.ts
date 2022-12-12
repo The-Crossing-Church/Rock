@@ -8,6 +8,7 @@ import Validator from "./validator"
 import Toggle from "./toggle"
 import rules from "../Rules/rules"
 import RoomSetUp from "./roomSetUp"
+import TimePicker from "./timePicker"
 
 type SelectedListItem = {
   text: string,
@@ -30,6 +31,7 @@ export default defineComponent({
       "tcc-validator": Validator,
       "tcc-switch": Toggle,
       "tcc-setup": RoomSetUp,
+      "tcc-time": TimePicker,
       "a-btn": Button,
       "a-modal": Modal,
       "a-select": Select,
@@ -42,7 +44,8 @@ export default defineComponent({
       locations: Array as PropType<DefinedValue[]>,
       locationSetUp: Array as PropType<any[]>,
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      request: Object as PropType<ContentChannelItem>
     },
     setup() {
 
@@ -313,6 +316,35 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
+  <template v-if="request.attributeValues.NeedsCatering == 'False'">
+    <h4 class="text-accent mt-2">Refreshments</h4>
+    <div class="row">
+      <div class="col col-xs-12 col-md-6">
+        <rck-field
+          v-model="e.attributeValues.Drinks"
+          :attribute="e.attributes.Drinks"
+          :is-edit-mode="true"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime">
+          <tcc-time 
+            :label="e.attributes.DrinkTime.name"
+            v-model="e.attributeValues.DrinkTime"
+          ></tcc-time>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 col-md-6">
+        <rck-field
+          v-model="e.attributeValues.DrinkSetupLocation"
+          :attribute="e.attributes.DrinkSetupLocation"
+          :is-edit-mode="true"
+        ></rck-field>
+      </div>
+    </div>
+  </template>
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div class="mt-2" style="height: 16px;"></div>

@@ -141,9 +141,17 @@ export default defineComponent({
                             }
                             let cRange = Interval.fromDateTimes(cdStart, cdEnd)
                             for(let i=0; i<dates.length; i++) {
+                                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                if(this.e?.attributeValues?.StartBuffer) {
+                                    eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
+                                }
+                                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                if(this.e?.attributeValues?.EndBuffer) {
+                                    eEnd = eStart.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
+                                }
                                 let current = Interval.fromDateTimes(
-                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`),
-                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                    eStart,
+                                    eEnd
                                 )
                                 if (cRange.overlaps(current)) {
                                     overlaps = true
@@ -165,9 +173,17 @@ export default defineComponent({
                             }
                             let cRange = Interval.fromDateTimes(cdStart, cdEnd)
                             for(let i=0; i<dates.length; i++) {
+                                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                if(this.e?.attributeValues?.StartBuffer) {
+                                    eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
+                                }
+                                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                if(this.e?.attributeValues?.EndBuffer) {
+                                    eEnd = eStart.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
+                                }
                                 let current = Interval.fromDateTimes(
-                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`),
-                                    DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                                    eStart,
+                                    eEnd
                                 )
                                 if (cRange.overlaps(current)) {
                                     overlaps = true

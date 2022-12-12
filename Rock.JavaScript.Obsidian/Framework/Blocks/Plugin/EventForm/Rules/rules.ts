@@ -27,6 +27,7 @@ const rules = {
     }
   },
   attendance: (value: number, rooms: string, locs: Array<any>, key: string) => {
+    if(rooms) {
       let selectedRooms = JSON.parse(rooms)
       if(selectedRooms && selectedRooms.value) {
           let roomGuids = selectedRooms.value.split(',')
@@ -44,7 +45,8 @@ const rules = {
               return true
           }
       }
-      return true
+    }
+    return true
   },
   drinkTimeRequired: (value: string, drinkStr: string, key: string) => {
     if(drinkStr != '') {

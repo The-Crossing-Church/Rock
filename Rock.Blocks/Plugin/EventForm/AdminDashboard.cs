@@ -506,6 +506,28 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
         }
 
+        [BlockAction]
+        public BlockActionResult AddBuffer( List<BufferData> data )
+        {
+            try
+            {
+                ContentChannelItemService cci_svc = new ContentChannelItemService( new RockContext() );
+                for ( int i = 0; i < data.Count(); i++ )
+                {
+                    ContentChannelItem item = cci_svc.Get( data[i].id );
+                    item.LoadAttributes();
+                    item.SetAttributeValue( "StartBuffer", data[i].start );
+                    item.SetAttributeValue( "EndBuffer", data[i].end );
+                    item.SaveAttributeValues();
+                }
+                return ActionOk( new { success = true } );
+            }
+            catch ( Exception e )
+            {
+                return ActionBadRequest( e.Message );
+            }
+        }
+
         #endregion Block Actions
 
         #region Helpers
@@ -1158,7 +1180,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             string subject = p.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>This comment has been added to your request:</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
             var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
             message = header + message + footer;
@@ -1188,7 +1210,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, udqueryParams );
             string subject = p.FullName + " Has Changed the Status of " + item.Title;
             string message = "<p>Your request has been marked: " + status + ".</p><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             if ( status == "Proposed Changes Denied" )
             {
                 Guid? workflowGuid = GetAttributeValue( AttributeKey.UserActionWorkflow ).AsGuidOrNull();
@@ -1319,10 +1341,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     "<tr>" +
                         "<td></td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>View Updated Event</a>" +
+                            "<a href='" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>View Updated Event</a>" +
                         "</td>" +
                         "<td style='text-align:center;'>" +
-                            "<a href='" + baseUrl + url.Substring(1) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Continue Modifying</a>" +
+                            "<a href='" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Continue Modifying</a>" +
                         "</td>" +
                         "<td></td>" +
                     "</tr>" +
@@ -1422,6 +1444,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
         {
             public DateRange range { get; set; }
             public string rooms { get; set; }
+        }
+
+        public class BufferData
+        {
+            public int id { get; set; }
+            public string start { get; set; }
+            public string end { get; set; }
         }
     }
 }

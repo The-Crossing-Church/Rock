@@ -20,11 +20,23 @@ import CCCatering from "./Components/childcareCatering"
 import EventTime from "./Components/eventTime"
 import { DateTime } from "luxon"
 import RockLabel from "../../../Elements/rockLabel"
+import RockField from "../../../Controls/rockField"
 import rules from "./Rules/rules"
 
 const store = useStore()
 const { Step } = Steps
 const { Option } = Select 
+const categoryAttrs = [
+  { attr: "NeedsSpace", cat: "Event Space" },
+  { attr: "NeedsOnline", cat: "Event Online" },
+  { attr: "NeedsCatering", cat: "Event Catering" },
+  { attr: "NeedsChildCare", cat: "Event Childcare" },
+  { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering" },
+  { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests" },
+  { attr: "NeedsPublicity", cat: "Event Production" },
+  { attr: "NeedsProductionAccommodations", cat: "Event Publicity" },
+  { attr: "NeedsRegistration", cat: "Event Registration" }
+]
 
 export default defineComponent({
   name: "EventForm.SubmissionForm",
@@ -49,6 +61,7 @@ export default defineComponent({
       "tcc-prod-tech": ProdTech,
       "tcc-event-time": EventTime,
       "rck-lbl": RockLabel,
+      "rck-field": RockField
   },
   setup() {
       const viewModel = useConfigurationValues<SubmissionFormBlockViewModel | null>();
@@ -140,10 +153,10 @@ export default defineComponent({
         return step
       },
       lastStep(): any {
-        let step = 0
-        if(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser) {
-          step++
-        }
+        let step = 1
+        // if(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser) {
+        //   step++
+        // }
         if(this.viewModel?.request.attributeValues?.NeedsSpace == "True" ||
           this.viewModel?.request.attributeValues?.NeedsOnline == "True" ||
           this.viewModel?.request.attributeValues?.NeedsCatering == "True" ||
@@ -317,8 +330,21 @@ export default defineComponent({
         this.viewModel?.events.forEach((event: any) => {
           for(let key in event.attributes) {
             let attr = event.attributes[key]
-            if(attr.categories.map((c: any) => { return c.name }).includes(category)) {
+            let categories = attr.categories.map((c: any) => { return c.name })
+            if(categories.length == 1 && categories.includes(category)) {
               event.attributeValues[key] = ""
+            } else if(categories.length > 1 && categories.includes(category)) {
+              let otherCategories = categories.filter((c: string) => { return c != category })
+              let catAttr = categoryAttrs.filter((ca: any) => { return otherCategories.includes(ca.cat) })
+              let allOtherFalse = true
+              catAttr.forEach((ca: any) => {
+                if(this.viewModel?.request?.attributeValues && this.viewModel?.request?.attributeValues[ca.attr] == 'True') {
+                  allOtherFalse = false
+                }
+              })
+              if(allOtherFalse) {
+                event.attributeValues[key] = ""
+              }
             }
           }
         })
@@ -710,6 +736,20 @@ export default defineComponent({
       }
       return 'is'
     },
+    previewStartBuffer(time: string, buffer: any) {
+      if(time && buffer) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
+      } else if (time) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+      }
+    },
+    previewEndBuffer(time: string, buffer: any) {
+      if(time && buffer) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
+      } else if (time) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+      }
+    },
   },
   watch: {
     'viewModel.request.attributeValues.IsSame'(val) {
@@ -921,7 +961,10 @@ export default defineComponent({
   },
   mounted() {
     if (!this.viewModel?.isSuperUser) {
-        this.step = 1
+      this.step = 1
+      if(this.viewModel?.request?.attributeValues) {
+        this.viewModel.request.attributeValues.NeedsSpace = 'True'
+      }
     }
     if(this.viewModel?.request.id == 0) {
       //New Request set some defaults
@@ -969,6 +1012,34 @@ export default defineComponent({
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
           <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
+          <div class="row" v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)">
+            <div class="col col-xs-12 col-md-6">
+              <rck-field
+                v-model="e.attributeValues.StartBuffer"
+                :attribute="e.attributes.StartBuffer"
+                :is-edit-mode="true"
+              ></rck-field>
+            </div>
+            <div class="col col-xs-12 col-md-6">
+              <rck-field
+                v-model="e.attributeValues.EndBuffer"
+                :attribute="e.attributes.EndBuffer"
+                :is-edit-mode="true"
+              ></rck-field>
+            </div>
+          </div>
+          <br/>
+          <div class="row" v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)">
+            <div class="col col-xs-6" v-if="e.attributeValues.StartBuffer != ''">
+              <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
+              {{e.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(e.attributeValues.StartTime, e.attributeValues.StartBuffer)}}
+            </div>
+            <div class="col col-xs-6" v-if="e.attributeValues.EndBuffer != ''">
+              <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
+              {{e.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(e.attributeValues.EndTime, e.attributeValues.EndBuffer)}}
+            </div>
+          </div>
+          <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
           <h3 class="text-primary">
@@ -991,7 +1062,7 @@ export default defineComponent({
             Other Accomodations
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-ops :e="e" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1036,6 +1107,14 @@ export default defineComponent({
         <h3 class="text-primary">Production Tech Information</h3>
         <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="prodtech" @validation-change="validationChange" ref="prodtech"></tcc-prod-tech>
       </template>
+    </template>
+    <template v-if="step == lastStep">
+      <h3 class="text-primary">Notes</h3>
+      <rck-field
+        v-model="viewModel.request.attributeValues.Notes"
+        :attribute="viewModel.request.attributes.Notes"
+        :is-edit-mode="true"
+      ></rck-field>
     </template>
   </div>
   <div class="row steps-action pt-2">

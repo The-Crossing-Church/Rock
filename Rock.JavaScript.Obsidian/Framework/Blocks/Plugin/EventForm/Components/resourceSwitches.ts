@@ -58,6 +58,9 @@ export default defineComponent({
           return ''
         },
         switchIsDisabled(tense: string, key: string) {
+          if(!(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser || this.viewModel?.isRoomAdmin)) {
+            return true
+          }
           if(tense == 'was') {
             //We are past the date you can request new resources
             //Allow toggle if the original request has the resource

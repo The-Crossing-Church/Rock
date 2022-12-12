@@ -96,7 +96,7 @@ export default defineComponent({
         select(item: ListItem) {
           if(!item.isDisabled) {
             let selectedItems = this.items.filter((i: any) => {
-              return this.selectedValue.value.split(",").includes(i.value)
+              return this.selectedValue.value?.split(",").includes(i.value)
             }).sort((a: any, b: any) => {
               if(a.order > b.order) {
                 return 1
@@ -172,7 +172,7 @@ export default defineComponent({
           }
         },
         isChecked(value: string) {
-          if(this.selectedValue.value.split(",").includes(value)) {
+          if(this.selectedValue.value?.split(",").includes(value)) {
             return "checked"
           }
           return ""
@@ -182,7 +182,7 @@ export default defineComponent({
           if(item.isDisabled) {
             className += " disabled"
           }
-          if(this.selectedValue.value.split(",").includes(item.value)) {
+          if(this.selectedValue.value?.split(",").includes(item.value)) {
             className += " active"
           }
           return className

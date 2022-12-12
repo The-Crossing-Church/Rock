@@ -188,7 +188,21 @@ export default defineComponent({
           request.id = request.attributeValues.ParentId
         }
         this.$emit("openrequest", request)
-      }
+      },
+      previewStartBuffer(time: string, buffer: any) {
+        if(time && buffer) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
+        } else if (time) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+        }
+      },
+      previewEndBuffer(time: string, buffer: any) {
+        if(time && buffer) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
+        } else if (time) {
+          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+        }
+      },
     },
     watch: {
       
@@ -324,6 +338,20 @@ export default defineComponent({
                   :attribute="ci.attributes.EndTime"
                   :showEmptyValue="true"
                 ></rck-field>
+              </template>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col col-xs-6">
+              <rck-lbl>Start Time Set-up Buffer</rck-lbl> <br/>
+              <template v-if="ci.attributeValues.StartBuffer != ''">
+                {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+              </template>
+            </div>
+            <div class="col col-xs-6">
+              <rck-lbl>End Time Set-up Buffer</rck-lbl> <br/>
+              <template v-if="ci.attributeValues.EndBuffer != ''">
+                {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
               </template>
             </div>
           </div>

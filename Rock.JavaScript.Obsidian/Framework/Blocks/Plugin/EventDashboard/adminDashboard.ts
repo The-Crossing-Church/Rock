@@ -99,6 +99,14 @@ export default defineComponent({
       }
       provide("completePartialApproval", completePartialApproval);
 
+      const addBuffer: (data: any) => Promise<any> = async (data) => {
+        const response = await invokeBlockAction("AddBuffer", {
+          data: data
+        });
+        return response
+      }
+      provide("addBuffer", addBuffer);
+
       return {
           viewModel,
           defaultFilters,
@@ -106,7 +114,8 @@ export default defineComponent({
           filterRequests,
           changeStatus,
           addComment,
-          completePartialApproval
+          completePartialApproval,
+          addBuffer
       }
   },
   data() {
@@ -154,6 +163,7 @@ export default defineComponent({
         modal: false,
         commentModal: false,
         partialApprovalModal: false,
+        bufferModal: false,
         comment: "",
         visible: false,
         approvePop: false,
@@ -315,6 +325,36 @@ export default defineComponent({
       this.selected.id = id
       this.updateStatus(status)
     },
+    addBufferFromGridAction(id: number) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.loadDetails(id).then((response: any) => {
+        if(response.data) {
+          response.data.details.forEach((detail: any) => {
+            detail.detail.changes = detail.detailPendingChanges
+          })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
+          response.data.request.changes = response.data.requestPendingChanges
+          response.data.request.comments = response.data.comments
+          response.data.request.conflicts = response.data.conflicts
+          response.data.request.changesConflicts = response.data.changesConflicts
+          this.selected = response.data.request
+          this.createdBy = response.data.createdBy
+          this.modifiedBy = response.data.modifiedBy
+          this.modal = true
+          this.bufferModal = true
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
+    addBufferFromModal() {
+      this.bufferModal = true
+    },
     updateStatus(status: string) {
       if(status == "In Progress") {
         this.btnLoading.inprogress = true
@@ -434,6 +474,46 @@ export default defineComponent({
           return submitter[0].fullName
         }
       }
+    },
+    previewStartBuffer(time: string, buffer: any) {
+      if(time && buffer) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
+      } else if (time) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+      }
+    },
+    previewEndBuffer(time: string, buffer: any) {
+      if(time && buffer) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
+      } else if (time) {
+        return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+      }
+    },
+    saveBuffers() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      let item = this.selected as any
+      let items = item.childItems.map((i: any) => {
+        if(i.attributeValues) {
+          return {id: i.id, start: i.attributeValues.StartBuffer, end: i.attributeValues.EndBuffer}
+        }
+      })
+      this.addBuffer(items).then((res) => {
+        this.bufferModal = false
+        if(res.isSuccess) {
+          this.selectItem(this.selected)
+        } else if (res.isError) {
+          this.toastMessage = res.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
     }
   },
   watch: {
@@ -449,13 +529,13 @@ export default defineComponent({
   },
   template: `
 <div class="card mb-2">
-  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card mb-2">
-  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card mb-2">
-  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" :users="viewModel.users" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card">
   <div style="display: flex; align-items: center;">
@@ -544,7 +624,7 @@ export default defineComponent({
         {{ resources }}
       </template>
       <template #action="{ record: r }">
-        <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+        <tcc-grid :request="r" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction"></tcc-grid>
       </template>
     </a-table>
   </div>
@@ -619,6 +699,10 @@ export default defineComponent({
         <i class="mr-1 fa fa-comment-alt"></i>
         Add Comment
       </a-btn>
+      <a-btn type="primary" @click="addBufferFromModal">
+        <i class="mr-1 far fa-clock"></i>
+        Set-up Buffer
+      </a-btn>
     </div>
   </template>
 </a-modal>
@@ -647,6 +731,70 @@ export default defineComponent({
       Complete
     </a-btn>
     <a-btn type="grey" @click="partialApprovalModal = false;">
+      <i class="mr-1 fa fa-ban"></i>
+      Cancel
+    </a-btn>
+  </template>
+</a-modal>
+<a-modal v-model:visible="bufferModal" width="70%" :closable="false">
+  <div v-for="e in selected.childItems" :key="e.id">
+    <h3>
+      <template v-if="selected.attributeValues.IsSame == 'True'">
+        Set-up Buffer for Events
+      </template>
+      <template v-else>
+        Set-up Buffer for: {{e.attributeValues.EventDate}}
+      </template>
+    </h3>
+    <div class="row">
+      <div class="col col-xs-6">
+        <rck-field
+          v-model="e.attributeValues.StartTime"
+          :attribute="e.attributes.StartTime"
+          :showEmptyValue="true"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-6">
+        <rck-field
+          v-model="e.attributeValues.EndTime"
+          :attribute="e.attributes.EndTime"
+          :showEmptyValue="true"
+        ></rck-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-6">
+        <rck-field
+          v-model="e.attributeValues.StartBuffer"
+          :attribute="e.attributes.StartBuffer"
+          :is-edit-mode="true"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-6">
+        <rck-field
+          v-model="e.attributeValues.EndBuffer"
+          :attribute="e.attributes.EndBuffer"
+          :is-edit-mode="true"
+        ></rck-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-6">
+        <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
+        {{previewStartBuffer(e.attributeValues.StartTime, e.attributeValues.StartBuffer)}}
+      </div>
+      <div class="col col-xs-6">
+        <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
+        {{previewEndBuffer(e.attributeValues.EndTime, e.attributeValues.EndBuffer)}}
+      </div>
+    </div>
+  </div>
+  <template #footer>
+    <a-btn type="primary" @click="saveBuffers">
+      <i class="mr-1 fas fa-save"></i>
+      Save
+    </a-btn>
+    <a-btn type="grey" @click="bufferModal = false;">
       <i class="mr-1 fa fa-ban"></i>
       Cancel
     </a-btn>
