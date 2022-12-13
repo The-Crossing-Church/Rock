@@ -521,7 +521,7 @@ export default defineComponent({
                 }
               }
             }
-            if(this.viewModel.request.attributeValues.NeedsChildCare == 'True' && this.viewModel.request.attributeValues.NeedsCatering == 'True') {
+            if(this.viewModel.request.attributeValues.NeedsChildCareCatering == 'True') {
               let ccFoodTime = this.viewModel.events[i].attributeValues?.ChildcareFoodTime as string
               let endTime = this.viewModel.events[i].attributeValues?.EndTime as string
               if(this.rules.required(this.viewModel.events[i].attributeValues?.ChildcareVendor, '') != true ||
@@ -532,9 +532,9 @@ export default defineComponent({
               ) {
                 requestIsValid = false
                 eventIsValid = false
-                let idx = invalidSections.indexOf('Childcare')
+                let idx = invalidSections.indexOf('Childcare Catering')
                 if(idx < 0) {
-                  invalidSections.push('Childcare')
+                  invalidSections.push('Childcare Catering')
                 }
               }
             }
@@ -628,6 +628,9 @@ export default defineComponent({
             if(invalidSections.includes('Catering')) {
               this.viewModel.request.attributeValues.NeedsCatering = 'False'
             }
+            if(invalidSections.includes('Childcare Catering')) {
+              this.viewModel.request.attributeValues.NeedsChildCareCatering = 'False'
+            }
             if(invalidSections.includes('Registration')) {
               this.viewModel.request.attributeValues.NeedsRegistration = 'False'
             }
@@ -651,6 +654,7 @@ export default defineComponent({
           if(twoWeeksTense == 'was') {
             this.readonlySections.push('Online')
             this.readonlySections.push('Catering')
+            this.readonlySections.push('Childcare Catering')
             this.readonlySections.push('Ops')
             this.readonlySections.push('Registration')
             this.readonlySections.push('Calendar')
