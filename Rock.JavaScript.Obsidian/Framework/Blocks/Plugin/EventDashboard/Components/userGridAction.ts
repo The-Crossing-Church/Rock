@@ -36,8 +36,12 @@ export default defineComponent({
       updateStatus(id: number, status: string) {
         this.$emit("updatestatus", id, status)
       },
-      approve() {
-        window.location.href = this.url + `?Id=${this.request?.id}&Action=Approved`
+      edit() {
+        window.location.href = "/eventform?Id=" + this.request?.id
+      },
+      duplicate() {
+        this.$emit("duplicate", this.request?.id)
+        this.visible = false
       }
     },
     watch: {
@@ -49,13 +53,13 @@ export default defineComponent({
     template: `
 <a-pop v-model:visible="visible" trigger="click" placement="right">
   <template #content>
-    <a-btn class="mr-1" shape="circle" type="primary" v-if="canEdit" @click="">
+    <a-btn class="mr-1" shape="circle" type="primary" v-if="canEdit" @click="edit">
       <i class="fa fa-pencil-alt"></i>
     </a-btn>
-    <a-btn class="mr-1" shape="circle" type="grey" v-if="!request.attributeValues.RequestStatus.includes('Cancelled')" @click="updateStatus(request.id, 'Cancelled By User')">
+    <a-btn class="mr-1" shape="circle" type="grey" v-if="!request.attributeValues.RequestStatus.includes('Cancelled')" @click="updateStatus(request.id, 'Cancelled by User')">
       <i class="fa fa-ban"></i>
     </a-btn>
-    <a-btn shape="circle" type="med-blue">
+    <a-btn shape="circle" type="med-blue" @click="duplicate">
       <i class="fas fa-history"></i>
     </a-btn>
   </template>

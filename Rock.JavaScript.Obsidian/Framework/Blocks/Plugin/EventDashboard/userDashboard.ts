@@ -328,10 +328,10 @@ export default defineComponent({
         this.btnLoading.cancelled = true
       }
       this.changeStatus(this.selected.id, status).then((res) => {
-        if(res.data.url) {
+        if(res.data?.url) {
           window.location.href = res.data.url
         }
-        if(res.data.status) {
+        if(res.data?.status) {
           if(this.selected.attributeValues) {
             this.selected.attributeValues.RequestStatus = res.data.status
           }
@@ -341,8 +341,8 @@ export default defineComponent({
             }
           })
         }
-        if(res.isError) {
-          this.toastMessage = res.errorMessage
+        if(res.isError || res.Message) {
+          this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
           let el = document.getElementById('toast')
           el?.classList.add("show")
         }
@@ -393,6 +393,36 @@ export default defineComponent({
     hideToast() {
       let el = document.getElementById('toast')
       el?.classList.remove("show")
+    },
+    copyFromGridAction(id: number) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.loadDetails(id).then((response: any) => {
+        if(response.data) {
+          response.data.details.forEach((detail: any) => {
+            detail.detail.changes = detail.detailPendingChanges
+          })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
+          response.data.request.changes = response.data.requestPendingChanges
+          response.data.request.comments = response.data.comments
+          this.selected = response.data.request
+          this.createdBy = response.data.createdBy
+          this.modifiedBy = response.data.modifiedBy
+          this.modal = true
+          this.copyRequest()
+        }
+        if(response.isError) {
+          this.toastMessage = response.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
     },
     copyRequest() {
       this.copy = JSON.parse(JSON.stringify(this.selected)) 
@@ -559,7 +589,7 @@ export default defineComponent({
       {{ formatDates(dates) }}
     </template>
     <template #action="{ record: r }">
-      <tcc-grid :request="r"></tcc-grid>
+      <tcc-grid :request="r" v-on:duplicate="copyFromGridAction" v-on:updatestatus="updateFromGridAction"></tcc-grid>
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">
@@ -677,7 +707,7 @@ export default defineComponent({
         <i class="mr-1 fas fa-history"></i>
         Resubmit Event
       </a-btn>
-      <a-btn type="grey" @click="commentModal = false;">
+      <a-btn type="grey" @click="resubmissionModal = false;">
         <i class="mr-1 fa fa-ban"></i>
         Cancel
       </a-btn>

@@ -349,7 +349,7 @@ export default defineComponent({
               </template>
             </div>
             <div class="col col-xs-6">
-              <rck-lbl>End Time Set-up Buffer</rck-lbl> <br/>
+              <rck-lbl>End Time Tear-down Buffer</rck-lbl> <br/>
               <template v-if="ci.attributeValues.EndBuffer != ''">
                 {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
               </template>

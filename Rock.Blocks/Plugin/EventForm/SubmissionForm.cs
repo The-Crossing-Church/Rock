@@ -1279,6 +1279,14 @@ namespace Rock.Blocks.Plugin.EventForm
                 {
                     message += RenderValue( "End Time", events[i].AttributeValues["EndTime"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["EndTime"].ValueFormatted : "" );
                 }
+                if ( !String.IsNullOrEmpty( events[i].AttributeValues["StartBuffer"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["StartBuffer"].Value ) ) )
+                {
+                    message += RenderValue( "Start Time Set-up Buffer", events[i].AttributeValues["StartBuffer"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["StartBuffer"].ValueFormatted : "" );
+                }
+                if ( !String.IsNullOrEmpty( events[i].AttributeValues["EndBuffer"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["EndBuffer"].Value ) ) )
+                {
+                    message += RenderValue( "End Time Tear-down Buffer", events[i].AttributeValues["EndBuffer"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["EndBuffer"].ValueFormatted : "" );
+                }
                 message += "</div>";
 
                 if ( item.AttributeValues["NeedsSpace"].Value == "True" )
