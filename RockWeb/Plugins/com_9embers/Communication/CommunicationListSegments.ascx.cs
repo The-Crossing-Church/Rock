@@ -38,8 +38,17 @@ namespace RockWeb.Plugins.com_9embers.Communication
         EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
         EntityTypeQualifierColumn = "GroupTypeId",
         EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
-        Order = 0,
+        Order = 1,
         Key = AttributeKey.PropertyFilterAttribute
+        )]
+
+    [AttributeField( "Can Send To Parents Attribute",
+        Description = "Attribute used to determine if sending to parents is allowed.",
+        EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
+        EntityTypeQualifierColumn = "GroupTypeId",
+        EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
+        Order = 2,
+        Key = AttributeKey.CanSendToParentsAttribute
         )]
 
     #endregion Block Attributes
@@ -53,6 +62,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             public const string AttributeFilterAttribute = "AttributeFilterAttribute";
             public const string PropertyFilterAttribute = "PropertyFilterAttribute";
+            public const string CanSendToParentsAttribute = "CanSendToParentsAttribute";
         }
 
         #endregion Attribute Keys
@@ -126,6 +136,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
         #region Events
         protected void ddlCommunicationList_SelectedIndexChanged( object sender, EventArgs e )
         {
+            var groupId = ddlCommunicationList.SelectedValueAsId();
+            ddlSendTo.Visible = SendingToParentsEnabled( groupId );
+
             ShowCommunicationFields();
         }
 
@@ -194,7 +207,28 @@ namespace RockWeb.Plugins.com_9embers.Communication
             cblRegistrationInstances.DataBind();
         }
 
+        private bool SendingToParentsEnabled( int? groupId )
+        {
+            RockContext rockContext = new RockContext();
+            GroupService groupService = new GroupService( rockContext );
+            var group = groupService.Get( groupId ?? 0 );
+            if ( group == null )
+            {
+                return false;
+            }
 
+            var canSendToParentsAttributeGuid = GetAttributeValue( AttributeKey.CanSendToParentsAttribute ).AsGuid();
+            var canSendToParentsAttribute = AttributeCache.Get( canSendToParentsAttributeGuid );
+
+            if ( canSendToParentsAttribute == null )
+            {
+                return false;
+            }
+
+            group.LoadAttributes();
+            return group.GetAttributeValue( canSendToParentsAttribute.Key ).AsBoolean();
+
+        }
 
         private void UpdateFilters( int groupId )
         {
@@ -318,7 +352,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             mdPreview.Show();
         }
 
-        private void SetSelection(SelectionState selectionState )
+        private void SetSelection( SelectionState selectionState )
         {
             if ( selectionState != null && selectionState.CommunicationId.HasValue )
             {
@@ -440,6 +474,26 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 else
                 {
                     qry = qry.Where( p => !registrationQry.Select( s => s.Id ).Contains( p.Id ) );
+                }
+            }
+
+            int adultRoleId = GroupTypeCache.GetFamilyGroupType().Roles.Where( a => a.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT.AsGuid() ).Select( a => a.Id ).FirstOrDefault();
+            int childRoleId = GroupTypeCache.GetFamilyGroupType().Roles.Where( a => a.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid() ).Select( a => a.Id ).FirstOrDefault();
+
+            if ( SendingToParentsEnabled( group.Id ) )
+            {
+
+                var parentQry = personService.Queryable()
+                    .Where( p => p.Members.Where( a => a.GroupRoleId == adultRoleId )
+                        .Any( a => a.Group.Members
+                        .Any( c => c.GroupRoleId == childRoleId && qry.Select( p2 => p2.Id ).Contains( c.PersonId ) ) ) );
+
+                switch ( ddlSendTo.SelectedValueAsId() ?? 0 )
+                {
+                    case 1: //Parents
+                        return parentQry;
+                    case 2:
+                        return personService.Queryable().Where( p => qry.Contains( p ) || parentQry.Contains( p ) );
                 }
             }
 
@@ -607,6 +661,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
         #endregion
 
+        #region Classes
 
         class AttributeFields
         {
@@ -632,9 +687,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 SegmentIds = new List<string>();
                 RegistrationInstanceIds = new List<string>();
-                PropertyValues = new Dictionary<string,List<string>>();
+                PropertyValues = new Dictionary<string, List<string>>();
             }
         }
-
+        #endregion
     }
 }
