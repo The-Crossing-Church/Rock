@@ -984,6 +984,7 @@ export default defineComponent({
       for(let i=0; i<= this.lastStep; i++) {
         this.pagesViewed.push(i)
       }
+      this.validate()
     }
   },
   template: `

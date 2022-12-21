@@ -45,7 +45,8 @@ export default defineComponent({
       const invokeBlockAction = useInvokeBlockAction();
       const viewModel = useConfigurationValues<UserDashboardBlockViewModel | null>();
       viewModel?.events.forEach((e: any) => {
-        e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
+        e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == viewModel.eventDetailsCCId })
+        e.comments = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == viewModel.commentsCCId })
       })
 
       let defaultFilters = {
@@ -289,7 +290,8 @@ export default defineComponent({
         if(this.viewModel) {
           this.viewModel.events = response.data.events
           this.viewModel?.events.forEach((e: any) => {
-            e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
+            e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == this.viewModel?.eventDetailsCCId })
+            e.comments = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == this.viewModel?.commentsCCId })
           })
         }
         if(response.isError) {
@@ -494,7 +496,23 @@ export default defineComponent({
           }
         })
       }
-    }
+    },
+    lastCommentIsFromUser(req: any) {
+      let ct = 0
+      if(req.comments && req.comments.length > 0) {
+        for(let i=req.comments.length - 1; i >= 0; i--) {
+          if(req.comments[i].childContentChannelItem.title.split("From ")[1] != this.currentPerson?.fullName) {
+            ct++
+          } else {
+            return ct
+          }
+        }
+      }
+      return ct
+    },
+    getIsValid(r: any) {
+      return r?.attributeValues?.RequestIsValid == 'True'
+    },
   },
   watch: {
     
@@ -580,7 +598,11 @@ export default defineComponent({
   </div>
   <a-table :columns="columns" :data-source="viewModel.events" :pagination="{ pageSize: 30 }">
     <template #title="{ text: title, record: r }">
-      <div class="hover" @click="selectItem(r)">{{ title }}</div>
+      <div class="hover" @click="selectItem(r)">
+        <i v-if="getIsValid(r)" class="fa fa-check-circle text-accent mr-2"></i>
+        <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i>
+        {{ title }}
+      </div>
     </template>
     <template #start="{ text: start }">
       {{ formatDateTime(start) }}
@@ -589,7 +611,7 @@ export default defineComponent({
       {{ formatDates(dates) }}
     </template>
     <template #action="{ record: r }">
-      <tcc-grid :request="r" v-on:duplicate="copyFromGridAction" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+      <tcc-grid :request="r" :commentNotification="lastCommentIsFromUser(r)" v-on:duplicate="copyFromGridAction" v-on:updatestatus="updateFromGridAction"></tcc-grid>
     </template>
   </a-table>
   <a-modal v-model:visible="modal" width="80%" :closable="false">

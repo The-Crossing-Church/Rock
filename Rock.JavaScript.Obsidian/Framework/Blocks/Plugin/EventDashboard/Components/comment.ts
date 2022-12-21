@@ -14,7 +14,7 @@ export default defineComponent({
     props: {
       comment: Object,
       createdBy: String,
-      next: Object
+      next: Object,
     },
     setup() {
 

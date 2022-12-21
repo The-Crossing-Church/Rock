@@ -2,6 +2,12 @@ import { defineComponent, PropType } from "vue";
 import RockField from "../../../../Controls/rockField"
 import RockLabel from "../../../../Elements/rockLabel"
 
+type ListItem = {
+  text: string,
+  description: string,
+  value: string
+}
+
 export default defineComponent({
     name: "EventDashboard.Components.Modal.OpsAccomInfo",
     components: {
@@ -10,7 +16,9 @@ export default defineComponent({
     },
     props: {
       details: Object,
-      rooms: Array
+      rooms: Array,
+      drinks: Array,
+      needsCatering: String
     },
     setup() {
 
@@ -32,6 +40,9 @@ export default defineComponent({
               item.value = this.details.attributeValues[key]
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
+              }
+              if(this.needsCatering == 'True' && categories.includes("Event Catering")) {
+                continue
               }
               attrs.push(item)
             }
@@ -63,6 +74,21 @@ export default defineComponent({
           }
         }
         return setup
+      },
+      getDrinkInfo(value: string) {
+        let item = JSON.parse(value) as ListItem
+        let guids = item.value.split(",")
+        let selectedDrinks = this.drinks?.filter((d: any) => {
+          return guids.includes(d.guid)
+        })
+        let expectedAttendance = this.details?.attributeValues.ExpectedAttendance
+        if(selectedDrinks && selectedDrinks.length > 0) {
+          return selectedDrinks.map((d: any) => { 
+            let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
+            let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
+            return `${d.value}: ${amount} ${term}` 
+          })
+        }
       }
     },
     watch: {
@@ -126,6 +152,23 @@ export default defineComponent({
               <b>{{su.room}}: Standard Setup</b>
             </template>
           </div>
+        </template>
+      </template>
+      <template v-else-if="av.attr.key == 'Drinks'">
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
+            </div>
+            <div class="col col-xs-6">
+              <div v-for="(d, idx) in getDrinkInfo(av.changeValue)" :key="idx" class="text-primary">{{d}}</div>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <rck-lbl>{{av.attr.name}}</rck-lbl>
+          <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
         </template>
       </template>
       <template v-else>

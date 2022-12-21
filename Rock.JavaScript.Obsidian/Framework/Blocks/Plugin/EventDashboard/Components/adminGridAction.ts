@@ -1,6 +1,6 @@
 import { defineComponent, PropType } from "vue";
 import { ContentChannelItem } from "../../../../ViewModels"
-import { Popover, Button } from "ant-design-vue"
+import { Popover, Button, Badge } from "ant-design-vue"
 
 
 export default defineComponent({
@@ -8,6 +8,7 @@ export default defineComponent({
     components: {
       "a-btn": Button,
       "a-pop": Popover,
+      "a-badge": Badge
     },
     props: {
       request: Object as PropType<ContentChannelItem>,
@@ -42,19 +43,21 @@ export default defineComponent({
       
     },
     template: `
-<a-pop v-model:visible="visible" trigger="click" placement="right">
-  <template #content>
-    <a-btn class="mr-1" shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
-      <i class="fas fa-tasks"></i>
-    </a-btn>
-    <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="updateStatus(request.id, 'Approved')">
-      <i class="fas fa-check-circle"></i>
-    </a-btn>
-    <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="addBuffer(request.id)">
-      <i class="far fa-clock"></i>
-    </a-btn>
-  </template>
-  <a-btn :type="btnColor" @click="visible = !visible">{{request.attributeValues.RequestStatus}}</a-btn>
-</a-pop>
+<a-badge :count="request.attributeValues.CommentNotifications" style="width: 100%; max-width: 200px;">
+  <a-pop v-model:visible="visible" trigger="click" placement="right">
+    <template #content>
+      <a-btn class="mr-1" shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
+        <i class="fas fa-tasks"></i>
+      </a-btn>
+      <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="updateStatus(request.id, 'Approved')">
+        <i class="fas fa-check-circle"></i>
+      </a-btn>
+      <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="addBuffer(request.id)">
+        <i class="far fa-clock"></i>
+      </a-btn>
+    </template>
+    <a-btn :type="btnColor" @click="visible = !visible">{{request.attributeValues.RequestStatus}}</a-btn>
+  </a-pop>
+</a-badge>
 `
 });

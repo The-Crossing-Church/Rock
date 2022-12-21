@@ -68,6 +68,9 @@ export default defineComponent({
               let val = this.viewModel.originalRequest.attributeValues[key]
               return val == 'False'
             } 
+            if(this.viewModel?.request?.attributeValues) {
+              return this.viewModel?.request?.attributeValues[key] == 'False'
+            }
             return true
           }
           return false

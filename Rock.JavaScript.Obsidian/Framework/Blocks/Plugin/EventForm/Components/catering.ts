@@ -65,6 +65,13 @@ export default defineComponent({
           }
         }
       },
+      'e.attributeValues.DrinkSetupLocation'(val) {
+        if(this.e?.attributeValues) {
+          if(this.e.attributeValues.FoodSetupLocation != val) { 
+            this.e.attributeValues.SetupFoodandDrinkTogether = "False"
+          }
+        }
+      },
       'e.attributeValues.SetupFoodandDrinkTogether'(val) {
         if(val == 'True' && this.e?.attributeValues) {
           this.e.attributeValues.DrinkSetupLocation = this.e.attributeValues.FoodSetupLocation

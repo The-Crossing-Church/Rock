@@ -1,6 +1,6 @@
 import { defineComponent, PropType } from "vue";
 import { ContentChannelItem } from "../../../../ViewModels"
-import { Popover, Button } from "ant-design-vue"
+import { Popover, Button, Badge } from "ant-design-vue"
 
 
 export default defineComponent({
@@ -8,10 +8,12 @@ export default defineComponent({
     components: {
       "a-btn": Button,
       "a-pop": Popover,
+      "a-badge": Badge
     },
     props: {
       request: Object as PropType<ContentChannelItem>,
-      url: String
+      url: String,
+      commentNotification: Number,
     },
     setup() {
 
@@ -30,7 +32,7 @@ export default defineComponent({
           return this.request.attributeValues.RequestStatus == 'Submitted' || this.request.attributeValues.RequestStatus == 'In Progress' || this.request.attributeValues.RequestStatus == 'Approved' || this.request.attributeValues.RequestStatus == 'Pending Changes'
         }
         return false
-      }
+      },
     },
     methods: {
       updateStatus(id: number, status: string) {
@@ -51,19 +53,21 @@ export default defineComponent({
       
     },
     template: `
-<a-pop v-model:visible="visible" trigger="click" placement="right">
-  <template #content>
-    <a-btn class="mr-1" shape="circle" type="primary" v-if="canEdit" @click="edit">
-      <i class="fa fa-pencil-alt"></i>
-    </a-btn>
-    <a-btn class="mr-1" shape="circle" type="grey" v-if="!request.attributeValues.RequestStatus.includes('Cancelled')" @click="updateStatus(request.id, 'Cancelled by User')">
-      <i class="fa fa-ban"></i>
-    </a-btn>
-    <a-btn shape="circle" type="med-blue" @click="duplicate">
-      <i class="fas fa-history"></i>
-    </a-btn>
-  </template>
-  <a-btn :type="btnColor" @click="visible = !visible">{{request.attributeValues.RequestStatus}}</a-btn>
-</a-pop>
+<a-badge :count="commentNotification" style="width: 200px;">
+  <a-pop v-model:visible="visible" trigger="click" placement="right">
+    <template #content>
+      <a-btn class="mr-1" shape="circle" type="primary" v-if="canEdit" @click="edit">
+        <i class="fa fa-pencil-alt"></i>
+      </a-btn>
+      <a-btn class="mr-1" shape="circle" type="grey" v-if="!request.attributeValues.RequestStatus.includes('Cancelled')" @click="updateStatus(request.id, 'Cancelled by User')">
+        <i class="fa fa-ban"></i>
+      </a-btn>
+      <a-btn shape="circle" type="med-blue" @click="duplicate">
+        <i class="fas fa-history"></i>
+      </a-btn>
+    </template>
+    <a-btn :type="btnColor" @click="visible = !visible">{{request.attributeValues.RequestStatus}}</a-btn>
+  </a-pop>
+</a-badge>
 `
 });

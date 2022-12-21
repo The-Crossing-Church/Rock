@@ -135,6 +135,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 && EventChangesContentChannelId > 0 && EventDetailsChangesContentChannelId > 0 )
             {
                 viewModel = LoadRequests();
+                viewModel.eventDetailsCCId = EventDetailsContentChannelId;
+                viewModel.commentsCCId = EventCommentsContentChannelId;
                 viewModel.submittedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Submitted" } } );
                 viewModel.changedEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "Pending Changes", "Changes Accepted by User", "Cancelled by User" } } );
                 viewModel.inprogressEvents = LoadByStatus( new Filters() { statuses = new List<string>() { "In Progress" } } );
@@ -328,7 +330,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             response.conflicts = GetConflicts( item, details );
             if ( requestchanges != null )
             {
-                response.changesConflicts = GetConflicts( requestchanges.ChildContentChannelItem, details.Select( cci => cci.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).ChildContentChannelItem ).ToList() );
+                response.changesConflicts = GetConflicts( requestchanges.ChildContentChannelItem, details.Select( cci => cci.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).ChildContentChannelItem ).ToList(), item.Id );
             }
 
             return ActionOk( response );
@@ -734,6 +736,25 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 }
             }
             viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
+            viewModel.events = viewModel.events.Select( e =>
+            {
+                var i = itemList.FirstOrDefault( il => il.Id == e.Id );
+                var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
+                int ct = 0;
+                for ( var k = 0; k < comments.Count(); k++ )
+                {
+                    if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
+                    {
+                        ct++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
+                return e;
+            } ).ToList();
             return viewModel;
         }
 
@@ -878,7 +899,27 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     );
             }
 
-            return filtered_items.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
+            var results = filtered_items.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
+            results = results.Select( e =>
+            {
+                var i = filtered_items.FirstOrDefault( il => il.Id == e.Id );
+                var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
+                int ct = 0;
+                for ( var k = 0; k < comments.Count(); k++ )
+                {
+                    if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
+                    {
+                        ct++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
+                return e;
+            } ).ToList();
+            return results;
         }
 
         /// <summary>
@@ -1019,7 +1060,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             return users;
         }
 
-        private List<ContentChannelItemViewModel> GetConflicts( ContentChannelItem item, List<ContentChannelItem> events )
+        private List<ContentChannelItemViewModel> GetConflicts( ContentChannelItem item, List<ContentChannelItem> events, int originalId = 0 )
         {
             item.LoadAttributes();
             events.LoadAttributes();
@@ -1072,7 +1113,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             for ( int i = 0; i < eventDates.Count(); i++ )
             {
                 string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
-                var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id ).OrderBy( cci => cci.Title );
+                var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id && cci.Id != originalId ).OrderBy( cci => cci.Title );
                 //Requests that are on the calendar
                 var statusAttr = item.Attributes[statusKey];
                 var statusValues = avSvc.Queryable().Where( av => av.AttributeId == statusAttr.Id && ( av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" ) ) );
@@ -1386,6 +1427,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
             public List<Person> users { get; set; }
+            public int eventDetailsCCId { get; set; }
+            public int commentsCCId { get; set; }
         }
 
         public class GetRequestResponse

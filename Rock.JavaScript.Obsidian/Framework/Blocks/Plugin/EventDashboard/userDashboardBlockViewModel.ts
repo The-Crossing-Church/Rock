@@ -14,6 +14,8 @@ export type UserDashboardBlockViewModel = {
     requestType: Attribute;
     workflowURL: string;
     defaultStatuses: string[];
+    eventDetailsCCId: number;
+    commentsCCId: number;
 };
 
 export type DuplicateRequestViewModel = {

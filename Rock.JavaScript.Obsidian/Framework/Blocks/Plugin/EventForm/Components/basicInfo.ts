@@ -75,7 +75,7 @@ export default defineComponent({
         minEventDate() {
           let date = DateTime.now()
           if(this.viewModel?.request?.attributeValues) {
-            if(this.viewModel.request?.attributeValues.RequestStatus != "Draft") {
+            if(this.viewModel.request?.attributeValues.RequestStatus != "Draft" && this.viewModel.request?.attributeValues.RequestStatus != "Submitted" && this.viewModel.request?.attributeValues.RequestStatus != " In Progress") {
               let val = this.viewModel.request.startDateTime as string
               date = DateTime.fromISO(val)
             }

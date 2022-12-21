@@ -123,6 +123,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     viewModel = LoadRequests();
                     viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
                     viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
+                    viewModel.eventDetailsCCId = EventDetailsContentChannelId;
+                    viewModel.commentsCCId = EventCommentsContentChannelId;
 
                     //Lists
                     Guid locationGuid = Guid.Empty;
@@ -1022,6 +1024,8 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public AttributeViewModel requestType { get; set; }
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
+            public int eventDetailsCCId { get; set; }
+            public int commentsCCId { get; set; }
         }
 
         public class GetRequestResponse
