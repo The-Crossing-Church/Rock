@@ -51,6 +51,24 @@ namespace RockWeb.Plugins.com_9embers.Communication
         Key = AttributeKey.CanSendToParentsAttribute
         )]
 
+    [AttributeField( "Hide In Segments Attribute",
+        Description = "Attribute used to determine if group should an option in the communication list dropdown.",
+        EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
+        EntityTypeQualifierColumn = "GroupTypeId",
+        EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
+        Order = 3,
+        Key = AttributeKey.HideInSegmentsAttribute
+        )]
+
+    [AttributeField( "Parents Group Attribute",
+        Description = "Attribute used to manage if a parent can recieve an email.",
+        EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
+        EntityTypeQualifierColumn = "GroupTypeId",
+        EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
+        Order = 4,
+        Key = AttributeKey.ParentsGroupAttribute
+        )]
+
     #endregion Block Attributes
 
     public partial class CommunicationListSegments : Rock.Web.UI.RockBlock
@@ -63,6 +81,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
             public const string AttributeFilterAttribute = "AttributeFilterAttribute";
             public const string PropertyFilterAttribute = "PropertyFilterAttribute";
             public const string CanSendToParentsAttribute = "CanSendToParentsAttribute";
+            public const string HideInSegmentsAttribute = "HideInSegmentsAttribute";
+            public const string ParentsGroupAttribute = "ParentsGroupAttribute";
         }
 
         #endregion Attribute Keys
@@ -186,6 +206,14 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 .Where( g => g.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                 .OrderBy( g => g.Name )
                 .ToList();
+
+            var hideInListAttribute = AttributeCache.Get( GetAttributeValue( AttributeKey.HideInSegmentsAttribute ) );
+
+            if ( hideInListAttribute != null )
+            {
+                groups.ForEach( g => g.LoadAttributes() );
+                groups = groups.Where( g => g.GetAttributeValue( hideInListAttribute.Key ).AsBoolean() != true ).ToList();
+            }
 
             ddlCommunicationList.DataSource = groups;
             ddlCommunicationList.DataBind();
@@ -488,6 +516,16 @@ namespace RockWeb.Plugins.com_9embers.Communication
                         .Any( a => a.Group.Members
                         .Any( c => c.GroupRoleId == childRoleId && qry.Select( p2 => p2.Id ).Contains( c.PersonId ) ) ) );
 
+                Group parentGroup = GetParentGroup( group, rockContext );
+
+                if ( parentGroup != null )
+                {
+                    var inactiveParentIds = parentGroup.Members
+                        .Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Inactive )
+                        .Select( gm => gm.PersonId );
+                    parentQry = parentQry.Where( p => !inactiveParentIds.Contains( p.Id ) );
+                }
+
                 switch ( ddlSendTo.SelectedValueAsId() ?? 0 )
                 {
                     case 1: //Parents
@@ -498,6 +536,25 @@ namespace RockWeb.Plugins.com_9embers.Communication
             }
 
             return qry;
+        }
+
+        private Group GetParentGroup( Group group, RockContext rockContext )
+        {
+            var parentsAttribute = AttributeCache.Get( GetAttributeValue( AttributeKey.ParentsGroupAttribute ) );
+            if ( parentsAttribute == null )
+            {
+                return null;
+            }
+
+            group.LoadAttributes();
+            var parentGroupGuids = group.GetAttributeValue( parentsAttribute.Key ).SplitDelimitedValues();
+
+            if (parentGroupGuids.Length < 2 )
+            {
+                return null;
+            }
+
+            return new GroupService( rockContext ).Get( parentGroupGuids[1].AsGuid() );
         }
 
         private IQueryable<Person> GetRegistrationQry( PersonService personService )
