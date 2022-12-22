@@ -14,6 +14,7 @@ import PublicityInfo from "./publicityInfo"
 import { DateTime } from "luxon"
 import { Button, Modal } from "ant-design-vue"
 import DatePicker from "../../EventForm/Components/calendar"
+import Chip from "../../EventForm/Components/chip"
 
 export default defineComponent({
     name: "EventDashboard.Components.Modal",
@@ -28,6 +29,7 @@ export default defineComponent({
       "tcc-production": ProdAccomInfo,
       "tcc-publicity": PublicityInfo,
       "tcc-date": DatePicker,
+      "tcc-chip": Chip,
       "rck-field": RockField,
       "rck-lbl": RockLabel,
       "a-btn": Button,
@@ -103,6 +105,18 @@ export default defineComponent({
           }
         }
         return null
+      },
+      originalResources() {
+        if(this.request?.attributeValues?.RequestType) {
+          return this.request.attributeValues.RequestType.split(',')
+        }
+        return []
+      },
+      changesResources() {
+        if(this.request?.changes?.attributeValues?.RequestType) {
+          return this.request.changes.attributeValues.RequestType.split(',')
+        }
+        return []
       }
     },
     methods: {
@@ -203,6 +217,25 @@ export default defineComponent({
           return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
         }
       },
+      getChipClassName(resource: string, fromOriginal: Boolean) {
+        let className = ""
+        if(fromOriginal) {
+          if(this.changesResources && this.changesResources.length > 0) {
+            let idx = this.changesResources.indexOf(resource)
+            if(idx < 0) {
+              className += "text-red text-strikethrough "
+            }
+          }
+        } else {
+          if(this.originalResources && this.originalResources.length > 0) {
+            let idx = this.originalResources.indexOf(resource)
+            if(idx >= 0) {
+              className += "chip-hidden"
+            }
+          }
+        }
+        return className
+      }
     },
     watch: {
       
@@ -215,7 +248,7 @@ export default defineComponent({
   <div class="row mb-2">
     <div class="col col-xs-12">
       <h4>
-        <template v-if="request.changes && request.title != request.changes.title.substring(0, (request.changes.title.length - 8))">
+        <template v-if="request.changes && request.changes.title.endsWith('Changes') && request.title != request.changes.title.substring(0, (request.changes.title.length - 8))">
           <span class="text-red">{{request.title}}</span>: <span class="text-primary">{{request.changes.title.substring(0, (request.changes.title.length - 8))}}</span>
         </template>
         <template v-else>
@@ -225,6 +258,14 @@ export default defineComponent({
         <i v-else class="fa fa-exclamation-circle text-inprogress ml-2"></i>
       </h4>
       <div :class="statusClass">{{request.attributeValues.RequestStatus}}</div>
+    </div>
+  </div>
+  <div class="row mb-4">
+    <div class="col col-xs-12">
+      <div class="chip-group">
+        <tcc-chip v-for="r in originalResources" :class="getChipClassName(r, true)" :disabled="true">{{r}}</tcc-chip>
+        <tcc-chip v-for="r in changesResources" :class="getChipClassName(r, false)" :disabled="true">{{r}}</tcc-chip>
+      </div>
     </div>
   </div>
   <div class="row mb-4">

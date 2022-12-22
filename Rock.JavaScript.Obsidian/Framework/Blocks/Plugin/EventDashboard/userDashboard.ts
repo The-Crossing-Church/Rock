@@ -857,46 +857,46 @@ td .ant-btn {
   cursor: pointer;
 }
 .text-primary, .text-submitted {
-  color: #347689;
+  color: #347689 !important;
 }
 .text-accent, .text-approved {
-  color: #8ED2C9;
+  color: #8ED2C9 !important;
 }
 .border-approved {
   border-color: #8ED2C9;
 }
 .text-inprogress {
-  color: #ecc30b;
+  color: #ecc30b !important;
 }
 .border-inprogress {
-  boarder-color: #ecc30b;
+  boarder-color: #ecc30b !important;
 }
 .text-draft {
-  color: #A18276;
+  color: #A18276 !important;
 }
 .border-draft {
-  border-color: #A18276;
+  border-color: #A18276 !important;
 }
 .text-pendingchanges {
-  color: #61a4a9;
+  color: #61a4a9 !important;
 }
 .border-pendingchanges {
-  border-color: #61a4a9;
+  border-color: #61a4a9 !important;
 }
 .text-cancelled, .text-cancelledbyuser {
-  color: #3d3d3d;
+  color: #3d3d3d !important;
 }
 .border-cancelled, .border-cancelledbyuser {
-  border-color: #3d3d3d;
+  border-color: #3d3d3d !important;
 }
 .text-denied, .text-red {
-  color: #cc3f0c;
+  color: #cc3f0c !important;
 }
 .border-denied {
-  border-color: #cc3f0c;
+  border-color: #cc3f0c !important;
 }
 .text-strikethrough {
-  text-decoration: line-through;
+  text-decoration: line-through !important;
 }
 .tcc-dropdown {
   display: flex;

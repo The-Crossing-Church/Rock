@@ -463,10 +463,11 @@ namespace Rock.Blocks.Plugin.EventForm
         private FormResponse SaveRequest( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
         {
             SetProperties();
+            RockContext rockContext = new RockContext();
             ContentChannelItem item = FromViewModel( viewModel );
-            var cciSvc = new ContentChannelItemService( context );
-            var assocSvc = new ContentChannelItemAssociationService( context );
-            var avSvc = new AttributeValueService( context );
+            var cciSvc = new ContentChannelItemService( rockContext );
+            var assocSvc = new ContentChannelItemAssociationService( rockContext );
+            var avSvc = new AttributeValueService( rockContext );
             var p = GetCurrentPerson();
             item.ModifiedByPersonAliasId = p.PrimaryAliasId;
             item.ModifiedDateTime = RockDateTime.Now;
@@ -521,7 +522,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         assocSvc.Delete( originalEventAssoc );
                     }
                 }
-                context.SaveChanges();
+                rockContext.SaveChanges();
             }
             else
             {
@@ -542,6 +543,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         }
                         changes.SetAttributeValue( "RequestStatus", "Pending Changes" );
                         original = cciSvc.Get( item.Id );
+                        original.LoadAttributes();
                         original.SetAttributeValue( "RequestStatus", "Pending Changes" );
                         original.SaveAttributeValue( "RequestStatus" );
                         item = changes;
@@ -567,7 +569,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         assoc.Order = order.HasValue ? order.Value + 1 : 0;
                         assocSvc.Add( assoc );
                     }
-                    context.SaveChanges();
+                    rockContext.SaveChanges();
                 }
                 item.SaveAttributeValues();
 
@@ -606,7 +608,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         cciSvc.Add( detail );
                         needsAssociation = true;
                     }
-                    context.SaveChanges();
+                    rockContext.SaveChanges();
                     if ( needsAssociation )
                     {
                         int? order;
@@ -632,7 +634,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         assoc.ChildContentChannelItemId = detail.Id;
                         assoc.Order = order.HasValue ? order.Value + 1 : 0;
                         assocSvc.Add( assoc );
-                        context.SaveChanges();
+                        rockContext.SaveChanges();
                     }
                     detail.SaveAttributeValues( context );
                 }
@@ -882,6 +884,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     {
                         item.SetAttributeValue( "IsPreApproved", "True" );
                         item.SetAttributeValue( "RequestStatus", "Approved" );
+                        item.SaveAttributeValue( "RequestStatus" );
                     }
                 }
                 else
@@ -894,7 +897,7 @@ namespace Rock.Blocks.Plugin.EventForm
                 notValidForPreApprovalReasons.Add( "All information was not filled out." );
             }
             notValidForPreApprovalReasons = notValidForPreApprovalReasons.Distinct().ToList();
-            item.SaveAttributeValues( context );
+            item.SaveAttributeValue( "IsPreApproved" );
             return notValidForPreApprovalReasons;
         }
 
@@ -971,7 +974,7 @@ namespace Rock.Blocks.Plugin.EventForm
             };
             if ( viewModel.Id > 0 )
             {
-                item = new ContentChannelItemService( context ).Get( viewModel.Id );
+                item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;
@@ -1375,22 +1378,36 @@ namespace Rock.Blocks.Plugin.EventForm
                     List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
                     List<TableSetUp> currentSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( current );
                     message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
-                    for ( int i = 0; i < originalSetUp.Count(); i++ )
+                    if ( originalSetUp != null )
                     {
-                        if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
                         {
-                            var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
-                            message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
+                            {
+                                var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
+                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                            }
                         }
                     }
-                    message += "</ul> <ul style='color: #347689;'>";
-                    for ( int i = 0; i < currentSetUp.Count(); i++ )
+                    else
                     {
-                        if ( !String.IsNullOrEmpty( currentSetUp[i].Room ) )
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul> <ul style='color: #347689;'>";
+                    if ( currentSetUp != null )
+                    {
+                        for ( int i = 0; i < currentSetUp.Count(); i++ )
                         {
-                            var room = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].Room ) );
-                            message += $"<li>{room}: {currentSetUp[i].NumberofTables} {currentSetUp[i].TypeofTable} tables with {currentSetUp[i].NumberofChairs} each.</li>";
+                            if ( !String.IsNullOrEmpty( currentSetUp[i].Room ) )
+                            {
+                                var room = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].Room ) );
+                                message += $"<li>{room}: {currentSetUp[i].NumberofTables} {currentSetUp[i].TypeofTable} tables with {currentSetUp[i].NumberofChairs} each.</li>";
+                            }
                         }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
                     }
                     message += "</ul>";
                 }

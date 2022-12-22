@@ -262,6 +262,48 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     }
                 }
                 item.SetAttributeValue( "RequestStatus", "Approved" );
+                List<String> resources = new List<string>();
+                if ( item.GetAttributeValue( "NeedsSpace" ) == "True" )
+                {
+                    resources.Add( "Room" );
+                }
+                if ( item.GetAttributeValue( "NeedsCatering" ) == "True" )
+                {
+                    resources.Add( "Catering" );
+                }
+                if ( item.GetAttributeValue( "NeedsOpsAccommodations" ) == "True" )
+                {
+                    resources.Add( "Extra Resources" );
+                }
+                if ( item.GetAttributeValue( "NeedsChildCare" ) == "True" )
+                {
+                    resources.Add( "Childcare" );
+                }
+                if ( item.GetAttributeValue( "NeedsChildCareCatering" ) == "True" )
+                {
+                    resources.Add( "Childcare Catering" );
+                }
+                if ( item.GetAttributeValue( "NeedsRegistration" ) == "True" )
+                {
+                    resources.Add( "Registration" );
+                }
+                if ( item.GetAttributeValue( "NeedsWebCalendar" ) == "True" )
+                {
+                    resources.Add( "Web Calendar" );
+                }
+                if ( item.GetAttributeValue( "NeedsPublicity" ) == "True" )
+                {
+                    resources.Add( "Publicity" );
+                }
+                if ( item.GetAttributeValue( "NeedsProductionAccommodations" ) == "True" )
+                {
+                    resources.Add( "Production" );
+                }
+                if ( item.GetAttributeValue( "NeedsOnline" ) == "True" )
+                {
+                    resources.Add( "Online Event" );
+                }
+                item.SetAttributeValue( "RequestType", String.Join( ",", resources ) );
                 item.SaveAttributeValues();
                 cci_svc.Delete( changes );
                 ccia_svc.Delete( changesAssoc );
@@ -384,9 +426,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 string currentStatus = item.GetAttributeValue( requestStatusAttrKey );
                 item.ModifiedByPersonAliasId = p.PrimaryAliasId;
                 item.ModifiedDateTime = RockDateTime.Now;
-                if ( status == "Approved" )
+                if ( currentStatus == "Pending Changes" )
                 {
-                    if ( currentStatus == "Pending Changes" )
+                    if ( status == "Approved" || status == "In Progress" )
                     {
                         //From Pending to Approved, update all attribute values and delete the pending changes items 
                         var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );

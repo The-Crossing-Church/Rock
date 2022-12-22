@@ -58,7 +58,7 @@ export default defineComponent({
         let selectedRooms = this.rooms?.filter((r: any) => {
           return selectedGuids.includes(r.guid)
         }) as any
-        let val = JSON.parse(value)
+        let val = value.includes('[') ? JSON.parse(value) : []
         let setup = []
         if(selectedRooms && selectedRooms.length > 0) {
           for(let i = 0; i < selectedRooms.length; i++) {

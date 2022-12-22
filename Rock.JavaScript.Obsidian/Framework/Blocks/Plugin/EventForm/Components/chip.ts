@@ -66,6 +66,10 @@ export default defineComponent({
     display: flex;
     justify-content: flex-start;
     flex-wrap: wrap;
+    align-content: flex-start;
+  }
+  .chip-hidden {
+    display: none;
   }
 </v-style>
 `
