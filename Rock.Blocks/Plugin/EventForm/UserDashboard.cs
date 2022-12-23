@@ -210,6 +210,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
             RockContext context = new RockContext();
             SetProperties();
             var item = new ContentChannelItemService( context ).Get( id );
+            if ( item == null )
+            {
+                return ActionOk( new { isError = true, errorMessage = "Request does not exist" } );
+            }
             if ( item.ContentChannelId == EventChangesContentChannelId )
             {
                 var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
@@ -850,22 +854,25 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 if ( exists == null )
                 {
                     item = new ContentChannelItemService( context ).Get( id.Value );
-                    if ( item.ContentChannelId == EventChangesContentChannelId )
+                    if ( item != null )
                     {
-                        var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
-                        if ( parent != null )
+                        if ( item.ContentChannelId == EventChangesContentChannelId )
                         {
-                            item = parent.ContentChannelItem;
-                            exists = items.FirstOrDefault( i => i.Id == item.Id );
-                            if ( exists == null )
+                            var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
+                            if ( parent != null )
                             {
-                                itemList.Add( item );
+                                item = parent.ContentChannelItem;
+                                exists = items.FirstOrDefault( i => i.Id == item.Id );
+                                if ( exists == null )
+                                {
+                                    itemList.Add( item );
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        itemList.Add( item );
+                        else
+                        {
+                            itemList.Add( item );
+                        }
                     }
                 }
             }
