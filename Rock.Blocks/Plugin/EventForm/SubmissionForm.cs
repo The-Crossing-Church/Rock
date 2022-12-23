@@ -182,6 +182,34 @@ namespace Rock.Blocks.Plugin.EventForm
         #endregion
 
         #region Block Actions
+        [BlockAction]
+        public BlockActionResult ReloadRequest( int id )
+        {
+            try
+            {
+                SetProperties();
+                SubmissionFormViewModel viewModel = LoadRequest( id );
+                if ( viewModel.request.ContentChannelId == EventChangesContentChannelId )
+                {
+                    //Need to get the events differently
+                    var item = new ContentChannelItemService( context ).Get( id );
+                    var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
+                    if ( parent != null )
+                    {
+                        var events = parent.ContentChannelItem.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem );
+                        if ( events != null && events.Count() > 0 )
+                        {
+                            viewModel.events = events.SelectMany( ci => ci.ChildItems.Where( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).Select( ccci => ccci.ChildContentChannelItem.ToViewModel( null, true ) ) ).ToList();
+                        }
+                    }
+                }
+                return ActionOk( viewModel );
+            }
+            catch ( Exception e )
+            {
+                return ActionInternalServerError( e.Message );
+            }
+        }
 
         [BlockAction]
         public BlockActionResult Save( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
@@ -245,10 +273,14 @@ namespace Rock.Blocks.Plugin.EventForm
         /// Loads the request or returns a new CCI
         /// </summary>
         /// <returns></returns>
-        private SubmissionFormViewModel LoadRequest()
+        private SubmissionFormViewModel LoadRequest( int altId = 0 )
         {
             RockContext context = new RockContext();
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
+            if ( altId > 0 )
+            {
+                id = altId;
+            }
             ContentChannelItem item = new ContentChannelItem();
             var p = GetCurrentPerson();
             SubmissionFormViewModel viewModel = new SubmissionFormViewModel();
@@ -463,11 +495,10 @@ namespace Rock.Blocks.Plugin.EventForm
         private FormResponse SaveRequest( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
         {
             SetProperties();
-            RockContext rockContext = new RockContext();
             ContentChannelItem item = FromViewModel( viewModel );
-            var cciSvc = new ContentChannelItemService( rockContext );
-            var assocSvc = new ContentChannelItemAssociationService( rockContext );
-            var avSvc = new AttributeValueService( rockContext );
+            var cciSvc = new ContentChannelItemService( context );
+            var assocSvc = new ContentChannelItemAssociationService( context );
+            var avSvc = new AttributeValueService( context );
             var p = GetCurrentPerson();
             item.ModifiedByPersonAliasId = p.PrimaryAliasId;
             item.ModifiedDateTime = RockDateTime.Now;
@@ -522,7 +553,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         assocSvc.Delete( originalEventAssoc );
                     }
                 }
-                rockContext.SaveChanges();
+                context.SaveChanges();
             }
             else
             {
@@ -569,7 +600,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         assoc.Order = order.HasValue ? order.Value + 1 : 0;
                         assocSvc.Add( assoc );
                     }
-                    rockContext.SaveChanges();
+                    context.SaveChanges();
                 }
                 item.SaveAttributeValues();
 
@@ -608,7 +639,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         cciSvc.Add( detail );
                         needsAssociation = true;
                     }
-                    rockContext.SaveChanges();
+                    context.SaveChanges();
                     if ( needsAssociation )
                     {
                         int? order;
@@ -634,7 +665,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         assoc.ChildContentChannelItemId = detail.Id;
                         assoc.Order = order.HasValue ? order.Value + 1 : 0;
                         assocSvc.Add( assoc );
-                        rockContext.SaveChanges();
+                        context.SaveChanges();
                     }
                     detail.SaveAttributeValues( context );
                 }
@@ -974,7 +1005,7 @@ namespace Rock.Blocks.Plugin.EventForm
             };
             if ( viewModel.Id > 0 )
             {
-                item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
+                item = new ContentChannelItemService( context ).Get( viewModel.Id );
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;

@@ -158,7 +158,7 @@ export default defineComponent({
     <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsSpace"
       :label="viewModel.request.attributes.NeedsSpace.name"
-      hint="If you need any doors unlocked for this event, please be sure to include Special Accommodations below. Selecting a physical space does not assume unlocked doors."
+      hint="If you need any doors unlocked for this event, please be sure to include Operations accommodations below. Selecting a physical space does not assume unlocked doors."
       :persistent-hint="viewModel.request.attributeValues.NeedsSpace == 'True'"
     ></tcc-switch>
   </div>

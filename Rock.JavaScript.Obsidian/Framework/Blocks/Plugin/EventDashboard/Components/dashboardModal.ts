@@ -288,16 +288,64 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-6">
-      <rck-field
-        v-model="request.attributeValues.Ministry"
-        :attribute="request.attributes.Ministry"
-      ></rck-field>
+      <template v-if="request.changes && request.changes.attributeValues.Ministry != request.attributeValues.Ministry">
+        <div class="row">
+          <div class="col col-xs-6">
+            <rck-field
+              v-model="request.attributeValues.Ministry"
+              :attribute="request.attributes.Ministry"
+              class="text-red"
+              :showEmptyValue="true"
+            ></rck-field>
+          </div>
+          <div class="col col-xs-6">
+            <rck-field
+              v-model="request.changes.attributeValues.Ministry"
+              :attribute="request.attributes.Ministry"
+              class="text-primary"
+              :showEmptyValue="true"
+              :showLabel="false"
+              style="padding-top: 18px;"
+            ></rck-field>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <rck-field
+          v-model="request.attributeValues.Ministry"
+          :attribute="request.attributes.Ministry"
+        ></rck-field>
+      </template>
     </div>
     <div class="col col-xs-6">
-      <rck-field
-        v-model="request.attributeValues.Contact"
-        :attribute="request.attributes.Contact"
-      ></rck-field>
+      <template v-if="request.changes && request.changes.attributeValues.Contact != request.attributeValues.Contact">
+        <div class="row">
+          <div class="col col-xs-6">
+            <rck-field
+              v-model="request.attributeValues.Contact"
+              :attribute="request.attributes.Contact"
+              class="text-red"
+              :showEmptyValue="true"
+            ></rck-field>
+          </div>
+          <div class="col col-xs-6">
+            <rck-field
+              v-model="request.changes.attributeValues.Contact"
+              :attribute="request.attributes.Contact"
+              class="text-primary"
+              :showEmptyValue="true"
+              :showLabel="false"
+              style="padding-top: 18px;"
+            ></rck-field>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <rck-field
+          v-model="request.attributeValues.Contact"
+          :attribute="request.attributes.Contact"
+        ></rck-field>
+      </template>
     </div>
   </div>
   <div class="row mb-4">

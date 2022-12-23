@@ -122,8 +122,8 @@ export default defineComponent({
           {
             title: 'Title',
             dataIndex: 'title',
-            key: 'title',
-            slots: { customRender: 'title' },
+            key: 'reqtitle',
+            slots: { customRender: 'reqtitle' },
           },
           {
             title: 'Submitted On',
@@ -597,11 +597,11 @@ export default defineComponent({
     </div>
   </div>
   <a-table :columns="columns" :data-source="viewModel.events" :pagination="{ pageSize: 30 }">
-    <template #title="{ text: title, record: r }">
+    <template #reqtitle="{ text: reqtitle, record: r }">
       <div class="hover" @click="selectItem(r)">
         <i v-if="getIsValid(r)" class="fa fa-check-circle text-accent mr-2"></i>
         <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i>
-        {{ title }}
+        {{ reqtitle }}
       </div>
     </template>
     <template #start="{ text: start }">

@@ -437,7 +437,6 @@ export default defineComponent({
       if(el) {
         el.style.display = 'block'
       }
-      
       this.completePartialApproval(this.selected.id, approved, denied, events).then((res) => {
         this.partialApprovalModal = false
         if(res.isSuccess) {

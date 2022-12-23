@@ -210,6 +210,14 @@ namespace Rock.Blocks.Plugin.EventDashboard
             RockContext context = new RockContext();
             SetProperties();
             var item = new ContentChannelItemService( context ).Get( id );
+            if ( item.ContentChannelId == EventChangesContentChannelId )
+            {
+                var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
+                if ( parent != null )
+                {
+                    item = parent.ContentChannelItem;
+                }
+            }
             response.request = item.ToViewModel( null, true );
             var requestchanges = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).FirstOrDefault();
             if ( requestchanges != null )
@@ -842,7 +850,23 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 if ( exists == null )
                 {
                     item = new ContentChannelItemService( context ).Get( id.Value );
-                    itemList.Add( item );
+                    if ( item.ContentChannelId == EventChangesContentChannelId )
+                    {
+                        var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
+                        if ( parent != null )
+                        {
+                            item = parent.ContentChannelItem;
+                            exists = items.FirstOrDefault( i => i.Id == item.Id );
+                            if ( exists == null )
+                            {
+                                itemList.Add( item );
+                            }
+                        }
+                    }
+                    else
+                    {
+                        itemList.Add( item );
+                    }
                 }
             }
             viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();

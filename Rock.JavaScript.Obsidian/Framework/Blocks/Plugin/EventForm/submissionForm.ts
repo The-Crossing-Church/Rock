@@ -95,10 +95,22 @@ export default defineComponent({
       };
       provide("submit", submit);
 
+      /** A method to reload the current request */
+      const reload: (id: number) => Promise<any> = async (id) => {
+          const response = await invokeBlockAction<{ expirationDateTime: string }>("ReloadRequest", {
+              id: id
+          });
+          if (response) {
+            return response
+          }
+      };
+      provide("reload", reload);
+
       return {
           viewModel,
           save,
-          submit
+          submit,
+          reload
       }
   },
   data() {
@@ -258,6 +270,9 @@ export default defineComponent({
             this.response = res.data
             this.isSave = true
             this.modal = true
+            if(this.viewModel?.request) {
+              this.viewModel.request.id = res.data.id
+            }
           } else if (res.isError) {
 
           }
@@ -271,9 +286,6 @@ export default defineComponent({
       }
       this.isSubmitting = true
       if(this.viewModel) {
-        // if(this.viewModel?.request?.attributeValues?.RequestStatus == "Draft") {
-        //   this.viewModel.request.attributeValues.RequestStatus = "Submitted"
-        // }
         this.validate()
         this.submit(this.viewModel).then((res: any) => {
           if(res) {
@@ -282,6 +294,9 @@ export default defineComponent({
               this.response = res.data
               this.isSave = false
               this.modal = true
+              if(this.viewModel?.request) {
+                this.viewModel.request.id = res?.data?.id
+              }
             } else if (res.isError || res.Message) {
               this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
               let el = document.getElementById('toast')
@@ -314,11 +329,11 @@ export default defineComponent({
       let url = ""
       if(this.viewModel?.isEventAdmin) {
         if(this.viewModel.adminDashboardURL) {
-          url = "https://" + window.location.host + "/" + this.viewModel.adminDashboardURL + "?Id=" + this.id
+          url = "https://" + window.location.host + (this.viewModel.adminDashboardURL.includes("/") ? "" : "/") + this.viewModel.adminDashboardURL + "?Id=" + this.id
         }
       } else {
         if(this.viewModel?.userDashboardURL) {
-          url = "https://" + window.location.host + "/" + this.viewModel.userDashboardURL + "?Id=" + this.id
+          url = "https://" + window.location.host + (this.viewModel.userDashboardURL.includes("/") ? "" : "/") + this.viewModel.userDashboardURL + "?Id=" + this.id
         }
       }
       if(url) {
@@ -961,6 +976,40 @@ export default defineComponent({
         }
       },
       deep: true
+    },
+    modal: {
+      handler (val) {
+        if(!val) {
+          if(this.viewModel?.request && this.viewModel.request.id > 0) {
+            let el = document.getElementById('updateProgress')
+            if(el) {
+              el.style.display = 'block'
+            }
+            this.reload(this.viewModel.request.id).then((res) => {
+              if(this.viewModel?.request && res.data.request ) {
+                this.viewModel.request = res.data.request
+                this.viewModel.events = res.data.events
+              } else if (res.isError || res.Message) {
+                this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
+                let el = document.getElementById('toast')
+                el?.classList.add("show")
+              }
+            }).catch((err) => {
+              console.log(err)
+              if(err.Message) {
+                this.toastMessage = err.Message
+                let el = document.getElementById('toast')
+                el?.classList.add("show")
+              }
+            }).finally(() => {
+              if(el) {
+                el.style.display = 'none'
+              }
+            })
+          }
+        }
+      },
+      deep: true
     }
   },
   mounted() {
@@ -1142,9 +1191,12 @@ export default defineComponent({
   <!-- Confirmation Modal -->
   <a-modal v-model:visible="modal" width="80%">
     <div class="pt-2">
-      <strong class="mb-2">
-        {{response.message}}
-      </strong>
+      <div class="mb-2 text-primary">
+        <strong>
+          <i class="fa fa-check" style="font-size: 25px"></i>
+          {{response.message}}
+        </strong>
+      </div>
       <div v-if="response.isPreApproved">
         Due to the nature of your request, it has been pre-approved. 
       </div>
@@ -1155,7 +1207,7 @@ export default defineComponent({
         </ul>
       </div>
       <div class="text-red" v-if="errorList && errorList.length > 0">
-        Please correct the following errors in your request:
+        Before your request can be approved, you will need to correct the following:
         <ul>
           <li v-for="(e, idx) in errorList" :key="idx">{{e}}</li>
         </ul>
