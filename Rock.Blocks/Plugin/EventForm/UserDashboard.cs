@@ -598,6 +598,74 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 return ActionBadRequest( e.Message );
             }
         }
+
+        [BlockAction]
+        public BlockActionResult ProposedChangesAction( int id, string action )
+        {
+            try
+            {
+                RockContext context = new RockContext();
+                var cci_svc = new ContentChannelItemService( context );
+                var ccia_svc = new ContentChannelItemAssociationService( context );
+                SetProperties();
+                ContentChannelItem item = cci_svc.Get( id );
+                if ( item != null )
+                {
+                    item.LoadAttributes();
+                    string status = item.GetAttributeValue( "RequestStatus" );
+                    if ( status != "Proposed Changes Denied" )
+                    {
+                        throw new Exception( "Unable to complete this action, request is not in an appropriate status." );
+                    }
+                    if ( action == "ChangesAccepted" )
+                    {
+                        item.SetAttributeValue( "RequestStatus", "Changes Accepted by User" );
+                        item.SaveAttributeValue( "RequestStatus" );
+                    }
+                    else
+                    {
+                        if ( action == "Original" )
+                        {
+                            //Use Originally Approved
+                            item.SetAttributeValue( "RequestStatus", "Approved" );
+                            item.SaveAttributeValue( "RequestStatus" );
+                        }
+                        else if ( action == "Cancelled" )
+                        {
+                            //Set Request to Cancelled by User
+                            item.SetAttributeValue( "RequestStatus", "Cancelled by User" );
+                            item.SaveAttributeValue( "RequestStatus" );
+                        }
+                        var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
+                        if ( changesAssoc != null )
+                        {
+                            var changes = changesAssoc.ChildContentChannelItem;
+                            cci_svc.Delete( changes );
+                            ccia_svc.Delete( changesAssoc );
+                            var events = item.ChildItems.Where( ci => ci.ChildContentChannelItem != null && ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ToList();
+                            for ( int i = 0; i < events.Count(); i++ )
+                            {
+                                var eventChanges = events[i].ChildContentChannelItem.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                                if ( eventChanges != null )
+                                {
+                                    cci_svc.Delete( eventChanges.ChildContentChannelItem );
+                                    ccia_svc.Delete( eventChanges );
+                                }
+                            }
+                        }
+                    }
+                    return ActionOk( new { id = id } );
+                }
+                else
+                {
+                    throw new Exception( "Item not found." );
+                }
+            }
+            catch ( Exception e )
+            {
+                return ActionBadRequest( e.Message );
+            }
+        }
         #endregion Block Actions
 
         #region Helpers

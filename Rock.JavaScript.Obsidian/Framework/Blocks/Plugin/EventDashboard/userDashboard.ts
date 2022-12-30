@@ -106,6 +106,17 @@ export default defineComponent({
       };
       provide("resubmitEvent", resubmitEvent);
 
+      /** A method for the user to respond to Proposed Changes Denied */
+      const userAction: (id: number, actin: string) => Promise<any> = async (id, action) => {
+          const response = await invokeBlockAction<{ expirationDateTime: string }>("ProposedChangesAction", {
+              id: id, action: action
+          });
+          if (response) {
+            return response
+          }
+      };
+      provide("userAction", userAction);
+
       return {
           viewModel,
           defaultFilters,
@@ -113,7 +124,8 @@ export default defineComponent({
           filterRequests,
           changeStatus,
           addComment,
-          resubmitEvent
+          resubmitEvent,
+          userAction
       }
   },
   data() {
@@ -324,6 +336,10 @@ export default defineComponent({
       this.updateStatus(status)
     },
     updateStatus(status: string) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       if(status == "In Progress") {
         this.btnLoading.inprogress = true
       } else {
@@ -355,6 +371,9 @@ export default defineComponent({
       }).finally(() => {
         this.btnLoading.inprogress = false
         this.btnLoading.cancelled = false
+        if(el) {
+          el.style.display = 'none'
+        }
       })
     },
     getNextComment(idx: number) {
@@ -513,6 +532,55 @@ export default defineComponent({
     getIsValid(r: any) {
       return r?.attributeValues?.RequestIsValid == 'True'
     },
+    proposedChangesAction(action: string, id: number) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.userAction(id, action).then((res) => {
+        if(res) {
+          if(res.isSuccess) {
+            this.loadDetails(id).then((response: any) => {
+              if(response.data) {
+                response.data.details.forEach((detail: any) => {
+                  detail.detail.changes = detail.detailPendingChanges
+                })
+                response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
+                response.data.request.changes = response.data.requestPendingChanges
+                response.data.request.comments = response.data.comments
+                this.selected = response.data.request
+                this.createdBy = response.data.createdBy
+                this.modifiedBy = response.data.modifiedBy
+                this.modal = true
+              }
+              if(response.isError) {
+                this.toastMessage = response.errorMessage
+                let el = document.getElementById('toast')
+                el?.classList.add("show")
+              }
+            }).finally(() => {
+              if(el) {
+                el.style.display = 'none'
+              }
+            })
+          } else if(res.isError) {
+            this.toastMessage = res.errorMessage
+            let el = document.getElementById('toast')
+            el?.classList.add("show")
+            if(el) {
+              el.style.display = 'none'
+            }
+          }
+        } else {
+          this.toastMessage = "Unable to update request"
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+          if(el) {
+            el.style.display = 'none'
+          }
+        }
+      })
+    }
   },
   watch: {
     
@@ -523,6 +591,10 @@ export default defineComponent({
     let id = params.get("Id")
     if(id) {
       this.selectItem({id: id})
+      let action = params.get("Action")
+      if(action) {
+        this.proposedChangesAction(action, parseInt(id))
+      }
     }
   },
   template: `
@@ -631,6 +703,10 @@ export default defineComponent({
         <a-btn type="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled by User')">
           <i class="mr-1 fa fa-ban"></i>
           Cancel
+        </a-btn>
+        <a-btn type="primary" v-if="selectedStatus == 'Proposed Changes Denied'" @click="proposedChangesAction('Original')">
+          <i class="mr-1 fa fa-check"></i>
+          Use Originally Approved
         </a-btn>
         <a-btn type="accent" @click="newComment">
           <i class="mr-1 fa fa-comment-alt"></i>
@@ -889,10 +965,10 @@ td .ant-btn {
 .border-cancelled, .border-cancelledbyuser {
   border-color: #3d3d3d !important;
 }
-.text-denied, .text-red {
+.text-denied, .text-red, .text-proposedchangesdenied {
   color: #cc3f0c !important;
 }
-.border-denied {
+.border-denied, .border-proposedchangesdenied {
   border-color: #cc3f0c !important;
 }
 .text-strikethrough {

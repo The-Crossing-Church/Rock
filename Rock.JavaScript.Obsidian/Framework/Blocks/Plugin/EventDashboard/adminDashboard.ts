@@ -356,6 +356,10 @@ export default defineComponent({
       this.bufferModal = true
     },
     updateStatus(status: string) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
       if(status == "In Progress") {
         this.btnLoading.inprogress = true
       } else if (status == "Cancelled") {
@@ -388,6 +392,9 @@ export default defineComponent({
       }).finally(() => {
         this.btnLoading.inprogress = false
         this.btnLoading.cancelled = false
+        if(el) {
+          el.style.display = 'none'
+        }
       })
     },
     requestAction(status: string) {
@@ -946,10 +953,10 @@ td .ant-btn {
 .border-cancelled, .border-cancelledbyuser {
   border-color: #3d3d3d !important;
 }
-.text-denied, .text-red {
+.text-denied, .text-red, .text-proposedchangesdenied {
   color: #cc3f0c !important;
 }
-.border-denied {
+.border-denied, .border-proposedchangesdenied {
   border-color: #cc3f0c !important;
 }
 .text-strikethrough {

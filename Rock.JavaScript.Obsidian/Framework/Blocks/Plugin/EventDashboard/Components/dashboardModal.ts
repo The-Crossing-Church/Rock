@@ -52,7 +52,7 @@ export default defineComponent({
     },
     computed: {
       statusClass() {
-        return "status-box text-" + this.request?.attributeValues.RequestStatus.replace(" ", "").toLowerCase() + " border-" + this.request?.attributeValues.RequestStatus.replace(" ", "").toLowerCase()
+        return "status-box text-" + this.request?.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase() + " border-" + this.request?.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase()
       },
       eventDates() {
         if(this.request?.attributeValues.EventDates) {

@@ -473,7 +473,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         }
                     }
                 }
-                if ( status == "Proposed Changes Denied" )
+                if ( status == "Proposed Changes Denied" && !denyWithComments )
                 {
                     //Remove Pending Changes items because they were not approved
                     var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );

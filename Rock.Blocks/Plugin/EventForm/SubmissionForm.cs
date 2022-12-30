@@ -1323,38 +1323,38 @@ namespace Rock.Blocks.Plugin.EventForm
                 }
                 message += "</div>";
 
-                if ( item.AttributeValues["NeedsSpace"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsSpace"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsSpace"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Space", "Space", events[i], eventChanges );
                 }
-                if ( item.AttributeValues["NeedsCatering"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsCatering"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Catering", "Catering", events[i], eventChanges );
                 }
-                if ( item.AttributeValues["NeedsOpsAccommodations"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsOpsAccommodations"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsOpsAccommodations"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Ops Requests", "Ops Accommodations", events[i], eventChanges );
                 }
-                if ( item.AttributeValues["NeedsChildCare"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsChildCare"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsChildCare"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Childcare", "Childcare", events[i], eventChanges );
                 }
-                if ( item.AttributeValues["NeedsChildCareCatering"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsChildCareCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsChildCareCatering"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Childcare Catering", "Childcare Catering", events[i], eventChanges );
                 }
-                if ( item.AttributeValues["NeedsRegistration"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsRegistration"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsRegistration"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Registration", "Registration", events[i], eventChanges );
                 }
-                if ( item.AttributeValues["NeedsOnline"].Value == "True" )
+                if ( ( item.AttributeValues["NeedsOnline"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsOnline"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Online", "Zoom", events[i], eventChanges );
                 }
                 message += "<br/>";
             }
 
-            if ( item.AttributeValues["NeedsWebCalendar"].Value == "True" )
+            if ( ( item.AttributeValues["NeedsWebCalendar"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsWebCalendar"].Value == "True" ) )
             {
                 if ( !String.IsNullOrEmpty( item.AttributeValues["WebCalendarDescription"].Value ) )
                 {
@@ -1363,11 +1363,11 @@ namespace Rock.Blocks.Plugin.EventForm
                     message += "</div>";
                 }
             }
-            if ( item.AttributeValues["NeedsPublicity"].Value == "True" )
+            if ( ( item.AttributeValues["NeedsPublicity"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsPublicity"].Value == "True" ) )
             {
                 message += GetCategoryDetails( "Event Publicity", "Publicity", item, itemChanges );
             }
-            if ( item.AttributeValues["NeedsProductionAccommodations"].Value == "True" )
+            if ( ( item.AttributeValues["NeedsProductionAccommodations"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsProductionAccommodations"].Value == "True" ) )
             {
                 message += GetCategoryDetails( "Event Production", "Production Accommodations", item, itemChanges );
             }
