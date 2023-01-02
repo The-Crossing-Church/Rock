@@ -52,7 +52,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Blocks\Plugin\EventForm\SubmissionFormBlockViewModel.cs" />
     <Compile Include="Cms\StructuredContent\BlockTypes\ButtonData.cs" />
     <Compile Include="Cms\StructuredContent\BlockTypes\ButtonRenderer.cs" />
     <Compile Include="Communications\Transport\Twilio.cs" />
