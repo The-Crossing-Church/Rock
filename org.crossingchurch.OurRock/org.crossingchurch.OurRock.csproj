@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Blocks\Plugin\EventForm\SubmissionFormBlockViewModel.cs" />
     <Compile Include="Cms\StructuredContent\BlockTypes\ButtonData.cs" />
     <Compile Include="Cms\StructuredContent\BlockTypes\ButtonRenderer.cs" />
     <Compile Include="Communications\Transport\Twilio.cs" />
@@ -70,6 +71,10 @@
     <ProjectReference Include="..\Rock.Common\Rock.Common.csproj">
       <Project>{13568622-324e-4493-b605-c9896e725d30}</Project>
       <Name>Rock.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Rock.ViewModel\Rock.ViewModel.csproj">
+      <Project>{05baaf85-9c53-4ccd-a535-036427b0df72}</Project>
+      <Name>Rock.ViewModel</Name>
     </ProjectReference>
     <ProjectReference Include="..\Rock\Rock.csproj">
       <Project>{185a31d7-3037-4dae-8797-0459849a84bd}</Project>

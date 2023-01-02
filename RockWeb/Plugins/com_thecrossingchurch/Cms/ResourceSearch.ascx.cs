@@ -16,17 +16,19 @@ using System.Net;
 using System.IO;
 using Newtonsoft.Json;
 using Rock.Web.Cache;
+using RestSharp;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
     [DisplayName( "Resource Search" )]
     [Category( "com_thecrossingchurch > Cms" )]
+    [TextField( "Hubspot Key Attribute", "", true, "HubspotPrivateAppKey", order: 1 )]
     [Description( "Display results of search query" )]
-    [ContentChannelField( "Watch Content Channel", required: false )]
-    [ContentChannelField( "Listen Content Channel", required: false )]
-    [IntegerField( "Limit", "The max number of posts to display", required: false )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 4 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 5 )]
+    [ContentChannelField( "Watch Content Channel", required: false, order: 2 )]
+    [ContentChannelField( "Listen Content Channel", required: false, order: 3 )]
+    [IntegerField( "Limit", "The max number of posts to display", required: false, order: 4 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 5 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 6 )]
 
     public partial class ResourceSearch : Rock.Web.UI.RockBlock
     {
@@ -40,6 +42,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private List<string> series { get; set; }
         private string author { get; set; }
         private string global { get; set; }
+        private string key { get; set; }
         #endregion
 
         #region Base Control Methods
@@ -68,7 +71,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             _context = new RockContext();
             Guid? WatchContentChannelGuid = GetAttributeValue( "WatchContentChannel" ).AsGuidOrNull();
             Guid? ListenContentChannelGuid = GetAttributeValue( "ListenContentChannel" ).AsGuidOrNull();
-            string HubspotAPIKey = GlobalAttributesCache.Get().GetValue( "HubspotAPIKeyGlobal" );
+            string attrKey = GetAttributeValue( "HubspotKeyAttribute" );
+            key = GlobalAttributesCache.Get().GetValue( attrKey );
             int? limit = GetAttributeValue( "Limit" ).AsIntegerOrNull();
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
@@ -88,9 +92,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             {
                 results.AddRange( SearchContent( ListenContentChannelGuid.Value ) );
             }
-            if ( !String.IsNullOrEmpty( HubspotAPIKey ) && ( contentType.Count() == 0 || contentType.Contains( "read" ) ) )
+            if ( !String.IsNullOrEmpty( key ) && ( contentType.Count() == 0 || contentType.Contains( "read" ) ) )
             {
-                results.AddRange( SearchRead( HubspotAPIKey ) );
+                results.AddRange( SearchRead() );
             }
 
             results = results.OrderByDescending( r => r.PublishDate ).ToList();
@@ -126,7 +130,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             items = items.Where( i =>
             {
                 bool meetsRec = true;
-                //var itemTag = i.AttributeValues["Tags"].Value.ToLower().Split( ',' ).ToList();
                 var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var itemSeries = i.AttributeValues["Series"].Value.ToLower();
                 var itemAuthor = i.AttributeValues["Author"].ValueFormatted.ToLower();
@@ -192,7 +195,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             return items.Select( e =>
             {
                 var p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, Url = e.AttributeValues["Link"].Value, PublishDate = e.StartDateTime, ItemGlobalKey = e.ItemGlobalKey, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId, Type = channel.AttributeValues["ContentType"].Value };
-                //var itemTag = e.AttributeValues["Tags"].Value.Split( ',' ).ToList();
                 var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 p.MatchingTags = intersect.ToList();
@@ -200,38 +202,33 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             } ).ToList();
         }
 
-        private List<Post> SearchRead( string apiKey )
+        private List<Post> SearchRead()
         {
             //Get blog posts that match
-            WebRequest request = WebRequest.Create( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
-            var response = request.GetResponse();
-            HubspotBlogResponse blogResponse = new HubspotBlogResponse();
-            using ( Stream stream = response.GetResponseStream() )
+            var postClient = new RestClient( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
+            postClient.Timeout = -1;
+            var postRequest = new RestRequest( Method.GET );
+            postRequest.AddHeader( "Authorization", $"Bearer {key}" );
+            IRestResponse jsonResponse = postClient.Execute( postRequest );
+            HubspotBlogResponse blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse.Content );
+            var posts = blogResponse.results.Select( e =>
             {
-                using ( StreamReader reader = new StreamReader( stream ) )
+                var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                if ( e.publishedDate.HasValue )
                 {
-                    var jsonResponse = reader.ReadToEnd();
-                    blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse );
-                    var posts = blogResponse.results.Select( e =>
-                    {
-                        var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
-                        if ( e.publishedDate.HasValue )
-                        {
-                            //Convert Epoch Time
-                            DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
-                            start = start.AddMilliseconds( e.publishedDate.Value );
-                            //Convert Time Zone
-                            start = start.ToLocalTime();
-                            p.PublishDate = start;
-                        }
-                        List<string> matchingTags = new List<string>();
-                        var intersect = tags.Intersect( e.tags );
-                        p.MatchingTags = intersect.ToList();
-                        return p;
-                    } );
-                    return posts.ToList();
+                    //Convert Epoch Time
+                    DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+                    start = start.AddMilliseconds( e.publishedDate.Value );
+                    //Convert Time Zone
+                    start = start.ToLocalTime();
+                    p.PublishDate = start;
                 }
-            }
+                List<string> matchingTags = new List<string>();
+                var intersect = tags.Intersect( e.tags );
+                p.MatchingTags = intersect.ToList();
+                return p;
+            } );
+            return posts.ToList();
         }
 
         #endregion

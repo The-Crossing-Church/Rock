@@ -746,16 +746,16 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
   </v-app>
 </div>
 <script type="module">
-    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.7';
-    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.7';
-    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.7';
-    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.7';
-    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.7';
-    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.7';
-    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.7';
-    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.7';
-    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.7';
-    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.7';
+    import timePickerVue from '/Scripts/com_thecrossingchurch/EventSubmission/TimePicker.js?v=1.0.8';
+    import spaceVue from '/Scripts/com_thecrossingchurch/EventSubmission/Space.js?v=1.0.8';
+    import zoomVue from '/Scripts/com_thecrossingchurch/EventSubmission/Zoom.js?v=1.0.8';
+    import registrationVue from '/Scripts/com_thecrossingchurch/EventSubmission/Registration.js?v=1.0.8';
+    import cateringVue from '/Scripts/com_thecrossingchurch/EventSubmission/Catering.js?v=1.0.8';
+    import childcareVue from '/Scripts/com_thecrossingchurch/EventSubmission/Childcare.js?v=1.0.8';
+    import publicityVue from '/Scripts/com_thecrossingchurch/EventSubmission/Publicity.js?v=1.0.8';
+    import accomVue from '/Scripts/com_thecrossingchurch/EventSubmission/SpecialAccom.js?v=1.0.8';
+    import drinksVue from '/Scripts/com_thecrossingchurch/EventSubmission/Drinks.js?v=1.0.8';
+    import datePicker from '/Scripts/com_thecrossingchurch/EventSubmission/DatePicker.js?v=1.0.8';
     document.addEventListener("DOMContentLoaded", function () {
         Vue.component("time-picker", timePickerVue);
         Vue.component("space", spaceVue);
@@ -1543,14 +1543,14 @@ Inherits="RockWeb.Plugins.com_thecrossingchurch.EventSubmission.EventSubmissionF
                                         if (compareTarget[x].MinsStartBuffer) {
                                             cdStart = cdStart.subtract(r.MinsStartBuffer, "minute");
                                         }
-                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`);
+                                        let cdEnd = moment(`${compareTarget[x].Date} ${compareTarget[x].EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute');
                                         if (compareTarget[x].MinsEndBuffer) {
                                             cdEnd = cdEnd.add(compareTarget[x].MinsEndBuffer, "minute");
                                         }
                                         let cRange = moment.range(cdStart, cdEnd);
                                         let current = moment.range(
                                             moment(`${compareSource[y].Date} ${compareSource[y].StartTime}`, `yyyy-MM-DD hh:mm A`),
-                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`)
+                                            moment(`${compareSource[y].Date} ${compareSource[y].EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute')
                                         );
                                         if (cRange.overlaps(current)) {
                                             conflicts = true

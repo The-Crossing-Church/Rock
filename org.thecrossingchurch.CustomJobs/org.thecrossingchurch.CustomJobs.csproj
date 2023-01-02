@@ -109,6 +109,7 @@
     <Compile Include="Jobs\HubspotGivingIntegration.cs" />
     <Compile Include="Jobs\HubspotIntegration.cs" />
     <Compile Include="Jobs\CrossingStudentsSteps.cs" />
+    <Compile Include="Jobs\PodcastSync.cs" />
     <Compile Include="Jobs\SyncEventCalendar.cs" />
     <Compile Include="Jobs\PiiAlert.cs" />
     <Compile Include="Jobs\VeritasSupportChanges.cs" />

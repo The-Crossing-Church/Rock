@@ -265,9 +265,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Checkin
                 if ( schedule.WasCheckInActive( when ) || ( when.TimeOfDay.Ticks == 0 && schedule.GetICalOccurrences( when.Date ).Any() ) )
                 {
                     // Get the start/end times for the schedule
+                    var start = when;
+                    var end = when;
                     var calEvent = schedule.GetICalEvent();
-                    var start = when.Date.Add( calEvent.Start.Date.TimeOfDay );
-                    var end = when.Date.Add( calEvent.End.Date.TimeOfDay );
+                    if ( calEvent != null && calEvent.DtStart != null )
+                    {
+                        start = when.Date.Add( calEvent.DtStart.Value.TimeOfDay );
+                        end = when.Date.Add( calEvent.DtEnd.Value.TimeOfDay );
+                    }
 
                     // Start a query for the group/locations linked to that schedule
                     var groupLocationQry = new GroupLocationService( rockContext )

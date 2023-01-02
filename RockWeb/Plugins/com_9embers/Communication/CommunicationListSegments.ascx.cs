@@ -38,11 +38,39 @@ namespace RockWeb.Plugins.com_9embers.Communication
         EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
         EntityTypeQualifierColumn = "GroupTypeId",
         EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
-        Order = 0,
+        Order = 1,
         Key = AttributeKey.PropertyFilterAttribute
         )]
 
+    [AttributeField( "Can Send To Parents Attribute",
+        Description = "Attribute used to determine if sending to parents is allowed.",
+        EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
+        EntityTypeQualifierColumn = "GroupTypeId",
+        EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
+        Order = 2,
+        Key = AttributeKey.CanSendToParentsAttribute
+        )]
+
+    [AttributeField( "Hide In Segments Attribute",
+        Description = "Attribute used to determine if group should an option in the communication list dropdown.",
+        EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
+        EntityTypeQualifierColumn = "GroupTypeId",
+        EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
+        Order = 3,
+        Key = AttributeKey.HideInSegmentsAttribute
+        )]
+
+    [AttributeField( "Parents Group Attribute",
+        Description = "Attribute used to manage if a parent can recieve an email.",
+        EntityTypeGuid = Rock.SystemGuid.EntityType.GROUP,
+        EntityTypeQualifierColumn = "GroupTypeId",
+        EntityTypeQualifierValue = Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST,
+        Order = 4,
+        Key = AttributeKey.ParentsGroupAttribute
+        )]
+
     #endregion Block Attributes
+
     public partial class CommunicationListSegments : Rock.Web.UI.RockBlock
     {
 
@@ -52,6 +80,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             public const string AttributeFilterAttribute = "AttributeFilterAttribute";
             public const string PropertyFilterAttribute = "PropertyFilterAttribute";
+            public const string CanSendToParentsAttribute = "CanSendToParentsAttribute";
+            public const string HideInSegmentsAttribute = "HideInSegmentsAttribute";
+            public const string ParentsGroupAttribute = "ParentsGroupAttribute";
         }
 
         #endregion Attribute Keys
@@ -66,6 +97,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
         #region Fields
 
+        private SelectionState _selectionState;
 
         #endregion
 
@@ -82,6 +114,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
+
+            gPreview.GridRebind += GPreview_GridRebind;
         }
 
         protected override void LoadViewState( object savedState )
@@ -103,6 +137,15 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 BindCommunicationListDropdown();
                 BindRegistrationInstanceDropdown();
+
+                if ( PageParameter( "Restore" ).AsBoolean() )
+                {
+                    var selectionState = Session["CommunicationListSegmentsSelection"] as SelectionState;
+                    if ( selectionState != null )
+                    {
+                        SetSelection( selectionState );
+                    }
+                }
             }
         }
 
@@ -114,14 +157,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
         protected void ddlCommunicationList_SelectedIndexChanged( object sender, EventArgs e )
         {
             var groupId = ddlCommunicationList.SelectedValueAsId();
-            ViewState["ListId"] = groupId;
-            btnGenerate.Visible = groupId.HasValue;
-            btnPreview.Visible = groupId.HasValue;
-            pnlRegistration.Visible = groupId.HasValue;
-            cblSegments.Visible = groupId.HasValue;
-            dcpContainer.Controls.Clear();
-            SaveViewState();
-            UpdateFilters( groupId ?? 0 );
+            ddlSendTo.Visible = SendingToParentsEnabled( groupId );
+
+            ShowCommunicationFields();
         }
 
         protected void btnGenerate_Click( object sender, EventArgs e )
@@ -133,11 +171,15 @@ namespace RockWeb.Plugins.com_9embers.Communication
             ShowPreview();
         }
 
-
-
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
         }
+
+        private void GPreview_GridRebind( object sender, GridRebindEventArgs e )
+        {
+            ShowPreview();
+        }
+
 
         #endregion
 
@@ -165,6 +207,14 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 .OrderBy( g => g.Name )
                 .ToList();
 
+            var hideInListAttribute = AttributeCache.Get( GetAttributeValue( AttributeKey.HideInSegmentsAttribute ) );
+
+            if ( hideInListAttribute != null )
+            {
+                groups.ForEach( g => g.LoadAttributes() );
+                groups = groups.Where( g => g.GetAttributeValue( hideInListAttribute.Key ).AsBoolean() != true ).ToList();
+            }
+
             ddlCommunicationList.DataSource = groups;
             ddlCommunicationList.DataBind();
 
@@ -185,7 +235,28 @@ namespace RockWeb.Plugins.com_9embers.Communication
             cblRegistrationInstances.DataBind();
         }
 
+        private bool SendingToParentsEnabled( int? groupId )
+        {
+            RockContext rockContext = new RockContext();
+            GroupService groupService = new GroupService( rockContext );
+            var group = groupService.Get( groupId ?? 0 );
+            if ( group == null )
+            {
+                return false;
+            }
 
+            var canSendToParentsAttributeGuid = GetAttributeValue( AttributeKey.CanSendToParentsAttribute ).AsGuid();
+            var canSendToParentsAttribute = AttributeCache.Get( canSendToParentsAttributeGuid );
+
+            if ( canSendToParentsAttribute == null )
+            {
+                return false;
+            }
+
+            group.LoadAttributes();
+            return group.GetAttributeValue( canSendToParentsAttribute.Key ).AsBoolean();
+
+        }
 
         private void UpdateFilters( int groupId )
         {
@@ -221,7 +292,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 string controlId = string.Format( "{0}_{1}", dcpContainer.ID, propertyField.EntityField.UniqueName );
 
-                var control = propertyField.EntityField.FieldType.Field.FilterControl( propertyField.EntityField.FieldConfig, controlId, true, FilterMode.AdvancedFilter );
+                var control = propertyField.EntityField.FieldType.Field.FilterControl( propertyField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
                 if ( control != null )
                 {
                     dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = propertyField.Property, CssClass = "control-label", AssociatedControlID = control.ID } );
@@ -235,7 +306,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 string controlId = string.Format( "{0}_{1}", dcpContainer.ID, attributeField.EntityField.UniqueName );
 
-                var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, true, FilterMode.AdvancedFilter );
+                var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
                 if ( control != null )
                 {
                     dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = attributeField.Attribute.Name, CssClass = "control-label cust-label", AssociatedControlID = control.ID } );
@@ -309,6 +380,59 @@ namespace RockWeb.Plugins.com_9embers.Communication
             mdPreview.Show();
         }
 
+        private void SetSelection( SelectionState selectionState )
+        {
+            if ( selectionState != null && selectionState.CommunicationId.HasValue )
+            {
+                ddlCommunicationList.SelectedValue = selectionState.CommunicationId.Value.ToString();
+                ShowCommunicationFields();
+
+                cblSegments.SetValues( selectionState.SegmentIds );
+                cblRegistrationInstances.SetValues( selectionState.RegistrationInstanceIds );
+
+                RockContext rockContext = new RockContext();
+                var group = new GroupService( rockContext ).Get( ddlCommunicationList.SelectedValueAsId() ?? 0 );
+                if ( group != null )
+                {
+                    SetFilterValues( group, selectionState );
+                }
+            }
+        }
+
+        private void ShowCommunicationFields()
+        {
+            var groupId = ddlCommunicationList.SelectedValueAsId();
+            ViewState["ListId"] = groupId;
+            btnGenerate.Visible = groupId.HasValue;
+            btnPreview.Visible = groupId.HasValue;
+            pnlRegistration.Visible = groupId.HasValue;
+            cblSegments.Visible = groupId.HasValue;
+            dcpContainer.Controls.Clear();
+            SaveViewState();
+            UpdateFilters( groupId ?? 0 );
+        }
+
+        private void SetFilterValues( Group group, SelectionState selectionState )
+        {
+            List<PropertyFields> propertyFields = GetPropertyFields( group );
+            List<AttributeFields> attributeFields = GetAttributeFields( group );
+
+            List<EntityField> entityFields = propertyFields.Select( p => p.EntityField ).ToList();
+            entityFields.AddRange( attributeFields.Select( a => a.EntityField ) );
+
+            foreach ( var entityField in entityFields )
+            {
+                string controlId = string.Format( "{0}_{1}", dcpContainer.ID, entityField.UniqueName );
+                var control = dcpContainer.FindControl( controlId );
+
+                if ( selectionState.PropertyValues.ContainsKey( controlId ) )
+                {
+                    entityField.FieldType.Field.SetFilterValues( control, entityField.FieldConfig, selectionState.PropertyValues[controlId] );
+                }
+            }
+        }
+
+
         private void GenerateEmailList()
         {
             RockContext rockContext = new RockContext();
@@ -331,7 +455,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
             communicationService.Add( communication );
             rockContext.SaveChanges();
 
-            Response.Redirect( "/Communication/" + communication.Id.ToString() );
+            Session["CommunicationListSegmentsSelection"] = _selectionState;
+
+            Response.Redirect( $"/Communication/{communication.Id}?Segments=true" );
         }
 
         private IQueryable<Person> GetCommunicationQry()
@@ -342,6 +468,11 @@ namespace RockWeb.Plugins.com_9embers.Communication
             {
                 return null;
             }
+
+            _selectionState = new SelectionState
+            {
+                CommunicationId = group.Id
+            };
 
             var personService = new PersonService( rockContext );
             var groupMemberService = new GroupMemberService( rockContext );
@@ -374,7 +505,56 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 }
             }
 
+            int adultRoleId = GroupTypeCache.GetFamilyGroupType().Roles.Where( a => a.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT.AsGuid() ).Select( a => a.Id ).FirstOrDefault();
+            int childRoleId = GroupTypeCache.GetFamilyGroupType().Roles.Where( a => a.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid() ).Select( a => a.Id ).FirstOrDefault();
+
+            if ( SendingToParentsEnabled( group.Id ) )
+            {
+
+                var parentQry = personService.Queryable()
+                    .Where( p => p.Members.Where( a => a.GroupRoleId == adultRoleId )
+                        .Any( a => a.Group.Members
+                        .Any( c => c.GroupRoleId == childRoleId && qry.Select( p2 => p2.Id ).Contains( c.PersonId ) ) ) );
+
+                Group parentGroup = GetParentGroup( group, rockContext );
+
+                if ( parentGroup != null )
+                {
+                    var inactiveParentIds = parentGroup.Members
+                        .Where( gm => gm.GroupMemberStatus == GroupMemberStatus.Inactive )
+                        .Select( gm => gm.PersonId );
+                    parentQry = parentQry.Where( p => !inactiveParentIds.Contains( p.Id ) );
+                }
+
+                switch ( ddlSendTo.SelectedValueAsId() ?? 0 )
+                {
+                    case 1: //Parents
+                        return parentQry;
+                    case 2:
+                        return personService.Queryable().Where( p => qry.Contains( p ) || parentQry.Contains( p ) );
+                }
+            }
+
             return qry;
+        }
+
+        private Group GetParentGroup( Group group, RockContext rockContext )
+        {
+            var parentsAttribute = AttributeCache.Get( GetAttributeValue( AttributeKey.ParentsGroupAttribute ) );
+            if ( parentsAttribute == null )
+            {
+                return null;
+            }
+
+            group.LoadAttributes();
+            var parentGroupGuids = group.GetAttributeValue( parentsAttribute.Key ).SplitDelimitedValues();
+
+            if (parentGroupGuids.Length < 2 )
+            {
+                return null;
+            }
+
+            return new GroupService( rockContext ).Get( parentGroupGuids[1].AsGuid() );
         }
 
         private IQueryable<Person> GetRegistrationQry( PersonService personService )
@@ -387,6 +567,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 return null;
             }
 
+            _selectionState.RegistrationInstanceIds = cblRegistrationInstances.SelectedValues;
+
             RegistrationService registrationService = new RegistrationService( rockContext );
             return registrationService.Queryable().Where( r => instanceIds.Contains( r.RegistrationInstanceId ) )
                 .SelectMany( r => r.Registrants.Where( rr => rr.PersonAlias != null ) )
@@ -397,6 +579,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             if ( cblSegments.Visible )
             {
+                _selectionState.SegmentIds = cblSegments.SelectedValues;
+
                 var personEntityType = EntityTypeCache.Get( typeof( Person ) );
 
                 DataViewService dataViewService = new DataViewService( new RockContext() );
@@ -450,41 +634,42 @@ namespace RockWeb.Plugins.com_9embers.Communication
                     continue;
                 }
 
-                if ( entityField.FieldKind == FieldKind.Property )
+                //If you leave a filter blank it will still run
+                //So create a comparison control to see if the current values == default values
+                var compairsonControl = entityField.FieldType.Field.FilterControl( entityField.FieldConfig, "", false, FilterMode.AdvancedFilter );
+                var comparisonValues = entityField.FieldType.Field.GetFilterValues( compairsonControl, entityField.FieldConfig, FilterMode.AdvancedFilter );
+
+                bool isSame = true;
+                if ( comparisonValues.Count == filterValues.Count )
                 {
-                    expressions.Add(
-                        entityField.FieldType.Field.PropertyFilterExpression(
-                            entityField.FieldConfig,
-                            FixDelimination( filterValues.ToList() ),
-                            paramExpression,
-                            entityField.Name,
-                            entityField.PropertyType ) );
+                    for ( var i = 0; i < comparisonValues.Count; i++ )
+                    {
+                        if ( comparisonValues[i] != filterValues[i] )
+                        {
+                            isSame = false;
+                        }
+                    }
                 }
                 else
                 {
-                    //If you leave an attribute filter blank it will still run
-                    //So create a comparison control to see if the current values == default values
-                    var compairsonControl = entityField.FieldType.Field.FilterControl( entityField.FieldConfig, "", true, FilterMode.AdvancedFilter );
-                    var comparisonValues = entityField.FieldType.Field.GetFilterValues( compairsonControl, entityField.FieldConfig, FilterMode.AdvancedFilter );
+                    isSame = false;
+                }
 
-                    bool isSame = true;
+                if ( !isSame )
+                {
+                    _selectionState.PropertyValues.Add( controlId, filterValues );
 
-                    if ( comparisonValues.Count == filterValues.Count )
+                    if ( entityField.FieldKind == FieldKind.Property )
                     {
-                        for ( var i = 0; i < comparisonValues.Count; i++ )
-                        {
-                            if ( comparisonValues[i] != filterValues[i] )
-                            {
-                                isSame = false;
-                            }
-                        }
+                        expressions.Add(
+                            entityField.FieldType.Field.PropertyFilterExpression(
+                                entityField.FieldConfig,
+                                FixDelimination( filterValues.ToList() ),
+                                paramExpression,
+                                entityField.Name,
+                                entityField.PropertyType ) );
                     }
                     else
-                    {
-                        isSame = false;
-                    }
-
-                    if ( !isSame )
                     {
                         expressions.Add(
                             Rock.Utility.ExpressionHelper.GetAttributeExpression(
@@ -531,9 +716,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
             return values;
         }
 
-
         #endregion
 
+        #region Classes
 
         class AttributeFields
         {
@@ -547,6 +732,21 @@ namespace RockWeb.Plugins.com_9embers.Communication
             public EntityField EntityField { get; set; }
         }
 
+        [Serializable]
+        class SelectionState
+        {
+            public int? CommunicationId { get; set; }
+            public List<string> SegmentIds { get; set; }
+            public List<string> RegistrationInstanceIds { get; set; }
+            public Dictionary<string, List<string>> PropertyValues { get; set; }
 
+            public SelectionState()
+            {
+                SegmentIds = new List<string>();
+                RegistrationInstanceIds = new List<string>();
+                PropertyValues = new Dictionary<string, List<string>>();
+            }
+        }
+        #endregion
     }
 }

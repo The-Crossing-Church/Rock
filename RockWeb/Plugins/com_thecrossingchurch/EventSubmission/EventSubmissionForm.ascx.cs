@@ -57,6 +57,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
     [SecurityRoleField( "Super User Role", "People who can make full requests", true, "", "", 7 )]
     [SecurityRoleField( "Room Request Admin", "The role for people handling the room only requests who need to be notified", true, "", "", 8 )]
     [SecurityRoleField( "Event Request Admin", "The role for people handling all other requests who need to be notified", true, "", "", 9 )]
+    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "", 10 )]
 
     public partial class EventSubmissionForm : Rock.Web.UI.RockBlock
     {
@@ -79,6 +80,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
         private List<DefinedValue> BudgetLines { get; set; }
         private Rock.Model.Group RoomOnlySR { get; set; }
         private Rock.Model.Group EventSR { get; set; }
+        private Rock.Model.GroupType SharedRequestGT { get; set; }
         private bool CurrentPersonIsRoomAdmin { get; set; }
         private bool CurrentPersonIsEventAdmin { get; set; }
         private bool CurrentPersonIsSuperUser { get; set; }
@@ -138,6 +140,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             {
                 RequestPageId = new PageService( context ).Get( RequestPageGuid.Value ).Id.ToString();
                 DashboardPageId = new PageService( context ).Get( DashboardPageGuid.Value ).Id.ToString();
+            }
+
+            Guid? sharedRequestGTGuid = GetAttributeValue( "SharedEventGroupType" ).AsGuidOrNull();
+            if ( sharedRequestGTGuid.HasValue )
+            {
+                SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGTGuid.Value );
             }
 
             Guid? superUserGuid = GetAttributeValue( "SuperUserRole" ).AsGuidOrNull();
@@ -541,8 +549,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
             ContentChannelItemService svc = new ContentChannelItemService( context );
             ContentChannelItem item = svc.Get( id );
             item.LoadAttributes();
+            List<string> sharedWithIds = JsonConvert.DeserializeObject<List<string>>( item.GetAttributeValue( "SharedWith" ) );
             bool canEdit = false;
-            if ( item.CreatedByPersonId == CurrentPersonId )
+
+            //Group Sharing for People taking over another's role
+            List<int?> aliasIds = new List<int?>();
+            if ( SharedRequestGT != null )
+            {
+                //Shared requests are configured, find any for the current user.
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
+                var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == CurrentPersonId.Value && gm.GroupRole.Name == "Can View" );
+                groups = from g in groups
+                         join gm in groupMembers on g.Id equals gm.GroupId
+                         select g;
+                var grpList = groups.ToList();
+                for ( int k = 0; k < grpList.Count(); k++ )
+                {
+                    var ids = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Request Creator" ).Select( gm => gm.Person.PrimaryAliasId );
+                    aliasIds.AddRange( ids );
+                }
+            }
+
+            if ( item.CreatedByPersonId == CurrentPersonId || item.ModifiedByPersonId == CurrentPersonId || sharedWithIds.Contains( CurrentPersonId.ToString() ) || aliasIds.Contains( item.CreatedByPersonAliasId ) )
             {
                 string status = item.AttributeValues.FirstOrDefault( av => av.Key == "RequestStatus" ).Value.Value;
                 if ( status == "Draft" || status == "Submitted" || status == "In Progress" || status == "Approved" )
@@ -587,7 +615,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 ).ToList();
             var dateAttrId = itm.Attributes["EventDates"].Id;
             var eventDates = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == dateAttrId ).ToList();
-            var startOfToday = new DateTime( RockDateTime.Now.Year, RockDateTime.Now.Month, RockDateTime.Now.Day, 0, 0, 0 ); 
+            var startOfToday = new DateTime( RockDateTime.Now.Year, RockDateTime.Now.Month, RockDateTime.Now.Day, 0, 0, 0 );
             eventDates = eventDates.Where( e =>
             {
                 var dates = e.Value.Split( ',' );
@@ -639,6 +667,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.EventSubmission
                 {
                     message = CurrentPerson.FullName + " has submitted a room request for " + Ministries.FirstOrDefault( dv => dv.Id.ToString() == request.Ministry ).Value + ".<br/>";
                 }
+                message += "<strong>Meeting Listing on the Calendar:</strong> " + request.Name + "<br/>";
                 message += "<strong>Ministry Contact:</strong> " + request.Contact + "<br/>";
                 for ( int i = 0; i < request.Events.Count(); i++ )
                 {

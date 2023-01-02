@@ -1,4 +1,6 @@
-﻿{% for s in Items %}
+﻿{% assign Items = Items | GroupByAttribute:'AgeGroup' %}
+{% for s in Items %}
+    {% assign item = s | PropertyToKeyValue  %}
     {% assign classname = '' %}
     {% assign mod = forloop.index0 | Modulo:2 %}
     {% if mod > 0 %}
@@ -6,9 +8,10 @@
     {% endif %}
     {[ carousel carouselid:'watch-{{forloop.index}}' itemheight:'300' containerclass:'{{classname}}' ]}
         [[ title ]]
-            {{s.Series}}
+            {{item.Key}}
         [[ endtitle ]]
-        {% for i in s.Items %}
+        {% assign videos = item.Value | Sort:'StartDateTime','Desc' %}
+        {% for i in videos limit:9 %}
             [[ item ]]
                 <a href="/Ministry/Children/Lessons/{{i | Attribute:'AgeGroup'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}">
                     <div style="padding: 8px">
@@ -21,6 +24,7 @@
                 </a>
             [[ enditem ]]
         {% endfor %}
-        [[ button url:'/Ministry/Children/Lessons/{{s.Series}}' text:'Explore All']][[ endbutton ]]
+        {% capture url %}/Ministry/Children/Lessons/{{item.Key}}{% endcapture %}
+        [[ button url:'{{url}}' text:'Explore All']][[ endbutton ]]
     {[ endcarousel ]}
 {% endfor %}

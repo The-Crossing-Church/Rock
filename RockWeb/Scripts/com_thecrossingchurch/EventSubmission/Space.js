@@ -354,54 +354,53 @@ export default {
       } else {
         dates.push(this.e.EventDate)
       }
-      let existingOnDate = this.existing.filter(e => {
-        if(e.Id == this.request.Id) {
-          return false
-        }
-        let intersect = e.EventDates.filter(val => dates.includes(val))
-        if(intersect.length > 0) {
-          //Filter to events object for the matching dates
-          let events = []
-          if(e.IsSame) {
-            events = e.Events
-          } else {
-            events = e.Events.filter(val => dates.includes(val.EventDate))
-          }
-          //Check if the times overlap
-          let overlaps = false
-          events.forEach((event, idx) => {
-            let date = event.EventDate
+      let existingOnDate = []
+      this.existing.forEach((e, evIdx) => {
+        if(e.Id != this.request.Id) {
+          let intersect = e.EventDates.filter(val => dates.includes(val))
+          if(intersect.length > 0) {
+            //Filter to events object for the matching dates
+            let events = []
             if(e.IsSame) {
-              date = intersect[idx]
+              events = e.Events
+            } else {
+              events = e.Events.filter(val => dates.includes(val.EventDate))
             }
-            let cdStart = moment(`${date} ${event.StartTime}`, `yyyy-MM-DD hh:mm A`)
-            if (event.MinsStartBuffer) {
-                cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
-            }
-            let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`)
-            if (event.MinsEndBuffer) {
-                cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
-            }
-            let cRange = moment.range(cdStart, cdEnd);
-            for(let i=0; i<dates.length; i++) {
-              let current = moment.range(
-                  moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
-                  moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`)
-              );
-              if (cRange.overlaps(current)) {
-                overlaps = true
+            //Check if the times overlap
+            events.forEach((event, idx) => {
+              let overlaps = false
+              let date = event.EventDate
+              if(e.IsSame) {
+                date = intersect[idx]
               }
-            }
-          })
-          return overlaps
+              let cdStart = moment(`${date} ${event.StartTime}`, `yyyy-MM-DD hh:mm A`)
+              if (event.MinsStartBuffer) {
+                  cdStart = cdStart.subtract(event.MinsStartBuffer, "minute");
+              }
+              let cdEnd = moment(`${date} ${event.EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute')
+              if (event.MinsEndBuffer) {
+                  cdEnd = cdEnd.add(event.MinsEndBuffer, "minute");
+              }
+              let cRange = moment.range(cdStart, cdEnd);
+              for(let i=0; i<dates.length; i++) {
+                let current = moment.range(
+                    moment(`${dates[i]} ${this.e.StartTime}`, `yyyy-MM-DD hh:mm A`),
+                    moment(`${dates[i]} ${this.e.EndTime}`, `yyyy-MM-DD hh:mm A`).subtract(1, 'minute')
+                );
+                if (cRange.overlaps(current)) {
+                  overlaps = true
+                }
+              }
+              if (overlaps) {
+                existingOnDate.push(event)
+              }
+            })
+          }
         }
-        return false
       })
       let existingRooms = []
       existingOnDate.forEach(e => {
-        e.Events.forEach(ev => {
-          existingRooms.push(...ev.Rooms)
-        })
+        existingRooms.push(...e.Rooms)
       })
       this.rooms.forEach(l => {
         let idx = -1

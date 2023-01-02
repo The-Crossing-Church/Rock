@@ -1,7 +1,7 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="CommunicationListSegments.ascx.cs" Inherits="RockWeb.Plugins.com_9embers.Communication.CommunicationListSegments" %>
 <style>
-    .cust-label{
-        margin-top:30px;
+    .cust-label {
+        margin-top: 30px;
     }
 </style>
 <asp:UpdatePanel ID="upnlContent" runat="server">
@@ -25,9 +25,22 @@
                 </h1>
             </div>
             <div class="panel-body">
-                <Rock:RockDropDownList runat="server" ID="ddlCommunicationList" Label="Communication List"
-                    AutoPostBack="true" OnSelectedIndexChanged="ddlCommunicationList_SelectedIndexChanged"
-                    DataTextField="Name" DataValueField="Id" />
+                <div class="row">
+                    <div class="col-md-8 col-sm-6">
+                        <Rock:RockDropDownList runat="server" ID="ddlCommunicationList" Label="Communication List"
+                            AutoPostBack="true" OnSelectedIndexChanged="ddlCommunicationList_SelectedIndexChanged"
+                            DataTextField="Name" DataValueField="Id" />
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <Rock:RockDropDownList runat="server"
+                            Help="Select if you want to send the email to only the members of the communication list, their parents, or both. Parents are not filtered through the parameters below, but will only be added when their child passes the filters."
+                            ID="ddlSendTo" Label="Send To" Visible="false">
+                            <asp:ListItem Text="List Members" Value="0" />
+                            <asp:ListItem Text="Parents" Value="1" />
+                            <asp:ListItem Text="Members and Parents" Value="2" />
+                        </Rock:RockDropDownList>
+                    </div>
+                </div>
                 <Rock:RockCheckBoxList runat="server" ID="cblSegments" Label="Communication Segments" Visible="false"
                     DataTextField="Name" DataValueField="Id" />
                 <Rock:DynamicControlsPanel runat="server" ID="dcpContainer" />

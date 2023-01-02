@@ -1,4 +1,4 @@
-﻿{% capture searchText %}{{Item | Attribute:'Semester'}} {{Item | Attribute:'Year'}}{% endcapture %}
+{% capture searchText %}{{Item | Attribute:'Semester'}} {{Item | Attribute:'Year'}}{% endcapture %}
 {% sql %}
 SELECT STRING_AGG(CAST(EventItemOccurrenceId AS varchar(50)), ',') AS Ids
 FROM (
@@ -13,7 +13,7 @@ FROM (
                         INNER JOIN (
                     SELECT Id
                     FROM RegistrationInstance
-                    WHERE Name LIKE '%WBS {{searchText}}%'
+                    WHERE Name LIKE '%MS {{searchText}}%'
                 ) AS ri ON ri.Id = RegistrationInstanceId
             ) AS eio ON EventItemOccurrenceId = EventItemOccurrence.Id
         ) AS ei ON ei.EventItemId = EventCalendarItem.EventItemId
@@ -199,7 +199,7 @@ FROM (
                             {% endfor %}
                         {% endif %}
                         <div class='col col-xs-12 col-sm-6 col-md-3 mb-2'>
-                            <div class='hover womens-card'>
+                            <div class='hover mens-card'>
                                 <a href="/Events/Detail?EventOccurrenceId={{e.Id}}" class='text-center study-link {% if registrationIsOpen == false %}reg-closed{% endif %}'>
                                     <div>
                                         {% if registrationIsOpen == false %}
@@ -300,7 +300,7 @@ FROM (
                                                     {% endif %}
                                                     <div class='text--upper' style='font-size: .75em; font-weight: 700;'>{{ registrationButtonText }}</div>
                                                 {% else %}
-                                                    <div class='womens-card-button justify-center'>
+                                                    <div class='mens-card-button justify-center'>
                                                         {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
                                                             <a href='/Registration/{{eventItemOccurrenceLinkage.UrlSlug}}' class='btn btn-primary'>{{registrationButtonText}}</a>
                                                         {% else %}
@@ -359,11 +359,11 @@ FROM (
     .wrapper {
         padding: 0px 32px;
     }
-    .womens-card {
+    .mens-card {
         height: 100%;
         padding-bottom: 40px;
     }
-    .womens-card-button {
+    .mens-card-button {
         position: absolute;
         bottom: 0;
         left: 0;
