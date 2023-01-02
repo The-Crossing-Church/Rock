@@ -549,6 +549,13 @@ export default defineComponent({
                 response.data.request.changes = response.data.requestPendingChanges
                 response.data.request.comments = response.data.comments
                 this.selected = response.data.request
+                if(this.viewModel?.events) {
+                  this.viewModel.events.forEach((r: any) => {
+                    if(r.id == this.selected.id) {
+                      r = this.selected
+                    }
+                  })
+                }
                 this.createdBy = response.data.createdBy
                 this.modifiedBy = response.data.modifiedBy
                 this.modal = true
@@ -565,16 +572,16 @@ export default defineComponent({
             })
           } else if(res.isError) {
             this.toastMessage = res.errorMessage
-            let el = document.getElementById('toast')
-            el?.classList.add("show")
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
             if(el) {
               el.style.display = 'none'
             }
           }
         } else {
           this.toastMessage = "Unable to update request"
-          let el = document.getElementById('toast')
-          el?.classList.add("show")
+          let toast = document.getElementById('toast')
+          toast?.classList.add("show")
           if(el) {
             el.style.display = 'none'
           }
@@ -704,7 +711,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-ban"></i>
           Cancel
         </a-btn>
-        <a-btn type="primary" v-if="selectedStatus == 'Proposed Changes Denied'" @click="proposedChangesAction('Original')">
+        <a-btn type="primary" v-if="selectedStatus == 'Proposed Changes Denied'" @click="proposedChangesAction('Original', selected.id)">
           <i class="mr-1 fa fa-check"></i>
           Use Originally Approved
         </a-btn>

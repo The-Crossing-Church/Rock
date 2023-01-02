@@ -240,6 +240,7 @@ export default defineComponent({
             } else {
               let t = JSON.parse(JSON.stringify(this.viewModel?.events[0]))
               t.attributeValues.EventDate = e
+              t.id = 0
               this.viewModel?.events.push(t)
             }
         })
@@ -1151,15 +1152,15 @@ export default defineComponent({
     <template v-if="step == publicityStep">
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
-        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="webcal" @validation-change="validationChange" ref="webcal"></tcc-web-cal>
+        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal"></tcc-web-cal>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>
-        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
+        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
         <h3 class="text-primary">Production Tech Information</h3>
-        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(3 + viewModel.events.length)" refName="prodtech" @validation-change="validationChange" ref="prodtech"></tcc-prod-tech>
+        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="prodtech" @validation-change="validationChange" ref="prodtech"></tcc-prod-tech>
       </template>
     </template>
     <template v-if="step == lastStep">

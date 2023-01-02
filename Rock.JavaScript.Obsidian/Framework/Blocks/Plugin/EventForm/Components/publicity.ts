@@ -65,6 +65,9 @@ export default defineComponent({
         if(this.request?.attributeValues && this.request?.attributeValues.PublicityStartDate) {
           let date = DateTime.fromFormat(this.request?.attributeValues.PublicityStartDate, "yyyy-MM-dd")
           return date.plus({weeks: 3}).toFormat("yyyy-MM-dd")
+        } else if(this.minPubStartDate) {
+          let date = DateTime.fromFormat(this.minPubStartDate, "yyyy-MM-dd")
+          return date.plus({weeks: 3}).toFormat("yyyy-MM-dd")
         }
         return ""
       },

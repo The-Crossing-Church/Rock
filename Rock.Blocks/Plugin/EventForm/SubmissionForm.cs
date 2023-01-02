@@ -1166,7 +1166,7 @@ namespace Rock.Blocks.Plugin.EventForm
             DateTime firstDate = item.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ) ).OrderBy( e => e.Date ).FirstOrDefault();
             DateTime twoWeekDate = firstDate.AddDays( -14 );
             DateTime thirtyDayDate = firstDate.AddDays( -30 );
-            DateTime sixWeekDate = firstDate.AddDays( -43 );
+            DateTime sixWeekDate = firstDate.AddDays( -42 );
             DateTime today = RockDateTime.Now;
             today = new DateTime( today.Year, today.Month, today.Day, 0, 0, 0 );
             List<String> unavailableResources = new List<String>();
