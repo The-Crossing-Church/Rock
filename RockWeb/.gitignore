@@ -7,6 +7,7 @@
 /bin/*.pdb
 /bin/*.xml
 
+!/bin/com.9embers.*
 !/bin/com.bemadev.*
 !/bin/com.bemaservices.*
 !/bin/com.bricksandmortarstudio.*
