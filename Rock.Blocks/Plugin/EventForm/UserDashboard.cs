@@ -341,7 +341,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
                 rockContext.SaveChanges();
 
-                CommentNotification( request, comment );
+                CommentNotification( comment, request );
                 return ActionOk( new { createdBy = p.FullName, comment = comment } );
             }
             catch ( Exception e )
@@ -652,6 +652,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                                     ccia_svc.Delete( eventChanges );
                                 }
                             }
+                            context.SaveChanges();
                         }
                     }
                     return ActionOk( new { id = id } );

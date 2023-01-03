@@ -489,6 +489,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                             cci_svc.Delete( eventChanges.ChildContentChannelItem );
                             ccia_svc.Delete( eventChanges );
                         }
+                        rockContext.SaveChanges();
                     }
                 }
                 if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) || status == "Approved" )
@@ -1321,20 +1322,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
             string url;
             string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
             Dictionary<string, string> udqueryParams = new Dictionary<string, string>();
+            udqueryParams.Add( "Id", item.Id.ToString() );
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, udqueryParams );
             string subject = p.FullName + " Has Changed the Status of " + item.Title;
             string message = "<p>Your request has been marked: " + status + ".</p><br/>" +
                 "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
             if ( status == "Proposed Changes Denied" )
             {
-                Guid? workflowGuid = GetAttributeValue( AttributeKey.UserActionWorkflow ).AsGuidOrNull();
-                if ( workflowGuid.HasValue )
-                {
-                    WorkflowType wf = new WorkflowTypeService( context ).Get( workflowGuid.Value );
-                    Dictionary<string, string> queryParams = new Dictionary<string, string>();
-                    queryParams.Add( "WorkflowTypeId", wf.Id.ToString() );
-                    url = this.GetLinkedPageUrl( AttributeKey.WorkflowEntryPage, queryParams );
-                }
                 subject = "Proposed Changes for " + item.Title + " have been Denied";
                 message = "<p>We regret to inform you the changes you have requested to your event request have been denied.</p> <br/>" +
                 "<p>Please select one of the following options for your request. You can...</p>" +
@@ -1344,11 +1338,11 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 "</ul>" +
                 "<table>" +
                     "<tr>" +
-                        "<td style='tect-align: center;'>" +
-                            "<a href='" + baseUrl + url + item.Id + "&Action=Original' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Use Original</a>" +
+                        "<td style='text-align: center;'>" +
+                            "<a href='" + baseUrl + url + "&Action=Original' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Use Original</a>" +
                         "</td>" +
-                        "<td style='tect-align: center;'>" +
-                            "<a href='" + baseUrl + url + item.Id + "&Action=Cancelled' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Cancel Request </a>" +
+                        "<td style='text-align: center;'>" +
+                            "<a href='" + baseUrl + url + "&Action=Cancelled' style='background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;'>Cancel Request </a>" +
                         "</td>" +
                     "</tr>" +
                 "</table>";
