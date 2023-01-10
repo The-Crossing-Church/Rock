@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem } from "../../../../ViewModels"
+import { ContentChannelItem, DefinedValue, ListItem } from "../../../../ViewModels"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import Validator from "./validator"
@@ -29,6 +29,11 @@ export default defineComponent({
           type: Object as PropType<ContentChannelItem>,
           required: false
       },
+      original: {
+        type: Object as PropType<ContentChannelItem>,
+        required: false
+      },
+      ministries: Array as PropType<DefinedValue[]>,
       showValidation: Boolean,
       refName: String
     },
@@ -52,6 +57,39 @@ export default defineComponent({
           }
         }
         return ""
+      },
+      earliestDate() {
+        let submissionDate = DateTime.now()
+        if(this.request?.attributeValues) {
+          let isFuneralRequest = false
+          let val = this.request.attributeValues.Ministry
+          let ministry = {} as DefinedValue | undefined
+          if(val != '') {
+            let min = JSON.parse(val) as ListItem
+            ministry = this.ministries?.filter((dv: any) => {
+              return dv.guid == min.value
+            })[0]
+          }
+          if(ministry?.value?.toLowerCase().includes("funeral")) {
+            isFuneralRequest = true
+          }
+          //Funeral Request, can submit for today
+          if(isFuneralRequest) {
+            return submissionDate.toFormat("yyyy-MM-dd")
+          }
+          //New request, must be min two weeks from today
+          if(this.request.id == 0 || this.request.attributeValues.RequestStatus == 'Draft') {
+            return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
+          }
+          //TODO COOKSEY
+          //if newly requesting registration, two weeks from today, else two weeks from submission date
+          //Existing request, no pending changes
+          if(this.original?.attributeValues?.NeedsRegistration == 'True') {
+            let val = this.request.startDateTime as string
+            submissionDate = DateTime.fromISO(val)
+          }
+          return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
+        }
       }
     },
     methods: {
@@ -118,6 +156,7 @@ export default defineComponent({
         <tcc-date-pkr
           :label="e.attributes.RegistrationStartDate.name"
           v-model="e.attributeValues.RegistrationStartDate"
+          :min="earliestDate"
         ></tcc-date-pkr>
       </tcc-validator>
     </div>
@@ -175,6 +214,7 @@ export default defineComponent({
         <tcc-date-pkr
           :label="e.attributes.RegistrationEndDate.name"
           v-model="e.attributeValues.RegistrationEndDate"
+          :min="earliestDate"
         ></tcc-date-pkr>
       </tcc-validator>
     </div>

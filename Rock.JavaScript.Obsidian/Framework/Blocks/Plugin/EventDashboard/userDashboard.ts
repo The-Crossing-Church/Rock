@@ -709,7 +709,7 @@ export default defineComponent({
         </a-btn>
         <a-btn type="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled by User')">
           <i class="mr-1 fa fa-ban"></i>
-          Cancel
+          Cancel Request
         </a-btn>
         <a-btn type="primary" v-if="selectedStatus == 'Proposed Changes Denied'" @click="proposedChangesAction('Original', selected.id)">
           <i class="mr-1 fa fa-check"></i>

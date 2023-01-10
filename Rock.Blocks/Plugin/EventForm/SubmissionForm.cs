@@ -207,6 +207,7 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionInternalServerError( e.Message );
             }
         }
@@ -222,6 +223,7 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionInternalServerError( e.Message );
             }
         }
@@ -262,6 +264,7 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionInternalServerError( e.Message );
             }
         }

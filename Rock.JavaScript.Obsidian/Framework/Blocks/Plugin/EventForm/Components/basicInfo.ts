@@ -40,6 +40,7 @@ export default defineComponent({
             type: Object as PropType<SubmissionFormBlockViewModel>,
             required: false
         },
+        minEventDate: String,
         showValidation: Boolean,
         refName: String
     },
@@ -71,42 +72,6 @@ export default defineComponent({
                 })
             }
             return list
-        },
-        minEventDate() {
-          let date = DateTime.now()
-          if(this.viewModel?.request?.attributeValues) {
-            if(this.viewModel.request?.attributeValues.RequestStatus != "Draft" && this.viewModel.request?.attributeValues.RequestStatus != "Submitted" && this.viewModel.request?.attributeValues.RequestStatus != " In Progress") {
-              let val = this.viewModel.request.startDateTime as string
-              date = DateTime.fromISO(val)
-            }
-          }
-          let span = Duration.fromObject({days: 0})
-          if(this.viewModel) {
-            if( this.viewModel.request?.attributeValues?.NeedsOnline == "True"
-              || this.viewModel.request?.attributeValues?.NeedsRegistration == "True"
-              || this.viewModel.request?.attributeValues?.NeedsWebCalendar == "True"
-              || this.viewModel.request?.attributeValues?.NeedsCatering == "True"
-              || this.viewModel.request?.attributeValues?.NeedsOpsAccommodations == "True"
-              || this.viewModel.request?.attributeValues?.NeedsProductionAccommodations == "True"
-            ) {
-              span = Duration.fromObject({days: 14})
-            }
-            if(this.viewModel.request?.attributeValues?.NeedsChildCare == "True") {
-              span = Duration.fromObject({days: 30})
-            }
-            if(this.viewModel.request?.attributeValues?.NeedsPublicity == "True") {
-              span = Duration.fromObject({weeks: 6})
-            }
-            //Override restrictions for Funerals
-            if(this.viewModel.request?.attributeValues?.Ministry) {
-              let ministry = JSON.parse(this.viewModel.request?.attributeValues?.Ministry)
-              if(ministry.text.toLowerCase().includes("funeral")) {
-                span = Duration.fromObject({days: 0})
-              }
-            }
-          }
-          date = date.plus(span)
-          return date.toFormat('yyyy-MM-dd')
         },
         requestType() {
           if(this.viewModel?.request?.attributeValues?.NeedsSpace == "True"
@@ -265,7 +230,6 @@ export default defineComponent({
       <tcc-switch
         v-model="viewModel.request.attributeValues.IsSame"
         :label="viewModel.request.attributes.IsSame.name"
-        :disabled="viewModel.request.attributeValues.RequestStatus != 'Draft' && viewModel.request.attributeValues.RequestStatus != 'Submitted' && viewModel.request.attributeValues.RequestStatus != 'In Progress'"
       ></tcc-switch>
     </div>
   </div>

@@ -476,7 +476,7 @@ export default defineComponent({
         let submitter = users.filter(u => {
           return u.primaryAliasId == id
         })
-        if(submitter) {
+        if(submitter && submitter.length > 0) {
           return submitter[0].fullName
         }
       }
