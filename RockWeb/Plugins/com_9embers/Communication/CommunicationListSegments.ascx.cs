@@ -384,7 +384,15 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             if ( selectionState != null && selectionState.CommunicationId.HasValue )
             {
-                ddlCommunicationList.SelectedValue = selectionState.CommunicationId.Value.ToString();
+                int commGroupId = selectionState.CommunicationId.Value;
+                ddlCommunicationList.SelectedValue = commGroupId.ToString();
+
+                ddlSendTo.Visible = SendingToParentsEnabled( commGroupId );
+                if ( selectionState.SendTo.HasValue )
+                {
+                    ddlSendTo.SelectedValue = selectionState.SendTo.Value.ToString();
+                }
+
                 ShowCommunicationFields();
 
                 cblSegments.SetValues( selectionState.SegmentIds );
@@ -471,7 +479,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
             _selectionState = new SelectionState
             {
-                CommunicationId = group.Id
+                CommunicationId = group.Id,
+                SendTo = ddlSendTo.SelectedValueAsId()
             };
 
             var personService = new PersonService( rockContext );
@@ -736,6 +745,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
         class SelectionState
         {
             public int? CommunicationId { get; set; }
+            public int? SendTo { get; set; }
             public List<string> SegmentIds { get; set; }
             public List<string> RegistrationInstanceIds { get; set; }
             public Dictionary<string, List<string>> PropertyValues { get; set; }
