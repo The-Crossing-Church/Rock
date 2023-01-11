@@ -1127,10 +1127,24 @@ namespace Rock.Blocks.Plugin.EventDashboard
             List<int?> sharedRequests = new List<int?>();
             if ( !String.IsNullOrEmpty( sharedWithAttr ) )
             {
-                List<int> ids = sharedWithAttr.Split( ',' ).Select( i => Int32.Parse( i ) ).ToList();
+                List<int> ids = sharedWithAttr.Split( ',' ).Select( i =>
+                {
+                    if ( !String.IsNullOrEmpty( i ) )
+                    {
+                        int id;
+                        if ( Int32.TryParse( i, out id ) )
+                        {
+                            return id;
+                        }
+                    }
+                    return 0;
+                } ).ToList();
                 for ( int k = 0; k < ids.Count(); k++ )
                 {
-                    users.Add( p_svc.Get( ids[k] ) );
+                    if ( ids[k] > 0 )
+                    {
+                        users.Add( p_svc.Get( ids[k] ) );
+                    }
                 }
             }
             users.Add( item.CreatedByPersonAlias.Person );
