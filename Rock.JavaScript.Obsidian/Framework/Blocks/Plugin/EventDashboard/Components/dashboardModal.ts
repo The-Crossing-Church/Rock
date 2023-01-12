@@ -433,14 +433,58 @@ export default defineComponent({
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>Start Time Set-up Buffer</rck-lbl> <br/>
-              <template v-if="ci.attributeValues.StartBuffer != ''">
-                {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+              <template v-if="ci.changes && ci.changes.attributeValues.StartBuffer != ci.attributeValues.StartBuffer">
+                <div class="row">
+                  <div class="col col-xs-6 text-red">
+                    <template v-if="ci.attributeValues.StartBuffer != ''">
+                      {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+                    </template>
+                    <template v-else>
+                      0 minutes: {{previewStartBuffer(ci.attributeValues.StartTime, 0)}}
+                    </template>
+                  </div>
+                  <div class="col col-xs-6 text-primary">
+                    <template v-if="ci.changes.attributeValues.StartBuffer != ''">
+                      {{ci.changes.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, ci.changes.attributeValues.StartBuffer)}}
+                    </template>
+                    <template v-else>
+                      0 minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, 0)}}
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <template v-if="ci.attributeValues.StartBuffer != ''">
+                  {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+                </template>
               </template>
             </div>
             <div class="col col-xs-6">
               <rck-lbl>End Time Tear-down Buffer</rck-lbl> <br/>
-              <template v-if="ci.attributeValues.EndBuffer != ''">
-                {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+              <template v-if="ci.changes && ci.changes.attributeValues.EndBuffer != ci.attributeValues.EndBuffer">
+                <div class="row">
+                  <div class="col col-xs-6 text-red">
+                    <template v-if="ci.attributeValues.EndBuffer != ''">
+                      {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+                    </template>
+                    <template v-else>
+                      0 minutes: {{previewEndBuffer(ci.attributeValues.EndTime, 0)}}
+                    </template>
+                  </div>
+                  <div class="col col-xs-6 text-primary">
+                    <template v-if="ci.changes.attributeValues.EndBuffer != ''">
+                      {{ci.changes.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, ci.changes.attributeValues.EndBuffer)}}
+                    </template>
+                    <template v-else>
+                      0 minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, 0)}}
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <template v-if="ci.attributeValues.EndBuffer != ''">
+                  {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+                </template>
               </template>
             </div>
           </div>
@@ -456,14 +500,36 @@ export default defineComponent({
     <tcc-web-cal v-if="request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' )" :request="request"></tcc-web-cal>
     <tcc-production v-if="request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' )" :request="request"></tcc-production>
     <tcc-publicity v-if="request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' )" :request="request"></tcc-publicity>
-    <div class="row" v-if="request.attributeValues.Notes != ''">
-      <div class="col col-xs-12">
-        <rck-field
-          v-model="request.attributeValues.Notes"
-          :attribute="request.attributes.Notes"
-          :showEmptyValue="true"
-        ></rck-field>
-      </div>
+    <div class="row" v-if="request.attributeValues.Notes != '' || (request.changes && request.changes.attributeValues.Notes != '')">
+      <template v-if="request.changes && request.changes.attributeValues.Notes != request.attributeValues.Notes">
+        <div class="col col-xs-6">
+          <rck-field
+            v-model="request.attributeValues.Notes"
+            :attribute="request.attributes.Notes"
+            :showEmptyValue="true"
+            class="text-red"
+          ></rck-field>
+        </div>
+        <div class="col col-xs-6">
+          <rck-field
+            v-model="request.changes.attributeValues.Notes"
+            :attribute="request.attributes.Notes"
+            class="text-primary"
+            :showEmptyValue="true"
+            :showLabel="false"
+            style="padding-top: 18px;"
+          ></rck-field>
+        </div>
+      </template>
+      <template v-else>
+        <div class="col col-xs-12">
+          <rck-field
+            v-model="request.attributeValues.Notes"
+            :attribute="request.attributes.Notes"
+            :showEmptyValue="true"
+          ></rck-field>
+        </div>
+      </template>
     </div>
     <template v-if="request.conflicts && request.conflicts.length > 0">
       <h3 class="text-red">Conflicts</h3>
