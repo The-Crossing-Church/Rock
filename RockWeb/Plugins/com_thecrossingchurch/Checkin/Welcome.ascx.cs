@@ -280,7 +280,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                         lNotActiveTitle.Text = GetAttributeValue( AttributeKey.NotActiveTitle );
                         lNotActiveCaption.Text = GetAttributeValue( AttributeKey.NotActiveCaption );
                         lNotActiveYetTitle.Text = GetAttributeValue( AttributeKey.NotActiveYetTitle );
-                        lNotActiveYetCaption.Text = string.Format( GetAttributeValue( AttributeKey.NotActiveYetCaption ), "<span class='js-countdown-timer'></span>" );
+                        lNotActiveYetCaption.Text = string.Format( GetAttributeValue( AttributeKey.NotActiveYetCaption ), "<span class='js-countdown-timer'>00:00</span>" );
                         lClosedTitle.Text = GetAttributeValue( AttributeKey.ClosedTitle );
                         lClosedCaption.Text = GetAttributeValue( AttributeKey.ClosedCaption );
 
@@ -429,7 +429,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                                 activeAt = disabledUntil.Value;
                             }
 
-                            hfCountdownSecondsUntil.Value = ( ( int ) ( activeAt - RockDateTime.Now ).TotalSeconds + 30 ).ToString();
+                            hfCountdownSecondsUntil.Value = ( ( int ) ( activeAt - RockDateTime.Now ).TotalSeconds ).ToString();
                             pnlNotActiveYet.Visible = true;
                         }
 
@@ -448,7 +448,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                         // CUSTOM: If check-in should be disabled, show the countdown timer instead of the check-in panel
                         if ( disabledUntil.HasValue )
                         {
-                            hfCountdownSecondsUntil.Value = ( ( int ) ( disabledUntil.Value - RockDateTime.Now ).TotalSeconds + 30 ).ToString();
+                            hfCountdownSecondsUntil.Value = ( ( int ) ( disabledUntil.Value - RockDateTime.Now ).TotalSeconds ).ToString();
                             pnlNotActiveYet.Visible = true;
                         }
                         else
@@ -546,7 +546,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.CheckIn
                 }
             }
 
-            return dateTime;
+            // Allow for 3 second variance
+            if ( dateTime > now.AddSeconds(3) )
+            {
+                return dateTime;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
