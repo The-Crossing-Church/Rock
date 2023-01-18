@@ -145,21 +145,24 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                 var step = steps[i];
                 step.LoadAttributes();
                 var personid = step.PersonAlias.PersonId;
-                var group = _groupsvc.Get( Guid.Parse( step.AttributeValues["ServingTeam"].Value ) );
-                if ( group.IsActive == false )
+                if ( step.AttributeValues["ServingTeam"] != null )
                 {
-                    //End their step because they aren't serving in that group anymore
-                    step.EndDateTime = RockDateTime.Now;
-                    _context.SaveChanges();
-                    continue;
-                }
-                var groupmem = _groupmembersvc.Queryable().FirstOrDefault( gm => gm.PersonId == personid && gm.GroupId == group.Id );
-                if ( groupmem == null || groupmem.GroupMemberStatus == GroupMemberStatus.Inactive )
-                {
-                    //End their step because they aren't serving in that group anymore
-                    step.EndDateTime = RockDateTime.Now;
-                    _context.SaveChanges();
-                    continue;
+                    var group = _groupsvc.Get( Guid.Parse( step.AttributeValues["ServingTeam"].Value ) );
+                    if ( group == null || group.IsActive == false )
+                    {
+                        //End their step because they aren't serving in that group anymore
+                        step.EndDateTime = RockDateTime.Now;
+                        _context.SaveChanges();
+                        continue;
+                    }
+                    var groupmem = _groupmembersvc.Queryable().FirstOrDefault( gm => gm.PersonId == personid && gm.GroupId == group.Id );
+                    if ( groupmem == null || groupmem.GroupMemberStatus == GroupMemberStatus.Inactive )
+                    {
+                        //End their step because they aren't serving in that group anymore
+                        step.EndDateTime = RockDateTime.Now;
+                        _context.SaveChanges();
+                        continue;
+                    }
                 }
             }
         }
@@ -192,7 +195,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                     var step = steps[j];
                     step.LoadAttributes();
                     var group = _groupsvc.Get( Guid.Parse( step.AttributeValues["ServingTeam"].Value ) );
-                    if ( validMemberships.Select( g => g.Id ).Contains( group.Id ) )
+                    if ( group != null && validMemberships.Select( g => g.Id ).Contains( group.Id ) )
                     {
                         //If the group in valid memberships is already contained in a step remove it from the list
                         var idx = validMemberships.Select( g => g.Id ).ToList().IndexOf( group.Id );
