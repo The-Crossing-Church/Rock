@@ -254,7 +254,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 {
                     if ( approved[i] == "Title" )
                     {
-                        item.Title = changes.Title.Substring( 0, changes.Title.Length - 8 );
+                        item.Title = changes.Title;
                     }
                     else
                     {
@@ -449,7 +449,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         {
                             var changes = changesAssoc.ChildContentChannelItem;
                             changes.LoadAttributes();
-                            item.Title = changes.Title.Substring( 0, changes.Title.Length - 8 );
+                            item.Title = changes.Title;
                             foreach ( var av in item.AttributeValues )
                             {
                                 item.SetAttributeValue( av.Key, changes.AttributeValues[av.Key].Value );
