@@ -166,7 +166,7 @@ export default defineComponent({
     </div>
   </div>
   
-  <template v-if="request.changes && request.title != request.changes.title.substring(0, (request.changes.title.length - 8))">
+  <template v-if="request.changes && request.title != request.changes.title">
     <div class="row" style="display: flex; align-items: center;">
       <div class="col col-xs-10">
         <div class="row">
@@ -183,11 +183,11 @@ export default defineComponent({
             <div style="padding-top: 18px;">
               <template v-if="!titleApproved">
                 <div class="text-strikethrough">
-                  {{request.changes.title.substring(0, (request.changes.title.length - 8))}}
+                  {{request.changes.title}}
                 </div>
               </template>
               <template v-else>
-                {{request.changes.title.substring(0, (request.changes.title.length - 8))}}
+                {{request.changes.title}}
               </template>
             </div>
           </div>

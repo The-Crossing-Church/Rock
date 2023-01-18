@@ -302,11 +302,6 @@ namespace Rock.Blocks.Plugin.EventForm
                 {
                     viewModel.originalRequest = viewModel.request;
                     viewModel.request = changes.ChildContentChannelItem.ToViewModel( p, true );
-                    //Don't want the tite to show as "Changes"
-                    if ( viewModel.request.Title.EndsWith( "Changes" ) )
-                    {
-                        viewModel.request.Title = viewModel.request.Title.Substring( 0, viewModel.request.Title.Length - 8 );
-                    }
                     viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).SelectMany( i => i.ChildContentChannelItem.ChildItems ).Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId ).Select( ci => ci.ChildContentChannelItem.ToViewModel( p, true ) ).ToList();
                 }
                 string status = "";
@@ -520,14 +515,7 @@ namespace Rock.Blocks.Plugin.EventForm
                 {
                     original = changesAssoc.ContentChannelItem;
                     original.LoadAttributes();
-                    if ( item.Title.EndsWith( "Changes" ) )
-                    {
-                        original.Title = item.Title.Substring( 0, item.Title.Length - 8 );
-                    }
-                    else
-                    {
-                        original.Title = item.Title;
-                    }
+                    original.Title = item.Title;
                     foreach ( var av in item.AttributeValues )
                     {
                         original.SetAttributeValue( av.Key, item.AttributeValues[av.Key].Value );
@@ -568,7 +556,7 @@ namespace Rock.Blocks.Plugin.EventForm
                         {
                             ContentChannelTypeId = item.ContentChannelTypeId,
                             ContentChannelId = viewModel.ContentChannelId,
-                            Title = item.Title + " Changes"
+                            Title = item.Title
                         };
                         changes.LoadAttributes();
                         foreach ( var av in item.AttributeValues )
@@ -1273,10 +1261,6 @@ namespace Rock.Blocks.Plugin.EventForm
             string message = "";
             message += RenderValue( "Ministry", item.AttributeValues["Ministry"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Ministry"].ValueFormatted : "" );
             string changeTitle = itemChanges != null ? itemChanges.Title : "";
-            if ( itemChanges != null && itemChanges.Title.EndsWith( "Changes" ) )
-            {
-                changeTitle = itemChanges.Title.Substring( 0, itemChanges.Title.Length - 8 );
-            }
             if ( item.AttributeValues["RequestType"].Value == "Room" )
             {
                 message += RenderValue( "Meeting Listing on Calendar", item.Title, itemChanges != null ? changeTitle : "" );

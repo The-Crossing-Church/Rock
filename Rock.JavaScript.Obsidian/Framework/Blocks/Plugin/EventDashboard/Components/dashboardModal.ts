@@ -248,8 +248,8 @@ export default defineComponent({
   <div class="row mb-2">
     <div class="col col-xs-12">
       <h4>
-        <template v-if="request.changes && request.changes.title.endsWith('Changes') && request.title != request.changes.title.substring(0, (request.changes.title.length - 8))">
-          <span class="text-red">{{request.title}}</span>: <span class="text-primary">{{request.changes.title.substring(0, (request.changes.title.length - 8))}}</span>
+        <template v-if="request.changes && request.title != request.changes.title">
+          <span class="text-red">{{request.title}}</span>: <span class="text-primary">{{request.changes.title}}</span>
         </template>
         <template v-else>
           {{request.title}}
