@@ -205,20 +205,6 @@
                         <li class="menu-item main-nav-item">
                             <a href="/Resources">Watch, Listen, Read</a>
                         </li>
-                        <!-- <li class="menu-item main-nav-item dropdown">
-                            <a class="resource-nav dropdown-toggle" data-toggle="dropdon">Resources</a>
-                                <div class="resource-menu dropdown-menu">
-                                    <div>
-                                        <a href="/Resources" class="text-white">Watch, Listen, Read</a>
-                                    </div>
-                                    <div>
-                                        <a href="/small-group-resources" class="text-white">Small Group Resources</a>
-                                    </div>
-                                    <div>
-                                        <a href="/Ministry/Adults/Women/womens-bible-studies" class="text-white">Women's Bible Study Studies</a>
-                                    </div>
-                                </div>
-                        </li> -->
                     </ul>
                 </div>
                 <div class="website-logo">
@@ -237,6 +223,9 @@
                                     </div>
                                     <div>
                                         <a href="/Serving" class="text-white">Serving</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Missions" class="text-white">Missions & Partners</a>
                                     </div>
                                     <div>
                                         <a href="/FAQs" class="text-white">FAQs</a>
@@ -278,9 +267,6 @@
                                             <a href="/Ministry/Adults/Small-Groups" class="text--accent">Small Groups</a>
                                         </div>
                                     </div>
-                                    <%--<div>
-                                        <a href="/Music" class="text-white">Music</a>
-                                    </div>--%>
                                     <div>
                                         <a href="/Ministry/Care" class="text-white">Care & Support</a>
                                     </div>
@@ -326,11 +312,11 @@
                                     <div>
                                         <a href="/About">About Us</a>
                                     </div>
-                                    <!--<div class="sub-menu-item">
-                                        <a href="/Blog" class="text-white">The Crossing Blog</a>
-                                    </div>-->
                                     <div class="sub-menu-item">
                                         <a href="/Serving" class="text-white">Serving</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Missions" class="text-white">Missions & Partners</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/FAQs" class="text-white">FAQs</a>
@@ -371,9 +357,6 @@
                                             <div>
                                                 <a class="text-white text--upper" id="adult-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
                                             </div>
-                                            <%--<div>
-                                                <a href="/Ministry/Adults" class="text--upper">Adults</a>
-                                            </div>--%>
                                             <div class="sub-menu-item">
                                                 <a href="/Ministry/Adults/Women" class="text-white">Women</a>
                                             </div>
@@ -389,25 +372,8 @@
                                             <div style="height: 150px;"></div>
                                         </div>
                                     </div>
-                                    <%--<div class="sub-menu-item">
-                                        <a href="/Music" class="text-white">Music</a>
-                                    </div>--%>
                                     <div class="sub-menu-item">
-                                        <a href="/Ministry/Care" class="text-white">Care & Support
-                                            <%--<i class="fa fa-chevron-right pull-right"></i>--%>
-                                        </a>
-                                        <%--<div class="care-menu-mobile">
-                                            <div>
-                                                <a class="text-white text--upper" id="care-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
-                                            </div>
-                                            <div>
-                                                <a href="/Ministry/Care" class="text--upper">Care</a>
-                                            </div>
-                                            <div class="sub-menu-item">
-                                                <a href="/Ministry/Care/Counseling" class="text-white">Professional Counseling</a>
-                                            </div>
-                                            <div style="height:200px;"></div>
-                                        </div>--%>
+                                        <a href="/Ministry/Care" class="text-white">Care & Support</a>
                                     </div>
                                     <div class="sub-menu-item">
                                         <a href="/Ministry/Counseling" class="text-white">Counseling</a>
