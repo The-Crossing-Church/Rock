@@ -81,6 +81,37 @@
                 }
             }
 
+            var isGettingConfigurationStatus = false;
+
+            function checkForConfigurationChange () {
+                if (isGettingConfigurationStatus) {
+                    return;
+                }
+
+                isGettingConfigurationStatus = true;
+
+                refreshKiosk();
+
+                isGettingConfigurationStatus = false;
+            }
+
+            function refreshKiosk () {
+
+                var currentVal = $('.js-countdown-timer').text();
+                if (currentVal === '') {
+                    currentVal = '00:00'
+                }
+
+                $('.js-countdown-timer').countdown('destroy');
+                $('.js-countdown-timer').text(currentVal);
+
+                setTimeout(function () {
+                    $('.js-countdown-timer').text(currentVal);
+                }, 0)
+
+                PostRefresh();
+            }
+
             Sys.Application.add_load(function () {
 
                 $('a.js-label-select').off('click').on('click', function () {
@@ -94,31 +125,7 @@
                 });
 
                 var timeoutSeconds = $('.js-refresh-timer-seconds').val();
-                var isGettingConfigurationStatus = false;
                 timeout = window.setInterval(checkForConfigurationChange, timeoutSeconds * 1000);
-
-                function checkForConfigurationChange () {
-                    if (isGettingConfigurationStatus) {
-                        return;
-                    }
-
-                    isGettingConfigurationStatus = true;
-
-                    refreshKiosk();
-
-                    isGettingConfigurationStatus = false;
-                }
-
-                function refreshKiosk () {
-                    $('.js-countdown-timer').countdown('destroy')
-
-                    setTimeout(function () {
-                        $('.js-countdown-timer')
-                            .text('00:00');
-                    }, 0)
-
-                    PostRefresh();
-                }
 
                 var $CountdownTimer = $('.js-countdown-timer');
 
@@ -128,8 +135,9 @@
                     $CountdownTimer.countdown({
                         until: secondsUntil,
                         compact: true,
+                        format: 'hMS',
                         onExpiry: refreshKiosk,
-                        format: 'hh:mm:ss'
+                        expiryText: '00:00'
                     });
                 }
 
