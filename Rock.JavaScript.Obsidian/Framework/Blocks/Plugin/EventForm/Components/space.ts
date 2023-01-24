@@ -147,7 +147,7 @@ export default defineComponent({
                                 }
                                 let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
                                 if(this.e?.attributeValues?.EndBuffer) {
-                                    eEnd = eStart.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
+                                    eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
                                 }
                                 let current = Interval.fromDateTimes(
                                     eStart,
@@ -179,7 +179,7 @@ export default defineComponent({
                                 }
                                 let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
                                 if(this.e?.attributeValues?.EndBuffer) {
-                                    eEnd = eStart.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
+                                    eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
                                 }
                                 let current = Interval.fromDateTimes(
                                     eStart,
