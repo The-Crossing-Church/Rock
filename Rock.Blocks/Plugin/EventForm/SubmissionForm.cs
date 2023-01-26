@@ -996,7 +996,7 @@ namespace Rock.Blocks.Plugin.EventForm
             };
             if ( viewModel.Id > 0 )
             {
-                item = new ContentChannelItemService( context ).Get( viewModel.Id );
+                item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;
