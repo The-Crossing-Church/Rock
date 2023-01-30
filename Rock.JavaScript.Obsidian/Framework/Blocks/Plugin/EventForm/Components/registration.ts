@@ -187,6 +187,33 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
+  <div class="row mt-2">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsCheckin"
+        :label="e.attributes.NeedsCheckin.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
+        :label="e.attributes.NeedsDatabaseSupportTeam.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.EventNeedsSeparateLink"
+        :label="e.attributes.EventNeedsSeparateLink.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.MaxRegistrants"
+        :attribute="e.attributes.MaxRegistrants"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
   <br/>
   <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
   <div class="row">
@@ -231,37 +258,28 @@ export default defineComponent({
       ></tcc-switch>
     </div>
   </div>
-  <div class="row mb-2" v-if="e.attributeValues.NeedsReminderEmail == 'True'">
-    <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+  <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
+    <div class="row">
+      <div class="col col-xs-12">
+        <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+          <rck-field
+            v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
+            :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+            :is-edit-mode="true"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row mb-2">
+      <div class="col col-xs-12 col-md-6">
         <rck-field
-          v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
-          :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+          v-model="e.attributeValues.ReminderEmailSendDate"
+          :attribute="e.attributes.ReminderEmailSendDate"
           :is-edit-mode="true"
         ></rck-field>
-      </tcc-validator>
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsCheckin"
-        :label="e.attributes.NeedsCheckin.name"
-      ></tcc-switch>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
-        :label="e.attributes.NeedsDatabaseSupportTeam.name"
-      ></tcc-switch>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="e.attributeValues.EventNeedsSeparateLink"
-        :label="e.attributes.EventNeedsSeparateLink.name"
-      ></tcc-switch>
-    </div>
-  </div>
+  </template>
 </rck-form>
 `
 });

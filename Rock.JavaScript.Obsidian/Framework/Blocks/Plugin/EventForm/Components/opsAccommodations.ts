@@ -290,7 +290,8 @@ export default defineComponent({
         :label="e.attributes.NeedsDoorsUnlocked.name"
       ></tcc-switch>
     </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
+    <div class="col col-xs-12" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
+      <strong>Operations will unlock doors for your event based on the spaces and rooms you have reserved. If you have special unlock instructions for your event, please indicate below.</strong><br/>
       <rck-field
         v-model="e.attributeValues.Doors"
         :attribute="doorsAttr"

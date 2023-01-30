@@ -265,7 +265,7 @@ export default defineComponent({
       <tcc-switch
         v-model="viewModel.request.attributeValues.IsSame"
         :label="viewModel.request.attributes.IsSame.name"
-        :disabled="viewModel.request.attributeValues.RequestStatus != 'Draft' && viewModel.request.attributeValues.RequestStatus != 'Submitted' && viewModel.request.attributeValues.RequestStatus != 'In Progress'"
+        :disabled="!(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')"
       ></tcc-switch>
     </div>
   </div>
