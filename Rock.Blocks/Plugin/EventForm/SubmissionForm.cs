@@ -38,6 +38,7 @@ namespace Rock.Blocks.Plugin.EventForm
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
+    [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 3 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 1 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
@@ -71,6 +72,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
+            public const string InventoryList = "InventoryList";
             public const string MinistryBudgetList = "MinistryBudgetList";
             public const string SubmissionPage = "SubmissionPage";
             public const string AdminDashboard = "AdminDashboard";
@@ -123,11 +125,14 @@ namespace Rock.Blocks.Plugin.EventForm
             Guid locationGuid = Guid.Empty;
             Guid ministryGuid = Guid.Empty;
             Guid budgetLineGuid = Guid.Empty;
+            Guid inventoryGuid = Guid.Empty;
             var p = GetCurrentPerson();
+            DefinedTypeService dt_svc = new DefinedTypeService( context );
+            DefinedValueService dv_svc = new DefinedValueService( context );
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
             {
-                Rock.Model.DefinedType locationDT = new DefinedTypeService( context ).Get( locationGuid );
-                var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
+                Rock.Model.DefinedType locationDT = dt_svc.Get( locationGuid );
+                var locs = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
                 viewModel.locations = locs.Select( l => l.ToViewModel( p, true ) ).ToList();
                 string templateIdVal;
                 int templateid;
@@ -148,17 +153,24 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
             {
-                Rock.Model.DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
-                var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                Rock.Model.DefinedType ministryDT = dt_svc.Get( ministryGuid );
+                var min = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
                 min.LoadAttributes();
                 viewModel.ministries = min.ToList();
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
             {
-                Rock.Model.DefinedType budgetDT = new DefinedTypeService( context ).Get( locationGuid );
-                var budget = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
+                Rock.Model.DefinedType budgetDT = dt_svc.Get( locationGuid );
+                var budget = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
                 budget.LoadAttributes();
                 viewModel.budgetLines = budget.ToList();
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.InventoryList ), out inventoryGuid ) )
+            {
+                Rock.Model.DefinedType inventoryDT = dt_svc.Get( inventoryGuid );
+                var inventory = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == inventoryDT.Id );
+                inventory.LoadAttributes();
+                viewModel.inventoryList = inventory.ToList();
             }
 
             return viewModel;
@@ -1476,6 +1488,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public List<AttributeMatrixItemViewModel> locationSetupMatrixItem { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
+            public List<Rock.Model.DefinedValue> inventoryList { get; set; }
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
         }
