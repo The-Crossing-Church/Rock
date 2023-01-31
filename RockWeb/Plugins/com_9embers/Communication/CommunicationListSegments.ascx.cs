@@ -181,6 +181,11 @@ namespace RockWeb.Plugins.com_9embers.Communication
         }
 
 
+        protected void cbIncludeInactive_CheckedChanged( object sender, EventArgs e )
+        {
+            BindRegistrationInstanceDropdown();
+        }
+
         #endregion
 
         #region Methods
@@ -227,9 +232,14 @@ namespace RockWeb.Plugins.com_9embers.Communication
             RockContext rockContext = new RockContext();
             RegistrationInstanceService registrationInstanceService = new RegistrationInstanceService( rockContext );
 
-            var registrationInstances = registrationInstanceService.Queryable()
-                .Where( ri => ri.IsActive && ri.RegistrationTemplate.IsActive && ri.StartDateTime <= now && ri.EndDateTime >= now )
-                .ToList();
+            var registrationInstancesQry = registrationInstanceService.Queryable();
+
+            if ( !cbIncludeInactive.Checked )
+            {
+                registrationInstancesQry = registrationInstancesQry.Where( ri => ri.IsActive && ri.RegistrationTemplate.IsActive && ri.StartDateTime <= now && ri.EndDateTime >= now );
+            }
+
+            var registrationInstances = registrationInstancesQry.OrderBy( r => r.Name ).ToList();
 
             cblRegistrationInstances.DataSource = registrationInstances;
             cblRegistrationInstances.DataBind();
@@ -384,6 +394,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             if ( selectionState != null && selectionState.CommunicationId.HasValue )
             {
+                cbIncludeInactive.Checked = selectionState.IncludeInactiveRegistrations;
+                BindRegistrationInstanceDropdown();
+
                 int commGroupId = selectionState.CommunicationId.Value;
                 ddlCommunicationList.SelectedValue = commGroupId.ToString();
 
@@ -404,6 +417,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 {
                     SetFilterValues( group, selectionState );
                 }
+
             }
         }
 
@@ -577,6 +591,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             }
 
             _selectionState.RegistrationInstanceIds = cblRegistrationInstances.SelectedValues;
+            _selectionState.IncludeInactiveRegistrations = cbIncludeInactive.Checked;
 
             RegistrationService registrationService = new RegistrationService( rockContext );
             return registrationService.Queryable().Where( r => instanceIds.Contains( r.RegistrationInstanceId ) )
@@ -749,14 +764,16 @@ namespace RockWeb.Plugins.com_9embers.Communication
             public List<string> SegmentIds { get; set; }
             public List<string> RegistrationInstanceIds { get; set; }
             public Dictionary<string, List<string>> PropertyValues { get; set; }
-
+            public bool IncludeInactiveRegistrations { get; set; }  
             public SelectionState()
             {
                 SegmentIds = new List<string>();
                 RegistrationInstanceIds = new List<string>();
                 PropertyValues = new Dictionary<string, List<string>>();
+                IncludeInactiveRegistrations = false;
             }
         }
         #endregion
+
     }
 }

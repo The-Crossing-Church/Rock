@@ -46,16 +46,18 @@
                 <Rock:DynamicControlsPanel runat="server" ID="dcpContainer" />
                 <asp:Panel runat="server" ID="pnlRegistration" Visible="false">
                     <br />
-                    <label class="control-label">Registration</label>
                     <div class="row">
                         <div class="col-sm-4 col-md-4 col-lg-3">
-                            <Rock:RockDropDownList runat="server" ID="ddlIncludeExclude">
+                            <Rock:RockDropDownList runat="server" ID="ddlIncludeExclude" Label="Registration">
                                 <asp:ListItem Text="Has NOT registered for" Value="-1" />
                                 <asp:ListItem Text="Has registered for" Value="1" />
                             </Rock:RockDropDownList>
                         </div>
-                        <div class="col-sm-8 col-md-8 col-lg-9">
-                            <Rock:RockListBox runat="server" ID="cblRegistrationInstances" DataValueField="Id" DataTextField="Name" />
+                        <div class="col-sm-5 col-md-6 col-lg-7">
+                            <Rock:RockListBox runat="server" ID="cblRegistrationInstances" Label="Instance" DataValueField="Id" DataTextField="Name" />
+                        </div>
+                        <div class="col-sm-3 col-md-2 col-lg-2">
+                            <Rock:RockCheckBox runat="server" ID="cbIncludeInactive" Label="Include Inactive" OnCheckedChanged="cbIncludeInactive_CheckedChanged" AutoPostBack="true" />
                         </div>
                     </div>
                 </asp:Panel>
