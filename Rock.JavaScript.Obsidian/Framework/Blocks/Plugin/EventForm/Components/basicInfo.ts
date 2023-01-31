@@ -3,7 +3,7 @@ import { Person } from "../../../../ViewModels"
 import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel"
 import { useStore } from "../../../../Store/index"
 import { Switch } from "ant-design-vue"
-import { DateTime, Duration, Interval } from "luxon"
+import { DateTime } from "luxon"
 import RockForm from "../../../../Controls/rockForm"
 import RockField from "../../../../Controls/rockField"
 import RockFormField from "../../../../Elements/rockFormField"
@@ -15,6 +15,7 @@ import AutoComplete from "./roomPicker"
 import Chip from "./chip"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
+import EventBuffer from "./eventBuffer"
 import rules from "../Rules/rules"
 
 const store = useStore();
@@ -27,6 +28,7 @@ export default defineComponent({
         "tcc-switch": Toggle,
         "tcc-time": TimePicker,
         "tcc-date": DatePicker,
+        "tcc-buffer": EventBuffer,
         "tcc-validator": Validator,
         "a-switch": Switch,
         "rck-form": RockForm,
@@ -40,6 +42,7 @@ export default defineComponent({
             type: Object as PropType<SubmissionFormBlockViewModel>,
             required: false
         },
+        minEventDate: String,
         showValidation: Boolean,
         refName: String
     },
@@ -71,42 +74,6 @@ export default defineComponent({
                 })
             }
             return list
-        },
-        minEventDate() {
-          let date = DateTime.now()
-          if(this.viewModel?.request?.attributeValues) {
-            if(this.viewModel.request?.attributeValues.RequestStatus != "Draft" && this.viewModel.request?.attributeValues.RequestStatus != "Submitted" && this.viewModel.request?.attributeValues.RequestStatus != " In Progress") {
-              let val = this.viewModel.request.startDateTime as string
-              date = DateTime.fromISO(val)
-            }
-          }
-          let span = Duration.fromObject({days: 0})
-          if(this.viewModel) {
-            if( this.viewModel.request?.attributeValues?.NeedsOnline == "True"
-              || this.viewModel.request?.attributeValues?.NeedsRegistration == "True"
-              || this.viewModel.request?.attributeValues?.NeedsWebCalendar == "True"
-              || this.viewModel.request?.attributeValues?.NeedsCatering == "True"
-              || this.viewModel.request?.attributeValues?.NeedsOpsAccommodations == "True"
-              || this.viewModel.request?.attributeValues?.NeedsProductionAccommodations == "True"
-            ) {
-              span = Duration.fromObject({days: 14})
-            }
-            if(this.viewModel.request?.attributeValues?.NeedsChildCare == "True") {
-              span = Duration.fromObject({days: 30})
-            }
-            if(this.viewModel.request?.attributeValues?.NeedsPublicity == "True") {
-              span = Duration.fromObject({weeks: 6})
-            }
-            //Override restrictions for Funerals
-            if(this.viewModel.request?.attributeValues?.Ministry) {
-              let ministry = JSON.parse(this.viewModel.request?.attributeValues?.Ministry)
-              if(ministry.text.toLowerCase().includes("funeral")) {
-                span = Duration.fromObject({days: 0})
-              }
-            }
-          }
-          date = date.plus(span)
-          return date.toFormat('yyyy-MM-dd')
         },
         requestType() {
           if(this.viewModel?.request?.attributeValues?.NeedsSpace == "True"
@@ -176,21 +143,7 @@ export default defineComponent({
       },
       validationChange(errs: Record<string, string>[]) {
         this.errors = errs
-      },
-      previewStartBuffer(time: string, buffer: any) {
-        if(time && buffer) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
-        } else if (time) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
-        }
-      },
-      previewEndBuffer(time: string, buffer: any) {
-        if(time && buffer) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
-        } else if (time) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
-        }
-      },
+      }
     },
     watch: {
       eventDates: {
@@ -302,33 +255,7 @@ export default defineComponent({
     </div>
   </div>
   <br/>
-  <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)">
-    <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="viewModel.events[0].attributeValues.StartBuffer"
-        :attribute="viewModel.events[0].attributes.StartBuffer"
-        :is-edit-mode="true"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="viewModel.events[0].attributeValues.EndBuffer"
-        :attribute="viewModel.events[0].attributes.EndBuffer"
-        :is-edit-mode="true"
-      ></rck-field>
-    </div>
-  </div>
-  <br/>
-  <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)">
-    <div class="col col-xs-6" v-if="viewModel.events[0].attributeValues.StartBuffer != ''">
-      <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
-      {{viewModel.events[0].attributeValues.StartBuffer}} minutes: {{previewStartBuffer(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.StartBuffer)}}
-    </div>
-    <div class="col col-xs-6" v-if="viewModel.events[0].attributeValues.EndBuffer != ''">
-      <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
-      {{viewModel.events[0].attributeValues.EndBuffer}} minutes: {{previewEndBuffer(viewModel.events[0].attributeValues.EndTime, viewModel.events[0].attributeValues.EndBuffer)}}
-    </div>
-  </div>
+  <tcc-buffer v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)" :e="viewModel.events[0]"></tcc-buffer>
   <br/>
 </rck-form>
 `

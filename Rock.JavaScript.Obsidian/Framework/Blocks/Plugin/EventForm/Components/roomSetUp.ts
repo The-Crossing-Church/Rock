@@ -5,65 +5,65 @@ import DDL from "../../../../Elements/dropDownList"
 import { Button } from "ant-design-vue"
 
 type RoomSetUp = {
-    Room: string,
-    TypeofTable: string,
-    NumberofTables: number,
-    NumberofChairs: number
+  Room: string,
+  TypeofTable: string,
+  NumberofTables: number,
+  NumberofChairs: number
 }
 
 export default defineComponent({
-    name: "EventForm.Components.RoomSetUp",
-    components: {
-        "rck-text": TextBox,
-        "rck-lbl": RockLabel,
-        "rck-ddl": DDL,
-        "a-btn": Button,
+  name: "EventForm.Components.RoomSetUp",
+  components: {
+    "rck-text": TextBox,
+    "rck-lbl": RockLabel,
+    "rck-ddl": DDL,
+    "a-btn": Button,
+  },
+  props: {
+    modelValue: Object as PropType<RoomSetUp>,
+    disabled: {
+      type: Boolean,
+      required: false
     },
-    props: {
-        modelValue: Object as PropType<RoomSetUp>,
-        disabled: {
-            type: Boolean,
-            required: false
-        },
-        hint: {
-            type: String,
-            required: false
-        },
-        persistentHint: {
-            type: Boolean,
-            required: false
-        },
+    hint: {
+      type: String,
+      required: false
     },
-    setup() {
+    persistentHint: {
+      type: Boolean,
+      required: false
+    },
+  },
+  setup() {
 
-    },
-    data() {
-        return {
-            roomSetUp: {} as RoomSetUp
-        };
-    },
-    computed: {
-    },
-    methods: {
-        removeConfiguration() {
-            this.$emit('removeconfig')
-        }
-    },
-    watch: {
-        roomSetUp(val) {
-            if (val) {
-                this.$emit('update:modelValue', this.roomSetUp)
-            } else {
-                this.$emit('update:modelValue', "{}")
-            }
-        }
-    },
-    mounted() {
-        if(this.modelValue) {
-            this.roomSetUp = this.modelValue
-        }
-    },
-    template: `
+  },
+  data() {
+    return {
+      roomSetUp: {} as RoomSetUp
+    };
+  },
+  computed: {
+  },
+  methods: {
+    removeConfiguration() {
+      this.$emit('removeconfig')
+    }
+  },
+  watch: {
+    roomSetUp(val) {
+      if (val) {
+        this.$emit('update:modelValue', this.roomSetUp)
+      } else {
+        this.$emit('update:modelValue', "{}")
+      }
+    }
+  },
+  mounted() {
+    if(this.modelValue) {
+      this.roomSetUp = this.modelValue
+    } 
+  },
+  template: `
 <div class="row" style="display: flex; align-items: end;">
   <div class="col col-xs-3">
     <rck-lbl>Type of Table</rck-lbl>

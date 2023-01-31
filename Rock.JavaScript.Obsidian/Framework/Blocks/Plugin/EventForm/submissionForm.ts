@@ -18,7 +18,9 @@ import ProdTech from "./Components/productionTech"
 import BasicInfo from "./Components/basicInfo"
 import CCCatering from "./Components/childcareCatering"
 import EventTime from "./Components/eventTime"
-import { DateTime } from "luxon"
+import DatePicker from "./Components/datePicker"
+import EventBuffer from "./Components/eventBuffer"
+import { DateTime, Duration } from "luxon"
 import RockLabel from "../../../Elements/rockLabel"
 import RockField from "../../../Controls/rockField"
 import rules from "./Rules/rules"
@@ -60,6 +62,8 @@ export default defineComponent({
       "tcc-web-cal": WebCal,
       "tcc-prod-tech": ProdTech,
       "tcc-event-time": EventTime,
+      "tcc-buffer": EventBuffer,
+      "tcc-date-pkr": DatePicker,
       "rck-lbl": RockLabel,
       "rck-field": RockField
   },
@@ -124,6 +128,9 @@ export default defineComponent({
           resources: [] as string[],
           pagesViewed: [] as number[],
           requestErrors: [] as any[],
+          changeDateModal: false,
+          changeDateOriginal: "",
+          changeDateReplacement: "",
           preFillModal: false,
           preFillModalOption: "",
           preFillTarget: "",
@@ -166,9 +173,6 @@ export default defineComponent({
       },
       lastStep(): any {
         let step = 1
-        // if(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser) {
-        //   step++
-        // }
         if(this.viewModel?.request.attributeValues?.NeedsSpace == "True" ||
           this.viewModel?.request.attributeValues?.NeedsOnline == "True" ||
           this.viewModel?.request.attributeValues?.NeedsCatering == "True" ||
@@ -218,7 +222,43 @@ export default defineComponent({
           })
         })
         return errors
-      }
+      },
+      minEventDate() {
+        let date = DateTime.now()
+        if(this.viewModel?.request?.attributeValues) {
+          if(this.viewModel.request?.attributeValues.RequestStatus != "Draft" && this.viewModel.request?.attributeValues.RequestStatus != "Submitted" && this.viewModel.request?.attributeValues.RequestStatus != " In Progress") {
+            let val = this.viewModel.request.startDateTime as string
+            date = DateTime.fromISO(val)
+          }
+        }
+        let span = Duration.fromObject({days: 0})
+        if(this.viewModel) {
+          if( this.viewModel.request?.attributeValues?.NeedsOnline == "True"
+            || this.viewModel.request?.attributeValues?.NeedsRegistration == "True"
+            || this.viewModel.request?.attributeValues?.NeedsWebCalendar == "True"
+            || this.viewModel.request?.attributeValues?.NeedsCatering == "True"
+            || this.viewModel.request?.attributeValues?.NeedsOpsAccommodations == "True"
+            || this.viewModel.request?.attributeValues?.NeedsProductionAccommodations == "True"
+          ) {
+            span = Duration.fromObject({days: 14})
+          }
+          if(this.viewModel.request?.attributeValues?.NeedsChildCare == "True") {
+            span = Duration.fromObject({days: 30})
+          }
+          if(this.viewModel.request?.attributeValues?.NeedsPublicity == "True") {
+            span = Duration.fromObject({weeks: 6})
+          }
+          //Override restrictions for Funerals
+          if(this.viewModel.request?.attributeValues?.Ministry) {
+            let ministry = JSON.parse(this.viewModel.request?.attributeValues?.Ministry)
+            if(ministry.text.toLowerCase().includes("funeral")) {
+              span = Duration.fromObject({days: 0})
+            }
+          }
+        }
+        date = date.plus(span)
+        return date.toFormat('yyyy-MM-dd')
+      },
   },
   methods: {
     matchMultiEvent() {
@@ -770,6 +810,17 @@ export default defineComponent({
         return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
       }
     },
+    replaceDate() {
+      if(this.viewModel?.request.attributeValues && this.changeDateOriginal && this.changeDateReplacement) {
+        this.viewModel.request.attributeValues.EventDates = this.viewModel.request.attributeValues.EventDates.replace(this.changeDateOriginal, this.changeDateReplacement)
+        this.viewModel.events.forEach((e: any) => {
+          if(e.attributeValues.EventDate == this.changeDateOriginal) {
+            e.attributeValues.EventDate = this.changeDateReplacement
+          }
+        })
+      }
+      this.changeDateModal = false
+    }
   },
   watch: {
     'viewModel.request.attributeValues.IsSame'(val) {
@@ -1055,45 +1106,20 @@ export default defineComponent({
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
-    <tcc-basic v-if="step == 1" :view-model="viewModel" :showValidation="pagesViewed.includes(1)" refName="basic" @validation-change="validationChange" ref="basic"></tcc-basic>
+    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" refName="basic" @validation-change="validationChange" ref="basic"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <h2 class="text-accent" style="display: flex; align-items: center;">
             Information for {{formatDate(e.attributeValues.EventDate)}}
             <a-btn class="ml-1" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event</a-btn>
+            <a-btn class="ml-1" type="accent-outlined" shape="round" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a-btn>
           </h2>
         </template>
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
           <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
-          <div class="row" v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)">
-            <div class="col col-xs-12 col-md-6">
-              <rck-field
-                v-model="e.attributeValues.StartBuffer"
-                :attribute="e.attributes.StartBuffer"
-                :is-edit-mode="true"
-              ></rck-field>
-            </div>
-            <div class="col col-xs-12 col-md-6">
-              <rck-field
-                v-model="e.attributeValues.EndBuffer"
-                :attribute="e.attributes.EndBuffer"
-                :is-edit-mode="true"
-              ></rck-field>
-            </div>
-          </div>
-          <br/>
-          <div class="row" v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)">
-            <div class="col col-xs-6" v-if="e.attributeValues.StartBuffer != ''">
-              <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
-              {{e.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(e.attributeValues.StartTime, e.attributeValues.StartBuffer)}}
-            </div>
-            <div class="col col-xs-6" v-if="e.attributeValues.EndBuffer != ''">
-              <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
-              {{e.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(e.attributeValues.EndTime, e.attributeValues.EndBuffer)}}
-            </div>
-          </div>
+          <tcc-buffer v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)" :e="e"></tcc-buffer>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
@@ -1109,7 +1135,7 @@ export default defineComponent({
             Catering Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
+          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1136,7 +1162,7 @@ export default defineComponent({
             Registration Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1246,6 +1272,26 @@ export default defineComponent({
     <template #footer>
       <a-btn type="primary" @click="preFill">Prefill</a-btn>
       <a-btn type="grey" @click="preFillModal = false;">Cancel</a-btn>
+    </template>
+  </a-modal>
+  <a-modal v-model:visible="changeDateModal">
+    <div class="pt-2">
+      <div class="row">
+        <div class="col col-xs-12">
+          <div class="mb-2">
+            Please note that event information tabs are displayed in chronological order, if your replacement date changes this order you might need to look for the tab with your new date.
+          </div>
+          <tcc-date-pkr
+            label="Select the new date of this event"
+            v-model="changeDateReplacement"
+            :min="minEventDate"
+          ></tcc-date-pkr>
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <a-btn type="primary" @click="replaceDate">Replace Date</a-btn>
+      <a-btn type="grey" @click="changeDateModal = false;">Cancel</a-btn>
     </template>
   </a-modal>
 </div>

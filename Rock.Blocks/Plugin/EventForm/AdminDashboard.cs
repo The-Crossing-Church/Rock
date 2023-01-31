@@ -254,7 +254,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 {
                     if ( approved[i] == "Title" )
                     {
-                        item.Title = changes.Title.Substring( 0, changes.Title.Length - 8 );
+                        item.Title = changes.Title;
                     }
                     else
                     {
@@ -337,6 +337,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -448,7 +449,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                         {
                             var changes = changesAssoc.ChildContentChannelItem;
                             changes.LoadAttributes();
-                            item.Title = changes.Title.Substring( 0, changes.Title.Length - 8 );
+                            item.Title = changes.Title;
                             foreach ( var av in item.AttributeValues )
                             {
                                 item.SetAttributeValue( av.Key, changes.AttributeValues[av.Key].Value );
@@ -507,6 +508,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -559,6 +561,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -581,6 +584,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -1123,10 +1127,24 @@ namespace Rock.Blocks.Plugin.EventDashboard
             List<int?> sharedRequests = new List<int?>();
             if ( !String.IsNullOrEmpty( sharedWithAttr ) )
             {
-                List<int> ids = sharedWithAttr.Split( ',' ).Select( i => Int32.Parse( i ) ).ToList();
+                List<int> ids = sharedWithAttr.Split( ',' ).Select( i =>
+                {
+                    if ( !String.IsNullOrEmpty( i ) )
+                    {
+                        int id;
+                        if ( Int32.TryParse( i, out id ) )
+                        {
+                            return id;
+                        }
+                    }
+                    return 0;
+                } ).ToList();
                 for ( int k = 0; k < ids.Count(); k++ )
                 {
-                    users.Add( p_svc.Get( ids[k] ) );
+                    if ( ids[k] > 0 )
+                    {
+                        users.Add( p_svc.Get( ids[k] ) );
+                    }
                 }
             }
             users.Add( item.CreatedByPersonAlias.Person );

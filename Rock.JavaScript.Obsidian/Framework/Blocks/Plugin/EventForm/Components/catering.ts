@@ -25,8 +25,12 @@ export default defineComponent({
     },
     props: {
       e: {
-          type: Object as PropType<ContentChannelItem>,
-          required: false
+        type: Object as PropType<ContentChannelItem>,
+        required: false
+      },
+      request: {
+        type: Object as PropType<ContentChannelItem>,
+        required: false
       },
       showValidation: Boolean,
       refName: String
@@ -35,11 +39,11 @@ export default defineComponent({
 
     },
     data() {
-        return {
-          rules: rules,
-          errors: [] as Record<string, string>[],
-          vendorMenu: false
-        };
+      return {
+        rules: rules,
+        errors: [] as Record<string, string>[],
+        vendorMenu: false
+      };
     },
     computed: {
       
@@ -203,7 +207,17 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12">
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'False'">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, [], e.attributes.ExpectedAttendance.name)]" ref="validator_att">
+        <rck-field
+          v-model="e.attributeValues.ExpectedAttendance"
+          :attribute="e.attributes.ExpectedAttendance"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <br v-if="request.attributeValues.NeedsSpace == 'False'" />
       <tcc-switch
         v-model="e.attributeValues.NeedsDelivery"
         :label="e.attributes.NeedsDelivery.name"

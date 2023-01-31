@@ -397,9 +397,6 @@ export default defineComponent({
         }
       })
     },
-    requestAction(status: string) {
-      window.location.href = this.viewModel?.workflowURL + `?Id=${this.selected?.id}&Action=${status}`
-    },
     getNextComment(idx: number) {
       let req = this.selected as any
       if(idx < (req.comments.length - 1)) {
@@ -476,7 +473,7 @@ export default defineComponent({
         let submitter = users.filter(u => {
           return u.primaryAliasId == id
         })
-        if(submitter) {
+        if(submitter && submitter.length > 0) {
           return submitter[0].fullName
         }
       }
@@ -678,7 +675,7 @@ export default defineComponent({
       <a-pop v-model:visible="visible" trigger="click" placement="top" v-if="selectedStatus != 'Denied'">
         <template #content>
           <div style="display: flex; flex-direction: column;">
-            <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="requestAction('Proposed Changes Denied')">
+            <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied')">
               <i class="mr-1 fa fa-times"></i>
               Changes w/ Comment
             </a-btn>
@@ -686,7 +683,7 @@ export default defineComponent({
               <i class="mr-1 fa fa-times"></i>
               Changes w/o Comment
             </a-btn>
-            <a-btn type="red" @click="requestAction('Denied')">
+            <a-btn type="red" @click="updateStatus('Denied')">
               <i class="mr-1 fa fa-times"></i>
               Request
             </a-btn>

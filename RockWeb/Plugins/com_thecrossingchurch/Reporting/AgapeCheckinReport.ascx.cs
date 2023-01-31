@@ -172,7 +172,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     groupIds.Add( agapeBuddyGroup.Id );
                 }
             }
-            var attendance = _attSvc.Queryable().Where( a => a.StartDateTime >= start && a.StartDateTime <= end && groupIds.Contains( a.Occurrence.GroupId.Value ) );
+            var attendance = _attSvc.Queryable().Where( a => a.StartDateTime >= start && a.StartDateTime <= end );
+            attendance = attendance.Join( groupIds,
+                a => a.Occurrence.GroupId,
+                g => g,
+                ( a, g ) => a
+            );
             var source = attendance.ToList().Select( a => new { Id = a.PersonAlias.PersonId, FirstName = a.PersonAlias.Person.FirstName, LastName = a.PersonAlias.Person.LastName, CheckInTime = a.StartDateTime, Location = a.Occurrence.Location.Name, Schedule = a.Occurrence.Schedule.Name, Time = a.Occurrence.Schedule.NextStartDateTime } ).OrderBy( s => s.Time ).ThenBy( s => s.LastName ).ToList();
             var groupedSource = source.GroupBy( s => s.Id ).Select( s => new { Id = s.Key, Name = String.Concat( s.First().LastName, ", ", s.First().FirstName ), Checkin = String.Join( ", ", s.Select( d => d.Schedule ) ) } ).ToList();
             grdBuddies.DataSource = groupedSource;

@@ -160,13 +160,42 @@ export default defineComponent({
       removeSetUpConfiguration(idx: number) {
         this.selectedRoomSetUp = this.selectedRoomSetUp.splice(idx, 1)
       },
+      useStandardSetUp() {
+        this.modal = false
+        let room = this.selectedRoomSetUp[0].Room
+        this.roomSetUp = this.roomSetUp.filter((s: any) => {
+          return s.Room != room
+        })
+      },
       saveSetUpConfiguration() {
         this.modal = false
         let room = this.selectedRoomSetUp[0].Room
         this.roomSetUp = this.roomSetUp.filter((s: any) => {
           return s.Room != room
         })
-        this.roomSetUp.push(...this.selectedRoomSetUp)
+        //Check that set up is not the same as standard 
+        let stdrSetUp = [] as any[]
+        this.groupedSetUp.forEach((s: any) => {
+          if(s.guid == room) {
+            if(s.standard.length > 0) {
+              s.standard.forEach((su: any) => {
+                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable, NumberofTables: su.attributeValues.NumberofTables, NumberofChairs: su.attributeValues.NumberofChairs })
+              })
+            }
+          }
+        })
+        stdrSetUp = stdrSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+        this.selectedRoomSetUp = this.selectedRoomSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+        let isSame = true
+        if(stdrSetUp.length != this.selectedRoomSetUp.length) {
+          isSame = false
+        }
+        if(JSON.stringify(stdrSetUp) != JSON.stringify(this.selectedRoomSetUp)) {
+          isSame = false
+        }
+        if(!isSame) {
+          this.roomSetUp.push(...this.selectedRoomSetUp)
+        }
         this.selectedRoomSetUp = []
       },
       validate() {
@@ -179,6 +208,24 @@ export default defineComponent({
       },
       validationChange(errs: Record<string, string>[]) {
         this.errors = errs
+      },
+      sortSetUp(a: any, b: any): number {
+        if(a.TypeofTable < b.TypeofTable) {
+          return -1
+        } else if(a.TypeofTable > b.TypeofTable) {
+          return 1
+        }
+        if(parseInt(a.NumberofTables) < parseInt(b.NumberofTables)) {
+          return -1
+        } else if(parseInt(a.NumberOfTables) > parseInt(b.NumberOfTables)) {
+          return 1
+        }
+        if(parseInt(a.NumberofChairs) < parseInt(b.NumberofChairs)) {
+          return -1
+        } else if(parseInt(a.NumberofChairs) > parseInt(b.NumberofChairs)) {
+          return 1
+        }
+        return 0
       }
     },
     watch: {
@@ -186,6 +233,16 @@ export default defineComponent({
         handler(val){
           if(this.e?.attributeValues) {
             this.e.attributeValues.RoomSetUp = JSON.stringify(val)
+            if(val.length > 0) {
+              let startBuffer = this.e.attributeValues.StartBuffer ? parseInt(this.e.attributeValues.StartBuffer) : 0
+              let endBuffer = this.e.attributeValues.EndBuffer ? parseInt(this.e.attributeValues.EndBuffer) : 0
+              if(startBuffer < 30) {
+                this.e.attributeValues.StartBuffer = "30"
+              }
+              if(endBuffer < 30) {
+                this.e.attributeValues.EndBuffer = "30"
+              }
+            }
           }
         },
         deep: true
@@ -301,6 +358,23 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12">
+      <tcc-switch
+        v-model="e.attributeValues.HasDangerousActivity"
+        :label="e.attributes.HasDangerousActivity.name"
+      ></tcc-switch>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.HasDangerousActivity == 'True'">
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="e.attributeValues.DangerousActivityInfo"
+        :attribute="e.attributes.DangerousActivityInfo"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
       <rck-field
         v-model="e.attributeValues.Setup"
         :attribute="e.attributes.Setup"
@@ -309,10 +383,17 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12">
+    <div class="col col-xs-12 col-md-6">
       <rck-field
         v-model="e.attributeValues.SetupImage"
         :attribute="e.attributes.SetupImage"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.HasDangerousActivity == 'True'">
+      <rck-field
+        v-model="e.attributeValues.InsuranceCertificate"
+        :attribute="e.attributes.InsuranceCertificate"
         :is-edit-mode="true"
       ></rck-field>
     </div>
@@ -349,10 +430,14 @@ export default defineComponent({
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div class="mt-2" style="height: 16px;"></div>
-  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="idx" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
+  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
   <template #footer>
-    <a-btn type="accent" @click="addSetUpConfiguration">Add Row</a-btn>
-    <a-btn type="primary" @click="saveSetUpConfiguration">Save</a-btn>
+    <div style="display: flex;">
+      <a-btn type="secondary" @click="useStandardSetUp">Use Standard Set-up</a-btn>
+      <div class="spacer"></div>
+      <a-btn type="accent" @click="addSetUpConfiguration">Add Row</a-btn>
+      <a-btn type="primary" @click="saveSetUpConfiguration">Save</a-btn>
+    </div>
   </template>
 </a-modal>
 <v-style>
@@ -367,6 +452,9 @@ export default defineComponent({
   }
   .setup-row:not(:last-child) {
     border-bottom: 1px solid #F0F0F0;
+  }
+  .spacer {
+    flex-grow: 1!important;
   }
 </v-style>
 `

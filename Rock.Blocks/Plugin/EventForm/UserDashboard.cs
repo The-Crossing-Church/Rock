@@ -294,6 +294,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -346,6 +347,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -595,6 +597,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }
@@ -664,6 +667,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             }
             catch ( Exception e )
             {
+                ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
             }
         }

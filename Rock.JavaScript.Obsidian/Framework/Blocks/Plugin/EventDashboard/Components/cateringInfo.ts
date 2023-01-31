@@ -16,7 +16,8 @@ export default defineComponent({
     },
     props: {
       details: Object,
-      drinks: Array
+      drinks: Array,
+      needsSpace: String,
     },
     setup() {
 
@@ -38,6 +39,9 @@ export default defineComponent({
               item.value = this.details.attributeValues[key]
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
+              }
+              if(this.needsSpace == 'True' && categories.includes("Event Space")) {
+                continue
               }
               attrs.push(item)
             }
