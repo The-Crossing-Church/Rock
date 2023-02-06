@@ -300,7 +300,11 @@ export default defineComponent({
       }
     },
     formatDate(date: string) {
-      return DateTime.fromFormat(date, 'yyyy-MM-dd').toFormat("MM/dd/yyyy")
+      let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
+      if(!dt.isValid) {
+        dt = DateTime.fromISO(date)
+      }
+      return dt.toFormat("MM/dd/yyyy")
     },
     saveDraft() {
       if(this.viewModel) {
@@ -1143,7 +1147,7 @@ export default defineComponent({
             Other Accomodations
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1213,6 +1217,11 @@ export default defineComponent({
       </a-btn> 
       <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
       <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
+    </div>
+  </div>
+  <div class="row" v-if="canSubmit && step == lastStep">
+    <div class="col text-red" style="text-align: right;">
+      You cannot submit a request unless you have: a title, ministry, and at least one event date
     </div>
   </div>
   <!-- Confirmation Modal -->
@@ -1406,6 +1415,9 @@ label, .control-label {
 }
 .text-errors {
   font-size: .85em;
+}
+.bg-red {
+  background-color: #dec7c7;
 }
 .tcc-dropdown {
   display: flex;

@@ -185,11 +185,31 @@ export default defineComponent({
         ></rck-field>
       </tcc-validator>
     </div>
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'False'">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, [], e.attributes.ExpectedAttendance.name)]" ref="validator_att">
+        <rck-field
+          v-model="e.attributeValues.ExpectedAttendance"
+          :attribute="e.attributes.ExpectedAttendance"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetLine, e.attributes.FoodBudgetLine.name)]" ref="validator_budget">
         <rck-field
           v-model="e.attributeValues.FoodBudgetLine"
           :attribute="e.attributes.FoodBudgetLine"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetMinistry, e.attributes.FoodBudgetMinistry.name)]" ref="validator_budgetmin">
+        <rck-field
+          v-model="e.attributeValues.FoodBudgetMinistry"
+          :attribute="e.attributes.FoodBudgetMinistry"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>
@@ -207,15 +227,6 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'False'">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, [], e.attributes.ExpectedAttendance.name)]" ref="validator_att">
-        <rck-field
-          v-model="e.attributeValues.ExpectedAttendance"
-          :attribute="e.attributes.ExpectedAttendance"
-          :is-edit-mode="true"
-        ></rck-field>
-      </tcc-validator>
-    </div>
     <div class="col col-xs-12 col-md-6">
       <br v-if="request.attributeValues.NeedsSpace == 'False'" />
       <tcc-switch

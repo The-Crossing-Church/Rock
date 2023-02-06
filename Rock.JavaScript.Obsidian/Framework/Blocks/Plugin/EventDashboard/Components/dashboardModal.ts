@@ -129,7 +129,11 @@ export default defineComponent({
       getPanelName(date: string, room: string) {
         let title = "" 
         if(date) {
-          title = DateTime.fromFormat(date, 'yyyy-MM-dd').toFormat('MM/dd/yyyy')
+          let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
+          if(!dt.isValid) {
+            dt = DateTime.fromISO(date)
+          }
+          title = dt.toFormat('MM/dd/yyyy')
         } else {
           let dates = this.request?.attributeValues.EventDates.split(",")
           dates = dates.map((d: any) => {

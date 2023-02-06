@@ -54,6 +54,7 @@ namespace Rock.Blocks.Plugin.EventForm
     [TextField( "Room", "Attribute Key for Room", key: AttributeKey.Rooms, defaultValue: "Rooms", category: "Attribute", order: 6 )]
     [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
+    [TextField( "Ops Inventory", "Attribute Key for Ops Inventory", key: AttributeKey.OpsInventory, defaultValue: "OpsInventory", category: "Attributes", order: 9 )]
     #endregion Block Attributes
 
     public class SubmissionForm : RockObsidianBlockType
@@ -89,6 +90,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public const string Rooms = "Rooms";
             public const string StartBuffer = "StartBuffer";
             public const string EndBuffer = "EndBuffer";
+            public const string OpsInventory = "OpsInventory";
         }
 
         /// <summary>
@@ -419,12 +421,14 @@ namespace Rock.Blocks.Plugin.EventForm
                 string dateKey = GetAttributeValue( AttributeKey.DetailsEventDate );
                 string sBufferKey = GetAttributeValue( AttributeKey.StartBuffer );
                 string eBufferKey = GetAttributeValue( AttributeKey.EndBuffer );
+                string opsInvKey = GetAttributeValue( AttributeKey.OpsInventory );
                 var startTimeAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startKey );
                 var endTimeAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endKey );
                 var roomAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == roomKey );
                 var eventDateAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == dateKey );
                 var sBufferAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == sBufferKey );
                 var eBufferAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == eBufferKey );
+                var opsInvAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == opsInvKey );
                 var isSameAttr = attr_svc.Get( IsSameAttrGuid );
                 if ( startTimeAttr != null && endTimeAttr != null && roomAttr != null && eventDateAttr != null && isSameAttr != null )
                 {
@@ -435,6 +439,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     var isSameVals = av_svc.Queryable().Where( av => av.AttributeId == isSameAttr.Id );
                     var sBuffers = av_svc.Queryable().Where( av => av.AttributeId == sBufferAttr.Id );
                     var eBuffers = av_svc.Queryable().Where( av => av.AttributeId == eBufferAttr.Id );
+                    var inventory = av_svc.Queryable().Where( av => av.AttributeId == opsInvAttr.Id );
                     items = qryItems.ToList().Select( i =>
                     {
                         if ( i.AttributeValues == null )
@@ -491,6 +496,11 @@ namespace Rock.Blocks.Plugin.EventForm
                               if ( eBuffer != null )
                               {
                                   ci.ChildContentChannelItem.AttributeValues.Add( eBufferAttr.Key, new AttributeValueCache() { Value = eBuffer.Value, AttributeId = eBufferAttr.Id } );
+                              }
+                              var invItems = inventory.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( invItems != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( opsInvAttr.Key, new AttributeValueCache() { Value = invItems.Value, AttributeId = opsInvAttr.Id } );
                               }
 
                               return ci;

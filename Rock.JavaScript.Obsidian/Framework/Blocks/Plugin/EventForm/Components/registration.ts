@@ -180,6 +180,17 @@ export default defineComponent({
         ></rck-field>
       </tcc-validator>
     </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
+        <rck-field
+          v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
+          :attribute="e.attributes.RegistrationFeeBudgetMinistry"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
       <tcc-validator :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
         <rck-field

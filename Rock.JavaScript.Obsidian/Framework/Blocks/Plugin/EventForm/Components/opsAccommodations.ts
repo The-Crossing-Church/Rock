@@ -1,5 +1,6 @@
 import { defineComponent, PropType } from "vue"
 import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
+import { DateTime, Duration, Interval } from "luxon"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import RockLabel from "../../../../Elements/rockLabel"
@@ -9,6 +10,7 @@ import Toggle from "./toggle"
 import rules from "../Rules/rules"
 import RoomSetUp from "./roomSetUp"
 import TimePicker from "./timePicker"
+import OpsInv from "./opsInventory"
 
 type SelectedListItem = {
   text: string,
@@ -21,6 +23,15 @@ type RoomSetUp = {
   NumberofTables: number,
   NumberofChairs: number
 }
+type ListItem = {
+  text: string,
+  value: string,
+  description: string,
+  isDisabled: boolean,
+  isHeader: boolean,
+  type: string,
+  order: number
+}
 
 export default defineComponent({
     name: "EventForm.Components.Ops",
@@ -32,6 +43,7 @@ export default defineComponent({
       "tcc-switch": Toggle,
       "tcc-setup": RoomSetUp,
       "tcc-time": TimePicker,
+      "tcc-ops-inv": OpsInv,
       "a-btn": Button,
       "a-modal": Modal,
       "a-select": Select,
@@ -45,7 +57,10 @@ export default defineComponent({
       locationSetUp: Array as PropType<any[]>,
       showValidation: Boolean,
       refName: String,
-      request: Object as PropType<ContentChannelItem>
+      request: Object as PropType<ContentChannelItem>,
+      originalRequest: Object as PropType<ContentChannelItem>,
+      inventoryList: Array as PropType<any[]>,
+      existing: Array as PropType<any[]>,
     },
     setup() {
 
@@ -97,7 +112,7 @@ export default defineComponent({
           arr.push({room: r.value, guid: r.guid, items: this.setUpForRoom(r.guid), standard: this.getSetUpDesc(r.guid)})
         })
         return arr
-      }
+      },
     },
     methods: {
       matchRoomsToSetup() {
@@ -158,7 +173,7 @@ export default defineComponent({
         this.selectedRoomSetUp.push({Room: room, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0})
       },
       removeSetUpConfiguration(idx: number) {
-        this.selectedRoomSetUp = this.selectedRoomSetUp.splice(idx, 1)
+        this.selectedRoomSetUp.splice(idx, 1)
       },
       useStandardSetUp() {
         this.modal = false
@@ -226,7 +241,7 @@ export default defineComponent({
           return 1
         }
         return 0
-      }
+      },
     },
     watch: {
       roomSetUp: {
@@ -252,6 +267,16 @@ export default defineComponent({
           this.$emit("validation-change", { ref: this.refName, errors: val})
         },
         deep: true
+      },
+      'e.attributeValues.HasDangerousActivity': {
+        handler(val) {
+          if(val == 'False') {
+            if(this.e?.attributeValues) {
+              this.e.attributeValues.DangerousActivityInfo = ""
+              this.e.attributeValues.InsuranceCertificate = ""
+            }
+          }
+        }
       }
     },
     mounted() {
@@ -347,7 +372,7 @@ export default defineComponent({
         :label="e.attributes.NeedsDoorsUnlocked.name"
       ></tcc-switch>
     </div>
-    <div class="col col-xs-12" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
+    <div class="col col-xs-12 mb-2" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
       <strong>Operations will unlock doors for your event based on the spaces and rooms you have reserved. If you have special unlock instructions for your event, please indicate below.</strong><br/>
       <rck-field
         v-model="e.attributeValues.Doors"
@@ -427,6 +452,8 @@ export default defineComponent({
       </div>
     </div>
   </template>
+  <h4 class="text-accent mt-2">Ops Inventory</h4>
+  <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing"></tcc-ops-inv>
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div class="mt-2" style="height: 16px;"></div>

@@ -15,6 +15,7 @@ export type SubmissionFormBlockViewModel = {
     locationSetupMatrixItem: AttributeMatrixItem[];
     ministries: DefinedValue[];
     budgetLines: DefinedValue[];
+    inventoryList: DefinedValue[];
     adminDashboardURL: string;
     userDashboardURL: string;
 };

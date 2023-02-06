@@ -1,21 +1,16 @@
-import { defineComponent, PropType} from "vue"
-import { Person } from "../../../../ViewModels"
+import { defineComponent, PropType } from "vue"
 import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
 import { DateTime, Duration, Interval } from "luxon"
-import { useStore } from "../../../../Store/index"
-import { Switch, Button } from "ant-design-vue"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
-import Validator from "./validator"
-import TextBox from "../../../../Elements/textBox"
 import RockLabel from "../../../../Elements/rockLabel"
-import RoomPicker from "./roomPicker"
-import RoomSetUp from "./roomSetUp"
-import Toggle from "./toggle"
-import rules from "../Rules/rules"
+import { Button, Modal, Select } from "ant-design-vue"
+import OpsInventory from "./opsInventoryEntry"
 
-const store = useStore();
-
+type InventoryReservation = {
+  InventoryItem: string,
+  QuantityNeeded: number
+}
 type ListItem = {
   text: string,
   value: string,
@@ -25,69 +20,50 @@ type ListItem = {
   type: string,
   order: number
 }
-type SelectedListItem = {
-  text: string,
-  value: string,
-  description: string
-}
 
 export default defineComponent({
-  name: "EventForm.Components.Space",
+  name: "EventForm.Components.OpsInventory",
   components: {
-    "a-btn": Button,
-    "a-switch": Switch,
     "rck-field": RockField,
     "rck-form": RockForm,
     "rck-lbl": RockLabel,
-    "rck-text": TextBox,
-    "tcc-validator": Validator,
-    "tcc-room": RoomPicker,
-    "tcc-setup": RoomSetUp,
-    "tcc-switch": Toggle
+    "tcc-ops-inv": OpsInventory,
+    "a-btn": Button,
+    "a-modal": Modal,
+    "a-select": Select,
   },
   props: {
     e: {
-      type: Object as PropType<ContentChannelItem>,
-      required: false
+        type: Object as PropType<ContentChannelItem>,
+        required: false
     },
-    locations: Array as PropType<DefinedValue[]>,
     request: Object as PropType<ContentChannelItem>,
     originalRequest: Object as PropType<ContentChannelItem>,
+    inventoryList: Array as PropType<any[]>,
     existing: Array as PropType<any[]>,
-    showValidation: Boolean,
-    refName: String
   },
   setup() {
 
   },
   data() {
-    return {
-      rules: rules,
-      errors: [] as Record<string, string>[]
-    };
+      return {
+        opsInventory: [] as InventoryReservation[],
+        modal: false
+      };
   },
   computed: {
-    /** The person currently authenticated */
-    currentPerson(): Person | null {
-      return store.state.currentPerson;
-    },
-    rooms() {
-      return this.locations?.filter(l => {
-        return l.attributeValues?.IsDoor == "False"
-      }).map(l => {
+    inventory() {
+      return this.inventoryList?.map(l => {
         let x = {} as ListItem
         x.value = l.guid
         if(l.value) {
           x.text = l.value
-          if(l.attributeValues?.Capacity) {
-            x.text += " (" + l.attributeValues?.Capacity + ")"
-          }
         }
         if(l.attributeValues?.Type) {
-          x.type = l.attributeValues.Type
+          x.type = l.attributeValues.Type.value
         }
-        if(l.attributeValues?.StandardSetUpDescription) {
-          x.description = l.attributeValues.StandardSetUpDescription
+        if(l.attributeValues?.Quantity) {
+          x.description = l.attributeValues.Quantity.value
         }
         if(!l.isActive) {
           x.isDisabled = true
@@ -105,8 +81,8 @@ export default defineComponent({
         return 0
       })
     },
-    groupedRooms() {        
-      let loc = [] as any[]
+    groupedInventory() {       
+      let inv = [] as any[]
       let dates = [] as any[]
       if(this.request?.attributeValues?.IsSame == "True") {
         dates = this.request.attributeValues.EventDates.split(",").map(d => d.trim())
@@ -196,32 +172,58 @@ export default defineComponent({
         }
         return false
       })
-      let existingRooms = [] as any[]
+      let existingInv = [] as any[]
       existingOnDate?.forEach(e => {
         e.childItems.forEach((ev: any) => {
-          existingRooms.push(...ev.childContentChannelItem.attributeValues?.Rooms?.value.split(","))
+          if(ev.childContentChannelItem.attributeValues.OpsInventory.value) {
+            let i = JSON.parse(ev.childContentChannelItem.attributeValues.OpsInventory.value)
+            for(let k=0; k < i.length; k++) {
+              let existingItem = existingInv.filter((ei: any) => {
+                return ei.InventoryItem == i[k].InventoryItem
+              })
+              if(existingItem && existingItem.length > 0) {
+                existingItem[0].QuantityNeeded += i[k].QuantityNeeded
+              } else {
+                existingInv.push(i[k])
+              }
+            }
+          }
         })
       })
-      this.rooms?.forEach(l => {
-          let idx = -1
-          loc.forEach((i, x) => {
-            if (i.Type == l.type) {
-              idx = x
+      console.log('inventory')
+      console.log(existingInv)
+      this.inventory?.forEach(l => {
+        let idx = -1
+        inv.forEach((i, x) => {
+          if (i.Type == l.type) {
+            idx = x
+          }
+        })
+        //Disable rooms not available for the date/time
+        l.isHeader = false
+        if(existingInv.map((ei: any) => { return ei.InventoryItem }).includes(l.value)){
+          let eiArr = existingInv.filter((ei: any) => { return ei.InventoryItem == l.value })
+          if(eiArr && eiArr.length > 0) {
+            let ei = eiArr[0]
+            let qtyOwned = parseInt(l.description)
+            if(ei.QuantityNeeded < qtyOwned) {
+              l.description = (qtyOwned - ei.QuantityNeeded) + "/" + l.description + " Available"
+            } else {
+              l.isDisabled = true
+              l.description = "0/" + l.description + " Available"
             }
-          })
-          //Disable rooms not available for the date/time
-          l.isHeader = false
-          if(existingRooms.includes(l.value)){
-            l.isDisabled = true
           }
-          if (idx > -1) {
-            loc[idx].locations.push(l)
-          } else {
-            loc.push({ Type: l.type, locations: [l], order: l.order })
-          }
+        } else {
+          l.description += "/" + l.description + " Available"
+        }
+        if (idx > -1) {
+          inv[idx].items.push(l)
+        } else {
+          inv.push({ Type: l.type, items: [l], order: l.order })
+        }
       })
-      loc.forEach(l => {
-          l.locations = l.locations.sort((a:any, b: any) => {
+      inv.forEach(l => {
+          l.items = l.items.sort((a:any, b: any) => {
           if (a.order < b.order) {
             return -1
           } else if (a.order > b.order) {
@@ -232,90 +234,143 @@ export default defineComponent({
         })
       })
       let arr = [] as any[]
-      loc.forEach(l => {
+      inv.forEach(l => {
         arr.push({ value: l.Type, isHeader: true, isDisabled: false})
-        l.locations.forEach((i:any) => {
+        l.items.forEach((i:any) => {
           arr.push((i))
         })
       })
       return arr
-    },
-    selectedRooms() {
-      let rawVal = this.e?.attributeValues?.Rooms as string
-      let selection = JSON.parse(rawVal) as SelectedListItem
-      let guids = selection.value.split(',')
-      return this.rooms?.filter((r: any) => {
-        return guids.includes(r.value)
-      })
-    },
-    ministry() {
-      if(this.request?.attributeValues) {
-        let ministry = JSON.parse(this.request.attributeValues.Ministry) as SelectedListItem
-        return ministry.text
-      }
-      return ''
-    },
+    }
   },
   methods: {
-    validate() {
-      let formRef = this.$refs as any
-      for(let r in formRef) {
-        if(formRef[r].className?.includes("validator")) {
-          formRef[r].validate()
+    openInventoryEditor() {
+      if(this.opsInventory.length == 0) {
+        this.opsInventory.push({InventoryItem: "", QuantityNeeded: 0})
+      }
+      this.modal = true
+    },
+    addOpsInvConfiguration() {
+      this.opsInventory.push({InventoryItem: "", QuantityNeeded: 0})
+    },
+    removeOpsInvConfiguration(idx: number) {
+      this.opsInventory.splice(idx, 1)
+    },
+    getInventoryName(guid: string, qty: number) {
+      if(guid) {
+        let itm = this.inventoryList?.filter((i: any) => {
+          return i.guid == guid
+        })
+        if(itm && itm.length > 0) {
+          if(qty > 1) {
+            return itm[0].value + 's'
+          }
+          return itm[0].value
         }
       }
     },
-    validationChange(errs: Record<string, string>[]) {
-      this.errors = errs
+    saveOpsInvConfiguration() {
+      this.modal = false
+      //Combine inventory rows
+      let inv = [] as any[]
+      this.opsInventory.forEach((i: any) => {
+        let idx = -1
+        inv.forEach((invt: any, indx: number) => {
+          if(invt.InventoryItem == i.InventoryItem) {
+            idx = indx
+          }
+        })
+        if(idx > -1) {
+          let existingQty = parseInt(inv[idx].QuantityNeeded)
+          let newQty = parseInt(i.QuantityNeeded)
+          inv[idx].QuantityNeeded = existingQty + newQty
+        } else {
+          inv.push(i)
+        }
+      })
+      //validate quantity
+      inv.forEach((i: any) => {
+        let giArr = this.groupedInventory.filter((gi: any) => {
+          return gi.value == i.InventoryItem
+        })
+        if(giArr && giArr.length > 0) {
+          let qtyRequested = parseInt(i.QuantityNeeded)
+          let qtyAvailable = parseInt(giArr[0].description.split("/")[0])
+          if(qtyRequested > qtyAvailable) {
+            i.QuantityNeeded = qtyAvailable
+          }
+        }
+      })
+      this.opsInventory = inv
     }
   },
   watch: {
-    errors: {
-      handler(val) {
-        this.$emit("validation-change", { ref: this.refName, errors: val})
+    opsInventory: {
+      handler(val){
+        if(this.e?.attributeValues) {
+          this.e.attributeValues.OpsInventory = JSON.stringify(val)
+        }
       },
       deep: true
+    },
+    modal(val) {
+      if(!val) {
+        this.saveOpsInvConfiguration()
+      }
     }
   },
   mounted() {
-    if(this.showValidation) {
-      this.validate()
+    if(this.e?.attributeValues) {
+      if(this.e?.attributeValues.OpsInventory) {
+        this.opsInventory = JSON.parse(this.e.attributeValues.OpsInventory)
+      }
     }
   },
   template: `
-<rck-form ref="form" @validationChanged="validationChange">
+<div class="my-2 setup-table">
   <div class="row">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
-        <rck-field
-          v-model="e.attributeValues.ExpectedAttendance"
-          :attribute="e.attributes.ExpectedAttendance"
-          :is-edit-mode="true"
-        ></rck-field>
-      </tcc-validator>
+    <div class="col col-xs-11">
+      <template v-if="opsInventory.length > 0">
+        <div class="row" v-for="(o, idx) in opsInventory" :key="idx">
+          <div class="col col-xs-12">
+            {{o.QuantityNeeded}} {{getInventoryName(o.InventoryItem, o.QuantityNeeded)}}
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        Click the add button below to reserve additional items
+      </template>
     </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.Rooms, e.attributes.Rooms.name)]" ref="validator_room">
-        <tcc-room
-          v-model="e.attributeValues.Rooms"
-          :label="e.attributes.Rooms.name"
-          :items="groupedRooms"
-          :multiple="true"
-        ></tcc-room>
-      </tcc-validator>
+    <div class="col col-xs-1">
+      <a-btn class="pull-right" type="accent" shape="circle" @click="openInventoryEditor">
+        <i class="fa fa-plus"></i>
+      </a-btn>
     </div>
   </div>
-  <div class="row" v-if="ministry == 'Infrastructure'">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator>
-        <rck-field
-          v-model="e.attributeValues.InfrastructureSpace"
-          :attribute="e.attributes.InfrastructureSpace"
-          :is-edit-mode="true"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-  </div>
-</rck-form>
+</div>
+<a-modal v-model:visible="modal" style="min-width: 50%;">
+  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
+  <template #footer>
+    <a-btn type="accent" @click="addOpsInvConfiguration">Add Row</a-btn>
+    <a-btn type="primary" @click="saveOpsInvConfiguration">Save</a-btn>
+  </template>
+</a-modal>
+<v-style>
+.setup-table {
+  border-radius: 6px;
+  border: 1px solid #dfe0e1;
+  padding: 8px;
+}
+.setup-row {
+  display: flex;
+  align-items: center;
+}
+.setup-row:not(:last-child) {
+  border-bottom: 1px solid #F0F0F0;
+}
+.spacer {
+  flex-grow: 1!important;
+}
+</v-style>
 `
 });

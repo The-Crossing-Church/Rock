@@ -207,6 +207,7 @@ export default defineComponent({
       <tcc-date v-model="viewModel.request.attributeValues.EventDates" :min="minEventDate" :multiple="true"></tcc-date>
     </div>
     <div class="col col-xs-12 col-md-8" style="display: flex; flex-wrap: wrap; align-content: flex-start;">
+      <tcc-chip v-if="showValidation && eventDates.length == 0" class="bg-red text-red">Event Date(s) are required.</tcc-chip>
       <tcc-chip v-for="d in eventDates" :key="d" v-on:chipdeleted="removeDate(d)">
         {{formatDate(d)}}
       </tcc-chip>

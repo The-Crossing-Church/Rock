@@ -1180,8 +1180,9 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 for ( int i = 0; i < dates.Count(); i++ )
                 {
                     ConflictData d = new ConflictData() { range = new DateRange() };
-                    d.range.Start = DateTime.Parse( $"{dates[i]} {events[k].GetAttributeValue( startKey )}" );
-                    d.range.End = DateTime.Parse( $"{dates[i]} {events[k].GetAttributeValue( endKey )}" );
+                    string formattedDate = DateTime.Parse( dates[i] ).ToString( "yyyy-MM-dd" );
+                    d.range.Start = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( startKey )}" );
+                    d.range.End = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( endKey )}" );
                     var startBuffer = events[0].GetAttributeValue( startBufferKey );
                     if ( !String.IsNullOrEmpty( startBuffer ) )
                     {
