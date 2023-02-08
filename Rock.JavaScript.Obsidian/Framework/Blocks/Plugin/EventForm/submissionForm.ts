@@ -823,6 +823,14 @@ export default defineComponent({
           }
         })
       }
+      this.matchMultiEvent()
+      let selectedIdx = -1 
+      this.viewModel?.events.forEach((e: any, idx: number) => {
+        if(e.attributeValues.EventDate == this.changeDateReplacement) {
+          selectedIdx = idx
+        }
+      })
+      this.jumpTo(selectedIdx + 2)
       this.changeDateModal = false
     }
   },
@@ -1166,7 +1174,7 @@ export default defineComponent({
             Registration Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1294,6 +1302,7 @@ export default defineComponent({
             label="Select the new date of this event"
             v-model="changeDateReplacement"
             :min="minEventDate"
+            :disabledDates="viewModel.request.attributeValues.EventDates"
           ></tcc-date-pkr>
         </div>
       </div>
@@ -1400,6 +1409,15 @@ label, .control-label {
   background-color: #929392;
   border-color: #929392;
   color: black;
+}
+.ant-btn-red {
+  background-color: rgb(204 63 12);
+  border-color: rgb(204 63 12);
+}
+.ant-btn-red:focus, .ant-btn-red:hover {
+  background-color: rgb(184 56 9);
+  border-color: rgb(184 56 9);
+  color: #fff;
 }
 .hover {
   cursor: pointer;

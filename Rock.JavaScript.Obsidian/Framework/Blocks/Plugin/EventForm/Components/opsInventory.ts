@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
+import { ContentChannelItem } from "../../../../ViewModels"
 import { DateTime, Duration, Interval } from "luxon"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
@@ -175,7 +175,7 @@ export default defineComponent({
       let existingInv = [] as any[]
       existingOnDate?.forEach(e => {
         e.childItems.forEach((ev: any) => {
-          if(ev.childContentChannelItem.attributeValues.OpsInventory.value) {
+          if(ev.childContentChannelItem?.attributeValues?.OpsInventory?.value) {
             let i = JSON.parse(ev.childContentChannelItem.attributeValues.OpsInventory.value)
             for(let k=0; k < i.length; k++) {
               let existingItem = existingInv.filter((ei: any) => {
@@ -190,8 +190,6 @@ export default defineComponent({
           }
         })
       })
-      console.log('inventory')
-      console.log(existingInv)
       this.inventory?.forEach(l => {
         let idx = -1
         inv.forEach((i, x) => {
@@ -317,12 +315,29 @@ export default defineComponent({
       if(!val) {
         this.saveOpsInvConfiguration()
       }
-    }
+    },
+    'e.attributeValues.StartTime': {
+      handler(val) {
+        this.saveOpsInvConfiguration()
+      }
+    },
+    'e.attributeValues.EndTime': {
+      handler(val) {
+        this.saveOpsInvConfiguration()
+      }
+    },
+    'e.attributeValues.EventDate': {
+      handler(val) {
+        this.saveOpsInvConfiguration()
+      }
+    },
   },
   mounted() {
     if(this.e?.attributeValues) {
       if(this.e?.attributeValues.OpsInventory) {
         this.opsInventory = JSON.parse(this.e.attributeValues.OpsInventory)
+        //Verify the quantities requested do not conflict (in case of a date or time change)
+
       }
     }
   },

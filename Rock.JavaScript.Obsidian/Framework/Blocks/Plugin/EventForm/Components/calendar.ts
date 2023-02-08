@@ -37,6 +37,10 @@ export default defineComponent({
         rules: {
             type: Array,
             required: false
+        },
+        disabledDates: {
+            type: Array as PropType<String[]>,
+            required: false
         }
     },
     setup() {
@@ -135,7 +139,7 @@ export default defineComponent({
             if(day.month != this.displayMonth.month) {
                 className += " diff-month"
             }
-            if (day.month != this.displayMonth.month || day < this.startDate || day > this.endDate) {
+            if (day.month != this.displayMonth.month || day < this.startDate || day > this.endDate || this.disabledDates?.includes(day.toFormat("yyyy-MM-dd"))) {
                 className += " disabled"
             } else {
                 if (this.selectedDates.includes(day.toFormat('yyyy-MM-dd'))) {

@@ -1,11 +1,12 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem, DefinedValue, ListItem } from "../../../../ViewModels"
+import { ContentChannelItem, DefinedValue, ListItem, Attribute } from "../../../../ViewModels"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import Validator from "./validator"
 import TimePicker from "./timePicker"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
+import DiscountCodes from "./discountCodes"
 import { DateTime } from "luxon"
 import rules from "../Rules/rules"
 
@@ -19,6 +20,7 @@ export default defineComponent({
       "tcc-time": TimePicker,
       "tcc-switch": Toggle,
       "tcc-date-pkr": DatePicker,
+      "tcc-discount": DiscountCodes
     },
     props: {
       e: {
@@ -34,6 +36,7 @@ export default defineComponent({
         required: false
       },
       ministries: Array as PropType<DefinedValue[]>,
+      discountAttrs: Array as PropType<Attribute[]>,
       showValidation: Boolean,
       refName: String
     },
@@ -106,11 +109,24 @@ export default defineComponent({
       }
     },
     watch: {
-      'e.attributeValues.RegistrationFeeType'(val) {
-        if(val.includes('No Fees')) {
+      'e.attributeValues.RegistrationFeeType'(val, original) {
+        if(val.includes('No Fees') && !original.includes('No Fees')) {
           //Overwrite options and clear out all other choices.
           if(this.e?.attributeValues?.RegistrationFeeType) {
             this.e.attributeValues.RegistrationFeeType = "No Fees"
+          }
+          if(this.e?.attributeValues) {
+            this.e.attributeValues.RegistrationFeeBudgetLine = ""
+            this.e.attributeValues.RegistrationFeeBudgetMinistry = ""
+            this.e.attributeValues.IndividualRegistrationFee = ""
+            this.e.attributeValues.CoupleRegistrationFee = ""
+            this.e.attributeValues.OnlineRegistrationFee = ""
+            this.e.attributeValues.DiscountCodes = ""
+          }
+        } else if(original == "No Fees" && val.includes(",")) {
+          if(this.e?.attributeValues?.RegistrationFeeType) {
+            let items = val.split(",").filter((i: string) => { return i != "No Fees" })
+            this.e.attributeValues.RegistrationFeeType = items.join(",")
           }
         }
       },
@@ -265,6 +281,7 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
+  <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs"></tcc-discount>
   <br/>
   <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
   <div class="row">

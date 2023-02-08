@@ -55,6 +55,7 @@ namespace Rock.Blocks.Plugin.EventForm
     [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     [TextField( "Ops Inventory", "Attribute Key for Ops Inventory", key: AttributeKey.OpsInventory, defaultValue: "OpsInventory", category: "Attributes", order: 9 )]
+    [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 10 )]
     #endregion Block Attributes
 
     public class SubmissionForm : RockObsidianBlockType
@@ -91,6 +92,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public const string StartBuffer = "StartBuffer";
             public const string EndBuffer = "EndBuffer";
             public const string OpsInventory = "OpsInventory";
+            public const string DiscountCodeMatrix = "DiscountCodeMatrix";
         }
 
         /// <summary>
@@ -173,6 +175,11 @@ namespace Rock.Blocks.Plugin.EventForm
                 var inventory = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == inventoryDT.Id );
                 inventory.LoadAttributes();
                 viewModel.inventoryList = inventory.ToList();
+            }
+            string matrixId = GetAttributeValue( AttributeKey.DiscountCodeMatrix );
+            if ( !String.IsNullOrEmpty( matrixId ) )
+            {
+                viewModel.discountCodeAttrs = new AttributeService( context ).Queryable().Where( a => a.EntityTypeQualifierColumn == "AttributeMatrixTemplateId" && a.EntityTypeQualifierValue == matrixId ).ToList().Select( a => a.ToViewModel( null, false ) ).ToList();
             }
 
             return viewModel;
@@ -1380,7 +1387,7 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 message += GetCategoryDetails( "Event Production", "Production Accommodations", item, itemChanges );
             }
-            if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) )
+            if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) || ( itemChanges != null && !String.IsNullOrEmpty( itemChanges.AttributeValues["Notes"].Value ) ) )
             {
                 message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";
                 message += RenderValue( "Notes", item.AttributeValues["Notes"].Value, itemChanges != null ? itemChanges.AttributeValues["Notes"].Value : "" );
@@ -1501,6 +1508,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public List<Rock.Model.DefinedValue> inventoryList { get; set; }
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
+            public List<AttributeViewModel> discountCodeAttrs { get; set; }
         }
 
         public class PreApprovalData

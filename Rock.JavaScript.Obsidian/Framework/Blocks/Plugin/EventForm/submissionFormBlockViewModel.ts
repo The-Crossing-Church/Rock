@@ -1,4 +1,4 @@
-import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, AttributeMatrix, AttributeMatrixItem } from "../../../ViewModels"
+import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, AttributeMatrix, AttributeMatrixItem, Attribute } from "../../../ViewModels"
 
 export type SubmissionFormBlockViewModel = {
     request: ContentChannelItem;
@@ -18,4 +18,5 @@ export type SubmissionFormBlockViewModel = {
     inventoryList: DefinedValue[];
     adminDashboardURL: string;
     userDashboardURL: string;
+    discountCodeAttrs: Attribute[];
 };

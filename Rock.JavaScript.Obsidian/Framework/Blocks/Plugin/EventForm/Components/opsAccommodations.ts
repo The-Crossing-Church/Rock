@@ -311,7 +311,7 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-  <h4 class="text-accent mt-2">Set-Up</h4>
+  <h4 class="text-accent mt-2">Additional Set-Up Details</h4>
   <div class="my-2 setup-table">
     <template v-if="selectedRooms.length == 0">
       <rck-lbl>
