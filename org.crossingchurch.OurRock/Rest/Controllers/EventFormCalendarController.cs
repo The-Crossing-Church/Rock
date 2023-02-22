@@ -29,11 +29,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <summary>
         /// Endpoint to add the main buiding calendar to an external app
         /// </summary>
-        /// <param name="definedTypeId">The Id of the Defined Type for the Event Form Locations list</param>
-        /// <param name="eventCCTId">The Id of the Event Request Content Channel Type</param>
-        /// <param name="detailsCCTId">The Id of the Event Requeuest Content Channel Type</param>
-        /// <param name="eventCCId">The Id of the Event Request Content Channel</param>
-        /// <param name="detailsCCId">The Id of the Event Request Details Content Channel</param>
+        /// <param name="token">The token to authenticate the user</param>
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetMainBuilding" )]
