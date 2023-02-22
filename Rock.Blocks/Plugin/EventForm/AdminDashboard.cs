@@ -39,6 +39,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
     [DefinedTypeField( "Drinks Defined Type", key: AttributeKey.DrinksList, category: "Lists", required: true, order: 3 )]
+    [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 4 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 1 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
@@ -81,6 +82,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public const string BudgetList = "BudgetList";
             public const string MinistryBudgetList = "MinistryBudgetList";
             public const string DrinksList = "DrinksList";
+            public const string InventoryList = "InventoryList";
             public const string SubmissionPage = "SubmissionPage";
             public const string WorkflowEntryPage = "WorkflowEntryPage";
             public const string AdminDashboard = "AdminDashboard";
@@ -155,6 +157,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 Guid ministryGuid = Guid.Empty;
                 Guid budgetLineGuid = Guid.Empty;
                 Guid drinksGuid = Guid.Empty;
+                Guid inventoryGuid = Guid.Empty;
                 var p = GetCurrentPerson();
                 if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
                 {
@@ -182,6 +185,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     var drinks = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == drinkDT.Id );
                     drinks.LoadAttributes();
                     viewModel.drinks = drinks.ToList();
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.InventoryList ), out inventoryGuid ) )
+                {
+                    DefinedType invDT = new DefinedTypeService( rockContext ).Get( inventoryGuid );
+                    var inventory = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == invDT.Id );
+                    inventory.LoadAttributes();
+                    viewModel.inventory = inventory.ToList();
                 }
 
                 //Attributes
@@ -1508,6 +1518,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public List<Rock.Model.DefinedValue> drinks { get; set; }
+            public List<Rock.Model.DefinedValue> inventory { get; set; }
             public AttributeViewModel requestStatus { get; set; }
             public AttributeViewModel requestType { get; set; }
             public string workflowURL { get; set; }

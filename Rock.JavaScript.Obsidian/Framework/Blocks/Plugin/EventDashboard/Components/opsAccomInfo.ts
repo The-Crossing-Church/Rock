@@ -18,6 +18,7 @@ export default defineComponent({
       details: Object,
       rooms: Array,
       drinks: Array,
+      inventory: Array,
       needsCatering: String
     },
     setup() {
@@ -48,7 +49,7 @@ export default defineComponent({
             }
           }
         }
-        return attrs
+        return attrs.sort((a,b) => a.attr.order - b.attr.order)
       }
     },
     methods: {
@@ -89,6 +90,21 @@ export default defineComponent({
             return `${d.value}: ${amount} ${term}` 
           })
         }
+      },
+      getOpsInventory(value: string) {
+        let inv = JSON.parse(value)
+        for(let i=0; i < inv.length; i++) {
+          this.inventory?.forEach((item: any) => {
+            if(item.guid == inv[i].InventoryItem) {
+              if(inv[i].QuantityNeeded > 1) {
+                inv[i].ItemName = item.value + "s"
+              } else {
+                inv[i].ItemName = item.value
+              }
+            }
+          })
+        }
+        return inv
       }
     },
     watch: {
@@ -104,7 +120,7 @@ export default defineComponent({
     <div class="col col-xs-12 col-md-6" v-for="av in opsAttrs">
       <template v-if="av.attr.key =='RoomSetUp'">
         <template v-if="av.changeValue != ''">
-          <div class="row">
+          <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
               <div class="text-red">
@@ -140,23 +156,25 @@ export default defineComponent({
           </div>
         </template>
         <template v-else>
-          <rck-lbl>{{av.attr.name}}</rck-lbl> <br/>
-          <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
-            <template v-if="su.items.length > 0">
-              <b>{{su.room}}: Custom Setup</b> <br/>
-              <div v-for="(i, idx) in su.items" :key="idx">
-                {{i}}
-              </div>
-            </template>
-            <template v-else>
-              <b>{{su.room}}: Standard Setup</b>
-            </template>
+          <div class="mb-2">
+            <rck-lbl>{{av.attr.name}}</rck-lbl> <br/>
+            <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
+              <template v-if="su.items.length > 0">
+                <b>{{su.room}}: Custom Setup</b> <br/>
+                <div v-for="(i, idx) in su.items" :key="idx">
+                  {{i}}
+                </div>
+              </template>
+              <template v-else>
+                <b>{{su.room}}: Standard Setup</b>
+              </template>
+            </div>
           </div>
         </template>
       </template>
       <template v-else-if="av.attr.key == 'Drinks'">
         <template v-if="av.changeValue != ''">
-          <div class="row">
+          <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
               <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
@@ -167,8 +185,34 @@ export default defineComponent({
           </div>
         </template>
         <template v-else>
-          <rck-lbl>{{av.attr.name}}</rck-lbl>
-          <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
+          <div class="mb-2">
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
+          </div>
+        </template>
+      </template>
+      <template v-else-if="av.attr.key == 'OpsInventory'">
+        <template v-if="av.changeValue != ''">
+          <div class="row mb-2">
+            <div class="col col-xs-6">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div class="text-red">
+                {{getOpsInventory(av.value)}}
+              </div>
+            </div>
+            <div class="col col-xs-6">
+              <div class="text-primary" style="padding-top: 18px;">
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="mb-2">
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
+              {{i.QuantityNeeded}} {{i.ItemName}}
+            </div>
+          </div>
         </template>
       </template>
       <template v-else>

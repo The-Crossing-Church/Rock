@@ -98,19 +98,19 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareCateringBudgetLine, e.attributes.ChildcareCateringBudgetLine.name)]" ref="validators_budget">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareCateringBudgetMinistry, e.attributes.ChildcareCateringBudgetMinistry.name)]" ref="validators_budgetmin">
         <rck-field
-          v-model="e.attributeValues.ChildcareCateringBudgetLine"
-          :attribute="e.attributes.ChildcareCateringBudgetLine"
+          v-model="e.attributeValues.ChildcareCateringBudgetMinistry"
+          :attribute="e.attributes.ChildcareCateringBudgetMinistry"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareCateringBudgetMinistry, e.attributes.ChildcareCateringBudgetMinistry.name)]" ref="validators_budgetmin">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareCateringBudgetLine, e.attributes.ChildcareCateringBudgetLine.name)]" ref="validators_budget">
         <rck-field
-          v-model="e.attributeValues.ChildcareCateringBudgetMinistry"
-          :attribute="e.attributes.ChildcareCateringBudgetMinistry"
+          v-model="e.attributeValues.ChildcareCateringBudgetLine"
+          :attribute="e.attributes.ChildcareCateringBudgetLine"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>

@@ -396,6 +396,7 @@ namespace com_thecrossingchurch.LavaFilters
                 tk = tokenHandler.WriteToken( token );
                 if ( p != null )
                 {
+                    p.LoadAttributes();
                     p.SetAttributeValue( "PersonalCalendarToken", tk );
                     p.SaveAttributeValue( "PersonalCalendarToken" );
                 }

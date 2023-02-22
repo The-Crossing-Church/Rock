@@ -51,7 +51,7 @@ export default defineComponent({
             }
           }
         }
-        return attrs
+        return attrs.sort((a,b) => a.attr.order - b.attr.order)
       },
       roomSetUp(): any {
         if(this.details?.attributeValues.RoomSetUp) {

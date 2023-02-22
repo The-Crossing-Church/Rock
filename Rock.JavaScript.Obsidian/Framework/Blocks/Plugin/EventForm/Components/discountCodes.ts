@@ -184,7 +184,7 @@ export default defineComponent({
   },
   template: `
 <rck-lbl class="mt-2">Discount Codes</rck-lbl>
-<div class="setup-table">
+<div class="setup-table mb-2">
   <div class="row">
     <div class="col col-xs-11">
       <template v-if="discountCodes.length > 0">

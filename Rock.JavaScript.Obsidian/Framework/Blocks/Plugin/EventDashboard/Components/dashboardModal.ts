@@ -39,6 +39,7 @@ export default defineComponent({
       request: Object,
       rooms: Array,
       drinks: Array,
+      inventory: Array,
       createdBy: Object,
       modifiedBy: Object,
     },
@@ -494,7 +495,7 @@ export default defineComponent({
           </div>
           <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
           <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks" :needsSpace="request.attributeValues.NeedsSpace"></tcc-catering>
-          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :needsCatering="request.attributeValues.NeedsCatering"></tcc-ops>
+          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="request.attributeValues.NeedsCatering"></tcc-ops>
           <tcc-childcare v-if="request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' )" :details="ci"></tcc-childcare>
           <tcc-registration v-if="request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' )" :details="ci"></tcc-registration>
           <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>

@@ -188,19 +188,19 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
         <rck-field
-          v-model="e.attributeValues.RegistrationFeeBudgetLine"
-          :attribute="e.attributes.RegistrationFeeBudgetLine"
+          v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
+          :attribute="e.attributes.RegistrationFeeBudgetMinistry"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
         <rck-field
-          v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
-          :attribute="e.attributes.RegistrationFeeBudgetMinistry"
+          v-model="e.attributeValues.RegistrationFeeBudgetLine"
+          :attribute="e.attributes.RegistrationFeeBudgetLine"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>
@@ -235,6 +235,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
+  <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs"></tcc-discount>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationEndDate, lastDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end">
@@ -255,7 +256,7 @@ export default defineComponent({
     </div>
   </div>
   <div class="row mt-2">
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'True'">
       <tcc-switch
         v-model="e.attributeValues.NeedsCheckin"
         :label="e.attributes.NeedsCheckin.name"
@@ -281,7 +282,6 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-  <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs"></tcc-discount>
   <br/>
   <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
   <div class="row">

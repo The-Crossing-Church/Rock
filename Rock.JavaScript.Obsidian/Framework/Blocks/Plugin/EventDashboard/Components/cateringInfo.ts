@@ -47,7 +47,7 @@ export default defineComponent({
             }
           }
         }
-        return attrs
+        return attrs.sort((a,b) => a.attr.order - b.attr.order)
       }
     },
     methods: {

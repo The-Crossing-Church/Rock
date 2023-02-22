@@ -197,19 +197,19 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetLine, e.attributes.FoodBudgetLine.name)]" ref="validator_budget">
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetMinistry, e.attributes.FoodBudgetMinistry.name)]" ref="validator_budgetmin">
         <rck-field
-          v-model="e.attributeValues.FoodBudgetLine"
-          :attribute="e.attributes.FoodBudgetLine"
+          v-model="e.attributeValues.FoodBudgetMinistry"
+          :attribute="e.attributes.FoodBudgetMinistry"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetMinistry, e.attributes.FoodBudgetMinistry.name)]" ref="validator_budgetmin">
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetLine, e.attributes.FoodBudgetLine.name)]" ref="validator_budget">
         <rck-field
-          v-model="e.attributeValues.FoodBudgetMinistry"
-          :attribute="e.attributes.FoodBudgetMinistry"
+          v-model="e.attributeValues.FoodBudgetLine"
+          :attribute="e.attributes.FoodBudgetLine"
           :is-edit-mode="true"
         ></rck-field>
       </tcc-validator>

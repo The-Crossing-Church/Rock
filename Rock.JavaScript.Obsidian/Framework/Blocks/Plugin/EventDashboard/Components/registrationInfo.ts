@@ -1,10 +1,13 @@
-import { defineComponent, PropType } from "vue";
+import { defineComponent } from "vue";
 import RockField from "../../../../Controls/rockField"
+import RockLabel from "../../../../Elements/rockLabel"
+import { DateTime } from "luxon"
 
 export default defineComponent({
     name: "EventDashboard.Components.Modal.RegistrationInfo",
     components: {
-      "rck-field": RockField
+      "rck-field": RockField,
+      "rck-lbl": RockLabel
     },
     props: {
       details: Object
@@ -18,7 +21,7 @@ export default defineComponent({
         };
     },
     computed: {
-      onlineAttrs() {
+      regAttrs() {
         let attrs = [] as any[]
         if(this.details?.attributes && this.details.attributeValues) {
           for(let key in this.details.attributes) {
@@ -34,10 +37,30 @@ export default defineComponent({
             }
           }
         }
-        return attrs
+        return attrs.sort((a,b) => a.attr.order - b.attr.order)
       }
     },
     methods: {
+      getDiscountCodes(value: string) {
+        if(value) {
+          return JSON.parse(value)
+        }
+        return []
+      },
+      formatDiscountCodeAmount(value: any) {
+        if(value.CodeType == '$') {
+          return `$${value.Amount}`
+        } else {
+          return `${value.Amount}%`
+        }
+      },
+      formatDiscountCodeDates(value: any) {
+        if(value.EffectiveDateRange) {
+          let dates = value.EffectiveDateRange.split(",")
+          return `(${DateTime.fromFormat(dates[0], "yyyy-MM-dd").toFormat("MM/dd/yyyy")} - ${DateTime.fromFormat(dates[1], "yyyy-MM-dd").toFormat("MM/dd/yyyy")})`
+        }
+        return ""
+      }
     },
     watch: {
       
@@ -49,35 +72,66 @@ export default defineComponent({
 <div>
   <h3 class="text-accent">Registration Information</h3>
   <div class="row">
-    <div class="col col-xs-12 col-md-6" v-for="av in onlineAttrs">
-      <template v-if="av.changeValue != ''">
-        <div class="row">
-          <div class="col col-xs-6">
-            <rck-field
-              v-model="av.value"
-              :attribute="av.attr"
-              class="text-red"
-              :showEmptyValue="true"
-            ></rck-field>
+    <div class="col col-xs-12 col-md-6" v-for="av in regAttrs">
+      <template v-if="av.attr.key == 'DiscountCodes'">
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div class="text-red">
+                <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
+                  <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
+                </div>
+              </div>
+            </div>
+            <div class="col col-xs-6">
+              <div class="text-primary" style="padding-top: 18px;">
+                <div v-for="c in getDiscountCodes(av.changeValue)" :key="c.Code">
+                  <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col col-xs-6">
-            <rck-field
-              v-model="av.changeValue"
-              :attribute="av.attr"
-              class="text-primary"
-              :showEmptyValue="true"
-              :showLabel="false"
-              style="padding-top: 18px;"
-            ></rck-field>
+        </template>
+        <template v-else>
+          <rck-lbl>{{av.attr.name}}</rck-lbl>
+          <div>
+            <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
+              <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <i v-if="c.AutoApply == 'True'" class="fas fa-check-square" style="font-size: 16px;"></i><i v-else class="far fa-square" style="font-size: 16px;"></i>
+            </div>
           </div>
-        </div>
+        </template>
       </template>
       <template v-else>
-        <rck-field
-          v-model="av.value"
-          :attribute="av.attr"
-          :showEmptyValue="true"
-        ></rck-field>
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <rck-field
+                v-model="av.value"
+                :attribute="av.attr"
+                class="text-red"
+                :showEmptyValue="true"
+              ></rck-field>
+            </div>
+            <div class="col col-xs-6">
+              <rck-field
+                v-model="av.changeValue"
+                :attribute="av.attr"
+                class="text-primary"
+                :showEmptyValue="true"
+                :showLabel="false"
+                style="padding-top: 18px;"
+              ></rck-field>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <rck-field
+            v-model="av.value"
+            :attribute="av.attr"
+            :showEmptyValue="true"
+          ></rck-field>
+        </template>
       </template>
     </div>
   </div>
