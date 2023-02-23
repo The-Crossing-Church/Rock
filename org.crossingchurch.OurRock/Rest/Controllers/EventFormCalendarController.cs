@@ -21,6 +21,7 @@ using System.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
+using System.Web;
 
 namespace org.crossingchurch.OurRock.Rest.Controllers
 {
@@ -33,8 +34,9 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetMainBuilding" )]
-        public string GetMainBuilding( string token )
+        public void GetMainBuilding( string token )
         {
+            var x = System.Web.HttpContext.Current;
             if ( String.IsNullOrWhiteSpace( token ) )
             {
                 throw new UnauthorizedAccessException( "403 Unauthorized" );
@@ -44,15 +46,24 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                 if ( ValidateToken( token ) )
                 {
                     List<string> mainBuildingLocations = GlobalAttributesCache.Get().GetValue( "EventFormMainBuildingLocationTypes" ).Split( ',' ).Select( value => value.Trim() ).ToList();
-
-                    return GenerateData( mainBuildingLocations, "Main Building" );
+                    x.Response.Clear();
+                    x.Response.ClearHeaders();
+                    x.Response.ClearContent();
+                    x.Response.ContentType = "text/calendar";
+                    x.Response.Write( GenerateData( mainBuildingLocations, "Main Building" ) );
+                    x.Response.End();
                 }
-                throw new UnauthorizedAccessException( "403 Unauthorized" );
+                else
+                {
+                    throw new UnauthorizedAccessException( "403 Unauthorized" );
+                }
             }
             catch ( Exception ex )
             {
                 ExceptionLogService.LogException( ex );
-                return $"API Error: {ex.Message}\r\n{ex.StackTrace}";
+                x.Response.StatusCode = 500;
+                x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
+                x.Response.End();
             }
         }
 
@@ -126,6 +137,10 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             );
 
             Calendar c = new Calendar();
+            var vtz = VTimeZone.FromLocalTimeZone();
+            c.AddTimeZone( vtz );
+            var timeZoneId = vtz.TzId;
+
             for ( var i = 0; i < eventList.Count(); i++ )
             {
                 var details = eventDetails.Where( ed => eventList[i].ChildItems.Select( ci => ci.ChildContentChannelItemId ).Contains( ed.Id ) ).ToList();
@@ -142,8 +157,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                         if ( !String.IsNullOrEmpty( startTime ) && !String.IsNullOrEmpty( endTime ) )
                         {
                             dates[k] = new DateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( startTime.Split( ':' )[0] ), Int32.Parse( startTime.Split( ':' )[1] ), 0 );
-                            e.Start = new CalDateTime( dates[k] );
-                            e.End = new CalDateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( endTime.Split( ':' )[0] ), Int32.Parse( endTime.Split( ':' )[1] ), 0 );
+                            e.Start = new CalDateTime( dates[k], timeZoneId );
+                            e.End = new CalDateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( endTime.Split( ':' )[0] ), Int32.Parse( endTime.Split( ':' )[1] ), 0, timeZoneId );
                             var roomGuids = details[h].GetAttributeValue( "Rooms" ).Split( ',' ).ToList();
                             e.Location = String.Join( ", ", roomList.Where( dv => roomGuids.Contains( dv.Guid.ToString() ) ).Select( dv => dv.Value ) );
                             c.Events.Add( e );
