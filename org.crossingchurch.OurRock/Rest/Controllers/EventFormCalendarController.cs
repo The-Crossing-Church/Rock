@@ -33,11 +33,11 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetMainBuilding" )]
-        public IHttpActionResult GetMainBuilding( string token )
+        public string GetMainBuilding( string token )
         {
             if ( String.IsNullOrWhiteSpace( token ) )
             {
-                return BadRequest( "403 Unauthorized" );
+                throw new UnauthorizedAccessException( "403 Unauthorized" );
             }
             try
             {
@@ -45,14 +45,14 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                 {
                     List<string> mainBuildingLocations = GlobalAttributesCache.Get().GetValue( "EventFormMainBuildingLocationTypes" ).Split( ',' ).Select( value => value.Trim() ).ToList();
 
-                    return Ok( GenerateData( mainBuildingLocations, "Main Building" ) );
+                    return GenerateData( mainBuildingLocations, "Main Building" );
                 }
-                return BadRequest( "403 Unauthorized" );
+                throw new UnauthorizedAccessException( "403 Unauthorized" );
             }
             catch ( Exception ex )
             {
                 ExceptionLogService.LogException( ex );
-                return BadRequest( ex.Message );
+                return $"API Error: {ex.Message}\r\n{ex.StackTrace}";
             }
         }
 
@@ -126,7 +126,6 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             );
 
             Calendar c = new Calendar();
-            c.Name = calName;
             for ( var i = 0; i < eventList.Count(); i++ )
             {
                 var details = eventDetails.Where( ed => eventList[i].ChildItems.Select( ci => ci.ChildContentChannelItemId ).Contains( ed.Id ) ).ToList();
@@ -137,7 +136,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                     for ( var k = 0; k < dates.Count(); k++ )
                     {
                         Event e = new Event();
-                        e.Name = eventList[i].Title;
+                        e.Summary = eventList[i].Title;
                         string startTime = details[h].GetAttributeValue( "StartTime" );
                         string endTime = details[h].GetAttributeValue( "EndTime" );
                         if ( !String.IsNullOrEmpty( startTime ) && !String.IsNullOrEmpty( endTime ) )
