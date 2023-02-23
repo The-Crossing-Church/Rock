@@ -51,6 +51,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             }
             catch ( Exception ex )
             {
+                ExceptionLogService.LogException( ex );
                 return BadRequest( ex.Message );
             }
         }
