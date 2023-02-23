@@ -140,12 +140,15 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                         e.Name = eventList[i].Title;
                         string startTime = details[h].GetAttributeValue( "StartTime" );
                         string endTime = details[h].GetAttributeValue( "EndTime" );
-                        dates[k] = new DateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( startTime.Split( ':' )[0] ), Int32.Parse( startTime.Split( ':' )[1] ), 0 );
-                        e.Start = new CalDateTime( dates[k] );
-                        e.End = new CalDateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( endTime.Split( ':' )[0] ), Int32.Parse( endTime.Split( ':' )[1] ), 0 );
-                        var roomGuids = details[h].GetAttributeValue( "Rooms" ).Split( ',' ).ToList();
-                        e.Location = String.Join( ", ", roomList.Where( dv => roomGuids.Contains( dv.Guid.ToString() ) ).Select( dv => dv.Value ) );
-                        c.Events.Add( e );
+                        if ( !String.IsNullOrEmpty( startTime ) && !String.IsNullOrEmpty( endTime ) )
+                        {
+                            dates[k] = new DateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( startTime.Split( ':' )[0] ), Int32.Parse( startTime.Split( ':' )[1] ), 0 );
+                            e.Start = new CalDateTime( dates[k] );
+                            e.End = new CalDateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( endTime.Split( ':' )[0] ), Int32.Parse( endTime.Split( ':' )[1] ), 0 );
+                            var roomGuids = details[h].GetAttributeValue( "Rooms" ).Split( ',' ).ToList();
+                            e.Location = String.Join( ", ", roomList.Where( dv => roomGuids.Contains( dv.Guid.ToString() ) ).Select( dv => dv.Value ) );
+                            c.Events.Add( e );
+                        }
                     }
                 }
             }
