@@ -1516,6 +1516,57 @@ namespace Rock.Blocks.Plugin.EventForm
                 }
                 else if ( key == DiscountCodeKey )
                 {
+                    List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
+                    List<DiscountCodeSetUp> currentSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( current );
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            string dates = "";
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].EffectiveDateRange ) )
+                            {
+                                dates = String.Join( " - ", originalSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
+                            }
+                            if ( originalSetUp[i].CodeType == "$" )
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
+                            else
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].Amount}{originalSetUp[i].CodeType}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul> <ul style='color: #347689;'>";
+                    if ( currentSetUp != null )
+                    {
+                        for ( int i = 0; i < currentSetUp.Count(); i++ )
+                        {
+                            string dates = "";
+                            if ( !String.IsNullOrEmpty( currentSetUp[i].EffectiveDateRange ) )
+                            {
+                                dates = String.Join( " - ", currentSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
+                            }
+                            if ( currentSetUp[i].CodeType == "$" )
+                            {
+                                message += $"<li>{currentSetUp[i].Code}: {currentSetUp[i].CodeType}{currentSetUp[i].Amount}, Auto-Apply: {currentSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {currentSetUp[i].MaxUses}</li>";
+                            }
+                            else
+                            {
+                                message += $"<li>{currentSetUp[i].Code}: {currentSetUp[i].Amount}{currentSetUp[i].CodeType}, Auto-Apply: {currentSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {currentSetUp[i].MaxUses}</li>";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul>";
 
                 }
                 else
@@ -1567,7 +1618,19 @@ namespace Rock.Blocks.Plugin.EventForm
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
                         {
-                            message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {originalSetUp[i].EffectiveDateRange}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            string dates = "";
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].EffectiveDateRange ) )
+                            {
+                                dates = String.Join( " - ", originalSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
+                            }
+                            if ( originalSetUp[i].CodeType == "$" )
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
+                            else
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].Amount}{originalSetUp[i].CodeType}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
                         }
                     }
                     message += "</ul>";

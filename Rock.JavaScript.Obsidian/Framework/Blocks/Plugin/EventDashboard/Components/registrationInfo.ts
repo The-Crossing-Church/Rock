@@ -60,6 +60,12 @@ export default defineComponent({
           return `(${DateTime.fromFormat(dates[0], "yyyy-MM-dd").toFormat("MM/dd/yyyy")} - ${DateTime.fromFormat(dates[1], "yyyy-MM-dd").toFormat("MM/dd/yyyy")})`
         }
         return ""
+      },
+      formatDiscountCodeMaxUses(value: any) {
+        if(value.MaxUses) {
+          return `Max Uses: ${value.MaxUses}`
+        }
+        return ""
       }
     },
     watch: {
@@ -97,7 +103,7 @@ export default defineComponent({
           <rck-lbl>{{av.attr.name}}</rck-lbl>
           <div>
             <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
-              <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <i v-if="c.AutoApply == 'True'" class="fas fa-check-square" style="font-size: 16px;"></i><i v-else class="far fa-square" style="font-size: 16px;"></i>
+              <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <template v-if="c.AutoApply == 'True'"><i class="fas fa-check-square" style="font-size: 16px;"></i> Auto Apply</template> {{formatDiscountCodeMaxUses(c)}}
             </div>
           </div>
         </template>
