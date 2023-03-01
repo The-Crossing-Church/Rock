@@ -22,6 +22,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Web;
+using Ical.Net.Interfaces.General;
+using Ical.Net.General;
 
 namespace org.crossingchurch.OurRock.Rest.Controllers
 {
@@ -137,8 +139,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             );
 
             Calendar c = new Calendar();
-            c.AddProperty( "X-PUBLISHED-TTL", "PT10M" );
-            c.AddProperty( "REFRESH-INTERVAL", "VALUE=DURATION:PT10M" );
+            c.AddProperty( "X-PUBLISHED-TTL", "P10M" );
+            c.AddProperty( "REFRESH-INTERVAL;VALUE=DURATION", "P10M" );
             var vtz = VTimeZone.FromLocalTimeZone();
             c.AddTimeZone( vtz );
             var timeZoneId = vtz.TzId;
