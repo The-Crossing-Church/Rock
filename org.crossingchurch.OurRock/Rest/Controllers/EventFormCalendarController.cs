@@ -146,22 +146,32 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                 var details = eventDetails.Where( ed => eventList[i].ChildItems.Select( ci => ci.ChildContentChannelItemId ).Contains( ed.Id ) ).ToList();
                 details.LoadAttributes();
                 List<DateTime> dates = eventList[i].GetAttributeValue( "EventDates" ).Split( ',' ).Select( d => DateTime.Parse( d.Trim() ) ).ToList();
+                string contact = eventList[i].GetAttributeValue( "Contact" );
                 for ( var h = 0; h < details.Count(); h++ )
                 {
-                    for ( var k = 0; k < dates.Count(); k++ )
+                    var roomGuids = details[h].GetAttributeValue( "Rooms" ).Split( ',' ).ToList();
+                    string eventLocation = String.Join( ", ", roomList.Where( dv => roomGuids.Contains( dv.Guid.ToString() ) ).Select( dv => dv.Value ) );
+                    string startTime = details[h].GetAttributeValue( "StartTime" );
+                    string endTime = details[h].GetAttributeValue( "EndTime" );
+                    string startBuffer = details[h].GetAttributeValue( "StartBuffer" );
+                    string endBuffer = details[h].GetAttributeValue( "EndBuffer" );
+                    if ( !String.IsNullOrEmpty( startTime ) && !String.IsNullOrEmpty( endTime ) )
                     {
-                        Event e = new Event();
-                        e.Summary = eventList[i].Title;
-                        string startTime = details[h].GetAttributeValue( "StartTime" );
-                        string endTime = details[h].GetAttributeValue( "EndTime" );
-                        if ( !String.IsNullOrEmpty( startTime ) && !String.IsNullOrEmpty( endTime ) )
+                        if ( eventList[i].GetAttributeValue( "IsSame" ) == "False" )
                         {
-                            dates[k] = new DateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( startTime.Split( ':' )[0] ), Int32.Parse( startTime.Split( ':' )[1] ), 0 );
-                            e.Start = new CalDateTime( dates[k], timeZoneId );
-                            e.End = new CalDateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( endTime.Split( ':' )[0] ), Int32.Parse( endTime.Split( ':' )[1] ), 0, timeZoneId );
-                            var roomGuids = details[h].GetAttributeValue( "Rooms" ).Split( ',' ).ToList();
-                            e.Location = String.Join( ", ", roomList.Where( dv => roomGuids.Contains( dv.Guid.ToString() ) ).Select( dv => dv.Value ) );
+                            DateTime eventDate = DateTime.Parse( details[h].GetAttributeValue( "EventDate" ) );
+                            Event e = GenerateEvent( eventDate, startTime, endTime, startBuffer, endBuffer, eventLocation, eventList[i].Title, contact, timeZoneId );
                             c.Events.Add( e );
+                        }
+                        else
+                        {
+                            for ( var k = 0; k < dates.Count(); k++ )
+                            {
+                                dates[k] = new DateTime( dates[k].Year, dates[k].Month, dates[k].Day, Int32.Parse( startTime.Split( ':' )[0] ), Int32.Parse( startTime.Split( ':' )[1] ), 0 );
+                                Event e = GenerateEvent( dates[k], startTime, endTime, startBuffer, endBuffer, eventLocation, eventList[i].Title, contact, timeZoneId );
+                                c.Events.Add( e );
+
+                            }
                         }
                     }
                 }
@@ -169,6 +179,38 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             var iCalSerializer = new CalendarSerializer();
             string result = iCalSerializer.SerializeToString( c );
             return result;
+        }
+
+        private Event GenerateEvent( DateTime eventDate, string startTime, string endTime, string startBuffer, string endBuffer, string location, string summary, string contact, string timeZoneId )
+        {
+            Event e = new Event();
+            e.Summary = summary;
+            eventDate = new DateTime( eventDate.Year, eventDate.Month, eventDate.Day, Int32.Parse( startTime.Split( ':' )[0] ), Int32.Parse( startTime.Split( ':' )[1] ), 0 );
+            DateTime eventEnd = new DateTime( eventDate.Year, eventDate.Month, eventDate.Day, Int32.Parse( endTime.Split( ':' )[0] ), Int32.Parse( endTime.Split( ':' )[1] ), 0 );
+            e.Start = new CalDateTime( eventDate, timeZoneId );
+            e.End = new CalDateTime( eventEnd, timeZoneId );
+            if ( !String.IsNullOrEmpty( startBuffer ) )
+            {
+                int buffer;
+                if ( Int32.TryParse( startBuffer, out buffer ) )
+                {
+                    e.Start = e.Start.AddMinutes( buffer * -1 );
+                }
+            }
+            if ( !String.IsNullOrEmpty( endBuffer ) )
+            {
+                int buffer;
+                if ( Int32.TryParse( endBuffer, out buffer ) )
+                {
+                    e.End = e.End.AddMinutes( buffer );
+                }
+            }
+            if ( !String.IsNullOrEmpty( startBuffer ) || !String.IsNullOrEmpty( endBuffer ) )
+            {
+                e.Description = summary + " officially runs " + eventDate.ToString( "hh:mm tt" ) + " to " + eventEnd.ToString( "hh:mm tt" ) + " and is reserved longer for set up and tear down.";
+            }
+            e.Location = location;
+            return e;
         }
 
         private bool ValidateToken( string token )
