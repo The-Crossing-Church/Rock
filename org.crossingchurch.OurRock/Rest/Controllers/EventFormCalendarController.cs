@@ -137,6 +137,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             );
 
             Calendar c = new Calendar();
+            c.AddProperty( "X-PUBLISHED-TTL", "PT10M" );
+            c.AddProperty( "REFRESH-INTERVAL", "VALUE=DURATION:PT10M" );
             var vtz = VTimeZone.FromLocalTimeZone();
             c.AddTimeZone( vtz );
             var timeZoneId = vtz.TzId;
