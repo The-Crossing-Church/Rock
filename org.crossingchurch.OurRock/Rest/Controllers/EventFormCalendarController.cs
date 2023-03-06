@@ -24,6 +24,7 @@ using System.Net.Http;
 using System.Web;
 using Ical.Net.Interfaces.General;
 using Ical.Net.General;
+using Rock.Attribute;
 
 namespace org.crossingchurch.OurRock.Rest.Controllers
 {
@@ -45,7 +46,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             }
             try
             {
-                if ( ValidateToken( token ) )
+                int userid;
+                if ( ValidateToken( token, out userid ) )
                 {
                     List<string> mainBuildingLocations = GlobalAttributesCache.Get().GetValue( "EventFormMainBuildingLocationTypes" ).Split( ',' ).Select( value => value.Trim() ).ToList();
                     x.Response.Clear();
@@ -69,7 +71,89 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             }
         }
 
-        private string GenerateData( List<string> locations, string calName )
+        /// <summary>
+        /// Endpoint to add the student center calendar to an external app
+        /// </summary>
+        /// <param name="token">The token to authenticate the user</param>
+        /// <returns></returns>
+        [HttpGet]
+        [System.Web.Http.Route( "api/EventForm/GetStudentCenter" )]
+        public void GetStudentCenter( string token )
+        {
+            var x = System.Web.HttpContext.Current;
+            if ( String.IsNullOrWhiteSpace( token ) )
+            {
+                throw new UnauthorizedAccessException( "403 Unauthorized" );
+            }
+            try
+            {
+                int userid;
+                if ( ValidateToken( token, out userid ) )
+                {
+                    List<string> studentCenterLocations = GlobalAttributesCache.Get().GetValue( "EventFormStudentCenterLocationTypes" ).Split( ',' ).Select( value => value.Trim() ).ToList();
+                    x.Response.Clear();
+                    x.Response.ClearHeaders();
+                    x.Response.ClearContent();
+                    x.Response.ContentType = "text/calendar";
+                    x.Response.Write( GenerateData( studentCenterLocations, "Student Center" ) );
+                    x.Response.End();
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException( "403 Unauthorized" );
+                }
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex );
+                x.Response.StatusCode = 500;
+                x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
+                x.Response.End();
+            }
+        }
+
+        /// <summary>
+        /// Endpoint to add the outdoor calendar to an external app
+        /// </summary>
+        /// <param name="token">The token to authenticate the user</param>
+        /// <returns></returns>
+        [HttpGet]
+        [System.Web.Http.Route( "api/EventForm/GetOutdoor" )]
+        public void GetOutdoor( string token )
+        {
+            var x = System.Web.HttpContext.Current;
+            if ( String.IsNullOrWhiteSpace( token ) )
+            {
+                throw new UnauthorizedAccessException( "403 Unauthorized" );
+            }
+            try
+            {
+                int userid;
+                if ( ValidateToken( token, out userid ) )
+                {
+                    List<string> outdoorLocations = GlobalAttributesCache.Get().GetValue( "EventFormOutdoorLocationTypes" ).Split( ',' ).Select( value => value.Trim() ).ToList();
+                    x.Response.Clear();
+                    x.Response.ClearHeaders();
+                    x.Response.ClearContent();
+                    x.Response.ContentType = "text/calendar";
+                    x.Response.Write( GenerateData( outdoorLocations, "Outdoor Spaces" ) );
+                    x.Response.End();
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException( "403 Unauthorized" );
+                }
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex );
+                x.Response.StatusCode = 500;
+                x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
+                x.Response.End();
+            }
+        }
+
+        private string GenerateData( List<string> locations, string calName, bool filterEvents = false, int userid = 0 )
         {
             Guid? definedTypeGuid = GlobalAttributesCache.Get().GetValue( "EventFormLocations" ).AsGuidOrNull();
             Guid? eventCCTGuid = GlobalAttributesCache.Get().GetValue( "EventRequestContentChannelType" ).AsGuidOrNull();
@@ -98,6 +182,20 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                 e => e.Id,
                 ( es, e ) => es
             );
+
+            if ( filterEvents )
+            {
+                Person p = new PersonService( context ).Get( userid );
+                //Filter to User's events and events that have been shared with them
+                //events = events.Where( cci =>
+                //{
+                //    if ( cci.CreatedByPersonAliasId == p.PrimaryAliasId )
+                //    {
+                //        return true;
+                //    }
+
+                //} );
+            }
 
             DateTime today = RockDateTime.Now.SundayDate();
             DateTime twoWeeksBack = today.AddDays( -14 );
@@ -132,15 +230,27 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
 
             var roomsAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierValue == detailsCCTId.ToString() && a.Key == "Rooms" );
             List<DefinedValue> roomList = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == definedTypeId ).ToList();
-            var rooms = av_svc.Queryable().Where( av => av.AttributeId == roomsAttr.Id ).ToList().Join( eventDetails,
+            roomList.LoadAttributes();
+            roomList = roomList.Where( dv => locations.Contains( dv.GetAttributeValue( "Type" ) ) ).ToList();
+            List<string> locationRoomGuids = roomList.Select( dv => dv.Guid.ToString() ).ToList();
+            eventDetails = av_svc.Queryable().Where( av => av.AttributeId == roomsAttr.Id ).ToList().Where( av =>
+             {
+                 List<string> guids = av.Value.Split( ',' ).ToList();
+                 if ( guids.Intersect( locationRoomGuids ).Count() > 0 )
+                 {
+                     return true;
+                 }
+                 return false;
+             } ).Join( eventDetails,
                 er => er.EntityId,
                 ed => ed.Id,
-                ( er, ed ) => er
-            );
+                ( er, ed ) => ed
+            ).ToList();
 
             Calendar c = new Calendar();
-            c.AddProperty( "X-PUBLISHED-TTL", "P10M" );
-            c.AddProperty( "REFRESH-INTERVAL;VALUE=DURATION", "P10M" );
+            c.AddProperty( "X-PUBLISHED-TTL", "PT1H" );
+            c.AddProperty( "REFRESH-INTERVAL;VALUE=DURATION", "PT1H" );
+            c.AddProperty( "X-WR-CALNAME", calName );
             var vtz = VTimeZone.FromLocalTimeZone();
             c.AddTimeZone( vtz );
             var timeZoneId = vtz.TzId;
@@ -217,7 +327,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             return e;
         }
 
-        private bool ValidateToken( string token )
+        private bool ValidateToken( string token, out int userid )
         {
             RockContext context = new RockContext();
             var secret = Encoding.ASCII.GetBytes( GlobalAttributesCache.Get().GetValue( "EventFormCalendarSecret" ) );
@@ -229,6 +339,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             }
             if ( token == null )
             {
+                userid = -1;
                 return false;
             }
 
@@ -257,6 +368,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                 {
                     throw new UnauthorizedAccessException( "Invalid Token" );
                 }
+                userid = userId;
                 return true;
             }
             throw new UnauthorizedAccessException( "Only staff can view this calendar" );
