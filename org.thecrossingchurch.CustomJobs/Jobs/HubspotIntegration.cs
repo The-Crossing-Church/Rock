@@ -118,11 +118,15 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             props = props.Where( p => p.groupName == "rock_information" ).ToList();
             //Business Unit hs_all_assigned_business_unit_ids
             //Save a list of the ones that are Rock attributes
-            var attrs = props.Where( p => !p.label.Contains( "Rock " ) ).ToList();
+            var attrs = props.Where( p => p.label.Contains( "Rock Attribute " ) ).ToList();
             RockContext _context = new RockContext();
             List<string> attrKeys = attrs.Select( hs => hs.name ).ToList();
             var rockAttributes = new AttributeService( _context ).Queryable().Where( a => a.EntityTypeId == 15 && attrKeys.Contains( a.Key.ToLower() ) );
-            var rockAttributeValues = new AttributeValueService( _context ).Queryable().Where( av => rockAttributes.Select( a => a.Id ).Contains( av.AttributeId ) );
+            var rockAttributeValues = new AttributeValueService( _context ).Queryable().Join( rockAttributes,
+                    av => av.AttributeId,
+                    attr => attr.Id,
+                    ( av, attr ) => av
+                );
             foreach ( var av in rockAttributeValues )
             {
                 av.Attribute = rockAttributes.FirstOrDefault( a => a.Id == av.AttributeId );
@@ -266,26 +270,27 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         //Build the POST request and schedule in the db 10 at a time 
                         var url = $"https://api.hubapi.com/crm/v3/objects/contacts/{contacts_with_email[i].id}";
                         var properties = new List<HubspotPropertyUpdate>();
-                        var personAttributes = rockAttributeValues.Where( av => av.EntityId == person.Id );
+                        var personAttributes = rockAttributeValues.Where( av => av.EntityId == person.Id ).ToList();
                         //Add each Rock prop to the list with the Hubspot name
                         for ( var j = 0; j < attrs.Count(); j++ )
                         {
                             AttributeValue current_prop = null;
                             try
                             {
-                                current_prop = personAttributes.FirstOrDefault( av => av.Attribute.Key.ToLower() == attrs[j].name );
+                                current_prop = personAttributes.FirstOrDefault( av => "Rock Attribute " + av.Attribute.Key == attrs[j].label );
                                 if ( current_prop == null )
                                 {
                                     //Try to get default value for this attr
-                                    var rockAttr = rockAttributes.FirstOrDefault( a => a.Key.ToLower() == attrs[j].name );
+                                    var rockAttr = rockAttributes.ToList().FirstOrDefault( a => "Rock Attribute " + a.Key == attrs[j].label );
                                     if ( rockAttr != null )
                                     {
-                                        current_prop = new AttributeValue() { Value = rockAttr.DefaultValue, AttributeId = rockAttr.Id };
+                                        current_prop = new AttributeValue() { Value = rockAttr.DefaultValue, AttributeId = rockAttr.Id, Attribute = rockAttr };
                                     }
                                 }
                             }
-                            catch
+                            catch ( Exception e )
                             {
+                                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Property Name{Environment.NewLine}{attrs[j].label}{Environment.NewLine}Exception from Job:{Environment.NewLine}{e.Message}{Environment.NewLine}" ) );
                                 current_prop = null;
                             }
                             //If the attribute is in our list of props from Hubspot
@@ -303,6 +308,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                         properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = d.ToString() } );
                                     }
                                 }
+                                else if ( current_prop.Attribute.FieldType.Name == "Lava" )
+                                {
+                                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
+                                    mergeFields.Add( "Entity", person );
+                                    var renderedLavaValue = current_prop.Value.ResolveMergeFields( mergeFields ).Trim();
+                                    properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = renderedLavaValue } );
+                                }
                                 else
                                 {
                                     properties.Add( new HubspotPropertyUpdate() { property = attrs[j].name, value = current_prop.ValueFormatted } );
@@ -310,10 +322,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                         }
                         //All properties begining with "Rock " are properties on the Person entity itself 
-                        var person_props = props.Where( p => p.label.Contains( "Rock " ) ).ToList();
+                        var person_props = props.Where( p => p.label.Contains( "Rock Property " ) ).ToList();
                         foreach ( PropertyInfo propInfo in person.GetType().GetProperties() )
                         {
-                            var current_prop = props.FirstOrDefault( p => p.label == "Rock " + propInfo.Name );
+                            var current_prop = props.FirstOrDefault( p => p.label == "Rock Property " + propInfo.Name );
                             if ( current_prop != null && propInfo.GetValue( person ) != null )
                             {
                                 if ( propInfo.PropertyType.FullName == "Rock.Model.DefinedValue" )
@@ -350,7 +362,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         if ( person.PrimaryFamily.Members.FirstOrDefault( gm => gm.PersonId == person.Id ).GroupRole.Name == "Adult" )
                         {
                             //Direct Family Members
-                            var child_ages_prop = props.FirstOrDefault( p => p.label == "Children's Age Groups" );
+                            var child_ages_prop = props.FirstOrDefault( p => p.label == "Rock Custom Children's Age Groups" );
                             var children = person.PrimaryFamily.Members.Where( gm => gm.Person != null && gm.Person.AgeClassification == AgeClassification.Child ).ToList();
                             var agegroups = "";
                             //Known Relationships
@@ -434,7 +446,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             //All current groups with the words Small Group, SG or Purpose == Small Group
                             var current_sg = memberships.Where( m => m.Group.Name.ToLower().Contains( "small group" ) || m.Group.Name.ToLower().Contains( "sg" ) || ( m.Group.GroupType.GroupTypePurposeValue != null && m.Group.GroupType.GroupTypePurposeValue.Value == "Small Group" ) ).ToList();
 
-                            var serving_prop = props.FirstOrDefault( p => p.label == "Currently Serving" );
+                            var serving_prop = props.FirstOrDefault( p => p.label == "Rock Custom Currently Serving" );
                             var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
                             Console.WriteLine( "x" );
                             //set the serving prop
@@ -458,15 +470,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                                 foreach ( var sg in current_sg )
                                 {
-                                    var small_group = sg_props.FirstOrDefault( p => p.label == "Currently in Adult Small Group" );
-                                    Console.WriteLine( "x" );
+                                    var small_group = sg_props.FirstOrDefault( p => p.label == "Rock Custom Currently in Adult Small Group" );
                                     if ( sg.Group.ParentGroup.Name.ToLower().Contains( "veritas" ) )
                                     {
-                                        small_group = sg_props.FirstOrDefault( p => p.label == "Currently in Veritas Small Group" );
+                                        small_group = sg_props.FirstOrDefault( p => p.label == "Rock Custom Currently in Veritas Small Group" );
                                     }
                                     else if ( sg.Group.ParentGroup.Name.ToLower().Contains( "twenties" ) )
                                     {
-                                        small_group = sg_props.FirstOrDefault( p => p.label == "Currently in Twenties Small Group" );
+                                        small_group = sg_props.FirstOrDefault( p => p.label == "Rock Custom Currently in Twenties Small Group" );
                                     }
 
                                     var exists = properties.FirstOrDefault( p => p.property == small_group.name );
@@ -510,7 +521,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         if ( alreadyKnown == "True" )
                         {
                             //Update the bucket prop to false since they are no longer in the potential matches, but actually matched.
-                            var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
+                            var bucket_prop = props.FirstOrDefault( p => p.label == "Rock Custom Has Potential Rock Match" );
                             properties.Add( new HubspotPropertyUpdate() { property = bucket_prop.name, value = "False" } );
                         }
                         MakeRequest( current_id, url, properties, 0 );
@@ -518,8 +529,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     }
                     catch ( Exception err )
                     {
-                        HttpContext context2 = HttpContext.Current;
-                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{err}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Job:{Environment.NewLine}{err.Message}{Environment.NewLine}" ), context2 );
+                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{err}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Job:{Environment.NewLine}{err.Message}{Environment.NewLine}" ) );
                     }
                 }
                 else
@@ -530,7 +540,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         if ( alreadyKnown != "True" )
                         {
                             //We don't have an exact match but we have guesses, so update Hubspot to reflect that.
-                            var bucket_prop = props.FirstOrDefault( p => p.label == "Has Potential Rock Match" );
+                            var bucket_prop = props.FirstOrDefault( p => p.label == "Rock Custom Has Potential Rock Match" );
                             var properties = new List<HubspotPropertyUpdate>() { new HubspotPropertyUpdate() { property = bucket_prop.name, value = "True" } };
                             var url = $"https://api.hubapi.com/crm/v3/objects/contacts/{contacts_with_email[i].id}";
                             MakeRequest( current_id, url, properties, 0 );
@@ -564,9 +574,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
             catch ( Exception e )
             {
-                HttpContext context2 = HttpContext.Current;
                 var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Request:{Environment.NewLine}{e.Message}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ), context2 );
+                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Request:{Environment.NewLine}{e.Message}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ) );
             }
         }
 
