@@ -113,6 +113,47 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         }
 
         /// <summary>
+        /// Endpoint to add the student center calendar to an external app
+        /// </summary>
+        /// <param name="token">The token to authenticate the user</param>
+        /// <returns></returns>
+        [HttpGet]
+        [System.Web.Http.Route( "api/EventForm/GetGym" )]
+        public void GetGym( string token )
+        {
+            var x = System.Web.HttpContext.Current;
+            if ( String.IsNullOrWhiteSpace( token ) )
+            {
+                throw new UnauthorizedAccessException( "403 Unauthorized" );
+            }
+            try
+            {
+                int userid;
+                if ( ValidateToken( token, out userid ) )
+                {
+                    List<string> studentCenterLocations = GlobalAttributesCache.Get().GetValue( "EventFormGymLocationTypes" ).Split( ',' ).Select( value => value.Trim() ).ToList();
+                    x.Response.Clear();
+                    x.Response.ClearHeaders();
+                    x.Response.ClearContent();
+                    x.Response.ContentType = "text/calendar";
+                    x.Response.Write( GenerateData( studentCenterLocations, "Gym" ) );
+                    x.Response.End();
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException( "403 Unauthorized" );
+                }
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex );
+                x.Response.StatusCode = 500;
+                x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
+                x.Response.End();
+            }
+        }
+
+        /// <summary>
         /// Endpoint to add the outdoor calendar to an external app
         /// </summary>
         /// <param name="token">The token to authenticate the user</param>
