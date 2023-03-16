@@ -633,7 +633,7 @@ export default defineComponent({
   </div>
 </div>
 <a-modal v-model:visible="modal" width="80%" :closable="false">
-  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :createdBy="createdBy" :modifiedBy="modifiedBy" v-on:openrequest="selectItem"></tcc-details>
+  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" v-on:openrequest="selectItem"></tcc-details>
   <template v-if="selected.comments && selected.comments.length > 0">
     <h3 class="text-accent">Comments</h3>
     <div>

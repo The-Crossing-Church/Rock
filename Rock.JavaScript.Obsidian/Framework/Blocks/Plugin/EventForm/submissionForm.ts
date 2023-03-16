@@ -19,6 +19,7 @@ import BasicInfo from "./Components/basicInfo"
 import CCCatering from "./Components/childcareCatering"
 import EventTime from "./Components/eventTime"
 import DatePicker from "./Components/datePicker"
+import EventBuffer from "./Components/eventBuffer"
 import { DateTime, Duration } from "luxon"
 import RockLabel from "../../../Elements/rockLabel"
 import RockField from "../../../Controls/rockField"
@@ -61,6 +62,7 @@ export default defineComponent({
       "tcc-web-cal": WebCal,
       "tcc-prod-tech": ProdTech,
       "tcc-event-time": EventTime,
+      "tcc-buffer": EventBuffer,
       "tcc-date-pkr": DatePicker,
       "rck-lbl": RockLabel,
       "rck-field": RockField
@@ -298,7 +300,11 @@ export default defineComponent({
       }
     },
     formatDate(date: string) {
-      return DateTime.fromFormat(date, 'yyyy-MM-dd').toFormat("MM/dd/yyyy")
+      let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
+      if(!dt.isValid) {
+        dt = DateTime.fromISO(date)
+      }
+      return dt.toFormat("MM/dd/yyyy")
     },
     saveDraft() {
       if(this.viewModel) {
@@ -817,6 +823,14 @@ export default defineComponent({
           }
         })
       }
+      this.matchMultiEvent()
+      let selectedIdx = -1 
+      this.viewModel?.events.forEach((e: any, idx: number) => {
+        if(e.attributeValues.EventDate == this.changeDateReplacement) {
+          selectedIdx = idx
+        }
+      })
+      this.jumpTo(selectedIdx + 2)
       this.changeDateModal = false
     }
   },
@@ -1117,33 +1131,7 @@ export default defineComponent({
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
           <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
-          <div class="row" v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)">
-            <div class="col col-xs-12 col-md-6">
-              <rck-field
-                v-model="e.attributeValues.StartBuffer"
-                :attribute="e.attributes.StartBuffer"
-                :is-edit-mode="true"
-              ></rck-field>
-            </div>
-            <div class="col col-xs-12 col-md-6">
-              <rck-field
-                v-model="e.attributeValues.EndBuffer"
-                :attribute="e.attributes.EndBuffer"
-                :is-edit-mode="true"
-              ></rck-field>
-            </div>
-          </div>
-          <br/>
-          <div class="row" v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)">
-            <div class="col col-xs-6" v-if="e.attributeValues.StartBuffer != ''">
-              <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
-              {{e.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(e.attributeValues.StartTime, e.attributeValues.StartBuffer)}}
-            </div>
-            <div class="col col-xs-6" v-if="e.attributeValues.EndBuffer != ''">
-              <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
-              {{e.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(e.attributeValues.EndTime, e.attributeValues.EndBuffer)}}
-            </div>
-          </div>
+          <tcc-buffer v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)" :e="e"></tcc-buffer>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
@@ -1159,7 +1147,7 @@ export default defineComponent({
             Catering Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-catering :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
+          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1167,7 +1155,7 @@ export default defineComponent({
             Other Accomodations
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1186,7 +1174,7 @@ export default defineComponent({
             Registration Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1237,6 +1225,11 @@ export default defineComponent({
       </a-btn> 
       <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
       <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
+    </div>
+  </div>
+  <div class="row" v-if="canSubmit && step == lastStep">
+    <div class="col text-red" style="text-align: right;">
+      You cannot submit a request unless you have: a title, ministry, and at least one event date
     </div>
   </div>
   <!-- Confirmation Modal -->
@@ -1309,6 +1302,7 @@ export default defineComponent({
             label="Select the new date of this event"
             v-model="changeDateReplacement"
             :min="minEventDate"
+            :disabledDates="viewModel.request.attributeValues.EventDates"
           ></tcc-date-pkr>
         </div>
       </div>
@@ -1416,6 +1410,15 @@ label, .control-label {
   border-color: #929392;
   color: black;
 }
+.ant-btn-red {
+  background-color: rgb(204 63 12);
+  border-color: rgb(204 63 12);
+}
+.ant-btn-red:focus, .ant-btn-red:hover {
+  background-color: rgb(184 56 9);
+  border-color: rgb(184 56 9);
+  color: #fff;
+}
 .hover {
   cursor: pointer;
 }
@@ -1430,6 +1433,9 @@ label, .control-label {
 }
 .text-errors {
   font-size: .85em;
+}
+.bg-red {
+  background-color: #dec7c7;
 }
 .tcc-dropdown {
   display: flex;

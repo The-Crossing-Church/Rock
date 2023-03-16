@@ -1,11 +1,12 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem, DefinedValue, ListItem } from "../../../../ViewModels"
+import { ContentChannelItem, DefinedValue, ListItem, Attribute } from "../../../../ViewModels"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import Validator from "./validator"
 import TimePicker from "./timePicker"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
+import DiscountCodes from "./discountCodes"
 import { DateTime } from "luxon"
 import rules from "../Rules/rules"
 
@@ -19,6 +20,7 @@ export default defineComponent({
       "tcc-time": TimePicker,
       "tcc-switch": Toggle,
       "tcc-date-pkr": DatePicker,
+      "tcc-discount": DiscountCodes
     },
     props: {
       e: {
@@ -34,6 +36,7 @@ export default defineComponent({
         required: false
       },
       ministries: Array as PropType<DefinedValue[]>,
+      discountAttrs: Array as PropType<Attribute[]>,
       showValidation: Boolean,
       refName: String
     },
@@ -106,11 +109,24 @@ export default defineComponent({
       }
     },
     watch: {
-      'e.attributeValues.RegistrationFeeType'(val) {
-        if(val.includes('No Fees')) {
+      'e.attributeValues.RegistrationFeeType'(val, original) {
+        if(val.includes('No Fees') && !original.includes('No Fees')) {
           //Overwrite options and clear out all other choices.
           if(this.e?.attributeValues?.RegistrationFeeType) {
             this.e.attributeValues.RegistrationFeeType = "No Fees"
+          }
+          if(this.e?.attributeValues) {
+            this.e.attributeValues.RegistrationFeeBudgetLine = ""
+            this.e.attributeValues.RegistrationFeeBudgetMinistry = ""
+            this.e.attributeValues.IndividualRegistrationFee = ""
+            this.e.attributeValues.CoupleRegistrationFee = ""
+            this.e.attributeValues.OnlineRegistrationFee = ""
+            this.e.attributeValues.DiscountCodes = ""
+          }
+        } else if(original == "No Fees" && val.includes(",")) {
+          if(this.e?.attributeValues?.RegistrationFeeType) {
+            let items = val.split(",").filter((i: string) => { return i != "No Fees" })
+            this.e.attributeValues.RegistrationFeeType = items.join(",")
           }
         }
       },
@@ -172,6 +188,15 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
     <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
+        <rck-field
+          v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
+          :attribute="e.attributes.RegistrationFeeBudgetMinistry"
+          :is-edit-mode="true"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
         <rck-field
           v-model="e.attributeValues.RegistrationFeeBudgetLine"
@@ -180,6 +205,8 @@ export default defineComponent({
         ></rck-field>
       </tcc-validator>
     </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
       <tcc-validator :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
         <rck-field
@@ -208,6 +235,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
+  <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs"></tcc-discount>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationEndDate, lastDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end">
@@ -225,6 +253,33 @@ export default defineComponent({
           v-model="e.attributeValues.RegistrationEndTime"
         ></tcc-time>
       </tcc-validator>
+    </div>
+  </div>
+  <div class="row mt-2">
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'True'">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsCheckin"
+        :label="e.attributes.NeedsCheckin.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
+        :label="e.attributes.NeedsDatabaseSupportTeam.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.EventNeedsSeparateLink"
+        :label="e.attributes.EventNeedsSeparateLink.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="e.attributeValues.MaxRegistrants"
+        :attribute="e.attributes.MaxRegistrants"
+        :is-edit-mode="true"
+      ></rck-field>
     </div>
   </div>
   <br/>
@@ -271,37 +326,28 @@ export default defineComponent({
       ></tcc-switch>
     </div>
   </div>
-  <div class="row mb-2" v-if="e.attributeValues.NeedsReminderEmail == 'True'">
-    <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+  <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
+    <div class="row">
+      <div class="col col-xs-12">
+        <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+          <rck-field
+            v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
+            :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+            :is-edit-mode="true"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row mb-2">
+      <div class="col col-xs-12 col-md-6">
         <rck-field
-          v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
-          :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+          v-model="e.attributeValues.ReminderEmailSendDate"
+          :attribute="e.attributes.ReminderEmailSendDate"
           :is-edit-mode="true"
         ></rck-field>
-      </tcc-validator>
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsCheckin"
-        :label="e.attributes.NeedsCheckin.name"
-      ></tcc-switch>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
-        :label="e.attributes.NeedsDatabaseSupportTeam.name"
-      ></tcc-switch>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="e.attributeValues.EventNeedsSeparateLink"
-        :label="e.attributes.EventNeedsSeparateLink.name"
-      ></tcc-switch>
-    </div>
-  </div>
+  </template>
 </rck-form>
 `
 });

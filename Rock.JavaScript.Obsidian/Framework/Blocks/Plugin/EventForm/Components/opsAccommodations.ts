@@ -1,5 +1,6 @@
 import { defineComponent, PropType } from "vue"
 import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
+import { DateTime, Duration, Interval } from "luxon"
 import RockField from "../../../../Controls/rockField"
 import RockForm from "../../../../Controls/rockForm"
 import RockLabel from "../../../../Elements/rockLabel"
@@ -9,6 +10,7 @@ import Toggle from "./toggle"
 import rules from "../Rules/rules"
 import RoomSetUp from "./roomSetUp"
 import TimePicker from "./timePicker"
+import OpsInv from "./opsInventory"
 
 type SelectedListItem = {
   text: string,
@@ -21,6 +23,15 @@ type RoomSetUp = {
   NumberofTables: number,
   NumberofChairs: number
 }
+type ListItem = {
+  text: string,
+  value: string,
+  description: string,
+  isDisabled: boolean,
+  isHeader: boolean,
+  type: string,
+  order: number
+}
 
 export default defineComponent({
     name: "EventForm.Components.Ops",
@@ -32,6 +43,7 @@ export default defineComponent({
       "tcc-switch": Toggle,
       "tcc-setup": RoomSetUp,
       "tcc-time": TimePicker,
+      "tcc-ops-inv": OpsInv,
       "a-btn": Button,
       "a-modal": Modal,
       "a-select": Select,
@@ -45,7 +57,10 @@ export default defineComponent({
       locationSetUp: Array as PropType<any[]>,
       showValidation: Boolean,
       refName: String,
-      request: Object as PropType<ContentChannelItem>
+      request: Object as PropType<ContentChannelItem>,
+      originalRequest: Object as PropType<ContentChannelItem>,
+      inventoryList: Array as PropType<any[]>,
+      existing: Array as PropType<any[]>,
     },
     setup() {
 
@@ -97,7 +112,7 @@ export default defineComponent({
           arr.push({room: r.value, guid: r.guid, items: this.setUpForRoom(r.guid), standard: this.getSetUpDesc(r.guid)})
         })
         return arr
-      }
+      },
     },
     methods: {
       matchRoomsToSetup() {
@@ -158,7 +173,14 @@ export default defineComponent({
         this.selectedRoomSetUp.push({Room: room, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0})
       },
       removeSetUpConfiguration(idx: number) {
-        this.selectedRoomSetUp = this.selectedRoomSetUp.splice(idx, 1)
+        this.selectedRoomSetUp.splice(idx, 1)
+      },
+      useStandardSetUp() {
+        this.modal = false
+        let room = this.selectedRoomSetUp[0].Room
+        this.roomSetUp = this.roomSetUp.filter((s: any) => {
+          return s.Room != room
+        })
       },
       saveSetUpConfiguration() {
         this.modal = false
@@ -166,7 +188,29 @@ export default defineComponent({
         this.roomSetUp = this.roomSetUp.filter((s: any) => {
           return s.Room != room
         })
-        this.roomSetUp.push(...this.selectedRoomSetUp)
+        //Check that set up is not the same as standard 
+        let stdrSetUp = [] as any[]
+        this.groupedSetUp.forEach((s: any) => {
+          if(s.guid == room) {
+            if(s.standard.length > 0) {
+              s.standard.forEach((su: any) => {
+                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable, NumberofTables: su.attributeValues.NumberofTables, NumberofChairs: su.attributeValues.NumberofChairs })
+              })
+            }
+          }
+        })
+        stdrSetUp = stdrSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+        this.selectedRoomSetUp = this.selectedRoomSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+        let isSame = true
+        if(stdrSetUp.length != this.selectedRoomSetUp.length) {
+          isSame = false
+        }
+        if(JSON.stringify(stdrSetUp) != JSON.stringify(this.selectedRoomSetUp)) {
+          isSame = false
+        }
+        if(!isSame) {
+          this.roomSetUp.push(...this.selectedRoomSetUp)
+        }
         this.selectedRoomSetUp = []
       },
       validate() {
@@ -179,13 +223,41 @@ export default defineComponent({
       },
       validationChange(errs: Record<string, string>[]) {
         this.errors = errs
-      }
+      },
+      sortSetUp(a: any, b: any): number {
+        if(a.TypeofTable < b.TypeofTable) {
+          return -1
+        } else if(a.TypeofTable > b.TypeofTable) {
+          return 1
+        }
+        if(parseInt(a.NumberofTables) < parseInt(b.NumberofTables)) {
+          return -1
+        } else if(parseInt(a.NumberOfTables) > parseInt(b.NumberOfTables)) {
+          return 1
+        }
+        if(parseInt(a.NumberofChairs) < parseInt(b.NumberofChairs)) {
+          return -1
+        } else if(parseInt(a.NumberofChairs) > parseInt(b.NumberofChairs)) {
+          return 1
+        }
+        return 0
+      },
     },
     watch: {
       roomSetUp: {
         handler(val){
           if(this.e?.attributeValues) {
             this.e.attributeValues.RoomSetUp = JSON.stringify(val)
+            if(val.length > 0) {
+              let startBuffer = this.e.attributeValues.StartBuffer ? parseInt(this.e.attributeValues.StartBuffer) : 0
+              let endBuffer = this.e.attributeValues.EndBuffer ? parseInt(this.e.attributeValues.EndBuffer) : 0
+              if(startBuffer < 30) {
+                this.e.attributeValues.StartBuffer = "30"
+              }
+              if(endBuffer < 30) {
+                this.e.attributeValues.EndBuffer = "30"
+              }
+            }
           }
         },
         deep: true
@@ -195,6 +267,16 @@ export default defineComponent({
           this.$emit("validation-change", { ref: this.refName, errors: val})
         },
         deep: true
+      },
+      'e.attributeValues.HasDangerousActivity': {
+        handler(val) {
+          if(val == 'False') {
+            if(this.e?.attributeValues) {
+              this.e.attributeValues.DangerousActivityInfo = ""
+              this.e.attributeValues.InsuranceCertificate = ""
+            }
+          }
+        }
       }
     },
     mounted() {
@@ -229,7 +311,7 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-  <h4 class="text-accent mt-2">Set-Up</h4>
+  <h4 class="text-accent mt-2">Additional Set-Up Details</h4>
   <div class="my-2 setup-table">
     <template v-if="selectedRooms.length == 0">
       <rck-lbl>
@@ -290,10 +372,28 @@ export default defineComponent({
         :label="e.attributes.NeedsDoorsUnlocked.name"
       ></tcc-switch>
     </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
+    <div class="col col-xs-12 mb-2" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
+      <strong>Operations will unlock doors for your event based on the spaces and rooms you have reserved. If you have special unlock instructions for your event, please indicate below.</strong><br/>
       <rck-field
         v-model="e.attributeValues.Doors"
         :attribute="doorsAttr"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-switch
+        v-model="e.attributeValues.HasDangerousActivity"
+        :label="e.attributes.HasDangerousActivity.name"
+      ></tcc-switch>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.HasDangerousActivity == 'True'">
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="e.attributeValues.DangerousActivityInfo"
+        :attribute="e.attributes.DangerousActivityInfo"
         :is-edit-mode="true"
       ></rck-field>
     </div>
@@ -308,10 +408,17 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12">
+    <div class="col col-xs-12 col-md-6">
       <rck-field
         v-model="e.attributeValues.SetupImage"
         :attribute="e.attributes.SetupImage"
+        :is-edit-mode="true"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.HasDangerousActivity == 'True'">
+      <rck-field
+        v-model="e.attributeValues.InsuranceCertificate"
+        :attribute="e.attributes.InsuranceCertificate"
         :is-edit-mode="true"
       ></rck-field>
     </div>
@@ -345,13 +452,19 @@ export default defineComponent({
       </div>
     </div>
   </template>
+  <h4 class="text-accent mt-2">Ops Inventory</h4>
+  <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing"></tcc-ops-inv>
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div class="mt-2" style="height: 16px;"></div>
-  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="idx" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
+  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
   <template #footer>
-    <a-btn type="accent" @click="addSetUpConfiguration">Add Row</a-btn>
-    <a-btn type="primary" @click="saveSetUpConfiguration">Save</a-btn>
+    <div style="display: flex;">
+      <a-btn type="secondary" @click="useStandardSetUp">Use Standard Set-up</a-btn>
+      <div class="spacer"></div>
+      <a-btn type="accent" @click="addSetUpConfiguration">Add Row</a-btn>
+      <a-btn type="primary" @click="saveSetUpConfiguration">Save</a-btn>
+    </div>
   </template>
 </a-modal>
 <v-style>
@@ -366,6 +479,9 @@ export default defineComponent({
   }
   .setup-row:not(:last-child) {
     border-bottom: 1px solid #F0F0F0;
+  }
+  .spacer {
+    flex-grow: 1!important;
   }
 </v-style>
 `

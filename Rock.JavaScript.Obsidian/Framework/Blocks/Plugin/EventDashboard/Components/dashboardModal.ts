@@ -39,6 +39,7 @@ export default defineComponent({
       request: Object,
       rooms: Array,
       drinks: Array,
+      inventory: Array,
       createdBy: Object,
       modifiedBy: Object,
     },
@@ -120,16 +121,20 @@ export default defineComponent({
       }
     },
     methods: {
-      getCollapseName(id: string) {
-        return "collapse-"+id
-      },
-      getCollapseReference(id: string) {
-        return "#collapse-"+id
+      getCollapseClassName(idx: number) {
+        if(idx == 0) {
+          return 'collapse body in'
+        }
+        return 'collapse body'
       },
       getPanelName(date: string, room: string) {
         let title = "" 
         if(date) {
-          title = DateTime.fromFormat(date, 'yyyy-MM-dd').toFormat('MM/dd/yyyy')
+          let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
+          if(!dt.isValid) {
+            dt = DateTime.fromISO(date)
+          }
+          title = dt.toFormat('MM/dd/yyyy')
         } else {
           let dates = this.request?.attributeValues.EventDates.split(",")
           dates = dates.map((d: any) => {
@@ -357,15 +362,15 @@ export default defineComponent({
     </div>
   </div>
   <div id="accordion" class="accordion">
-    <template v-for="ci in request.childItems" :key="ci.id">
+    <template v-for="(ci, idx) in request.childItems" :key="ci.id">
       <div class='panel no-border'>
-        <a role="button" :href="getCollapseReference(ci.id)" data-parent="#accordion" data-toggle="collapse" aria-expanded="false" :aria-controls="getCollapseName(ci.id)">
+        <a role="button" :href="'#collapse-' + ci.id" data-parent="#accordion" data-toggle="collapse" aria-expanded="false" :aria-controls="'#collapse-' + ci.id">
           <h5 class='header pb-1'>{{ getPanelName(ci.attributeValues.EventDate, ci.attributeValues.Rooms) }} 
           <i v-if="ci.attributeValues.EventIsValid == 'True'" class="fa fa-check-circle text-accent"></i>
           <i v-else class="fa fa-exclamation-circle text-inprogress"></i>
           <i class='fa expand-icon pull-right'></i></h5>
         </a>
-        <div class='collapse collapse body' :id="getCollapseName(ci.id)" aria-expanded="false">
+        <div :class='getCollapseClassName(idx)' :id="'collapse-' + ci.id" aria-expanded="false">
           <div class="row">
             <div class="col col-xs-12 col-md-6">
               <template v-if="ci.changes && ci.changes.attributeValues.StartTime != ci.attributeValues.StartTime">
@@ -489,8 +494,8 @@ export default defineComponent({
             </div>
           </div>
           <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
-          <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks"></tcc-catering>
-          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :needsCatering="request.attributeValues.NeedsCatering"></tcc-ops>
+          <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks" :needsSpace="request.attributeValues.NeedsSpace"></tcc-catering>
+          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="request.attributeValues.NeedsCatering"></tcc-ops>
           <tcc-childcare v-if="request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' )" :details="ci"></tcc-childcare>
           <tcc-registration v-if="request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' )" :details="ci"></tcc-registration>
           <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>

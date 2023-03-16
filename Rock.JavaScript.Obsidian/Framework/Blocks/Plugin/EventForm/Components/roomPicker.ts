@@ -1,5 +1,5 @@
 import { defineComponent } from "vue";
-import { Input, Menu, Dropdown } from "ant-design-vue";
+import { Input, Menu, Dropdown, Modal, Button } from "ant-design-vue";
 import TextBox from "../../../../Elements/textBox";
 import RockLabel from "../../../../Elements/rockLabel";
 import Checkbox from "../../../../Elements/checkBox";
@@ -24,13 +24,15 @@ type SelectedListItem = {
 export default defineComponent({
     name: "EventForm.Components.RoomPicker",
     components: {
-        "a-dropdown": Dropdown,
-        "a-text": Input,
-        "a-menu": Menu,
-        "a-menu-item": MenuItem,
-        "rck-text": TextBox,
-        "rck-lbl": RockLabel,
-        "rck-check": Checkbox
+      "a-btn": Button,
+      "a-dropdown": Dropdown,
+      "a-text": Input,
+      "a-menu": Menu,
+      "a-menu-item": MenuItem,
+      "a-modal": Modal,
+      "rck-text": TextBox,
+      "rck-lbl": RockLabel,
+      "rck-check": Checkbox
     },
     props: {
         modelValue: String,
@@ -73,24 +75,25 @@ export default defineComponent({
         return {
             selectedValue: {} as SelectedListItem,
             search: '',
-            menuOpen: false
+            menuOpen: false,
+            map: false
         };
     },
     computed: {
-        filteredItems() {
-            if (this.search) {
-                return this.items.filter(i => {
-                    let item = i as ListItem
-                    if(item.isHeader) {
-                      return true
-                    }
-                    if(item.text) {
-                      return item.text.toLowerCase().includes(this.search.toLowerCase())
-                    }
-                })
+      filteredItems() {
+        if (this.search) {
+          return this.items.filter(i => {
+            let item = i as ListItem
+            if(item.isHeader) {
+              return true
             }
-            return this.items
+            if(item.text) {
+              return item.text.toLowerCase().includes(this.search.toLowerCase())
+            }
+          })
         }
+        return this.items
+      }
     },
     methods: {
         select(item: ListItem) {
@@ -213,61 +216,72 @@ export default defineComponent({
       }
     },
     mounted() {
-        if (this.modelValue) {
-            this.selectedValue = JSON.parse(this.modelValue)
-        }
-        let els = document.querySelectorAll(".tcc-text-display")
-        els.forEach((el: any) => {
-          el.setAttribute("readonly", "")
-        })
+      if (this.modelValue) {
+        this.selectedValue = JSON.parse(this.modelValue)
+      }
+      let els = document.querySelectorAll(".tcc-text-display")
+      els.forEach((el: any) => {
+        el.setAttribute("readonly", "")
+      })
     },
     template: `
-<div>
-  <a-dropdown :trigger="['click']" v-on:visibleChange="menuChange">
-    <div>
-      <rck-lbl>{{label}}</rck-lbl>
-      <rck-text
-        v-model="selectedValue.text"
-        inputClasses="tcc-text-display"
-      ></rck-text>
-    </div>
-    <template #overlay>
-      <a-menu class="tcc-dropdown">
-        <div class="tcc-menu-header">
-          <div class="tcc-menu-search">
-            <rck-text
-              v-model="search"
-              placeholder="Type to filter..."
-            ></rck-text>
-            <i class="fa fa-search"></i>
-          </div>
-          <div class="tcc-menu-banner">
-            Room (Capacity)
-          </div>
-        </div>
-        <a-menu-item :class="getClassName(i)" v-for="i in filteredItems" :key="i.value" @click="select(i)">
-          <template v-if="i.isHeader">
-            <div class="tcc-dropdown-header">{{i.value}}</div>
-          </template>
-          <template v-else>
-            <div class="tcc-dropdown-item-action">
-              <div class="tcc-checkbox">
-                <i v-if="isChecked(i.value)" class="fa fa-check-square"></i>
-                <i v-else class="far fa-square"></i>
-              </div>
+<div style="display: flex; align-items: end;">
+  <a-btn shape="circle" type="accent" @click="map = true" class="mr-1">
+    <i class="fas fa-map-marked-alt"></i>
+  </a-btn>
+  <div style="width: -webkit-fill-available;">
+    <a-dropdown :trigger="['click']" v-on:visibleChange="menuChange">
+      <div>
+        <rck-lbl>{{label}}</rck-lbl>
+        <rck-text
+          v-model="selectedValue.text"
+          inputClasses="tcc-text-display"
+        ></rck-text>
+      </div>
+      <template #overlay>
+        <a-menu class="tcc-dropdown">
+          <div class="tcc-menu-header">
+            <div class="tcc-menu-search">
+              <rck-text
+                v-model="search"
+                placeholder="Type to filter..."
+              ></rck-text>
+              <i class="fa fa-search"></i>
             </div>
-            <div class="tcc-dropdown-item-content">
-              {{i.text}}
-              <div class="tcc-dropdown-item-description">
-                {{i.description}}
-              </div>
+            <div class="tcc-menu-banner">
+              Room (Capacity)
             </div>
-          </template>
-        </a-menu-item>
-      </a-menu>
-    </template>
-  </a-dropdown>
+          </div>
+          <a-menu-item :class="getClassName(i)" v-for="i in filteredItems" :key="i.value" @click="select(i)">
+            <template v-if="i.isHeader">
+              <div class="tcc-dropdown-header">{{i.value}}</div>
+            </template>
+            <template v-else>
+              <div class="tcc-dropdown-item-action">
+                <div class="tcc-checkbox">
+                  <i v-if="isChecked(i.value)" class="fa fa-check-square"></i>
+                  <i v-else class="far fa-square"></i>
+                </div>
+              </div>
+              <div class="tcc-dropdown-item-content">
+                {{i.text}}
+                <div class="tcc-dropdown-item-description">
+                  {{i.description}}
+                </div>
+              </div>
+            </template>
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
+  </div>
 </div>
+<a-modal v-model:visible="map" style="min-width: 75%;">
+  <img src="https://rock.thecrossingchurch.com/Content/Operations/Campus%20Map.png" style="width: 100%;"/>
+  <template #footer>
+    <a-btn type="grey" @click="map = false">Close</a-btn>
+  </template>
+</a-modal>
 <v-style>
   .tcc-menu-header {
     position: sticky;

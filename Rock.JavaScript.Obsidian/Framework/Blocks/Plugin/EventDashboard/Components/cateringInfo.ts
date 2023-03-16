@@ -16,7 +16,8 @@ export default defineComponent({
     },
     props: {
       details: Object,
-      drinks: Array
+      drinks: Array,
+      needsSpace: String,
     },
     setup() {
 
@@ -39,11 +40,14 @@ export default defineComponent({
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
               }
+              if(this.needsSpace == 'True' && categories.includes("Event Space")) {
+                continue
+              }
               attrs.push(item)
             }
           }
         }
-        return attrs
+        return attrs.sort((a,b) => a.attr.order - b.attr.order)
       }
     },
     methods: {

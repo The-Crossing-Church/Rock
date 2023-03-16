@@ -1,4 +1,4 @@
-import { defineComponent } from "vue"
+import { defineComponent, PropType } from "vue"
 import RockField from "../../../../Controls/rockField"
 import RockLabel from "../../../../Elements/rockLabel"
 import TextBox from "../../../../Elements/textBox"
@@ -35,6 +35,10 @@ export default defineComponent({
       rules: {
           type: Array,
           required: false
+      },
+      disabledDates: {
+        type: String,
+        required: false
       }
     },
     setup() {
@@ -60,6 +64,12 @@ export default defineComponent({
           return dt.toFormat("MM/dd/yyyy")
         }
         return ""
+      },
+      unavailableDates() {
+        if(this.disabledDates) {
+          return this.disabledDates?.split(",")
+        }
+        return [] as String[]
       }
     },
     methods: {
@@ -95,6 +105,7 @@ export default defineComponent({
       :min="min"
       :max="max"
       v-on:closemenu="menu = false"
+      :disabledDates="unavailableDates"
     ></tcc-calendar>
   </a-modal>
 </div>

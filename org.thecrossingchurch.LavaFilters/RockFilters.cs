@@ -20,6 +20,10 @@ using Rock.Lava;
 using System.Globalization;
 using Rock.Attribute;
 using Rock.Web.Cache;
+using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -225,7 +229,7 @@ namespace com_thecrossingchurch.LavaFilters
             }
             throw new Exception( "Unable to parse input, start, and end" );
         }
-        
+
         /// <summary>
         /// This filter parses the user input for the lava filter for the IsDateBetween method. Should not be modified without testing with that filter.
         /// </summary>
@@ -345,6 +349,63 @@ namespace com_thecrossingchurch.LavaFilters
             }
 
             return groupedList;
+        }
+
+        /// <summary>
+        /// Generate a token specifically to use with the calendar api endpoint
+        /// </summary>
+        /// <param name="input">The Person the token is for</param>
+        /// <param name="expiration">An optional parameter to determine when the token should expire</param>
+        /// <returns></returns>
+        public static String GenerateCalendarToken( object input, bool? regenerate = true, DateTime? expiration = null )
+        {
+            string id = "";
+            id = input.GetPropertyValue( "Id" ).ToString();
+            Person p = new PersonService( new RockContext() ).Get( id );
+            string tk = "";
+            if ( !regenerate.Value )
+            {
+                if ( p != null )
+                {
+                    p.LoadAttributes();
+                    tk = p.GetAttributeValue( "PersonalCalendarToken" );
+                }
+                else
+                {
+                    throw new Exception( "Input must be a person" );
+                }
+            }
+            else
+            {
+                //LOL - Microsoft has 15 years to fix this issue.
+                DateTime tokenExp = new DateTime( 2038, 1, 18, 0, 0, 0 );
+                if ( expiration != null )
+                {
+                    tokenExp = expiration.Value;
+                }
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var secret = Encoding.ASCII.GetBytes( GlobalAttributesCache.Get().GetValue( "EventFormCalendarSecret" ) );
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity( new[] { new Claim( "id", id ) } ),
+                    Expires = tokenExp,
+                    SigningCredentials = new SigningCredentials( new SymmetricSecurityKey( secret ), SecurityAlgorithms.HmacSha256Signature )
+                };
+                var token = tokenHandler.CreateToken( tokenDescriptor );
+                tk = tokenHandler.WriteToken( token );
+                if ( p != null )
+                {
+                    p.LoadAttributes();
+                    p.SetAttributeValue( "PersonalCalendarToken", tk );
+                    p.SaveAttributeValue( "PersonalCalendarToken" );
+                }
+                else
+                {
+                    throw new Exception( "Input must be a person" );
+                }
+            }
+            return tk;
         }
     }
 }

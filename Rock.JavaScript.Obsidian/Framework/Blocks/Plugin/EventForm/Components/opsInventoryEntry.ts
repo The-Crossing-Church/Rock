@@ -3,24 +3,25 @@ import TextBox from "../../../../Elements/textBox"
 import RockLabel from "../../../../Elements/rockLabel"
 import DDL from "../../../../Elements/dropDownList"
 import { Button } from "ant-design-vue"
+import OpsInvDDL from "./opsInventoryDropDown"
 
-type RoomSetUp = {
-  Room: string,
-  TypeofTable: string,
-  NumberofTables: number,
-  NumberofChairs: number
+type InventoryReservation = {
+  InventoryItem: string,
+  QuantityNeeded: number
 }
 
 export default defineComponent({
-  name: "EventForm.Components.RoomSetUp",
+  name: "EventForm.Components.OpsInventoryEntry",
   components: {
     "rck-text": TextBox,
     "rck-lbl": RockLabel,
     "rck-ddl": DDL,
     "a-btn": Button,
+    "tcc-inv-ddl": OpsInvDDL
   },
   props: {
-    modelValue: Object as PropType<RoomSetUp>,
+    modelValue: Object as PropType<InventoryReservation>,
+    inventory: Array,
     disabled: {
       type: Boolean,
       required: false
@@ -39,20 +40,20 @@ export default defineComponent({
   },
   data() {
     return {
-      roomSetUp: {} as RoomSetUp
+      inventoryRes: {} as InventoryReservation
     };
   },
   computed: {
   },
   methods: {
     removeConfiguration() {
-      this.$emit('removeconfig')
+      this.$emit('removeinventoryconfig')
     }
   },
   watch: {
-    roomSetUp(val) {
+    inventoryRes(val) {
       if (val) {
-        this.$emit('update:modelValue', this.roomSetUp)
+        this.$emit('update:modelValue', this.inventoryRes)
       } else {
         this.$emit('update:modelValue', "{}")
       }
@@ -60,31 +61,25 @@ export default defineComponent({
   },
   mounted() {
     if(this.modelValue) {
-      this.roomSetUp = this.modelValue
+      this.inventoryRes = this.modelValue
     } 
   },
   template: `
 <div class="row" style="display: flex; align-items: end;">
-  <div class="col col-xs-3">
-    <rck-lbl>Type of Table</rck-lbl>
-    <rck-ddl
-      v-model="roomSetUp.TypeofTable"
-      :options="[{value: 'Round', text: 'Round'}, {value: 'Rectangular', text: 'Rectangular'}]"
-    ></rck-ddl>
+  <div class="col col-xs-5">
+    <tcc-inv-ddl
+      v-model="inventoryRes.InventoryItem"
+      :items="inventory"
+    ></tcc-inv-ddl>
   </div>
-  <div class="col col-xs-4">
-    <rck-lbl>Number of Tables</rck-lbl>
+  <div class="col col-xs-5">
+    <rck-lbl>Quantity Needed</rck-lbl>
     <rck-text
-      v-model="roomSetUp.NumberofTables"
+      v-model="inventoryRes.QuantityNeeded"
+      type="number"
     ></rck-text>
   </div>
-  <div class="col col-xs-4">
-    <rck-lbl>Number of Chairs</rck-lbl>
-    <rck-text
-      v-model="roomSetUp.NumberofChairs"
-    ></rck-text>
-  </div>
-  <div class="col col-xs-1">
+  <div class="col col-xs-2">
     <a-btn type="red" @click="removeConfiguration">
       <i class="fas fa-trash"></i>
     </a-btn>

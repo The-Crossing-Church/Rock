@@ -3,7 +3,7 @@ import { Person } from "../../../../ViewModels"
 import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel"
 import { useStore } from "../../../../Store/index"
 import { Switch } from "ant-design-vue"
-import { DateTime, Duration, Interval } from "luxon"
+import { DateTime } from "luxon"
 import RockForm from "../../../../Controls/rockForm"
 import RockField from "../../../../Controls/rockField"
 import RockFormField from "../../../../Elements/rockFormField"
@@ -15,6 +15,7 @@ import AutoComplete from "./roomPicker"
 import Chip from "./chip"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
+import EventBuffer from "./eventBuffer"
 import rules from "../Rules/rules"
 
 const store = useStore();
@@ -27,6 +28,7 @@ export default defineComponent({
         "tcc-switch": Toggle,
         "tcc-time": TimePicker,
         "tcc-date": DatePicker,
+        "tcc-buffer": EventBuffer,
         "tcc-validator": Validator,
         "a-switch": Switch,
         "rck-form": RockForm,
@@ -141,21 +143,7 @@ export default defineComponent({
       },
       validationChange(errs: Record<string, string>[]) {
         this.errors = errs
-      },
-      previewStartBuffer(time: string, buffer: any) {
-        if(time && buffer) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
-        } else if (time) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
-        }
-      },
-      previewEndBuffer(time: string, buffer: any) {
-        if(time && buffer) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
-        } else if (time) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
-        }
-      },
+      }
     },
     watch: {
       eventDates: {
@@ -219,6 +207,7 @@ export default defineComponent({
       <tcc-date v-model="viewModel.request.attributeValues.EventDates" :min="minEventDate" :multiple="true"></tcc-date>
     </div>
     <div class="col col-xs-12 col-md-8" style="display: flex; flex-wrap: wrap; align-content: flex-start;">
+      <tcc-chip v-if="showValidation && eventDates.length == 0" class="bg-red text-red">Event Date(s) are required.</tcc-chip>
       <tcc-chip v-for="d in eventDates" :key="d" v-on:chipdeleted="removeDate(d)">
         {{formatDate(d)}}
       </tcc-chip>
@@ -230,6 +219,7 @@ export default defineComponent({
       <tcc-switch
         v-model="viewModel.request.attributeValues.IsSame"
         :label="viewModel.request.attributes.IsSame.name"
+        :disabled="!(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')"
       ></tcc-switch>
     </div>
   </div>
@@ -266,33 +256,7 @@ export default defineComponent({
     </div>
   </div>
   <br/>
-  <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)">
-    <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="viewModel.events[0].attributeValues.StartBuffer"
-        :attribute="viewModel.events[0].attributes.StartBuffer"
-        :is-edit-mode="true"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="viewModel.events[0].attributeValues.EndBuffer"
-        :attribute="viewModel.events[0].attributes.EndBuffer"
-        :is-edit-mode="true"
-      ></rck-field>
-    </div>
-  </div>
-  <br/>
-  <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)">
-    <div class="col col-xs-6" v-if="viewModel.events[0].attributeValues.StartBuffer != ''">
-      <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
-      {{viewModel.events[0].attributeValues.StartBuffer}} minutes: {{previewStartBuffer(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.StartBuffer)}}
-    </div>
-    <div class="col col-xs-6" v-if="viewModel.events[0].attributeValues.EndBuffer != ''">
-      <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
-      {{viewModel.events[0].attributeValues.EndBuffer}} minutes: {{previewEndBuffer(viewModel.events[0].attributeValues.EndTime, viewModel.events[0].attributeValues.EndBuffer)}}
-    </div>
-  </div>
+  <tcc-buffer v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)" :e="viewModel.events[0]"></tcc-buffer>
   <br/>
 </rck-form>
 `

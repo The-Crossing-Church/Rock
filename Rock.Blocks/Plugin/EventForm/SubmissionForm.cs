@@ -38,6 +38,7 @@ namespace Rock.Blocks.Plugin.EventForm
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
+    [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 3 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 1 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
@@ -53,6 +54,10 @@ namespace Rock.Blocks.Plugin.EventForm
     [TextField( "Room", "Attribute Key for Room", key: AttributeKey.Rooms, defaultValue: "Rooms", category: "Attribute", order: 6 )]
     [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
+    [TextField( "Ops Inventory", "Attribute Key for Ops Inventory", key: AttributeKey.OpsInventory, defaultValue: "OpsInventory", category: "Attributes", order: 9 )]
+    [TextField( "Room Set-up", "Attribute Key for Room SetUp", key: AttributeKey.RoomSetUp, defaultValue: "RoomSetUp", category: "Attributes", order: 10 )]
+    [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCode", category: "Attributes", order: 11 )]
+    [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 12 )]
     #endregion Block Attributes
 
     public class SubmissionForm : RockObsidianBlockType
@@ -71,6 +76,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
+            public const string InventoryList = "InventoryList";
             public const string MinistryBudgetList = "MinistryBudgetList";
             public const string SubmissionPage = "SubmissionPage";
             public const string AdminDashboard = "AdminDashboard";
@@ -87,6 +93,10 @@ namespace Rock.Blocks.Plugin.EventForm
             public const string Rooms = "Rooms";
             public const string StartBuffer = "StartBuffer";
             public const string EndBuffer = "EndBuffer";
+            public const string OpsInventory = "OpsInventory";
+            public const string RoomSetUp = "RoomSetUp";
+            public const string DiscountCode = "DiscountCode";
+            public const string DiscountCodeMatrix = "DiscountCodeMatrix";
         }
 
         /// <summary>
@@ -123,11 +133,14 @@ namespace Rock.Blocks.Plugin.EventForm
             Guid locationGuid = Guid.Empty;
             Guid ministryGuid = Guid.Empty;
             Guid budgetLineGuid = Guid.Empty;
+            Guid inventoryGuid = Guid.Empty;
             var p = GetCurrentPerson();
+            DefinedTypeService dt_svc = new DefinedTypeService( context );
+            DefinedValueService dv_svc = new DefinedValueService( context );
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
             {
-                Rock.Model.DefinedType locationDT = new DefinedTypeService( context ).Get( locationGuid );
-                var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
+                Rock.Model.DefinedType locationDT = dt_svc.Get( locationGuid );
+                var locs = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
                 viewModel.locations = locs.Select( l => l.ToViewModel( p, true ) ).ToList();
                 string templateIdVal;
                 int templateid;
@@ -148,17 +161,29 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
             {
-                Rock.Model.DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
-                var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                Rock.Model.DefinedType ministryDT = dt_svc.Get( ministryGuid );
+                var min = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
                 min.LoadAttributes();
                 viewModel.ministries = min.ToList();
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
             {
-                Rock.Model.DefinedType budgetDT = new DefinedTypeService( context ).Get( locationGuid );
-                var budget = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
+                Rock.Model.DefinedType budgetDT = dt_svc.Get( locationGuid );
+                var budget = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == budgetDT.Id );
                 budget.LoadAttributes();
                 viewModel.budgetLines = budget.ToList();
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.InventoryList ), out inventoryGuid ) )
+            {
+                Rock.Model.DefinedType inventoryDT = dt_svc.Get( inventoryGuid );
+                var inventory = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == inventoryDT.Id );
+                inventory.LoadAttributes();
+                viewModel.inventoryList = inventory.ToList();
+            }
+            string matrixId = GetAttributeValue( AttributeKey.DiscountCodeMatrix );
+            if ( !String.IsNullOrEmpty( matrixId ) )
+            {
+                viewModel.discountCodeAttrs = new AttributeService( context ).Queryable().Where( a => a.EntityTypeQualifierColumn == "AttributeMatrixTemplateId" && a.EntityTypeQualifierValue == matrixId ).ToList().Select( a => a.ToViewModel( null, false ) ).ToList();
             }
 
             return viewModel;
@@ -178,6 +203,9 @@ namespace Rock.Blocks.Plugin.EventForm
         private Guid RequestStatusAttrGuid { get; set; }
         private Guid IsSameAttrGuid { get; set; }
         private RockContext context { get; set; }
+        private string RoomSetUpKey { get; set; }
+        private string DiscountCodeKey { get; set; }
+        private string OpsInventoryKey { get; set; }
 
         #endregion
 
@@ -407,12 +435,14 @@ namespace Rock.Blocks.Plugin.EventForm
                 string dateKey = GetAttributeValue( AttributeKey.DetailsEventDate );
                 string sBufferKey = GetAttributeValue( AttributeKey.StartBuffer );
                 string eBufferKey = GetAttributeValue( AttributeKey.EndBuffer );
+                string opsInvKey = GetAttributeValue( AttributeKey.OpsInventory );
                 var startTimeAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startKey );
                 var endTimeAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endKey );
                 var roomAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == roomKey );
                 var eventDateAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == dateKey );
                 var sBufferAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == sBufferKey );
                 var eBufferAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == eBufferKey );
+                var opsInvAttr = attr_svc.Queryable().FirstOrDefault( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == opsInvKey );
                 var isSameAttr = attr_svc.Get( IsSameAttrGuid );
                 if ( startTimeAttr != null && endTimeAttr != null && roomAttr != null && eventDateAttr != null && isSameAttr != null )
                 {
@@ -423,6 +453,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     var isSameVals = av_svc.Queryable().Where( av => av.AttributeId == isSameAttr.Id );
                     var sBuffers = av_svc.Queryable().Where( av => av.AttributeId == sBufferAttr.Id );
                     var eBuffers = av_svc.Queryable().Where( av => av.AttributeId == eBufferAttr.Id );
+                    var inventory = av_svc.Queryable().Where( av => av.AttributeId == opsInvAttr.Id );
                     items = qryItems.ToList().Select( i =>
                     {
                         if ( i.AttributeValues == null )
@@ -479,6 +510,11 @@ namespace Rock.Blocks.Plugin.EventForm
                               if ( eBuffer != null )
                               {
                                   ci.ChildContentChannelItem.AttributeValues.Add( eBufferAttr.Key, new AttributeValueCache() { Value = eBuffer.Value, AttributeId = eBufferAttr.Id } );
+                              }
+                              var invItems = inventory.FirstOrDefault( q => q.EntityId == ci.ChildContentChannelItem.Id );
+                              if ( invItems != null )
+                              {
+                                  ci.ChildContentChannelItem.AttributeValues.Add( opsInvAttr.Key, new AttributeValueCache() { Value = invItems.Value, AttributeId = opsInvAttr.Id } );
                               }
 
                               return ci;
@@ -996,7 +1032,14 @@ namespace Rock.Blocks.Plugin.EventForm
             };
             if ( viewModel.Id > 0 )
             {
-                item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
+                if ( viewModel.AttributeValues.ContainsKey( "RequestStatus" ) && ( viewModel.AttributeValues["RequestStatus"] == "Submitted" || viewModel.AttributeValues["RequestStatus"] == "In Progress" || viewModel.AttributeValues["RequestStatus"] == "Draft" ) )
+                {
+                    item = new ContentChannelItemService( context ).Get( viewModel.Id );
+                }
+                else
+                {
+                    item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
+                }
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;
@@ -1052,6 +1095,9 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 IsSameAttrGuid = isSameAttrGuid;
             }
+            RoomSetUpKey = GetAttributeValue( AttributeKey.RoomSetUp );
+            OpsInventoryKey = GetAttributeValue( AttributeKey.OpsInventory );
+            DiscountCodeKey = GetAttributeValue( AttributeKey.DiscountCode );
         }
 
         private void SubmittedNotifications( ContentChannelItem item )
@@ -1358,7 +1404,7 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 message += GetCategoryDetails( "Event Production", "Production Accommodations", item, itemChanges );
             }
-            if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) )
+            if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) || ( itemChanges != null && !String.IsNullOrEmpty( itemChanges.AttributeValues["Notes"].Value ) ) )
             {
                 message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";
                 message += RenderValue( "Notes", item.AttributeValues["Notes"].Value, itemChanges != null ? itemChanges.AttributeValues["Notes"].Value : "" );
@@ -1377,7 +1423,7 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             for ( int k = 0; k < attrs.Count(); k++ )
             {
-                message += RenderValue( item.Attributes[attrs[k]].Name, item.AttributeValues[attrs[k]].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues[attrs[k]].ValueFormatted : "", attrs[k] == "RoomSetUp" ? true : false );
+                message += RenderValue( item.Attributes[attrs[k]].Name, item.AttributeValues[attrs[k]].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues[attrs[k]].ValueFormatted : "", attrs[k] );
             }
             if ( attrs.Count() > 0 )
             {
@@ -1386,12 +1432,12 @@ namespace Rock.Blocks.Plugin.EventForm
             return message;
         }
 
-        private string RenderValue( string title, string original, string current, bool isRoomSetUp = false )
+        private string RenderValue( string title, string original, string current, string key = "" )
         {
             string message = "";
             if ( !String.IsNullOrEmpty( current ) && original != current )
             {
-                if ( isRoomSetUp )
+                if ( key == RoomSetUpKey )
                 {
                     List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
                     List<TableSetUp> currentSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( current );
@@ -1429,6 +1475,100 @@ namespace Rock.Blocks.Plugin.EventForm
                     }
                     message += "</ul>";
                 }
+                else if ( key == OpsInventoryKey )
+                {
+                    List<OpsInventorySetUp> originalSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( original );
+                    List<OpsInventorySetUp> currentSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( current );
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryItem ) )
+                            {
+                                var item = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
+                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 ? "s" : "" )}</li>";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul> <ul style='color: #347689;'>";
+                    if ( currentSetUp != null )
+                    {
+                        for ( int i = 0; i < currentSetUp.Count(); i++ )
+                        {
+                            if ( !String.IsNullOrEmpty( currentSetUp[i].InventoryItem ) )
+                            {
+                                var item = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].InventoryItem ) );
+                                message += $"<li>{currentSetUp[i].QuantityNeeded} {item.Value} {( currentSetUp[i].QuantityNeeded > 1 ? "s" : "" )}</li>";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul>";
+
+                }
+                else if ( key == DiscountCodeKey )
+                {
+                    List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
+                    List<DiscountCodeSetUp> currentSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( current );
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            string dates = "";
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].EffectiveDateRange ) )
+                            {
+                                dates = String.Join( " - ", originalSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
+                            }
+                            if ( originalSetUp[i].CodeType == "$" )
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
+                            else
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].Amount}{originalSetUp[i].CodeType}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul> <ul style='color: #347689;'>";
+                    if ( currentSetUp != null )
+                    {
+                        for ( int i = 0; i < currentSetUp.Count(); i++ )
+                        {
+                            string dates = "";
+                            if ( !String.IsNullOrEmpty( currentSetUp[i].EffectiveDateRange ) )
+                            {
+                                dates = String.Join( " - ", currentSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
+                            }
+                            if ( currentSetUp[i].CodeType == "$" )
+                            {
+                                message += $"<li>{currentSetUp[i].Code}: {currentSetUp[i].CodeType}{currentSetUp[i].Amount}, Auto-Apply: {currentSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {currentSetUp[i].MaxUses}</li>";
+                            }
+                            else
+                            {
+                                message += $"<li>{currentSetUp[i].Code}: {currentSetUp[i].Amount}{currentSetUp[i].CodeType}, Auto-Apply: {currentSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {currentSetUp[i].MaxUses}</li>";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "</ul>";
+
+                }
                 else
                 {
                     message = "<strong>" + title + ":</strong> <span style='color: #cc3f0c;'>" + original + "</span> <span style='color: #347689;'>" + current + "</span><br/>";
@@ -1436,16 +1576,61 @@ namespace Rock.Blocks.Plugin.EventForm
             }
             else
             {
-                if ( isRoomSetUp )
+                if ( key == RoomSetUpKey )
                 {
                     List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
                     message = "<strong>" + title + ":</strong> <ul>";
-                    for ( int i = 0; i < originalSetUp.Count(); i++ )
+                    if ( originalSetUp != null )
                     {
-                        if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
                         {
-                            var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
-                            message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
+                            {
+                                var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
+                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                            }
+                        }
+                    }
+                    message += "</ul>";
+                }
+                else if ( key == OpsInventoryKey )
+                {
+                    List<OpsInventorySetUp> originalSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( original );
+                    message = "<strong>" + title + ":</strong> <ul>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryItem ) )
+                            {
+                                var item = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
+                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 ? "s" : "" )}</li>";
+                            }
+                        }
+                    }
+                    message += "</ul>";
+                }
+                else if ( key == DiscountCodeKey )
+                {
+                    List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
+                    message = "<strong>" + title + ":</strong> <ul>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            string dates = "";
+                            if ( !String.IsNullOrEmpty( originalSetUp[i].EffectiveDateRange ) )
+                            {
+                                dates = String.Join( " - ", originalSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
+                            }
+                            if ( originalSetUp[i].CodeType == "$" )
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
+                            else
+                            {
+                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].Amount}{originalSetUp[i].CodeType}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
+                            }
                         }
                     }
                     message += "</ul>";
@@ -1476,8 +1661,10 @@ namespace Rock.Blocks.Plugin.EventForm
             public List<AttributeMatrixItemViewModel> locationSetupMatrixItem { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
+            public List<Rock.Model.DefinedValue> inventoryList { get; set; }
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
+            public List<AttributeViewModel> discountCodeAttrs { get; set; }
         }
 
         public class PreApprovalData
@@ -1500,6 +1687,20 @@ namespace Rock.Blocks.Plugin.EventForm
             public string TypeofTable { get; set; }
             public int NumberofTables { get; set; }
             public int NumberofChairs { get; set; }
+        }
+        public class OpsInventorySetUp
+        {
+            public string InventoryItem { get; set; }
+            public int QuantityNeeded { get; set; }
+        }
+        public class DiscountCodeSetUp
+        {
+            public string CodeType { get; set; }
+            public string Code { get; set; }
+            public int Amount { get; set; }
+            public string AutoApply { get; set; }
+            public string EffectiveDateRange { get; set; }
+            public int MaxUses { get; set; }
         }
     }
 }
