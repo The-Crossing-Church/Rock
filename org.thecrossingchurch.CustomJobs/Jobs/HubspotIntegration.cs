@@ -33,13 +33,11 @@ using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using Newtonsoft.Json;
 using System.Net;
-using HubSpot.NET.Api.Contact.Dto;
 using System.IO;
 using System.Reflection;
 using OfficeOpenXml;
 using System.Drawing;
 using OfficeOpenXml.Style;
-using System.Threading;
 using RestSharp;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
@@ -120,8 +118,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //Save a list of the ones that are Rock attributes
             var attrs = props.Where( p => p.label.Contains( "Rock Attribute " ) ).ToList();
             RockContext _context = new RockContext();
-            List<string> attrKeys = attrs.Select( hs => hs.name ).ToList();
-            var rockAttributes = new AttributeService( _context ).Queryable().Where( a => a.EntityTypeId == 15 && attrKeys.Contains( a.Key.ToLower() ) );
+            List<string> attrKeys = attrs.Select( hs => hs.label.Replace( "Rock Attribute ", "" ) ).ToList();
+            var rockAttributes = new AttributeService( _context ).Queryable().Where( a => a.EntityTypeId == 15 && attrKeys.Contains( a.Key ) );
             var rockAttributeValues = new AttributeValueService( _context ).Queryable().Join( rockAttributes,
                     av => av.AttributeId,
                     attr => attr.Id,
@@ -321,6 +319,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 }
                             }
                         }
+
                         //All properties begining with "Rock " are properties on the Person entity itself 
                         var person_props = props.Where( p => p.label.Contains( "Rock Property " ) ).ToList();
                         foreach ( PropertyInfo propInfo in person.GetType().GetProperties() )
@@ -448,7 +447,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
                             var serving_prop = props.FirstOrDefault( p => p.label == "Rock Custom Currently Serving" );
                             var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
-                            Console.WriteLine( "x" );
+
                             //set the serving prop
                             if ( serving_prop != null )
                             {
