@@ -182,6 +182,7 @@ namespace org.crossingchurch.PodcastSync.Jobs
                 item.LoadAttributes();
 
                 item.SetAttributeValue( "MegaphoneId", podcast.id.ToString() );
+                item.SetAttributeValue( "ContentAltText", podcast.title );
                 if ( podcast.customFields != null )
                 {
                     if ( podcast.customFields.Author != null && !String.IsNullOrEmpty( podcast.customFields.Author.ToString() ) )
@@ -209,6 +210,10 @@ namespace org.crossingchurch.PodcastSync.Jobs
                     if ( !String.IsNullOrEmpty( podcast.customFields.Guest ) )
                     {
                         item.SetAttributeValue( "Guest", podcast.customFields.Guest );
+                    }
+                    if ( !String.IsNullOrEmpty( podcast.customFields.MetaDescription ) )
+                    {
+                        item.SetAttributeValue( "MetaDescription", podcast.customFields.MetaDescription );
                     }
                 }
                 item.SetAttributeValue( "Image", image );
@@ -247,6 +252,7 @@ namespace org.crossingchurch.PodcastSync.Jobs
             public Object Author { get; set; }
             public Object Author2 { get; set; }
             public string Subseries { get; set; }
+            public string MetaDescription { get; set; }
         }
 
         private class PodcastInfo
