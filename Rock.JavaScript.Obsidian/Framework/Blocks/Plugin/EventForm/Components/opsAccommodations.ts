@@ -382,7 +382,13 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsSecurity"
+        :label="e.attributes.NeedsSecurity.name"
+      ></tcc-switch>
+    </div>
+    <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.HasDangerousActivity"
         :label="e.attributes.HasDangerousActivity.name"

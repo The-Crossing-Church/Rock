@@ -77,34 +77,40 @@ export default defineComponent({
         return setup
       },
       getDrinkInfo(value: string) {
-        let item = JSON.parse(value) as ListItem
-        let guids = item.value.split(",")
-        let selectedDrinks = this.drinks?.filter((d: any) => {
-          return guids.includes(d.guid)
-        })
-        let expectedAttendance = this.details?.attributeValues.ExpectedAttendance
-        if(selectedDrinks && selectedDrinks.length > 0) {
-          return selectedDrinks.map((d: any) => { 
-            let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
-            let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
-            return `${d.value}: ${amount} ${term}` 
+        if(value) {
+          let item = JSON.parse(value) as ListItem
+          let guids = item.value.split(",")
+          let selectedDrinks = this.drinks?.filter((d: any) => {
+            return guids.includes(d.guid)
           })
+          let expectedAttendance = this.details?.attributeValues.ExpectedAttendance
+          if(selectedDrinks && selectedDrinks.length > 0) {
+            return selectedDrinks.map((d: any) => { 
+              let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
+              let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
+              return `${d.value}: ${amount} ${term}` 
+            })
+          }
         }
+        return []
       },
       getOpsInventory(value: string) {
-        let inv = JSON.parse(value)
-        for(let i=0; i < inv.length; i++) {
-          this.inventory?.forEach((item: any) => {
-            if(item.guid == inv[i].InventoryItem) {
-              if(inv[i].QuantityNeeded > 1) {
-                inv[i].ItemName = item.value + "s"
-              } else {
-                inv[i].ItemName = item.value
+        if(value) {
+          let inv = JSON.parse(value)
+          for(let i=0; i < inv.length; i++) {
+            this.inventory?.forEach((item: any) => {
+              if(item.guid == inv[i].InventoryItem) {
+                if(inv[i].QuantityNeeded > 1) {
+                  inv[i].ItemName = item.value + "s"
+                } else {
+                  inv[i].ItemName = item.value
+                }
               }
-            }
-          })
+            })
+          }
+          return inv
         }
-        return inv
+        return []
       }
     },
     watch: {
