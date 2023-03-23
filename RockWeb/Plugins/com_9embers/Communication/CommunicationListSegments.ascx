@@ -33,11 +33,11 @@
                     </div>
                     <div class="col-md-4 col-sm-6">
                         <Rock:RockDropDownList runat="server"
-                            Help="Select if you want to send the email to only the members of the communication list, their parents, or both. Parents are not filtered through the parameters below, but will only be added when their child passes the filters."
+                            Help="Select if you want to send the communicaiton to only the Student/Child of the communication list, their parents, or both. Parents are not filtered throguh the parameters below, but will ONLY be added when their child passes the filters. When a 'Student/Child' option is selected it will only pull the age appropriate minors for that particular ministry (ie Crossing Students Segments will only pull 6th - 12th graders and Crossing Kids will only pull infants - 5th graders)"
                             ID="ddlSendTo" Label="Send To" Visible="false">
-                            <asp:ListItem Text="List Members" Value="0" />
+                            <asp:ListItem Text="Student/Child" Value="0" />
                             <asp:ListItem Text="Parents" Value="1" />
-                            <asp:ListItem Text="Members and Parents" Value="2" />
+                            <asp:ListItem Text="Student/Child and Parents" Value="2" />
                         </Rock:RockDropDownList>
                     </div>
                 </div>
