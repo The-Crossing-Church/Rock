@@ -1,5 +1,5 @@
 ﻿{% comment %}Custom Breadcrumbs{% endcomment %}
-<ol class='breadcrumb'>
+<ol class='breadcrumb podcast-breadcrumbs'>
     <li class='breadcrumb-item'>
         <a href="/">Home</a>
     </li>
@@ -19,18 +19,15 @@
             <a href="/Resources/Listen/Series/{{ Item |Attribute:'Series'}}/{{sub}}">{{ sub }}</a>
         </li>
     {% endif %}
-    <li class='breadcrumb-item'>
-        {{ Item.Title }}
-    </li>
 </ol>
-
+<h1 class="my-custom-2x">{{Item.Title}}</h1>
 {{ Item | Attribute:'MetaDescription' | AddMetaTagToHead:'name','description' }}
 <div class='row row-equal-height'>
-    <div class='col col-xs-12 col-md-7'>
+    <div class='col col-xs-12'>
         {% assign videoSrc = Item | Attribute:'Link' %}
         {% assign isCaptivate = videoSrc | Contains:'captivate' %}
         {% if isCaptivate %}
-            <iframe title="player" src="{{videoSrc | Replace:'vimeo.com','player.vimeo.com/video'}}" alt="{{Item | Attribute:'ContentAltText'}}" width="100%" height="170px" style="border-radius: 10px; overflow: hidden;" frameborder="0" allowfullscreen></iframe>
+            <iframe title="player" src="{{videoSrc}}" alt="{{Item | Attribute:'ContentAltText'}}" width="100%" height="170px" style="border-radius: 10px; overflow: hidden;" frameborder="0" allowfullscreen></iframe>
         {% else %}
             <iframe title="player" src="{{videoSrc}}" alt="{{Item | Attribute:'ContentAltText'}}" width="100%" height="215px" id="casted-embed-{{videoSrc | Split:'/' | Last}}" scrolling="no" style="border: none;"></iframe>
             
@@ -62,30 +59,34 @@
             </script>
         {% endif %}
     </div>
-    <div class='col col-xs-12 col-md-5'>
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                Title
-            </span>
-        </label>
-        {% endcomment %}
-        <h1>{{Item.Title}}</h1>
-        <br/>
+</div>
+<div class="row">
+    <div class="col col-xs-12 col-md-6 text-center text-md-left">
+        <div class='social-media'>
+            <script>function fbs_click() { u = location.href; t = document.title; window.open('http://www.facebook.com/sharer.php?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(t), 'sharer', 'toolbar=0,status=0,width=626,height=436'); return false; }</script>
+            <ul class="links">
+              <li style="margin-left: 0px;">
+                <a href="https://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
+                  <i class='fa fa-facebook-f'></i>
+                </a>
+              </li>
+              <li>
+                <a href="https://twitter.com/intent/tweet?text={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
+                  <i class='fa fa-twitter'></i>
+                </a>
+              </li>
+              <li style="margin-right: 0px;">
+                <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
+                  <i class='fa fa-share-alt'></i>
+                </a>
+              </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col col-xs-12 col-md-6 text-center text-md-right">
         {% assign hOne = Item | Attribute:'Author' %}
         {% assign hTwo = Item | Attribute:'Author2' %}
         {% assign guest = Item | Attribute:'Guest' %}
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                {% if hOne != '' and hTwo != '' %}
-                    Hosts
-                {% else %}
-                    Host
-                {% endif %}
-            </span>
-        </label>
-        {% endcomment %}
         {% if hOne != '' %}
             <a href="/Resources/Search?q={{Item | Attribute:'Author','FullName'}}"><h4>{{Item | Attribute:'Author','FullName'}}</h4></a>
         {% endif %}
@@ -95,47 +96,11 @@
         {% if guest != '' %}
             <a href="/Resources/Search?q={{Item | Attribute:'Guest'}}"><h4>{{Item | Attribute:'Guest'}}</h4></a>
         {% endif %}
-        <br/>
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                Description
-            </span>
-        </label>
-        {% endcomment %}
+    </div>
+</div>
+<div class="row">
+    <div class='col col-xs-12 text-justify'>
         <p>{{Item.Content}}</p>
-        <br/>
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                Share
-            </span>
-        </label>
-        {% endcomment %}
-        <div class="row">
-          <div class="col col-xs-12">
-            <div class='social-media'>
-                <script>function fbs_click() { u = location.href; t = document.title; window.open('http://www.facebook.com/sharer.php?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(t), 'sharer', 'toolbar=0,status=0,width=626,height=436'); return false; }</script>
-                <ul class="links">
-                  <li style="margin-left: 0px;">
-                    <a href="https://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
-                      <i class='fa fa-facebook-f'></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://twitter.com/intent/tweet?text={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
-                      <i class='fa fa-twitter'></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
-                      <i class='fa fa-share-alt'></i>
-                    </a>
-                  </li>
-                </ul>
-            </div>
-          </div>
-        </div>
     </div>
 </div>
 
@@ -149,27 +114,8 @@
 </script>
 
 <style>
-    .floating--title {
-        display: inline-block;
-        padding: 0 0 4px;
-        border-bottom: 2px solid #5F9BAC;
-        text-transform: uppercase;
-        font-size: .75em;
-        line-height: 1em;
-        color: #5F9BAC;
-    }
-    .video-wrapper {
-        position: relative;
-        width: 100%;
-        height: 0;
-        padding-bottom: 26%;
-    }
-    .video-wrapper>iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+    .podcast-breadcrumbs.breadcrumb > li {
+        display: inline !important;
     }
     .social-media .links {
         display: block;
