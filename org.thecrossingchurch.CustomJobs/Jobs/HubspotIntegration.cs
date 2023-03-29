@@ -256,7 +256,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //}
                 //else
                 //{
-                //    person = personService.Get( 14659 );
+                //    person = personService.Get(  );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
@@ -566,7 +566,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 request.AddHeader( "Authorization", $"Bearer {key}" );
                 request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
                 IRestResponse response = client.Execute( request );
-                if ( response.StatusCode == HttpStatusCode.BadRequest )
+                if ( response.StatusCode != HttpStatusCode.OK )
                 {
                     throw new Exception( response.Content );
                 }
