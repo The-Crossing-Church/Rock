@@ -136,7 +136,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             GetContacts( "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,phone,hs_all_assigned_business_unit_ids,rock_id,which_best_describes_your_involvement_with_the_crossing_,has_potential_rock_match,createdate,lastmodifieddate" );
 
             //Contacts with emails only in The Crossing Business Unit
-            var contacts_with_email = contacts.Where( c => c.properties.email != null && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ',' ).Contains( "0" ) ).ToList();
+            var contacts_with_email = contacts.Where( c => c.properties.email != null && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( "0" ) ).ToList();
 
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
             for ( var i = 0; i < contacts_with_email.Count(); i++ )
@@ -256,7 +256,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //}
                 //else
                 //{
-                //    person = personService.Get(  );
+                //    person = personService.Get( 22767 );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
