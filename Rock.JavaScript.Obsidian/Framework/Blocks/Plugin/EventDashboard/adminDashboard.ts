@@ -75,9 +75,9 @@ export default defineComponent({
       }
       provide("filterRequests", filterRequests);
 
-      const changeStatus: (id: number, status: string) => Promise<any> = async (id, status) => {
+      const changeStatus: (id: number, status: string, withComment: boolean) => Promise<any> = async (id, status, withComment) => {
         const response = await invokeBlockAction("ChangeStatus", {
-            id: id, status: status
+            id: id, status: status, denyWithComments: withComment
         });
         return response
       }
@@ -355,7 +355,7 @@ export default defineComponent({
     addBufferFromModal() {
       this.bufferModal = true
     },
-    updateStatus(status: string) {
+    updateStatus(status: string, withComment: boolean = false) {
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'
@@ -365,7 +365,7 @@ export default defineComponent({
       } else if (status == "Cancelled") {
         this.btnLoading.cancelled = true
       }
-      this.changeStatus(this.selected.id, status).then((res) => {
+      this.changeStatus(this.selected.id, status, withComment).then((res) => {
         if(res.isSuccess) {
           if(res.data.url) {
             window.location.href = res.data.url
@@ -675,7 +675,7 @@ export default defineComponent({
       <a-pop v-model:visible="visible" trigger="click" placement="top" v-if="selectedStatus != 'Denied'">
         <template #content>
           <div style="display: flex; flex-direction: column;">
-            <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied')">
+            <a-btn class="mb-1" type="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied', true)">
               <i class="mr-1 fa fa-times"></i>
               Changes w/ Comment
             </a-btn>
