@@ -280,7 +280,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     var gender = new HtmlGenericControl( "td" );
                     gender.InnerText = person.Gender.ToString();
                     var allergyMed = new HtmlGenericControl( "td" );
-                    allergyMed.InnerText = person.AttributeValues["Allergy"].Value + " " + person.AttributeValues["MedicalSituation"].Value;
+                    if ( !String.IsNullOrEmpty( person.AttributeValues["Allergy"].Value ) )
+                    {
+                        allergyMed.InnerText = person.AttributeValues["Allergy"].Value;
+                    }
+                    if ( !String.IsNullOrEmpty( person.AttributeValues["MedicalSituation"].Value ) )
+                    {
+                        allergyMed.InnerText += ( String.IsNullOrEmpty( allergyMed.InnerText ) ? "" : " | " ) + person.AttributeValues["MedicalSituation"].Value;
+                    }
+                    if ( !String.IsNullOrEmpty( person.AttributeValues["MedicalInformation-Arena"].Value ) )
+                    {
+                        allergyMed.InnerText += ( String.IsNullOrEmpty( allergyMed.InnerText ) ? "" : " | " ) + person.AttributeValues["MedicalInformation-Arena"].Value;
+                    }
                     var parents = new HtmlGenericControl( "td" );
                     var parentNames = person.GetFamilyMembers().Where( fm => fm.GroupRoleId == 3 ).ToList();
                     if ( parentNames.Count() != 0 )
@@ -320,6 +331,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                         AllergyMedical = allergyMed.InnerText,
                         Allergy = person.AttributeValues["Allergy"].Value,
                         Medical = person.AttributeValues["MedicalSituation"].Value,
+                        MedicalInfo = person.AttributeValues["MedicalInformation-Arena"].Value,
                         ParentNames = parents.InnerText,
                         ParentPhones = phones.InnerText,
                         Securitycode = AttendanceCodeService.GetNew( 6, 0, 0, true ).Code
@@ -507,7 +519,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     if ( !String.IsNullOrWhiteSpace( rosters[i].RosterData[j].AllergyMedical ) )
                     {
                         page += "<div class='med' style='padding: 8px;'>" +
-                                    rosters[i].RosterData[j].AllergyMedical +
+                                    ( !String.IsNullOrWhiteSpace( rosters[i].RosterData[j].Medical ) ? ( rosters[i].RosterData[j].Medical + " | " ) : "" ) +
+                                    rosters[i].RosterData[j].Allergy +
                                 "</div>";
                     }
                     page += "</td><td class='vertical-spacer'></td><td class='tag'><div>";
@@ -590,122 +603,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                         .Content();
             return pdf;
         }
-        //public byte[] GenerateTags()
-        //{
-        //    var tags = "";
-        //    for (var i = 0; i < rosters.Count(); i++)
-        //    {
-        //        var counter = 1;
-        //        var page = "";
-        //        for (var j = 0; j < rosters[i].RosterData.Count(); j++)
-        //        {
-        //            if (counter == 1)
-        //            {
-        //                page = "<div class='page'>";
-        //            }
-        //            page += "<div class='row'>";
-        //            page += "<div class='tag first-tag'>";
-        //            //Child Tag
-        //            page += "<div style='padding: 8px;'>" +
-        //                        "<div class='inline' style='font-size: 26pt;'>" +
-        //                            rosters[i].RosterData[j].NickName +
-        //                        "</div>" +
-        //                        "<div class='inline right'>" +
-        //                            "<div>" +
-        //                                "Kids Club" +
-        //                            "</div>" +
-        //                            "<div>" +
-        //                                "06/05/20" +
-        //                            "</div>" +
-        //                        "</div>" +
-        //                    "</div>" +
-        //                    "<div style='padding: 0px 8px;'>" +
-        //                        "<div class='inline' style='font-size: 16pt;'>" +
-        //                            rosters[i].RosterData[j].LastName +
-        //                        "</div>" +
-        //                        "<div class='inline right' style='font-size: 20pt;'>" +
-        //                            rosters[i].RosterData[j].Securitycode +
-        //                        "</div>" +
-        //                    "</div>" +
-        //                    "<div style='padding: 8px;' style='font-size: 18pt;'>" +
-        //                        rosters[i].ClassName +
-        //                    "</div>";
-        //            if (!String.IsNullOrWhiteSpace(rosters[i].RosterData[j].AllergyMedical))
-        //            {
-        //                page += "<div class='med' style='padding: 8px;'>" +
-        //                            rosters[i].RosterData[j].AllergyMedical +
-        //                        "</div>";
-        //            }
-        //            page += "</div><div class='tag'>";
-        //            //Parent Receipt
-        //            page += "<div style='padding: 8px; text-align: center;' class='inline'>" +
-        //                        "<div style='font-size: 20pt;'>Receipt</div>" +
-        //                        "<div class='sec' style='font-size: 20pt;'>" +
-        //                            rosters[i].RosterData[j].Securitycode +
-        //                        "</div>" +
-        //                        "<div style='font-size: 22pt;'>" +
-        //                            rosters[i].RosterData[j].NickName +
-        //                        "</div>" +
-        //                        "<div style='font-size: 18pt;'>" +
-        //                            "06/05/20" +
-        //                        "</div>" +
-        //                        "<div style='font-size: 18pt;'>" +
-        //                            "Kids Club" +
-        //                        "</div>" +
-        //                    "</div>" +
-        //                    "<div style='padding: 8px; text-align: center;' class='inline right'>" +
-        //                        "<div style='font-size: 20pt;'>Receipt</div>" +
-        //                        "<div class='sec' style='font-size: 20pt;'>" +
-        //                            rosters[i].RosterData[j].Securitycode +
-        //                        "</div>" +
-        //                        "<div style='font-size: 22pt;'>" +
-        //                            rosters[i].RosterData[j].NickName +
-        //                        "</div>" +
-        //                        "<div style='font-size: 18pt;'>" +
-        //                            "06/05/20" +
-        //                        "</div>" +
-        //                        "<div style='font-size: 18pt;'>" +
-        //                            "Kids Club" +
-        //                        "</div>" +
-        //                    "</div>";
-        //            page += "</div>";
-        //            if (counter == 4)
-        //            {
-        //                page += "</div>";
-        //                tags += page;
-        //                counter = 0;
-        //            }
-        //            counter++;
-        //        }
-        //    }
-        //    var content = "<!DOCTYPE html>" +
-        //                    "<html>" +
-        //                    "<head>" +
-        //                        "<meta charset='UTF-8'>" +
-        //                        "<title>Power Failure Tags</title>" +
-        //                        "<style>" +
-        //                          //"body { widht: 8.5in; height: 11in; }" +
-        //                          ".page { page-break-before: always; font-family: sans-serif; }" +
-        //                          ".row { margin-bottom: 0.125in; }" +
-        //                          ".tag { display: inline-block; height: 2.33in; width: 3.375in; border: 1px solid grey; position: relative; }" +
-        //                          ".first-tag { margin-right: 0.375in; }" +
-        //                          ".med { position: absolute; bottom: 0px; background-color: black; color: white; padding: 8px; font-weight: bold; }" +
-        //                          ".sec { background-color: black; color: white; padding: 8px; font-weight: bold; }" +
-        //                          ".inline { display: inline-block; }" +
-        //                          ".right { float: right; }" +
-        //                        //".row { margin-bottom: 0.25in; }" +
-        //                        //".tag { display: inline-block; height: 4.66in; width: 6.75in; padding: 8px; border: 1px solid grey; }" +
-        //                        //".first-tag { margin-right: .375in; }" +
-        //                        "</style>" +
-        //                    "</head>" +
-        //                    "<body>" +
-        //                    tags +
-        //                    "</body>" +
-        //                    "</html>";
-        //    //var size = new PaperSize(Length.Inches(8.5), Length.Inches(11));
-        //    var pdf = Pdf.From(content).WithResolution(7680).WithObjectSetting("web.enableIntelligentShrinking", "false").Portrait().WithMargins(0.65.Inches()).Content();
-        //    return pdf;
-        //}
         #endregion
     }
 
@@ -720,6 +617,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         public string AllergyMedical { get; set; }
         public string Allergy { get; set; }
         public string Medical { get; set; }
+        public string MedicalInfo { get; set; }
         public string ParentNames { get; set; }
         public string ParentPhones { get; set; }
         public string Securitycode { get; set; }
