@@ -36,7 +36,6 @@
     "webpack-cli": "^4.7.0"
   },
   "dependencies": {
-    "@vuepic/vue-datepicker": "^3.4.7",
     "ant-design-vue": "^2.1.0",
     "axios": "^0.21.4",
     "luxon": "^2.0.2",
@@ -45,6 +44,7 @@
     "moment-timezone": "^0.5.37",
     "systemjs": " ^6.8.3",
     "vee-validate": "^4.5.5",
-    "vue": "^3.0.7"
+    "vue": "^3.0.7",
+    "vue-cal": "^4.8.1"
   }
 }
