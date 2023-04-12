@@ -6,10 +6,11 @@ import { useStore } from "../../../Store/index"
 import { DateTime, Interval } from "luxon"
 import MonthView from "./Components/month"
 import WeekView from "./Components/week"
-import DayView from "./Components/day"
+import DayView from "./Components/dayView"
 import { Button, Modal } from "ant-design-vue"
 import RoomPicker from "../EventForm/Components/roomPicker"
 import DropDownList from "../EventDashboard/Components/dropDownList"
+import RockLabel from  "../../../Elements/rockLabel"
 
 const store = useStore()
 
@@ -32,7 +33,8 @@ export default defineComponent({
     "tcc-room": RoomPicker,
     "tcc-ddl": DropDownList,
     "a-btn": Button,
-    "a-modal": Modal
+    "a-modal": Modal,
+    "rck-lbl": RockLabel
   },
   setup() {
       const invokeBlockAction = useInvokeBlockAction();
@@ -60,7 +62,6 @@ export default defineComponent({
         lastLoadRange: {} as Interval,
         calendars: [],
         event: null,
-        modal: false,
         filters: {
           rooms: "",
           ministries: [] as string[],
@@ -164,6 +165,14 @@ export default defineComponent({
     },
     filteredCalendars() {
       let cals = JSON.parse(JSON.stringify(this.calendars))
+      console.log(cals)
+      if(this.filters.parentId && this.filters.parentId > 0) {
+        cals.forEach((c: any) => {
+          c.events = c.events.filter((e: any) => {
+            return e.parentId === this.filters.parentId
+          })
+        })
+      }
       if(this.filters.ministries && this.filters.ministries.length > 0) {
         cals.forEach((c: any) => {
           c.events = c.events.filter((e: any) => {
@@ -173,7 +182,7 @@ export default defineComponent({
       }
       if(this.filters.rooms) {
         let selected = JSON.parse(this.filters.rooms)
-        let items = selected.text.split(", ")
+        let items = selected.text.split(", ").filter((s: string) => { return s })
         if(items.length > 0) {
           cals.forEach((c: any) => {
             c.events = c.events.filter((e: any) => {
@@ -223,12 +232,6 @@ export default defineComponent({
       }
       return 'accent'
     },
-    getTime(hour: number) {
-      if(this.currentDate) {
-        let dt = DateTime.fromObject({year: this.currentDate.year, month: this.currentDate.month, day: this.currentDate.day, hour: hour - 1, minute: 0, second: 0})
-        return dt.toFormat('h') + ' ' + ((hour - 1) > 11 ? 'PM' : 'AM')
-      }
-    },
     selectWeek(date: DateTime) {
       this.currentDate = date
       this.view = 'week'
@@ -237,40 +240,46 @@ export default defineComponent({
       this.currentDate = date
       this.view = 'day'
     },
-    openEvent(e: any) {
-      this.event = e
-      this.modal = true
-    },
-    prev() {
-    }, 
-    next() {
+    page(isNext: boolean) {
+      let val = 1
+      if(!isNext) {
+        val = -1
+      }
       let nextRange = {} as Interval
       if(this.view == 'day') {
-        nextRange = Interval.fromDateTimes(this.currentDate.plus({days: 1}).startOf('day'), this.currentDate.plus({days: 1}).endOf('day'))
-        this.currentDate = this.currentDate.plus({days: 1}).startOf('day')
+        nextRange = Interval.fromDateTimes(this.currentDate.plus({days: val}).startOf('day'), this.currentDate.plus({days: val}).endOf('day'))
+        this.currentDate = this.currentDate.plus({days: val}).startOf('day')
       } else if(this.view == 'week') {
-        nextRange = Interval.fromDateTimes(this.currentDate.plus({weeks: 1}).startOf('week').minus({days: 1}), this.currentDate.plus({weeks: 1}).endOf('week').minus({days: 1}))
-        this.currentDate = this.currentDate.plus({weeks: 1}).startOf('day')
+        nextRange = Interval.fromDateTimes(this.currentDate.plus({weeks: val}).startOf('week').minus({days: 1}), this.currentDate.plus({weeks: val}).endOf('week').minus({days: 1}))
+        this.currentDate = this.currentDate.plus({weeks: val}).startOf('day')
       } else {
         let startOfMonth = this.currentDate.startOf('month')
-        nextRange = Interval.fromDateTimes(startOfMonth.plus({months: 1}).startOf('day'), startOfMonth.plus({months: 1}).endOf('day'))
-        this.currentDate = startOfMonth.plus({months: 1}).startOf('day')
+        nextRange = Interval.fromDateTimes(startOfMonth.plus({months: val}).startOf('day'), startOfMonth.plus({months: val}).endOf('month'))
+        this.currentDate = startOfMonth.plus({months: val}).startOf('day')
       }
-      if(!this.lastLoadRange.engulfs(nextRange)) {
-        if(this.view == 'month') {
-          this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
-        } else {
-          this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+      //Only load new data if we haven't filtered to a particular event since we should already have the data for it
+      if(this.filters.parentId == 0) {
+        if(!this.lastLoadRange.engulfs(nextRange)) {
+          if(this.view == 'month') {
+            this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+          } else {
+            this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+          }
         }
       }
     },
+    filterToEvent(id: number) {
+      this.filters.parentId = id
+    }
   },
   watch: {
     view(val) {
       if(val == 'month') {
         let nextRange = Interval.fromDateTimes(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
-        if(!this.lastLoadRange.engulfs(nextRange)) {
-          this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+        if(this.filters.parentId == 0) {
+          if(!this.lastLoadRange.engulfs(nextRange)) {
+            this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+          }
         }
       }
     }
@@ -287,11 +296,11 @@ export default defineComponent({
         </a-btn>
       </div>
       <div class="col col-xs-6 text-center font-weight-bold" style="font-size: 20px;">
-        <a-btn shape="circle" type="accent" @click="prev">
+        <a-btn shape="circle" type="accent" @click="page(false)">
           <i class="fa fa-chevron-left"></i>
         </a-btn>
         {{displayDate}}
-        <a-btn shape="circle" type="accent" @click="next">
+        <a-btn shape="circle" type="accent" @click="page(true)">
           <i class="fa fa-chevron-right"></i>
         </a-btn>
       </div>
@@ -301,7 +310,7 @@ export default defineComponent({
         <a-btn :type="viewBtnColor('day')" @click="view = 'day'">Day</a-btn>
       </div>
     </div>
-    <div class="collapse py-2" id="calendar-filters">
+    <div class="collapse py-4" id="calendar-filters">
       <div class="row">
         <div class="col col-xs-12 col-md-4">
           <tcc-room
@@ -318,6 +327,13 @@ export default defineComponent({
             :items="ministries"
           ></tcc-ddl>
         </div>
+        <div class="col col-xs-12 col-md-4">
+          <rck-lbl>Filtered to Event</rck-lbl> <br/>
+          {{(filters.parentId == 0 ? 'No' : 'Yes')}}
+        </div>
+      </div>
+      <div class="pull-right">
+        <a-btn type="grey" @click="filters = { rooms: '', ministries: [], parentId: 0, resources: [], submitters: [] }">Clear Filters</a-btn>
       </div>
     </div>
     <tcc-month
@@ -325,44 +341,21 @@ export default defineComponent({
       :calendars="filteredCalendars"
       :currentDate="currentDate"
       v-on:selectWeek="selectWeek"
-      v-on:openEvent="openEvent"
     ></tcc-month>
     <tcc-week
       v-if="view == 'week'"
       :calendars="filteredCalendars"
       :currentDate="currentDate"
       v-on:selectDay="selectDay"
-      v-on:openEvent="openEvent"
+      v-on:filterToEvent="filterToEvent"
     ></tcc-week>
-    <template v-if="view == 'day'">
-      <div style="display: flex;">
-        <div class="tcc-time-of-day">
-          <div class="tcc-hour" v-for="i in 24" :idx="i">
-            {{getTime(i)}}
-          </div>
-        </div>
-        <div class="tcc-cal-wrapper">
-          <div class="tcc-cal-body">
-            <div class="tcc-cal-week">
-              <div class="tcc-cal-day">
-                <div class="tcc-day-header">
-                  {{currentDate.toFormat('EEE')}} {{currentDate.toFormat('dd')}}
-                </div>
-                <tcc-day
-                  :calendars="filteredCalendars"
-                  :currentDate="currentDate"
-                  v-on:openEvent="openEvent"
-                ></tcc-day>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
+    <tcc-day
+      v-if="view == 'day'"
+      :calendars="filteredCalendars"
+      :currentDate="currentDate"
+      v-on:filterToEvent="filterToEvent"
+    ></tcc-day>
   </div>
-  <a-modal v-model:visible="modal" v-if="modal" width="75%">
-    {{event.title}}
-  </a-modal>
   <v-style>
     .hover {
       cursor: pointer;
@@ -403,13 +396,45 @@ export default defineComponent({
       border-color: hsl(172deg 30% 55%);
       color: hsl(172deg 30% 55%);
     }
+    .ant-btn-grey:focus, .ant-btn-grey:hover, .ant-btn-cancelled:focus, .ant-btn-cancelled:hover, .ant-btn-cancelledbyuser:focus, .ant-btn-cancelledbyuser:hover {
+      background-color: #929392;
+      border-color: #929392;
+      color: black;
+    }
+    .ant-btn-cancelled, .ant-btn-cancelledbyuser, .ant-btn-grey {
+      background-color: #9e9e9e;
+      border-color: #9e9e9e;
+    }
+    .window {
+      overflow-y: scroll;
+      width: 100%;
+      height: 80vh;
+    }
+    .window::-webkit-scrollbar {
+      width: 5px;
+      border-radius: 3px;
+    }
+    .window::-webkit-scrollbar-track {
+      background: #bfbfbf;
+      -webkit-box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    .window::-webkit-scrollbar-thumb {
+      background: rgb(224, 224, 224);
+      -webkit-box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    .window::-webkit-scrollbar-thumb:hover {
+      background: #AAA;
+    }
+    .window::-webkit-scrollbar-thumb:active {
+      background: #888;
+      -webkit-box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3);
+    }
     .tcc-cal-wrapper {
       width: 100%;
     }
     .tcc-time-of-day {
       width: 50px;
       text-align: justify;
-      margin-top: 30px;
     }
     .tcc-time-of-day .tcc-hour {
       width: 50px;

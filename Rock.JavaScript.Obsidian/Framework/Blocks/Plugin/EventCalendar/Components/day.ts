@@ -1,11 +1,42 @@
 import { defineComponent, PropType } from "vue"
 import { DateTime, Interval } from "luxon"
-import { Modal } from "ant-design-vue"
+import { Modal, Button } from "ant-design-vue"
+import { useStore } from "../../../../Store/index"
+import { Person } from "../../../../ViewModels"
+import Chip from "../../EventForm/Components/chip"
+
+const store = useStore()
+
+type Event = {
+   id: number,
+   parentId: number,
+   start: string,
+   end: string,
+   adjustedStart: DateTime,
+   adjustedEnd: DateTime,
+   startBuffer: number,
+   endBuffer: number,
+   title: string,
+   location: string,
+   ministry: string,
+   resources: string[],
+   submitterId: number,
+   submitter: string,
+   contact: string,
+   calendar: string,
+   height: number,
+   intersections: number,
+   interval: number,
+   left: number,
+   idx: number,
+} 
 
 export default defineComponent({
   name: "EventCalendar.Components.DayView",
   components: {
-    "a-modal": Modal
+    "a-btn": Button,
+    "a-modal": Modal,
+    "tcc-chip": Chip,
   },
   props: {
     calendars: Array,
@@ -21,6 +52,10 @@ export default defineComponent({
     }
   },
   computed: {
+    /** The person currently authenticated */
+    currentPerson(): Person | null {
+      return store.state.currentPerson
+    },
     daysCalendar(): Array<any> {
       if(this.calendars && this.currentDate) {
         let data = JSON.parse(JSON.stringify(this.calendars))
@@ -146,6 +181,9 @@ export default defineComponent({
             })
             e.idx = eventsAtInterval.indexOf(e)
             e.left = 0
+            // if(e.idx > 0) {
+            //   e.left = eventsAtInterval[e.idx - 1].left + (100 / (eventsAtInterval[e.idx - 1].intersections + 1))
+            // }
             for(let i=0; i<e.idx; i++) {
               e.left += 100 / (eventsAtInterval[i].intersections + 1)
             }
@@ -175,6 +213,28 @@ export default defineComponent({
         }
         return timeFrame
       }
+    },
+    relatedEvents() {
+      if(this.selected) {
+        let events = [] as any[]
+        this.calendars?.forEach((c: any) => {
+          c.events.forEach((e: any) => {
+            if(e.parentId == this.selected.parentId && (e.id != this.selected.id || c.name != this.selected.calendar)) {
+              let idx = events.map((event: any) => { return event.start }).indexOf(e.start)
+              if(idx >= 0) {
+                events[idx].events.push(e)
+              } else {
+                events.push({start: e.start, events: [ e ]})
+              }
+            }
+          })
+        })
+        events.forEach((e: any) => {
+          e.rooms = e.events.map((ev: any) => ev.location).join(", ")
+        })
+        return events
+      }
+      return []
     }
   },
   methods: {
@@ -185,6 +245,26 @@ export default defineComponent({
     },
     openEvent(e: any) {
       this.$emit("openEvent", e)
+    },
+    getTimeFrame(event: any) {
+      if(event) {
+        let start = event.adjustedStart
+        let end = event.adjustedEnd
+        if(!start) {
+          start = DateTime.fromISO(event.start)
+          if(event.startBuffer && event.startBuffer > 0) {
+            start = start.minus({minutes: event.startBuffer})
+          }
+        }
+        if(!end) {
+          end = DateTime.fromISO(event.end)
+          if(event.endBuffer && event.endBuffer > 0) {
+            end = end.plus({minutes: event.endBuffer})
+          }
+        }
+        return `${start.toFormat("EEE, MMM, d")} ${start.toFormat("t")} - ${end.toFormat("t")}`
+      }
+      return ""
     },
     getStyle(event: any, calendar: any) {
       let style = 'position: absolute; background-color: ' + calendar.color.replaceAll('%2C', ',') + '; border-color: ' + calendar.border.replaceAll('%2C', ',') + '; height: ' + event.height + ';'
@@ -236,22 +316,27 @@ export default defineComponent({
       //   }
       // })
       // let idx = overlaps.indexOf(event)
-      console.log('START EVENT')
-      console.log(event.location + " " + event.title)
-      console.log("Actual Start: " + event.start + " " + DateTime.fromISO(event.start).toFormat("yyyy-MM-dd HH:mm"))
-      console.log("Actual End: " + event.end+ " " + DateTime.fromISO(event.end).toFormat("yyyy-MM-dd HH:mm"))
-      console.log("Start Buffer: " + event.startBuffer)
-      console.log("End Buffer: " + event.endBuffer)
-      console.log("Adjusted Start: " + event.adjustedStart.toFormat("yyyy-MM-dd HH:mm"))
-      console.log("Adjusted End: " + event.adjustedEnd.toFormat("yyyy-MM-dd HH:mm"))
+      // console.log('START EVENT')
+      // console.log(event.location + " " + event.title)
+      // console.log("Actual Start: " + event.start + " " + DateTime.fromISO(event.start).toFormat("yyyy-MM-dd HH:mm"))
+      // console.log("Actual End: " + event.end+ " " + DateTime.fromISO(event.end).toFormat("yyyy-MM-dd HH:mm"))
+      // console.log("Start Buffer: " + event.startBuffer)
+      // console.log("End Buffer: " + event.endBuffer)
+      // console.log("Adjusted Start: " + event.adjustedStart.toFormat("yyyy-MM-dd HH:mm"))
+      // console.log("Adjusted End: " + event.adjustedEnd.toFormat("yyyy-MM-dd HH:mm"))
       let percentage = (100/(event.intersections + 1))
       //TODO: instead of left being percentage*idx it should be a sum of each preious event in the list percentage so we save that percentage info, but then the value used for left is a sum
-      console.log(percentage + "%", (percentage*event.idx) + "%")
-      console.log("left: " + event.left + "%")
+      // console.log(percentage + "%", (percentage*event.idx) + "%")
+      // console.log("left: " + event.left + "%")
       style += " width: "  + percentage + "%; left: " + event.left + "%;"
       // style += " width: "  + (100/overlaps.length) + "%; left: " + ((100/overlaps.length)*idx) + "%;"
       //style += " width: "  + (100/(event.intersections + 1)) + "%; left: " + ((100/overlaps.length)*idx) + "%;"
       return style
+    },
+    filterToEvent() {
+      this.modal = false
+      this.$emit('filterToEvent', this.selected.parentId)
+      this.selected = {}
     }
   },
   watch: {
@@ -272,18 +357,79 @@ export default defineComponent({
       </template>
     </template>
   </div>
-  <a-modal v-if="modal" v-model:visible="modal" :closable="false">
+  <a-modal v-if="modal" v-model:visible="modal" :closable="false" width="75%">
     <h2 class="text-center">{{selected.title}}</h2>
-    <i class="far fa-clock"></i> {{selectedTimeFrame}} <br/>
-    <div class="row">
-      <div class="col col-xs-12 col-md-6">
-        {{selected.ministry}}: {{selected.submitter}}
-      </div>
-      <div class="col col-xs-12 col-md-6" v-if="selected.submitter != selected.contact">
-        Event Contact: {{selected.contact}}
+    <div>
+      <i class="far fa-clock"></i> {{selectedTimeFrame}}
+    </div>
+    <div>
+      {{selected.ministry}}: {{selected.submitter}}
+    </div>
+    <div v-if="selected.submitter != selected.contact">
+      Event Contact: {{selected.contact}}
+    </div>
+    <div>
+      <i class="fas fa-map-marker-alt"></i> {{selected.location}}
+    </div>
+    <div class="mt-2">
+      Resources
+      <div class="chip-group">
+        <tcc-chip v-for="r in selected.resources" :disabled="true">
+          <template v-if="r == 'Room'">
+            <i class="mr-1 fas fa-door-open"></i> Physical Space
+          </template>
+          <template v-else-if="r == 'Catering'">
+            <i class="mr-1 fas fa-utensils"></i> Catering
+          </template>
+          <template v-else-if="r == 'Childcare'">
+            <i class="mr-1 fas fa-child"></i> Childcare
+          </template>
+          <template v-else-if="r == 'Childcare Catering'">
+            <i class="mr-1 fas fa-pizza-slice"></i> Childcare Catering
+          </template>
+          <template v-else-if="r == 'Online Event'">
+            <i class="mr-1 fas fa-child"></i> Zoom
+          </template>
+          <template v-else-if="r == 'Publicity'">
+            <i class="mr-1 fas fa-bullhorn"></i> Publicity
+          </template>
+          <template v-else-if="r == 'Registration'">
+            <i class="mr-1 fas fa-laptop"></i> Registration
+          </template>
+          <template v-else-if="r == 'Extra Resources'">
+            <i class="mr-1 fas fa-cogs"></i> Ops Request
+          </template>
+          <template v-else-if="r == 'Web Calendar'">
+            <i class="mr-1 fas fa-calendar"></i> Web Calendar
+          </template>
+          <template v-else-if="r == 'Production'">
+            <i class="mr-1 fas fa-music"></i> Production
+          </template>
+          <template v-else>
+            {{r}}
+          </template>
+        </tcc-chip>
       </div>
     </div>
-    <i class="fas fa-map-marker-alt"></i> {{selected.location}}
+    <template v-if="relatedEvents.length > 0">
+      <div class="mt-2 font-weight-bold hover" data-toggle="collapse" href="#relatedCollapse" aria-expanded="false" aria-controls="relatedCollapse">
+        Other Events in Request <i class="fa fa-chevron-down"></i>
+      </div>
+      <div class="collapse" id="relatedCollapse">
+        <div v-for="e in relatedEvents">
+          {{getTimeFrame(e.events[0])}} {{e.rooms}}
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <a-btn shape="circle" type="accent" v-if="selected.submitterId == currentPerson.id">
+        <i class="fa fa-pencil"></i>
+      </a-btn>
+      <a-btn shape="circle" type="primary" v-if="relatedEvents.length > 0" @click="filterToEvent">
+        <i class="fa fa-filter"></i>
+      </a-btn>
+      <a-btn type="grey" @click="modal = false; selected = {};">Close</a-btn>
+    </template>
   </a-modal>
   <v-style>
     .tcc-event {

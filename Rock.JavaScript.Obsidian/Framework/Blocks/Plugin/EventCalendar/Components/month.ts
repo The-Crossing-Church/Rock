@@ -87,33 +87,16 @@ export default defineComponent({
     selectMonth(month: number) {
       this.currentMonth = month
     },
-    eventsOnDay(events: Array<any>, day: number) {
+    eventsOnDay(events: Array<any>, date: DateTime) {
       let evts = JSON.parse(JSON.stringify(events))
-      evts.forEach((e: any) => {
-        let start = DateTime.fromISO(e.start)
-        if(e.startBuffer) {
-          e.adjustedStart = start.minus({minutes: e.startBuffer})
-        } else {
-          e.adjustedStart = start
-        }
-        let end = DateTime.fromISO(e.end)
-        if(e.endBuffer) {
-          e.adjustedEnd = end.plus({minutes: e.endBuffer})
-        } else {
-          e.adjustedEnd = end
-        }
-      })
       evts = evts.filter((e: any) => {
-        return e.adjustedStart.day == day
+        return DateTime.fromISO(e.start).day == date.day && date.month == DateTime.fromISO(e.start).month
       })
       return evts
     },
     selectWeek(day: DateTime) {
       this.$emit('selectWeek', day)
     },
-    openEvent(e: any) {
-      this.$emit("openEvent", e)
-    }
   },
   watch: {
     calendars: {
@@ -121,6 +104,10 @@ export default defineComponent({
 
       },
       deep: true
+    },
+    currentDate(val) {
+      this.currentMonth = val.month
+      this.currentYear = val.year
     }
   },
   mounted() {
@@ -176,7 +163,7 @@ export default defineComponent({
           {{day.toFormat('dd')}}
           <div>
             <template v-for="c in calendars">
-              <div class="tcc-event" v-for="e in eventsOnDay(c.events, day.toFormat('dd'))" :style="('height: 24px; background-color: ' + c.color.replaceAll('%2C', ',') + '; border-color: ' + c.border.replaceAll('%2C', ',') + ';')" @click="openEvent(e)">
+              <div class="tcc-event" v-for="e in eventsOnDay(c.events, day)" :style="('height: 24px; background-color: ' + c.color.replaceAll('%2C', ',') + '; border-color: ' + c.border.replaceAll('%2C', ',') + ';')">
                 {{e.location}}
               </div>
             </template>

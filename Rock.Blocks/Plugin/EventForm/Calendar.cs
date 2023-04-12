@@ -318,7 +318,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
                         endBuffer = endbuffer,
                         location = String.Join( ", ", grouped[j].Select( g => g.Location ) ),
                         ministry = ministry.Value,
-                        submitterId = parent.CreatedByPersonAliasId.Value,
+                        submitterId = parent.CreatedByPersonId.Value,
                         submitter = parent.CreatedByPersonName,
                         contact = contactAv != null ? contactAv.Value : parent.CreatedByPersonName,
                         resources = resourcesAv.Value.Split( ',' ).ToList()

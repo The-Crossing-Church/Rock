@@ -48,35 +48,45 @@ export default defineComponent({
     selectDay(day: DateTime) {
       this.$emit('selectDay', day)
     },
-    openEvent(e: any) {
-      this.$emit("openEvent", e)
+    filterToEvent(parent: number) {
+      this.$emit('filterToEvent', parent)
     }
   },
   watch: {
 
   },
   mounted() {
-    
+    let w = document.querySelector('.window')
+    if(w) {
+      w.scrollTo(0, (60*7)) //7 am
+    }
   },
   template: `
-  <div style="display: flex;">
-    <div class="tcc-time-of-day">
-      <div class="tcc-hour" v-for="i in 24" :idx="i">
-        {{getTime(i)}}
+  <div class="tcc-cal-week">
+    <div style="width: 50px"></div>
+    <div class="tcc-cal-day" v-for="(day, didx) in calData" @click="selectDay(day.date)">
+      <div class="tcc-day-header">
+        {{day.date.toFormat('EEE')}} {{day.date.toFormat('dd')}}
       </div>
     </div>
-    <div class="tcc-cal-wrapper">
-      <div class="tcc-cal-body">
-        <div class="tcc-cal-week">
-          <div class="tcc-cal-day" v-for="(day, didx) in calData" :id="getDayId(day.date)" :key="didx" @click="selectDay(day.date)">
-            <div class="tcc-day-header">
-              {{day.date.toFormat('EEE')}} {{day.date.toFormat('dd')}}
+  </div>
+  <div class="window">
+    <div style="display: flex;">
+      <div class="tcc-time-of-day">
+        <div class="tcc-hour" v-for="i in 24" :idx="i">
+          {{getTime(i)}}
+        </div>
+      </div>
+      <div class="tcc-cal-wrapper">
+        <div class="tcc-cal-body">
+          <div class="tcc-cal-week">
+            <div class="tcc-cal-day" v-for="(day, didx) in calData" :id="getDayId(day.date)" :key="didx" @click="selectDay(day.date)">
+              <tcc-day
+                :calendars="calendars"
+                :currentDate="day.date"
+                v-on:filterToEvent="filterToEvent"
+              ></tcc-day>
             </div>
-            <tcc-day
-              :calendars="calendars"
-              :currentDate="day.date"
-              v-on:openEvent="openEvent"
-            ></tcc-day>
           </div>
         </div>
       </div>
