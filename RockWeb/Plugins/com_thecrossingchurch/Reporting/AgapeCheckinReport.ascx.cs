@@ -21,6 +21,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
     [Description( "Live report of Agape kids and buddies currently checked in" )]
     [GroupsField( "Agape Kids Groups", "", false, key: AttributeKey.AgapeKidsGroup, order: 1 )]
     [GroupsField( "Agape Buddies Groups", "Checkin Groups for Buddies", false, key: AttributeKey.AgapeBuddiesGroup, order: 2 )]
+    [BooleanField( "Use Same Logic for Buddies and Kids", "Determines if the buddies grid should look for attendance in the selected groups, or attendance for members of the selected groups", false, key: AttributeKey.SameLogic, order: 3 )]
     public partial class AgapeCheckinReport : Rock.Web.UI.RockBlock
     {
         #region Keys
@@ -28,6 +29,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         {
             public const string AgapeKidsGroup = "AgapeKidsGroup";
             public const string AgapeBuddiesGroup = "AgapeBuddiesGroup";
+            public const string SameLogic = "SameLogic";
         }
         #endregion
 
@@ -89,11 +91,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
                 if ( agapeKidsGroupGuids != null && agapeKidsGroupGuids.Count() > 0 )
                 {
-                    LoadKids();
+                    LoadAttendanceByMembership( agapeKidsGroupGuids, grdAgapeKids );
                 }
                 if ( agapeBuddiesGroupGuids != null && agapeBuddiesGroupGuids.Count() > 0 )
                 {
-                    LoadBuddies();
+                    var sameLogic = GetAttributeValue( AttributeKey.SameLogic ).AsBoolean();
+                    if ( sameLogic )
+                    {
+                        LoadAttendanceByMembership( agapeBuddiesGroupGuids, grdBuddies );
+                    }
+                    else
+                    {
+                        LoadAttendanceByGroup();
+                    }
                 }
             }
         }
@@ -101,15 +111,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
         #endregion
 
         #region Methods
-        private void LoadKids()
+        private void LoadAttendanceByMembership( List<Guid> groupGuids, Grid grid )
         {
             DateTime start = reportDate.SelectedDate.Value.StartOfDay();
             DateTime end = reportDate.SelectedDate.Value.EndOfDay();
             IEnumerable<Person> members = null;
-            for ( int i = 0; i < agapeKidsGroupGuids.Count(); i++ )
+            for ( int i = 0; i < groupGuids.Count(); i++ )
             {
                 Group agapeKidsGroup = null;
-                agapeKidsGroup = _grpSvc.Get( agapeKidsGroupGuids[i] );
+                agapeKidsGroup = _grpSvc.Get( groupGuids[i] );
                 if ( agapeKidsGroup != null )
                 {
                     if ( members == null )
@@ -155,10 +165,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     }
                 } ) )
             } ).ToList();
-            grdAgapeKids.DataSource = groupedSource;
-            grdAgapeKids.DataBind();
+            grid.DataSource = groupedSource;
+            grid.DataBind();
         }
-        private void LoadBuddies()
+        private void LoadAttendanceByGroup()
         {
             DateTime start = reportDate.SelectedDate.Value.StartOfDay();
             DateTime end = reportDate.SelectedDate.Value.EndOfDay();
