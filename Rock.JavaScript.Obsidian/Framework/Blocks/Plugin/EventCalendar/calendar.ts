@@ -11,6 +11,7 @@ import { Button, Modal } from "ant-design-vue"
 import RoomPicker from "../EventForm/Components/roomPicker"
 import DropDownList from "../EventDashboard/Components/dropDownList"
 import RockLabel from  "../../../Elements/rockLabel"
+import RockTextBox from "../../../Elements/textBox"
 
 const store = useStore()
 
@@ -34,7 +35,8 @@ export default defineComponent({
     "tcc-ddl": DropDownList,
     "a-btn": Button,
     "a-modal": Modal,
-    "rck-lbl": RockLabel
+    "rck-lbl": RockLabel,
+    "rck-txt": RockTextBox
   },
   setup() {
       const invokeBlockAction = useInvokeBlockAction();
@@ -67,8 +69,20 @@ export default defineComponent({
           ministries: [] as string[],
           parentId: 0,
           resources: [] as string[],
-          submitters: [] as any[]
-        }
+          submitters: ""
+        },
+        resources: [
+          "Room", 
+          "Online Event",
+          "Catering",
+          "Childcare",
+          "Childcare Catering",
+          "Extra Resources",
+          "Registration",
+          "Web Calendar",
+          "Production",
+          "Publicity"
+        ],
       };
   },
   computed: {
@@ -180,6 +194,22 @@ export default defineComponent({
           })
         })
       }
+      if(this.filters.submitters) {
+        let creators = this.filters.submitters.split(',').map((s: string) => { return s.trim() })
+        cals.forEach((c: any) => {
+          c.events = c.events.filter((e: any) => {
+            let isMatch = false
+            if(e.submitter) {
+              for(let i = 0; i < creators.length; i++) {
+                if(e.submitter.toLowerCase().includes(creators[i].toLowerCase())) {
+                  isMatch = true
+                }
+              }
+            }
+            return isMatch
+          })
+        })
+      }
       if(this.filters.rooms) {
         let selected = JSON.parse(this.filters.rooms)
         let items = selected.text.split(", ").filter((s: string) => { return s })
@@ -192,6 +222,14 @@ export default defineComponent({
             })
           })
         }
+      }
+      if(this.filters.resources && this.filters.resources.length > 0) {
+        cals.forEach((c: any) => {
+          c.events = c.events.filter((e: any) => {
+            let intersection = e.resources.filter((value: string) => this.filters.resources.includes(value))
+            return intersection.length == this.filters.resources.length
+          })
+        })
       }
       return cals
     }
@@ -332,8 +370,24 @@ export default defineComponent({
           {{(filters.parentId == 0 ? 'No' : 'Yes')}}
         </div>
       </div>
+      <div class="row mt-2">
+        <div class="col col-xs-12 col-md-4">
+          <rck-lbl>Submitted By</rck-lbl> 
+          <rck-txt
+            v-model="filters.submitters"
+          ></rck-txt>
+          <span>Separate names with a comma to search multiple people</span>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <tcc-ddl
+            label="Requested Resources"
+            :items="resources"
+            v-model="filters.resources"
+          ></tcc-ddl>
+        </div>
+      </div>
       <div class="pull-right">
-        <a-btn type="grey" @click="filters = { rooms: '', ministries: [], parentId: 0, resources: [], submitters: [] }">Clear Filters</a-btn>
+        <a-btn type="grey" @click="filters = { rooms: '', ministries: [], parentId: 0, resources: [], submitters: '' }">Clear Filters</a-btn>
       </div>
     </div>
     <tcc-month
