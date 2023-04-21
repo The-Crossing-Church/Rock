@@ -1,0 +1,113 @@
+﻿{% assign watchCt = Watch | Size %}
+{% if watchCt > 0 %}
+    <div class="row py-custom-2x">
+        <div class="col-xs-3">
+            {% if watchCt > 6 %}
+                <div class="btn btn-primary btn-round" onclick="watchPaginate(false, false)" ondblclick="watchPaginate(false, true)">
+                    <i class="fa fa-chevron-left"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-xs-6">
+            <a href="/Resources/Watch" target="_blank"><h2 class="text-center">Watch</h2></a>
+            <div id="watch_paginate" skip="0">
+                <div style="font-variant: small-caps;" class="w-100 text-center">
+                    {% if watchCt > 6 %}
+                        <span id="watch_range">1 - 6</span> of
+                    {% endif %}
+                    {{watchCt}} {{'Results' |  PluralizeForQuantity:watchCt }}
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-3">
+            {% if watchCt > 6 %}
+                <div class="btn btn-primary pull-right btn-round" onclick="watchPaginate(true, false)" ondblclick="watchPaginate(true, true)">
+                    <i class="fa fa-chevron-right"></i>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row row-equal-height d-none d-md-flex watch-results" id="watch_results"></div>
+    <div class="d-block d-md-none watch-results" id="watch_results_mobile"></div>
+    <script>
+        let watchData = [
+            {% for i in Watch %}
+                {% assign speaker = i | Attribute:'Author','FullName' %}
+                {% if speaker == '' %}
+                    {% assign speaker = i | Attribute:'GuestSpeaker' %}
+                {% endif %}
+                { image: "{{i | Attribute:'Image'}}", title: `{{i.Title}}`, speaker: `{{speaker}}`, series: `{{i | Attribute:'Series'}}`, category: `{{i | Attribute:'Cateogry'}}`, resourceCategory: `{{i.ContentChannel | Attribute:'ResourceCategory'}}`, slug: "{{i.PrimarySlug}}", date: "{{i.StartDateTime | Date:'MMMM dd, yyyy'}}", html: `<div class="watch-result col col-xs-12 col-sm-6 col-md-4 text-center"><a target="_blank" href="/Resources/Watch/{{i.ContentChannel | Attribute:'ResourceCategory'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}"><img src="{{i | Attribute:'Image'}}" class="w-100"/><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p></a></div>`, mobile: `<a class="watch-result" target="_blank" href="/Resources/Watch/{{i.ContentChannel | Attribute:'ResourceCategory'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}"><div class="row d-flex" style="align-items: center;"><div class="pr-0 col-xs-3"><img src="{{i | Attribute:'Image'}}" class="w-100" /></div><div class="col-xs-9"><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p></div></div></a>` },
+            {% endfor %}
+        ]
+
+        $(document).ready(() => {
+            for(let i=0; i < watchData.length && i < 6; i++) {
+                let node = $.parseHTML(watchData[i].html)
+                $('#watch_results').append(node)
+                node = $.parseHTML(watchData[i].mobile)
+                $('#watch_results_mobile').append(node)
+            }
+            $('.watch-results').each((index, parent) => {
+                $(parent.children).each((idx, el) => {
+                    $(el).delay(100*idx).fadeIn(350)
+                })
+            })
+        })
+
+        function watchPaginate(isNext, jump) {
+            let skip = parseInt($('#watch_paginate').attr('skip'))
+            let start = 0
+            if(isNext) {
+                if(jump) {
+                    start = watchData.length - 6
+                } else {
+                    start = skip + 6
+                }
+                if(start >= (watchData.length - 1) ) {
+                    start = watchData.length - 6
+                }
+            } else {
+                start = skip - 6
+                if(start < 0 || jump) {
+                    start = 0
+                }
+            }
+            $('#watch_paginate').attr('skip', start)
+            $('#watch_paginate #watch_range').text(`${start + 1} - ${(start + 6 > watchData.length ? watchData.length : start + 6)}`)
+            $('.watch-results').each((outerIndex, outerParent) => {
+                let numChildren = $(outerParent.children).length
+                $($(outerParent.children).get().reverse()).each((idx, el) => {
+                    $(el).delay(100*idx).fadeOut(350, () => {
+                        $(el).remove()
+                        if(idx == (numChildren-1)) {
+                            $('.watch-results').each((index, parent) => {
+                                $(parent.children).each((idx, el) => {
+                                    $(el).delay(100*idx).fadeIn(350)
+                                })
+                            })
+                        }
+                    })
+                })
+            })
+            for(let i=start; i < watchData.length && i < (start + 6); i++) {
+                let node = $.parseHTML(watchData[i].html)
+                $('#watch_results').append(node)
+                node = $.parseHTML(watchData[i].mobile)
+                $('#watch_results_mobile').append(node)
+            }
+        }
+    </script>
+    <style>
+        .watch-result {
+            display: none;
+        }
+        .btn-round {
+            width: 40px;
+            height: 40px;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+{% endif %}

@@ -5,7 +5,7 @@
 
         <Rock:NotificationBox ID="nbMessage" runat="server" Visible="false" />
 
-        <asp:Panel id="pnlDetails" runat="server" CssClass="row">
+        <asp:Panel ID="pnlDetails" runat="server" CssClass="row">
 
             <asp:Panel ID="pnlList" CssClass="col-xs-12" runat="server">
 

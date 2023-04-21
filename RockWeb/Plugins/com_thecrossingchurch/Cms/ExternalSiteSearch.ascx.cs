@@ -15,17 +15,21 @@ using Z.EntityFramework.Plus;
 using System.Net;
 using System.IO;
 using Newtonsoft.Json;
+using Rock.SystemGuid;
+using System.Diagnostics;
+using System.Data.SqlClient;
+using System.Web.Services;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
     [DisplayName( "External Site Search" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Display results of search query" )]
-    [ContentChannelField( "Staff Content Channel", required: false, order: 1 )]
+    [ContentChannelsField( "Enabled Channels", "Channels that should be searched", true, category: "Searchable Entities", order: 0 )]
+    [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, category: "Searchable Entities", order: 1 )]
     [EventCalendarField( "Calendar", "", false, "8A444668-19AF-4417-9C74-09F842572974", order: 2 )]
     [LinkedPage( "Event Details Page", "Detail page for events", order: 3 )]
     [DefinedValueField( "Audiences", Description = "The audiences to include in search", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, IsRequired = false, Order = 4 )]
-    [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, order: 5 )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 6 )]
     [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/' %}", "", 7 )]
 
@@ -36,8 +40,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         private ContentChannelItemService _cciSvc { get; set; }
         private ContentChannelService _ccSvc { get; set; }
         private TaggedItemService _tiSvc { get; set; }
-        private string query { get; set; }
+        private TagService _tSvc { get; set; }
+        private string title { get; set; }
+        private List<string> contentType { get; set; }
+        private List<string> tags { get; set; }
+        private List<string> series { get; set; }
+        private string author { get; set; }
+        private string global { get; set; }
+        private List<string> globalTerms { get; set; }
+        private Dictionary<string, object> mergeFields { get; set; }
         #endregion
+
+        public List<ResultSet> SearchResults
+        {
+            get
+            {
+                return ( List<ResultSet> ) ViewState["SearchResults"] ?? new List<ResultSet>();
+            }
+            set
+            {
+                ViewState["SearchResults"] = value;
+            }
+        }
 
         #region Base Control Methods
 
@@ -62,130 +86,367 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+            if ( !Page.IsPostBack )
+            {
+                mergeFields = new Dictionary<string, object>();
+                SearchChannels();
+                SearchEvents();
+                SearchPages();
+                lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
+            }
+        }
+
+        protected void SearchChannels()
+        {
             _context = new RockContext();
-            Guid? StaffContentChannelGuid = GetAttributeValue( "StaffContentChannel" ).AsGuidOrNull();
+            List<Guid> EnabledChannels = GetAttributeValues( "EnabledChannels" ).AsGuidList();
             Guid? CalendarGuid = GetAttributeValue( "Calendar" ).AsGuidOrNull();
             List<Guid> Audiences = GetAttributeValue( "Audiences" ).SplitDelimitedValues( true ).AsGuidList();
             string idsRaw = GetAttributeValue( "PageIds" );
+            List<int> pageIds = idsRaw.Split( ',' ).Select( id =>
+            {
+                int pageId;
+                if ( Int32.TryParse( id, out pageId ) )
+                {
+                    return pageId;
+                }
+                return -1;
+            } ).Where( id => id > 0 ).ToList();
             _cciSvc = new ContentChannelItemService( _context );
             _ccSvc = new ContentChannelService( _context );
             _tiSvc = new TaggedItemService( _context );
-            query = PageParameter( "q" ).ToLower();
+            _tSvc = new TagService( _context );
+            title = PageParameter( "title" ).ToLower();
+            tags = !String.IsNullOrEmpty( PageParameter( "tags" ) ) ? PageParameter( "tags" ).Split( ',' ).ToList() : new List<string>();
+            series = !String.IsNullOrEmpty( PageParameter( "series" ) ) ? PageParameter( "series" ).Split( ',' ).ToList() : new List<string>();
+            author = PageParameter( "author" ).ToLower();
+            global = PageParameter( "q" ).ToLower();
+            globalTerms = global.Split( ' ' ).Where( t => !String.IsNullOrEmpty( t ) ).ToList();
 
             List<EventItemOccurrence> events = new List<EventItemOccurrence>();
             List<ContentChannelItem> staff = new List<ContentChannelItem>();
             List<PageResult> pages = new List<PageResult>();
-            var mergeFields = new Dictionary<string, object>();
 
-            if ( StaffContentChannelGuid.HasValue )
-            {
-                staff = SearchStaff( StaffContentChannelGuid.Value );
-                mergeFields.Add( "Staff", staff );
-            }
-            if ( CalendarGuid.HasValue )
-            {
-                events = SearchEvents( CalendarGuid.Value, Audiences );
-                mergeFields.Add( "Events", events );
-                mergeFields.Add( "DetailsPage", LinkedPageRoute( "EventDetailsPage" ) );
-            }
-            if ( !String.IsNullOrEmpty( idsRaw ) )
-            {
-                List<int> pageIds = idsRaw.Split( ',' ).Select( i => Int32.Parse( i ) ).ToList();
-                pages = SearchPages( pageIds );
-                mergeFields.Add( "Pages", pages );
-            }
+            List<ResultSet> queryResults = SearchResults;
 
-            lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
+            if ( !String.IsNullOrEmpty( title ) || !String.IsNullOrEmpty( author ) || series.Count() > 0 || tags.Count() > 0 || !String.IsNullOrEmpty( global ) )
+            {
+                for ( int i = 0; i < EnabledChannels.Count(); i++ )
+                {
+                    ContentChannel channel = _ccSvc.Get( EnabledChannels[i] );
+                    var idx = queryResults.Select( qr => qr.channel ).ToList().IndexOf( channel.Guid );
+                    int skip = 0;
+                    int take = 12;
+                    if ( idx >= 0 )
+                    {
+                        skip = queryResults[idx].skip;
+                        take = queryResults[idx].take;
+                    }
+                    var results = SearchChannel( channel, skip, take );
+                    if ( idx < 0 )
+                    {
+                        queryResults.Add( new ResultSet() { skip = skip, take = take, channel = channel.Guid, mergefield = channel.Name.Replace( " ", "" ) } );
+                    }
+                    else
+                    {
+                        queryResults[idx].skip = skip;
+                        queryResults[idx].take = take;
+                    }
+                    mergeFields.Add( queryResults[i].mergefield, results );
+                }
+            }
+            //SearchResults = queryResults;
+
         }
 
         #endregion
 
         #region Methods
 
-        private List<EventItemOccurrence> SearchEvents( Guid guid, List<Guid> audiences )
+        private void SearchEvents()
         {
-            EventCalendar calendar = new EventCalendarService( _context ).Get( guid );
-            List<EventItemOccurrence> events = new EventItemOccurrenceService( _context ).Queryable().ToList().Where( e =>
+            EventItemService ei_svc = new EventItemService( _context );
+            EventCalendarService cal_svc = new EventCalendarService( _context );
+            Guid? calGuid = GetAttributeValue( "Calendar" ).AsGuidOrNull();
+            var audiences = GetAttributeValues( "Audiences" ).AsGuidOrNullList();
+            if ( calGuid.HasValue && audiences.Count() > 0 )
             {
-                bool isMatch = false;
-                var itemTag = _tiSvc.Get( 0, "", "", null, e.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                if ( e.EventItem.EventCalendarItems.Select( eci => eci.EventCalendarId ).Contains( calendar.Id ) && ( e.EventItem.Name.ToLower().Contains( query ) || e.EventItem.Description.ToLower().Contains( query ) || itemTag.Contains( query ) ) && ( audiences.Count() == 0 || e.EventItem.EventItemAudiences.Any( a => audiences.Contains( a.DefinedValue.Guid ) ) ) )
-                {
-                    isMatch = true;
-                }
-                return isMatch;
-            } ).ToList().Where( e => e.NextStartDateTime.HasValue && DateTime.Compare( e.NextStartDateTime.Value, RockDateTime.Now ) >= 0 ).ToList();
-            return events;
+                EventCalendar c = cal_svc.Get( calGuid.Value );
+                var events = ei_svc.GetActiveItemsByCalendarId( c.Id ).Where( ei => ei.EventItemAudiences.Select( eia => eia.DefinedValue.Guid ).Any( a => audiences.Contains( a ) ) && globalTerms.Any( t => ei.Name.ToLower().Contains( t ) ) );
+                mergeFields.Add( "Events", events.ToList() );
+            }
         }
 
-        private List<ContentChannelItem> SearchStaff( Guid guid )
+        private void SearchPages()
         {
-            ContentChannel channel = _ccSvc.Get( guid );
-            List<ContentChannelItem> items = _cciSvc.Queryable().Where( i => i.ContentChannelId == channel.Id && ( !channel.RequiresApproval || i.Status == ContentChannelItemStatus.Approved ) && DateTime.Compare( i.StartDateTime, RockDateTime.Now ) <= 0 && ( !i.ExpireDateTime.HasValue || DateTime.Compare( i.ExpireDateTime.Value, RockDateTime.Now ) > 0 ) ).ToList().Where( i =>
+            if ( globalTerms.Count() > 0 )
             {
-                bool isMatch = false;
-                var itemTag = _tiSvc.Get( 0, "", "", null, i.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                if ( i.Title.ToLower().Contains( query ) || i.Content.ToLower().Contains( query ) || itemTag.Contains( query ) )
+                List<int> pageIds = GetAttributeValue( "PageIds" ).Split( ',' ).Select( i => Int32.Parse( i.Trim() ) ).ToList();
+                PageService pg_svc = new PageService( _context );
+                var pages = pg_svc.Queryable().Where( p => pageIds.Contains( p.Id ) && ( globalTerms.Any( t => p.PageTitle.ToLower().Contains( t ) ) || globalTerms.Any( t => p.Description.ToLower().Contains( t ) ) ) );
+                mergeFields.Add( "Pages", pages.ToList() );
+            }
+        }
+
+        private List<ContentChannelItem> SearchChannel( ContentChannel channel, int skip, int take )
+        {
+            List<ContentChannelItem> items = new List<ContentChannelItem>();
+            int total = 0;
+            if ( channel != null )
+            {
+                IQueryable<ContentChannelItem> query = _cciSvc.Queryable().Where( cci => cci.ContentChannelId == channel.Id && cci.StartDateTime <= RockDateTime.Now && ( !cci.ExpireDateTime.HasValue || cci.ExpireDateTime.Value > RockDateTime.Now ) );
+                List<QueryResult> matchedResults = new List<QueryResult>();
+
+                var titleTerms = new List<string>( globalTerms );
+                if ( !String.IsNullOrEmpty( title ) )
                 {
-                    isMatch = true;
+                    titleTerms.Add( title );
                 }
-                return isMatch;
-            } ).ToList();
-            items.LoadAttributes();
+                foreach ( string term in titleTerms )
+                {
+                    matchedResults.AddRange( GetTitleEntityIds( channel.Guid.ToString(), term ) );
+                }
+
+                var aTerms = new List<string>( globalTerms );
+                if ( !String.IsNullOrEmpty( author ) )
+                {
+                    aTerms.Add( author );
+                }
+                foreach ( string t in aTerms )
+                {
+                    matchedResults.AddRange( GetAuthorEntityIds( channel.Guid.ToString(), t ) );
+                }
+
+                foreach ( string s in series )
+                {
+                    matchedResults.AddRange( GetSeriesMatchEntityIds( channel.Guid.ToString(), s ) );
+                }
+                foreach ( string t in globalTerms )
+                {
+                    matchedResults.AddRange( GetSeriesEntityIds( channel.Guid.ToString(), t ) );
+                }
+
+                var tTerms = new List<string>( globalTerms );
+                if ( tags.Count() > 0 )
+                {
+                    tTerms.AddRange( tags );
+                }
+                foreach ( string t in tTerms )
+                {
+                    matchedResults.AddRange( GetTagEntityIds( t ) );
+                }
+
+                var joined = matchedResults.Join( query,
+                    qr => qr.Id,
+                    cci => cci.Id,
+                    ( qr, cci ) => new { Item = cci, Match = qr }
+                );
+
+                int minWeight = CalculateMinWeight();
+                var relevantResults = joined.GroupBy( r => r.Item ).Select( r => new { Item = r.Key, NumMatches = r.Count(), Highest = r.Select( m => m.Match.Weight ).Max(), TotalWeight = r.Select( m => m.Match.Weight ).Sum() } ).Where( r => r.TotalWeight >= minWeight );
+                items = relevantResults.OrderByDescending( e => e.Item.StartDateTime ).OrderByDescending( e => e.TotalWeight ).Select( e => e.Item ).ToList();
+                total = relevantResults.Count();
+            }
             return items;
         }
 
-        private List<PageResult> SearchPages( List<int> pageIds )
+        private int CalculateMinWeight()
         {
-            List<PageResult> results = new List<PageResult>();
-            for ( int i = 0; i < pageIds.Count(); i++ )
+            int minWeight = 0;
+            int searchQueries = 0;
+
+            searchQueries += globalTerms.Count() > 0 ? 1 : 0;
+            searchQueries += series.Count() > 0 ? 1 : 0;
+            searchQueries += tags.Count() > 0 ? 1 : 0;
+            searchQueries += !String.IsNullOrEmpty( author ) ? 1 : 0;
+            searchQueries += !String.IsNullOrEmpty( title ) ? 1 : 0;
+
+            minWeight += !String.IsNullOrEmpty( author ) ? 1 : 0;
+            minWeight += !String.IsNullOrEmpty( title ) ? 1 : 0;
+            minWeight += series.Count() > 0 ? 3 : 0;
+            minWeight += tags.Count() > 0 ? 2 : 0;
+            if ( tags.Count() > 3 )
             {
-                Rock.Model.Page p = new PageService( _context ).Get( pageIds[i] );
-                bool added = false;
-                foreach ( var b in p.Blocks )
-                {
-                    if ( b.BlockTypeId == 6 )
-                    {
-                        var html = new HtmlContentService( _context ).Queryable().Where( c => c.BlockId == b.Id && c.IsApproved ).OrderByDescending( c => c.Version ).FirstOrDefault();
-                        if ( html != null )
-                        {
-                            if ( html.Content.ToLower().Contains( query ) )
-                            {
-                                var idx = html.Content.ToLower().IndexOf( query );
-                                if ( idx >= 0 )
-                                {
-                                    //Html block contains search query
-                                    PageResult r = new PageResult() { Id = p.Id, Title = p.PageTitle, Description = p.Description };
-                                    r.Tags = _tiSvc.Get( 0, "", "", null, p.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                                    if ( html.Content.Length > ( 150 + idx ) )
-                                    {
-                                        r.Matched = html.Content.Substring( idx, 150 );
-                                    }
-                                    else
-                                    {
-                                        r.Matched = html.Content.Substring( idx );
-                                    }
-                                    results.Add( r );
-                                    added = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                if ( !added )
-                {
-                    //Check for matching tags
-                    PageResult r = new PageResult() { Id = p.Id, Title = p.PageTitle, Description = p.Description };
-                    r.Tags = _tiSvc.Get( 0, "", "", null, p.Guid ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
-                    var intersection = query.Split( ' ' ).Intersect( r.Tags.Select( t => t.ToLower() ) ).ToList();
-                    if ( r.Tags.Select( t => t.ToLower() ).Contains( query ) || intersection.Count() > 0 )
-                    {
-                        results.Add( r );
-                        added = true;
-                    }
-                }
+                //If more than 3 tags are searched we want to match at least 2 of them
+                minWeight += 2;
             }
-            return results;
+            minWeight += globalTerms.Count() > 0 ? 3 : 0;
+
+            return minWeight;
+        }
+
+        private List<QueryResult> GetAuthorEntityIds( string channelGuid, string query )
+        {
+            using ( var context = new RockContext() )
+            {
+                var results = context.Database.SqlQuery<QueryResult>( $@"
+SELECT EntityId AS Id,
+       (CASE
+            WHEN Distance = 2 THEN 1
+            WHEN Distance = 0 THEN 3
+            WHEN Value LIKE '%' + @q + '%' OR Distance = 1 THEN 2
+           END) AS Weight
+FROM (
+         SELECT EntityId,
+                Value,
+                [dbo].[PartialDamerauLevenschtein](Value, @q) AS 'Distance'
+         FROM (
+                  SELECT avAuthor.EntityId,
+                         (CASE
+                              WHEN ValueAsPersonId IS NULL THEN Value
+                              ELSE CONCAT(NickName, ' ', LastName)
+                             END) AS Value,
+                         ValueAsPersonId
+                  FROM Person
+                           RIGHT OUTER JOIN (
+                      SELECT AttributeValue.Id,
+                             AttributeValue.EntityId,
+                             Value,
+                             ValueAsPersonId
+                      FROM AttributeValue
+                               INNER JOIN (
+                          SELECT Attribute.Id
+                          FROM Attribute
+                                   INNER JOIN (
+                              SELECT Id, ContentChannelTypeId
+                              FROM ContentChannel
+                              WHERE Guid = @channelGuid
+                          ) cc ON (EntityTypeQualifierColumn = 'ContentChannelId' AND
+                                   EntityTypeQualifierValue = cc.Id) OR
+                                  (EntityTypeQualifierColumn = 'ContentChannelTypeId' AND
+                                   EntityTypeQualifierValue = cc.ContentChannelTypeId)
+                          WHERE EntityTypeId = 208
+                            AND ([Key] LIKE '%Author%' OR [Key] LIKE '%Speaker%')
+                      ) AS attrAuthor ON AttributeId = attrAuthor.Id
+                      WHERE Value IS NOT NULL
+                  ) AS avAuthor ON ValueAsPersonId = Person.Id
+              ) AS entityAuthor
+     ) AS entityMatchAuthor
+WHERE Value LIKE '%' + @q + '%'
+   OR Distance < 3
+", new SqlParameter( "@q", query ), new SqlParameter( "@channelGuid", channelGuid ) ).ToList();
+                return results;
+            }
+        }
+
+        private List<QueryResult> GetSeriesEntityIds( string channelGuid, string query )
+        {
+            using ( var context = new RockContext() )
+            {
+                var results = context.Database.SqlQuery<QueryResult>( $@"
+SELECT EntityId AS Id,
+       (CASE
+            WHEN Distance = 1 THEN 1
+            WHEN Distance = 0 THEN 3
+            WHEN Value LIKE '%' + @q + '%' THEN 2
+           END) AS Weight
+FROM (
+         SELECT EntityId,
+                Value,
+                [dbo].[PartialDamerauLevenschtein](Value, @q) AS 'Distance'
+         FROM AttributeValue
+                  INNER JOIN (
+             SELECT Attribute.Id
+             FROM Attribute
+                      INNER JOIN (
+                 SELECT Id, ContentChannelTypeId
+                 FROM ContentChannel
+                 WHERE Guid = @channelGuid
+             ) cc ON (EntityTypeQualifierColumn = 'ContentChannelId' AND
+                      EntityTypeQualifierValue = cc.Id) OR
+                     (EntityTypeQualifierColumn = 'ContentChannelTypeId' AND
+                      EntityTypeQualifierValue = cc.ContentChannelTypeId)
+             WHERE EntityTypeId = 208
+               AND ([Key] LIKE '%Series%')
+         ) AS attrAuthor ON AttributeId = attrAuthor.Id
+         WHERE Value IS NOT NULL
+     ) AS entityMatchAuthor
+WHERE Value LIKE '%' + @q + '%'
+   OR Distance < 2
+", new SqlParameter( "@q", query ), new SqlParameter( "@channelGuid", channelGuid ) ).ToList();
+                return results;
+            }
+        }
+
+        private List<QueryResult> GetSeriesMatchEntityIds( string channelGuid, string query )
+        {
+            using ( var context = new RockContext() )
+            {
+                var results = context.Database.SqlQuery<QueryResult>( $@"
+SELECT EntityId AS Id,
+       3 AS Weight
+FROM AttributeValue
+         INNER JOIN (
+    SELECT Attribute.Id
+    FROM Attribute
+             INNER JOIN (
+        SELECT Id, ContentChannelTypeId
+        FROM ContentChannel
+        WHERE Guid = @channelGuid
+    ) cc ON (EntityTypeQualifierColumn = 'ContentChannelId' AND
+             EntityTypeQualifierValue = cc.Id) OR
+            (EntityTypeQualifierColumn = 'ContentChannelTypeId' AND
+             EntityTypeQualifierValue = cc.ContentChannelTypeId)
+    WHERE EntityTypeId = 208
+      AND ([Key] LIKE '%Series%')
+) AS attrAuthor ON AttributeId = attrAuthor.Id
+WHERE Value LIKE @q
+", new SqlParameter( "@q", query ), new SqlParameter( "@channelGuid", channelGuid ) ).ToList();
+                return results;
+            }
+        }
+
+        private List<QueryResult> GetTitleEntityIds( string channelGuid, string query )
+        {
+            using ( var context = new RockContext() )
+            {
+                var results = context.Database.SqlQuery<QueryResult>( $@"
+SELECT Id,
+       (CASE
+            WHEN Distance = 1 THEN 1
+            WHEN Distance = 0 THEN 3
+            WHEN Title LIKE '%' + @q + '%' THEN 2
+           END) AS Weight
+FROM (
+         SELECT ContentChannelItem.Id,
+                ContentChannelItem.Title,
+                [dbo].[PartialDamerauLevenschtein](Title, @q) AS 'Distance'
+         FROM ContentChannelItem
+                  INNER JOIN (
+             SELECT Id
+             FROM ContentChannel
+             WHERE Guid = @channelGuid
+         ) AS cc ON cc.Id = ContentChannelItem.ContentChannelId
+     ) AS cci
+WHERE Title LIKE '%' + @q + '%'
+   OR Distance < 2
+", new SqlParameter( "@q", query ), new SqlParameter( "@channelGuid", channelGuid ) ).ToList();
+                return results;
+            }
+        }
+
+        private List<QueryResult> GetTagEntityIds( string query )
+        {
+            using ( var context = new RockContext() )
+            {
+                var results = context.Database.SqlQuery<QueryResult>( $@"
+SELECT DISTINCT Id, 2 AS 'Weight' 
+FROM ContentChannelItem
+        INNER JOIN (
+    SELECT EntityGuid
+    FROM TaggedItem
+            INNER JOIN (
+        SELECT Id
+        FROM Tag
+        WHERE Name LIKE '%' + @q + '%'
+        AND CategoryId = 725
+        AND (EntityTypeId = 208 OR EntityTypeId IS NULL)
+        AND OwnerPersonAliasId IS NULL 
+    ) AS tag ON tag.Id = TagId
+) AS taggedItem ON Guid = EntityGuid
+", new SqlParameter( "@q", query ) ).ToList();
+                return results;
+            }
         }
 
         #endregion
@@ -198,6 +459,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             public string Title { get; set; }
             public string Description { get; set; }
             public List<string> Tags { get; set; }
+        }
+
+        [Serializable]
+        public class ResultSet
+        {
+            public Guid channel { get; set; }
+            public string mergefield { get; set; }
+            public int skip { get; set; }
+            public int take { get; set; }
+            public int total { get; set; }
+        }
+
+        private class QueryResult
+        {
+            public int Id { get; set; }
+            public int Weight { get; set; }
         }
     }
 }
