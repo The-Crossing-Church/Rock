@@ -22,16 +22,29 @@ export default defineComponent({
   computed: {
     calData() {
       if(this.currentDate) {
-        let week = [
-          {date: this.currentDate.startOf('week').minus({days: 1}) },
-          {date: this.currentDate.startOf('week') },
-          {date: this.currentDate.startOf('week').plus({days: 1}) },
-          {date: this.currentDate.startOf('week').plus({days: 2}) },
-          {date: this.currentDate.startOf('week').plus({days: 3}) },
-          {date: this.currentDate.startOf('week').plus({days: 4}) },
-          {date: this.currentDate.startOf('week').plus({days: 5}) }
-        ]
-        return week
+        if(this.currentDate.weekday == 7) {
+          let week = [
+            {date: this.currentDate.startOf('week').plus({weeks: 1}).minus({days: 1}) },
+            {date: this.currentDate.startOf('week').plus({weeks: 1}) },
+            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 1}) },
+            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 2}) },
+            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 3}) },
+            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 4}) },
+            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 5}) }
+          ]
+          return week
+        } else {
+          let week = [
+            {date: this.currentDate.startOf('week').minus({days: 1}) },
+            {date: this.currentDate.startOf('week') },
+            {date: this.currentDate.startOf('week').plus({days: 1}) },
+            {date: this.currentDate.startOf('week').plus({days: 2}) },
+            {date: this.currentDate.startOf('week').plus({days: 3}) },
+            {date: this.currentDate.startOf('week').plus({days: 4}) },
+            {date: this.currentDate.startOf('week').plus({days: 5}) }
+          ]
+          return week
+        }
       }
     },
   },

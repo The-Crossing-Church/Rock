@@ -94,6 +94,9 @@ export default defineComponent({
       if(this.view == 'month') {
         return this.currentDate.toFormat('MMMM, yyyy')
       } else if(this.view == 'week') {
+        if(this.currentDate.weekday == 7) {
+          return this.currentDate.startOf('week').plus({weeks: 1}).minus({days: 1}).toFormat('EEEE, MMMM dd') + ' - ' + this.currentDate.endOf('week').plus({weeks: 1}).minus({days: 1}).toFormat('DDDD')
+        }
         return this.currentDate.startOf('week').minus({days: 1}).toFormat('EEEE, MMMM dd') + ' - ' + this.currentDate.endOf('week').minus({days: 1}).toFormat('DDDD')
       } 
       return this.currentDate.toFormat('DDDD')

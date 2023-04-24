@@ -261,7 +261,10 @@ export default defineComponent({
         })
         if(itm && itm.length > 0) {
           if(qty > 1) {
-            return itm[0].value + 's'
+            let lastChar = itm[0].value.charAt(itm[0].value.length - 1)
+            if(lastChar != 's') {
+              return itm[0].value + 's'
+            }
           }
           return itm[0].value
         }

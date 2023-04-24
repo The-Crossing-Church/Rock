@@ -184,6 +184,7 @@ export default defineComponent({
           "Online Event",
           "Catering",
           "Childcare",
+          "Childcare Catering",
           "Extra Resources",
           "Registration",
           "Web Calendar",

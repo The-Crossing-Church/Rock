@@ -64,6 +64,7 @@ export default defineComponent({
           c.events = c.events.filter((e: any) => {
             return DateTime.fromISO(e.start).toFormat('yyyy-MM-dd') == this.currentDate?.toFormat('yyyy-MM-dd')
           })
+          let numEvents = c.events.length
           c.events.forEach((e: any) => {
             let start = DateTime.fromISO(e.start)
             if(e.startBuffer) {
@@ -80,6 +81,7 @@ export default defineComponent({
             let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
             e.height = interval.toDuration('minutes').toObject().minutes + "px"
             e.calendar = c.name
+            e.numEvents = numEvents
           })
         })
         data = data.filter((c: any) => {
@@ -130,9 +132,9 @@ export default defineComponent({
                 return 0
               })
               e.intersections = intervals[0].ct
+              e.totalIntersections = intersectingEvents.length
               e.interval = intervals[0].int
             }
-            //e.intersections = intersectingEvents.map((oe: any) => { return { id: oe.id, calendar: oe.calendar, adjustedStart: oe.adjustedStart, adjustedEnd: oe.adjustedEnd, location: oe.location, title: oe.title } })
           })
         })
         //Save Sort Order
@@ -142,52 +144,42 @@ export default defineComponent({
             let intersectingEvents = events.filter((oe: any) => {
               if(!(e.location == oe.location && e.id == oe.id)) {
                 let otherInterval = Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd)
-                return interval.intersection(otherInterval) != null
+                if(interval && otherInterval) {
+                  return interval.intersection(otherInterval) != null
+                }
               }
               return false
             })
             let eventsAtInterval = intersectingEvents.filter((oe: any) => {
-              return Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd).intersection(e.interval) != null
+               return Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd).intersection(e.interval) != null
             })
             eventsAtInterval.push(e)
-            eventsAtInterval.sort((a: any, b: any) => {
-              if(a.calendar < b.calendar) {
-                return -1
-              } else if(a.calendar > b.calendar) {
-                return 1
-              } 
-              if(a.intersections > b.intersections) {
-                return -1
-              } else if(a.intersections < b.intersections) {
-                return 1
-              }
-              if(a.adjustedStart.hour < b.adjustedStart.hour) {
-                return -1
-              } else if(a.adjustedStart.hour > b.adjustedStart.hour) {
-                return 1
-              } 
-              if(a.adjustedStart.minute < b.adjustedStart.minute) {
-                return -1
-              } else if(a.adjustedStart.minute > b.adjustedStart.minute) {
-                return 1
-              } 
-              if(a.location < b.location) {
-                return -1
-              } else if(a.location > b.location) {
-                return 1
-              } else {
-                return 0
-              }
-            })
+            eventsAtInterval.sort(this.sortEvents)
             e.idx = eventsAtInterval.indexOf(e)
             e.left = 0
-            // if(e.idx > 0) {
-            //   e.left = eventsAtInterval[e.idx - 1].left + (100 / (eventsAtInterval[e.idx - 1].intersections + 1))
-            // }
             for(let i=0; i<e.idx; i++) {
               e.left += 100 / (eventsAtInterval[i].intersections + 1)
             }
+            if(e.idx > 0) {
+              e.preceedingEvent = { calendar: eventsAtInterval[e.idx-1].calendar, id: eventsAtInterval[e.idx-1].id }
+            } else {
+              e.preceedingEvent = null
+            }
+            if(e.idx < (eventsAtInterval.length - 1)) {
+              e.followingEvent = { calendar: eventsAtInterval[e.idx+1].calendar, id: eventsAtInterval[e.idx+1].id }
+            } else {
+              e.followingEvent = null
+            }
           })
+          c.events.sort(this.sortEvents)
+        })
+        data.sort((a: any, b: any) => {
+          if(a.name < b.name) {
+            return -1
+          } else if(a.name > b.name) {
+            return 1
+          } 
+          return 0
         })
         if(data.length > 0) {
           return data
@@ -200,16 +192,15 @@ export default defineComponent({
         let start = DateTime.fromISO(this.selected.start)
         let end = DateTime.fromISO(this.selected.end)
         let duration = Interval.fromDateTimes(start, end).toDuration()
-        console.log(duration)
         let range = ""
         if(duration.hours > 1) {
           range = duration.hours + " hours"
         } else if(duration.hours == 1) {
           range = "1 hour"
         }
-        let timeFrame = start.toFormat("t") + " - " + end.toFormat("t") 
+        let timeFrame =  this.selected.adjustedStart.toFormat("t") + " - " + this.selected.adjustedEnd.toFormat("t") 
         if((this.selected.startBuffer && this.selected.startBuffer > 0) || (this.selected.endBuffer && this.selected.endBuffer > 0)) {
-          timeFrame += " (Booked " + this.selected.adjustedStart.toFormat("t") + " - " + this.selected.adjustedEnd.toFormat("t") + ")"
+          timeFrame += " (Event Time: " + start.toFormat("t") + " - " + end.toFormat("t") + ")"
         }
         return timeFrame
       }
@@ -269,65 +260,37 @@ export default defineComponent({
     getStyle(event: any, calendar: any) {
       let style = 'position: absolute; background-color: ' + calendar.color.replaceAll('%2C', ',') + '; border-color: ' + calendar.border.replaceAll('%2C', ',') + '; height: ' + event.height + ';'
       style += ' top: ' + ((event.adjustedStart.hour * 60) + event.adjustedStart.minute ) + 'px;'
-      // let currentInterval = Interval.fromDateTimes(event.adjustedStart, event.adjustedEnd)
-      // let otherEvents = this.daysCalendar.map((c: any) => {
-      //   return c.events.filter((e: any) => {
-      //     return !(e.location == event.location && e.id == event.id)
-      //   })
-      // })
-      // let overlaps = [] as any[]
-      // otherEvents.forEach((arr: any) => {
-      //   arr.forEach((e: any) => {
-      //     let eventInterval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
-      //     let intersection = currentInterval.intersection(eventInterval)
-      //     if(intersection) {
-      //       overlaps.push(e)
-      //     }
-      //   })
-      // })
-      // overlaps.push(event)
-      // overlaps.sort((a: any, b: any) => {
-      //   if(a.calendar < b.calendar) {
-      //     return -1
-      //   } else if(a.calendar > b.calendar) {
-      //     return 1
-      //   } 
-      //   if(a.intersections > b.intersections) {
-      //     return -1
-      //   } else if(a.intersections < b.intersections) {
-      //     return 1
-      //   }
-      //   if(a.adjustedStart.hour < b.adjustedStart.hour) {
-      //     return -1
-      //   } else if(a.adjustedStart.hour > b.adjustedStart.hour) {
-      //     return 1
-      //   } 
-      //   if(a.adjustedStart.minute < b.adjustedStart.minute) {
-      //     return -1
-      //   } else if(a.adjustedStart.minute > b.adjustedStart.minute) {
-      //     return 1
-      //   } 
-      //   if(a.location < b.location) {
-      //     return -1
-      //   } else if(a.location > b.location) {
-      //     return 1
-      //   } else {
-      //     return 0
-      //   }
-      // })
-      // let idx = overlaps.indexOf(event)
-      // console.log('START EVENT')
-      // console.log(event.location + " " + event.title)
-      // console.log("Actual Start: " + event.start + " " + DateTime.fromISO(event.start).toFormat("yyyy-MM-dd HH:mm"))
-      // console.log("Actual End: " + event.end+ " " + DateTime.fromISO(event.end).toFormat("yyyy-MM-dd HH:mm"))
-      // console.log("Start Buffer: " + event.startBuffer)
-      // console.log("End Buffer: " + event.endBuffer)
-      // console.log("Adjusted Start: " + event.adjustedStart.toFormat("yyyy-MM-dd HH:mm"))
-      // console.log("Adjusted End: " + event.adjustedEnd.toFormat("yyyy-MM-dd HH:mm"))
       let percentage = (100/(event.intersections + 1))
-      //TODO: instead of left being percentage*idx it should be a sum of each preious event in the list percentage so we save that percentage info, but then the value used for left is a sum
-      // console.log(percentage + "%", (percentage*event.idx) + "%")
-      // console.log("left: " + event.left + "%")
+      if(event.preceedingEvent) {
+        this.daysCalendar.forEach((c: any) => {
+          if(c.name == event.preceedingEvent.calendar) {
+            c.events.forEach((e: any) => {
+              if(e.id == event.preceedingEvent.id) {
+                let adjustedLeft = (e.left + (100/(e.intersections + 1)))
+                if(event.left < adjustedLeft) {
+                  if((adjustedLeft + percentage) < 100) {
+                    event.left = (e.left + (100/(e.intersections + 1)))
+                  } 
+                }
+              }
+            })
+          }
+        })
+      }
+      if(event.followingEvent) {
+        this.daysCalendar.forEach((c: any) => {
+          if(c.name == event.followingEvent.calendar) {
+            c.events.forEach((e: any) => {
+              if(e.id == event.followingEvent.id) {
+                let currentEnd = event.left + percentage
+                if(currentEnd > e.left) {
+                  percentage = (100/(e.intersections + 1))
+                }
+              }
+            })
+          }
+        })
+      }
       style += " width: "  + percentage + "%; left: " + event.left + "%;"
       // style += " width: "  + (100/overlaps.length) + "%; left: " + ((100/overlaps.length)*idx) + "%;"
       //style += " width: "  + (100/(event.intersections + 1)) + "%; left: " + ((100/overlaps.length)*idx) + "%;"
@@ -337,13 +300,47 @@ export default defineComponent({
       this.modal = false
       this.$emit('filterToEvent', this.selected.parentId)
       this.selected = {}
+    },
+    sortEvents(a: any, b: any) {
+      if(a.calendar < b.calendar) {
+        return -1
+      } else if(a.calendar > b.calendar) {
+        return 1
+      } 
+      if(a.intersections > b.intersections) {
+        return -1
+      } else if(a.intersections < b.intersections) {
+        return 1
+      }
+      if(a.adjustedStart.hour < b.adjustedStart.hour) {
+        return -1
+      } else if(a.adjustedStart.hour > b.adjustedStart.hour) {
+        return 1
+      } 
+      if(a.adjustedStart.minute < b.adjustedStart.minute) {
+        return -1
+      } else if(a.adjustedStart.minute > b.adjustedStart.minute) {
+        return 1
+      } 
+      if(a.location < b.location) {
+        return -1
+      } else if(a.location > b.location) {
+        return 1
+      } else {
+        return 0
+      }
     }
   },
   watch: {
     
   },
   mounted() {
-    
+    console.log('mounted')
+    console.log(document.querySelectorAll('.tcc-event'))
+  },
+  updated() {
+    console.log('updated')
+    console.log(document.querySelectorAll('.tcc-event'))
   },
   template: `
   <div style="position: relative;">

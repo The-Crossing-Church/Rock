@@ -119,34 +119,6 @@ export default defineComponent({
   template: `
   <div class="tcc-cal-wrapper">
     <div class="tcc-cal-header">
-      <i class="fa fa-chevron-left hover"></i>
-      <div style="display: flex;">
-        <a-dropdown :trigger="['click']">
-          <div style="padding-right: 8px;">
-            {{displayMonth.toFormat('MMMM')}}
-          </div>
-          <template #overlay>
-            <a-menu class="tcc-month-picker">
-              <a-menu-item :class="getMonthPickerClassName(1)" @click="selectMonth(1)" key="JAN">JAN</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(2)" @click="selectMonth(2)" key="FEB">FEB</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(3)" @click="selectMonth(3)" key="MAR">MAR</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(4)" @click="selectMonth(4)" key="APR">APR</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(5)" @click="selectMonth(5)" key="MAY">MAY</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(6)" @click="selectMonth(6)" key="JUN">JUN</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(7)" @click="selectMonth(7)" key="JUL">JUL</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(8)" @click="selectMonth(8)" key="AUG">AUG</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(9)" @click="selectMonth(9)" key="SEP">SEP</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(10)" @click="selectMonth(10)" key="OCT">OCT</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(11)" @click="selectMonth(11)" key="NOV">NOV</a-menu-item>
-              <a-menu-item :class="getMonthPickerClassName(12)" @click="selectMonth(12)" key="DEC">DEC</a-menu-item>
-            </a-menu>
-          </template>
-        </a-dropdown>
-        <div>
-          {{displayMonth.toFormat('yyyy')}}
-        </div>
-      </div>
-      <i class="fa fa-chevron-right hover"></i>
     </div>
     <div class="tcc-cal-body">
       <div class="tcc-cal-week">
@@ -213,8 +185,6 @@ export default defineComponent({
       border-radius: 4px;
       overflow: hidden;
       border-left: 6px solid;
-      display: flex;
-      align-items: center;
       margin-bottom: 1px;
     }
     .tcc-month-picker-item {

@@ -1,8 +1,8 @@
-import { defineComponent, PropType } from "vue";
-import { DateTime, Duration } from "luxon";
-import { Button, Dropdown, Menu } from "ant-design-vue";
+import { defineComponent, PropType } from "vue"
+import { DateTime, Duration } from "luxon"
+import { Button, Dropdown, Menu } from "ant-design-vue"
 
-const { MenuItem } = Menu;
+const { MenuItem } = Menu
 
 export default defineComponent({
     name: "EventForm.Components.Calendar",
