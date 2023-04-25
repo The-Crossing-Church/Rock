@@ -19,6 +19,8 @@ using Rock.SystemGuid;
 using System.Diagnostics;
 using System.Data.SqlClient;
 using System.Web.Services;
+using Rock.Web.Cache;
+using RestSharp;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 {
@@ -26,7 +28,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Display results of search query" )]
     [ContentChannelsField( "Enabled Channels", "Channels that should be searched", true, category: "Searchable Entities", order: 0 )]
-    [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, category: "Searchable Entities", order: 1 )]
+    [TextField( "Hubspot Key Attribute", "", false, "", category: "Searchable Entities", order: 1 )]
+    [TextField( "Page Ids", "Comma seperated list of page ids to search", required: false, category: "Searchable Entities", order: 2 )]
     [EventCalendarField( "Calendar", "", false, "8A444668-19AF-4417-9C74-09F842572974", order: 2 )]
     [LinkedPage( "Event Details Page", "Detail page for events", order: 3 )]
     [DefinedValueField( "Audiences", Description = "The audiences to include in search", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, IsRequired = false, Order = 4 )]
@@ -89,43 +92,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             if ( !Page.IsPostBack )
             {
                 mergeFields = new Dictionary<string, object>();
+                _context = new RockContext();
+                _cciSvc = new ContentChannelItemService( _context );
+                _ccSvc = new ContentChannelService( _context );
+                _tiSvc = new TaggedItemService( _context );
+                _tSvc = new TagService( _context );
+                title = PageParameter( "title" ).ToLower();
+                tags = !String.IsNullOrEmpty( PageParameter( "tags" ) ) ? PageParameter( "tags" ).Split( ',' ).ToList() : new List<string>();
+                series = !String.IsNullOrEmpty( PageParameter( "series" ) ) ? PageParameter( "series" ).Split( ',' ).ToList() : new List<string>();
+                author = PageParameter( "author" ).ToLower();
+                global = PageParameter( "q" ).ToLower();
+                globalTerms = global.Split( ' ' ).Where( t => !String.IsNullOrEmpty( t ) ).ToList();
                 SearchChannels();
                 SearchEvents();
                 SearchPages();
+                SearchBlog();
                 lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
             }
         }
 
         protected void SearchChannels()
         {
-            _context = new RockContext();
             List<Guid> EnabledChannels = GetAttributeValues( "EnabledChannels" ).AsGuidList();
-            Guid? CalendarGuid = GetAttributeValue( "Calendar" ).AsGuidOrNull();
-            List<Guid> Audiences = GetAttributeValue( "Audiences" ).SplitDelimitedValues( true ).AsGuidList();
-            string idsRaw = GetAttributeValue( "PageIds" );
-            List<int> pageIds = idsRaw.Split( ',' ).Select( id =>
-            {
-                int pageId;
-                if ( Int32.TryParse( id, out pageId ) )
-                {
-                    return pageId;
-                }
-                return -1;
-            } ).Where( id => id > 0 ).ToList();
-            _cciSvc = new ContentChannelItemService( _context );
-            _ccSvc = new ContentChannelService( _context );
-            _tiSvc = new TaggedItemService( _context );
-            _tSvc = new TagService( _context );
-            title = PageParameter( "title" ).ToLower();
-            tags = !String.IsNullOrEmpty( PageParameter( "tags" ) ) ? PageParameter( "tags" ).Split( ',' ).ToList() : new List<string>();
-            series = !String.IsNullOrEmpty( PageParameter( "series" ) ) ? PageParameter( "series" ).Split( ',' ).ToList() : new List<string>();
-            author = PageParameter( "author" ).ToLower();
-            global = PageParameter( "q" ).ToLower();
-            globalTerms = global.Split( ' ' ).Where( t => !String.IsNullOrEmpty( t ) ).ToList();
-
-            List<EventItemOccurrence> events = new List<EventItemOccurrence>();
-            List<ContentChannelItem> staff = new List<ContentChannelItem>();
-            List<PageResult> pages = new List<PageResult>();
 
             List<ResultSet> queryResults = SearchResults;
 
@@ -134,29 +122,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 for ( int i = 0; i < EnabledChannels.Count(); i++ )
                 {
                     ContentChannel channel = _ccSvc.Get( EnabledChannels[i] );
-                    var idx = queryResults.Select( qr => qr.channel ).ToList().IndexOf( channel.Guid );
+                    //var idx = queryResults.Select( qr => qr.channel ).ToList().IndexOf( channel.Guid );
                     int skip = 0;
                     int take = 12;
-                    if ( idx >= 0 )
-                    {
-                        skip = queryResults[idx].skip;
-                        take = queryResults[idx].take;
-                    }
+                    //if ( idx >= 0 )
+                    //{
+                    //    skip = queryResults[idx].skip;
+                    //    take = queryResults[idx].take;
+                    //}
                     var results = SearchChannel( channel, skip, take );
-                    if ( idx < 0 )
-                    {
-                        queryResults.Add( new ResultSet() { skip = skip, take = take, channel = channel.Guid, mergefield = channel.Name.Replace( " ", "" ) } );
-                    }
-                    else
-                    {
-                        queryResults[idx].skip = skip;
-                        queryResults[idx].take = take;
-                    }
-                    mergeFields.Add( queryResults[i].mergefield, results );
+                    //if ( idx < 0 )
+                    //{
+                    //    queryResults.Add( new ResultSet() { skip = skip, take = take, channel = channel.Guid, mergefield = channel.Name.Replace( " ", "" ) } );
+                    //}
+                    //else
+                    //{
+                    //    queryResults[idx].skip = skip;
+                    //    queryResults[idx].take = take;
+                    //}
+                    mergeFields.Add( channel.Name.Replace( " ", "" ), results );
                 }
             }
             //SearchResults = queryResults;
-
         }
 
         #endregion
@@ -185,6 +172,41 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 PageService pg_svc = new PageService( _context );
                 var pages = pg_svc.Queryable().Where( p => pageIds.Contains( p.Id ) && ( globalTerms.Any( t => p.PageTitle.ToLower().Contains( t ) ) || globalTerms.Any( t => p.Description.ToLower().Contains( t ) ) ) );
                 mergeFields.Add( "Pages", pages.ToList() );
+            }
+        }
+
+        private void SearchBlog()
+        {
+
+            string attrKey = GetAttributeValue( "HubspotKeyAttribute" );
+            if ( !String.IsNullOrEmpty( attrKey ) )
+            {
+                string key = GlobalAttributesCache.Get().GetValue( attrKey );
+                //Get blog posts that match
+                var postClient = new RestClient( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
+                postClient.Timeout = -1;
+                var postRequest = new RestRequest( Method.GET );
+                postRequest.AddHeader( "Authorization", $"Bearer {key}" );
+                IRestResponse jsonResponse = postClient.Execute( postRequest );
+                HubspotBlogResponse blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse.Content );
+                var posts = blogResponse.results.Select( e =>
+                {
+                    var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                    if ( e.publishedDate.HasValue )
+                    {
+                        //Convert Epoch Time
+                        DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+                        start = start.AddMilliseconds( e.publishedDate.Value );
+                        //Convert Time Zone
+                        start = start.ToLocalTime();
+                        p.PublishDate = start;
+                    }
+                    List<string> matchingTags = new List<string>();
+                    var intersect = tags.Intersect( e.tags );
+                    p.MatchingTags = intersect.ToList();
+                    return p;
+                } );
+                mergeFields.Add( "Posts", posts.ToList() );
             }
         }
 
@@ -475,6 +497,37 @@ FROM ContentChannelItem
         {
             public int Id { get; set; }
             public int Weight { get; set; }
+        }
+
+        [DotLiquid.LiquidType( "Id", "Title", "Author", "Url", "PublishDate", "Image", "ItemGlobalKey", "Slug", "MatchingTags", "ContentChannelId", "Type" )]
+        private class Post
+        {
+            public int Id { get; set; }
+            public string Title { get; set; }
+            public string Author { get; set; }
+            public DateTime PublishDate { get; set; }
+            public string Image { get; set; }
+            public string Url { get; set; }
+            public string ItemGlobalKey { get; set; }
+            public string Slug { get; set; }
+            public List<string> MatchingTags { get; set; }
+            public int ContentChannelId { get; set; }
+            public string Type { get; set; }
+        }
+        private class HubspotBlogResponse
+        {
+            public int total { get; set; }
+            public List<BlogPost> results { get; set; }
+        }
+
+        private class BlogPost
+        {
+            public string title { get; set; }
+            public string authorFullName { get; set; }
+            public string url { get; set; }
+            public string featuredImageUrl { get; set; }
+            public double? publishedDate { get; set; }
+            public List<string> tags { get; set; }
         }
     }
 }

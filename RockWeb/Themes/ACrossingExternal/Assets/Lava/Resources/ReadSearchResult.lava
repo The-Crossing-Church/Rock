@@ -1,0 +1,109 @@
+{% assign readCt = Posts | Size %}
+{% if readCt > 0 %}
+    <div class="row py-custom-2x">
+        <div class="col-xs-3">
+            {% if readCt > 6 %}
+                <div class="btn btn-primary btn-round" onclick="readPaginate(false, false)" ondblclick="readPaginate(false, true)">
+                    <i class="fa fa-chevron-left"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-xs-6">
+            <a href="/Resources/Read" target="_blank"><h2 class="text-center">Read</h2></a>
+            <div id="read_paginate" skip="0">
+                <div style="font-variant: small-caps;" class="w-100 text-center">
+                    {% if readCt > 6 %}
+                        <span id="read_range">1 - 6</span> of
+                    {% endif %}
+                    {{readCt}} {{'Results' |  PluralizeForQuantity:readCt }}
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-3">
+            {% if readCt > 6 %}
+                <div class="btn btn-primary pull-right btn-round" onclick="readPaginate(true, false)" ondblclick="readPaginate(true, true)">
+                    <i class="fa fa-chevron-right"></i>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row row-equal-height d-none d-md-flex read-results" id="read_results"></div>
+    <div class="d-block d-md-none read-results" id="read_results_mobile"></div>
+    <script>
+        let readData = [
+            {% for i in Posts %}
+                { image: "{{i.Image}}", title: `{{i.Title}}`, speaker: `{{i.Author}}`, date: "{{i.PublishDate | Date:'MMMM dd, yyyy'}}", html: `<div class="read-result col col-xs-12 col-sm-6 col-md-4 text-center"><a target="_blank" href="{{i.Url}}"><img src="{{i.Image}}" class="w-100"/><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.PublishDate | Date:'MMMM dd, yyyy'}}</p></a></div>`, mobile: `<a class="read-result" target="_blank" href="{{i.Url}}"><div class="row d-flex" style="align-items: center;"><div class="pr-0 col-xs-3"><img src="{{i.Image}}" class="w-100" /></div><div class="col-xs-9"><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.PublishDate | Date:'MMMM dd, yyyy'}}</p></div></div></a>` },
+            {% endfor %}
+        ]
+
+        $(document).ready(() => {
+            for(let i=0; i < readData.length && i < 6; i++) {
+                let node = $.parseHTML(readData[i].html)
+                $('#read_results').append(node)
+                node = $.parseHTML(readData[i].mobile)
+                $('#read_results_mobile').append(node)
+            }
+            $('.read-results').each((index, parent) => {
+                $(parent.children).each((idx, el) => {
+                    $(el).delay(100*idx).fadeIn(350)
+                })
+            })
+        })
+
+        function readPaginate(isNext, jump) {
+            let skip = parseInt($('#read_paginate').attr('skip'))
+            let start = 0
+            if(isNext) {
+                if(jump) {
+                    start = readData.length - 6
+                } else {
+                    start = skip + 6
+                }
+                if(start >= (readData.length - 1) ) {
+                    start = readData.length - 6
+                }
+            } else {
+                start = skip - 6
+                if(start < 0 || jump) {
+                    start = 0
+                }
+            }
+            $('#read_paginate').attr('skip', start)
+            $('#read_paginate #read_range').text(`${start + 1} - ${(start + 6 > readData.length ? readData.length : start + 6)}`)
+            $('.read-results').each((outerIndex, outerParent) => {
+                let numChildren = $(outerParent.children).length
+                $($(outerParent.children).get().reverse()).each((idx, el) => {
+                    $(el).delay(100*idx).fadeOut(350, () => {
+                        $(el).remove()
+                        if(idx == (numChildren-1)) {
+                            $('.read-results').each((index, parent) => {
+                                $(parent.children).each((idx, el) => {
+                                    $(el).delay(100*idx).fadeIn(350)
+                                })
+                            })
+                        }
+                    })
+                })
+            })
+            for(let i=start; i < readData.length && i < (start + 6); i++) {
+                let node = $.parseHTML(readData[i].html)
+                $('#read_results').append(node)
+                node = $.parseHTML(readData[i].mobile)
+                $('#read_results_mobile').append(node)
+            }
+        }
+    </script>
+    <style>
+        .read-result {
+            display: none;
+        }
+        .btn-round {
+            width: 40px;
+            height: 40px;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+{% endif %}
