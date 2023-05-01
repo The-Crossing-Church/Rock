@@ -17,7 +17,7 @@ FROM (
                 ) AS ri ON ri.Id = RegistrationInstanceId
             ) AS eio ON EventItemOccurrenceId = EventItemOccurrence.Id
         ) AS ei ON ei.EventItemId = EventCalendarItem.EventItemId
-        WHERE EventCalendarId = 1
+        WHERE EventCalendarId = 2
     ) AS events GROUP BY EventCalendarId
 {% endsql %}
 

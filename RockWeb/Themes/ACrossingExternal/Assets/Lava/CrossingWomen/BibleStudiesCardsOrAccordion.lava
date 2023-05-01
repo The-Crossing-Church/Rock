@@ -1,0 +1,28 @@
+<div class="row row-equal-height d-none d-md-flex mb-custom-2x">
+    {% for item in Items %}
+        {% assign ct = Items | Size %}
+        {% assign lg = 12 | DividedBy:ct %}
+        <div class="col col-xs-12 col-md-{{lg}}">
+            <div class="card--custom border--bottom" style="height:100%;">
+                <h4>{{item.Title}}</h4>
+                <hr>
+                {{item.Content}}
+            </div>
+        </div>
+    {% endfor%}
+</div>
+<div class="d-block d-md-none mb-custom-2x">
+    {% for item in Items %}
+        <div class="btn btn-accent mb-2" style="width:100%;" data-toggle="collapse" href="#collapse{{forloop.index}}" role="button" aria-expanded="false" aria-controls="collapse{{forloop.index}}">{{item.Title}}</div>
+        <div class="collapse" id="collapse{{forloop.index}}">
+            {{item.Content}}
+        </div>
+    {% endfor %}
+</div>
+<style>
+    @media only screen and (min-width: 769px) {
+        .row-equal-height {
+            display: flex;
+        }
+    }
+</style>
