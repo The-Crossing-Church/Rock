@@ -4739,8 +4739,8 @@ namespace RockWeb.Blocks.Event
     $('.credit-card').keyup();
 
     // Toggle credit card display if saved card option is available
-    $('div.radio-content').prev('div.radio-list').find('input:radio').unbind('click').on('click', function () {{
-        $content = $(this).parents('div.radio-list').first().next('.radio-content');
+    $('div.radio-content').prev('div.js-rockradiobuttonlist').find('input:radio').unbind('click').on('click', function () {{
+        $content = $(this).parents('div.js-rockradiobuttonlist').first().next('.radio-content');
         var radioDisplay = $content.css('display');
         if ($(this).val() == 0 && radioDisplay == 'none') {{
             $content.slideToggle();
