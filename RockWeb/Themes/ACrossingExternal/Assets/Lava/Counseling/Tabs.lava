@@ -22,7 +22,7 @@
                             </div>
                         {% endif %}
                         {% assign shortCode = i.ChildItems[0].ChildContentChannelItem.ContentChannel | Attribute:'LavaTemplate' %}
-                        {% assign items = i.ChildItems | Map:'ChildContentChannelItem' %}
+                        {% assign items = i.ChildItems | OrderBy:'Order asc' | Map:'ChildContentChannelItem' %}
                         {% if shortCode == 'counselingsvc' %}
                             {[ counselingsvc items:items carouselid:'servicesdsktp' ]}
                         {% elseif shortCode == 'counselingstaff' %}
@@ -70,7 +70,7 @@
                                 </div>
                             {% endif %}
                             {% assign shortCode = i.ChildItems[0].ChildContentChannelItem.ContentChannel | Attribute:'LavaTemplate' %}
-                            {% assign items = i.ChildItems | Map:'ChildContentChannelItem' %}
+                            {% assign items = i.ChildItems | OrderBy:'Order asc' | Map:'ChildContentChannelItem' %}
                             {% if shortCode == 'counselingsvc' %}
                                 {[ counselingsvc items:items ]}
                             {% elseif shortCode == 'counselingstaff' %}
@@ -104,8 +104,8 @@
 
 <style>
     #counselingaccordion div .expand-header a {
-      min-height: 40px; 
-      padding: 8px; 
+      min-height: 40px;
+      padding: 8px;
     }
     .nav-tabs li a {
         display: flex !important;
@@ -120,11 +120,11 @@
     }
     .nav-tabs li {
         margin: 4px;
-        overflow: hidden; 
+        overflow: hidden;
     }
     .nav-tabs li.active, #counselingaccordion div .expand-header a[aria-expanded="true"]{
         box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-        border: none !important; 
+        border: none !important;
     }
     .expand-header a {
       display: inline-block;
@@ -136,7 +136,7 @@
     }
     .nav-tabs {
       border: none !important;
-    } 
+    }
     .accordion .panel {
       box-shadow: none;
     }

@@ -1,4 +1,4 @@
-﻿{% capture searchText %}{{Item | Attribute:'Semester'}} {{Item | Attribute:'Year'}}{% endcapture %}
+﻿{% capture searchText %}{{Item | Attribute:'Year'}} {{Item | Attribute:'Semester'}}{% endcapture %}
 {% sql %}
 SELECT STRING_AGG(CAST(EventItemOccurrenceId AS varchar(50)), ',') AS Ids
 FROM (
@@ -13,7 +13,7 @@ FROM (
                         INNER JOIN (
                     SELECT Id
                     FROM RegistrationInstance
-                    WHERE Name LIKE '%WBS {{searchText}}%'
+                    WHERE Name LIKE 'Crossing Women%{{searchText}}%'
                 ) AS ri ON ri.Id = RegistrationInstanceId
             ) AS eio ON EventItemOccurrenceId = EventItemOccurrence.Id
         ) AS ei ON ei.EventItemId = EventCalendarItem.EventItemId

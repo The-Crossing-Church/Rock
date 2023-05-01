@@ -29,7 +29,7 @@
                     {% endif %}
                     <i class='fa expand-icon pull-right'></i>
                 </div>
-            </a> 
+            </a>
             <div class='collapse' id="dateList">
                 <ul class="list-unstyled">
                     {% for scheduledDate in scheduledDates %}
@@ -57,6 +57,7 @@
         {% endif %}
       {% else %}
         {% assign displayDates = scheduledDates %}
+        {% assign endTimes = scheduledDates | First | DateAdd:EventItemOccurrence.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
         {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
             {% for i in eventitemoccurrenceItems %}
                 {% if i.Id != EventItemOccurrence.Id %}
@@ -66,7 +67,8 @@
                         {% assign nextDate = sdates | First %}
                         {% assign diff = 'Now' DateDiff:nextDate %}
                         {% if diff > 0 %}
-                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %} 
+                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %}
+                            {% capture endTimes %}{{endTimes}},{{nextDate | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt'}}{% endcapture %}
                         {% endif %}
                     {% endif %}
                 {% endif %}
@@ -75,17 +77,18 @@
         {% assign ddSize = displayDates | Size %}
         {% if ddSize > 1 %}
             {% assign displayDates = displayDates | Split:',' %}
-            {% assign displayDates = displayDates | Sort %}
+            {% comment %} {% assign displayDates = displayDates | Sort %} {% endcomment %}
         {% endif %}
+        {% assign endTimes = endTimes | Split:',' %}
         <ul class="list-unstyled">
             {% for d in displayDates %}
                 <li>
                     {% if dateTimeFormat == 'No Time' %}
                         {{d | Date:'dddd, MMMM d, yyyy'}}
                     {% elseif dateTimeFormat == 'All Day' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day) 
+                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day)
                     {% else %}
-                        {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTime}}{% endif %} 
+                        {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTimes[forloop.index0]}}{% endif %}
                     {% endif %}
                 </li>
             {% endfor %}
@@ -101,7 +104,7 @@
         {{ EventItemOccurrence.Location }} <br/><br/>
     {% endif %}
     {% comment %}<span class="floating-event-title">Description</span> <br />{% endcomment %}
-    {{ Event.Description }} 
+    {{ Event.Description }}
     <div class="row">
       {% assign eventItemOccurrenceLinkages = EventItemOccurrence.Linkages %}
       {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
@@ -112,7 +115,7 @@
           {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
           {% assign showRegistration = true %}
           {% assign registrationMessage = '' %}
-              
+
           {% if daysTillStartDate and daysTillStartDate > 0 %}
             {% assign showRegistration = false %}
             {% if eventItemOccurrenceLinkagesCount == 1 %}
@@ -121,7 +124,7 @@
               {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
             {% endif %}
           {% endif %}
-    
+
           {% if daysTillEndDate and daysTillEndDate < 0 %}
             {% assign showRegistration = false %}
               {% if eventItemOccurrenceLinkagesCount == 1 %}
@@ -130,7 +133,7 @@
                 {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
               {% endif %}
           {% endif %}
-    
+
           {% if showRegistration == true %}
             {% assign statusLabel = RegistrationStatusLabels[eventItemOccurrenceLinkage.RegistrationInstanceId] %}
             {% if eventItemOccurrenceLinkagesCount == 1 %}
@@ -138,7 +141,7 @@
             {% else %}
               {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
             {% endif %}
-    
+
             {% if statusLabel == 'Full' %}
               {% if eventItemOccurrenceLinkagesCount == 1 %}
                 {% assign registrationButtonText = 'Registration Full' %}

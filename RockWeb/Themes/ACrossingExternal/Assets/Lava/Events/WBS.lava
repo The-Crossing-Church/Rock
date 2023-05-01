@@ -73,7 +73,7 @@
                     <ul class="list-unstyled">
                         {% for scheduledDate in sdates %}
                         <li>
-                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy h:mm' }} - {{endTime}}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy h:mm' }} - {{scheduleDate | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt'}}
                         </li>
                         {% endfor %}
                     </ul>
