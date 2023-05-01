@@ -13,7 +13,7 @@ FROM (
                         INNER JOIN (
                     SELECT Id
                     FROM RegistrationInstance
-                    WHERE Name LIKE '%MS {{searchText}}%'
+                    WHERE Name LIKE 'MS {{searchText}}%'
                 ) AS ri ON ri.Id = RegistrationInstanceId
             ) AS eio ON EventItemOccurrenceId = EventItemOccurrence.Id
         ) AS ei ON ei.EventItemId = EventCalendarItem.EventItemId
@@ -32,18 +32,28 @@ FROM (
 <div id="studiesTabs">
     {% comment %} DOW Tabs {% endcomment %}
     {% eventitemoccurrence ids:'{{ids}}' %}
-        {% assign dowArr = '[{desktop: "All Studies", mobile: "All"}]' | FromJSON %}
+        {% assign dowArr = '[{desktop: "All Studies", mobile: "All", dow: "0"}]' | FromJSON %}
         {% assign days = '[]' | FromJSON %}
         {% for e in eventitemoccurrenceItems %}
             {% assign day = e.Schedule.EffectiveStartDate | Date:'dddd' %}
             {% assign days = days | AddToArray:day %}
         {% endfor %}
         {% assign days = days | Distinct %}
+        {% capture daysOfWeek %}[ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ]{% endcapture %}
+        {% assign daysOfWeek = daysOfWeek | FromJSON %}
         {% for d in days %}
-            {% capture dow %}{ desktop:"{{d}}", mobile: "{{d | Truncate:3,''}}"}{% endcapture %}
+            {% assign num = -1 %}
+            {% assign truncated = d | Truncate:3,'' %}
+            {% for i in daysOfWeek %}
+                {% if i == truncated %}
+                    {% assign num = forloop.index %}
+                {% endif %}
+            {% endfor %}
+            {% capture dow %}{ desktop:"{{d}}", mobile: "{{truncated}}", dow: "{{num}}" }{% endcapture %}
             {% assign dow = dow | FromJSON %}
             {% assign dowArr = dowArr | AddToArray:dow %}
         {% endfor %}
+        {% assign dowArr = dowArr | OrderBy:'dow' %}
     {% endeventitemoccurrence %}
     {% assign filterLedBy = 'Global' | PageParameter:'LedBy' | Downcase %}
     {% assign filterReg = 'Global' | PageParameter:'RegistrationStatus' %}
@@ -186,6 +196,13 @@ FROM (
                     {% else %}
                         {% assign items = allStudies %}
                     {% endif %}
+                    {% assign ct = items | Size %}
+                    {% if ct == 0 %}
+                    <div class="text-center" style="width: 100%;">
+                        <b>Don’t see an open class? Be the first to know when new classes open.</b> <br/>
+                        <a class='btn btn-primary mt-2' data-toggle="collapse" href="#contactCollapse" role="button" aria-expanded="false" aria-controls="contactCollapse">Stay in the Loop</a>
+                    </div>
+                    {% endif %}
                     {% for e in items %}
                         {% assign eventItemOccurrenceLinkages = e.Linkages %}
                         {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
@@ -199,7 +216,7 @@ FROM (
                             {% endfor %}
                         {% endif %}
                         <div class='col col-xs-12 col-sm-6 col-md-3 mb-2'>
-                            <div class='hover mens-card'>
+                            <div class='hover womens-card'>
                                 <a href="/Events/Detail?EventOccurrenceId={{e.Id}}" class='text-center study-link {% if registrationIsOpen == false %}reg-closed{% endif %}'>
                                     <div>
                                         {% if registrationIsOpen == false %}
@@ -212,7 +229,7 @@ FROM (
                                         </div>
                                     </div>
                                     <br/>
-                                    <div style='font-size: .9375em; min-height: 65px;'>
+                                    <div style='font-size: .9375em; min-height: 45px;'>
                                         {{e.EventItem.Name | Split:' - ' | Last}}
                                     </div>
                                     {% assign scheduledDates = e.Schedule.iCalendarContent | DatesFromICal:'all' %}
@@ -300,11 +317,11 @@ FROM (
                                                     {% endif %}
                                                     <div class='text--upper' style='font-size: .75em; font-weight: 700;'>{{ registrationButtonText }}</div>
                                                 {% else %}
-                                                    <div class='mens-card-button justify-center'>
+                                                    <div class='womens-card-button justify-center'>
                                                         {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
-                                                            <a href='/Registration/{{eventItemOccurrenceLinkage.UrlSlug}}' class='btn btn-primary'>{{registrationButtonText}}</a>
+                                                            <a href='/page/413?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn btn-primary'>{{registrationButtonText}}</a>
                                                         {% else %}
-                                                            <a href="/Registration?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn btn-primary ">{{registrationButtonText}}</a>
+                                                            <a href="/page/413?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn btn-primary ">{{registrationButtonText}}</a>
                                                         {% endif %}
                                                     </div>
                                                 {% endif %}
@@ -325,12 +342,7 @@ FROM (
         {% endfor %}
     {% endeventitemoccurrence %}
 </div>
-
-<div class="text-center py-custom-2x" style="width: 100%;">
-    <b>Don’t see an open class? Be the first to know when new classes open.</b> <br/>
-    <a class='btn btn-primary mt-2' data-toggle="collapse" href="#contactCollapse" role="button" aria-expanded="false" aria-controls="contactCollapse">Stay in the Loop</a>
-</div>
-
+<br/>
 <style>
     .reg-closed-banner {
         background-color: rgba(0,0,0,.4);
@@ -342,7 +354,7 @@ FROM (
     .banner-wrapper {
         position: absolute;
         z-index: 10;
-        top: 20%;
+        top: 5px;
     }
     .study-link {
         display: flex;
@@ -356,14 +368,11 @@ FROM (
     .reg-closed .wrapper img {
         filter: grayscale(.8);
     }
-    .wrapper {
-        padding: 0px 32px;
-    }
-    .mens-card {
+    .womens-card {
         height: 100%;
         padding-bottom: 40px;
     }
-    .mens-card-button {
+    .womens-card-button {
         position: absolute;
         bottom: 0;
         left: 0;
