@@ -32,7 +32,7 @@
     <script>
         let readData = [
             {% for i in Posts %}
-                { image: "{{i.Image}}", title: `{{i.Title}}`, speaker: `{{i.Author}}`, date: "{{i.PublishDate | Date:'MMMM dd, yyyy'}}", html: `<div class="read-result col col-xs-12 col-sm-6 col-md-4 text-center"><a target="_blank" href="{{i.Url}}"><img src="{{i.Image}}" class="w-100"/><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.PublishDate | Date:'MMMM dd, yyyy'}}</p></a></div>`, mobile: `<a class="read-result" target="_blank" href="{{i.Url}}"><div class="row d-flex" style="align-items: center;"><div class="pr-0 col-xs-3"><img src="{{i.Image}}" class="w-100" /></div><div class="col-xs-9"><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.PublishDate | Date:'MMMM dd, yyyy'}}</p></div></div></a>` },
+                { image: "{{i.Image}}", title: `{{i.Title}}`, speaker: `{{i.Author}}`, date: "{{i.PublishDate | Date:'MMMM dd, yyyy'}}", html: `<div class="read-result col col-xs-12 col-sm-6 col-md-4 text-center"><a target="_blank" href="{{i.Url}}"><div class="img-wrapper"><img src="{{i.Image}}" class="w-100"/></div><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.PublishDate | Date:'MMMM dd, yyyy'}}</p></a></div>`, mobile: `<a class="read-result" target="_blank" href="{{i.Url}}"><div class="row d-flex" style="align-items: center;"><div class="pr-0 col-xs-3"><img src="{{i.Image}}" class="w-100" /></div><div class="col-xs-9"><h4>{{i.Title}}</h4><p style='font-size: 16px;'>{{i.PublishDate | Date:'MMMM dd, yyyy'}}</p></div></div></a>` },
             {% endfor %}
         ]
 

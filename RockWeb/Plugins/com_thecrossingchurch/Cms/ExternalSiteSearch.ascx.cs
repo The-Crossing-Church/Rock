@@ -122,24 +122,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 for ( int i = 0; i < EnabledChannels.Count(); i++ )
                 {
                     ContentChannel channel = _ccSvc.Get( EnabledChannels[i] );
-                    //var idx = queryResults.Select( qr => qr.channel ).ToList().IndexOf( channel.Guid );
                     int skip = 0;
                     int take = 12;
-                    //if ( idx >= 0 )
-                    //{
-                    //    skip = queryResults[idx].skip;
-                    //    take = queryResults[idx].take;
-                    //}
                     var results = SearchChannel( channel, skip, take );
-                    //if ( idx < 0 )
-                    //{
-                    //    queryResults.Add( new ResultSet() { skip = skip, take = take, channel = channel.Guid, mergefield = channel.Name.Replace( " ", "" ) } );
-                    //}
-                    //else
-                    //{
-                    //    queryResults[idx].skip = skip;
-                    //    queryResults[idx].take = take;
-                    //}
                     mergeFields.Add( channel.Name.Replace( " ", "" ), results );
                 }
             }
@@ -177,35 +162,35 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private void SearchBlog()
         {
-
             string attrKey = GetAttributeValue( "HubspotKeyAttribute" );
             if ( !String.IsNullOrEmpty( attrKey ) )
             {
                 string key = GlobalAttributesCache.Get().GetValue( attrKey );
+
                 //Get blog posts that match
-                var postClient = new RestClient( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
+                var postClient = new RestClient( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + global + "," + String.Join( ",", tags ) + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
                 postClient.Timeout = -1;
                 var postRequest = new RestRequest( Method.GET );
                 postRequest.AddHeader( "Authorization", $"Bearer {key}" );
                 IRestResponse jsonResponse = postClient.Execute( postRequest );
                 HubspotBlogResponse blogResponse = JsonConvert.DeserializeObject<HubspotBlogResponse>( jsonResponse.Content );
                 var posts = blogResponse.results.Select( e =>
-                {
-                    var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
-                    if ( e.publishedDate.HasValue )
-                    {
-                        //Convert Epoch Time
-                        DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
-                        start = start.AddMilliseconds( e.publishedDate.Value );
-                        //Convert Time Zone
-                        start = start.ToLocalTime();
-                        p.PublishDate = start;
-                    }
-                    List<string> matchingTags = new List<string>();
-                    var intersect = tags.Intersect( e.tags );
-                    p.MatchingTags = intersect.ToList();
-                    return p;
-                } );
+                 {
+                     var p = new Post() { Id = 0, Title = e.title.Replace( " - The Crossing Blog", "" ), Author = e.authorFullName, Image = e.featuredImageUrl, Url = e.url, Type = "Read" };
+                     if ( e.publishedDate.HasValue )
+                     {
+                         //Convert Epoch Time
+                         DateTime start = new DateTime( 1970, 1, 1, 0, 0, 0, 0 );
+                         start = start.AddMilliseconds( e.publishedDate.Value );
+                         //Convert Time Zone
+                         start = start.ToLocalTime();
+                         p.PublishDate = start;
+                     }
+                     List<string> matchingTags = new List<string>();
+                     var intersect = tags.Intersect( e.tags );
+                     p.MatchingTags = intersect.ToList();
+                     return p;
+                 } );
                 mergeFields.Add( "Posts", posts.ToList() );
             }
         }
@@ -286,11 +271,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             minWeight += !String.IsNullOrEmpty( author ) ? 1 : 0;
             minWeight += !String.IsNullOrEmpty( title ) ? 1 : 0;
             minWeight += series.Count() > 0 ? 3 : 0;
-            minWeight += tags.Count() > 0 ? 2 : 0;
+            minWeight += tags.Count() > 0 ? 3 : 0;
             if ( tags.Count() > 3 )
             {
                 //If more than 3 tags are searched we want to match at least 2 of them
-                minWeight += 2;
+                minWeight += 3;
             }
             minWeight += globalTerms.Count() > 0 ? 3 : 0;
 
@@ -452,13 +437,13 @@ WHERE Title LIKE '%' + @q + '%'
             using ( var context = new RockContext() )
             {
                 var results = context.Database.SqlQuery<QueryResult>( $@"
-SELECT DISTINCT Id, 2 AS 'Weight' 
+SELECT DISTINCT Id, (CASE WHEN LOWER(TagName) = @q THEN 4 ELSE 3 END) AS 'Weight' 
 FROM ContentChannelItem
         INNER JOIN (
-    SELECT EntityGuid
+    SELECT EntityGuid, TagName
     FROM TaggedItem
             INNER JOIN (
-        SELECT Id
+        SELECT Id, Name AS 'TagName'
         FROM Tag
         WHERE Name LIKE '%' + @q + '%'
         AND CategoryId = 725
@@ -520,6 +505,12 @@ FROM ContentChannelItem
             public List<BlogPost> results { get; set; }
         }
 
+        private class HubspotTagResponse
+        {
+            public int total { get; set; }
+            public List<BlogTag> results { get; set; }
+        }
+
         private class BlogPost
         {
             public string title { get; set; }
@@ -528,6 +519,18 @@ FROM ContentChannelItem
             public string featuredImageUrl { get; set; }
             public double? publishedDate { get; set; }
             public List<string> tags { get; set; }
+            //For Alternate API Versions
+            public string name { get; set; }
+            public string authorName { get; set; }
+            public string featuredImage { get; set; }
+            public DateTime? publishDate { get; set; }
+            public List<string> tagIds { get; set; }
+        }
+
+        private class BlogTag
+        {
+            public string id { get; set; }
+            public string name { get; set; }
         }
     }
 }

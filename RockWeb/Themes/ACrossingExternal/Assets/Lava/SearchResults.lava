@@ -123,6 +123,7 @@
 
 {% include "~/Themes/ACrossingExternal/Assets/Lava/Resources/WatchSearchResult.lava" %}
 {% include "~/Themes/ACrossingExternal/Assets/Lava/Resources/ListenSearchResult.lava" %}
+{% include "~/Themes/ACrossingExternal/Assets/Lava/Resources/ReadSearchResult.lava" %}
 
 {% if staffCt > 0 %}
     <a href="/Staff"><h2 class='text-center py-custom-2x'>Staff</h2></a>
@@ -252,6 +253,8 @@
         position: relative;
         max-height: 194px;
         overflow: hidden;
+        display: flex;
+        align-items: center;
     }
     .type-icon {
         position: absolute;
