@@ -24,7 +24,8 @@ export default defineComponent({
           required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
@@ -97,20 +98,34 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareStartTime, e.attributes.ChildcareStartTime.name)]" ref="validators_start">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareStartTime, e.attributes.ChildcareStartTime.name)]" ref="validators_start" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.ChildcareStartTime.name"
           v-model="e.attributeValues.ChildcareStartTime"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.ChildcareStartTime"
+        :attribute="e.attributes.ChildcareStartTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareEndTime, e.attributes.ChildcareEndTime.name)]" ref="validators_end">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareEndTime, e.attributes.ChildcareEndTime.name)]" ref="validators_end" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.ChildcareEndTime.name"
           v-model="e.attributeValues.ChildcareEndTime"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.ChildcareEndTime"
+        :attribute="e.attributes.ChildcareEndTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row">
@@ -119,7 +134,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcareBudgetMinistry"
           :attribute="e.attributes.ChildcareBudgetMinistry"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -128,7 +144,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcareBudgetLine"
           :attribute="e.attributes.ChildcareBudgetLine"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -139,7 +156,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcareOptions"
           :attribute="childcareOptsAttr"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -148,7 +166,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.EstimatedNumberofKids"
           :attribute="e.attributes.EstimatedNumberofKids"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>

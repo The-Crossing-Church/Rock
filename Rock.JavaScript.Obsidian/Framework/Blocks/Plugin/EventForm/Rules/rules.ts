@@ -39,6 +39,7 @@ const rules = {
                   if(l.attributeValues?.Capacity) {
                       return parseInt(l.attributeValues.Capacity)
                   }
+                  return 0
               }).reduce((partialSum: any, a: any) => partialSum + a, 0)
               return value <= capacity || `${key} cannot exceed ${capacity}`
           } else {

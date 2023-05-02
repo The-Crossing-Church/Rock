@@ -19,16 +19,17 @@ export default defineComponent({
           required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
     },
     data() {
-        return {
-          rules: rules,
-          errors: [] as Record<string, string>[]
-        };
+      return {
+        rules: rules,
+        errors: [] as Record<string, string>[]
+      };
     },
     computed: {
       
@@ -67,7 +68,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.EventURL"
           :attribute="e.attributes.EventURL"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -77,7 +79,8 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.Password"
         :attribute="e.attributes.Password"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>

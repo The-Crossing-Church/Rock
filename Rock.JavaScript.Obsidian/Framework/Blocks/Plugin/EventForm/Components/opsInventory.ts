@@ -41,6 +41,7 @@ export default defineComponent({
     originalRequest: Object as PropType<ContentChannelItem>,
     inventoryList: Array as PropType<any[]>,
     existing: Array as PropType<any[]>,
+    readonly: Boolean
   },
   setup() {
 
@@ -340,7 +341,7 @@ export default defineComponent({
       if(this.e?.attributeValues.OpsInventory) {
         this.opsInventory = JSON.parse(this.e.attributeValues.OpsInventory)
         //Verify the quantities requested do not conflict (in case of a date or time change)
-
+        
       }
     }
   },
@@ -360,7 +361,7 @@ export default defineComponent({
       </template>
     </div>
     <div class="col col-xs-1">
-      <a-btn class="pull-right" type="accent" shape="circle" @click="openInventoryEditor">
+      <a-btn class="pull-right" type="accent" shape="circle" @click="openInventoryEditor" v-if="!readonly">
         <i class="fa fa-plus"></i>
       </a-btn>
     </div>

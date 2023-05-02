@@ -18,7 +18,8 @@ export default defineComponent({
           required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
@@ -76,7 +77,8 @@ export default defineComponent({
         <rck-field
           v-model="request.attributeValues.ProductionTech"
           :attribute="request.attributes.ProductionTech"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -87,7 +89,8 @@ export default defineComponent({
         <rck-field
           v-model="request.attributeValues.ProductionSetup"
           :attribute="request.attributes.ProductionSetup"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>

@@ -682,18 +682,11 @@ export default defineComponent({
         //Remove/Readonly Sections
         let twoWeeksTense = this.findTense(14)
         let thirtyDaysTense = this.findTense(30)
-        let pubDateCutOff = lastDate.minus({days: 42})
+        let pubDateCutOff = lastDate.minus({weeks: 6})
         if(this.viewModel.request.attributeValues.PublicityStartDate) {
           pubDateCutOff = DateTime.fromISO(this.viewModel.request.attributeValues.PublicityStartDate).minus({days: 21})
         }
-        let regDateCutOff = firstDate.minus({days: 14})
-        if(this.viewModel.events[0].attributeValues && this.viewModel.events[0].attributeValues.RegistrationStartDate) {
-          regDateCutOff = DateTime.fromISO(this.viewModel.events[0].attributeValues.RegistrationStartDate).minus({days: 14})
-        }
         let sixWeeksTense = DateTime.now() > pubDateCutOff ? 'was' : 'is'
-        console.log(sixWeeksTense)
-        console.log("Reg Cut Off:", regDateCutOff)
-        console.log("Pub Cut Off:", pubDateCutOff)
         //Drafts, cut anything that is past-deadline
         if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
           if(twoWeeksTense == 'was') {
@@ -702,8 +695,6 @@ export default defineComponent({
             this.viewModel.request.attributeValues.NeedsOpsAccommodations = 'False'
             this.viewModel.request.attributeValues.NeedsWebCalendar = 'False'
             this.viewModel.request.attributeValues.NeedsProductionAccommodations = 'False'
-          }
-          if(DateTime.now() > regDateCutOff) {
             this.viewModel.request.attributeValues.NeedsRegistration = 'False'
           }
           if(thirtyDaysTense == 'was') {
@@ -1204,7 +1195,7 @@ export default defineComponent({
             Catering Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
+          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1212,7 +1203,7 @@ export default defineComponent({
             Other Accomodations
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1220,10 +1211,10 @@ export default defineComponent({
             Childcare Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)"></tcc-childcare>
+          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')"></tcc-childcare>
           <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
           <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
-          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
+          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
@@ -1231,7 +1222,7 @@ export default defineComponent({
             Registration Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1239,7 +1230,7 @@ export default defineComponent({
             Zoom Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)"></tcc-online>
+          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')"></tcc-online>
           <br/>
         </template>
       </template>
@@ -1247,15 +1238,15 @@ export default defineComponent({
     <template v-if="step == publicityStep">
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
-        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal"></tcc-web-cal>
+        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal" :readonly="readonlySections.includes('Calendar')"></tcc-web-cal>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>
-        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
+        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="publicity" @validation-change="validationChange" ref="publicity" :readonly="readonlySections.includes('Publicity')"></tcc-publicity>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
         <h3 class="text-primary">Production Tech Information</h3>
-        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="prodtech" @validation-change="validationChange" ref="prodtech"></tcc-prod-tech>
+        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="prodtech" @validation-change="validationChange" ref="prodtech" :readonly="readonlySections.includes('Production')"></tcc-prod-tech>
       </template>
     </template>
     <template v-if="step == lastStep">

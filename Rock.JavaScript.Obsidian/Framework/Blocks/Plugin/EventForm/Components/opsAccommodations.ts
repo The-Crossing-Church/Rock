@@ -61,6 +61,7 @@ export default defineComponent({
       originalRequest: Object as PropType<ContentChannelItem>,
       inventoryList: Array as PropType<any[]>,
       existing: Array as PropType<any[]>,
+      readonly: Boolean
     },
     setup() {
 
@@ -298,7 +299,8 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.RoomTech"
         :attribute="e.attributes.RoomTech"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>
@@ -307,7 +309,8 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.TechNeeds"
         :attribute="e.attributes.TechNeeds"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>
@@ -333,7 +336,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)">
+            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly">
               <i class="fa fa-pencil-alt"></i>
             </a-btn>
           </div>
@@ -351,7 +354,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)">
+            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly">
               <i class="fa fa-pencil-alt"></i>
             </a-btn>
           </div>
@@ -364,20 +367,37 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.Tablecloths"
         :label="e.attributes.Tablecloths.name"
+        v-if="!readonly"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.Tablecloths"
+        :attribute="e.attributes.Tablecloths"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.NeedsDoorsUnlocked"
         :label="e.attributes.NeedsDoorsUnlocked.name"
+        v-if="!readonly"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsDoorsUnlocked"
+        :attribute="e.attributes.NeedsDoorsUnlocked"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 mb-2" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
       <strong>Operations will unlock doors for your event based on the spaces and rooms you have reserved. If you have special unlock instructions for your event, please indicate below.</strong><br/>
       <rck-field
         v-model="e.attributeValues.Doors"
         :attribute="doorsAttr"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>
@@ -386,13 +406,29 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.NeedsSecurity"
         :label="e.attributes.NeedsSecurity.name"
+        v-if="!readonly"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsSecurity"
+        :attribute="e.attributes.NeedsSecurity"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.HasDangerousActivity"
         :label="e.attributes.HasDangerousActivity.name"
+        v-if="!readonly"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.HasDangerousActivity"
+        :attribute="e.attributes.HasDangerousActivity"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row" v-if="e.attributeValues.HasDangerousActivity == 'True'">
@@ -400,7 +436,8 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.DangerousActivityInfo"
         :attribute="e.attributes.DangerousActivityInfo"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>
@@ -409,7 +446,8 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.Setup"
         :attribute="e.attributes.Setup"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>
@@ -418,14 +456,16 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.SetupImage"
         :attribute="e.attributes.SetupImage"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.HasDangerousActivity == 'True'">
       <rck-field
         v-model="e.attributeValues.InsuranceCertificate"
         :attribute="e.attributes.InsuranceCertificate"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>
@@ -436,16 +476,24 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.Drinks"
           :attribute="e.attributes.Drinks"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </div>
       <div class="col col-xs-12 col-md-6">
-        <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime">
+        <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime" v-if="!readonly">
           <tcc-time 
             :label="e.attributes.DrinkTime.name"
             v-model="e.attributeValues.DrinkTime"
           ></tcc-time>
         </tcc-validator>
+        <rck-field
+          v-else
+          v-model="e.attributeValues.DrinkTime"
+          :attribute="e.attributes.DrinkTime"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+        ></rck-field>
       </div>
     </div>
     <div class="row">
@@ -453,13 +501,14 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.DrinkSetupLocation"
           :attribute="e.attributes.DrinkSetupLocation"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </div>
     </div>
   </template>
   <h4 class="text-accent mt-2">Ops Inventory</h4>
-  <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing"></tcc-ops-inv>
+  <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing" :readonly="readonly"></tcc-ops-inv>
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div class="mt-2" style="height: 16px;"></div>

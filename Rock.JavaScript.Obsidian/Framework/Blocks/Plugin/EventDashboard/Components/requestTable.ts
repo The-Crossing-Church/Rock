@@ -42,7 +42,7 @@ export default defineComponent({
             statuses: [] as string[],
             resources: [] as string[],
             ministry: "",
-            submitter: { value: "", text: ""},
+            submitter: "",
             eventDates:  { lowerValue: "", upperValue: "" },
             eventModified: { lowerValue: "", upperValue: "" }
           },
@@ -138,7 +138,7 @@ export default defineComponent({
           statuses: [],
           resources: [] as string[],
           ministry: "",
-          submitter: { value: "", text: ""},
+          submitter: "",
           eventDates:  { lowerValue: "", upperValue: "" },
           eventModified: { lowerValue: "", upperValue: "" }
         }
@@ -200,10 +200,10 @@ export default defineComponent({
         ></rck-text>
       </div>
       <div class="col col-xs-12 col-md-4">
-        <rck-person
+        <rck-text
           label="Submitter/Modifier"
           v-model="filters.submitter"
-        ></rck-person>
+        ></rck-text>
       </div>
       <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
         <rck-field
