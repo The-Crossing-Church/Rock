@@ -74,10 +74,11 @@
             NickName,
             LastName,
             BirthDate,
-            ALLERGY.Value AS 'Allergy',
-            MedInfo.Value AS 'MedInfo',
-            MEDICAL.Value AS 'MedCode',
-            Location      AS 'PickUpLocation',
+            ALLERGY.Value                              AS 'Allergy',
+            MedInfo.Value                              AS 'MedInfo',
+            MEDICAL.Value                              AS 'MedCode',
+            Location                                   AS 'PickUpLocation',
+            LocSort.Value                              AS 'LocationSortOrder',
             dbo.Cust_Bema_GetParentNickNames(PersonId) AS [ParentNames],
             LocationId,
             ScheduleId,
@@ -92,7 +93,7 @@
                 LEFT OUTER JOIN AttributeValue MedInfo ON MedInfo.EntityId = PersonId AND MedInfo.AttributeId = 4141
                 LEFT OUTER JOIN AttributeValue MEDICAL ON MEDICAL.EntityId = PersonId AND MEDICAL.AttributeId = 2855
                 INNER JOIN (
-            SELECT AttendanceData.PersonAliasId, Location
+            SELECT AttendanceData.PersonAliasId, Location, LocationId AS 'PickUpLocationId'
             FROM (
                     SELECT Attendance.PersonAliasId,
                             ROW_NUMBER() OVER (PARTITION BY Attendance.PersonAliasId ORDER BY Start) AS 'Row',
@@ -163,8 +164,10 @@
             ) AS TargetData ON TargetData.PersonAliasId = AttendanceData.PersonAliasId AND TargetRow = Row
             WHERE TargetRow > 0
         ) AS PrevAtt ON PrevAtt.PersonAliasId = Attendance.PersonAliasId
+            LEFT OUTER JOIN AttributeValue LocSort
+                            ON LocSort.EntityId = PrevAtt.PickUpLocationId AND LocSort.AttributeId = {{sortAttrId}}
         WHERE OccurrenceId = {{occurrence.Id}}
-        ORDER BY PickUpLocation, NickName
+        ORDER BY LocationSortOrder, PickUpLocation, NickName
     {% endsql %}
 
     {% assign pageNumber = 1 | AsInteger %}
