@@ -78,7 +78,7 @@
             MedInfo.Value                              AS 'MedInfo',
             MEDICAL.Value                              AS 'MedCode',
             Location                                   AS 'PickUpLocation',
-            LocSort.Value                              AS 'LocationSortOrder',
+            CAST(LocSort.Value AS int)                 AS 'LocationSortOrder',
             dbo.Cust_Bema_GetParentNickNames(PersonId) AS [ParentNames],
             LocationId,
             ScheduleId,
