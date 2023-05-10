@@ -108,6 +108,23 @@ export default defineComponent({
           </div>
         </template>
       </template>
+      <template v-else-if="av.attr.key.includes('EmailAdditionalDetails')">
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div class="mb-2 text-red" v-html="av.value.replaceAll('\\n','<br>')"></div>
+            </div>
+            <div class="col col-xs-6">
+              <div class="mb-2 text-primary" style="padding-top: 18px;" v-html="av.changeValue.replaceAll('\\n','<br>')"></div>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <rck-lbl>{{av.attr.name}}</rck-lbl>
+          <div class="mb-2" v-html="av.value.replaceAll('\\n','<br>')"></div>
+        </template>
+      </template>
       <template v-else>
         <template v-if="av.changeValue != ''">
           <div class="row">

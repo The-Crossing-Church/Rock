@@ -36,31 +36,17 @@ export default defineComponent({
       <template v-if="request.changes != null && request.attributeValues.WebCalendarDescription != request.changes.attributeValues.WebCalendarDescription">
         <div class="row">
           <div class="col col-xs-6">
-            <rck-field
-              v-model="request.attributeValues.WebCalendarDescription"
-              :attribute="request.attributes.WebCalendarDescription"
-              class="text-red"
-              :showEmptyValue="true"
-            ></rck-field>
+            <rck-lbl>{{request.attributes.WebCalendarDescription.name}}</rck-lbl>
+            <div class="mb-2 text-red" v-html="request.attributeValues.WebCalendarDescription.replaceAll('\\n','<br>')"></div>
           </div>
           <div class="col col-xs-6">
-            <rck-field
-              v-model="request.changes.attributeValues.WebCalendarDescription"
-              :attribute="request.attributes.WebCalendarDescription"
-              class="text-primary"
-              :showEmptyValue="true"
-              :showLabel="false"
-              style="padding-top: 18px;"
-            ></rck-field>
+            <div class="mb-2 text-primary" style="padding-top: 18px;" v-html="request.changes.attributeValues.WebCalendarDescription.replaceAll('\\n','<br>')"></div>
           </div>
         </div>
       </template>
       <template v-else>
-        <rck-field
-          v-model="request.attributeValues.WebCalendarDescription"
-          :attribute="request.attributes.WebCalendarDescription"
-          :showEmptyValue="true"
-        ></rck-field>
+        <rck-lbl>{{request.attributes.WebCalendarDescription.name}}</rck-lbl>
+        <div class="mb-2" v-html="request.attributeValues.WebCalendarDescription.replaceAll('\\n','<br>')"></div>
       </template>
     </div>
   </div>
