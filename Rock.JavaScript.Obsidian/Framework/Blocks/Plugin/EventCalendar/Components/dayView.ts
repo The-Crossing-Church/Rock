@@ -57,7 +57,7 @@ export default defineComponent({
       <div class="tcc-cal-wrapper">
         <div class="tcc-cal-body">
           <div class="tcc-cal-week">
-            <div class="tcc-cal-day">
+            <div class="tcc-cal-day" :id="'day_' + currentDate.toFormat('dd')">
               <div class="tcc-day-header">
                 {{currentDate.toFormat('EEE')}} {{currentDate.toFormat('dd')}}
               </div>

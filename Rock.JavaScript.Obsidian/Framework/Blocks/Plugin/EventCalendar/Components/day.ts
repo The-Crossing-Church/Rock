@@ -79,6 +79,7 @@ export default defineComponent({
               e.adjustedEnd = end
             }
             let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
+            e.duration = interval.toDuration('minutes').toObject().minutes
             e.height = interval.toDuration('minutes').toObject().minutes + "px"
             e.calendar = c.name
             e.numEvents = numEvents
@@ -312,6 +313,11 @@ export default defineComponent({
       } else if(a.intersections < b.intersections) {
         return 1
       }
+      if(a.duration > b.duration) {
+        return -1
+      } else if(a.duration < b.duration) {
+        return 1
+      }
       if(a.adjustedStart.hour < b.adjustedStart.hour) {
         return -1
       } else if(a.adjustedStart.hour > b.adjustedStart.hour) {
@@ -336,11 +342,75 @@ export default defineComponent({
   },
   mounted() {
     console.log('mounted')
-    console.log(document.querySelectorAll('.tcc-event'))
+    //Go through all events for day and move ones that are overlapping
+    let events = [] as any[]
+    document.querySelectorAll(`#day_${this.currentDate?.toFormat("dd")} .tcc-event`).forEach((e: any) => {
+      let obj = { 
+        eventId: e.dataset.eventId, 
+        detailId: e.dataset.detailId, 
+        top: parseInt(e.style.top.replace('px', '')), 
+        left: parseInt(e.style.left.replace("%", "")),
+        right: parseInt(e.style.width.replace("%", "")),
+        bottom: parseInt(e.style.height.replace("px", "")),
+        calendar: e.dataset.calendar, 
+        el: e 
+      }
+      obj.right += obj.left
+      obj.bottom += obj.top
+      events.push(obj)
+    })
+    events.sort((a: any, b: any) => {
+      if(a.top < b.top) {
+        return -1
+      } else if(a.top > b.top) {
+        return 1
+      }
+      return 0
+    })
+    events.forEach((e: any, idx: number) => {
+      let otherEvents = events.filter((oe: any) => { return !(oe.eventId == e.eventId && oe.detailId == e.detailId && oe.calendar == e.calendar) })
+      otherEvents.forEach((oe: any) => {
+        //Figure out if events overlap horizontally 
+        if((e.left > oe.left && e.left < oe.right) || e.left == oe.left || e.right == oe.right || (e.right > oe.left && e.right < oe.right)){
+          //Figure out if events overlap vertically
+          if((e.top > oe.top && e.top < oe.bottom) || e.top == oe.top || e.bottom == oe.bottom || (e.bottom > oe.top && e.bottom < oe.bottom)){
+            console.log('overlaps', e, oe)
+            //Try to see if e can move left
+            //Find events that are during this time slot 
+            let eventsDuringInterval = otherEvents.filter((edi: any) => {
+              return (edi.top >= e.top && edi.top < e.bottom) || (edi.bottom > e.top && edi.bottom <= e.bottom) || (edi.top <= e.top && edi.bottom >= e.bottom)
+            })
+            eventsDuringInterval = eventsDuringInterval.filter((edi: any) => {
+              return edi.left < e.right
+            })
+            eventsDuringInterval = eventsDuringInterval.sort((a: any, b: any) => {
+              if(a.right > b.right) {
+                return -1
+              } else if (a.right < b.right) {
+                return 1
+              }
+              return 0
+            })
+            //See if the farthest right item, is further left that the current item's left and update it 
+            // for(let i = 0; i < eventsDuringInterval.length; i++) {
+            //   if(eventsDuringInterval[i].right < e.left) {
+                console.log('Adjusting...')
+                console.log(e.el, eventsDuringInterval[0].el, 0)
+                // e.left = parseFloat(eventsDuringInterval[i].el.style.width.replace("%", "")) + parseFloat(eventsDuringInterval[i].el.style.left.replace("%", ""))
+                // e.right = e.left + parseFloat(e.el.style.width.replace("%", ""))
+                // e.el.style.left = e.left + "%"
+              //   break;
+              // }
+            // }
+          }
+        }
+      })
+    })
+    console.log(events)
   },
   updated() {
     console.log('updated')
-    console.log(document.querySelectorAll('.tcc-event'))
+    //Go through all events for day and move ones that are overlapping
   },
   template: `
   <div style="position: relative;">
@@ -348,7 +418,7 @@ export default defineComponent({
     </div>
     <template v-for="c in daysCalendar">
       <template v-for="e in c.events">
-        <div class="tcc-event" :style="getStyle(e, c)" :event-id="e.id" :detial-id="e.parentId" @click="selected = e; modal = true;">
+        <div class="tcc-event" :style="getStyle(e, c)" :data-event-id="e.id" :data-detail-id="e.parentId" :data-calendar="e.calendar" @click="selected = e; modal = true;">
           <strong>{{e.location}}</strong> {{e.title}}
         </div>
       </template>

@@ -7,7 +7,8 @@ import { DateTime, Interval } from "luxon"
 import MonthView from "./Components/month"
 import WeekView from "./Components/week"
 import DayView from "./Components/dayView"
-import { Button, Modal } from "ant-design-vue"
+import DatePicker from "../EventForm/Components/calendar"
+import { Button, Dropdown, Modal, Menu } from "ant-design-vue"
 import RoomPicker from "../EventForm/Components/roomPicker"
 import DropDownList from "../EventDashboard/Components/dropDownList"
 import RockLabel from  "../../../Elements/rockLabel"
@@ -33,8 +34,11 @@ export default defineComponent({
     "tcc-day": DayView,
     "tcc-room": RoomPicker,
     "tcc-ddl": DropDownList,
+    "tcc-date": DatePicker,
     "a-btn": Button,
+    "a-dropdown": Dropdown,
     "a-modal": Modal,
+    "a-menu": Menu,
     "rck-lbl": RockLabel,
     "rck-txt": RockTextBox
   },
@@ -59,8 +63,10 @@ export default defineComponent({
       return {
         selected: {} as ContentChannelItem,
         loading: false,
+        dateMenu: false,
         view: 'week',
         currentDate: DateTime.now(),
+        currentDateAsString: DateTime.now().toFormat("yyyy-MM-dd"),
         lastLoadRange: {} as Interval,
         calendars: [],
         event: null,
@@ -311,7 +317,7 @@ export default defineComponent({
     },
     filterToEvent(id: number) {
       this.filters.parentId = id
-    }
+    },
   },
   watch: {
     view(val) {
@@ -320,6 +326,36 @@ export default defineComponent({
         if(this.filters.parentId == 0) {
           if(!this.lastLoadRange.engulfs(nextRange)) {
             this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+          }
+        }
+      }
+    },
+    currentDate(val) {
+      if(val.toFormat("yyyy-MM-dd") != this.currentDateAsString) {
+        this.currentDateAsString = val.toFormat('yyyy-MM-dd')
+      }
+    },
+    currentDateAsString(val) {
+      if(val != this.currentDate.toFormat("yyyy-MM-dd")) {
+        this.currentDate = DateTime.fromFormat(val, "yyyy-MM-dd")
+        this.dateMenu = false
+        let nextRange = {} as Interval
+        if(this.view == 'day') {
+          nextRange = Interval.fromDateTimes(this.currentDate.startOf('day'), this.currentDate.endOf('day'))
+        } else if(this.view == 'week') {
+          nextRange = Interval.fromDateTimes(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+        } else {
+          let startOfMonth = this.currentDate.startOf('month')
+          nextRange = Interval.fromDateTimes(startOfMonth.startOf('day'), startOfMonth.endOf('month'))
+        }
+        //Only load new data if we haven't filtered to a particular event since we should already have the data for it
+        if(this.filters.parentId == 0) {
+          if(!this.lastLoadRange.engulfs(nextRange)) {
+            if(this.view == 'month') {
+              this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+            } else {
+              this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+            }
           }
         }
       }
@@ -336,11 +372,20 @@ export default defineComponent({
           <i class="fa fa-filter"></i>
         </a-btn>
       </div>
-      <div class="col col-xs-6 text-center font-weight-bold" style="font-size: 20px;">
+      <div class="col col-xs-6 text-center justify-center font-weight-bold" style="font-size: 20px;">
         <a-btn shape="circle" type="accent" @click="page(false)">
           <i class="fa fa-chevron-left"></i>
         </a-btn>
-        {{displayDate}}
+        <a-dropdown :trigger="['click']" v-model:visible="dateMenu">
+          <div @click="openDatePicker" class="hover px-2">
+            {{displayDate}}
+          </div> 
+          <template #overlay>
+            <a-menu>
+              <tcc-date v-model="currentDateAsString" min="2020-01-01"></tcc-date>
+            </a-menu>
+          </template>
+        </a-dropdown>
         <a-btn shape="circle" type="accent" @click="page(true)">
           <i class="fa fa-chevron-right"></i>
         </a-btn>
@@ -414,6 +459,10 @@ export default defineComponent({
     ></tcc-day>
   </div>
   <v-style>
+    .justify-center {
+      display: flex; 
+      justify-content: center;
+    }
     .hover {
       cursor: pointer;
     }
