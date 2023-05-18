@@ -66,6 +66,9 @@ export default defineComponent({
           return `Max Uses: ${value.MaxUses}`
         }
         return ""
+      },
+      formatDateTime(value: string) {
+        return DateTime.fromISO(value).toFormat("f")
       }
     },
     watch: {
@@ -123,6 +126,29 @@ export default defineComponent({
         <template v-else>
           <rck-lbl>{{av.attr.name}}</rck-lbl>
           <div class="mb-2" v-html="av.value.replaceAll('\\n','<br>')"></div>
+        </template>
+      </template>
+      <template v-else-if="av.attr.fieldTypeGuid == 'fe95430c-322d-4b67-9c77-dfd1d4408725'">
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div class="text-red">
+                {{formatDateTime(av.value)}}
+              </div>
+            </div>
+            <div class="col col-xs-6">
+              <div class="mb-2 text-primary" style="padding-top: 18px;">
+                {{formatDateTime(av.changeValue)}}
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <rck-lbl>{{av.attr.name}}</rck-lbl>
+          <div class="mb-2">
+            {{formatDateTime(av.value)}}
+          </div>
         </template>
       </template>
       <template v-else>

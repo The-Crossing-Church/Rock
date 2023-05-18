@@ -64,7 +64,7 @@ export default defineComponent({
         selected: {} as ContentChannelItem,
         loading: false,
         dateMenu: false,
-        view: 'week',
+        view: 'day',
         currentDate: DateTime.now(),
         currentDateAsString: DateTime.now().toFormat("yyyy-MM-dd"),
         lastLoadRange: {} as Interval,

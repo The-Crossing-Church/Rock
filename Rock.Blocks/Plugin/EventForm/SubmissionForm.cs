@@ -1338,7 +1338,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     DateTime goLiveDate = firstDate;
                     if ( !String.IsNullOrEmpty( events[i].AttributeValues["RegistrationStartDate"].Value ) )
                     {
-                        twoWeekRegistrationDate = DateTime.Parse( events[i].AttributeValues["RegistrationStartDate"].Value ).AddDays( -21 );
+                        twoWeekRegistrationDate = DateTime.Parse( events[i].AttributeValues["RegistrationStartDate"].Value ).AddDays( -14 );
                         goLiveDate = DateTime.Parse( events[i].AttributeValues["RegistrationStartDate"].Value );
                     }
                     message += "<li><strong>" + twoWeekRegistrationDate.ToShortDateString() + "</strong> for the go live date " + goLiveDate.ToShortDateString() + "</li>";

@@ -118,7 +118,25 @@ export default defineComponent({
           return this.request.changes.attributeValues.RequestType.split(',')
         }
         return []
-      }
+      },
+      needsSpace(): boolean {
+        if(this.request?.attributeValues) {
+          return (this.request.attributeValues.NeedsSpace == 'True') || this.request.changes?.attributeValues?.NeedsSpace == 'True'
+        }
+        return false
+      },
+      needsCatering(): boolean {
+        if(this.request?.attributeValues) {
+          return this.request.attributeValues.NeedsCatering == 'True' || this.request.changes?.attributeValues?.NeedsCatering == 'True'
+        }
+        return false
+      },
+      needsChildcareCatering(): boolean {
+        if(this.request?.attributeValues) {
+          return (this.request.attributeValues.NeedsChildCareCatering == 'True') ||  this.request.changes?.attributeValues?.NeedsChildCareCatering == 'True'
+        }
+        return false
+      },
     },
     methods: {
       getCollapseClassName(idx: number) {
@@ -494,9 +512,9 @@ export default defineComponent({
             </div>
           </div>
           <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
-          <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks" :needsSpace="request.attributeValues.NeedsSpace"></tcc-catering>
-          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="request.attributeValues.NeedsCatering"></tcc-ops>
-          <tcc-childcare v-if="request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' )" :details="ci"></tcc-childcare>
+          <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks" :needsSpace="needsSpace"></tcc-catering>
+          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering"></tcc-ops>
+          <tcc-childcare v-if="request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' )" :details="ci" :needsCatering="needsChildcareCatering"></tcc-childcare>
           <tcc-registration v-if="request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' )" :details="ci"></tcc-registration>
           <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>
         </div>

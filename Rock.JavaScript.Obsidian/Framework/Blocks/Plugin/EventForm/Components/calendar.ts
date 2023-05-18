@@ -52,7 +52,8 @@ export default defineComponent({
             startDate: DateTime.now(),
             endDate: DateTime.now(),
             currentMonth: 0,
-            currentYear: 0
+            currentYear: 0,
+            monthMenu: false
         };
     },
     computed: {
@@ -195,6 +196,7 @@ export default defineComponent({
                 date = date.endOf('month')
                 if (date < this.endDate) {
                     this.currentMonth = month
+                    this.monthMenu = false
                 }
             }
         },
@@ -264,7 +266,7 @@ export default defineComponent({
     <i v-if="canClickPre" class="fa fa-chevron-left hover" @click="prevMonth"></i>
     <i v-else class="fa fa-chevron-left fa-disabled"></i>
     <div style="display: flex;">
-      <a-dropdown :trigger="['click']">
+      <a-dropdown :trigger="['click']" v-model:visible="monthMenu">
         <div style="padding-right: 8px;">
           {{displayMonth.toFormat('MMMM')}}
         </div>

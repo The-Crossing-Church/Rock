@@ -1,9 +1,8 @@
 import { defineComponent, PropType } from "vue"
 import { DateTime, Interval } from "luxon"
-import { Modal, Button } from "ant-design-vue"
 import { useStore } from "../../../../Store/index"
 import { Person } from "../../../../ViewModels"
-import Chip from "../../EventForm/Components/chip"
+import Event from "./event"
 
 const store = useStore()
 
@@ -34,9 +33,7 @@ type Event = {
 export default defineComponent({
   name: "EventCalendar.Components.DayView",
   components: {
-    "a-btn": Button,
-    "a-modal": Modal,
-    "tcc-chip": Chip,
+    "tcc-event": Event
   },
   props: {
     calendars: Array,
@@ -106,46 +103,6 @@ export default defineComponent({
         }
       }
       return [{name: 'default', events: []}]
-    },
-    selectedTimeFrame() {
-      if(this.selected) {
-        let start = DateTime.fromISO(this.selected.start)
-        let end = DateTime.fromISO(this.selected.end)
-        let duration = Interval.fromDateTimes(start, end).toDuration()
-        let range = ""
-        if(duration.hours > 1) {
-          range = duration.hours + " hours"
-        } else if(duration.hours == 1) {
-          range = "1 hour"
-        }
-        let timeFrame =  this.selected.adjustedStart.toFormat("t") + " - " + this.selected.adjustedEnd.toFormat("t") 
-        if((this.selected.startBuffer && this.selected.startBuffer > 0) || (this.selected.endBuffer && this.selected.endBuffer > 0)) {
-          timeFrame += " (Event Time: " + start.toFormat("t") + " - " + end.toFormat("t") + ")"
-        }
-        return timeFrame
-      }
-    },
-    relatedEvents() {
-      if(this.selected) {
-        let events = [] as any[]
-        this.calendars?.forEach((c: any) => {
-          c.events.forEach((e: any) => {
-            if(e.parentId == this.selected.parentId && (e.id != this.selected.id || c.name != this.selected.calendar)) {
-              let idx = events.map((event: any) => { return event.start }).indexOf(e.start)
-              if(idx >= 0) {
-                events[idx].events.push(e)
-              } else {
-                events.push({start: e.start, events: [ e ]})
-              }
-            }
-          })
-        })
-        events.forEach((e: any) => {
-          e.rooms = e.events.map((ev: any) => ev.location).join(", ")
-        })
-        return events
-      }
-      return []
     },
     sortedEvents() {
       let lastEventEnding = null
@@ -218,10 +175,8 @@ export default defineComponent({
       }
       return ""
     },
-    filterToEvent() {
-      this.modal = false
-      this.$emit('filterToEvent', this.selected.parentId)
-      this.selected = {}
+    filterToEvent(id: number) {
+      this.$emit('filterToEvent', id)
     },
     sortEvents(a: any, b: any) {
       if(a.calendar < b.calendar) {
@@ -256,9 +211,6 @@ export default defineComponent({
       } else {
         return 0
       }
-    },
-    getStyle(e: any) {
-      return `position: absolute; top: ${e.top}; height: ${e.height}; left: ${(100*e.left)}%; width: ${(100/this.sortedEvents.length)}%; background-color: ${e.calColor.replaceAll('%2C', ',') }; border-color: ${e.calBorder.replaceAll('%2C', ',') };`
     },
     packEvents(columns: any[]) {
       let numColumns = columns.length
@@ -301,85 +253,9 @@ export default defineComponent({
     <div class="tcc-hour" v-for="i in 24" :key="i" :id="getHourId(i)">
     </div>
     <template v-for="col in sortedEvents">
-      <div v-for="e in col" class="tcc-event" :id="e.calendar+'_'+e.id" :style="getStyle(e)">
-        <b>{{e.location}}</b> {{e.title}}
-      </div>
+      <tcc-event v-for="e in col" :event="e" :cols="sortedEvents.length" v-on:filterToEvent="filterToEvent" v-on:openEvent="openEvent" :calendars="calendars"></tcc-event>
     </template>
   </div>
-  <a-modal v-if="modal" v-model:visible="modal" :closable="false" width="75%">
-    <h2 class="text-center">{{selected.title}}</h2>
-    <div>
-      <i class="far fa-clock"></i> {{selectedTimeFrame}}
-    </div>
-    <div>
-      {{selected.ministry}}: {{selected.submitter}}
-    </div>
-    <div v-if="selected.submitter != selected.contact">
-      Event Contact: {{selected.contact}}
-    </div>
-    <div>
-      <i class="fas fa-map-marker-alt"></i> {{selected.location}}
-    </div>
-    <div class="mt-2">
-      Resources
-      <div class="chip-group">
-        <tcc-chip v-for="r in selected.resources" :disabled="true">
-          <template v-if="r == 'Room'">
-            <i class="mr-1 fas fa-door-open"></i> Physical Space
-          </template>
-          <template v-else-if="r == 'Catering'">
-            <i class="mr-1 fas fa-utensils"></i> Catering
-          </template>
-          <template v-else-if="r == 'Childcare'">
-            <i class="mr-1 fas fa-child"></i> Childcare
-          </template>
-          <template v-else-if="r == 'Childcare Catering'">
-            <i class="mr-1 fas fa-pizza-slice"></i> Childcare Catering
-          </template>
-          <template v-else-if="r == 'Online Event'">
-            <i class="mr-1 fas fa-child"></i> Zoom
-          </template>
-          <template v-else-if="r == 'Publicity'">
-            <i class="mr-1 fas fa-bullhorn"></i> Publicity
-          </template>
-          <template v-else-if="r == 'Registration'">
-            <i class="mr-1 fas fa-laptop"></i> Registration
-          </template>
-          <template v-else-if="r == 'Extra Resources'">
-            <i class="mr-1 fas fa-cogs"></i> Ops Request
-          </template>
-          <template v-else-if="r == 'Web Calendar'">
-            <i class="mr-1 fas fa-calendar"></i> Web Calendar
-          </template>
-          <template v-else-if="r == 'Production'">
-            <i class="mr-1 fas fa-music"></i> Production
-          </template>
-          <template v-else>
-            {{r}}
-          </template>
-        </tcc-chip>
-      </div>
-    </div>
-    <template v-if="relatedEvents.length > 0">
-      <div class="mt-2 font-weight-bold hover" data-toggle="collapse" href="#relatedCollapse" aria-expanded="false" aria-controls="relatedCollapse">
-        Other Events in Request <i class="fa fa-chevron-down"></i>
-      </div>
-      <div class="collapse" id="relatedCollapse">
-        <div v-for="e in relatedEvents">
-          {{getTimeFrame(e.events[0])}} {{e.rooms}}
-        </div>
-      </div>
-    </template>
-    <template #footer>
-      <a-btn shape="circle" type="accent" v-if="selected.submitterId == currentPerson.id">
-        <i class="fa fa-pencil"></i>
-      </a-btn>
-      <a-btn shape="circle" type="primary" v-if="relatedEvents.length > 0" @click="filterToEvent">
-        <i class="fa fa-filter"></i>
-      </a-btn>
-      <a-btn type="grey" @click="modal = false; selected = {};">Close</a-btn>
-    </template>
-  </a-modal>
   <v-style>
     .tcc-event {
       padding: 4px; 

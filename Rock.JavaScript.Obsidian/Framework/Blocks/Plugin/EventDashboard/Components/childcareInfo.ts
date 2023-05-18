@@ -7,7 +7,8 @@ export default defineComponent({
       "rck-field": RockField
     },
     props: {
-      details: Object
+      details: Object,
+      needsCatering: Boolean
     },
     setup() {
 
@@ -26,6 +27,9 @@ export default defineComponent({
             let item = { attr: attr, value: "", changeValue: "" }
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Childcare")) {
+              if(categories.includes("Event Childcare Catering") && !this.needsCatering) {
+                continue
+              } 
               item.value = this.details.attributeValues[key]
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
