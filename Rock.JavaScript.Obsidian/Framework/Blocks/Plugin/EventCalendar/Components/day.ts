@@ -113,9 +113,9 @@ export default defineComponent({
         let e = events[i]
         let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
         if (lastEventEnding != null && e.adjustedStart >= lastEventEnding) {
-            this.packEvents(columns)
-            columns = []
-            lastEventEnding = null
+          this.packEvents(columns)
+          // columns = []
+          // lastEventEnding = null
         }
         let placed = false
         for(let k=0; k<columns.length; k++) {

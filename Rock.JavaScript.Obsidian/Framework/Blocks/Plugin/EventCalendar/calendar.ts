@@ -64,7 +64,7 @@ export default defineComponent({
         selected: {} as ContentChannelItem,
         loading: false,
         dateMenu: false,
-        view: 'day',
+        view: 'week',
         currentDate: DateTime.now(),
         currentDateAsString: DateTime.now().toFormat("yyyy-MM-dd"),
         lastLoadRange: {} as Interval,
@@ -188,7 +188,6 @@ export default defineComponent({
     },
     filteredCalendars() {
       let cals = JSON.parse(JSON.stringify(this.calendars))
-      console.log(cals)
       if(this.filters.parentId && this.filters.parentId > 0) {
         cals.forEach((c: any) => {
           c.events = c.events.filter((e: any) => {
@@ -221,11 +220,11 @@ export default defineComponent({
       }
       if(this.filters.rooms) {
         let selected = JSON.parse(this.filters.rooms)
-        let items = selected.text.split(", ").filter((s: string) => { return s })
+        let items = selected.text.split(",").filter((s: string) => { return s.trim() })
         if(items.length > 0) {
           cals.forEach((c: any) => {
             c.events = c.events.filter((e: any) => {
-              let eRooms = e.location.split(", ")
+              let eRooms = e.location.split(",").map((s: string) => { return s.trim() })
               let intersection = eRooms.filter((value: string) => items.includes(value))
               return intersection.length > 0
             })

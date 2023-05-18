@@ -104,6 +104,11 @@ export default defineComponent({
       }
       return ""
     },
+    openModal(e: any) {
+      // e.preventDefault()
+      console.log('open modal')
+      this.modal = true
+    }
   },
   watch: {
     
@@ -115,7 +120,7 @@ export default defineComponent({
     
   },
   template: `
-  <div class="tcc-event" :id="event.calendar+'_'+event.id" :style="getStyle(event)" @click="modal = true">
+  <div class="tcc-event" :id="event.calendar+'_'+event.id" :style="getStyle(event)" @click="openModal">
     <b>{{event.location}}</b> {{event.title}}
   </div>
   <a-modal v-if="modal" v-model:visible="modal" :closable="false" width="75%">

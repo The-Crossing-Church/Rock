@@ -169,7 +169,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), , rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
         <tcc-date-pkr
           :label="e.attributes.RegistrationStartDate.name"
           v-model="e.attributeValues.RegistrationStartDate"
@@ -252,7 +252,7 @@ export default defineComponent({
   <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs"></tcc-discount>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationEndDate, lastDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
         <tcc-date-pkr
           :label="e.attributes.RegistrationEndDate.name"
           v-model="e.attributeValues.RegistrationEndDate"
@@ -268,7 +268,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name), rules.timeCannotBeAfterEvent(e.attributeValues.RegistrationEndTime, e.attributeValues.EndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
+      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.RegistrationEndTime.name"
           v-model="e.attributeValues.RegistrationEndTime"

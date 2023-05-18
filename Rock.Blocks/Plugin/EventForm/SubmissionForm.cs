@@ -1310,11 +1310,11 @@ namespace Rock.Blocks.Plugin.EventForm
             DateTime twoWeekDate = firstDate.AddDays( -14 );
             DateTime thirtyDayDate = firstDate.AddDays( -30 );
             DateTime sixWeekDate = firstDate.AddDays( -42 );
-            DateTime pubGoLige = firstDate.AddDays( -21 );
+            DateTime pubGoLive = firstDate.AddDays( -21 );
             if ( !String.IsNullOrEmpty( item.AttributeValues["PublicityStartDate"].Value ) )
             {
                 sixWeekDate = DateTime.Parse( item.AttributeValues["PublicityStartDate"].Value ).AddDays( -21 );
-                pubGoLige = DateTime.Parse( item.AttributeValues["PublicityStartDate"].Value );
+                pubGoLive = DateTime.Parse( item.AttributeValues["PublicityStartDate"].Value );
             }
             DateTime today = RockDateTime.Now;
             today = new DateTime( today.Year, today.Month, today.Day, 0, 0, 0 );
@@ -1351,7 +1351,7 @@ namespace Rock.Blocks.Plugin.EventForm
                     if ( sixWeekDate >= today )
                     {
                         message += "Last date to request and provide all information for Publicity is three weeks before your publicity goes live:";
-                        message += "<ul><li><strong>" + sixWeekDate.ToShortDateString() + "</strong> for the go live date " + pubGoLige.ToShortDateString() + "</li></ul>";
+                        message += "<ul><li><strong>" + sixWeekDate.ToShortDateString() + "</strong> for the go live date " + pubGoLive.ToShortDateString() + "</li></ul>";
                     }
                     else
                     {
