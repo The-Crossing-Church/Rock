@@ -48,7 +48,7 @@ export default defineComponent({
   data() {
     return {
       selected: {} as any,
-      modal: false
+      modal: false,
     }
   },
   computed: {
@@ -64,7 +64,6 @@ export default defineComponent({
           c.events = c.events.filter((e: any) => {
             return DateTime.fromISO(e.start).toFormat('yyyy-MM-dd') == this.currentDate?.toFormat('yyyy-MM-dd')
           })
-          let numEvents = c.events.length
           c.events.forEach((e: any) => {
             let start = DateTime.fromISO(e.start)
             if(e.startBuffer) {
@@ -81,97 +80,17 @@ export default defineComponent({
             let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
             e.duration = interval.toDuration('minutes').toObject().minutes
             e.height = interval.toDuration('minutes').toObject().minutes + "px"
+            e.top = ((e.adjustedStart.hour * 60) + e.adjustedStart.minute ) + 'px'
             e.calendar = c.name
-            e.numEvents = numEvents
+            e.calColor = c.color
+            e.calBorder = c.border
           })
         })
         data = data.filter((c: any) => {
           return c.events.length > 0
         })
-        //Save Intersection Data
-        let events = data.map((c: any) => { return c.events }).flat()
-        data.forEach((c: any) => {
-          c.events.forEach((e: any) => {
-            let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
-            let intersectingEvents = events.filter((oe: any) => {
-              if(!(e.location == oe.location && e.id == oe.id)) {
-                let otherInterval = Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd)
-                return interval.intersection(otherInterval) != null
-              }
-              return false
-            }).sort((a: any, b: any) => {
-              let aInt = Interval.fromDateTimes(a.adjustedStart, a.adjustedEnd)
-              let bInt = Interval.fromDateTimes(b.adjustedStart, b.adjustedEnd)
-              if(aInt.count('minutes') < bInt.count('minutes')) {
-                return -1
-              } else if(aInt.count('minutes') > bInt.count('minutes')) {
-                return 1
-              }
-              return 0
-            })
-            let intervals = [] as any[]
-            intersectingEvents.forEach((oe: any) => {
-              let intersection = interval.intersection(Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd)) as Interval
-              let hasMatch = false
-              intervals.forEach((i: any) => {
-                let int = i.int.intersection(intersection)
-                if(int) {
-                  i.ct++
-                }
-              })
-              if(!hasMatch) {
-                intervals.push({int: intersection, ct: 1})
-              }
-            })
-            if(intervals && intervals.length > 0) {
-              intervals = intervals.sort((a: any, b: any) => {
-                if(a.ct > b.ct ) {
-                  return -1
-                } else if( a.ct < b.ct) {
-                  return 1
-                }
-                return 0
-              })
-              e.intersections = intervals[0].ct
-              e.totalIntersections = intersectingEvents.length
-              e.interval = intervals[0].int
-            }
-          })
-        })
         //Save Sort Order
         data.forEach((c: any) => {
-          c.events.forEach((e: any) => {
-            let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
-            let intersectingEvents = events.filter((oe: any) => {
-              if(!(e.location == oe.location && e.id == oe.id)) {
-                let otherInterval = Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd)
-                if(interval && otherInterval) {
-                  return interval.intersection(otherInterval) != null
-                }
-              }
-              return false
-            })
-            let eventsAtInterval = intersectingEvents.filter((oe: any) => {
-               return Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd).intersection(e.interval) != null
-            })
-            eventsAtInterval.push(e)
-            eventsAtInterval.sort(this.sortEvents)
-            e.idx = eventsAtInterval.indexOf(e)
-            e.left = 0
-            for(let i=0; i<e.idx; i++) {
-              e.left += 100 / (eventsAtInterval[i].intersections + 1)
-            }
-            if(e.idx > 0) {
-              e.preceedingEvent = { calendar: eventsAtInterval[e.idx-1].calendar, id: eventsAtInterval[e.idx-1].id }
-            } else {
-              e.preceedingEvent = null
-            }
-            if(e.idx < (eventsAtInterval.length - 1)) {
-              e.followingEvent = { calendar: eventsAtInterval[e.idx+1].calendar, id: eventsAtInterval[e.idx+1].id }
-            } else {
-              e.followingEvent = null
-            }
-          })
           c.events.sort(this.sortEvents)
         })
         data.sort((a: any, b: any) => {
@@ -227,7 +146,48 @@ export default defineComponent({
         return events
       }
       return []
-    }
+    },
+    sortedEvents() {
+      let lastEventEnding = null
+      let columns = [] as any[]
+      let events = [] as any[] 
+      this.daysCalendar.forEach((c: any) => events.push(...c.events))
+      for(let i=0; i<events.length; i++) {
+        let e = events[i]
+        let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
+        if (lastEventEnding != null && e.adjustedStart >= lastEventEnding) {
+            this.packEvents(columns)
+            columns = []
+            lastEventEnding = null
+        }
+        let placed = false
+        for(let k=0; k<columns.length; k++) {
+          let col = columns[k]
+          let noIntersections = true
+          for(let j=0; j<col.length; j++) {
+            let intersection = interval.intersection(Interval.fromDateTimes(col[j].adjustedStart, col[j].adjustedEnd)) as Interval
+            if(intersection != null) {
+              noIntersections = false
+            }
+          }
+          if(noIntersections) {
+            col.push(e)
+            placed = true
+            break
+          }
+        }
+        if (!placed) {
+          columns.push([e])
+        }
+        if (lastEventEnding == null || e.adjustedEnd > lastEventEnding) {
+          lastEventEnding = e.adjustedEnd
+        }
+      }
+      if (columns.length > 0){
+        this.packEvents(columns)
+      }
+      return columns
+    },
   },
   methods: {
     getHourId(hour: number) {
@@ -258,45 +218,6 @@ export default defineComponent({
       }
       return ""
     },
-    getStyle(event: any, calendar: any) {
-      let style = 'position: absolute; background-color: ' + calendar.color.replaceAll('%2C', ',') + '; border-color: ' + calendar.border.replaceAll('%2C', ',') + '; height: ' + event.height + ';'
-      style += ' top: ' + ((event.adjustedStart.hour * 60) + event.adjustedStart.minute ) + 'px;'
-      let percentage = (100/(event.intersections + 1))
-      if(event.preceedingEvent) {
-        this.daysCalendar.forEach((c: any) => {
-          if(c.name == event.preceedingEvent.calendar) {
-            c.events.forEach((e: any) => {
-              if(e.id == event.preceedingEvent.id) {
-                let adjustedLeft = (e.left + (100/(e.intersections + 1)))
-                if(event.left < adjustedLeft) {
-                  if((adjustedLeft + percentage) < 100) {
-                    event.left = (e.left + (100/(e.intersections + 1)))
-                  } 
-                }
-              }
-            })
-          }
-        })
-      }
-      if(event.followingEvent) {
-        this.daysCalendar.forEach((c: any) => {
-          if(c.name == event.followingEvent.calendar) {
-            c.events.forEach((e: any) => {
-              if(e.id == event.followingEvent.id) {
-                let currentEnd = event.left + percentage
-                if(currentEnd > e.left) {
-                  percentage = (100/(e.intersections + 1))
-                }
-              }
-            })
-          }
-        })
-      }
-      style += " width: "  + percentage + "%; left: " + event.left + "%;"
-      // style += " width: "  + (100/overlaps.length) + "%; left: " + ((100/overlaps.length)*idx) + "%;"
-      //style += " width: "  + (100/(event.intersections + 1)) + "%; left: " + ((100/overlaps.length)*idx) + "%;"
-      return style
-    },
     filterToEvent() {
       this.modal = false
       this.$emit('filterToEvent', this.selected.parentId)
@@ -308,16 +229,6 @@ export default defineComponent({
       } else if(a.calendar > b.calendar) {
         return 1
       } 
-      if(a.intersections > b.intersections) {
-        return -1
-      } else if(a.intersections < b.intersections) {
-        return 1
-      }
-      if(a.duration > b.duration) {
-        return -1
-      } else if(a.duration < b.duration) {
-        return 1
-      }
       if(a.adjustedStart.hour < b.adjustedStart.hour) {
         return -1
       } else if(a.adjustedStart.hour > b.adjustedStart.hour) {
@@ -328,6 +239,16 @@ export default defineComponent({
       } else if(a.adjustedStart.minute > b.adjustedStart.minute) {
         return 1
       } 
+      if(a.adjustedEnd.hour < b.adjustedEnd.hour) {
+        return -1
+      } else if(a.adjustedEnd.hour > b.adjustedEnd.hour) {
+        return 1
+      } 
+      if(a.adjustedEnd.minute < b.adjustedEnd.minute) {
+        return -1
+      } else if(a.adjustedEnd.minute > b.adjustedEnd.minute) {
+        return 1
+      } 
       if(a.location < b.location) {
         return -1
       } else if(a.location > b.location) {
@@ -335,93 +256,54 @@ export default defineComponent({
       } else {
         return 0
       }
+    },
+    getStyle(e: any) {
+      return `position: absolute; top: ${e.top}; height: ${e.height}; left: ${(100*e.left)}%; width: ${(100/this.sortedEvents.length)}%; background-color: ${e.calColor.replaceAll('%2C', ',') }; border-color: ${e.calBorder.replaceAll('%2C', ',') };`
+    },
+    packEvents(columns: any[]) {
+      let numColumns = columns.length
+      let iColumn = 0
+      columns.forEach((col: any) => {
+        col.forEach((e: any) => {
+          let colSpan = this.expandEvent(e, iColumn, columns)
+          e.left = iColumn / numColumns
+          e.right = (iColumn + colSpan) / numColumns
+        })
+        iColumn++
+      })
+    },
+    expandEvent(e: any, iColumn: number, columns: any[]): number {
+      let colSpan = 1
+      let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
+      columns.slice(iColumn + 1).forEach((col: any) => {
+        col.forEach((oe: any) => {
+          let intersection = interval.intersection(Interval.fromDateTimes(oe.adjustedStart, oe.adjustedEnd)) as Interval
+          if(intersection) {
+            return colSpan
+          }
+        })
+        colSpan++
+      })
+      return colSpan
     }
   },
   watch: {
     
   },
   mounted() {
-    console.log('mounted')
-    //Go through all events for day and move ones that are overlapping
-    let events = [] as any[]
-    document.querySelectorAll(`#day_${this.currentDate?.toFormat("dd")} .tcc-event`).forEach((e: any) => {
-      let obj = { 
-        eventId: e.dataset.eventId, 
-        detailId: e.dataset.detailId, 
-        top: parseInt(e.style.top.replace('px', '')), 
-        left: parseInt(e.style.left.replace("%", "")),
-        right: parseInt(e.style.width.replace("%", "")),
-        bottom: parseInt(e.style.height.replace("px", "")),
-        calendar: e.dataset.calendar, 
-        el: e 
-      }
-      obj.right += obj.left
-      obj.bottom += obj.top
-      events.push(obj)
-    })
-    events.sort((a: any, b: any) => {
-      if(a.top < b.top) {
-        return -1
-      } else if(a.top > b.top) {
-        return 1
-      }
-      return 0
-    })
-    events.forEach((e: any, idx: number) => {
-      let otherEvents = events.filter((oe: any) => { return !(oe.eventId == e.eventId && oe.detailId == e.detailId && oe.calendar == e.calendar) })
-      otherEvents.forEach((oe: any) => {
-        //Figure out if events overlap horizontally 
-        if((e.left > oe.left && e.left < oe.right) || e.left == oe.left || e.right == oe.right || (e.right > oe.left && e.right < oe.right)){
-          //Figure out if events overlap vertically
-          if((e.top > oe.top && e.top < oe.bottom) || e.top == oe.top || e.bottom == oe.bottom || (e.bottom > oe.top && e.bottom < oe.bottom)){
-            console.log('overlaps', e, oe)
-            //Try to see if e can move left
-            //Find events that are during this time slot 
-            let eventsDuringInterval = otherEvents.filter((edi: any) => {
-              return (edi.top >= e.top && edi.top < e.bottom) || (edi.bottom > e.top && edi.bottom <= e.bottom) || (edi.top <= e.top && edi.bottom >= e.bottom)
-            })
-            eventsDuringInterval = eventsDuringInterval.filter((edi: any) => {
-              return edi.left < e.right
-            })
-            eventsDuringInterval = eventsDuringInterval.sort((a: any, b: any) => {
-              if(a.right > b.right) {
-                return -1
-              } else if (a.right < b.right) {
-                return 1
-              }
-              return 0
-            })
-            //See if the farthest right item, is further left that the current item's left and update it 
-            // for(let i = 0; i < eventsDuringInterval.length; i++) {
-            //   if(eventsDuringInterval[i].right < e.left) {
-                console.log('Adjusting...')
-                console.log(e.el, eventsDuringInterval[0].el, 0)
-                // e.left = parseFloat(eventsDuringInterval[i].el.style.width.replace("%", "")) + parseFloat(eventsDuringInterval[i].el.style.left.replace("%", ""))
-                // e.right = e.left + parseFloat(e.el.style.width.replace("%", ""))
-                // e.el.style.left = e.left + "%"
-              //   break;
-              // }
-            // }
-          }
-        }
-      })
-    })
-    console.log(events)
+    
   },
   updated() {
-    console.log('updated')
-    //Go through all events for day and move ones that are overlapping
+    
   },
   template: `
-  <div style="position: relative;">
+  <div style="position: relative;" :id="'event_container_' + currentDate.toFormat('dd')" class="event-container">
     <div class="tcc-hour" v-for="i in 24" :key="i" :id="getHourId(i)">
     </div>
-    <template v-for="c in daysCalendar">
-      <template v-for="e in c.events">
-        <div class="tcc-event" :style="getStyle(e, c)" :data-event-id="e.id" :data-detail-id="e.parentId" :data-calendar="e.calendar" @click="selected = e; modal = true;">
-          <strong>{{e.location}}</strong> {{e.title}}
-        </div>
-      </template>
+    <template v-for="col in sortedEvents">
+      <div v-for="e in col" class="tcc-event" :id="e.calendar+'_'+e.id" :style="getStyle(e)">
+        <b>{{e.location}}</b> {{e.title}}
+      </div>
     </template>
   </div>
   <a-modal v-if="modal" v-model:visible="modal" :closable="false" width="75%">
