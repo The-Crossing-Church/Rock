@@ -68,7 +68,10 @@ export default defineComponent({
         return ""
       },
       formatDateTime(value: string) {
-        return DateTime.fromISO(value).toFormat("f")
+        if(value) {
+          return DateTime.fromISO(value).toFormat("f")
+        }
+        return ""
       }
     },
     watch: {
