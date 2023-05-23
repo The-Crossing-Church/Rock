@@ -213,6 +213,11 @@ export default defineComponent({
           }
         },
         deep: true
+      },
+      modelValue(val) {
+        if(val != JSON.stringify(this.selectedValue)) {
+          this.selectedValue = JSON.parse(val)
+        }
       }
     },
     mounted() {

@@ -16,6 +16,8 @@ import RockTextBox from "../../../Elements/textBox"
 
 const store = useStore()
 
+const { MenuItem } = Menu
+
 type ListItem = {
   text: string,
   value: string,
@@ -39,6 +41,7 @@ export default defineComponent({
     "a-dropdown": Dropdown,
     "a-modal": Modal,
     "a-menu": Menu,
+    "a-menu-item": MenuItem,
     "rck-lbl": RockLabel,
     "rck-txt": RockTextBox
   },
@@ -106,6 +109,12 @@ export default defineComponent({
         return this.currentDate.startOf('week').minus({days: 1}).toFormat('EEEE, MMMM dd') + ' - ' + this.currentDate.endOf('week').minus({days: 1}).toFormat('DDDD')
       } 
       return this.currentDate.toFormat('DDDD')
+    },
+    displayDateMobile(): string {
+      if(this.view == 'month') {
+        return this.currentDate.toFormat('MMMM, yyyy')
+      }
+      return this.currentDate.toFormat('EEE, DD')
     },
     rooms() {
       let arr = this.viewModel?.locations as any[]
@@ -220,7 +229,7 @@ export default defineComponent({
       }
       if(this.filters.rooms) {
         let selected = JSON.parse(this.filters.rooms)
-        let items = selected.text.split(",").filter((s: string) => { return s.trim() })
+        let items = selected.text.split(",").map((s: string) => { return s.trim() }).filter((s: string) => { return s })
         if(items.length > 0) {
           cals.forEach((c: any) => {
             c.events = c.events.filter((e: any) => {
@@ -280,7 +289,12 @@ export default defineComponent({
     },
     selectWeek(date: DateTime) {
       this.currentDate = date
-      this.view = 'week'
+      //Month view should selecte week or day depending on mobile vs desktop
+      if(window.screen.width < 768) {
+        this.view = 'day'
+      } else {
+        this.view = 'week'
+      }
     },
     selectDay(date: DateTime) {
       this.currentDate = date
@@ -317,6 +331,25 @@ export default defineComponent({
     filterToEvent(id: number) {
       this.filters.parentId = id
     },
+    clearFilters() {
+      this.filters = { rooms: '{"text": "", "value": ""}', ministries: [], parentId: 0, resources: [], submitters: '' }
+    },
+    getMonthPickerClassName(month: number) {
+      let className = "tcc-month-picker-item"
+      let date = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year }).endOf('month')
+      if (date < DateTime.fromObject( { day: 1, month: 1, year: 2020 } )) {
+        className += " disabled"
+      }
+      if (month == this.currentDate.month) {
+        className += " selected"
+      }
+      return className
+    },
+    selectMonth(month: number) {
+      console.log('select month')
+      this.currentDate = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year})
+      console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+    }
   },
   watch: {
     view(val) {
@@ -361,11 +394,14 @@ export default defineComponent({
     }
   },
   mounted() {
+    if(window.screen.width < 768) {
+      this.view = 'day'
+    }
     this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
   },
   template: `
   <div class="card">
-    <div class="row">
+    <div class="row d-none d-md-block">
       <div class="col col-xs-3">
         <a-btn shape="circle" type="primary" data-toggle="collapse" data-target="#calendar-filters" aria-expanded="false" aria-controls="calendar-filters">
           <i class="fa fa-filter"></i>
@@ -393,6 +429,50 @@ export default defineComponent({
         <a-btn :type="viewBtnColor('month')" @click="view = 'month'">Month</a-btn>
         <a-btn class="mx-1" :type="viewBtnColor('week')" @click="view = 'week'">Week</a-btn>
         <a-btn :type="viewBtnColor('day')" @click="view = 'day'">Day</a-btn>
+      </div>
+    </div>
+    <div class="d-block d-md-none">
+      <div class="row mb-3">
+        <div class="col col-xs-12 text-center justify-center font-weight-bold" style="font-size: 20px;">
+          <a-btn shape="circle" type="accent" @click="page(false)">
+            <i class="fa fa-chevron-left"></i>
+          </a-btn>
+          <a-dropdown :trigger="['click']" v-model:visible="dateMenu">
+            <div @click="openDatePicker" class="hover px-2 text-center" style="width: -webkit-fill-available;">
+              {{displayDateMobile}}
+            </div> 
+            <template #overlay>
+              <a-menu class="tcc-month-picker">
+                <a-menu-item :class="getMonthPickerClassName(1)" @click="selectMonth(1)" key="JAN">JAN</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(2)" @click="selectMonth(2)" key="FEB">FEB</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(3)" @click="selectMonth(3)" key="MAR">MAR</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(4)" @click="selectMonth(4)" key="APR">APR</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(5)" @click="selectMonth(5)" key="MAY">MAY</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(6)" @click="selectMonth(6)" key="JUN">JUN</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(7)" @click="selectMonth(7)" key="JUL">JUL</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(8)" @click="selectMonth(8)" key="AUG">AUG</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(9)" @click="selectMonth(9)" key="SEP">SEP</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(10)" @click="selectMonth(10)" key="OCT">OCT</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(11)" @click="selectMonth(11)" key="NOV">NOV</a-menu-item>
+                <a-menu-item :class="getMonthPickerClassName(12)" @click="selectMonth(12)" key="DEC">DEC</a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+          <a-btn shape="circle" type="accent" @click="page(true)">
+            <i class="fa fa-chevron-right"></i>
+          </a-btn>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-xs-4">
+          <a-btn shape="circle" type="primary" data-toggle="collapse" data-target="#calendar-filters" aria-expanded="false" aria-controls="calendar-filters">
+            <i class="fa fa-filter"></i>
+          </a-btn>
+        </div>
+        <div class="col col-xs-8 text-right">
+          <a-btn :type="viewBtnColor('month')" @click="view = 'month'">Month</a-btn>
+          <a-btn :type="viewBtnColor('day')" @click="view = 'day'">Day</a-btn>
+        </div>
       </div>
     </div>
     <div class="collapse py-4" id="calendar-filters">
@@ -434,7 +514,7 @@ export default defineComponent({
         </div>
       </div>
       <div class="pull-right">
-        <a-btn type="grey" @click="filters = { rooms: '', ministries: [], parentId: 0, resources: [], submitters: '' }">Clear Filters</a-btn>
+        <a-btn type="grey" @click="clearFilters">Clear Filters</a-btn>
       </div>
     </div>
     <tcc-month
