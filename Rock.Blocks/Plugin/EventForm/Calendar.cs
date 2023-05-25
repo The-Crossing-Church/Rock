@@ -127,7 +127,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 {
                     viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
                 }
-
+                viewModel.formUrl = this.GetLinkedPageUrl( AttributeKey.SubmissionPage );
             }
             return viewModel;
         }
@@ -452,6 +452,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
             public List<DefinedValueViewModel> ministries { get; set; }
             public AttributeViewModel requestStatus { get; set; }
             public AttributeViewModel requestType { get; set; }
+            public string formUrl { get; set; }
         }
 
         public class EventFormCalendar

@@ -174,6 +174,16 @@ export default defineComponent({
       if(this.showValidation) {
         this.validate()
       }
+      if(!this.viewModel?.request.id) {
+        let params = new URLSearchParams(window.location.search)
+        let prefill = params.get('PreFill')
+        if(prefill && this.viewModel?.request?.attributeValues) {
+          let dt = DateTime.fromFormat(prefill, "yyyy-MM-dd")
+          if(dt >= DateTime.now().startOf('day')) {
+            this.viewModel.request.attributeValues.EventDates = prefill
+          }
+        }
+      }
     },
     template: `
 <h3>Basic Information</h3>

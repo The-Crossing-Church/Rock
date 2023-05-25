@@ -6,4 +6,5 @@ export type CalendarBlockViewModel = {
     ministries: DefinedValue[];
     requestStatus: Attribute;
     requestType: Attribute;
+    formUrl: String;
 };

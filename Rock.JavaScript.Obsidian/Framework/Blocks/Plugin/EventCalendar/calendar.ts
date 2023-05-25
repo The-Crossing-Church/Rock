@@ -349,6 +349,13 @@ export default defineComponent({
       console.log('select month')
       this.currentDate = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year})
       console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+    },
+    newEvent() {
+      let url = this.viewModel?.formUrl as string
+      if(this.view == 'day' && this.currentDate >= DateTime.now().startOf('day')) {
+        url += '?PreFill=' + this.currentDate.toFormat('yyyy-MM-dd')
+      }
+      window.location.href = url
     }
   },
   watch: {
@@ -429,6 +436,9 @@ export default defineComponent({
         <a-btn :type="viewBtnColor('month')" @click="view = 'month'">Month</a-btn>
         <a-btn class="mx-1" :type="viewBtnColor('week')" @click="view = 'week'">Week</a-btn>
         <a-btn :type="viewBtnColor('day')" @click="view = 'day'">Day</a-btn>
+        <a-btn type="primary" shape="circle" class="ml-2" @click="newEvent">
+          <i class="fas fa-lg fa-calendar-plus" style="font-size: 17px"></i>
+        </a-btn>
       </div>
     </div>
     <div class="d-block d-md-none">
@@ -472,6 +482,9 @@ export default defineComponent({
         <div class="col col-xs-8 text-right">
           <a-btn :type="viewBtnColor('month')" @click="view = 'month'">Month</a-btn>
           <a-btn :type="viewBtnColor('day')" @click="view = 'day'">Day</a-btn>
+          <a-btn type="primary" shape="circle" class="ml-2" @click="newEvent">
+            <i class="fas fa-lg fa-calendar-plus" style="font-size: 17px"></i>
+          </a-btn>
         </div>
       </div>
     </div>
