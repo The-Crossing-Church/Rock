@@ -1332,6 +1332,11 @@ namespace Rock.Blocks.Plugin.EventForm
                     "</ul> <br/>";
                 message += "Last date to request and provide all information for Registration is two weeks before your registration goes live:" +
                     "<ul>";
+                if ( item.ContentChannelId == EventChangesContentChannelId )
+                {
+                    events = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId ).ContentChannelItem.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem.ChildItems.FirstOrDefault().ChildContentChannelItem ).ToList();
+                    events.LoadAttributes();
+                }
                 for ( int i = 0; i < events.Count(); i++ )
                 {
                     DateTime twoWeekRegistrationDate = twoWeekDate;
@@ -1427,7 +1432,7 @@ namespace Rock.Blocks.Plugin.EventForm
                 events = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
                 events.LoadAttributes();
                 item.LoadAttributes();
-                itemChanges.LoadAttributes();
+                //itemChanges.LoadAttributes();
             }
             string message = "";
             message += RenderValue( "Ministry", item.AttributeValues["Ministry"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Ministry"].ValueFormatted : "" );
