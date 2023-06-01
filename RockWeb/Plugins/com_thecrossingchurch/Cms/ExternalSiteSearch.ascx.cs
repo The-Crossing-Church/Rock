@@ -243,6 +243,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     matchedResults.AddRange( GetTagEntityIds( t ) );
                 }
 
+                //Pretty confident the join is actually enumerating all the data which is bad for performance
+                //Filtering the query so it enumerates fewer items until it can be refactored
+                List<int> ids = matchedResults.Select( qr => qr.Id ).ToList();
+
+                query = query.Where( cci => ids.Contains( cci.Id ) );
+
                 var joined = matchedResults.Join( query,
                     qr => qr.Id,
                     cci => cci.Id,
