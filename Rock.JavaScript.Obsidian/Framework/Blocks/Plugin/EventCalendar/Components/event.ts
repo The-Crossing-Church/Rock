@@ -17,7 +17,9 @@ export default defineComponent({
   props: {
     calendars: Array,
     event: Object,
-    cols: Number
+    cols: Number,
+    formUrl: String,
+    dashboardUrl: String
   },
   setup() {
 
@@ -107,7 +109,14 @@ export default defineComponent({
     openModal(e: any) {
       // e.preventDefault()
       console.log('open modal')
+      console.log(this.event)
       this.modal = true
+    },
+    openInForm() {
+      window.location.href = this.formUrl + "?Id=" + this.event?.parentId
+    },
+    openInDash() {
+      window.location.href = this.dashboardUrl + "?Id=" + this.event?.parentId
     }
   },
   watch: {
@@ -120,7 +129,7 @@ export default defineComponent({
     
   },
   template: `
-  <div class="tcc-event" :id="event.calendar+'_'+event.id" :style="getStyle(event)" @click="openModal">
+  <div class="tcc-event" :id="event.calendar+'_'+event.id" :style="getStyle(event)" @click.stop="openModal">
     <b>{{event.location}}</b> {{event.title}}
   </div>
   <a-modal v-if="modal" v-model:visible="modal" :closable="false" width="75%">
@@ -188,7 +197,7 @@ export default defineComponent({
       </div>
     </template>
     <template #footer>
-      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id">
+      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id" @click="openInForm">
         <i class="fa fa-pencil"></i>
       </a-btn>
       <a-btn shape="circle" type="primary" v-if="relatedEvents.length > 0" @click="filterToEvent">

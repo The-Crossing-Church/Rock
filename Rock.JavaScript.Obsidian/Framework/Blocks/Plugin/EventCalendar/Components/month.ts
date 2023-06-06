@@ -14,7 +14,9 @@ export default defineComponent({
   },
   props: {
     calendars: Array,
-    currentDate: DateTime
+    currentDate: DateTime,
+    formUrl: String,
+    dashboardUrl: String
   },
   setup() {
 

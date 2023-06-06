@@ -16,7 +16,9 @@ export default defineComponent({
   },
   props: {
     calendars: Array,
-    currentDate: DateTime
+    currentDate: DateTime,
+    formUrl: String,
+    dashboardUrl: String
   },
   data() {
       return {
@@ -64,6 +66,8 @@ export default defineComponent({
               <tcc-day
                 :calendars="calendars"
                 :currentDate="currentDate"
+                :formUrl="formUrl"
+                :dashboardUrl="dashboardUrl"
                 v-on:filterToEvent="filterToEvent"
               ></tcc-day>
             </div>

@@ -9,7 +9,9 @@ export default defineComponent({
   },
   props: {
     calendars: Array,
-    currentDate: DateTime
+    currentDate: DateTime,
+    formUrl: String,
+    dashboardUrl: String
   },
   setup() {
 
@@ -97,6 +99,8 @@ export default defineComponent({
               <tcc-day
                 :calendars="calendars"
                 :currentDate="day.date"
+                :formUrl="formUrl"
+                :dashboardUrl="dashboardUrl"
                 v-on:filterToEvent="filterToEvent"
               ></tcc-day>
             </div>

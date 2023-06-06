@@ -37,7 +37,9 @@ export default defineComponent({
   },
   props: {
     calendars: Array,
-    currentDate: DateTime
+    currentDate: DateTime,
+    formUrl: String,
+    dashboardUrl: String
   },
   setup() {
 
@@ -253,7 +255,15 @@ export default defineComponent({
     <div class="tcc-hour" v-for="i in 24" :key="i" :id="getHourId(i)">
     </div>
     <template v-for="col in sortedEvents">
-      <tcc-event v-for="e in col" :event="e" :cols="sortedEvents.length" v-on:filterToEvent="filterToEvent" v-on:openEvent="openEvent" :calendars="calendars"></tcc-event>
+      <tcc-event v-for="e in col" 
+        :event="e" 
+        :cols="sortedEvents.length" 
+        v-on:filterToEvent="filterToEvent" 
+        v-on:openEvent="openEvent" 
+        :calendars="calendars"
+        :formUrl="formUrl"
+        :dashboardUrl="dashboardUrl"
+      ></tcc-event>
     </template>
   </div>
   <v-style>

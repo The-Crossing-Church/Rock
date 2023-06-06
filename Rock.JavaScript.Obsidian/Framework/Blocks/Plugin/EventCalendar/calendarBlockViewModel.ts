@@ -7,4 +7,5 @@ export type CalendarBlockViewModel = {
     requestStatus: Attribute;
     requestType: Attribute;
     formUrl: String;
+    dashboardUrl: String;
 };

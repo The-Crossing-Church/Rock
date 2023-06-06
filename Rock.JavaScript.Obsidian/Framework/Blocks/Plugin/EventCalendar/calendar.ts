@@ -68,6 +68,7 @@ export default defineComponent({
         loading: false,
         dateMenu: false,
         view: 'week',
+        isMobile: false,
         currentDate: DateTime.now(),
         currentDateAsString: DateTime.now().toFormat("yyyy-MM-dd"),
         lastLoadRange: {} as Interval,
@@ -108,6 +109,9 @@ export default defineComponent({
         }
         return this.currentDate.startOf('week').minus({days: 1}).toFormat('EEEE, MMMM dd') + ' - ' + this.currentDate.endOf('week').minus({days: 1}).toFormat('DDDD')
       } 
+      if(this.isMobile) {
+        return this.currentDate.toFormat('EEE, MMM dd, yyyy')
+      }
       return this.currentDate.toFormat('DDDD')
     },
     displayDateMobile(): string {
@@ -249,6 +253,14 @@ export default defineComponent({
         })
       }
       return cals
+    },
+    yearPickerItems(): number[] {
+      let startYear = this.currentDate.year - 2
+      //Can't go back before we have data
+      while(startYear < 2020) {
+        startYear++
+      }
+      return [startYear, startYear + 1, startYear + 2, startYear + 3, startYear + 4]
     }
   },
   methods: {
@@ -336,19 +348,31 @@ export default defineComponent({
     },
     getMonthPickerClassName(month: number) {
       let className = "tcc-month-picker-item"
-      let date = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year }).endOf('month')
-      if (date < DateTime.fromObject( { day: 1, month: 1, year: 2020 } )) {
-        className += " disabled"
-      }
       if (month == this.currentDate.month) {
         className += " selected"
       }
       return className
     },
     selectMonth(month: number) {
-      console.log('select month')
-      this.currentDate = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year})
-      console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+      if(this.currentDate.month != month) {
+        this.currentDate = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year})
+        console.log('select month')
+        console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+      }
+    },
+    getYearPickerClassName(year: number) {
+      let className = "tcc-month-picker-item"
+      if (year == this.currentDate.year) {
+        className += " selected"
+      }
+      return className
+    },
+    selectYear(year: number) {
+      if(this.currentDate.year != year) {
+        this.currentDate = DateTime.fromObject({ day: 1, month: this.currentDate.month, year: year})
+        console.log('select year')
+        console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+      }
     },
     newEvent() {
       let url = this.viewModel?.formUrl as string
@@ -356,6 +380,9 @@ export default defineComponent({
         url += '?PreFill=' + this.currentDate.toFormat('yyyy-MM-dd')
       }
       window.location.href = url
+    },
+    openDatePicker() {
+      this.dateMenu = true
     }
   },
   watch: {
@@ -375,6 +402,8 @@ export default defineComponent({
       }
     },
     currentDateAsString(val) {
+      console.log('date change')
+      console.log(val)
       if(val != this.currentDate.toFormat("yyyy-MM-dd")) {
         this.currentDate = DateTime.fromFormat(val, "yyyy-MM-dd")
         this.dateMenu = false
@@ -403,12 +432,13 @@ export default defineComponent({
   mounted() {
     if(window.screen.width < 768) {
       this.view = 'day'
+      this.isMobile = true
     }
     this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
   },
   template: `
   <div class="card">
-    <div class="row d-none d-md-block">
+    <div class="row" v-if="!isMobile">
       <div class="col col-xs-3">
         <a-btn shape="circle" type="primary" data-toggle="collapse" data-target="#calendar-filters" aria-expanded="false" aria-controls="calendar-filters">
           <i class="fa fa-filter"></i>
@@ -418,16 +448,14 @@ export default defineComponent({
         <a-btn shape="circle" type="accent" @click="page(false)">
           <i class="fa fa-chevron-left"></i>
         </a-btn>
-        <a-dropdown :trigger="['click']" v-model:visible="dateMenu">
-          <div @click="openDatePicker" class="hover px-2">
+        <div class="dropdown">
+          <div class="hover px-2" id="ddDatePckr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             {{displayDate}}
           </div> 
-          <template #overlay>
-            <a-menu>
-              <tcc-date v-model="currentDateAsString" min="2020-01-01"></tcc-date>
-            </a-menu>
-          </template>
-        </a-dropdown>
+          <div class="dropdown-menu" style="padding: 0px; margin-left: -55px;" aria-labelledby="ddDatePckr">
+            <tcc-date v-model="currentDateAsString" min="2020-01-01"></tcc-date>
+          </div>
+        </div>
         <a-btn shape="circle" type="accent" @click="page(true)">
           <i class="fa fa-chevron-right"></i>
         </a-btn>
@@ -441,38 +469,74 @@ export default defineComponent({
         </a-btn>
       </div>
     </div>
-    <div class="d-block d-md-none">
-      <div class="row mb-3">
-        <div class="col col-xs-12 text-center justify-center font-weight-bold" style="font-size: 20px;">
-          <a-btn shape="circle" type="accent" @click="page(false)">
-            <i class="fa fa-chevron-left"></i>
-          </a-btn>
-          <a-dropdown :trigger="['click']" v-model:visible="dateMenu">
-            <div @click="openDatePicker" class="hover px-2 text-center" style="width: -webkit-fill-available;">
-              {{displayDateMobile}}
-            </div> 
-            <template #overlay>
-              <a-menu class="tcc-month-picker">
-                <a-menu-item :class="getMonthPickerClassName(1)" @click="selectMonth(1)" key="JAN">JAN</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(2)" @click="selectMonth(2)" key="FEB">FEB</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(3)" @click="selectMonth(3)" key="MAR">MAR</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(4)" @click="selectMonth(4)" key="APR">APR</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(5)" @click="selectMonth(5)" key="MAY">MAY</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(6)" @click="selectMonth(6)" key="JUN">JUN</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(7)" @click="selectMonth(7)" key="JUL">JUL</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(8)" @click="selectMonth(8)" key="AUG">AUG</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(9)" @click="selectMonth(9)" key="SEP">SEP</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(10)" @click="selectMonth(10)" key="OCT">OCT</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(11)" @click="selectMonth(11)" key="NOV">NOV</a-menu-item>
-                <a-menu-item :class="getMonthPickerClassName(12)" @click="selectMonth(12)" key="DEC">DEC</a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-          <a-btn shape="circle" type="accent" @click="page(true)">
-            <i class="fa fa-chevron-right"></i>
-          </a-btn>
+    <div v-else>
+      <template v-if="view != 'day'">
+        <div class="row mb-3">
+          <div class="col col-xs-12 text-center justify-center font-weight-bold" style="font-size: 20px;">
+            <a-btn shape="circle" type="accent" @click="page(false)">
+              <i class="fa fa-chevron-left"></i>
+            </a-btn>
+            <div style="width: -webkit-fill-available; display: flex; justify-content: center;">
+              <div class="dropdown">
+                <div class="hover px-2" id="ddMonthPkr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{currentDate.toFormat('MMM')}},
+                </div> 
+                <div class="dropdown-menu" style="padding: 0px;" aria-labelledby="ddMonthPkr">
+                  <div class="tcc-month-picker">
+                    <div :class="getMonthPickerClassName(1)" @click="selectMonth(1)" key="JAN">JAN</div>
+                    <div :class="getMonthPickerClassName(2)" @click="selectMonth(2)" key="FEB">FEB</div>
+                    <div :class="getMonthPickerClassName(3)" @click="selectMonth(3)" key="MAR">MAR</div>
+                    <div :class="getMonthPickerClassName(4)" @click="selectMonth(4)" key="APR">APR</div>
+                    <div :class="getMonthPickerClassName(5)" @click="selectMonth(5)" key="MAY">MAY</div>
+                    <div :class="getMonthPickerClassName(6)" @click="selectMonth(6)" key="JUN">JUN</div>
+                    <div :class="getMonthPickerClassName(7)" @click="selectMonth(7)" key="JUL">JUL</div>
+                    <div :class="getMonthPickerClassName(8)" @click="selectMonth(8)" key="AUG">AUG</div>
+                    <div :class="getMonthPickerClassName(9)" @click="selectMonth(9)" key="SEP">SEP</div>
+                    <div :class="getMonthPickerClassName(10)" @click="selectMonth(10)" key="OCT">OCT</div>
+                    <div :class="getMonthPickerClassName(11)" @click="selectMonth(11)" key="NOV">NOV</div>
+                    <div :class="getMonthPickerClassName(12)" @click="selectMonth(12)" key="DEC">DEC</div>
+                  </div>
+                </div>
+              </div>
+              <div class="dropdown">
+                <div class="hover px-2" id="ddYearPkr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{currentDate.toFormat('yyyy')}}
+                </div> 
+                <div class="dropdown-menu" style="padding: 0px;" aria-labelledby="ddYearPkr">
+                  <div class="tcc-month-picker">
+                    <div v-for="y in yearPickerItems" :class="getYearPickerClassName(y)" @click="selectYear(y)" :key="y">{{y}}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <a-btn shape="circle" type="accent" @click="page(true)">
+              <i class="fa fa-chevron-right"></i>
+            </a-btn>
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="row mb-3">
+          <div class="col col-xs-12 text-center justify-center font-weight-bold" style="font-size: 20px;">
+            <a-btn shape="circle" type="accent" @click="page(false)">
+              <i class="fa fa-chevron-left"></i>
+            </a-btn>
+            <div style="width: -webkit-fill-available;">
+              <div class="dropdown">
+                <div class="hover px-2" id="ddMobileDatePckr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{displayDate}}
+                </div> 
+                <div class="dropdown-menu" style="padding: 0px; margin-left: -55px;" aria-labelledby="ddMobileDatePckr">
+                  <tcc-date v-model="currentDateAsString" min="2020-01-01"></tcc-date>
+                </div>
+              </div>
+            </div>
+            <a-btn shape="circle" type="accent" @click="page(true)">
+              <i class="fa fa-chevron-right"></i>
+            </a-btn>
+          </div>
+        </div>
+      </template>
       <div class="row">
         <div class="col col-xs-4">
           <a-btn shape="circle" type="primary" data-toggle="collapse" data-target="#calendar-filters" aria-expanded="false" aria-controls="calendar-filters">
@@ -534,12 +598,16 @@ export default defineComponent({
       v-if="view == 'month'"
       :calendars="filteredCalendars"
       :currentDate="currentDate"
+      :formUrl="viewModel.formUrl"
+      :dashboardUrl="viewModel.dashboardUrl"
       v-on:selectWeek="selectWeek"
     ></tcc-month>
     <tcc-week
       v-if="view == 'week'"
       :calendars="filteredCalendars"
       :currentDate="currentDate"
+      :formUrl="viewModel.formUrl"
+      :dashboardUrl="viewModel.dashboardUrl"
       v-on:selectDay="selectDay"
       v-on:filterToEvent="filterToEvent"
     ></tcc-week>
@@ -547,6 +615,8 @@ export default defineComponent({
       v-if="view == 'day'"
       :calendars="filteredCalendars"
       :currentDate="currentDate"
+      :formUrl="viewModel.formUrl"
+      :dashboardUrl="viewModel.dashboardUrl"
       v-on:filterToEvent="filterToEvent"
     ></tcc-day>
   </div>
