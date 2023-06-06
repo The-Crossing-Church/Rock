@@ -1830,7 +1830,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public int Amount { get; set; }
             public string AutoApply { get; set; }
             public string EffectiveDateRange { get; set; }
-            public int MaxUses { get; set; }
+            public int? MaxUses { get; set; }
         }
     }
 }
