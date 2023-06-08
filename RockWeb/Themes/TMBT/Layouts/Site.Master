@@ -63,19 +63,11 @@
                 </div>
                 <nav class="navbar navbar-static-top">
                     <div class="container">
-                        <div class="navbar-header">
-                            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
-                                <i class="fa fa-bars"></i>
-                            </button>
-                            <Rock:Zone Name="Header" runat="server" />
+                        <!-- Main Navigation -->
+                        <div class="pull-right">
+                            <Rock:Zone Name="Login" runat="server" />
                         </div>
-                        <div class="navbar-collapse collapse">
-                            <!-- Main Navigation -->
-                            <div class="pull-right">
-                                <Rock:Zone Name="Login" runat="server" />
-                            </div>
-                            <Rock:Zone Name="Navigation" runat="server" />
-                        </div>
+                        <Rock:Zone Name="Navigation" runat="server" />
                     </div>
                 </nav>
             </header>

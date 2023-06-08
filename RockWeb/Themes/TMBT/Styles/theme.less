@@ -53,6 +53,12 @@ body {
     }
   }
 }
+.nav>li>a:hover, .nav>li>a:focus, .dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus, .nav .open>a, .nav .open>a:hover, .nav .open>a:focus {
+  background-color: @color-dark-grey;
+}
+.nav>li>a:focus, .dropdown-menu>li>a:focus, .nav .open>a:focus {
+  color: @color-light-orange;
+}
 
 a:hover i.fs, a, a:hover, .btn-link {
   text-decoration: none !important;
@@ -280,6 +286,14 @@ header {
         width: 333px !important;
         padding: 0px;
       }
+    }
+  }
+}
+// Header on Small/Medium Devices
+@media only screen and (min-width: 576px) and (max-width: 1010px) {
+  header {
+    .header-wrapper {
+      padding-left: 12px;
     }
   }
 }
