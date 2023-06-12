@@ -19,7 +19,8 @@ export default defineComponent({
     event: Object,
     cols: Number,
     formUrl: String,
-    dashboardUrl: String
+    dashboardUrl: String,
+    isAdmin: Boolean
   },
   setup() {
 
@@ -197,8 +198,11 @@ export default defineComponent({
       </div>
     </template>
     <template #footer>
-      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id" @click="openInForm">
+      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id || isAdmin" @click="openInForm">
         <i class="fa fa-pencil"></i>
+      </a-btn>
+      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id || isAdmin" @click="openInDash">
+        <i class="fas fa-external-link-alt"></i>
       </a-btn>
       <a-btn shape="circle" type="primary" v-if="relatedEvents.length > 0" @click="filterToEvent">
         <i class="fa fa-filter"></i>

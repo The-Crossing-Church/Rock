@@ -8,4 +8,5 @@ export type CalendarBlockViewModel = {
     requestType: Attribute;
     formUrl: String;
     dashboardUrl: String;
+    isEventAdmin: boolean;
 };

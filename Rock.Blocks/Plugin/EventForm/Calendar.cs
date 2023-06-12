@@ -36,6 +36,8 @@ namespace Rock.Blocks.Plugin.EventCalendar
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
+    [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 1 )]
+    [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 2 )]
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
     [TextField( "Requested Resources Attribute Key", key: AttributeKey.RequestedResourcesAttrKey, category: "Filters", defaultValue: "RequestType", required: true, order: 2 )]
     [TextField( "Event Dates Attribute Key", key: AttributeKey.EventDatesAttrKey, category: "Filters", defaultValue: "EventDates", required: true, order: 3 )]
@@ -47,6 +49,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
     [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     [TextField( "Contact", "Attribute Key for Ministry Contact", key: AttributeKey.ContactAttrKey, defaultValue: "Contact", category: "Attributes", order: 9 )]
+    [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     #endregion Block Attributes
 
     public class Calendar : RockObsidianBlockType
@@ -68,6 +71,8 @@ namespace Rock.Blocks.Plugin.EventCalendar
             public const string DrinksList = "DrinksList";
             public const string InventoryList = "InventoryList";
             public const string SubmissionPage = "SubmissionPage";
+            public const string UserDashboard = "UserDashboard";
+            public const string AdminDashboard = "AdminDashboard";
             public const string DefaultStatuses = "DefaultStatuses";
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
@@ -80,6 +85,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
             public const string Rooms = "Rooms";
             public const string StartBuffer = "StartBuffer";
             public const string EndBuffer = "EndBuffer";
+            public const string EventAdminRole = "EventAdminRole";
         }
 
         #endregion Keys
@@ -101,16 +107,17 @@ namespace Rock.Blocks.Plugin.EventCalendar
             CalendarBlockViewModel viewModel = new CalendarBlockViewModel();
 
             SetProperties();
-            if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 )
+
+            if (EventContentChannelId > 0 && EventDetailsContentChannelId > 0)
             {
                 //Lists
                 var p = GetCurrentPerson();
-                if ( Locations != null && Locations.Count() > 0 )
+                if (Locations != null && Locations.Count() > 0)
                 {
                     var locs = Locations.Select( l => l.ToViewModel( p, true ) );
                     viewModel.locations = locs.ToList();
                 }
-                if ( Ministries != null && Ministries.Count() > 0 )
+                if (Ministries != null && Ministries.Count() > 0)
                 {
                     var mins = Ministries.Select( m => m.ToViewModel( p, true ) );
                     viewModel.ministries = mins.ToList();
@@ -118,16 +125,25 @@ namespace Rock.Blocks.Plugin.EventCalendar
 
                 //Attributes
                 string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-                if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
+                if (!String.IsNullOrEmpty( requestStatusAttrKey ))
                 {
                     viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).ToViewModel();
                 }
                 string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
+                if (!String.IsNullOrEmpty( resourcesAttrKey ))
                 {
                     viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
                 }
+                viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
                 viewModel.formUrl = this.GetLinkedPageUrl( AttributeKey.SubmissionPage );
+                if (viewModel.isEventAdmin)
+                {
+                    viewModel.dashboardUrl = this.GetLinkedPageUrl( AttributeKey.AdminDashboard );
+                }
+                else
+                {
+                    viewModel.dashboardUrl = this.GetLinkedPageUrl( AttributeKey.UserDashboard );
+                }
             }
             return viewModel;
         }
@@ -167,7 +183,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
             try
             {
                 SetProperties();
-                if ( EventDatesAttr != null && EventDateAttr != null && StartTimeAttr != null && StartBufferAttr != null && EndTimeAttr != null && EndBufferAttr != null && LocationAttr != null )
+                if (EventDatesAttr != null && EventDateAttr != null && StartTimeAttr != null && StartBufferAttr != null && EndTimeAttr != null && EndBufferAttr != null && LocationAttr != null)
                 {
                     RockContext context = new RockContext();
                     AttributeValueService av_svc = new AttributeValueService( context );
@@ -175,12 +191,12 @@ namespace Rock.Blocks.Plugin.EventCalendar
                     var dates = av_svc.Queryable().Where( av => av.AttributeId == EventDatesAttr.Id ).ToList().Where( av =>
                     {
                         bool inRange = false;
-                        if ( !String.IsNullOrEmpty( av.Value ) )
+                        if (!String.IsNullOrEmpty( av.Value ))
                         {
                             List<DateTime> d = av.Value.Split( ',' ).Select( dt => DateTime.Parse( dt ) ).ToList();
-                            for ( int i = 0; i < d.Count(); i++ )
+                            for (int i = 0; i < d.Count(); i++)
                             {
-                                if ( start <= d[i] && d[i] <= end )
+                                if (start <= d[i] && d[i] <= end)
                                 {
                                     inRange = true;
                                 }
@@ -201,19 +217,19 @@ namespace Rock.Blocks.Plugin.EventCalendar
                     ).ToList();
 
                     List<EventFormCalendar> calendars = new List<EventFormCalendar>();
-                    for ( int i = 0; i < inRangeEvents.Count(); i++ )
+                    for (int i = 0; i < inRangeEvents.Count(); i++)
                     {
                         var details = inRangeEvents[i].ChildItems.Select( ci => ci.ChildContentChannelItem ).Where( cci => cci.ContentChannelId == EventDetailsContentChannelId ).ToList();
-                        for ( int k = 0; k < details.Count(); k++ )
+                        for (int k = 0; k < details.Count(); k++)
                         {
                             var currentDetail = details[k];
                             var eventDateAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EventDateAttr.Id && av.EntityId == currentDetail.Id );
-                            if ( eventDateAV == null || String.IsNullOrEmpty( eventDateAV.Value ) )
+                            if (eventDateAV == null || String.IsNullOrEmpty( eventDateAV.Value ))
                             {
                                 var parent = inRangeEvents[i];
                                 eventDateAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EventDatesAttr.Id && av.EntityId == parent.Id );
                                 List<string> eventDates = eventDateAV.Value.Split( ',' ).Select( d => d.Trim() ).ToList();
-                                for ( int h = 0; h < eventDates.Count(); h++ )
+                                for (int h = 0; h < eventDates.Count(); h++)
                                 {
                                     BuildEvent( calendars, currentDetail, parent, eventDates[h] );
                                 }
@@ -230,7 +246,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 }
                 throw new Exception( "Configuration Error: Cannot find Event Dates Attribute" );
             }
-            catch ( Exception e )
+            catch (Exception e)
             {
                 ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
@@ -248,28 +264,28 @@ namespace Rock.Blocks.Plugin.EventCalendar
             int startbuffer = 0;
             int endbuffer = 0;
             var startAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == StartTimeAttr.Id && av.EntityId == currentDetail.Id );
-            if ( startAV != null )
+            if (startAV != null)
             {
                 DateTime dt;
-                if ( DateTime.TryParse( $"{eventDate} {startAV.Value}", out dt ) )
+                if (DateTime.TryParse( $"{eventDate} {startAV.Value}", out dt ))
                 {
                     eStart = dt;
                     var startBufferAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == StartBufferAttr.Id && av.EntityId == currentDetail.Id );
-                    if ( startBufferAV != null )
+                    if (startBufferAV != null)
                     {
                         Int32.TryParse( startBufferAV.Value, out startbuffer );
                     }
                 }
             }
             var endAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EndTimeAttr.Id && av.EntityId == currentDetail.Id );
-            if ( endAV != null )
+            if (endAV != null)
             {
                 DateTime dt;
-                if ( DateTime.TryParse( $"{eventDate} {endAV.Value}", out dt ) )
+                if (DateTime.TryParse( $"{eventDate} {endAV.Value}", out dt ))
                 {
                     eEnd = dt;
                     var endBufferAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EndBufferAttr.Id && av.EntityId == currentDetail.Id );
-                    if ( endBufferAV != null )
+                    if (endBufferAV != null)
                     {
                         Int32.TryParse( endBufferAV.Value, out endbuffer );
                     }
@@ -279,18 +295,18 @@ namespace Rock.Blocks.Plugin.EventCalendar
             var ministryAv = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == MinistryAttr.Id && av.EntityId == parent.Id );
             var contactAv = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == ContactAttr.Id && av.EntityId == parent.Id );
             var resourcesAv = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == ResourcesAttr.Id && av.EntityId == parent.Id );
-            if ( locationAV != null && ministryAv != null && resourcesAv != null && eStart.HasValue && eEnd.HasValue )
+            if (locationAV != null && ministryAv != null && resourcesAv != null && eStart.HasValue && eEnd.HasValue)
             {
                 var locationGuids = locationAV.Value.Split( ',' ).AsGuidOrNullList();
                 var locs = Locations.Where( l => locationGuids.Contains( l.Guid ) ).ToList();
                 var ministry = Ministries.FirstOrDefault( dv => dv.Guid == Guid.Parse( ministryAv.Value ) );
                 var grouped = locs.Select( l => new { Category = l.GetAttributeValue( "Type" ), Location = l.Value } ).GroupBy( l => l.Category ).ToList();
 
-                for ( int j = 0; j < grouped.Count(); j++ )
+                for (int j = 0; j < grouped.Count(); j++)
                 {
                     var calendarIdx = calendars.Select( c => c.name ).ToList().IndexOf( grouped[j].Key );
                     EventFormCalendar calendar;
-                    if ( calendarIdx < 0 )
+                    if (calendarIdx < 0)
                     {
                         var colors = GetAttributeValue( AttributeKey.CalendarColors ).Split( '|' ).ToList();
                         var color = colors.FirstOrDefault( c => c.Split( '^' )[0] == grouped[j].Key );
@@ -298,8 +314,8 @@ namespace Rock.Blocks.Plugin.EventCalendar
                         {
                             name = grouped[j].Key,
                             events = new List<EventFormEvent>(),
-                            color = color != null ? ( "rgba(" + color.Split( '^' )[1] + ", .7)" ) : "rgba(78, 135, 140, .7)",
-                            border = color != null ? ( "rgba(" + color.Split( '^' )[1] + ", 1)" ) : "rgba(78, 135, 140, 1)"
+                            color = color != null ? ("rgba(" + color.Split( '^' )[1] + ", .7)") : "rgba(78, 135, 140, .7)",
+                            border = color != null ? ("rgba(" + color.Split( '^' )[1] + ", 1)") : "rgba(78, 135, 140, 1)"
                         };
                         calendars.Add( calendar );
                     }
@@ -337,13 +353,13 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 ContentChannelId = viewModel.ContentChannelId,
                 ContentChannelTypeId = viewModel.ContentChannelTypeId
             };
-            if ( viewModel.Id > 0 )
+            if (viewModel.Id > 0)
             {
                 item = new ContentChannelItemService( context ).Get( viewModel.Id );
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;
-            foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
+            foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
             {
                 item.SetPublicAttributeValue( av.Key, av.Value, p, false );
             }
@@ -357,13 +373,13 @@ namespace Rock.Blocks.Plugin.EventCalendar
             Guid eventCCGuid = Guid.Empty;
             Guid eventDetailsCCGuid = Guid.Empty;
 
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
+            if (Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ))
             {
                 ContentChannel cc = new ContentChannelService( rockContext ).Get( eventCCGuid );
                 EventContentChannelId = cc.Id;
                 EventContentChannelTypeId = cc.ContentChannelTypeId;
             }
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
+            if (Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ))
             {
                 ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsCCGuid );
                 EventDetailsContentChannelId = dCC.Id;
@@ -371,62 +387,62 @@ namespace Rock.Blocks.Plugin.EventCalendar
 
             }
             string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
-            if ( !String.IsNullOrEmpty( eventDatesAttrKey ) )
+            if (!String.IsNullOrEmpty( eventDatesAttrKey ))
             {
                 EventDatesAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == eventDatesAttrKey );
             }
             string statusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-            if ( !String.IsNullOrEmpty( statusAttrKey ) )
+            if (!String.IsNullOrEmpty( statusAttrKey ))
             {
                 RequestStatusAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == statusAttrKey );
             }
             string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-            if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
+            if (!String.IsNullOrEmpty( resourcesAttrKey ))
             {
                 ResourcesAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey );
             }
             string eventDateAttrKey = GetAttributeValue( AttributeKey.DetailsEventDate );
-            if ( !String.IsNullOrEmpty( eventDateAttrKey ) )
+            if (!String.IsNullOrEmpty( eventDateAttrKey ))
             {
                 EventDateAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == eventDateAttrKey );
             }
             string startTimeAttrKey = GetAttributeValue( AttributeKey.StartDateTime );
-            if ( !String.IsNullOrEmpty( startTimeAttrKey ) )
+            if (!String.IsNullOrEmpty( startTimeAttrKey ))
             {
                 StartTimeAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startTimeAttrKey );
             }
             string startBufferAttrKey = GetAttributeValue( AttributeKey.StartBuffer );
-            if ( !String.IsNullOrEmpty( startBufferAttrKey ) )
+            if (!String.IsNullOrEmpty( startBufferAttrKey ))
             {
                 StartBufferAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startBufferAttrKey );
             }
             string endTimeAttrKey = GetAttributeValue( AttributeKey.EndDateTime );
-            if ( !String.IsNullOrEmpty( endTimeAttrKey ) )
+            if (!String.IsNullOrEmpty( endTimeAttrKey ))
             {
                 EndTimeAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endTimeAttrKey );
             }
             string endBufferAttrKey = GetAttributeValue( AttributeKey.EndBuffer );
-            if ( !String.IsNullOrEmpty( endBufferAttrKey ) )
+            if (!String.IsNullOrEmpty( endBufferAttrKey ))
             {
                 EndBufferAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endBufferAttrKey );
             }
             string locationAttrKey = GetAttributeValue( AttributeKey.Rooms );
-            if ( !String.IsNullOrEmpty( locationAttrKey ) )
+            if (!String.IsNullOrEmpty( locationAttrKey ))
             {
                 LocationAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == locationAttrKey );
             }
             string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
-            if ( !String.IsNullOrEmpty( ministryAttrKey ) )
+            if (!String.IsNullOrEmpty( ministryAttrKey ))
             {
                 MinistryAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == ministryAttrKey );
             }
             string contactAttrKey = GetAttributeValue( AttributeKey.ContactAttrKey );
-            if ( !String.IsNullOrEmpty( contactAttrKey ) )
+            if (!String.IsNullOrEmpty( contactAttrKey ))
             {
                 ContactAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == contactAttrKey );
             }
             Guid locationGuid = Guid.Empty;
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
+            if (Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ))
             {
                 DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
                 var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
@@ -434,13 +450,34 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 Locations = locs;
             }
             Guid ministryGuid = Guid.Empty;
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+            if (Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ))
             {
                 DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
                 var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
                 min.LoadAttributes();
                 Ministries = min.ToList();
             }
+        }
+
+        /// <summary>
+        /// Return true/false is the current person a member of the given Security Role
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckSecurityRole( RockContext context, string attrKey )
+        {
+            bool hasRole = false;
+            Rock.Model.Person p = GetCurrentPerson();
+            Guid securityRoleGuid = Guid.Empty;
+            //A role was configured and the current person is not null
+            if (Guid.TryParse( GetAttributeValue( attrKey ), out securityRoleGuid ) && p != null)
+            {
+                Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
+                if (securityRole.Members.Select( gm => gm.PersonId ).Contains( p.Id ))
+                {
+                    hasRole = true;
+                }
+            }
+            return hasRole;
         }
 
         #endregion Helpers
@@ -453,6 +490,8 @@ namespace Rock.Blocks.Plugin.EventCalendar
             public AttributeViewModel requestStatus { get; set; }
             public AttributeViewModel requestType { get; set; }
             public string formUrl { get; set; }
+            public string dashboardUrl { get; set; }
+            public bool isEventAdmin { get; set; }
         }
 
         public class EventFormCalendar

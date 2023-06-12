@@ -598,8 +598,6 @@ export default defineComponent({
       v-if="view == 'month'"
       :calendars="filteredCalendars"
       :currentDate="currentDate"
-      :formUrl="viewModel.formUrl"
-      :dashboardUrl="viewModel.dashboardUrl"
       v-on:selectWeek="selectWeek"
     ></tcc-month>
     <tcc-week
@@ -608,6 +606,7 @@ export default defineComponent({
       :currentDate="currentDate"
       :formUrl="viewModel.formUrl"
       :dashboardUrl="viewModel.dashboardUrl"
+      :isAdmin="viewModel.isEventAdmin"
       v-on:selectDay="selectDay"
       v-on:filterToEvent="filterToEvent"
     ></tcc-week>
@@ -617,6 +616,7 @@ export default defineComponent({
       :currentDate="currentDate"
       :formUrl="viewModel.formUrl"
       :dashboardUrl="viewModel.dashboardUrl"
+      :isAdmin="viewModel.isEventAdmin"
       v-on:filterToEvent="filterToEvent"
     ></tcc-day>
   </div>

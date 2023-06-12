@@ -18,7 +18,8 @@ export default defineComponent({
     calendars: Array,
     currentDate: DateTime,
     formUrl: String,
-    dashboardUrl: String
+    dashboardUrl: String,
+    isAdmin: Boolean
   },
   data() {
       return {
@@ -68,6 +69,7 @@ export default defineComponent({
                 :currentDate="currentDate"
                 :formUrl="formUrl"
                 :dashboardUrl="dashboardUrl"
+                :isAdmin="isAdmin"
                 v-on:filterToEvent="filterToEvent"
               ></tcc-day>
             </div>

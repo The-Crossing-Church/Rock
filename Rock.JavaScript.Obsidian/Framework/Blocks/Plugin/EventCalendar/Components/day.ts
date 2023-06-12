@@ -39,7 +39,8 @@ export default defineComponent({
     calendars: Array,
     currentDate: DateTime,
     formUrl: String,
-    dashboardUrl: String
+    dashboardUrl: String,
+    isAdmin: Boolean
   },
   setup() {
 
@@ -263,6 +264,7 @@ export default defineComponent({
         :calendars="calendars"
         :formUrl="formUrl"
         :dashboardUrl="dashboardUrl"
+        :isAdmin="isAdmin"
       ></tcc-event>
     </template>
   </div>
