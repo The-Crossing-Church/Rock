@@ -21,6 +21,7 @@ using System.Linq;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+
 using Rock;
 using Rock.Attribute;
 using Rock.Communication;
@@ -113,7 +114,7 @@ namespace RockWeb.Blocks.Security
     [LinkedPage(
         "Login Page",
         Key = AttributeKey.LoginPage,
-        Description = "Page to navigate to when user elects to login (if blank will use 'Login' page route)",
+        Description = "Page to navigate to when a user elects to log in (if blank will use 'Login' page route)",
         IsRequired = false,
         Category = "Pages",
         Order = 9 )]
@@ -248,7 +249,16 @@ namespace RockWeb.Blocks.Security
         Key = AttributeKey.ShowGender,
         Description = "Determines if the gender selection field should be shown.",
         DefaultBooleanValue = true,
-        Order = 23 )]
+        Order = 25 )]
+
+    [AttributeCategoryField(
+        "Attribute Categories",
+        Key = AttributeKey.AttributeCategories,
+        Description = "The Attribute Categories to display attributes from.",
+        AllowMultiple = true,
+        EntityTypeName = "Rock.Model.Person",
+        IsRequired = false,
+        Order = 26 )]
 
     #endregion
 
@@ -282,7 +292,21 @@ namespace RockWeb.Blocks.Security
             public const string CampusSelectorLabel = "CampusSelectorLabel";
             public const string CreateCommunicationRecord = "CreateCommunicationRecord";
             public const string ShowGender = "ShowGender";
+            public const string AttributeCategories = "AttributeCategories";
         }
+
+        #region Page Parameter Keys
+
+        /// <summary>
+        /// Keys to use for Page Parameters
+        /// </summary>
+        private static class PageParameterKey
+        {
+            public const string Caption = "Caption";
+            public const string Returnurl = "Returnurl";
+        }
+
+        #endregion
 
         #region Fields
 
@@ -351,6 +375,7 @@ usernameTextbox.blur(function () {{
             usernameUnavailable.html(usernameFieldLabel + ' is not valid. ' + usernameValidCaption);
             usernameUnavailable.addClass('alert-warning');
             usernameUnavailable.removeClass('alert-success');
+            availabilityMessageRow.show();
         }} else {{
             $.ajax({{
                 type: 'GET',
@@ -369,9 +394,12 @@ usernameTextbox.blur(function () {{
                         usernameUnavailable.addClass('alert-warning');
                         usernameUnavailable.removeClass('alert-success');
                     }}
+                    availabilityMessageRow.show();
                 }},
                 error: function (xhr, status, error) {{
-                    alert(status + ' [' + error + ']: ' + xhr.responseText);
+                    if(xhr.status != 401) {{
+                        alert(status + ' [' + error + ']: ' + xhr.responseText);
+                    }}
                 }}
             }});
         }}
@@ -379,9 +407,8 @@ usernameTextbox.blur(function () {{
         usernameUnavailable.html(usernameFieldLabel + ' is required.');
         usernameUnavailable.addClass('alert-warning');
         usernameUnavailable.removeClass('alert-success');
+        availabilityMessageRow.show();
     }}
-
-    availabilityMessageRow.show();
     }});
 }});
 ",
@@ -391,6 +418,8 @@ usernameTextbox.blur(function () {{
                 tbUserName.Label );      // 3 
 
             ScriptManager.RegisterStartupScript( this, GetType(), "AccountEntry_" + this.ClientID, script, true );
+
+            this.BlockUpdated += Block_BlockUpdated;
         }
 
         /// <summary>
@@ -401,6 +430,7 @@ usernameTextbox.blur(function () {{
         {
             base.OnLoad( e );
 
+            ScriptManager.GetCurrent( this.Page ).RegisterPostBackControl( btnUserInfoNext );
             pnlMessage.Controls.Clear();
             pnlMessage.Visible = false;
 
@@ -413,6 +443,12 @@ usernameTextbox.blur(function () {{
 
             if ( !Page.IsPostBack )
             {
+                if ( CurrentPerson != null && PageParameter( PageParameterKey.Caption ).ToLower() == "success" )
+                {
+                    DisplaySuccessPanel( CurrentPerson );
+                    return;
+                }
+
                 DisplayUserInfo( Direction.Forward );
 
                 // show/hide address and phone panels
@@ -473,10 +509,11 @@ usernameTextbox.blur(function () {{
                         rPhoneNumbers.DataSource = phoneNumbers;
                         rPhoneNumbers.DataBind();
                     }
+
+                    SetCurrentPersonDetails();
                 }
 
-                SetCurrentPersonDetails();
-
+                BuildAttributes();
             }
         }
 
@@ -696,6 +733,17 @@ usernameTextbox.blur(function () {{
         }
 
         #endregion
+
+        /// <summary>
+        /// Handles the BlockUpdated event of the Block control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        /// <exception cref="NotImplementedException"></exception>
+        private void Block_BlockUpdated( object sender, EventArgs e )
+        {
+            BuildAttributes();
+        }
 
         #endregion
 
@@ -1026,16 +1074,17 @@ usernameTextbox.blur(function () {{
                         ExceptionLogService.LogException( ex, Context, RockPage.PageId, RockPage.Site.Id, CurrentPersonAlias );
                     }
 
-                    string returnUrl = Request.QueryString["returnurl"];
-                    btnContinue.Visible = !string.IsNullOrWhiteSpace( returnUrl );
-
-                    lSuccessCaption.Text = GetAttributeValue( AttributeKey.SuccessCaption );
-                    if ( lSuccessCaption.Text.Contains( "{0}" ) )
+                    // Redirect to new communication
+                    if ( CurrentPageReference.Parameters.ContainsKey( PageParameterKey.Caption ) )
                     {
-                        lSuccessCaption.Text = string.Format( lSuccessCaption.Text, person.FirstName );
+                        CurrentPageReference.Parameters[PageParameterKey.Returnurl] = "Success";
+                    }
+                    else
+                    {
+                        CurrentPageReference.Parameters.Add( PageParameterKey.Caption, "Success" );
                     }
 
-                    ShowPanel( 5 );
+                    Response.Redirect( CurrentPageReference.BuildUrl(), false );
                 }
                 else
                 {
@@ -1046,6 +1095,20 @@ usernameTextbox.blur(function () {{
             {
                 ShowErrorMessage( "Invalid User" );
             }
+        }
+
+        private void DisplaySuccessPanel( Person person )
+        {
+            string returnUrl = Request.QueryString["returnurl"];
+            btnContinue.Visible = !string.IsNullOrWhiteSpace( returnUrl );
+
+            lSuccessCaption.Text = GetAttributeValue( AttributeKey.SuccessCaption );
+            if ( lSuccessCaption.Text.Contains( "{0}" ) )
+            {
+                lSuccessCaption.Text = string.Format( lSuccessCaption.Text, person.FirstName );
+            }
+
+            ShowPanel( 5 );
         }
 
         /// <summary>
@@ -1153,7 +1216,9 @@ usernameTextbox.blur(function () {{
                 campusId = cpCampus.SelectedCampusId;
             }
 
-            PersonService.SaveNewPerson( person, rockContext, campusId, false );
+            avcAttributes.GetEditValues( person );
+
+            PersonService.SaveNewPerson( person, rockContext, campusId, true );
 
             // save address
             if ( pnlAddress.Visible )
@@ -1221,6 +1286,45 @@ usernameTextbox.blur(function () {{
             }
 
             return Rock.RockDateTime.Today.AddYears( minimumAge * -1 ) >= birthday;
+        }
+
+        /// <summary>
+        /// Builds the attributes.
+        /// </summary>
+        private void BuildAttributes()
+        {
+            var attributeList = GetCategoryAttributeList( AttributeKey.AttributeCategories );
+            var person = new Person();
+
+            avcAttributes.IncludedAttributes = attributeList.ToArray();
+            avcAttributes.ValidationGroup = this.BlockValidationGroup;
+            avcAttributes.AddEditControls( person );
+        }
+
+        /// <summary>
+        /// Gets the category attribute list.
+        /// </summary>
+        /// <param name="attributeKey">The attribute key.</param>
+        /// <returns></returns>
+        private List<AttributeCache> GetCategoryAttributeList( string attributeKey )
+        {
+            var attributeList = new List<AttributeCache>();
+            foreach ( Guid categoryGuid in GetAttributeValue( attributeKey ).SplitDelimitedValues( false ).AsGuidList() )
+            {
+                var category = CategoryCache.Get( categoryGuid );
+                if ( category != null )
+                {
+                    foreach ( var attribute in new AttributeService( new RockContext() ).GetByCategoryId( category.Id, false ) )
+                    {
+                        if ( !attributeList.Any(a => a.Guid == attribute.Guid ) )
+                        {
+                            attributeList.Add( AttributeCache.Get( attribute ) );
+                        }
+                    }
+                }
+            }
+
+            return attributeList;
         }
 
         #endregion
