@@ -60,12 +60,16 @@ body {
   color: @color-light-orange;
 }
 
+.nav-pills > li.active > a, .nav-pills > li.active > a:focus {
+  color: @color-dark-orange;
+}
+
 a:hover i.fs, a, a:hover, .btn-link {
   text-decoration: none !important;
   font-weight: 600;
 }
 
-a:hover {
+a:hover, .nav-pills > li.active > a:hover {
   color: @color-light-orange !important;
 }
 
