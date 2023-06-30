@@ -448,13 +448,19 @@ export default defineComponent({
         <a-btn shape="circle" type="accent" @click="page(false)">
           <i class="fa fa-chevron-left"></i>
         </a-btn>
-        <div class="dropdown">
-          <div class="hover px-2" id="ddDatePckr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <div>
+          <div class="hover px-2" id="ddDatePckr" @click="dateMenu = true">
             {{displayDate}}
           </div> 
-          <div class="dropdown-menu" style="padding: 0px; margin-left: -55px;" aria-labelledby="ddDatePckr">
-            <tcc-date v-model="currentDateAsString" min="2020-01-01"></tcc-date>
-          </div>
+          <a-modal v-model:visible="dateMenu" @ok="dateMenu = false">
+            <br/>
+            <tcc-date 
+              v-model="currentDateAsString" 
+              min="2020-01-01"
+              :noBorder="true"
+              v-on:closemenu="dateMenu = false"
+            ></tcc-date>
+          </a-modal>
         </div>
         <a-btn shape="circle" type="accent" @click="page(true)">
           <i class="fa fa-chevron-right"></i>
@@ -522,13 +528,19 @@ export default defineComponent({
               <i class="fa fa-chevron-left"></i>
             </a-btn>
             <div style="width: -webkit-fill-available;">
-              <div class="dropdown">
-                <div class="hover px-2" id="ddMobileDatePckr" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <div>
+                <div class="hover px-2" id="ddDatePckr" @click="dateMenu = true">
                   {{displayDate}}
                 </div> 
-                <div class="dropdown-menu" style="padding: 0px; margin-left: -55px;" aria-labelledby="ddMobileDatePckr">
-                  <tcc-date v-model="currentDateAsString" min="2020-01-01"></tcc-date>
-                </div>
+                <a-modal v-model:visible="dateMenu" @ok="dateMenu = false">
+                  <br/>
+                  <tcc-date 
+                    v-model="currentDateAsString" 
+                    min="2020-01-01"
+                    :noBorder="true"
+                    v-on:closemenu="dateMenu = false"
+                  ></tcc-date>
+                </a-modal>
               </div>
             </div>
             <a-btn shape="circle" type="accent" @click="page(true)">
