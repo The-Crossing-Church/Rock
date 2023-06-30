@@ -789,6 +789,9 @@ export default defineComponent({
       max-height: 300px;
       overflow-y: scroll;
     }
+    .ant-modal-close-x {
+      height: 40px !important;
+    }
   </v-style>
 `
 })
