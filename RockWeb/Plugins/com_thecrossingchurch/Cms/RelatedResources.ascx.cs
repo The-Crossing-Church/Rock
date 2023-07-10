@@ -120,10 +120,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     itemChannelId = item.ContentChannelId;
                     _tiSvc = new TaggedItemService( _context );
                     tags = _tiSvc.Queryable().Where( ti => ti.EntityGuid == item.Guid && !ti.Tag.OwnerPersonAliasId.HasValue ).Select( ti => ti.Tag.Name.ToLower() ).Distinct().ToList();
-                    if ( tags.Count() > 0 )
-                    {
-                        GetContent();
-                    }
+                    GetContent();
                 }
             }
         }
