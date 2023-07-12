@@ -44,4 +44,15 @@
     </div>
   </div>
 </div>
+<script>
+  $(document).ready(() => {
+      let tallest = 0
+      $('#featured-events div .item').each((i, e) => {
+          if ($(e).height() > tallest ) {
+              tallest = $(e).height()
+          }
+      })
+      $('#featured-events div .item').css('min-height', tallest)
+  })
+</script>
 {% endif %}
