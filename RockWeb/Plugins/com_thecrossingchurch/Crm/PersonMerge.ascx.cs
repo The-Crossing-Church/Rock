@@ -22,10 +22,12 @@ using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Attribute;
+using Rock.Blocks.Core;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
@@ -108,9 +110,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             "FamilyAttributes",
             FAMILY_VALUES,
             BUSINESS_INFORMATION,
-            BUSINESS_ATTRIBUTES,
-            "UserLogins",
-            "AlertNotes"
+            BUSINESS_ATTRIBUTES
     };
 
         #endregion
@@ -147,7 +147,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             gValues.RowDataBound += gValues_RowDataBound;
 
             var resetConfirmation = string.Empty;
-            if ( GetAttributeValue( AttributeKey.ResetLoginConfirmation ).AsBoolean() )
+            if (GetAttributeValue( AttributeKey.ResetLoginConfirmation ).AsBoolean())
             {
                 resetConfirmation = @"<br>Additionally, this person will be prompted to reconfirm before they can login using the email address you select.";
             }
@@ -173,7 +173,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             pnlEdit.Visible = canEdit;
             pnlView.Visible = !canEdit;
 
-            if ( canEdit )
+            if (canEdit)
             {
                 LoadEditDetails();
             }
@@ -188,7 +188,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// </summary>
         private void LoadViewDetails()
         {
-            if ( Page.IsPostBack )
+            if (Page.IsPostBack)
             {
                 nbMergeRequestSuccess.Visible = false;
                 nbMergeRequestAlreadySubmitted.Visible = false;
@@ -198,23 +198,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 nbNotAuthorized.Visible = true;
 
                 int? setId = PageParameter( "Set" ).AsIntegerOrNull();
-                if ( setId.HasValue )
+                if (setId.HasValue)
                 {
                     // if the user only has View auth to the page, mark the EntitySet as a Person Merge Request and let them edit the EntitySet note
                     var rockContext = new RockContext();
                     var entitySetService = new EntitySetService( rockContext );
                     var entitySet = entitySetService.Get( setId.Value );
-                    if ( entitySet != null )
+                    if (entitySet != null)
                     {
                         tbEntitySetNote.Text = entitySet.Note;
                         var definedValuePurpose = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.ENTITY_SET_PURPOSE_PERSON_MERGE_REQUEST.AsGuid() );
-                        if ( definedValuePurpose != null )
+                        if (definedValuePurpose != null)
                         {
                             nbNotAuthorized.Visible = false;
                             tbEntitySetNote.Visible = true;
                             btnSaveRequestNote.Visible = true;
 
-                            if ( entitySet.EntitySetPurposeValueId != definedValuePurpose.Id && entitySet.ExpireDateTime != null )
+                            if (entitySet.EntitySetPurposeValueId != definedValuePurpose.Id && entitySet.ExpireDateTime != null)
                             {
                                 nbMergeRequestSuccess.Visible = true;
                                 entitySet.EntitySetPurposeValueId = definedValuePurpose.Id;
@@ -236,14 +236,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// </summary>
         private void LoadEditDetails()
         {
-            if ( !Page.IsPostBack )
+            if (!Page.IsPostBack)
             {
                 List<int> selectedPersonIds = null;
 
                 // Process Query String parameter "Set", specifying a set of people to merge.
                 int? setId = PageParameter( "Set" ).AsIntegerOrNull();
 
-                if ( setId.HasValue )
+                if (setId.HasValue)
                 {
                     selectedPersonIds = new EntitySetItemService( new RockContext() )
                         .GetByEntitySetId( setId.Value, true )
@@ -255,20 +255,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 // Process Query String parameter "PersonId", specifying a delimited list of people to merge.
                 var personIdList = PageParameter( "PersonId" );
 
-                if ( personIdList.IsNotNullOrWhiteSpace() )
+                if (personIdList.IsNotNullOrWhiteSpace())
                 {
                     selectedPersonIds = personIdList.SplitDelimitedValues().AsIntegerList();
                 }
 
                 // Load the set of people specified by query string parameters.
-                if ( selectedPersonIds != null )
+                if (selectedPersonIds != null)
                 {
-                    foreach ( var personId in selectedPersonIds )
+                    foreach (var personId in selectedPersonIds)
                     {
                         PersonService.UpdateAccountProtectionProfileForPerson( personId, new RockContext() );
                     }
 
-                    if ( selectedPersonIds.Count == 0 )
+                    if (selectedPersonIds.Count == 0)
                     {
                         ScriptManager.RegisterStartupScript( this, this.GetType(), "goBack", "history.go(-1);", true );
                     }
@@ -290,13 +290,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     // Create the data structure used to build the grid.
                     MergeData = new MergeData( people, headingKeys, CurrentPerson, IsUserAuthorized( PersonMerge.SecurityActionKey.ViewAllAttributes ) );
 
-                    if ( setId != null )
+                    if (setId != null)
                     {
                         MergeData.EntitySetId = setId.Value;
                     }
 
                     // If a Person Id list has been specified as a query parameter, select the first person in the list as the merge target.
-                    if ( personIdList.IsNotNullOrWhiteSpace() )
+                    if (personIdList.IsNotNullOrWhiteSpace())
                     {
                         MergeData.PrimaryPersonId = selectedPersonIds.FirstOrDefault();
                     }
@@ -310,10 +310,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 var selectedPrimaryPersonId = hfSelectedColumnPersonId.Value.AsIntegerOrNull();
 
                 // Save the primary header radio button's selection
-                foreach ( var col in gValues.Columns.OfType<MergePersonField>() )
+                foreach (var col in gValues.Columns.OfType<MergePersonField>())
                 {
                     col.OnDelete += personCol_OnDelete;
-                    if ( selectedPrimaryPersonId.HasValue && selectedPrimaryPersonId.Value == col.PersonId )
+                    if (selectedPrimaryPersonId.HasValue && selectedPrimaryPersonId.Value == col.PersonId)
                     {
                         MergeData.PrimaryPersonId = col.PersonId;
                     }
@@ -345,7 +345,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         protected void ppAdd_SelectPerson( object sender, EventArgs e )
         {
             int? personId = ppAdd.PersonId;
-            if ( personId.HasValue && ( MergeData == null || !MergeData.People.Any( p => p.Id == personId.Value ) ) )
+            if (personId.HasValue && (MergeData == null || !MergeData.People.Any( p => p.Id == personId.Value )))
             {
                 var selectedPersonIds = MergeData != null ? MergeData.People.Select( p => p.Id ).ToList() : new List<int>();
                 selectedPersonIds.Add( personId.Value );
@@ -374,7 +374,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         protected void personCol_OnDelete( object sender, EventArgs e )
         {
             var personMergeField = sender as MergePersonField;
-            if ( personMergeField != null )
+            if (personMergeField != null)
             {
                 var selectedPersonIds = MergeData.People
                     .Where( p => p.Id != personMergeField.PersonId )
@@ -402,19 +402,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             int personId = personMergeFieldRowEventArgs.MergePersonField.PersonId;
             ValuesRow rowValue = personMergeFieldRowEventArgs.Row.DataItem as ValuesRow;
             ValuesRowPersonPersonProperty valuesRowPersonPersonProperty = rowValue.PersonPersonPropertyList.FirstOrDefault( a => a.Person.Id == personId );
-            if ( rowValue.IsSectionHeading )
+            if (rowValue.IsSectionHeading)
             {
                 personMergeFieldRowEventArgs.SelectionControlType = MergePersonField.SelectionControlType.None;
                 personMergeFieldRowEventArgs.ContentHTML = rowValue.PropertyLabel;
                 return;
             }
 
-            if ( valuesRowPersonPersonProperty == null )
+            if (valuesRowPersonPersonProperty == null)
             {
                 return;
             }
 
-            if ( rowValue.PersonProperty.Attribute != null && rowValue.PersonProperty.Attribute.FieldType.Field is Rock.Field.Types.MatrixFieldType )
+            if (rowValue.PersonProperty.Attribute != null && rowValue.PersonProperty.Attribute.FieldType.Field is Rock.Field.Types.MatrixFieldType)
             {
                 personMergeFieldRowEventArgs.SelectionControlType = MergePersonField.SelectionControlType.Checkbox;
                 personMergeFieldRowEventArgs.ContentDisplayType = MergePersonField.ContentDisplayType.ContentWrapper;
@@ -436,9 +436,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
         protected void gValues_RowDataBound( object sender, GridViewRowEventArgs e )
         {
-            if ( e.Row.RowType == DataControlRowType.DataRow )
+            if (e.Row.RowType == DataControlRowType.DataRow)
             {
-                if ( headingKeys.Contains( gValues.DataKeys[e.Row.RowIndex].Value.ToString() ) )
+                if (headingKeys.Contains( gValues.DataKeys[e.Row.RowIndex].Value.ToString() ))
                 {
                     e.Row.AddCssClass( "grid-section-header" );
                 }
@@ -456,7 +456,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void lbMerge_Click( object sender, EventArgs e )
         {
-            if ( !CanMerge().IsAllowedToMerge )
+            if (!CanMerge().IsAllowedToMerge)
             {
                 nbError.Heading = "Merge Error";
                 nbError.Text = string.Format( "<p>You do not have the necessary permissions to merge this user.</p>" );
@@ -471,13 +471,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             and might also to consider for any future changes made to current method.
             */
 
-            if ( MergeData.People.Count < 2 )
+            if (MergeData.People.Count < 2)
             {
                 nbPeople.Visible = true;
                 return;
             }
 
-            if ( MergeDataIncludesAnonymousGiver() )
+            if (MergeDataIncludesAnonymousGiver())
             {
                 nbError.Heading = "Merge Error";
                 nbError.Text = string.Format( "<p>You can't merge the Anonymous Giver unless it is the primary selected person.</p>" );
@@ -514,13 +514,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     var personSearchKeyService = new PersonSearchKeyService( rockContext );
 
                     Person primaryPerson = personService.Get( MergeData.PrimaryPersonId ?? 0 );
-                    if ( primaryPerson != null )
+                    if (primaryPerson != null)
                     {
                         primaryPersonId = primaryPerson.Id;
 
                         // Write a history record about the merge
                         var changes = new History.HistoryChangeList();
-                        foreach ( var p in MergeData.People.Where( p => p.Id != primaryPerson.Id ) )
+                        foreach (var p in MergeData.People.Where( p => p.Id != primaryPerson.Id ))
                         {
                             changes.AddChange( History.HistoryVerb.Merge, History.HistoryChangeType.Record, string.Format( "{0} [ID: {1}]", p.FullName, p.Id ) );
                         }
@@ -530,7 +530,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         // Photo Id
                         primaryPerson.PhotoId = MergeData.GetSelectedValue( MergeData.GetProperty( "Photo" ) ).Value.AsIntegerOrNull();
                         primaryPerson.TitleValueId = GetNewIntValue( "Title" );
-                        if ( !isBusiness )
+                        if (!isBusiness)
                         {
                             primaryPerson.FirstName = GetNewStringValue( "FirstName" );
                             primaryPerson.NickName = GetNewStringValue( "NickName" );
@@ -544,7 +544,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         primaryPerson.RecordStatusReasonValueId = GetNewIntValue( "RecordStatusReason" );
                         primaryPerson.ConnectionStatusValueId = GetNewIntValue( "ConnectionStatus" );
                         primaryPerson.IsDeceased = GetNewBoolValue( "Deceased" ) ?? false;
-                        primaryPerson.Gender = ( Gender ) GetNewEnumValue( "Gender", typeof( Gender ) );
+                        primaryPerson.Gender = (Gender) GetNewEnumValue( "Gender", typeof( Gender ) );
                         primaryPerson.MaritalStatusValueId = GetNewIntValue( "MaritalStatus" );
                         primaryPerson.SetBirthDate( GetNewDateTimeValue( "BirthDate" ) );
                         primaryPerson.AnniversaryDate = GetNewDateTimeValue( "AnniversaryDate" );
@@ -552,7 +552,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         primaryPerson.Email = GetNewStringValue( "Email" );
                         primaryPerson.IsEmailActive = GetNewBoolValue( "EmailActive" ) ?? true;
                         primaryPerson.EmailNote = GetNewStringValue( "EmailNote" );
-                        primaryPerson.EmailPreference = ( EmailPreference ) GetNewEnumValue( "EmailPreference", typeof( EmailPreference ) );
+                        primaryPerson.EmailPreference = (EmailPreference) GetNewEnumValue( "EmailPreference", typeof( EmailPreference ) );
                         primaryPerson.InactiveReasonNote = GetNewStringValue( "InactiveReasonNote" );
                         primaryPerson.SystemNote = GetNewStringValue( "SystemNote" );
                         primaryPerson.ContributionFinancialAccountId = GetNewIntValue( "ContributionFinancialAccountId" );
@@ -562,7 +562,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                         // Update phone numbers
                         var phoneTypes = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE.AsGuid() ).DefinedValues;
-                        foreach ( var phoneType in phoneTypes )
+                        foreach (var phoneType in phoneTypes)
                         {
                             var phoneNumber = primaryPerson.PhoneNumbers.Where( p => p.NumberTypeValueId == phoneType.Id ).FirstOrDefault();
                             string oldValue = phoneNumber != null ? phoneNumber.Number : string.Empty;
@@ -571,13 +571,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                             string newValue = GetNewStringValue( key );
                             bool phoneNumberDeleted = false;
 
-                            if ( !oldValue.Equals( newValue, StringComparison.OrdinalIgnoreCase ) )
+                            if (!oldValue.Equals( newValue, StringComparison.OrdinalIgnoreCase ))
                             {
                                 // New phone doesn't match old
-                                if ( !string.IsNullOrWhiteSpace( newValue ) )
+                                if (!string.IsNullOrWhiteSpace( newValue ))
                                 {
                                     // New value exists
-                                    if ( phoneNumber == null )
+                                    if (phoneNumber == null)
                                     {
                                         // Old value didn't exist... create new phone record
                                         phoneNumber = new PhoneNumber { NumberTypeValueId = phoneType.Id };
@@ -590,7 +590,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                                 else
                                 {
                                     // New value doesn't exist
-                                    if ( phoneNumber != null )
+                                    if (phoneNumber != null)
                                     {
                                         // old value existed.. delete it
                                         primaryPerson.PhoneNumbers.Remove( phoneNumber );
@@ -601,11 +601,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                             }
 
                             // check to see if IsMessagingEnabled is true for any of the merged people for this number/numbertype
-                            if ( phoneNumber != null && !phoneNumberDeleted && !phoneNumber.IsMessagingEnabled )
+                            if (phoneNumber != null && !phoneNumberDeleted && !phoneNumber.IsMessagingEnabled)
                             {
                                 var personIds = MergeData.People.Select( a => a.Id ).ToList();
                                 var isMessagingEnabled = phoneNumberService.Queryable().Where( a => personIds.Contains( a.PersonId ) && a.Number == phoneNumber.Number && a.NumberTypeValueId == phoneNumber.NumberTypeValueId ).Any( a => a.IsMessagingEnabled );
-                                if ( isMessagingEnabled )
+                                if (isMessagingEnabled)
                                 {
                                     phoneNumber.IsMessagingEnabled = true;
                                 }
@@ -617,10 +617,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                         // Update the attributes
                         primaryPerson.LoadAttributes( rockContext );
-                        foreach ( var property in MergeData.Properties.Where( p => p.Key.StartsWith( "attr_" ) ) )
+                        foreach (var property in MergeData.Properties.Where( p => p.Key.StartsWith( "attr_" ) ))
                         {
                             var attribute = AttributeCache.Get( property.AttributeId.Value );
-                            if ( attribute.FieldType.Field is Rock.Field.Types.MatrixFieldType )
+                            if (attribute.FieldType.Field is Rock.Field.Types.MatrixFieldType)
                             {
                                 MergeAttributeMatrixAttributeValues( rockContext, primaryPerson, property, attribute );
                             }
@@ -629,7 +629,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                                 string oldValue = primaryPerson.GetAttributeValue( attribute.Key ) ?? string.Empty;
                                 string newValue = GetNewStringValue( property.Key ) ?? string.Empty;
 
-                                if ( !oldValue.Equals( newValue ) )
+                                if (!oldValue.Equals( newValue ))
                                 {
                                     Rock.Attribute.Helper.SaveAttributeValue( primaryPerson, attribute, newValue, rockContext );
                                 }
@@ -639,20 +639,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         // Update the Primary Family.
                         var primaryFamily = primaryPerson.GetFamily( rockContext );
 
-                        if ( primaryFamily != null )
+                        if (primaryFamily != null)
                         {
                             // Update the family attributes.
                             primaryFamily.Name = GetNewStringValue( FAMILY_NAME );
                             primaryFamily.CampusId = GetNewIntValue( CAMPUS );
 
                             primaryFamily.LoadAttributes( rockContext );
-                            foreach ( var property in MergeData.Properties.Where( p => p.Key.StartsWith( "groupattr_" ) ) )
+                            foreach (var property in MergeData.Properties.Where( p => p.Key.StartsWith( "groupattr_" ) ))
                             {
                                 string attributeKey = AttributeCache.Get( property.AttributeId.Value ).Key;
                                 string oldValue = primaryFamily.GetAttributeValue( attributeKey ) ?? string.Empty;
                                 string newValue = GetNewStringValue( property.Key ) ?? string.Empty;
 
-                                if ( !oldValue.Equals( newValue ) )
+                                if (!oldValue.Equals( newValue ))
                                 {
                                     var attribute = primaryFamily.Attributes[attributeKey];
                                     Rock.Attribute.Helper.SaveAttributeValue( primaryFamily, attribute, newValue, rockContext );
@@ -665,20 +665,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                         // Delete the unselected photos
                         string photoKeeper = primaryPerson.PhotoId.HasValue ? primaryPerson.PhotoId.Value.ToString() : string.Empty;
-                        foreach ( var photoValue in MergeData.Properties
+                        foreach (var photoValue in MergeData.Properties
                             .Where( p => p.Key == "Photo" )
                             .SelectMany( p => p.Values )
                             .Where( v => v.Value != string.Empty && v.Value != photoKeeper )
-                            .Select( v => v.Value ) )
+                            .Select( v => v.Value ))
                         {
                             int photoId = 0;
-                            if ( int.TryParse( photoValue, out photoId ) )
+                            if (int.TryParse( photoValue, out photoId ))
                             {
                                 var photo = binaryFileService.Get( photoId );
-                                if ( photo != null )
+                                if (photo != null)
                                 {
                                     string errorMessages;
-                                    if ( binaryFileService.CanDelete( photo, out errorMessages ) )
+                                    if (binaryFileService.CanDelete( photo, out errorMessages ))
                                     {
                                         binaryFileService.Delete( photo );
                                     }
@@ -690,16 +690,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                         // If there was more than one email address and user has logins, then set any of the local
                         // logins ( database & AD ) to require a reconfirmation
-                        if ( reconfirmRequired )
+                        if (reconfirmRequired)
                         {
                             var personIds = MergeData.People.Select( a => a.Id ).ToList();
-                            foreach ( var login in userLoginService.Queryable()
+                            foreach (var login in userLoginService.Queryable()
                                 .Where( l =>
                                     l.PersonId.HasValue &&
-                                    personIds.Contains( l.PersonId.Value ) ) )
+                                    personIds.Contains( l.PersonId.Value ) ))
                             {
                                 var component = Rock.Security.AuthenticationContainer.GetComponent( login.EntityType.Name );
-                                if ( component != null && !component.RequiresRemoteAuthentication )
+                                if (component != null && !component.RequiresRemoteAuthentication)
                                 {
                                     login.IsConfirmed = false;
                                 }
@@ -711,9 +711,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         // Merge search keys on merge
                         var searchTypeValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_SEARCH_KEYS_EMAIL.AsGuid() );
                         var personSearchKeys = primaryPerson.GetPersonSearchKeys( rockContext ).Where( a => a.SearchTypeValueId == searchTypeValue.Id ).ToList();
-                        foreach ( var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ) )
+                        foreach (var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ))
                         {
-                            if ( !string.IsNullOrEmpty( p.Email ) && p.Email != GetNewStringValue( "Email" ) && !personSearchKeys.Any( a => a.SearchValue.Equals( p.Email, StringComparison.OrdinalIgnoreCase ) ) )
+                            if (!string.IsNullOrEmpty( p.Email ) && p.Email != GetNewStringValue( "Email" ) && !personSearchKeys.Any( a => a.SearchValue.Equals( p.Email, StringComparison.OrdinalIgnoreCase ) ))
                             {
                                 PersonSearchKey personSearchKey = new PersonSearchKey()
                                 {
@@ -728,7 +728,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                             var mergeSearchKeys = personService.GetPersonSearchKeys( p.Id ).Where( a => a.SearchTypeValueId == searchTypeValue.Id ).ToList();
                             var duplicateKeys = mergeSearchKeys.Where( a => personSearchKeys.Any( b => b.SearchValue.Equals( a.SearchValue, StringComparison.OrdinalIgnoreCase ) ) );
 
-                            if ( duplicateKeys.Any() )
+                            if (duplicateKeys.Any())
                             {
                                 personSearchKeyService.DeleteRange( duplicateKeys );
                                 rockContext.SaveChanges();
@@ -736,10 +736,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         }
 
                         // Delete merged person's family records and any families that would be empty after merge
-                        foreach ( var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ) )
+                        foreach (var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ))
                         {
                             // Delete the merged person's phone numbers (we've already updated the primary persons values)
-                            foreach ( var phoneNumber in phoneNumberService.GetByPersonId( p.Id ) )
+                            foreach (var phoneNumber in phoneNumberService.GetByPersonId( p.Id ))
                             {
                                 phoneNumberService.Delete( phoneNumber );
                             }
@@ -748,7 +748,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                             // Delete the merged person's other family member records and the family if they were the only one in the family
                             Guid familyGuid = Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY.AsGuid();
-                            foreach ( var familyMember in groupMemberService.Queryable().Where( m => m.PersonId == p.Id && m.Group.GroupType.Guid == familyGuid ) )
+                            foreach (var familyMember in groupMemberService.Queryable().Where( m => m.PersonId == p.Id && m.Group.GroupType.Guid == familyGuid ))
                             {
                                 groupMemberService.Delete( familyMember );
 
@@ -756,12 +756,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                                 // Get the family
                                 var family = groupService.Queryable( "Members" ).Where( f => f.Id == familyMember.GroupId ).FirstOrDefault();
-                                if ( !family.Members.Any() )
+                                if (!family.Members.Any())
                                 {
                                     // If there are not any other family members, delete the family record.
 
                                     // If theres any people that have this group as a giving group, set it to null (the person being merged should be the only one)
-                                    foreach ( Person gp in personService.Queryable().Where( g => g.GivingGroupId == family.Id ) )
+                                    foreach (Person gp in personService.Queryable().Where( g => g.GivingGroupId == family.Id ))
                                     {
                                         gp.GivingGroupId = null;
                                     }
@@ -771,7 +771,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                                     // Delete the family
                                     string errorMessage;
-                                    if ( groupService.CanDelete( family, out errorMessage ) )
+                                    if (groupService.CanDelete( family, out errorMessage ))
                                     {
                                         groupService.Delete( family );
                                         rockContext.SaveChanges();
@@ -781,12 +781,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         }
 
                         // Flush any security roles that the merged person's other records were a part of
-                        foreach ( var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ) )
+                        foreach (var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ))
                         {
-                            foreach ( var groupMember in groupMemberService.Queryable().Where( m => m.PersonId == p.Id ) )
+                            foreach (var groupMember in groupMemberService.Queryable().Where( m => m.PersonId == p.Id ))
                             {
                                 Group group = new GroupService( rockContext ).Get( groupMember.GroupId );
-                                if ( group.IsSecurityRole || group.GroupType.Guid.Equals( Rock.SystemGuid.GroupType.GROUPTYPE_SECURITY_ROLE.AsGuid() ) )
+                                if (group.IsSecurityRole || group.GroupType.Guid.Equals( Rock.SystemGuid.GroupType.GROUPTYPE_SECURITY_ROLE.AsGuid() ))
                                 {
                                     RoleCache.Remove( group.Id );
                                     Rock.Security.Authorization.Clear();
@@ -796,7 +796,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                         // If merging records into the Anonymous Giver record, remove any UserLogins.
                         bool mergingWithAnonymousGiver = primaryPerson.Guid == Rock.SystemGuid.Person.GIVER_ANONYMOUS.AsGuid();
-                        if ( mergingWithAnonymousGiver )
+                        if (mergingWithAnonymousGiver)
                         {
                             RemoveAnonymousGiverUserLogins( userLoginService, rockContext );
                         }
@@ -804,7 +804,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         // now that the Merge is complete, the EntitySet can be marked to be deleted by the RockCleanup job
                         var entitySetService = new EntitySetService( rockContext );
                         var entitySet = entitySetService.Get( MergeData.EntitySetId );
-                        if ( entitySet != null )
+                        if (entitySet != null)
                         {
                             entitySet.ExpireDateTime = RockDateTime.Now.AddMinutes( -1 );
                             entitySet.EntitySetPurposeValueId = null;
@@ -813,7 +813,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     }
                 } );
 
-                foreach ( var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ) )
+                foreach (var p in MergeData.People.Where( p => p.Id != primaryPersonId.Value ))
                 {
                     // Run merge proc to merge all associated data
                     var parms = new Dictionary<string, object>();
@@ -822,7 +822,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     DbService.ExecuteCommand( "spCrm_PersonMerge", CommandType.StoredProcedure, parms );
                 }
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
                 ExceptionLogService.LogException( ex, Context, this.RockPage.PageId, this.RockPage.Site.Id, CurrentPersonAlias );
 
@@ -842,7 +842,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// <param name="primaryPerson"></param>
         private void MergeAddresses( RockContext rockContext, Group primaryFamily )
         {
-            if ( primaryFamily == null )
+            if (primaryFamily == null)
             {
                 return;
             }
@@ -853,7 +853,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             var locationService = new LocationService( rockContext );
             var groupLocationService = new GroupLocationService( rockContext );
 
-            foreach ( var addressType in addressTypes )
+            foreach (var addressType in addressTypes)
             {
                 GroupLocation mergeSourceFamilyLocation = null;
 
@@ -863,7 +863,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 // Get all of the property keys that correspond to addresses of this type.
                 var addressKeys = MergeData.Properties.Where( p => p.Key == key || p.Key.StartsWith( keyPrefix, StringComparison.OrdinalIgnoreCase ) ).Select( x => x.Key ).ToList();
 
-                foreach ( var addressKey in addressKeys )
+                foreach (var addressKey in addressKeys)
                 {
                     /*
                      * 12/12/2019 BJW
@@ -882,7 +882,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     var property = MergeData.GetProperty( addressKey );
 
                     // If there are no values for this address type then no action is required
-                    if ( property.Values.All( v => v.Value.IsNullOrWhiteSpace() ) )
+                    if (property.Values.All( v => v.Value.IsNullOrWhiteSpace() ))
                     {
                         continue;
                     }
@@ -890,7 +890,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     var primaryPersonGroupLocationValue = property.Values.Where( v => v.PersonId == MergeData.PrimaryPersonId ).FirstOrDefault();
 
                     // If the merge target address is selected, there is no need to process this entry.
-                    if ( primaryPersonGroupLocationValue.Selected )
+                    if (primaryPersonGroupLocationValue.Selected)
                     {
                         continue;
                     }
@@ -898,14 +898,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     // Get the updated value for this merge address.
                     var newValueId = GetNewIntValue( addressKey );
 
-                    if ( newValueId != null )
+                    if (newValueId != null)
                     {
                         mergeSourceFamilyLocation = groupLocationService.Get( newValueId.Value );
                     }
 
                     GroupLocation currentTargetFamilyLocation = null;
 
-                    if ( primaryPersonGroupLocationValue.Value.IsNotNullOrWhiteSpace() )
+                    if (primaryPersonGroupLocationValue.Value.IsNotNullOrWhiteSpace())
                     {
                         currentTargetFamilyLocation = primaryFamily.GroupLocations.FirstOrDefault( p => p.Id == primaryPersonGroupLocationValue.Value.AsInteger() );
                     }
@@ -913,39 +913,39 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     // Compare the address components to determine if an update is required.
                     var isUpdated = true;
 
-                    if ( currentTargetFamilyLocation != null )
+                    if (currentTargetFamilyLocation != null)
                     {
                         var targetLocation = currentTargetFamilyLocation.Location;
 
                         Location sourceLocation = null;
 
-                        if ( mergeSourceFamilyLocation != null )
+                        if (mergeSourceFamilyLocation != null)
                         {
                             sourceLocation = mergeSourceFamilyLocation.Location;
 
-                            if ( targetLocation.Id == sourceLocation.Id )
+                            if (targetLocation.Id == sourceLocation.Id)
                             {
                                 isUpdated = false;
                             }
-                            else if ( sourceLocation.Street1.ToStringSafe() == targetLocation.Street1.ToStringSafe()
+                            else if (sourceLocation.Street1.ToStringSafe() == targetLocation.Street1.ToStringSafe()
                                  && sourceLocation.Street2.ToStringSafe() == targetLocation.Street2.ToStringSafe()
                                  && sourceLocation.City.ToStringSafe() == targetLocation.City.ToStringSafe()
                                  && sourceLocation.County.ToStringSafe() == targetLocation.County.ToStringSafe()
                                  && sourceLocation.State.ToStringSafe() == targetLocation.State.ToStringSafe()
                                  && sourceLocation.PostalCode.ToStringSafe() == targetLocation.PostalCode.ToStringSafe()
-                                 && sourceLocation.Country.ToStringSafe() == targetLocation.Country.ToStringSafe() )
+                                 && sourceLocation.Country.ToStringSafe() == targetLocation.Country.ToStringSafe())
                             {
                                 isUpdated = false;
                             }
                         }
                     }
 
-                    if ( isUpdated )
+                    if (isUpdated)
                     {
-                        if ( mergeSourceFamilyLocation == null )
+                        if (mergeSourceFamilyLocation == null)
                         {
                             // Remove the address if it exists.
-                            if ( currentTargetFamilyLocation != null )
+                            if (currentTargetFamilyLocation != null)
                             {
                                 primaryFamily.GroupLocations.Remove( currentTargetFamilyLocation );
                                 groupLocationService.Delete( currentTargetFamilyLocation );
@@ -961,10 +961,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                             var newGroupLocationId = 0;
                             var newGroupLocationGuid = Guid.NewGuid();
 
-                            if ( currentTargetFamilyLocation != null )
+                            if (currentTargetFamilyLocation != null)
                             {
                                 // A Family Address of this Type already exists in the target.
-                                if ( prevLocType != null )
+                                if (prevLocType != null)
                                 {
                                     // Change the existing address to a previous address.
                                     currentTargetFamilyLocation.GroupLocationTypeValue = null;
@@ -993,7 +993,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                             newTargetFamilyLocation.Guid = newGroupLocationGuid;
 
                             // If this is a new location, associate it with the Family.
-                            if ( newTargetFamilyLocation.Id == 0 )
+                            if (newTargetFamilyLocation.Id == 0)
                             {
                                 primaryFamily.GroupLocations.Add( newTargetFamilyLocation );
                             }
@@ -1017,7 +1017,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             var attributeMatrixService = new AttributeMatrixService( rockContext );
             AttributeMatrix primaryPersonAttributeMatrix = null;
             var primaryPersonAttributeMatrixGuid = primaryPerson.GetAttributeValue( attribute.Key ).AsGuidOrNull();
-            if ( primaryPersonAttributeMatrixGuid.HasValue )
+            if (primaryPersonAttributeMatrixGuid.HasValue)
             {
                 primaryPersonAttributeMatrix = attributeMatrixService.Get( primaryPersonAttributeMatrixGuid.Value );
             }
@@ -1031,10 +1031,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
             var selectedAttributeMatrixList = attributeMatrixService.GetByGuids( selectedAttributeMatrixGuidList ).ToList();
 
-            if ( selectedAttributeMatrixList.Count > 1 )
+            if (selectedAttributeMatrixList.Count > 1)
             {
                 int attributeMatrixTemplateId;
-                if ( primaryPersonAttributeMatrix != null )
+                if (primaryPersonAttributeMatrix != null)
                 {
                     attributeMatrixTemplateId = primaryPersonAttributeMatrix.AttributeMatrixTemplateId;
                 }
@@ -1044,7 +1044,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
 
                 // If a valid Attribute Matrix exists, merge all of the values into it.
-                if ( attributeMatrixTemplateId > 0 )
+                if (attributeMatrixTemplateId > 0)
                 {
                     // Create a new Attribute Matrix instance and assign a Guid so the Attribute Values can be linked to it.
                     // We can't use SaveChanges() to get a server-generated Guid here, because it will cause a deadlock in the merge transaction.
@@ -1063,12 +1063,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     attributeMatrixService.Add( newPersonAttributeMatrix );
                 }
             }
-            else if ( selectedAttributeMatrixList.Count == 1 )
+            else if (selectedAttributeMatrixList.Count == 1)
             {
                 newPersonAttributeMatrixGuid = selectedAttributeMatrixList.First().Guid;
             }
 
-            if ( primaryPersonAttributeMatrixGuid != newPersonAttributeMatrixGuid )
+            if (primaryPersonAttributeMatrixGuid != newPersonAttributeMatrixGuid)
             {
                 Rock.Attribute.Helper.SaveAttributeValue( primaryPerson, attribute, newPersonAttributeMatrixGuid.ToString(), rockContext );
             }
@@ -1082,7 +1082,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         protected void btnSaveRequestNote_Click( object sender, EventArgs e )
         {
             int? setId = PageParameter( "Set" ).AsIntegerOrNull();
-            if ( setId.HasValue )
+            if (setId.HasValue)
             {
                 var rockContext = new RockContext();
                 var entitySet = new EntitySetService( rockContext ).Get( setId.Value );
@@ -1106,7 +1106,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         {
             gValues.Columns.Clear();
 
-            if ( MergeData != null && MergeData.People != null && MergeData.People.Any() )
+            if (MergeData != null && MergeData.People != null && MergeData.People.Any())
             {
                 var keyCol = new BoundField();
                 keyCol.DataField = "PropertyKey";
@@ -1118,7 +1118,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 ////labelCol.HeaderStyle.CssClass = "grid-section-header";
                 gValues.Columns.Add( labelCol );
 
-                foreach ( var person in MergeData.People )
+                foreach (var person in MergeData.People)
                 {
                     var personCol = new MergePersonField();
                     personCol.DataBound += personCol_DataBound;
@@ -1153,7 +1153,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
             StringBuilder sbHeaderData = new StringBuilder();
 
-            if ( families.Count > 1 )
+            if (families.Count > 1)
             {
                 sbHeaderData.Append( "<div class='js-person-header js-person-has-multiple-families'>" );
             }
@@ -1162,17 +1162,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 sbHeaderData.Append( "<div class='js-person-header'>" );
             }
 
-            if ( isNameless )
+            if (isNameless)
             {
                 sbHeaderData.Append( "<div class='merge-heading-family'>Nameless Person</div>" );
             }
 
-            foreach ( var family in families )
+            foreach (var family in families)
             {
                 sbHeaderData.Append( "<div class='merge-heading-family'>" );
 
                 List<string> nickNames = new List<string>();
-                if ( !isBusiness )
+                if (!isBusiness)
                 {
                     nickNames = groupMemberService.Queryable( "Person" )
                     .Where( m => m.GroupId == family.Id )
@@ -1183,7 +1183,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     .ToList();
                 }
 
-                if ( nickNames.Any() )
+                if (nickNames.Any())
                 {
                     sbHeaderData.AppendFormat( "{0} ({1})", family.Name, nickNames.AsDelimited( ", " ) );
                 }
@@ -1193,7 +1193,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
 
                 bool showType = family.GroupLocations.Count() > 1;
-                foreach ( var loc in family.GroupLocations )
+                foreach (var loc in family.GroupLocations)
                 {
                     sbHeaderData.AppendFormat(
                         " <br><span>{0}{1}</span>",
@@ -1233,7 +1233,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 .Queryable()
                 .IsInSecurityRoleGroupOrSecurityRoleGroupType()
                 .Where( a => a.Group.IsActive && personIds.Contains( a.PersonId ) && a.GroupMemberStatus == GroupMemberStatus.Active )
-                .Max( a => ( ElevatedSecurityLevel? ) a.Group.ElevatedSecurityLevel ) ?? ElevatedSecurityLevel.None;
+                .Max( a => (ElevatedSecurityLevel?) a.Group.ElevatedSecurityLevel ) ?? ElevatedSecurityLevel.None;
 
             var canMergeResult = new CanMergeResult
             {
@@ -1243,9 +1243,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 IsAllowedToMerge = true,
             };
 
-            if ( requiredSecurityRole != null )
+            if (requiredSecurityRole != null)
             {
-                if ( !requiredSecurityRole.IsPersonInRole( RockPage.CurrentPerson.Guid ) )
+                if (!requiredSecurityRole.IsPersonInRole( RockPage.CurrentPerson.Guid ))
                 {
                     canMergeResult.IsAllowedToMerge = false;
                 }
@@ -1259,12 +1259,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// </summary>
         private void BindGrid()
         {
-            if ( MergeData != null && MergeData.People != null && MergeData.People.Any() )
+            if (MergeData != null && MergeData.People != null && MergeData.People.Any())
             {
                 var canMergeResult = CanMerge();
                 lbMerge.Visible = canMergeResult.IsAllowedToMerge;
 
-                if ( !canMergeResult.IsAllowedToMerge )
+                if (!canMergeResult.IsAllowedToMerge)
                 {
                     nbAccountProtectProfile.Text = $"A record on this merge request has an Account Protection Profile of '{canMergeResult.MaxAccountProtectionProfile}'. This will require an individual in the '{canMergeResult.RequiredSecurityRole}' role to perform the merge.";
                     nbAccountProtectProfile.Visible = true;
@@ -1276,10 +1276,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 // If the values of any hidden Attributes differ, display warning message.
                 SetAttributesSecurityNoticeState();
 
-                foreach ( var col in gValues.Columns.OfType<MergePersonField>() )
+                foreach (var col in gValues.Columns.OfType<MergePersonField>())
                 {
                     col.IsPrimaryPerson = col.PersonId == MergeData.PrimaryPersonId;
-                    if ( col.IsPrimaryPerson )
+                    if (col.IsPrimaryPerson)
                     {
                         hfSelectedColumnPersonId.Value = col.PersonId.ToString();
                     }
@@ -1288,6 +1288,73 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 List<ValuesRow> valuesRowList = MergeData.GetValuesRowList( headingKeys );
                 gValues.DataSource = valuesRowList;
                 gValues.DataBind();
+                GetSecurityRows();
+            }
+        }
+
+        private void GetSecurityRows()
+        {
+            pnlSecurity.Controls.Clear();
+            var securityHeading = new HtmlGenericControl( "div" );
+            securityHeading.InnerHtml = "<span style='font-size: 18px; font-weight: 700;'>Security Information</span>";
+            pnlSecurity.Controls.Add( securityHeading );
+            var loginTypes = EntityTypeCache.All().Where( et => et.Name.Contains( "Security.Auth" ) );
+            RockContext context = new RockContext();
+            UserLoginService userLoginService = new UserLoginService( context );
+            NoteService noteService = new NoteService( context );
+            foreach (var lt in loginTypes)
+            {
+                var row = new HtmlGenericControl( "div" );
+                row.ID = "infoSecurity";
+                row.AddCssClass( "d-flex" );
+                var headerCol = new HtmlGenericControl( "div" );
+                headerCol.InnerHtml = "<span style='font-size: 14px; font-weight: 700;'>" + lt.FriendlyName + "</span>";
+                row.Controls.Add( headerCol );
+                bool hasData = false;
+                foreach (var person in MergeData.People)
+                {
+                    var logins = userLoginService.Queryable().Where( u => u.PersonId == person.Id && u.EntityTypeId == lt.Id ).Select( l => l.UserName );
+                    string valueFormatted = "";
+                    if (logins.Count() > 0)
+                    {
+                        valueFormatted = String.Join( "<br/>", logins );
+                        hasData = true;
+                    }
+                    var col = new HtmlGenericControl( "div" );
+                    col.InnerHtml = valueFormatted;
+                    row.Controls.Add( col );
+                }
+                if (hasData)
+                {
+                    pnlSecurity.Controls.Add( row );
+                    ScriptManager.RegisterStartupScript( this.Page, Page.GetType(), "Javascript", "matchColumns(); ", true );
+                }
+            }
+
+            var alertRow = new HtmlGenericControl( "div" );
+            alertRow.ID = "infoSecurity";
+            alertRow.AddCssClass( "d-flex" );
+            var alertHeaderCol = new HtmlGenericControl( "div" );
+            alertHeaderCol.InnerHtml = "<span style='font-size: 14px; font-weight: 700;'>Alert Notes</span>";
+            alertRow.Controls.Add( alertHeaderCol );
+            bool alertHasData = false;
+            foreach (var person in MergeData.People)
+            {
+                var notes = noteService.Queryable().Where( n => n.EntityId == person.Id && n.IsAlert == true ).ToList();
+                string valueFormatted = "";
+                if (notes.Count() > 0)
+                {
+                    alertHasData = true;
+                    valueFormatted = String.Join( "<hr/>", notes.Select( n => n.CreatedByPersonName + " - " + n.CreatedDateTime.Value.ToString( "MM/dd/yyyy" ) + "<br/>" + n.Text ) );
+                }
+                var col = new HtmlGenericControl( "div" );
+                col.InnerHtml = valueFormatted;
+                alertRow.Controls.Add( col );
+            }
+            if (alertHasData)
+            {
+                pnlSecurity.Controls.Add( alertRow );
+                ScriptManager.RegisterStartupScript( this.Page, Page.GetType(), "Javascript", "matchColumns(); ", true );
             }
         }
 
@@ -1297,12 +1364,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// <param name="canMergeResult">The can merge result.</param>
         private void ShowMessages( CanMergeResult canMergeResult )
         {
-            if ( !canMergeResult.IsAllowedToMerge )
+            if (!canMergeResult.IsAllowedToMerge)
             {
                 return;
             }
 
-            if ( canMergeResult.MaxAccountProtectionProfile == AccountProtectionProfile.Low )
+            if (canMergeResult.MaxAccountProtectionProfile == AccountProtectionProfile.Low)
             {
                 // no security messages, regardless of existence of Login, email address differences or phone differences
                 nbSecurityNotice.Visible = false;
@@ -1331,14 +1398,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             var maxAccountProtectionProfile = canMergeResult.MaxAccountProtectionProfile;
             var maxElevatedSecurityLevel = canMergeResult.MaxElevatedSecurityLevel;
 
-            if ( maxAccountProtectionProfile == AccountProtectionProfile.Medium && !hasDifferentEmailAddresses && !hasDifferentEmailAddresses )
+            if (maxAccountProtectionProfile == AccountProtectionProfile.Medium && !hasDifferentEmailAddresses && !hasDifferentEmailAddresses)
             {
                 // Medium AccountProtectionProfile, but not email or phone issues, so just a friendly warning
                 nbSecurityNotice.Heading = null;
                 nbSecurityNotice.Visible = true;
                 nbSecurityNotice.NotificationBoxType = NotificationBoxType.Warning;
 
-                if ( hasLogins )
+                if (hasLogins)
                 {
                     nbSecurityNotice.Text = "This merge is considered of moderate risk as one of the records has a login. Please be sure to carefully consider the changed information to ensure this is not an attempt to hijack the account.";
                     return;
@@ -1364,13 +1431,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             var warningMessageIssues = new List<string>();
             var cautionMessageIssues = new List<string>();
 
-            if ( hasDifferentEmailAddresses )
+            if (hasDifferentEmailAddresses)
             {
                 warningMessageIssues.Add( "emails" );
                 cautionMessageIssues.Add( "email" );
             }
 
-            if ( hasDifferentMobilePhoneNumbers )
+            if (hasDifferentMobilePhoneNumbers)
             {
                 warningMessageIssues.Add( "mobile phone numbers" );
                 cautionMessageIssues.Add( "mobile phone" );
@@ -1378,9 +1445,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
             string warningMessage = string.Empty;
 
-            if ( hasLogins )
+            if (hasLogins)
             {
-                if ( warningMessageIssues.Any() )
+                if (warningMessageIssues.Any())
                 {
                     warningMessage = "One or more of the records has a login and different " + warningMessageIssues.AsDelimited( " and " ) + " associated with this merge.";
                 }
@@ -1391,10 +1458,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                 warningMessage += " This could be an attempt to hijack the account.";
             }
-            else if ( warningMessageIssues.Any() )
+            else if (warningMessageIssues.Any())
             {
                 warningMessage = "Different " + warningMessageIssues.AsDelimited( " and " ) + " are associated with this merge.";
-                if ( hasMobilePhoneNumbers || hasEmailsAddresses )
+                if (hasMobilePhoneNumbers || hasEmailsAddresses)
                 {
 
                     // Even nobody person has a login, if any person has a phone number or email address, it might be possible to hijack the account;
@@ -1402,12 +1469,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
             }
 
-            if ( cautionMessageIssues.Any() )
+            if (cautionMessageIssues.Any())
             {
                 warningMessage += " You should apply considerable caution in selecting the appropriate " + cautionMessageIssues.AsDelimited( " and " ) + " for this merge.";
             }
 
-            if ( hasLogins )
+            if (hasLogins)
             {
                 warningMessage += " Additionally, this person will be prompted to reconfirm before they can login.";
             }
@@ -1418,11 +1485,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
             string securityAlertHeading;
 
-            if ( maxAccountProtectionProfile == AccountProtectionProfile.Extreme )
+            if (maxAccountProtectionProfile == AccountProtectionProfile.Extreme)
             {
                 securityAlertHeading = "Critical Security Alert";
             }
-            else if ( maxAccountProtectionProfile == AccountProtectionProfile.High )
+            else if (maxAccountProtectionProfile == AccountProtectionProfile.High)
             {
                 securityAlertHeading = "Important Security Alert";
             }
@@ -1433,9 +1500,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
             string memberOfSecurityRoleMessage;
 
-            if ( maxElevatedSecurityLevel > ElevatedSecurityLevel.None )
+            if (maxElevatedSecurityLevel > ElevatedSecurityLevel.None)
             {
-                if ( warningMessage.IsNotNullOrWhiteSpace() )
+                if (warningMessage.IsNotNullOrWhiteSpace())
                 {
                     memberOfSecurityRoleMessage = "Additionally, one or more of these records is a member of a security role with elevated privileges.";
                 }
@@ -1444,7 +1511,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     memberOfSecurityRoleMessage = "One or more of these records is a member of a security role with elevated privileges.";
                 }
 
-                if ( maxAccountProtectionProfile == AccountProtectionProfile.Extreme )
+                if (maxAccountProtectionProfile == AccountProtectionProfile.Extreme)
                 {
                     memberOfSecurityRoleMessage = $"<b class='text-uppercase'>{memberOfSecurityRoleMessage}</b>";
                 }
@@ -1458,13 +1525,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 memberOfSecurityRoleMessage = null;
             }
 
-            if ( memberOfSecurityRoleMessage.IsNullOrWhiteSpace() && warningMessage.IsNullOrWhiteSpace() )
+            if (memberOfSecurityRoleMessage.IsNullOrWhiteSpace() && warningMessage.IsNullOrWhiteSpace())
             {
                 // if there is no message to show since there are only some other issues (like Financial Data), show a generic message;
                 warningMessage = "This merge is considered a high risk due to financial or other sensitive data. Please be sure to carefully consider the changed information.";
             }
 
-            if ( warningMessage.IsNotNullOrWhiteSpace() )
+            if (warningMessage.IsNotNullOrWhiteSpace())
             {
                 nbSecurityNotice.Text = $"<b class='text-uppercase'>{securityAlertHeading}:</b> {warningMessage}";
             }
@@ -1473,7 +1540,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 nbSecurityNotice.Text = $"<b class='text-uppercase'>{securityAlertHeading}</b>";
             }
 
-            if ( memberOfSecurityRoleMessage.IsNotNullOrWhiteSpace() )
+            if (memberOfSecurityRoleMessage.IsNotNullOrWhiteSpace())
             {
                 nbSecurityNotice.Text += $"<br><br>{memberOfSecurityRoleMessage}";
             }
@@ -1486,7 +1553,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         {
             // Show a warning if there are any properties with differing values that the current user does not have permission to view.
             var conflictingHiddenProperties = MergeData.Properties.Where( p => !p.HasViewPermission
-                                                        && ( p.Values.Select( v => v.Value ).Distinct().Count() > 1 ) )
+                                                        && (p.Values.Select( v => v.Value ).Distinct().Count() > 1) )
                                               .ToList();
 
             var showWarning = conflictingHiddenProperties.Any();
@@ -1501,14 +1568,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         {
             var mergeDataPropertiesLookup = MergeData.Properties.ToDictionary( k => k.Key, v => v.Values.ToDictionary( vk => vk.PersonId, vv => vv ) );
 
-            foreach ( var column in gValues.Columns.OfType<MergePersonField>() )
+            foreach (var column in gValues.Columns.OfType<MergePersonField>())
             {
                 int personId = column.PersonId;
 
-                foreach ( GridViewRow row in gValues.Rows )
+                foreach (GridViewRow row in gValues.Rows)
                 {
                     var propertySelection = MergePersonField.GetPropertySelection( row, personId );
-                    if ( !propertySelection.IsSectionHeader )
+                    if (!propertySelection.IsSectionHeader)
                     {
                         PersonPropertyValue personPropertyValue = mergeDataPropertiesLookup[propertySelection.PropertyKey][personId];
                         personPropertyValue.Selected = propertySelection.Selected;
@@ -1526,10 +1593,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         private int? GetNewIntValue( string key )
         {
             var ppValue = GetNewValue( key );
-            if ( ppValue != null )
+            if (ppValue != null)
             {
                 int newValue = int.MinValue;
-                if ( int.TryParse( ppValue.Value, out newValue ) )
+                if (int.TryParse( ppValue.Value, out newValue ))
                 {
                     return newValue;
                 }
@@ -1541,10 +1608,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         private bool? GetNewBoolValue( string key )
         {
             var ppValue = GetNewValue( key );
-            if ( ppValue != null )
+            if (ppValue != null)
             {
                 bool newValue = false;
-                if ( bool.TryParse( ppValue.Value, out newValue ) )
+                if (bool.TryParse( ppValue.Value, out newValue ))
                 {
                     return newValue;
                 }
@@ -1556,10 +1623,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         private DateTime? GetNewDateTimeValue( string key )
         {
             var ppValue = GetNewValue( key );
-            if ( ppValue != null )
+            if (ppValue != null)
             {
                 DateTime newValue = DateTime.MinValue;
-                if ( DateTime.TryParse( ppValue.Value, out newValue ) )
+                if (DateTime.TryParse( ppValue.Value, out newValue ))
                 {
                     return newValue;
                 }
@@ -1571,9 +1638,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         private Enum GetNewEnumValue( string key, Type enumType )
         {
             var ppValue = GetNewValue( key );
-            if ( ppValue != null )
+            if (ppValue != null)
             {
-                return ( Enum ) Enum.Parse( enumType, ppValue.Value );
+                return (Enum) Enum.Parse( enumType, ppValue.Value );
             }
 
             return null;
@@ -1716,31 +1783,31 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
             bool isBusiness = people.All( a => a.IsBusiness() );
 
-            foreach ( var person in people )
+            foreach (var person in people)
             {
                 AddPerson( person, isBusiness );
             }
 
             // Add Phone Numbers
             var phoneTypes = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE.AsGuid() ).DefinedValues;
-            foreach ( var person in people )
+            foreach (var person in people)
             {
                 AddProperty( "PhoneNumbers", "Phone Numbers", 0, string.Empty );
 
-                foreach ( var phoneType in phoneTypes )
+                foreach (var phoneType in phoneTypes)
                 {
                     string key = "phone_" + phoneType.Id.ToString();
                     var phoneNumber = person.PhoneNumbers.Where( p => p.NumberTypeValueId == phoneType.Id ).FirstOrDefault();
-                    if ( phoneNumber != null )
+                    if (phoneNumber != null)
                     {
                         string iconHtml = string.Empty;
 
-                        if ( phoneNumber.IsUnlisted )
+                        if (phoneNumber.IsUnlisted)
                         {
                             iconHtml += " <span class='label label-info' title='Unlisted' data-toggle='tooltip' data-placement='top'><i class='fa fa-phone-slash'></i></span>";
                         }
 
-                        if ( phoneNumber.IsMessagingEnabled )
+                        if (phoneNumber.IsMessagingEnabled)
                         {
                             iconHtml += " <span class='label label-success' title='SMS Enabled' data-toggle='tooltip' data-placement='top'><i class='fa fa-sms'></i></span>";
                         }
@@ -1757,17 +1824,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             // Add Addresses, grouped by Address Type.
             var addressTypes = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE.AsGuid() ).DefinedValues;
 
-            foreach ( var addressType in addressTypes )
+            foreach (var addressType in addressTypes)
             {
                 string key = "address_" + addressType.Id.ToString();
 
-                foreach ( var person in people )
+                foreach (var person in people)
                 {
                     AddProperty( "Addresses", "Addresses", 0, string.Empty );
 
                     var family = person.PrimaryFamily;
 
-                    if ( family == null )
+                    if (family == null)
                     {
                         continue;
                     }
@@ -1778,25 +1845,25 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                     var addressTypeCount = addressesOfType.Count;
 
-                    if ( addressTypeCount > 0 )
+                    if (addressTypeCount > 0)
                     {
-                        foreach ( var address in addressesOfType )
+                        foreach (var address in addressesOfType)
                         {
                             string iconHtml = string.Empty;
 
-                            if ( address.IsMailingLocation )
+                            if (address.IsMailingLocation)
                             {
                                 iconHtml += " <span class='label label-info' title='Mailing' data-toggle='tooltip' data-placement='top'><i class='fa fa-envelope'></i></span>";
                             }
 
-                            if ( address.IsMappedLocation )
+                            if (address.IsMappedLocation)
                             {
                                 iconHtml += " <span class='label label-success' title='Mapped' data-toggle='tooltip' data-placement='top'><i class='fa fa-map-marker'></i></span>";
                             }
 
                             var addressKey = key;
 
-                            if ( addressTypeCount > 1 )
+                            if (addressTypeCount > 1)
                             {
                                 addressKey = addressKey + "_" + address.Id;
                             }
@@ -1811,9 +1878,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
             }
 
-            foreach ( var person in people )
+            foreach (var person in people)
             {
-                if ( isBusiness )
+                if (isBusiness)
                 {
                     AddProperty( BUSINESS_ATTRIBUTES, "Business Attributes", 0, string.Empty );
                 }
@@ -1823,7 +1890,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
 
                 person.LoadAttributes();
-                foreach ( var attribute in person.Attributes.OrderBy( a => a.Value.Order ) )
+                foreach (var attribute in person.Attributes.OrderBy( a => a.Value.Order ))
                 {
                     string value = person.GetAttributeValue( attribute.Key );
                     bool condensed = attribute.Value.FieldType.Class == typeof( Rock.Field.Types.ImageFieldType ).FullName;
@@ -1836,9 +1903,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
             }
 
-            foreach ( var person in people )
+            foreach (var person in people)
             {
-                if ( isBusiness )
+                if (isBusiness)
                 {
                     AddProperty( BUSINESS_INFORMATION, "Business Information", 0, string.Empty );
                 }
@@ -1848,13 +1915,13 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
 
                 var family = person.GetFamily();
-                if ( family != null )
+                if (family != null)
                 {
                     AddProperty( FAMILY_NAME, FAMILY_NAME.SplitCase(), person.Id, family.Name );
                     AddProperty( CAMPUS, CAMPUS, person.Id, family.CampusId.HasValue ? family.CampusId.ToString() : string.Empty, family.CampusId.HasValue ? family.Campus.Name : string.Empty );
                 }
 
-                if ( isBusiness )
+                if (isBusiness)
                 {
                     AddProperty( "BusinessAttributes", "Business Attributes", 0, string.Empty );
                 }
@@ -1863,10 +1930,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                     AddProperty( "FamilyAttributes", "Family Attributes", 0, string.Empty );
                 }
 
-                if ( family != null )
+                if (family != null)
                 {
                     family.LoadAttributes();
-                    foreach ( var attribute in family.Attributes.OrderBy( a => a.Value.Order ) )
+                    foreach (var attribute in family.Attributes.OrderBy( a => a.Value.Order ))
                     {
                         string value = family.GetAttributeValue( attribute.Key );
                         bool condensed = attribute.Value.FieldType.Class == typeof( Rock.Field.Types.ImageFieldType ).FullName;
@@ -1880,53 +1947,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 }
             }
 
-            //Add User Logins
-            var loginTypes = EntityTypeCache.All().Where( et => et.Name.Contains( "Security.Auth" ) );
-            foreach ( var person in people )
-            {
-                AddProperty( "UserLogins", "User Logins", 0, string.Empty );
-                foreach ( var lt in loginTypes )
-                {
-                    string key = "logins_" + lt.Id.ToString();
-                    var logins = person.Users.Where( u => u.EntityTypeId == lt.Id ).Select( l => l.UserName );
-                    string value = "";
-                    string valueFormatted = "";
-                    if ( logins.Count() > 0 )
-                    {
-                        value = String.Join( ", ", logins );
-                        valueFormatted = String.Join( "<br/>", logins );
-                    }
-                    AddProperty( key, lt.FriendlyName, person.Id, value, valueFormatted );
-                }
-            }
-
-            //Add Alert Notes
-            NoteService note_svc = new NoteService( new RockContext() );
-            foreach ( var person in people )
-            {
-                AddProperty( "AlertNotes", "Alert Notes", 0, string.Empty );
-                var notes = note_svc.Queryable().Where( n => n.EntityId == person.Id && n.IsAlert == true ).ToList();
-                string value = "";
-                string valueFormatted = "";
-                if ( notes.Count() > 0 )
-                {
-                    value = String.Join( ", ", notes.Select( n => n.Id.ToString() ) );
-                    valueFormatted = String.Join( "<hr/>", notes.Select( n => n.CreatedByPersonName + " - " + n.CreatedDateTime.Value.ToString( "MM/dd/yyyy" ) + "<br/>" + n.Text ) );
-                }
-                AddProperty( "alerts", "Alerts", person.Id, value, valueFormatted );
-            }
-
             // Add missing values
-            foreach ( var property in Properties.Where( p => !headingKeys.Contains( p.Key ) ) )
+            foreach (var property in Properties.Where( p => !headingKeys.Contains( p.Key ) ))
             {
-                foreach ( var person in People.Where( p => !property.Values.Any( v => v.PersonId == p.Id ) ) )
+                foreach (var person in People.Where( p => !property.Values.Any( v => v.PersonId == p.Id ) ))
                 {
                     property.Values.Add( new PersonPropertyValue() { PersonId = person.Id } );
                 }
             }
 
             var primaryPerson = people.OrderBy( p => p.CreatedDateTime ).FirstOrDefault();
-            if ( primaryPerson != null )
+            if (primaryPerson != null)
             {
                 SetPrimary( primaryPerson.Id, primaryPerson.Guid );
             }
@@ -1946,28 +1977,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         {
             PrimaryPersonId = primaryPersonId;
 
-            foreach ( var personProperty in Properties )
+            foreach (var personProperty in Properties)
             {
                 PersonPropertyValue value = null;
 
                 // If the Primary Person Guid is the anonymous giver, always set that record value as default.
-                if ( primaryPersonGuid == Rock.SystemGuid.Person.GIVER_ANONYMOUS.AsGuid() )
+                if (primaryPersonGuid == Rock.SystemGuid.Person.GIVER_ANONYMOUS.AsGuid())
                 {
                     value = personProperty.Values.Where( v => v.PersonId == primaryPersonId ).FirstOrDefault();
                 }
-                else if ( personProperty.Values.Any( v => v.Value != null && v.Value != string.Empty ) )
+                else if (personProperty.Values.Any( v => v.Value != null && v.Value != string.Empty ))
                 {
                     // Find primary person's non-blank value
                     value = personProperty.Values.Where( v => v.PersonId == primaryPersonId && v.Value != null && v.Value != string.Empty ).FirstOrDefault();
-                    if ( value == null )
+                    if (value == null)
                     {
                         // Find any other selected value
                         value = personProperty.Values.Where( v => v.Selected ).FirstOrDefault();
-                        if ( value == null )
+                        if (value == null)
                         {
                             // Find first non-blank value
                             value = personProperty.Values.Where( v => v.Value != string.Empty ).FirstOrDefault();
-                            if ( value == null )
+                            if (value == null)
                             {
                                 value = personProperty.Values.FirstOrDefault();
                             }
@@ -1982,16 +2013,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                 // Unselect all the values
                 personProperty.Values.ForEach( v => v.Selected = false );
 
-                if ( personProperty.AttributeId.HasValue )
+                if (personProperty.AttributeId.HasValue)
                 {
                     var attribute = AttributeCache.Get( personProperty.AttributeId.Value );
-                    if ( attribute.FieldType.Field is Rock.Field.Types.MatrixFieldType )
+                    if (attribute.FieldType.Field is Rock.Field.Types.MatrixFieldType)
                     {
                         personProperty.Values.ForEach( v => v.Selected = true );
                     }
                 }
 
-                if ( value != null )
+                if (value != null)
                 {
                     value.Selected = true;
                 }
@@ -2005,7 +2036,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         /// <returns></returns>
         public PersonPropertyValue GetSelectedValue( PersonProperty personProperty )
         {
-            if ( personProperty != null )
+            if (personProperty != null)
             {
                 return personProperty.Values.Where( v => v.Selected ).FirstOrDefault();
             }
@@ -2025,16 +2056,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             ValuesRow headingRow = null;
 
             // Only show properties that match the selected headingKeys, and have more than one distinct value.
-            var visibleProperties = Properties.Where( p => ( p.HasViewPermission || _ShowSecuredProperties )
-                                                           && ( headingKeys.Contains( p.Key ) || p.Values.Select( v => v.Value ?? string.Empty ).Distinct().Count() > 1 ) )
+            var visibleProperties = Properties.Where( p => (p.HasViewPermission || _ShowSecuredProperties)
+                                                           && (headingKeys.Contains( p.Key ) || p.Values.Select( v => v.Value ?? string.Empty ).Distinct().Count() > 1) )
                                               .ToList();
 
-            foreach ( var personProperty in visibleProperties )
+            foreach (var personProperty in visibleProperties)
             {
                 var valuesRow = new ValuesRow();
                 valuesRow.PersonProperty = personProperty;
                 valuesRow.PersonPersonPropertyList = new List<ValuesRowPersonPersonProperty>();
-                foreach ( var person in People )
+                foreach (var person in People)
                 {
                     ValuesRowPersonPersonProperty valuesRowPersonPersonProperty = new ValuesRowPersonPersonProperty();
                     valuesRowPersonPersonProperty.Person = person;
@@ -2042,7 +2073,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
                     bool addValuesRow;
 
-                    if ( personProperty.HasViewPermission )
+                    if (personProperty.HasViewPermission)
                     {
                         valuesRowPersonPersonProperty.PersonPropertyValue = personProperty.Values.Where( v => v.PersonId == person.Id ).FirstOrDefault();
                         addValuesRow = true;
@@ -2054,20 +2085,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
                         addValuesRow = _ShowSecuredProperties;
                     }
 
-                    if ( addValuesRow )
+                    if (addValuesRow)
                     {
                         valuesRow.PersonPersonPropertyList.Add( valuesRowPersonPersonProperty );
                     }
                 }
 
-                if ( headingKeys.Contains( personProperty.Key ) )
+                if (headingKeys.Contains( personProperty.Key ))
                 {
                     headingRow = valuesRow;
                     headingRow.IsSectionHeading = true;
                 }
                 else
                 {
-                    if ( headingRow != null )
+                    if (headingRow != null)
                     {
                         valuesRowList.Add( headingRow );
                         headingRow = null;
@@ -2091,7 +2122,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             People.Add( new MergePerson( person ) );
             AddProperty( "Photo", "Photo", person.Id, person.PhotoId.ToString(), personPhotoTag );
             AddProperty( "Title", person.Id, person.TitleValue );
-            if ( !isBusiness )
+            if (!isBusiness)
             {
                 AddProperty( "FirstName", person.Id, person.FirstName );
                 AddProperty( "NickName", person.Id, person.NickName );
@@ -2152,7 +2183,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         private void AddProperty( string key, string label, int personId, string value, string formattedValue, bool hasViewPermission = true, bool selected = false, AttributeCache attribute = null )
         {
             var property = GetProperty( key, true, label );
-            if ( attribute != null )
+            if (attribute != null)
             {
                 property.AttributeId = attribute.Id;
             }
@@ -2160,7 +2191,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             property.HasViewPermission = hasViewPermission;
 
             var propertyValue = property.Values.Where( v => v.PersonId == personId ).FirstOrDefault();
-            if ( propertyValue == null )
+            if (propertyValue == null)
             {
                 propertyValue = new PersonPropertyValue { PersonId = personId };
                 property.Values.Add( propertyValue );
@@ -2183,7 +2214,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             property.HasViewPermission = hasViewPermission;
 
             var propertyValue = property.Values.Where( v => v.PersonId == personId ).FirstOrDefault();
-            if ( propertyValue == null )
+            if (propertyValue == null)
             {
                 propertyValue = new PersonPropertyValue { PersonId = personId };
                 property.Values.Add( propertyValue );
@@ -2196,7 +2227,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
 
         private void AddProperty( string key, int personId, bool? value, bool hasViewPermission = true, bool selected = false )
         {
-            AddProperty( key, personId, ( value ?? false ).ToString(), hasViewPermission, selected );
+            AddProperty( key, personId, (value ?? false).ToString(), hasViewPermission, selected );
         }
 
         private void AddProperty( string key, int personId, DateTime? value, bool hasViewPermission = true, bool selected = false )
@@ -2212,9 +2243,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         public PersonProperty GetProperty( string key, bool createIfNotFound = false, string label = "" )
         {
             var property = Properties.Where( p => p.Key.Equals( key, StringComparison.OrdinalIgnoreCase ) ).FirstOrDefault();
-            if ( property == null && createIfNotFound )
+            if (property == null && createIfNotFound)
             {
-                if ( label == string.Empty )
+                if (label == string.Empty)
                 {
                     label = key.SplitCase();
                 }
@@ -2276,7 +2307,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
             Guid = person.Guid;
             IsBusiness = person.IsBusiness();
             IsNameless = person.IsNameless();
-            if ( person.ModifiedByPersonAlias != null && person.ModifiedByPersonAlias.Person != null )
+            if (person.ModifiedByPersonAlias != null && person.ModifiedByPersonAlias.Person != null)
             {
                 ModifiedBy = person.ModifiedByPersonAlias.Person.FullName;
             }
@@ -2332,7 +2363,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Crm
         {
             get
             {
-                if ( AttributeId.HasValue )
+                if (AttributeId.HasValue)
                 {
                     return AttributeCache.Get( AttributeId.Value );
                 }

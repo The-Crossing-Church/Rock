@@ -56,6 +56,8 @@
                         <Rock:Grid ID="gValues" TableStriped="false" CssClass="sticky-headers js-sticky-headers js-person-merge-table" RowStyle-CssClass="js-merge-field-row" runat="server" EnableResponsiveTable="false" AllowSorting="false" EmptyDataText="No Results" />
                     </div>
 
+                    <asp:Panel runat="server" ID="pnlSecurity" ></asp:Panel>
+
                     <div class="actions">
                         <asp:LinkButton ID="lbMerge" runat="server" Text="Merge Records" CssClass="btn btn-primary pull-right" OnClick="lbMerge_Click" />
                     </div>
@@ -115,6 +117,13 @@
                     $(this).closest('.js-merge-field-cell').addClass('selected')
                 });
             });
+            function matchColumns() {
+                $('.grid table tr:last td').each((idx, e) => {
+                    $('div[id$="_infoSecurity"]').each((rowIdx, row) => {
+                        $(row.children[idx]).width($(e).outerWidth())
+                    })
+                })
+            }
         </script>
 
     </ContentTemplate>
@@ -122,5 +131,9 @@
 <style>
     tr[datakey="attr_Pillars_2FACode"] {
         word-break: break-all;
+    }
+    div[id$="_infoSecurity"] div {
+        padding: 6px 12px;
+        border: 1px solid rgb(223, 224, 225);
     }
 </style>
