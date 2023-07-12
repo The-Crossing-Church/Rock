@@ -1,99 +1,47 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.19/jquery.touchSwipe.min.js" integrity="sha512-YYiD5ZhmJ0GCdJvx6Xe6HzHqHvMpJEPomXwPbsgcpMFPW+mQEeVBU6l9n+2Y+naq+CLbujk91vHyN18q6/RSYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
 {% assign ct = EventItemOccurrences | Size %}
 {% if ct > 0 %}
 <div class='full-width background--grey'>
   <div class='container'>
-    <br/>
-    <h1 class='text--centered'>Upcoming Events</h1>
-    <br/>
-    <div id='eventsCarousel' class='carousel slide'>
-      <ol class="carousel-indicators">
+    <h2 class='text-center py-custom-2x'>Upcoming Events</h2>
+    {[ slider sliderid:'featured-events' containerclass:'' ]}
         {% for i in EventItemOccurrences %}
-        <li data-target="#eventsCarousel" data-slide-to="{{forloop.index0}}" {% if forloop.index0 == 0 %}class="active"{% endif %}></li>
-        {% endfor %}
-      </ol>
-      <div class="carousel-inner">
-        {% for i in EventItemOccurrences %}
-        <div class="carousel-item item {% if forloop.index0 == 0 %}active{% endif %}">
-          <div class='row'>
-            <div class='col col-xs-12 d-block d-md-none'>
-              {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
-              {% if altImage != '' %}
-                <img class="d-block w-100" src="{{ altImage }}" />
-              {% else %}
-                <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
-              {% endif %}
-            </div>
-            <div class='col col-xs-12 col-md-6'>
-              <br/>
-              <h2>{{i.EventItem.Name}}</h2>
-              {% assign dateTimeFormat = i | Attribute:'DateTimeDisplayFormat' %}
-              {% if dateTimeFormat != 'No Time' %}
-                {{ i.Schedule.FriendlyScheduleText }} <br/>
-              {% endif %}
-              <br/>
-              {{i.EventItem.Description}}
-              <br/>
-              <div class='text--centered'>
-                <a class='btn btn-primary' href="{{DetailsPage}}?EventOccurrenceId={{ i.Id }}">View Event</a>
+            [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]
+            [[ slide]]
+              <div class='row'>
+                <div class='col col-xs-12 col-md-6'>
+                  {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
+                  {% if altImage != '' %}
+                    <img class="d-block w-100" src="{{ altImage }}" />
+                  {% else %}
+                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
+                  {% endif %}
+                </div>
+                <div class='col col-xs-12 col-md-6'>
+                  <h2>{{i.EventItem.Name}}</h2>
+                  {% assign dateTimeFormat = i | Attribute:'DateTimeDisplayFormat' %}
+                  {% if dateTimeFormat != 'No Time' %}
+                    {{ i.Schedule.FriendlyScheduleText }} <br/>
+                  {% endif %}
+                  <br/>
+                  <div class="d-none d-md-block">
+                    {{i.EventItem.Description}}
+                  </div>
+                  <div class="d-block d-md-none">
+                    {{i.EventItem.Description  | TruncateWords:30 }}
+                  </div>
+                  <br/>
+                  <div class='text--centered'>
+                    <a class='btn btn-primary' href="{{DetailsPage}}?EventOccurrenceId={{ i.Id }}">View Event</a>
+                  </div>
+                  <br class="d-block d-md-none"/>
+                </div>
               </div>
-              <br/>
-              <br/>
-            </div>
-            <div class='col d-none d-md-block col-md-6'>
-              <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
-            </div>
-          </div>
-        </div>
+            [[ endslide ]]
         {% endfor %}
-      </div>
-    </div>
-    <br/>
-    <div class='text--centered'>
+    {[ endslider ]}
+    <div class='text-center pb-4'>
       <a class='btn btn-primary' href="/Veritas/Events?aud={{AdditionalAudiences | Select:'Value' | Join:','}}">View All Events</a>
     </div>
-    <br/>
   </div>
 </div>
 {% endif %}
-
-<script>
-  $(document).ready(()=> {
-    $('#eventsCarousel').carousel();
-
-    $( ".carousel .carousel-inner" ).swipe( {
-    swipeLeft: function ( event, direction, distance, duration, fingerCount ) {
-        this.parent( ).carousel( 'next' );
-    },
-    swipeRight: function ( ) {
-        this.parent( ).carousel( 'prev' );
-    },
-    threshold: 0,
-    tap: function(event, target) {
-        window.location = $(this).find('.carousel-item.active a').attr('href');
-    },
-    excludedElements:"label, button, input, select, textarea, .noSwipe"
-    } );
-
-    $('.carousel .carousel-inner').on('dragstart', 'a', function () {
-        return false;
-    });
-
-    let tallest = 0
-    $('#eventsCarousel div .item').each((i, e) => {
-        if ($(e).height() > tallest ) {
-            tallest = $(e).height()
-        }
-    })
-    $('#eventsCarousel div .item').css('min-height', tallest)
-  })
-</script>
-{% stylesheet compile:'less' import:'_variables.less' %}
-    .carousel-indicators .active[data-target="#eventsCarousel"] {
-        background-color: @color-light-blue;
-    }
-    .carousel-indicators li[data-target="#eventsCarousel"] {
-        border: 1px solid @color-light-blue; 
-    }
-{% endstylesheet %}
