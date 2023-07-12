@@ -19,7 +19,7 @@ export default defineComponent({
       rooms: Array,
       drinks: Array,
       inventory: Array,
-      needsCatering: String
+      needsCatering: Boolean
     },
     setup() {
 
@@ -42,7 +42,7 @@ export default defineComponent({
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
               }
-              if(this.needsCatering == 'True' && categories.includes("Event Catering")) {
+              if(this.needsCatering && categories.includes("Event Catering")) {
                 continue
               }
               attrs.push(item)

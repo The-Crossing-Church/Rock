@@ -35,6 +35,7 @@ namespace Rock.Blocks.Plugin.EventForm
     [ContentChannelField( "Event Details Content Channel", key: AttributeKey.EventDetailsContentChannel, category: "General", required: true, order: 1 )]
     [ContentChannelField( "Event Changes Content Channel", key: AttributeKey.EventChangesContentChannel, category: "General", required: true, order: 2 )]
     [ContentChannelField( "Event Details Changes Content Channel", key: AttributeKey.EventDetailsChangesContentChannel, category: "General", required: true, order: 3 )]
+    [ContentChannelField( "Event Comments Content Channel", key: AttributeKey.EventCommentsContentChannel, category: "General", required: true, order: 4 )]
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
@@ -73,6 +74,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public const string EventDetailsContentChannel = "EventDetailsContentChannel";
             public const string EventChangesContentChannel = "EventChangesContentChannel";
             public const string EventDetailsChangesContentChannel = "EventDetailsChangesContentChannel";
+            public const string EventCommentsContentChannel = "EventCommentsContentChannel";
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
@@ -199,6 +201,7 @@ namespace Rock.Blocks.Plugin.EventForm
         private int EventDetailsContentChannelTypeId { get; set; }
         private int EventChangesContentChannelId { get; set; }
         private int EventDetailsChangesContentChannelId { get; set; }
+        private int EventCommentsContentChannelId { get; set; }
         private Guid EventDatesAttrGuid { get; set; }
         private Guid RequestStatusAttrGuid { get; set; }
         private Guid IsSameAttrGuid { get; set; }
@@ -294,6 +297,59 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 ExceptionLogService.LogException( e );
                 return ActionInternalServerError( e.Message );
+            }
+        }
+
+        [BlockAction]
+        public BlockActionResult AddComment( int id, string message )
+        {
+            try
+            {
+                RockContext rockContext = new RockContext();
+                SetProperties();
+                Rock.Model.Person p = GetCurrentPerson();
+                ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
+                ContentChannel commentChannel = new ContentChannelService( rockContext ).Get( EventCommentsContentChannelId );
+                ContentChannelItem comment = new ContentChannelItem()
+                {
+                    ContentChannelId = EventCommentsContentChannelId,
+                    ContentChannelTypeId = commentChannel.ContentChannelTypeId,
+                    Title = "Comment From " + p.FullName,
+                    Content = message,
+                    CreatedByPersonAliasId = p.PrimaryAliasId,
+                    ModifiedByPersonAliasId = p.PrimaryAliasId,
+                    CreatedDateTime = RockDateTime.Now,
+                    ModifiedDateTime = RockDateTime.Now
+                };
+                cci_svc.Add( comment );
+                rockContext.SaveChanges();
+
+                //We want the request to move to the top of the stack when a note is added
+                ContentChannelItem request = cci_svc.Get( id );
+                request.ModifiedDateTime = RockDateTime.Now;
+
+                //Add association between comment and request
+                var assocSvc = new ContentChannelItemAssociationService( rockContext );
+                var order = assocSvc.Queryable().AsNoTracking()
+                    .Where( a => a.ContentChannelItemId == id )
+                    .Select( a => ( int? ) a.Order )
+                    .DefaultIfEmpty()
+                    .Max();
+                var assoc = new ContentChannelItemAssociation();
+                assoc.ContentChannelItemId = id;
+                assoc.ChildContentChannelItemId = comment.Id;
+                assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                assocSvc.Add( assoc );
+
+                rockContext.SaveChanges();
+
+                CommentNotification( comment, request );
+                return ActionOk( new { createdBy = p.FullName, comment = comment } );
+            }
+            catch ( Exception e )
+            {
+                ExceptionLogService.LogException( e );
+                return ActionBadRequest( e.Message );
             }
         }
 
@@ -959,6 +1015,50 @@ namespace Rock.Blocks.Plugin.EventForm
             return notValidForPreApprovalReasons;
         }
 
+        private void CommentNotification( ContentChannelItem comment, ContentChannelItem item )
+        {
+            RockContext context = new RockContext();
+            Rock.Model.Person p = GetCurrentPerson();
+            string url;
+            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
+            string subject = p.FullName + " Has Added a Comment to " + item.Title;
+            string message = "<p>This comment has been added to " + p.FullName + "'s request:</p>" +
+                "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
+            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            message = header + message + footer;
+            RockEmailMessage email = new RockEmailMessage();
+            var users = GetAdminUsers();
+            users.Remove( p );
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+        private List<Rock.Model.Person> GetAdminUsers()
+        {
+            List<Rock.Model.Person> users = new List<Rock.Model.Person>();
+            RockContext context = new RockContext();
+            Guid securityRoleGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventAdminRole ), out securityRoleGuid ) )
+            {
+                Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
+                users.AddRange( securityRole.Members.Select( gm => gm.Person ) );
+            }
+            users = users.Distinct().ToList();
+            return users;
+        }
+
         /// <summary>
         /// Return true/false is the current person a member of the given Security Role
         /// </summary>
@@ -1058,6 +1158,7 @@ namespace Rock.Blocks.Plugin.EventForm
             Guid eventDetailsCCGuid = Guid.Empty;
             Guid eventChangesCCGuid = Guid.Empty;
             Guid eventDetailsChangesCCGuid = Guid.Empty;
+            Guid eventCommentsCCGuid = Guid.Empty;
             Guid eventDatesAttrGuid = Guid.Empty;
             Guid requestStatusAttrGuid = Guid.Empty;
             Guid isSameAttrGuid = Guid.Empty;
@@ -1082,6 +1183,11 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 ContentChannel cc = new ContentChannelService( context ).Get( eventDetailsChangesCCGuid );
                 EventDetailsChangesContentChannelId = cc.Id;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventCommentsContentChannel ), out eventCommentsCCGuid ) )
+            {
+                ContentChannel cc = new ContentChannelService( context ).Get( eventCommentsCCGuid );
+                EventCommentsContentChannelId = cc.Id;
             }
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDatesAttr ), out eventDatesAttrGuid ) )
             {
@@ -1204,29 +1310,53 @@ namespace Rock.Blocks.Plugin.EventForm
             DateTime twoWeekDate = firstDate.AddDays( -14 );
             DateTime thirtyDayDate = firstDate.AddDays( -30 );
             DateTime sixWeekDate = firstDate.AddDays( -42 );
+            DateTime pubGoLive = firstDate.AddDays( -21 );
+            if ( !String.IsNullOrEmpty( item.AttributeValues["PublicityStartDate"].Value ) )
+            {
+                sixWeekDate = DateTime.Parse( item.AttributeValues["PublicityStartDate"].Value ).AddDays( -21 );
+                pubGoLive = DateTime.Parse( item.AttributeValues["PublicityStartDate"].Value );
+            }
             DateTime today = RockDateTime.Now;
             today = new DateTime( today.Year, today.Month, today.Day, 0, 0, 0 );
             List<String> unavailableResources = new List<String>();
             if ( twoWeekDate >= today )
             {
                 message += "<br/><div><strong>Important Dates for Your Request</strong></div>";
-                message += "Last date to request and provide all information for the following resources is <strong>" + twoWeekDate.ToShortDateString() + "</strong>:";
+                message += "Last date to request and provide all information for the following resources is two weeks before your first event date <strong>(" + twoWeekDate.ToShortDateString() + ")</strong>:";
                 message += "<ul>" +
                         "<li>Catering</li>" +
                         "<li>Ops Accommodations</li>" +
-                        "<li>Registration</li>" +
                         "<li>Web Calendar</li>" +
                         "<li>Production Accommodations</li>" +
                         "<li>Zoom</li>" +
                     "</ul> <br/>";
+                message += "Last date to request and provide all information for Registration is two weeks before your registration goes live:" +
+                    "<ul>";
+                if ( item.ContentChannelId == EventChangesContentChannelId )
+                {
+                    events = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId ).ContentChannelItem.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem.ChildItems.FirstOrDefault().ChildContentChannelItem ).ToList();
+                    events.LoadAttributes();
+                }
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    DateTime twoWeekRegistrationDate = twoWeekDate;
+                    DateTime goLiveDate = firstDate;
+                    if ( !String.IsNullOrEmpty( events[i].AttributeValues["RegistrationStartDate"].Value ) )
+                    {
+                        twoWeekRegistrationDate = DateTime.Parse( events[i].AttributeValues["RegistrationStartDate"].Value ).AddDays( -14 );
+                        goLiveDate = DateTime.Parse( events[i].AttributeValues["RegistrationStartDate"].Value );
+                    }
+                    message += "<li><strong>" + twoWeekRegistrationDate.ToShortDateString() + "</strong> for the go live date " + goLiveDate.ToShortDateString() + "</li>";
+                }
+                message += "</ul> <br/>";
                 if ( thirtyDayDate >= today )
                 {
                     message += "Last date to request and provide all information for the following resources is <strong>" + thirtyDayDate.ToShortDateString() + "</strong>:";
                     message += "<ul><li>Childcare</li></ul>";
                     if ( sixWeekDate >= today )
                     {
-                        message += "Last date to request and provide all information for the following resources is <strong>" + sixWeekDate.ToShortDateString() + "</strong>:";
-                        message += "<ul><li>Publicity</li></ul>";
+                        message += "Last date to request and provide all information for Publicity is three weeks before your publicity goes live:";
+                        message += "<ul><li><strong>" + sixWeekDate.ToShortDateString() + "</strong> for the go live date " + pubGoLive.ToShortDateString() + "</li></ul>";
                     }
                     else
                     {
@@ -1302,7 +1432,7 @@ namespace Rock.Blocks.Plugin.EventForm
                 events = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
                 events.LoadAttributes();
                 item.LoadAttributes();
-                itemChanges.LoadAttributes();
+                //itemChanges.LoadAttributes();
             }
             string message = "";
             message += RenderValue( "Ministry", item.AttributeValues["Ministry"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Ministry"].ValueFormatted : "" );
@@ -1700,7 +1830,7 @@ namespace Rock.Blocks.Plugin.EventForm
             public int Amount { get; set; }
             public string AutoApply { get; set; }
             public string EffectiveDateRange { get; set; }
-            public int MaxUses { get; set; }
+            public int? MaxUses { get; set; }
         }
     }
 }

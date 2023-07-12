@@ -19,7 +19,8 @@ export default defineComponent({
           required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
@@ -67,7 +68,8 @@ export default defineComponent({
         <rck-field
           v-model="request.attributeValues.WebCalendarDescription"
           :attribute="request.attributes.WebCalendarDescription"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>

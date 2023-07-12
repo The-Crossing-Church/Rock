@@ -30,7 +30,8 @@ export default defineComponent({
           required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
@@ -152,31 +153,47 @@ export default defineComponent({
         <rck-field
           v-model="request.attributeValues.WhyAttend"
           :attribute="request.attributes.WhyAttend"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
   </div>
   <div class="row row-equal-height">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.TargetAudience, request.attributes.TargetAudience.name)]" ref="validators_audience"  style="width: 100%;">
+      <tcc-validator :rules="[rules.required(request.attributeValues.TargetAudience, request.attributes.TargetAudience.name)]" ref="validators_audience"  style="width: 100%;" v-if="!readonly">
         <tcc-pub-ddl
           v-model="request.attributeValues.TargetAudience"
           :label="request.attributes.TargetAudience.name"
           :items="JSON.parse(request.attributes.TargetAudience.configurationValues.values)"
         ></tcc-pub-ddl>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.TargetAudience"
+        :attribute="request.attributes.TargetAudience"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="request.attributeValues.EventisSticky"
         :label="request.attributes.EventisSticky.name"
+        v-if="!readonly"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.EventisSticky"
+        :attribute="request.attributes.EventisSticky"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start">
+      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start" v-if="!readonly">
         <tcc-date-pkr
           v-model="request.attributeValues.PublicityStartDate"
           :label="request.attributes.PublicityStartDate.name"
@@ -184,9 +201,16 @@ export default defineComponent({
           :max="maxPubStartDate"
         ></tcc-date-pkr>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.PublicityStartDate"
+        :attribute="request.attributes.PublicityStartDate"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityEndDate, request.attributes.PublicityEndDate.name), rules.pubEndIsValid(request.attributeValues.PublicityEndDate, request.attributeValues.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate)]" ref="validators_end">
+      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityEndDate, request.attributes.PublicityEndDate.name), rules.pubEndIsValid(request.attributeValues.PublicityEndDate, request.attributeValues.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate)]" ref="validators_end" v-if="!readonly">
         <tcc-date-pkr
           v-model="request.attributeValues.PublicityEndDate"
           :label="request.attributes.PublicityEndDate.name"
@@ -194,6 +218,13 @@ export default defineComponent({
           :max="maxPubEndDate"
         ></tcc-date-pkr>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.PublicityEndDate"
+        :attribute="request.attributes.PublicityEndDate"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row">
@@ -204,13 +235,15 @@ export default defineComponent({
             v-if="request.attributeValues.EventisSticky == 'False'"
             v-model="request.attributeValues.PublicityStrategies"
             :attribute="pubStrategiesNotSticky"
-            :is-edit-mode="true"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
           ></rck-field>
           <rck-field
             v-else
             v-model="request.attributeValues.PublicityStrategies"
             :attribute="request.attributes.PublicityStrategies"
-            :is-edit-mode="true"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
           ></rck-field>
         </tcc-validator>
       </div>

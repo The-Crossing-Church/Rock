@@ -110,10 +110,19 @@ export default defineComponent({
       };
       provide("reload", reload);
 
+      const addComment: (id: number, message: string) => Promise<any> = async (id, message) => {
+        const response = await invokeBlockAction("AddComment", {
+          id: id, message: message
+        });
+        return response
+      }
+      provide("addComment", addComment);
+
       return {
           viewModel,
           save,
           submit,
+          addComment,
           reload
       }
   },
@@ -138,6 +147,7 @@ export default defineComponent({
           rules: rules,
           readonlySections: [] as string[],
           toastMessage: "",
+          toastIsError: true
       };
   },
   computed: {
@@ -259,6 +269,12 @@ export default defineComponent({
         date = date.plus(span)
         return date.toFormat('yyyy-MM-dd')
       },
+      toastClass() {
+        if(this.toastIsError) {
+          return 'toast-error'
+        }
+        return 'toast-success'
+      }
   },
   methods: {
     matchMultiEvent() {
@@ -343,6 +359,7 @@ export default defineComponent({
                 this.viewModel.request.id = res?.data?.id
               }
             } else if (res.isError || res.Message) {
+              this.toastIsError = true
               this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
               let el = document.getElementById('toast')
               el?.classList.add("show")
@@ -352,6 +369,7 @@ export default defineComponent({
         }).catch((err: any) => {
           console.log('catch error')
           if(err.Message) {
+            this.toastIsError = true
             this.toastMessage = err.Message
             let el = document.getElementById('toast')
             el?.classList.add("show")
@@ -440,6 +458,8 @@ export default defineComponent({
     },
     hideToast() {
       let el = document.getElementById('toast')
+      el?.classList.remove("show")
+      el = document.getElementById('toastSuccess')
       el?.classList.remove("show")
     },
     validate() {
@@ -662,16 +682,20 @@ export default defineComponent({
         //Remove/Readonly Sections
         let twoWeeksTense = this.findTense(14)
         let thirtyDaysTense = this.findTense(30)
-        let sixWeeksTense = this.findTense(42)
+        let pubDateCutOff = lastDate.minus({weeks: 6})
+        if(this.viewModel.request.attributeValues.PublicityStartDate) {
+          pubDateCutOff = DateTime.fromISO(this.viewModel.request.attributeValues.PublicityStartDate).minus({days: 21})
+        }
+        let sixWeeksTense = DateTime.now() > pubDateCutOff ? 'was' : 'is'
         //Drafts, cut anything that is past-deadline
         if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
           if(twoWeeksTense == 'was') {
             this.viewModel.request.attributeValues.NeedsOnline = 'False'
             this.viewModel.request.attributeValues.NeedsCatering = 'False'
             this.viewModel.request.attributeValues.NeedsOpsAccommodations = 'False'
-            this.viewModel.request.attributeValues.NeedsRegistration = 'False'
             this.viewModel.request.attributeValues.NeedsWebCalendar = 'False'
             this.viewModel.request.attributeValues.NeedsProductionAccommodations = 'False'
+            this.viewModel.request.attributeValues.NeedsRegistration = 'False'
           }
           if(thirtyDaysTense == 'was') {
             this.viewModel.request.attributeValues.NeedsChildCare = 'False'
@@ -832,7 +856,29 @@ export default defineComponent({
       })
       this.jumpTo(selectedIdx + 2)
       this.changeDateModal = false
-    }
+    },
+    createComment(comment: string) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      let id = this.viewModel?.request?.id as number
+      this.addComment(id, comment).then((res: any) => {
+        if (res.isError) {
+          this.toastMessage = res.errorMessage
+          let toast = document.getElementById('toast')
+          toast?.classList.add("show")
+        } else {
+          this.toastMessage = "Comment Added"
+          let toast = document.getElementById('toastSuccess')
+          toast?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
   },
   watch: {
     'viewModel.request.attributeValues.IsSame'(val) {
@@ -1054,6 +1100,7 @@ export default defineComponent({
                 this.viewModel.request = res.data.request
                 this.viewModel.events = res.data.events
               } else if (res.isError || res.Message) {
+                this.toastIsError = true
                 this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
                 let el = document.getElementById('toast')
                 el?.classList.add("show")
@@ -1061,6 +1108,7 @@ export default defineComponent({
             }).catch((err) => {
               console.log(err)
               if(err.Message) {
+                this.toastIsError = true
                 this.toastMessage = err.Message
                 let el = document.getElementById('toast')
                 el?.classList.add("show")
@@ -1118,7 +1166,7 @@ export default defineComponent({
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
-    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" refName="basic" @validation-change="validationChange" ref="basic"></tcc-basic>
+    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" refName="basic" @validation-change="validationChange" ref="basic" v-on:createComment="createComment"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
@@ -1147,7 +1195,7 @@ export default defineComponent({
             Catering Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)"></tcc-catering>
+          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1155,7 +1203,7 @@ export default defineComponent({
             Other Accomodations
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)"></tcc-ops>
+          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1163,10 +1211,10 @@ export default defineComponent({
             Childcare Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)"></tcc-childcare>
+          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')"></tcc-childcare>
           <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
           <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
-          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)"></tcc-childcare-catering>
+          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
@@ -1174,7 +1222,7 @@ export default defineComponent({
             Registration Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1182,7 +1230,7 @@ export default defineComponent({
             Zoom Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)"></tcc-online>
+          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')"></tcc-online>
           <br/>
         </template>
       </template>
@@ -1190,15 +1238,15 @@ export default defineComponent({
     <template v-if="step == publicityStep">
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
-        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal"></tcc-web-cal>
+        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal" :readonly="readonlySections.includes('Calendar')"></tcc-web-cal>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>
-        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="publicity" @validation-change="validationChange" ref="publicity"></tcc-publicity>
+        <tcc-publicity :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="publicity" @validation-change="validationChange" ref="publicity" :readonly="readonlySections.includes('Publicity')"></tcc-publicity>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'">
         <h3 class="text-primary">Production Tech Information</h3>
-        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="prodtech" @validation-change="validationChange" ref="prodtech"></tcc-prod-tech>
+        <tcc-prod-tech :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="prodtech" @validation-change="validationChange" ref="prodtech" :readonly="readonlySections.includes('Production')"></tcc-prod-tech>
       </template>
     </template>
     <template v-if="step == lastStep">
@@ -1317,6 +1365,16 @@ export default defineComponent({
   <div class="toast-header text-red">
     <i class="fas fa-exclamation-triangle mr-1"></i>
     <strong>System Exception</strong>
+    <i class="fa fa-times pull-right hover" @click="hideToast"></i>
+  </div>
+  <div class="toast-body">
+    {{toastMessage}}
+  </div>
+</div>
+<div id="toastSuccess" role="alert">
+  <div class="toast-header text-primary">
+    <i class="fas fa-check-circle mr-1"></i>
+    <strong>System Notification</strong>
     <i class="fa fa-times pull-right hover" @click="hideToast"></i>
   </div>
   <div class="toast-body">
@@ -1458,23 +1516,30 @@ label, .control-label {
   margin-bottom: 0px;
 }
 /* Toast Message */
-#toast {
+#toast, #toastSuccess {
   display: none; 
   opacity: 0;
   min-width: 250px; 
-  background-color: #f8d7da; 
-  color: #333;
   border-radius: 2px; 
   padding: 8px; 
   position: fixed; 
   z-index: 5000; 
   left: 30px; 
   bottom: 30px; 
-  border: 1px solid #f4bec2;
   transition: opacity 1s ease;
   box-shadow: 0 0 1px 0 rgb(0 0 0 / 8%), 0 1px 3px 0 rgb(0 0 0 / 15%);
 }
-#toast.show {
+#toast {
+  border-top: 3px solid #f4bec2;
+  background-color: #f8d7da; 
+  color: #333;
+}
+#toastSuccess {
+  border-top: 3px solid #16c98d;
+  color: #108043;
+  background-color: #eaf6ef;
+}
+#toast.show, #toastSuccess.show {
   display: block;
   opacity: 1;
   transition: opacity 1s ease;

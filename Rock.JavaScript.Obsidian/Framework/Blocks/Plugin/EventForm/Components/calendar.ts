@@ -1,8 +1,8 @@
-import { defineComponent, PropType } from "vue";
-import { DateTime, Duration } from "luxon";
-import { Button, Dropdown, Menu } from "ant-design-vue";
+import { defineComponent, PropType } from "vue"
+import { DateTime, Duration } from "luxon"
+import { Button, Dropdown, Menu } from "ant-design-vue"
 
-const { MenuItem } = Menu;
+const { MenuItem } = Menu
 
 export default defineComponent({
     name: "EventForm.Components.Calendar",
@@ -52,7 +52,8 @@ export default defineComponent({
             startDate: DateTime.now(),
             endDate: DateTime.now(),
             currentMonth: 0,
-            currentYear: 0
+            currentYear: 0,
+            monthMenu: false
         };
     },
     computed: {
@@ -135,7 +136,7 @@ export default defineComponent({
             }
         },
         getClassName(day: DateTime) {
-            let className = "tcc-cal-day"
+            let className = "tcc-cal-pkr-day"
             if(day.month != this.displayMonth.month) {
                 className += " diff-month"
             }
@@ -166,6 +167,7 @@ export default defineComponent({
         },
         toggleSelect(day: DateTime) {
             if(this.readonly) {
+                console.log('is readonly')
                 return
             }
             if (day.month == this.displayMonth.month && day >= this.startDate && day <= this.endDate) {
@@ -186,6 +188,7 @@ export default defineComponent({
                     }
                 }
                 dates = dates.sort()
+                console.log('dates', dates)
                 this.selectedDates = dates
             }
         },
@@ -195,6 +198,7 @@ export default defineComponent({
                 date = date.endOf('month')
                 if (date < this.endDate) {
                     this.currentMonth = month
+                    this.monthMenu = false
                 }
             }
         },
@@ -210,7 +214,7 @@ export default defineComponent({
                 let today = DateTime.now()
                 let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
                 //Our original minimum date is in the past
-                if(firstDate.startOf('day') <= today.startOf('day')) {
+                if(firstDate.startOf('day') < today.startOf('day')) {
                     //Looking at historical event
                     this.startDate = firstDate
                 } else {
@@ -218,9 +222,12 @@ export default defineComponent({
                         this.startDate = today
                     }
                 }
+                this.currentMonth = firstDate.month
+                this.currentYear = firstDate.year
+            } else {
+                this.currentMonth = this.startDate.month
+                this.currentYear = this.startDate.year
             }
-            this.currentMonth = this.startDate.month
-            this.currentYear = this.startDate.year
             //Set the max date available on the calendar 
             if (this.max) {
                 this.endDate = DateTime.fromFormat(this.max, "yyyy-MM-dd")
@@ -257,11 +264,11 @@ export default defineComponent({
     },
     template: `
 <div :class="wrapperClassName">
-  <div class="tcc-cal-header">
+  <div class="tcc-cal-pkr-header">
     <i v-if="canClickPre" class="fa fa-chevron-left hover" @click="prevMonth"></i>
     <i v-else class="fa fa-chevron-left fa-disabled"></i>
     <div style="display: flex;">
-      <a-dropdown :trigger="['click']">
+      <a-dropdown :trigger="['click']" v-model:visible="monthMenu">
         <div style="padding-right: 8px;">
           {{displayMonth.toFormat('MMMM')}}
         </div>
@@ -289,17 +296,17 @@ export default defineComponent({
     <i v-if="canClickNext" class="fa fa-chevron-right hover" @click="nextMonth"></i>
     <i v-else class="fa fa-chevron-right fa-disabled"></i>
   </div>
-  <div class="tcc-cal-body">
-    <div class="tcc-cal-week">
-        <div class="tcc-cal-day text-accent">S</div>
-        <div class="tcc-cal-day text-accent">M</div>
-        <div class="tcc-cal-day text-accent">T</div>
-        <div class="tcc-cal-day text-accent">W</div>
-        <div class="tcc-cal-day text-accent">T</div>
-        <div class="tcc-cal-day text-accent">F</div>
-        <div class="tcc-cal-day text-accent">S</div>
+  <div class="tcc-cal-pkr-body">
+    <div class="tcc-cal-pkr-week">
+        <div class="tcc-cal-pkr-day text-accent">S</div>
+        <div class="tcc-cal-pkr-day text-accent">M</div>
+        <div class="tcc-cal-pkr-day text-accent">T</div>
+        <div class="tcc-cal-pkr-day text-accent">W</div>
+        <div class="tcc-cal-pkr-day text-accent">T</div>
+        <div class="tcc-cal-pkr-day text-accent">F</div>
+        <div class="tcc-cal-pkr-day text-accent">S</div>
     </div>
-    <div class="tcc-cal-week" v-for="(week, idx) in calData" :key="idx">
+    <div class="tcc-cal-pkr-week" v-for="(week, idx) in calData" :key="idx">
       <div :class="getClassName(day)" v-for="(day, didx) in week" :key="didx" @click="toggleSelect(day)">
         {{day.toFormat('dd')}}
       </div>
@@ -307,16 +314,16 @@ export default defineComponent({
   </div>
 </div>
 <v-style>
-  .tcc-cal-header, .tcc-cal-week {
+  .tcc-cal-pkr-header, .tcc-cal-pkr-week {
     display: flex;
     justify-content: center;
   }
-  .tcc-cal-header {
+  .tcc-cal-pkr-header {
     justify-content: space-between;
     font-weight: bold;
     font-size: 14px;
   }
-  .tcc-cal-day {
+  .tcc-cal-pkr-day {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -325,17 +332,17 @@ export default defineComponent({
     display: flex;
     cursor: pointer;
   }
-  .tcc-cal-day:hover, .tcc-month-picker-item:hover {
+  .tcc-cal-pkr-day:hover, .tcc-month-picker-item:hover {
     background-color: #EEEFEF;
   }
-  .tcc-cal-day.selected {
+  .tcc-cal-pkr-day.selected {
     background-color: #8ED2C9;
   }
-  .tcc-cal-day.disabled, .tcc-month-picker-item.disabled {
+  .tcc-cal-pkr-day.disabled, .tcc-month-picker-item.disabled {
     color: rgba(0,0,0,.26) !important;
     cursor: not-allowed;
   }
-  .tcc-cal-day.diff-month {
+  .tcc-cal-pkr-day.diff-month {
     color: rgba(0,0,0,.15) !important;
   }
   .tcc-month-picker-item {

@@ -16,6 +16,7 @@ import Chip from "./chip"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
 import EventBuffer from "./eventBuffer"
+import AddComment from "./addComment"
 import rules from "../Rules/rules"
 
 const store = useStore();
@@ -30,6 +31,7 @@ export default defineComponent({
         "tcc-date": DatePicker,
         "tcc-buffer": EventBuffer,
         "tcc-validator": Validator,
+        "tcc-comment": AddComment,
         "a-switch": Switch,
         "rck-form": RockForm,
         "rck-field": RockField,
@@ -110,11 +112,13 @@ export default defineComponent({
     },
     methods: {
       removeDate(date: string) {
-        if (this.viewModel?.request?.attributeValues?.EventDates) {
-          let dates = this.viewModel.request.attributeValues.EventDates.split(',')
-          let idx = dates.indexOf(date)
-          dates.splice(idx, 1)
-          this.viewModel.request.attributeValues.EventDates = dates.join(",")
+        if(!(this.viewModel?.request.attributeValues?.IsSame == 'False' && !(this.viewModel?.request.attributeValues.RequestStatus == 'Draft' || this.viewModel?.request.attributeValues.RequestStatus == 'Submitted' || this.viewModel?.request.attributeValues.RequestStatus == 'In Progress'))) {
+          if (this.viewModel?.request?.attributeValues?.EventDates) {
+            let dates = this.viewModel.request.attributeValues.EventDates.split(',')
+            let idx = dates.indexOf(date)
+            dates.splice(idx, 1)
+            this.viewModel.request.attributeValues.EventDates = dates.join(",")
+          }
         }
       },
       formatDate(date: string) {
@@ -143,6 +147,9 @@ export default defineComponent({
       },
       validationChange(errs: Record<string, string>[]) {
         this.errors = errs
+      },
+      addComment(comment: string) {
+        this.$emit("createComment", comment)
       }
     },
     watch: {
@@ -166,6 +173,16 @@ export default defineComponent({
     mounted() {
       if(this.showValidation) {
         this.validate()
+      }
+      if(!this.viewModel?.request.id) {
+        let params = new URLSearchParams(window.location.search)
+        let prefill = params.get('PreFill')
+        if(prefill && this.viewModel?.request?.attributeValues) {
+          let dt = DateTime.fromFormat(prefill, "yyyy-MM-dd")
+          if(dt >= DateTime.now().startOf('day')) {
+            this.viewModel.request.attributeValues.EventDates = prefill
+          }
+        }
       }
     },
     template: `
@@ -204,13 +221,14 @@ export default defineComponent({
   <br/>
   <div class="row">
     <div class="col col-xs-12 col-md-4">
-      <tcc-date v-model="viewModel.request.attributeValues.EventDates" :min="minEventDate" :multiple="true"></tcc-date>
+      <tcc-date v-model="viewModel.request.attributeValues.EventDates" :min="minEventDate" :multiple="true" :readonly="viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')"></tcc-date>
     </div>
     <div class="col col-xs-12 col-md-8" style="display: flex; flex-wrap: wrap; align-content: flex-start;">
       <tcc-chip v-if="showValidation && eventDates.length == 0" class="bg-red text-red">Event Date(s) are required.</tcc-chip>
-      <tcc-chip v-for="d in eventDates" :key="d" v-on:chipdeleted="removeDate(d)">
+      <tcc-chip v-for="d in eventDates" :key="d" v-on:chipdeleted="removeDate(d)" :disabled="viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')">
         {{formatDate(d)}}
       </tcc-chip>
+      <tcc-comment v-if="viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')" :request="viewModel.request" v-on:addComment="addComment"></tcc-comment>
     </div>
   </div>
   <br/><br/>

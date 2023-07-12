@@ -28,8 +28,7 @@ const vendorMaps: Record<string, string> = {
     "luxon": "Luxon",
     "mitt": "Mitt",
     "vee-validate": "VeeValidate",
-    "vue": "Vue",
-    "@vuepic/vue-datepicker": "VueDatePicker"
+    "vue": "Vue"
 };
 
 /**

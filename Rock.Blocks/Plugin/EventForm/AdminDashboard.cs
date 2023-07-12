@@ -673,17 +673,12 @@ namespace Rock.Blocks.Plugin.EventDashboard
             {
                 filtered_items = items;
             }
-            Person submitter = null;
-            if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
-            {
-                submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter.value ) );
-            }
             filtered_items = filtered_items.Where( i =>
             {
                 bool meetsCriteria = true;
-                if ( submitter != null )
+                if ( !String.IsNullOrEmpty( filters.submitter ) )
                 {
-                    if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
+                    if ( !i.CreatedByPersonAlias.Person.FullName.ToLower().Contains( filters.submitter.ToLower() ) && !i.ModifiedByPersonAlias.Person.FullName.ToLower().Contains( filters.submitter.ToLower() ) )
                     {
                         meetsCriteria = false;
                     }
@@ -876,17 +871,12 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     ( i, av ) => i
                 );
 
-            Person submitter = null;
-            if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
-            {
-                submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter.value ) );
-            }
             filtered_items = filtered_items.Where( i =>
             {
                 bool meetsCriteria = true;
-                if ( submitter != null )
+                if ( !String.IsNullOrEmpty( filters.submitter ) )
                 {
-                    if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
+                    if ( !i.CreatedByPersonAlias.Person.FullName.ToLower().Contains( filters.submitter.ToLower() ) && !i.ModifiedByPersonAlias.Person.FullName.ToLower().Contains( filters.submitter.ToLower() ) )
                     {
                         meetsCriteria = false;
                     }
@@ -1560,12 +1550,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             public List<string> resources { get; set; }
             public DateRangeParts eventDates { get; set; }
             public DateRangeParts eventModified { get; set; }
-            public Submitter submitter { get; set; }
-        }
-        public class Submitter
-        {
-            public string value { get; set; }
-            public string text { get; set; }
+            public string submitter { get; set; }
         }
         public class DateRangeParts
         {

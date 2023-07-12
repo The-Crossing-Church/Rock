@@ -33,7 +33,8 @@ export default defineComponent({
         required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
@@ -102,10 +103,18 @@ export default defineComponent({
           this.e.attributeValues.FoodTime = defaultTime.toFormat("HH:mm:ss")
         }
       }
+      if(this.readonly) {
+        document.querySelectorAll('.catering-form input').forEach((el: any) => {
+          el.setAttribute("readonly", "")
+        })
+        document.querySelectorAll('.catering-form textarea').forEach((el: any) => {
+          el.setAttribute("readonly", "")
+        })
+      }
     },
     template: `
-<rck-form ref="form" @validationChanged="validationChange">
-  <a-dropdown :trigger="['click']" v-model:visible="vendorMenu">
+<rck-form ref="form" @validationChanged="validationChange" class="catering-form">
+  <a-dropdown :trigger="['click']" v-model:visible="vendorMenu" v-if="!readonly">
     <div class="hover font-weight-bold">For a list of our preferred vendors - <span class="text-accent">please click here.</span></div>
     <template #overlay>
       <a-menu class="tcc-dropdown">
@@ -181,7 +190,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.PreferredVendor"
           :attribute="e.attributes.PreferredVendor"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -190,7 +200,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ExpectedAttendance"
           :attribute="e.attributes.ExpectedAttendance"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -201,7 +212,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.FoodBudgetMinistry"
           :attribute="e.attributes.FoodBudgetMinistry"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -210,7 +222,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.FoodBudgetLine"
           :attribute="e.attributes.FoodBudgetLine"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -221,47 +234,70 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.PreferredMenu"
           :attribute="e.attributes.PreferredMenu"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <br v-if="request.attributeValues.NeedsSpace == 'False'" />
       <tcc-switch
         v-model="e.attributeValues.NeedsDelivery"
         :label="e.attributes.NeedsDelivery.name"
+        v-if="!readonly"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsDelivery"
+        :attribute="e.attributes.NeedsDelivery"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row" v-if="e.attributeValues.NeedsDelivery == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime">
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.FoodTime.name"
           v-model="e.attributeValues.FoodTime"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.FoodTime"
+        :attribute="e.attributes.FoodTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :rules="[rules.required(e.attributeValues.FoodSetupLocation, e.attributes.FoodSetupLocation.name)]" ref="validator_foodloc">
         <rck-field
           v-model="e.attributeValues.FoodSetupLocation"
           :attribute="e.attributes.FoodSetupLocation"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
   </div>
   <div class="row" v-else>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime">
+      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.FoodTime.name"
           v-model="e.attributeValues.FoodTime"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.FoodTime"
+        :attribute="e.attributes.FoodTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row">
@@ -269,16 +305,24 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.Drinks"
         :attribute="e.attributes.Drinks"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime">
+      <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.DrinkTime.name"
           v-model="e.attributeValues.DrinkTime"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.DrinkTime"
+        :attribute="e.attributes.DrinkTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row">
@@ -286,14 +330,16 @@ export default defineComponent({
       <rck-field
         v-model="e.attributeValues.SetupFoodandDrinkTogether"
         :attribute="e.attributes.SetupFoodandDrinkTogether"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
       <rck-field
         v-model="e.attributeValues.DrinkSetupLocation"
         :attribute="e.attributes.DrinkSetupLocation"
-        :is-edit-mode="true"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
       ></rck-field>
     </div>
   </div>

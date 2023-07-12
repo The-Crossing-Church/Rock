@@ -21,7 +21,8 @@ export default defineComponent({
           required: false
       },
       showValidation: Boolean,
-      refName: String
+      refName: String,
+      readonly: Boolean
     },
     setup() {
 
@@ -83,17 +84,25 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcareVendor"
           :attribute="e.attributes.ChildcareVendor"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareFoodTime, e.attributes.ChildcareFoodTime.name), rules.timeCannotBeAfterEvent(e.attributeValues.ChildcareFoodTime, e.attributeValues.EndTime,  e.attributes.ChildcareFoodTime.name)]" ref="validators_time">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareFoodTime, e.attributes.ChildcareFoodTime.name), rules.timeCannotBeAfterEvent(e.attributeValues.ChildcareFoodTime, e.attributeValues.EndTime,  e.attributes.ChildcareFoodTime.name)]" ref="validators_time" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.ChildcareFoodTime.name"
           v-model="e.attributeValues.ChildcareFoodTime"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.ChildcareFoodTime"
+        :attribute="e.attributes.ChildcareFoodTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+      ></rck-field>
     </div>
   </div>
   <div class="row">
@@ -102,7 +111,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcareCateringBudgetMinistry"
           :attribute="e.attributes.ChildcareCateringBudgetMinistry"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -111,7 +121,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcareCateringBudgetLine"
           :attribute="e.attributes.ChildcareCateringBudgetLine"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -122,7 +133,8 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ChildcarePreferredMenu"
           :attribute="e.attributes.ChildcarePreferredMenu"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
         ></rck-field>
       </tcc-validator>
     </div>
