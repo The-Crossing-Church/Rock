@@ -1187,13 +1187,13 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     if ( !String.IsNullOrEmpty( startBuffer ) )
                     {
                         int buffer = Int32.Parse( startBuffer );
-                        d.range.Start.Value.AddMinutes( buffer * -1 );
+                        d.range.Start = d.range.Start.Value.AddMinutes( buffer * -1 );
                     }
                     var endBuffer = events[0].GetAttributeValue( endBufferKey );
                     if ( !String.IsNullOrEmpty( endBuffer ) )
                     {
                         int buffer = Int32.Parse( endBuffer );
-                        d.range.Start.Value.AddMinutes( buffer );
+                        d.range.End = d.range.End.Value.AddMinutes( buffer );
                     }
                     d.rooms = events[k].GetAttributeValue( roomKey );
                     //Only care about events we have rooms, dates, and times for
@@ -1271,12 +1271,12 @@ namespace Rock.Blocks.Plugin.EventDashboard
                     if ( !String.IsNullOrEmpty( startBuffer ) )
                     {
                         int buffer = Int32.Parse( startBuffer );
-                        r.Start.Value.AddMinutes( buffer * -1 );
+                        r.Start = r.Start.Value.AddMinutes( buffer * -1 );
                     }
                     if ( !String.IsNullOrEmpty( endBuffer ) )
                     {
                         int buffer = Int32.Parse( endBuffer );
-                        r.End.Value.AddMinutes( buffer );
+                        r.End = r.End.Value.AddMinutes( buffer );
                     }
                     if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
                     {
