@@ -43,7 +43,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [DisplayName( "Related Resources" )]
     [Category( "com_thecrossingchurch > Cms" )]
     [Description( "Pulls Watch, Listen, Read Content with similar tags" )]
-    [TextField( "Hubspot Key Attribute", "", true, "HubspotPrivateAppKey", order: 1 )]
+    [TextField( "Hubspot Key Attribute", "", false, "HubspotPrivateAppKey", order: 1 )]
     [IntegerField( "Number of Posts", required: true, order: 2, defaultValue: 7 )]
     [ContentChannelField( "Watch Content Channel", required: true, order: 3 )]
     [TextField( "Watch URL", required: true, defaultValue: "/Resources/Watch/Sermon Archives/", order: 4 )]
@@ -99,21 +99,21 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             watchURL = GetAttributeValue( "WatchURL" );
             listenURL = GetAttributeValue( "ListenURL" );
             string watchGuid = GetAttributeValue( "WatchContentChannel" );
-            if ( !String.IsNullOrEmpty( watchGuid ) )
+            if (!String.IsNullOrEmpty( watchGuid ))
             {
                 ccWatch = new ContentChannelService( _context ).Get( watchGuid.AsGuid() );
             }
             string listenGuid = GetAttributeValue( "ListenContentChannel" );
-            if ( !String.IsNullOrEmpty( listenGuid ) )
+            if (!String.IsNullOrEmpty( listenGuid ))
             {
                 ccListen = new ContentChannelService( _context ).Get( listenGuid.AsGuid() );
             }
             previouslyViewed = GetPreviouslyViewedContent();
             string itemGlobalKey = PageParameter( "Slug" );
             ContentChannelItem item = new ContentChannelItemService( _context ).Queryable().FirstOrDefault( i => i.ItemGlobalKey == itemGlobalKey );
-            if ( !Page.IsPostBack )
+            if (!Page.IsPostBack)
             {
-                if ( item != null )
+                if (item != null)
                 {
                     item.LoadAttributes();
                     itemId = item.Id;
@@ -136,16 +136,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             List<Post> popWatch = new List<Post>();
             List<Post> listen = new List<Post>();
             List<Post> popListen = new List<Post>();
-            if ( !String.IsNullOrEmpty( key ) )
+            if (!String.IsNullOrEmpty( key ))
             {
                 read = GetBlogPosts();
             }
-            if ( ccWatch != null )
+            if (ccWatch != null)
             {
                 watch = GetContent( ccWatch.Id ).Select( e => ConvertWatchToPost( e ) ).ToList();
                 popWatch = GetTrending( watch.Select( p => p.Id ).ToList(), ccWatch.Id ).Select( e => ConvertWatchToPost( e ) ).ToList();
             }
-            if ( ccListen != null )
+            if (ccListen != null)
             {
                 listen = GetContent( ccListen.Id ).Select( e => ConvertListenToPost( e ) ).ToList();
                 popListen = GetTrending( listen.Select( p => p.Id ).ToList(), ccListen.Id ).Select( e => ConvertListenToPost( e ) ).ToList();
@@ -156,6 +156,108 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             int numListen = itemChannelId == ccListen.Id ? 2 : 1;
             int numPopListen = 1;
             int numRead = 2;
+
+            if (read.Count() < numRead)
+            {
+                if (watch.Count() > numWatch)
+                {
+                    numWatch++;
+                }
+                else
+                {
+                    numPopWatch++;
+                }
+                if (listen.Count() > numListen)
+                {
+                    numListen++;
+                }
+                else
+                {
+                    numPopListen++;
+                }
+            }
+            if (watch.Count() < numWatch)
+            {
+                if (popWatch.Count() > numPopWatch)
+                {
+                    numPopWatch++;
+                }
+                else if (listen.Count() > numListen)
+                {
+                    numListen++;
+                }
+                else if (popListen.Count() > numPopListen)
+                {
+                    numPopListen++;
+                }
+                else if (read.Count() > numRead)
+                {
+                    numRead++;
+                }
+            }
+            if (popWatch.Count() < numPopWatch)
+            {
+                if (watch.Count() > numWatch)
+                {
+                    numWatch++;
+                }
+                else
+                {
+                    if (listen.Count() > numListen)
+                    {
+                        numListen++;
+                    }
+                    else if (popListen.Count() > numPopListen)
+                    {
+                        numPopListen++;
+                    }
+                    else if (read.Count() > numRead)
+                    {
+                        numRead++;
+                    }
+                }
+            }
+            if (listen.Count() < numListen)
+            {
+                if (popListen.Count() > numPopListen)
+                {
+                    numPopListen++;
+                }
+                else if (watch.Count() > numWatch)
+                {
+                    numWatch++;
+                }
+                else if (popWatch.Count() > numPopWatch)
+                {
+                    numPopWatch++;
+                }
+                else if (read.Count() > numRead)
+                {
+                    numRead++;
+                }
+            }
+            if (popListen.Count() < numPopListen)
+            {
+                if (listen.Count() > numListen)
+                {
+                    numListen++;
+                }
+                else
+                {
+                    if (watch.Count() > numWatch)
+                    {
+                        numWatch++;
+                    }
+                    else if (popWatch.Count() > numPopWatch)
+                    {
+                        numPopWatch++;
+                    }
+                    else if (read.Count() > numRead)
+                    {
+                        numRead++;
+                    }
+                }
+            }
 
             content.AddRange( watch.OrderByDescending( e => e.PublishDate ).Take( numWatch ) );
             content.AddRange( listen.OrderByDescending( e => e.PublishDate ).Take( numListen ) );
@@ -187,6 +289,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             DateTime checkDate = RockDateTime.Now.StartOfDay().AddDays( -30 );
             InteractionChannelService ic_svc = new InteractionChannelService( _context );
             InteractionChannel channel = ic_svc.Queryable().FirstOrDefault( ic => ic.ChannelEntityId == channelId );
+            if (channel == null)
+            {
+                return new List<ContentChannelItem>();
+            }
             var popular = new InteractionService( _context ).Queryable().Where( i => i.InteractionComponent.InteractionChannelId == channel.Id && i.InteractionDateTime > checkDate && !i.InteractionSession.DeviceType.Application.ToLower().Contains( "bot" ) && !i.InteractionSession.DeviceType.Application.ToLower().Contains( "spider" ) && !i.InteractionSession.DeviceType.Application.ToLower().Contains( "crawler" ) ).Select( i => i.InteractionComponent.EntityId ).GroupBy( i => i ).Select( i => new PopularityResult() { EntityId = i.Key.Value, NumViews = i.Count() } );
             var items = new ContentChannelItemService( _context ).Queryable().Where( i => i.ContentChannelId == channelId && i.Id != itemId && !previouslyViewed.Contains( i.Id ) && !alreadyIncluded.Contains( i.Id ) );
             var results = popular.Join( items,
@@ -203,7 +309,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
             //Get the Hubspot Tags
             List<string> tag_ids = new List<string>();
             Dictionary<string, string> tagDict = new Dictionary<string, string>();
-            for ( int i = 0; i < tags.Count(); i++ )
+            for (int i = 0; i < tags.Count(); i++)
             {
                 var tagClient = new RestClient( "https://api.hubapi.com/cms/v3/blogs/tags?name__like=" + tags[i] );
                 tagClient.Timeout = -1;
@@ -211,18 +317,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 tagRequest.AddHeader( "Authorization", $"Bearer {key}" );
                 IRestResponse jsonResponse = tagClient.Execute( tagRequest );
                 HubspotTagResponse tagResponse = JsonConvert.DeserializeObject<HubspotTagResponse>( jsonResponse.Content );
-                if ( tagResponse.results.Count() > 0 )
+                if (tagResponse.results.Count() > 0)
                 {
                     tag_ids.Add( tagResponse.results[0].id );
                     tagDict.Add( tagResponse.results[0].id, tags[i] );
                 }
             }
 
-            if ( tag_ids.Count() > 0 )
+            if (tag_ids.Count() > 0)
             {
                 //Get blog posts that match
                 string url = "https://api.hubapi.com/cms/v3/blogs/posts?sort=-publishDate&state=PUBLISHED&content_group_id=14822403917";
-                if ( tag_ids.Count() > 0 )
+                if (tag_ids.Count() > 0)
                 {
                     url += "&tagId__in=" + String.Join( ",", tag_ids );
                 }
@@ -236,9 +342,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                 {
                     var p = new Post() { Title = e.name, Author = e.authorName, Image = e.featuredImage, Url = e.url, PublishDate = e.publishDate.Value };
                     List<string> matchingTags = new List<string>();
-                    for ( var k = 0; k < e.tagIds.Count(); k++ )
+                    for (var k = 0; k < e.tagIds.Count(); k++)
                     {
-                        if ( tagDict.ContainsKey( e.tagIds[k] ) )
+                        if (tagDict.ContainsKey( e.tagIds[k] ))
                         {
                             matchingTags.Add( tagDict[e.tagIds[k]] );
                         }
@@ -253,7 +359,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private Post ConvertWatchToPost( ContentChannelItem e )
         {
-            var p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, PublishDate = e.StartDateTime, Slug = e.PrimarySlug, Url = watchURL + e.AttributeValues["Series"] + "/" + e.PrimarySlug, ContentChannelId = e.ContentChannelId };
+            Post p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, PublishDate = e.StartDateTime, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId };
+            if (e.Attributes.ContainsKey( "Series" ))
+            {
+                p.Url = watchURL + e.AttributeValues["Series"] + "/" + e.PrimarySlug;
+            }
+            else
+            {
+                p.Url = watchURL + e.PrimarySlug;
+            }
             var itemTag = _tiSvc.Queryable().Where( ti => ti.EntityGuid == e.Guid && !ti.Tag.OwnerPersonAliasId.HasValue ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
             var intersect = tags.Intersect( itemTag );
             p.MatchingTags = intersect.ToList();
@@ -261,7 +375,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
         }
         private Post ConvertListenToPost( ContentChannelItem e )
         {
-            var p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, PublishDate = e.StartDateTime, Slug = e.PrimarySlug, Url = listenURL + e.AttributeValues["Series"] + "/" + e.AttributeValues["Subseries"] + "/" + e.PrimarySlug, ContentChannelId = e.ContentChannelId };
+            var p = new Post() { Id = e.Id, Title = e.Title, Author = e.AttributeValues["Author"].ValueFormatted, Image = e.AttributeValues["Image"].Value, PublishDate = e.StartDateTime, Slug = e.PrimarySlug, ContentChannelId = e.ContentChannelId };
+            if (e.Attributes.ContainsKey( "Series" ) && e.Attributes.ContainsKey( "Subseries" ))
+            {
+                p.Url = listenURL + e.AttributeValues["Series"] + "/" + e.AttributeValues["Subseries"] + "/" + e.PrimarySlug;
+            }
+            else
+            {
+                p.Url = listenURL + e.PrimarySlug;
+            }
             var itemTag = _tiSvc.Queryable().Where( ti => ti.EntityGuid == e.Guid && !ti.Tag.OwnerPersonAliasId.HasValue ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
             var intersect = tags.Intersect( itemTag );
             p.MatchingTags = intersect.ToList();
@@ -270,11 +392,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private List<int> GetPreviouslyViewedContent()
         {
-            if ( CurrentPerson != null )
+            if (CurrentPerson != null)
             {
                 List<int> aliasIds = CurrentPerson.Aliases.Select( pa => pa.Id ).ToList();
                 InteractionChannelService ic_svc = new InteractionChannelService( _context );
-                List<int> channels = ic_svc.Queryable().Where( ic => ic.ComponentEntityTypeId == 209 && ( ic.ChannelEntityId == ccWatch.Id || ic.ChannelEntityId == ccListen.Id ) ).Select( ic => ic.Id ).ToList();
+                List<int> channels = ic_svc.Queryable().Where( ic => ic.ComponentEntityTypeId == 209 && (ic.ChannelEntityId == ccWatch.Id || ic.ChannelEntityId == ccListen.Id) ).Select( ic => ic.Id ).ToList();
                 InteractionService int_svc = new InteractionService( _context );
                 List<int> viewedContent = int_svc.Queryable().Where( i => i.PersonAliasId.HasValue && i.InteractionComponent.EntityId.HasValue && aliasIds.Contains( i.PersonAliasId.Value ) && channels.Contains( i.InteractionComponent.InteractionChannelId ) ).Select( i => i.InteractionComponent.EntityId.Value ).Distinct().ToList();
                 return viewedContent;
