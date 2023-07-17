@@ -33,7 +33,7 @@
                     </div>
                     <div class="col-md-4 col-sm-6">
                         <Rock:RockDropDownList runat="server"
-                            Help="Select if you want to send the communicaiton to only the Student/Child of the communication list, their parents, or both. Parents are not filtered through the parameters below, but will ONLY be added when their child passes the filters. When a 'Student/Child' option is selected it will only pull the age appropriate minors for that particular ministry (ie Crossing Students Segments will only pull 6th - 12th graders and Crossing Kids will only pull infants - 5th graders)"
+                            Help="Select if you want to send the communication to only the Student/Child of the communication list, their parents, or both. Parents are not filtered through the parameters below, but will ONLY be added when their child passes the filters. When a 'Student/Child' option is selected it will only pull the age appropriate minors for that particular ministry (ie Crossing Students Segments will only pull 6th - 12th graders and Crossing Kids will only pull infants - 5th graders)"
                             ID="ddlSendTo" Label="Send To" Visible="false">
                             <asp:ListItem Text="Student/Child" Value="0" />
                             <asp:ListItem Text="Parents" Value="1" />
@@ -43,24 +43,34 @@
                 </div>
                 <Rock:RockCheckBoxList runat="server" ID="cblSegments" Label="Communication Segments" Visible="false"
                     DataTextField="Name" DataValueField="Id" />
-                <Rock:DynamicControlsPanel runat="server" ID="dcpContainer" />
+                <Rock:DynamicControlsPanel runat="server" ID="dcpContainer" CssClass="row"  />
                 <asp:Panel runat="server" ID="pnlRegistration" Visible="false">
                     <br />
                     <div class="row">
-                        <div class="col-sm-4 col-md-4 col-lg-3">
+                        <asp:Panel ID="pnlIncludeExclude" runat="server" >
                             <Rock:RockDropDownList runat="server" ID="ddlIncludeExclude" Label="Registration">
                                 <asp:ListItem Text="Has NOT registered for" Value="-1" />
                                 <asp:ListItem Text="Has registered for" Value="1" />
                             </Rock:RockDropDownList>
-                        </div>
-                        <div class="col-sm-5 col-md-6 col-lg-7">
+                        </asp:Panel>
+                        <asp:Panel ID="pnlRegistrationTemplates" runat="server" Visible="false" >
+                            <Rock:RegistrationTemplatePicker ID="rpRegistrationTemplates" runat="server" Label="Template" AllowMultiSelect="false" OnSelectItem="rpRegistrationTemplates_SelectItem" />
+                        </asp:Panel>
+                        <asp:Panel ID="pnlRegistrationInstances" runat="server" >
                             <Rock:RockListBox runat="server" ID="cblRegistrationInstances" Label="Instance" DataValueField="Id" DataTextField="Name" />
-                        </div>
-                        <div class="col-sm-3 col-md-2 col-lg-2">
+                        </asp:Panel>
+                        <asp:Panel ID="pnlIncludeInactive" runat="server" >
                             <Rock:RockCheckBox runat="server" ID="cbIncludeInactive" Label="Include Inactive" OnCheckedChanged="cbIncludeInactive_CheckedChanged" AutoPostBack="true" />
-                        </div>
+                        </asp:Panel>
                     </div>
                 </asp:Panel>
+
+                <asp:Panel runat="server" ID="pnlPrevCommunication" CssClass="row margin-t-md" Visible="false">
+                    <div class="col-md-12">
+                        <Rock:RockDropDownList runat="server" ID="ddlPrevCommunication" Label="Copy Communication Details From" DataTextField="Name" DataValueField="Id" ></Rock:RockDropDownList>
+                   </div>
+                </asp:Panel>
+
                 <br />
 
                 <Rock:BootstrapButton runat="server" ID="btnPreview" CssClass="btn btn-default" Text="Preview" OnClick="btnPreview_Click" Visible="false" />

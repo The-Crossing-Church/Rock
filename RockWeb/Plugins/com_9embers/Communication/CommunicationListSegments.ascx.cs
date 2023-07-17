@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data.Entity;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+
 using Newtonsoft.Json;
 using Rock;
 using Rock.Attribute;
@@ -69,6 +72,13 @@ namespace RockWeb.Plugins.com_9embers.Communication
         Key = AttributeKey.ParentsGroupAttribute
         )]
 
+    [BooleanField( "Show Registration Template Filter",
+        "If you have a lot of registration instances, you can optionally display a template filter to narrow down list of instances.",
+        false,
+        Order = 5,
+        Key = AttributeKey.ShowRegistrationTemplate
+        )]
+
     #endregion Block Attributes
 
     public partial class CommunicationListSegments : Rock.Web.UI.RockBlock
@@ -83,6 +93,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             public const string CanSendToParentsAttribute = "CanSendToParentsAttribute";
             public const string HideInSegmentsAttribute = "HideInSegmentsAttribute";
             public const string ParentsGroupAttribute = "ParentsGroupAttribute";
+            public const string ShowRegistrationTemplate = "ShowRegistrationTemplate";
         }
 
         #endregion Attribute Keys
@@ -132,11 +143,12 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             base.OnLoad( e );
 
-
             if ( !Page.IsPostBack )
             {
                 BindCommunicationListDropdown();
+                SetRegistrationOptions();
                 BindRegistrationInstanceDropdown();
+                BindPreviousCommunications();
 
                 if ( PageParameter( "Restore" ).AsBoolean() )
                 {
@@ -148,8 +160,6 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 }
             }
         }
-
-
 
         #endregion
 
@@ -180,6 +190,10 @@ namespace RockWeb.Plugins.com_9embers.Communication
             ShowPreview();
         }
 
+        protected void rpRegistrationTemplates_SelectItem( object sender, EventArgs e )
+        {
+            BindRegistrationInstanceDropdown();
+        }
 
         protected void cbIncludeInactive_CheckedChanged( object sender, EventArgs e )
         {
@@ -226,6 +240,27 @@ namespace RockWeb.Plugins.com_9embers.Communication
             ddlCommunicationList.Items.Insert( 0, "" );
         }
 
+        private void SetRegistrationOptions()
+        {
+            if ( GetAttributeValue( AttributeKey.ShowRegistrationTemplate ).AsBoolean() )
+            {
+                pnlRegistrationTemplates.Visible = true;
+
+                pnlIncludeExclude.AddCssClass( "col-sm-6" ).AddCssClass( "col-md-4" ).AddCssClass( "col-lg-3" );
+                pnlRegistrationTemplates.AddCssClass( "col-sm-6" ).AddCssClass( "col-md-3" ).AddCssClass( "col-lg-3" );
+                pnlRegistrationInstances.AddCssClass( "col-sm-6" ).AddCssClass( "col-md-3" ).AddCssClass( "col-lg-4" );
+                pnlIncludeInactive.AddCssClass( "col-sm-6" ).AddCssClass( "col-md-2" ).AddCssClass( "col-lg-2" );
+            }
+            else
+            {
+                pnlIncludeExclude.AddCssClass( "col-sm-4" ).AddCssClass( "col-md-4" ).AddCssClass( "col-lg-3" );
+                pnlRegistrationInstances.AddCssClass( "col-sm-5" ).AddCssClass( "col-md-6" ).AddCssClass( "col-lg-7" );
+                pnlIncludeInactive.AddCssClass( "col-sm-3" ).AddCssClass( "col-md-2" ).AddCssClass( "col-lg-2" );
+            }
+
+
+        }
+
         private void BindRegistrationInstanceDropdown()
         {
             var now = RockDateTime.Now;
@@ -233,6 +268,12 @@ namespace RockWeb.Plugins.com_9embers.Communication
             RegistrationInstanceService registrationInstanceService = new RegistrationInstanceService( rockContext );
 
             var registrationInstancesQry = registrationInstanceService.Queryable();
+
+            if ( GetAttributeValue( AttributeKey.ShowRegistrationTemplate ).AsBoolean() )
+            {
+                var templateId = rpRegistrationTemplates.SelectedValue.AsIntegerOrNull();
+                registrationInstancesQry = registrationInstancesQry.Where( ri => templateId.HasValue && templateId.Value == ri.RegistrationTemplateId );
+            }
 
             if ( !cbIncludeInactive.Checked )
             {
@@ -243,6 +284,36 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
             cblRegistrationInstances.DataSource = registrationInstances;
             cblRegistrationInstances.DataBind();
+        }
+
+        private void BindPreviousCommunications()
+        {
+            RockContext rockContext = new RockContext();
+            CommunicationService commService = new CommunicationService( rockContext );
+
+            ddlPrevCommunication.Items.Clear();
+            
+            if ( CurrentPersonId.HasValue )
+            {
+                ddlPrevCommunication.DataSource = commService
+                    .Queryable().AsNoTracking()
+                    .Where( c =>
+                        c.SenderPersonAlias.PersonId == CurrentPersonId.Value &&
+                        c.Status != CommunicationStatus.Transient &&
+                        ( ( c.Name != null && c.Name != "" ) || ( c.Subject != null && c.Subject != "" ) )
+                    )
+                    .OrderByDescending( c => c.CreatedDateTime )
+                    .Take( 10 )
+                    .ToList()
+                    .Select( c => new
+                    {
+                        c.Id,
+                        Name = $"{c.Name ?? c.Subject} ({c.CreatedDateTime.ToElapsedString(false,true)})"
+                    } )
+                    .ToList();
+                ddlPrevCommunication.DataBind();
+                ddlPrevCommunication.Items.Insert( 0, new ListItem() );
+            }
         }
 
         private bool SendingToParentsEnabled( int? groupId )
@@ -305,8 +376,12 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 var control = propertyField.EntityField.FieldType.Field.FilterControl( propertyField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
                 if ( control != null )
                 {
-                    dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = propertyField.Property, CssClass = "control-label", AssociatedControlID = control.ID } );
-                    dcpContainer.Controls.Add( control );
+                    HtmlGenericControl col = new HtmlGenericControl( "div" );
+                    col.AddCssClass( "col-sm-6" );
+                    dcpContainer.Controls.Add( col );
+
+                    col.Controls.Add( new Label { ID = controlId + "_Label", Text = propertyField.Property, CssClass = "control-label", AssociatedControlID = control.ID } );
+                    col.Controls.Add( control );
                 }
             }
 
@@ -314,13 +389,23 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
             foreach ( var attributeField in attributeFields )
             {
+                FilterMode filterMode = FilterMode.AdvancedFilter;
+                if ( attributeField.EntityField.FieldType.Guid == Rock.SystemGuid.FieldType.MULTI_SELECT.AsGuid() )
+                {
+                    filterMode = FilterMode.SimpleFilter;
+                }
+
                 string controlId = string.Format( "{0}_{1}", dcpContainer.ID, attributeField.EntityField.UniqueName );
 
-                var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
+                var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, false, filterMode );
                 if ( control != null )
                 {
-                    dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = attributeField.Attribute.Name, CssClass = "control-label cust-label", AssociatedControlID = control.ID } );
-                    dcpContainer.Controls.Add( control );
+                    HtmlGenericControl col = new HtmlGenericControl( "div" );
+                    col.AddCssClass( "col-sm-6" );
+                    dcpContainer.Controls.Add( col );
+
+                    col.Controls.Add( new Label { ID = controlId + "_Label", Text = attributeField.Attribute.Name, CssClass = "control-label cust-label", AssociatedControlID = control.ID } );
+                    col.Controls.Add( control );
                 }
             }
         }
@@ -394,6 +479,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
         {
             if ( selectionState != null && selectionState.CommunicationId.HasValue )
             {
+                rpRegistrationTemplates.SetValue( selectionState.RegistrationTemplateId );
                 cbIncludeInactive.Checked = selectionState.IncludeInactiveRegistrations;
                 BindRegistrationInstanceDropdown();
 
@@ -418,6 +504,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
                     SetFilterValues( group, selectionState );
                 }
 
+                ddlPrevCommunication.SetValue( selectionState.PrevCommunicationId );
+
             }
         }
 
@@ -428,6 +516,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
             btnGenerate.Visible = groupId.HasValue;
             btnPreview.Visible = groupId.HasValue;
             pnlRegistration.Visible = groupId.HasValue;
+            pnlPrevCommunication.Visible = groupId.HasValue;
             cblSegments.Visible = groupId.HasValue;
             dcpContainer.Controls.Clear();
             SaveViewState();
@@ -467,6 +556,36 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 SenderPersonAliasId = CurrentPersonAliasId
             };
 
+            var prevCommId = ddlPrevCommunication.SelectedValueAsId();
+            if ( prevCommId.HasValue)
+            {
+                var prevCommunication = communicationService.Get( prevCommId.Value );
+                if ( prevCommunication != null )
+                {
+                    communication.Name = prevCommunication.Name;
+                    communication.CommunicationType = prevCommunication.CommunicationType;
+                    communication.FutureSendDateTime = prevCommunication.FutureSendDateTime;
+                    communication.CommunicationTemplateId = prevCommunication.CommunicationTemplateId;
+
+                    communication.FromName = prevCommunication.FromName;
+                    communication.FromEmail = prevCommunication.FromEmail;
+                    communication.Subject = prevCommunication.Subject;
+                    foreach( var prevAttachment in prevCommunication.Attachments )
+                    {
+                        var commAttachment = new CommunicationAttachment
+                        {
+                            BinaryFileId = prevAttachment.BinaryFileId,
+                            CommunicationType = prevAttachment.CommunicationType,
+                        };
+                        communication.Attachments.Add( commAttachment );
+                    }
+                    communication.Message = prevCommunication.Message;
+
+                    communication.SMSFromDefinedValueId = prevCommunication.SMSFromDefinedValueId;
+                    communication.SMSMessage = prevCommunication.SMSMessage;
+                }
+            }
+
             var recipientPersons = GetCommunicationQry().ToList();
 
             foreach ( var person in recipientPersons )
@@ -494,7 +613,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
             _selectionState = new SelectionState
             {
                 CommunicationId = group.Id,
-                SendTo = ddlSendTo.SelectedValueAsId()
+                SendTo = ddlSendTo.SelectedValueAsId(),
+                PrevCommunicationId = ddlPrevCommunication.SelectedValueAsId()
             };
 
             var personService = new PersonService( rockContext );
@@ -590,6 +710,7 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 return null;
             }
 
+            _selectionState.RegistrationTemplateId = rpRegistrationTemplates.SelectedValue.AsIntegerOrNull();
             _selectionState.RegistrationInstanceIds = cblRegistrationInstances.SelectedValues;
             _selectionState.IncludeInactiveRegistrations = cbIncludeInactive.Checked;
 
@@ -764,7 +885,9 @@ namespace RockWeb.Plugins.com_9embers.Communication
             public List<string> SegmentIds { get; set; }
             public List<string> RegistrationInstanceIds { get; set; }
             public Dictionary<string, List<string>> PropertyValues { get; set; }
-            public bool IncludeInactiveRegistrations { get; set; }  
+            public int? RegistrationTemplateId { get; set; }
+            public bool IncludeInactiveRegistrations { get; set; }
+            public int? PrevCommunicationId { get; set; }
             public SelectionState()
             {
                 SegmentIds = new List<string>();
@@ -774,6 +897,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
             }
         }
         #endregion
+
+
 
     }
 }
