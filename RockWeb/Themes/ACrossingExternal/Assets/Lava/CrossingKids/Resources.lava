@@ -30,8 +30,3 @@
 <script>
   $('[data-toggle="popover"]').popover()
 </script>
-<style>
-  .img-wrapper {
-    height: 348px !important;
-  }
-</style>
