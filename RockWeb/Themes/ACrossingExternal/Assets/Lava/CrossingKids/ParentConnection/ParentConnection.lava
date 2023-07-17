@@ -15,7 +15,7 @@
 <br/>
 <div class="collapse" id="EarlyChildhood">
     <div class="card--custom">
-        <ul class="nav nav-tabs justify-center">
+        <ul class="nav nav-tabs justify-center center-mobile">
             <li class="nav-item active" role="presentation">
                 <a class="nav-link active btn btn-accent" href="#ToddlerBlue" aria-controls="ToddlerBlue" role="tab" data-toggle="tab" aria-expanded="true">Toddler Blue</a>
             </li>
@@ -47,7 +47,7 @@
 </div>
 <div class="collapse" id="Elementary">
     <div class="card--custom">
-        <ul class="nav nav-tabs justify-center">
+        <ul class="nav nav-tabs justify-center center-mobile">
             <li class="nav-item active" role="presentation">
                 <a class="nav-link active btn btn-accent" href="#KFirst" aria-controls="KFirst" role="tab" data-toggle="tab" aria-expanded="true">Kindergarten/1st Grade</a>
             </li>
