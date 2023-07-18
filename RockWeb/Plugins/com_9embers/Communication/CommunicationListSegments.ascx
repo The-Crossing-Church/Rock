@@ -43,7 +43,7 @@
                 </div>
                 <Rock:RockCheckBoxList runat="server" ID="cblSegments" Label="Communication Segments" Visible="false"
                     DataTextField="Name" DataValueField="Id" />
-                <Rock:DynamicControlsPanel runat="server" ID="dcpContainer" CssClass="row"  />
+                <Rock:DynamicControlsPanel runat="server" ID="dcpContainer" />
                 <asp:Panel runat="server" ID="pnlRegistration" Visible="false">
                     <br />
                     <div class="row">

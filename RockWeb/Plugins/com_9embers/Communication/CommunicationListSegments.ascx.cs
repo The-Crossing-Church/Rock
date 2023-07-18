@@ -376,12 +376,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 var control = propertyField.EntityField.FieldType.Field.FilterControl( propertyField.EntityField.FieldConfig, controlId, false, FilterMode.AdvancedFilter );
                 if ( control != null )
                 {
-                    HtmlGenericControl col = new HtmlGenericControl( "div" );
-                    col.AddCssClass( "col-sm-6" );
-                    dcpContainer.Controls.Add( col );
-
-                    col.Controls.Add( new Label { ID = controlId + "_Label", Text = propertyField.Property, CssClass = "control-label", AssociatedControlID = control.ID } );
-                    col.Controls.Add( control );
+                    dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = propertyField.Property, CssClass = "control-label", AssociatedControlID = control.ID } );
+                    dcpContainer.Controls.Add( control );
                 }
             }
 
@@ -400,12 +396,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 var control = attributeField.EntityField.FieldType.Field.FilterControl( attributeField.EntityField.FieldConfig, controlId, false, filterMode );
                 if ( control != null )
                 {
-                    HtmlGenericControl col = new HtmlGenericControl( "div" );
-                    col.AddCssClass( "col-sm-6" );
-                    dcpContainer.Controls.Add( col );
-
-                    col.Controls.Add( new Label { ID = controlId + "_Label", Text = attributeField.Attribute.Name, CssClass = "control-label cust-label", AssociatedControlID = control.ID } );
-                    col.Controls.Add( control );
+                    dcpContainer.Controls.Add( new Label { ID = controlId + "_Label", Text = attributeField.Attribute.Name, CssClass = "control-label cust-label", AssociatedControlID = control.ID } );
+                    dcpContainer.Controls.Add( control );
                 }
             }
         }
