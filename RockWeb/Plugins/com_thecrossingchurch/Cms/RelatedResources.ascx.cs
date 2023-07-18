@@ -49,8 +49,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
     [TextField( "Watch URL", required: true, defaultValue: "/Resources/Watch/Sermon Archives/", order: 4 )]
     [ContentChannelField( "Listen Content Channel", required: true, order: 5 )]
     [TextField( "Listen URL", required: true, defaultValue: "/Resources/Listen/", order: 6 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 7 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 8 )]
+    [IntegerField( "Matching Tags", required: true, defaultValue: 2, description: "The minimum number of tags that have to match for a related result", order: 7 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 8 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedBlogPosts.lava' %}", "", 9 )]
 
     public partial class RelatedResources : Rock.Web.UI.RockBlock
     {
@@ -273,13 +274,18 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
 
         private List<ContentChannelItem> GetContent( int channelId )
         {
+            int? numTags = GetAttributeValue( "MatchingTags" ).AsIntegerOrNull();
+            if (!numTags.HasValue)
+            {
+                numTags = 2;
+            }
             var items = new ContentChannelItemService( _context ).Queryable().Where( i => i.ContentChannelId == channelId && i.Id != itemId && !previouslyViewed.Contains( i.Id ) ).ToList();
             items = items.Select( i =>
             {
                 var itemTag = _tiSvc.Queryable().Where( ti => ti.EntityGuid == i.Guid && !ti.Tag.OwnerPersonAliasId.HasValue ).Select( ti => ti.Tag.Name.ToLower() ).ToList();
                 var intersect = tags.Intersect( itemTag );
                 return new { Item = i, MatchingTags = intersect };
-            } ).Where( i => i.MatchingTags.Count() > 2 ).OrderByDescending( i => i.MatchingTags.Count() ).ThenByDescending( i => i.Item.StartDateTime ).Select( i => i.Item ).Take( 7 ).ToList();
+            } ).Where( i => i.MatchingTags.Count() >= numTags.Value ).OrderByDescending( i => i.MatchingTags.Count() ).ThenByDescending( i => i.Item.StartDateTime ).Select( i => i.Item ).Take( 7 ).ToList();
             items.LoadAttributes();
             return items.ToList();
         }
