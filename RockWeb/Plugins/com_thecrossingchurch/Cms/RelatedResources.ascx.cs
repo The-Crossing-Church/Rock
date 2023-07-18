@@ -299,7 +299,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Cms
                     pop => pop.EntityId,
                     cci => cci.Id,
                     ( pop, cci ) => new { CCI = cci, Pop = pop }
-                ).Select( i => i.CCI ).Take( 7 ).ToList();
+                ).OrderByDescending( i => i.Pop.NumViews ).Select( i => i.CCI ).Take( 7 ).ToList();
             results.LoadAttributes();
             return results;
         }
