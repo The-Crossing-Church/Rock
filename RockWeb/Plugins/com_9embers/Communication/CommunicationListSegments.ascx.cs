@@ -613,7 +613,11 @@ namespace RockWeb.Plugins.com_9embers.Communication
             var groupMemberService = new GroupMemberService( rockContext );
 
             var qry = groupMemberService.Queryable()
-                .Where( gm => gm.GroupId == group.Id )
+                .Where( gm =>
+                    gm.GroupId == group.Id &&
+                    gm.GroupMemberStatus == GroupMemberStatus.Active &&
+                    gm.IsArchived == false
+                )
                 .Select( gm => gm.Person );
 
             IQueryable<Person> segmentQry = GetSegmentQry( personService, group );
