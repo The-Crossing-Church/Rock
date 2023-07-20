@@ -39,10 +39,10 @@ export default defineComponent({
             required(val: any, field: string) {
               return !!val || `${field} is required`;
             },
-            isValidHour(val: Number) {
+            isValidHour(val: number) {
               return val > 0 && val < 25 || 'Invalid input for hour'
             },
-            isValidMinute(val: Number) {
+            isValidMinute(val: number) {
               return val >= 0 && val < 60 || 'Invalid input for minute'
             }
           },

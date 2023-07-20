@@ -335,7 +335,7 @@ export default defineComponent({
           if(this.view == 'month') {
             this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
           } else {
-            this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+            this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
           }
         }
       }
@@ -422,7 +422,7 @@ export default defineComponent({
             if(this.view == 'month') {
               this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
             } else {
-              this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+              this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
             }
           }
         }
@@ -434,7 +434,7 @@ export default defineComponent({
       this.view = 'day'
       this.isMobile = true
     }
-    this.loadData(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+    this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
   },
   template: `
   <div class="card">
