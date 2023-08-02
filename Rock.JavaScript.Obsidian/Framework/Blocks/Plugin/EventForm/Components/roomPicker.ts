@@ -218,6 +218,20 @@ export default defineComponent({
         if(val != JSON.stringify(this.selectedValue)) {
           this.selectedValue = JSON.parse(val)
         }
+      },
+      items: {
+        handler(val) {
+          //When list of rooms is updated make sure any now disabled rooms are removed from selection
+          let selectedGuids = this.selectedValue.value.split(',')
+          let selectedRooms = val.filter((i: any) => {
+            if(!i.isDisabled) {
+              return selectedGuids.includes(i.value)
+            }
+          }).sort((i: any) => i.order)
+          this.selectedValue.value = selectedRooms.map((i: any) => i.value).join(",")
+          this.selectedValue.text = selectedRooms.map((i: any) => i.text.split(" (")[0]).join(", ")
+        },
+        deep: true
       }
     },
     mounted() {

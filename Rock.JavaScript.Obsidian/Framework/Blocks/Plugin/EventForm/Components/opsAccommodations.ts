@@ -278,6 +278,19 @@ export default defineComponent({
             }
           }
         }
+      },
+      'e.attributeValues.Rooms': {
+        handler(val) {
+          let rooms = JSON.parse(val)
+          if(rooms.value) {
+            rooms = rooms.value.split(',')
+          } else {
+            rooms = []
+          }
+          this.roomSetUp = this.roomSetUp.filter((set: any) => {
+            return rooms.includes(set.Room)
+          })
+        }
       }
     },
     mounted() {
@@ -511,7 +524,13 @@ export default defineComponent({
   <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing" :readonly="readonly"></tcc-ops-inv>
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
-  <div class="mt-2" style="height: 16px;"></div>
+  <div style="height: 16px;"></div>
+  <div class="text-center mb-2">
+    <i>
+      Please Note: configuring a custom set-up will automatically add a 30 minute buffer to your reservation.<br/> 
+      It may impact the rooms/spaces available to you.
+    </i>
+  </div>
   <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
   <template #footer>
     <div style="display: flex;">

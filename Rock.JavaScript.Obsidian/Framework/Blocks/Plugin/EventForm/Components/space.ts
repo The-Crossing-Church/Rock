@@ -108,6 +108,10 @@ export default defineComponent({
     groupedRooms() {        
       let loc = [] as any[]
       let dates = [] as any[]
+      //Reference the values so the computed re-generates on change
+      let startBuffer = this.e?.attributeValues?.StartBuffer ? parseInt(this.e?.attributeValues?.StartBuffer) : 0
+      let endBuffer = this.e?.attributeValues?.EndBuffer ? parseInt(this.e?.attributeValues?.EndBuffer) : 0
+
       if(this.request?.attributeValues?.IsSame == "True") {
         dates = this.request.attributeValues.EventDates.split(",").map(d => d.trim())
       } else {
@@ -140,14 +144,8 @@ export default defineComponent({
               }
               let cRange = Interval.fromDateTimes(cdStart, cdEnd)
               for(let i=0; i<dates.length; i++) {
-                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
-                if(this.e?.attributeValues?.StartBuffer) {
-                  eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
-                }
-                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
-                if(this.e?.attributeValues?.EndBuffer) {
-                  eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
-                }
+                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: startBuffer })
+                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: endBuffer })
                 let current = Interval.fromDateTimes(
                   eStart,
                   eEnd
@@ -170,14 +168,8 @@ export default defineComponent({
               }
               let cRange = Interval.fromDateTimes(cdStart, cdEnd)
               for(let i=0; i<dates.length; i++) {
-                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
-                if(this.e?.attributeValues?.StartBuffer) {
-                  eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
-                }
-                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
-                if(this.e?.attributeValues?.EndBuffer) {
-                  eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
-                }
+                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: startBuffer })
+                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: endBuffer })
                 let current = Interval.fromDateTimes(
                   eStart,
                   eEnd
@@ -269,6 +261,31 @@ export default defineComponent({
     errors: {
       handler(val) {
         this.$emit("validation-change", { ref: this.refName, errors: val})
+      },
+      deep: true
+    },
+    'e.attributeValues.Rooms': {
+      handler(val, oval) {
+        //Find Values that were removed 
+        let original = JSON.parse(oval)
+        let current = JSON.parse(val)
+        if(original.value) {
+          original = original.value.split(',')
+          if(current.value) {
+            current = current.value.split(',')
+          } else {
+            current = []
+          }
+          let removed = original.filter((r: string) => { return !current.includes(r) } )
+          //For removed rooms make sure they are removed from the set-up list
+          if(this.e?.attributeValues?.RoomSetUp) {
+            let setUp = JSON.parse(this.e?.attributeValues?.RoomSetUp as string)
+            if(setUp) {
+              setUp = setUp.filter((set: any) => { return !removed.includes(set.Room)})
+              this.e.attributeValues.RoomSetUp = JSON.stringify(setUp)
+            }
+          }
+        }
       },
       deep: true
     }
