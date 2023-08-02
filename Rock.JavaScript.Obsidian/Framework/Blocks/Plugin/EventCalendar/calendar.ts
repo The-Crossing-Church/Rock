@@ -319,23 +319,34 @@ export default defineComponent({
       }
       let nextRange = {} as Interval
       if(this.view == 'day') {
-        nextRange = Interval.fromDateTimes(this.currentDate.plus({days: val}).startOf('day'), this.currentDate.plus({days: val}).endOf('day'))
         this.currentDate = this.currentDate.plus({days: val}).startOf('day')
+        if(this.currentDate.weekday == 7 && val > 0) {
+          nextRange = Interval.fromDateTimes(this.currentDate.plus({days: 1}).startOf('week').minus({days: 1}), this.currentDate.plus({days: 1}).endOf('week').minus({days: 1}))
+        } else {
+          nextRange = Interval.fromDateTimes(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+        }
       } else if(this.view == 'week') {
-        nextRange = Interval.fromDateTimes(this.currentDate.plus({weeks: val}).startOf('week').minus({days: 1}), this.currentDate.plus({weeks: val}).endOf('week').minus({days: 1}))
         this.currentDate = this.currentDate.plus({weeks: val}).startOf('day')
+        nextRange = Interval.fromDateTimes(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
       } else {
         let startOfMonth = this.currentDate.startOf('month')
-        nextRange = Interval.fromDateTimes(startOfMonth.plus({months: val}).startOf('day'), startOfMonth.plus({months: val}).endOf('month'))
         this.currentDate = startOfMonth.plus({months: val}).startOf('day')
+        nextRange = Interval.fromDateTimes(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
       }
       //Only load new data if we haven't filtered to a particular event since we should already have the data for it
       if(this.filters.parentId == 0) {
-        if(!this.lastLoadRange.engulfs(nextRange)) {
-          if(this.view == 'month') {
-            this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
-          } else {
-            this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
+        if(!this.lastLoadRange.contains(this.currentDate)) {
+          console.log(this.lastLoadRange, this.currentDate, nextRange)
+          if(!this.lastLoadRange.engulfs(nextRange)) {
+            if(this.view == 'month') {
+              this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+            } else {
+              if(this.currentDate.weekday == 7 && val > 0) {
+                this.loadData(this.currentDate.plus({days: 1}).startOf('week').minus({days: 8}), this.currentDate.plus({days: 1}).endOf('week').plus({days: 13}))
+              } else {
+                this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
+              }
+            }
           }
         }
       }
@@ -402,27 +413,33 @@ export default defineComponent({
       }
     },
     currentDateAsString(val) {
-      console.log('date change')
-      console.log(val)
       if(val != this.currentDate.toFormat("yyyy-MM-dd")) {
         this.currentDate = DateTime.fromFormat(val, "yyyy-MM-dd")
         this.dateMenu = false
-        let nextRange = {} as Interval
-        if(this.view == 'day') {
-          nextRange = Interval.fromDateTimes(this.currentDate.startOf('day'), this.currentDate.endOf('day'))
-        } else if(this.view == 'week') {
-          nextRange = Interval.fromDateTimes(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
-        } else {
-          let startOfMonth = this.currentDate.startOf('month')
-          nextRange = Interval.fromDateTimes(startOfMonth.startOf('day'), startOfMonth.endOf('month'))
-        }
-        //Only load new data if we haven't filtered to a particular event since we should already have the data for it
-        if(this.filters.parentId == 0) {
-          if(!this.lastLoadRange.engulfs(nextRange)) {
-            if(this.view == 'month') {
-              this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+        if(!this.lastLoadRange.contains(val)) {
+          let nextRange = {} as Interval
+          if(this.view != 'month') {
+            if(this.currentDate.weekday == 7) {
+              nextRange = Interval.fromDateTimes(this.currentDate.plus({days: 1}).startOf('week').minus({days: 1}), this.currentDate.plus({days: 1}).endOf('week').minus({days: 1}))
             } else {
-              this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
+              nextRange = Interval.fromDateTimes(this.currentDate.startOf('week').minus({days: 1}), this.currentDate.endOf('week').minus({days: 1}))
+            }
+          } else {
+            let startOfMonth = this.currentDate.startOf('month')
+            nextRange = Interval.fromDateTimes(startOfMonth.startOf('day'), startOfMonth.endOf('month'))
+          }
+          //Only load new data if we haven't filtered to a particular event since we should already have the data for it
+          if(this.filters.parentId == 0) {
+            if(!this.lastLoadRange.engulfs(nextRange)) {
+              if(this.view == 'month') {
+                this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))
+              } else {
+                if(this.currentDate.weekday == 7) {
+                  this.loadData(this.currentDate.plus({days: 1}).startOf('week').minus({days: 8}), this.currentDate.plus({days: 1}).endOf('week').plus({days: 13}))
+                } else {
+                  this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
+                }
+              }
             }
           }
         }
@@ -444,7 +461,7 @@ export default defineComponent({
           <i class="fa fa-filter"></i>
         </a-btn>
       </div>
-      <div class="col col-xs-6 text-center justify-center font-weight-bold" style="font-size: 20px;">
+      <div class="col col-xs-6 d-flex justify-content-between font-weight-bold" style="font-size: 20px;">
         <a-btn shape="circle" type="accent" @click="page(false)">
           <i class="fa fa-chevron-left"></i>
         </a-btn>
@@ -452,7 +469,7 @@ export default defineComponent({
           <div class="hover px-2" id="ddDatePckr" @click="dateMenu = true">
             {{displayDate}}
           </div> 
-          <a-modal v-model:visible="dateMenu" @ok="dateMenu = false">
+          <a-modal v-if="dateMenu" v-model:visible="dateMenu" @ok="dateMenu = false">
             <br/>
             <tcc-date 
               v-model="currentDateAsString" 
@@ -532,7 +549,7 @@ export default defineComponent({
                 <div class="hover px-2" id="ddDatePckr" @click="dateMenu = true">
                   {{displayDate}}
                 </div> 
-                <a-modal v-model:visible="dateMenu" @ok="dateMenu = false">
+                <a-modal v-if="dateMenu" v-model:visible="dateMenu" @ok="dateMenu = false">
                   <br/>
                   <tcc-date 
                     v-model="currentDateAsString" 

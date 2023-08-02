@@ -59,8 +59,13 @@
     <Folder Include="Framework\Blocks\Groups\" />
     <Folder Include="Framework\Blocks\Core\" />
     <Folder Include="Framework\Blocks\Plugin\" />
+    <Folder Include="Framework\Blocks\Plugin\EventCalendar\" />
+    <Folder Include="Framework\Blocks\Plugin\EventCalendar\Components\" />
+    <Folder Include="Framework\Blocks\Plugin\EventDashboard\" />
+    <Folder Include="Framework\Blocks\Plugin\EventDashboard\Components\" />
     <Folder Include="Framework\Blocks\Plugin\EventForm\" />
     <Folder Include="Framework\Blocks\Plugin\EventForm\Components\" />
+    <Folder Include="Framework\Blocks\Plugin\EventForm\Rules\" />
     <Folder Include="Framework\Blocks\WorkFlow\" />
     <Folder Include="Framework\Blocks\Security\" />
     <Folder Include="Framework\Blocks\Utility\" />
@@ -120,28 +125,66 @@
     <TypeScriptCompile Include="Framework\Blocks\Example\personSecondary.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Finance\transactionEntry.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Groups\groupMemberList.ts" />
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\autoComplete.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\calendar.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\calendarBlockViewModel.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\Components\day.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\Components\dayView.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\Components\event.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\Components\month.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventCalendar\Components\week.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\adminDashboard.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\adminDashboardBlockViewModel.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\adminGridAction.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\calendarInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\cateringInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\childcareInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\comment.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\dashboardModal.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\dropDownList.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\onlineInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\opsAccomInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\partialApproval.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\partialApprovalValues.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\productionAccomInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\publicityInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\registrationInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\requestTable.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\spaceInfo.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\Components\userGridAction.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\userDashboard.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventDashboard\userDashboardBlockViewModel.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\addComment.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\basicInfo.ts" />
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\calendar.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\calendar.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\catering.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\childcare.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\childcareCatering.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\chip.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\datePicker.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\discountCodePicker.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\discountCodes.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\eventBuffer.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\eventTime.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\online.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\opsAccommodations.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\opsInventory.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\opsInventoryDropDown.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\opsInventoryEntry.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\productionTech.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\publicity.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\publicityDropDown.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\registration.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\resourceSwitches.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\roomPicker.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\roomSetUp.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\space.ts" />
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\resourceSwitches.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\toggle.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\submissionForm.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\eventAttributeValuesViewModel.ts" />
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\eventDetailsAttributeValuesViewModel.ts" />
-    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\submissionFormBlockViewModel.ts">
-      <SubType>Code</SubType>
-    </TypeScriptCompile>
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\timePicker.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\toggle.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\validator.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Components\webCal.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\Rules\rules.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\submissionForm.ts" />
+    <TypeScriptCompile Include="Framework\Blocks\Plugin\EventForm\submissionFormBlockViewModel.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Security\login.ts" />
     <TypeScriptCompile Include="Framework\Blocks\Utility\starkDetail.ts" />
     <TypeScriptCompile Include="Framework\Blocks\WorkFlow\FormBuilder\formBuilderDetail.ts" />
