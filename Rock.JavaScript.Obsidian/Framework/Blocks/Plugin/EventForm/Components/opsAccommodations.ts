@@ -525,13 +525,12 @@ export default defineComponent({
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div style="height: 16px;"></div>
-  <div class="text-center mb-2">
+  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
+  <div class="text-center mt-4 mb-0 alert alert-danger">
     <i>
-      Please Note: configuring a custom set-up will automatically add a 30 minute buffer to your reservation.<br/> 
-      It may impact the rooms/spaces available to you.
+      Please Note: configuring a custom set-up will automatically add a 30 minute buffer to your reservation. It may impact the rooms/spaces available to you.
     </i>
   </div>
-  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
   <template #footer>
     <div style="display: flex;">
       <a-btn type="secondary" @click="useStandardSetUp">Use Standard Set-up</a-btn>
