@@ -528,7 +528,7 @@ export default defineComponent({
   <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
   <div class="text-center mt-4 mb-0 alert alert-danger">
     <i>
-      Please Note: configuring a custom set-up will automatically add a 30 minute buffer to your reservation. It may impact the rooms/spaces available to you.
+      Please Note: Configuring a custom set-up will automatically add a 30 minute buffer to your reservation. It may impact the rooms/spaces available to you.
     </i>
   </div>
   <template #footer>
