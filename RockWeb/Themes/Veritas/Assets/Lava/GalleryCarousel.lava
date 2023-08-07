@@ -1,0 +1,12 @@
+{[ carousel carouselid:'gallery' itemheight:'200' ]}
+    [[ title ]]
+        Gallery
+    [[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+            <div class="img-wrapper">
+                <img src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'ImageAltText'}}" class="w-100"/>
+            </div>
+        [[ enditem ]]
+    {% endfor %}
+{[ endcarousel ]}

@@ -1,0 +1,18 @@
+{[ carousel carouselid:'{{carouselid}}' itemheight:'{{height}}' ]}
+    [[ title ]]
+        {{carouseltitle}}
+    [[ endtitle ]]
+    {% for item in Items %}
+        [[ item ]]
+            {% assign link = item | Attribute:'VideoUrl' | Replace:'/shorts','' | Replace:'.com','.com/embed' %}
+            <div class="clips-frame-wrapper">
+                <iframe src="{{link}}" height="{{height}}"></iframe>
+            </div>
+        [[ enditem ]]
+    {% endfor %}
+{[ endcarousel ]}
+<style>
+    .control.{{carouselid}}-control {
+        top: 50%;
+    }
+</style>
