@@ -131,7 +131,7 @@
                             <a href="/Veritas/Staff">Get to Know Us</a>
                         </li>
                         <li class="menu-item main-nav-item">
-                            <a href="/Veritas/Resources">Messages</a>
+                            <a href="/Veritas/Resources">Watch</a>
                         </li>
                     </ul>
                 </div>
@@ -144,10 +144,10 @@
                     <div class="desktop-menu">
                         <ul id="menu-right" class="main-navigation">
                             <li class="menu-item main-nav-item">
-                                <a href="/Veritas/Serving">Make an Impact</a>
+                                <a href="/Veritas/Serving">Serve With Us</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Registration/veritas-rides">Find a Ride</a>
+                                <a href="/Registration/veritas-rides">I Need a Ride</a>
                             </li>
                             <li class="menu-item main-nav-item">
                                 <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
@@ -167,13 +167,13 @@
                                 <a class="text-white" href="/Veritas/Staff">Get to Know Us</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Veritas/Resources" class="text-white">Messages</a>
+                                <a href="/Veritas/Resources" class="text-white">Watch</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Veritas/Serving" class="text-white">Make an Impact</a>
+                                <a href="/Veritas/Serving" class="text-white">Serve With Us</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Registration/veritas-rides" class="text-white">Find a Ride</a>
+                                <a href="/Registration/veritas-rides" class="text-white">I Need a Ride</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Veritas/Events?aud=College" class="text-white">Events</a>
@@ -200,19 +200,10 @@
             <!-- Brand Bar -->
             <nav class="navbar navbar-inverse navbar-static-top">
                 <div class="container">
-                    <div class="navbar-header">
-                        <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
-                            <i class="fa fa-bars"></i>
-                        </button>
-                        <Rock:Zone Name="Header" runat="server" />
+                    <div class="pull-right">
+                        <Rock:Zone Name="Login" runat="server" />
                     </div>
-                    <div class="navbar-collapse collapse">
-                        <!-- Main Navigation -->
-                        <div class="pull-right">
-                            <Rock:Zone Name="Login" runat="server" />
-                        </div>
-                        <Rock:Zone Name="Navigation" runat="server" />
-                    </div>
+                    <Rock:Zone Name="Navigation" runat="server" />
                 </div>
             </nav>
 
