@@ -62,21 +62,24 @@ export default defineComponent({
         //Filter to current events
         data.forEach((c: any) => {
           c.events = c.events.filter((e: any) => {
-            return DateTime.fromISO(e.start).toFormat('yyyy-MM-dd') == this.currentDate?.toFormat('yyyy-MM-dd')
+            return e.eventDate == this.currentDate?.toFormat('yyyy-MM-dd')
           })
           c.events.forEach((e: any) => {
-            let start = DateTime.fromISO(e.start)
-            if(e.startBuffer) {
-              e.adjustedStart = start.minus({minutes: e.startBuffer})
-            } else {
-              e.adjustedStart = start
-            }
-            let end = DateTime.fromISO(e.end)
-            if(e.endBuffer) {
-              e.adjustedEnd = end.plus({minutes: e.endBuffer})
-            } else {
-              e.adjustedEnd = end
-            }
+            // let start = DateTime.fromISO(e.start)
+            // if(e.startBuffer) {
+            //   e.adjustedStart = start.minus({minutes: e.startBuffer})
+            // } else {
+            //   e.adjustedStart = start
+            // }
+            // let end = DateTime.fromISO(e.end)
+            // if(e.endBuffer) {
+            //   e.adjustedEnd = end.plus({minutes: e.endBuffer})
+            // } else {
+            //   e.adjustedEnd = end
+            // }
+            //The SQL now accounts for the buffer, just convert to luxon datetime
+            e.adjustedStart = DateTime.fromISO(e.adjustedStart)
+            e.adjustedEnd = DateTime.fromISO(e.adjustedEnd)
             let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
             e.duration = interval.toDuration('minutes').toObject().minutes
             e.height = interval.toDuration('minutes').toObject().minutes + "px"
@@ -114,17 +117,29 @@ export default defineComponent({
       this.daysCalendar.forEach((c: any) => events.push(...c.events))
       for(let i=0; i<events.length; i++) {
         let e = events[i]
+        if(typeof e.adjustedStart === 'string') {
+          e.adjustedStart = DateTime.fromISO(e.adjustedStart)
+        }
+        if(typeof e.adjustedEnd === 'string') {
+          e.adjustedEnd = DateTime.fromISO(e.adjustedEnd)
+        }
         let interval = Interval.fromDateTimes(e.adjustedStart, e.adjustedEnd)
         if (lastEventEnding != null && e.adjustedStart >= lastEventEnding) {
           this.packEvents(columns)
-          // columns = []
-          // lastEventEnding = null
         }
         let placed = false
         for(let k=0; k<columns.length; k++) {
           let col = columns[k]
           let noIntersections = true
           for(let j=0; j<col.length; j++) {
+            if(typeof col[j].adjustedStart === 'string') {
+              col[j].adjustedStart = DateTime.fromISO(col[j].adjustedStart)
+            }
+            if(typeof col[j].adjustedEnd === 'string') {
+              col[j].adjustedEnd = DateTime.fromISO(col[j].adjustedEnd)
+            }
+            console.log(col[j])
+            console.log(col[j].adjustedStart, col[j].adjustedEnd)
             let intersection = interval.intersection(Interval.fromDateTimes(col[j].adjustedStart, col[j].adjustedEnd)) as Interval
             if(intersection != null) {
               noIntersections = false

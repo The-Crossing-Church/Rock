@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -49,7 +51,20 @@ namespace Rock.Blocks.Plugin.EventCalendar
     [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     [TextField( "Contact", "Attribute Key for Ministry Contact", key: AttributeKey.ContactAttrKey, defaultValue: "Contact", category: "Attributes", order: 9 )]
+    [TextField( "IsSame", "Attribute Key for IsSame", key: AttributeKey.IsSameAttrKey, defaultValue: "IsSame", category: "Attributes", order: 10 )]
+    [TextField( "NeedsSpace", "Attribute Key for NeedsSpace", key: AttributeKey.NeedsSpaceAttrKey, defaultValue: "NeedsSpace", category: "Attributes", order: 11 )]
+    [TextField( "NeedsOnline", "Attribute Key for NeedsOnline", key: AttributeKey.NeedsOnlineAttrKey, defaultValue: "NeedsOnline", category: "Attributes", order: 12 )]
+    [TextField( "NeedsPublicity", "Attribute Key for NeedsPublicity", key: AttributeKey.NeedsPublicityAttrKey, defaultValue: "NeedsPublicity", category: "Attributes", order: 13 )]
+    [TextField( "NeedsRegistration", "Attribute Key for NeedsRegistration", key: AttributeKey.NeedsRegistrationAttrKey, defaultValue: "NeedsRegistration", category: "Attributes", order: 14 )]
+    [TextField( "NeedsCalendar", "Attribute Key for NeedsCalendar", key: AttributeKey.NeedsCalendarAttrKey, defaultValue: "NeedsWebCalendar", category: "Attributes", order: 15 )]
+    [TextField( "NeedsCatering", "Attribute Key for NeedsCatering", key: AttributeKey.NeedsCateringAttrKey, defaultValue: "NeedsCatering", category: "Attributes", order: 16 )]
+    [TextField( "NeedsChildcare", "Attribute Key for NeedsChildcare", key: AttributeKey.NeedsChildcareAttrKey, defaultValue: "NeedsChildCare", category: "Attributes", order: 17 )]
+    [TextField( "NeedsChildcareCatering", "Attribute Key for NeedsChildcareCatering", key: AttributeKey.NeedsChildcareCateringAttrKey, defaultValue: "NeedsChildCareCatering", category: "Attributes", order: 18 )]
+    [TextField( "NeedsOps", "Attribute Key for NeedsOps", key: AttributeKey.NeedsOpsAttrKey, defaultValue: "NeedsOpsAccommodations", category: "Attributes", order: 19 )]
+    [TextField( "NeedsProduction", "Attribute Key for NeedsProduction", key: AttributeKey.NeedsProductionAttrKey, defaultValue: "NeedsProductionAccommodations", category: "Attributes", order: 20 )]
+    [TextField( "Infrastructure Space", "Attribute Key for Infrastructure Space", key: AttributeKey.InfrstructureSpaceAttrKey, defaultValue: "InfrastructureSpace", category: "Attributes", order: 21 )]
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
+
     #endregion Block Attributes
 
     public class Calendar : RockObsidianBlockType
@@ -82,6 +97,18 @@ namespace Rock.Blocks.Plugin.EventCalendar
             public const string StartDateTime = "StartDateTime";
             public const string EndDateTime = "EndDateTime";
             public const string ContactAttrKey = "ContactAttrKey";
+            public const string IsSameAttrKey = "IsSameAttrKey";
+            public const string NeedsSpaceAttrKey = "NeedsSpaceAttrKey";
+            public const string NeedsOnlineAttrKey = "NeedsOnlineAttrKey";
+            public const string NeedsPublicityAttrKey = "NeedsPublicityAttrKey";
+            public const string NeedsRegistrationAttrKey = "NeedsRegistrationAttrKey";
+            public const string NeedsCalendarAttrKey = "NeedsCalendarAttrKey";
+            public const string NeedsCateringAttrKey = "NeedsCateringAttrKey";
+            public const string NeedsChildcareAttrKey = "NeedsChildcareAttrKey";
+            public const string NeedsChildcareCateringAttrKey = "NeedsChildcareCateringAttrKey";
+            public const string NeedsOpsAttrKey = "NeedsOpsAttrKey";
+            public const string NeedsProductionAttrKey = "NeedsProductionAttrKey";
+            public const string InfrstructureSpaceAttrKey = "InfrstructureSpaceAttrKey";
             public const string Rooms = "Rooms";
             public const string StartBuffer = "StartBuffer";
             public const string EndBuffer = "EndBuffer";
@@ -89,6 +116,41 @@ namespace Rock.Blocks.Plugin.EventCalendar
         }
 
         #endregion Keys
+
+        #region Properties
+
+        private int EventContentChannelId { get; set; }
+        private int EventContentChannelTypeId { get; set; }
+        private int EventDetailsContentChannelId { get; set; }
+        private int EventDetailsContentChannelTypeId { get; set; }
+        private Rock.Model.Attribute EventDatesAttr { get; set; }
+        private Rock.Model.Attribute RequestStatusAttr { get; set; }
+        private Rock.Model.Attribute InfrastructureSpaceAttr { get; set; }
+        private Rock.Model.Attribute EventDateAttr { get; set; }
+        private Rock.Model.Attribute StartTimeAttr { get; set; }
+        private Rock.Model.Attribute EndTimeAttr { get; set; }
+        private Rock.Model.Attribute StartBufferAttr { get; set; }
+        private Rock.Model.Attribute EndBufferAttr { get; set; }
+        private Rock.Model.Attribute LocationAttr { get; set; }
+        private Rock.Model.Attribute MinistryAttr { get; set; }
+        private Rock.Model.Attribute ContactAttr { get; set; }
+        private Rock.Model.Attribute IsSameAttr { get; set; }
+        private Rock.Model.Attribute NeedsSpaceAttr { get; set; }
+        private Rock.Model.Attribute NeedsOnlineAttr { get; set; }
+        private Rock.Model.Attribute NeedsPublicityAttr { get; set; }
+        private Rock.Model.Attribute NeedsRegistrationAttr { get; set; }
+        private Rock.Model.Attribute NeedsCalendarAttr { get; set; }
+        private Rock.Model.Attribute NeedsCateringAttr { get; set; }
+        private Rock.Model.Attribute NeedsChildcareAttr { get; set; }
+        private Rock.Model.Attribute NeedsChildcareCateringAttr { get; set; }
+        private Rock.Model.Attribute NeedsOpsAttr { get; set; }
+        private Rock.Model.Attribute NeedsProductionAttr { get; set; }
+        private DefinedType LocationDT { get; set; }
+        private DefinedType MinistryDT { get; set; }
+        private List<DefinedValue> Locations { get; set; }
+        private List<DefinedValue> Ministries { get; set; }
+
+        #endregion
 
         #region Obsidian Block Type Overrides
 
@@ -150,32 +212,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
 
         #endregion Obsidian Block Type Overrides
 
-        #region Properties
-
-        private int EventContentChannelId { get; set; }
-        private int EventContentChannelTypeId { get; set; }
-        private int EventDetailsContentChannelId { get; set; }
-        private int EventDetailsContentChannelTypeId { get; set; }
-        private Rock.Model.Attribute EventDatesAttr { get; set; }
-        private Rock.Model.Attribute RequestStatusAttr { get; set; }
-        private Rock.Model.Attribute ResourcesAttr { get; set; }
-        private Rock.Model.Attribute EventDateAttr { get; set; }
-        private Rock.Model.Attribute StartTimeAttr { get; set; }
-        private Rock.Model.Attribute EndTimeAttr { get; set; }
-        private Rock.Model.Attribute StartBufferAttr { get; set; }
-        private Rock.Model.Attribute EndBufferAttr { get; set; }
-        private Rock.Model.Attribute LocationAttr { get; set; }
-        private Rock.Model.Attribute MinistryAttr { get; set; }
-        private Rock.Model.Attribute ContactAttr { get; set; }
-        private List<DefinedValue> Locations { get; set; }
-        private List<DefinedValue> Ministries { get; set; }
-
-        #endregion
-
         #region Block Actions
-
-
-        #endregion Block Actions
 
         [BlockAction]
         public BlockActionResult GetEvents( DateTime start, DateTime end )
@@ -185,62 +222,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 SetProperties();
                 if (EventDatesAttr != null && EventDateAttr != null && StartTimeAttr != null && StartBufferAttr != null && EndTimeAttr != null && EndBufferAttr != null && LocationAttr != null)
                 {
-                    RockContext context = new RockContext();
-                    AttributeValueService av_svc = new AttributeValueService( context );
-                    ContentChannelItemService cci_svc = new ContentChannelItemService( context );
-                    var dates = av_svc.Queryable().Where( av => av.AttributeId == EventDatesAttr.Id ).ToList().Where( av =>
-                    {
-                        bool inRange = false;
-                        if (!String.IsNullOrEmpty( av.Value ))
-                        {
-                            List<DateTime> d = av.Value.Split( ',' ).Select( dt => DateTime.Parse( dt ) ).ToList();
-                            for (int i = 0; i < d.Count(); i++)
-                            {
-                                if (start <= d[i] && d[i] <= end)
-                                {
-                                    inRange = true;
-                                }
-                            }
-                        }
-                        return inRange;
-                    } ).ToList();
-                    var statuses = av_svc.Queryable().Where( av => av.AttributeId == RequestStatusAttr.Id && av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" ) );
-                    var eventsInRange = cci_svc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId ).Join( statuses,
-                        cci => cci.Id,
-                        av => av.EntityId,
-                        ( cci, av ) => cci
-                    );
-                    var inRangeEvents = eventsInRange.ToList().Join( dates,
-                        cci => cci.Id,
-                        av => av.EntityId,
-                        ( cci, av ) => cci
-                    ).ToList();
-
-                    List<EventFormCalendar> calendars = new List<EventFormCalendar>();
-                    for (int i = 0; i < inRangeEvents.Count(); i++)
-                    {
-                        var details = inRangeEvents[i].ChildItems.Select( ci => ci.ChildContentChannelItem ).Where( cci => cci.ContentChannelId == EventDetailsContentChannelId ).ToList();
-                        for (int k = 0; k < details.Count(); k++)
-                        {
-                            var currentDetail = details[k];
-                            var eventDateAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EventDateAttr.Id && av.EntityId == currentDetail.Id );
-                            if (eventDateAV == null || String.IsNullOrEmpty( eventDateAV.Value ))
-                            {
-                                var parent = inRangeEvents[i];
-                                eventDateAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EventDatesAttr.Id && av.EntityId == parent.Id );
-                                List<string> eventDates = eventDateAV.Value.Split( ',' ).Select( d => d.Trim() ).ToList();
-                                for (int h = 0; h < eventDates.Count(); h++)
-                                {
-                                    BuildEvent( calendars, currentDetail, parent, eventDates[h] );
-                                }
-                            }
-                            else
-                            {
-                                string eventDate = DateTime.Parse( eventDateAV.Value ).ToString( "yyyy-MM-dd" );
-                                BuildEvent( calendars, currentDetail, inRangeEvents[i], eventDate );
-                            }
-                        }
-                    }
+                    var calendars = GetEventDataSQL( start, end );
 
                     return ActionOk( calendars );
                 }
@@ -252,97 +234,10 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 return ActionBadRequest( e.Message );
             }
         }
+
+        #endregion Block Actions
+
         #region Helpers
-
-        private void BuildEvent( List<EventFormCalendar> calendars, ContentChannelItem currentDetail, ContentChannelItem parent, string eventDate )
-        {
-            RockContext context = new RockContext();
-            AttributeValueService av_svc = new AttributeValueService( context );
-            ContentChannelItemService cci_svc = new ContentChannelItemService( context );
-            DateTime? eStart = null;
-            DateTime? eEnd = null;
-            int startbuffer = 0;
-            int endbuffer = 0;
-            var startAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == StartTimeAttr.Id && av.EntityId == currentDetail.Id );
-            if (startAV != null)
-            {
-                DateTime dt;
-                if (DateTime.TryParse( $"{eventDate} {startAV.Value}", out dt ))
-                {
-                    eStart = dt;
-                    var startBufferAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == StartBufferAttr.Id && av.EntityId == currentDetail.Id );
-                    if (startBufferAV != null)
-                    {
-                        Int32.TryParse( startBufferAV.Value, out startbuffer );
-                    }
-                }
-            }
-            var endAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EndTimeAttr.Id && av.EntityId == currentDetail.Id );
-            if (endAV != null)
-            {
-                DateTime dt;
-                if (DateTime.TryParse( $"{eventDate} {endAV.Value}", out dt ))
-                {
-                    eEnd = dt;
-                    var endBufferAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == EndBufferAttr.Id && av.EntityId == currentDetail.Id );
-                    if (endBufferAV != null)
-                    {
-                        Int32.TryParse( endBufferAV.Value, out endbuffer );
-                    }
-                }
-            }
-            var locationAV = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == LocationAttr.Id && av.EntityId == currentDetail.Id );
-            var ministryAv = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == MinistryAttr.Id && av.EntityId == parent.Id );
-            var contactAv = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == ContactAttr.Id && av.EntityId == parent.Id );
-            var resourcesAv = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == ResourcesAttr.Id && av.EntityId == parent.Id );
-            if (locationAV != null && ministryAv != null && resourcesAv != null && eStart.HasValue && eEnd.HasValue)
-            {
-                var locationGuids = locationAV.Value.Split( ',' ).AsGuidOrNullList();
-                var locs = Locations.Where( l => locationGuids.Contains( l.Guid ) ).ToList();
-                var ministry = Ministries.FirstOrDefault( dv => dv.Guid == Guid.Parse( ministryAv.Value ) );
-                var grouped = locs.Select( l => new { Category = l.GetAttributeValue( "Type" ), Location = l.Value } ).GroupBy( l => l.Category ).ToList();
-
-                for (int j = 0; j < grouped.Count(); j++)
-                {
-                    var calendarIdx = calendars.Select( c => c.name ).ToList().IndexOf( grouped[j].Key );
-                    EventFormCalendar calendar;
-                    if (calendarIdx < 0)
-                    {
-                        var colors = GetAttributeValue( AttributeKey.CalendarColors ).Split( '|' ).ToList();
-                        var color = colors.FirstOrDefault( c => c.Split( '^' )[0] == grouped[j].Key );
-                        calendar = new EventFormCalendar()
-                        {
-                            name = grouped[j].Key,
-                            events = new List<EventFormEvent>(),
-                            color = color != null ? ("rgba(" + color.Split( '^' )[1] + ", .7)") : "rgba(78, 135, 140, .7)",
-                            border = color != null ? ("rgba(" + color.Split( '^' )[1] + ", 1)") : "rgba(78, 135, 140, 1)"
-                        };
-                        calendars.Add( calendar );
-                    }
-                    else
-                    {
-                        calendar = calendars[calendarIdx];
-                    }
-                    EventFormEvent e = new EventFormEvent()
-                    {
-                        id = currentDetail.Id,
-                        parentId = parent.Id,
-                        title = parent.Title,
-                        start = eStart.Value,
-                        end = eEnd.Value,
-                        startBuffer = startbuffer,
-                        endBuffer = endbuffer,
-                        location = String.Join( ", ", grouped[j].Select( g => g.Location ) ),
-                        ministry = ministry.Value,
-                        submitterId = parent.CreatedByPersonId.Value,
-                        submitter = parent.CreatedByPersonName,
-                        contact = contactAv != null ? contactAv.Value : parent.CreatedByPersonName,
-                        resources = resourcesAv.Value.Split( ',' ).ToList()
-                    };
-                    calendar.events.Add( e );
-                }
-            }
-        }
 
         private ContentChannelItem FromViewModel( ContentChannelItemViewModel viewModel )
         {
@@ -386,74 +281,131 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 EventDetailsContentChannelTypeId = dCC.ContentChannelTypeId;
 
             }
+            var attr_svc = new AttributeService( rockContext );
             string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
             if (!String.IsNullOrEmpty( eventDatesAttrKey ))
             {
-                EventDatesAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == eventDatesAttrKey );
+                EventDatesAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == eventDatesAttrKey );
             }
             string statusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
             if (!String.IsNullOrEmpty( statusAttrKey ))
             {
-                RequestStatusAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == statusAttrKey );
+                RequestStatusAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == statusAttrKey );
             }
-            string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-            if (!String.IsNullOrEmpty( resourcesAttrKey ))
+            string infrstructureSpaceAttrKey = GetAttributeValue( AttributeKey.InfrstructureSpaceAttrKey );
+            if (!String.IsNullOrEmpty( infrstructureSpaceAttrKey ))
             {
-                ResourcesAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey );
+                InfrastructureSpaceAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == infrstructureSpaceAttrKey );
             }
             string eventDateAttrKey = GetAttributeValue( AttributeKey.DetailsEventDate );
             if (!String.IsNullOrEmpty( eventDateAttrKey ))
             {
-                EventDateAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == eventDateAttrKey );
+                EventDateAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == eventDateAttrKey );
             }
             string startTimeAttrKey = GetAttributeValue( AttributeKey.StartDateTime );
             if (!String.IsNullOrEmpty( startTimeAttrKey ))
             {
-                StartTimeAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startTimeAttrKey );
+                StartTimeAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startTimeAttrKey );
             }
             string startBufferAttrKey = GetAttributeValue( AttributeKey.StartBuffer );
             if (!String.IsNullOrEmpty( startBufferAttrKey ))
             {
-                StartBufferAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startBufferAttrKey );
+                StartBufferAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startBufferAttrKey );
             }
             string endTimeAttrKey = GetAttributeValue( AttributeKey.EndDateTime );
             if (!String.IsNullOrEmpty( endTimeAttrKey ))
             {
-                EndTimeAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endTimeAttrKey );
+                EndTimeAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endTimeAttrKey );
             }
             string endBufferAttrKey = GetAttributeValue( AttributeKey.EndBuffer );
             if (!String.IsNullOrEmpty( endBufferAttrKey ))
             {
-                EndBufferAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endBufferAttrKey );
+                EndBufferAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endBufferAttrKey );
             }
             string locationAttrKey = GetAttributeValue( AttributeKey.Rooms );
             if (!String.IsNullOrEmpty( locationAttrKey ))
             {
-                LocationAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == locationAttrKey );
+                LocationAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == locationAttrKey );
             }
             string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
             if (!String.IsNullOrEmpty( ministryAttrKey ))
             {
-                MinistryAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == ministryAttrKey );
+                MinistryAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == ministryAttrKey );
             }
             string contactAttrKey = GetAttributeValue( AttributeKey.ContactAttrKey );
             if (!String.IsNullOrEmpty( contactAttrKey ))
             {
-                ContactAttr = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == contactAttrKey );
+                ContactAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == contactAttrKey );
             }
+            string isSameAttrKey = GetAttributeValue( AttributeKey.IsSameAttrKey );
+            if (!String.IsNullOrEmpty( isSameAttrKey ))
+            {
+                IsSameAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == isSameAttrKey );
+            }
+            string needsSpaceAttrKey = GetAttributeValue( AttributeKey.NeedsSpaceAttrKey );
+            if (!String.IsNullOrEmpty( needsSpaceAttrKey ))
+            {
+                NeedsSpaceAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsSpaceAttrKey );
+            }
+            string needsOnlineAttrKey = GetAttributeValue( AttributeKey.NeedsOnlineAttrKey );
+            if (!String.IsNullOrEmpty( needsOnlineAttrKey ))
+            {
+                NeedsOnlineAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsOnlineAttrKey );
+            }
+            string needsPublicityAttrKey = GetAttributeValue( AttributeKey.NeedsPublicityAttrKey );
+            if (!String.IsNullOrEmpty( needsPublicityAttrKey ))
+            {
+                NeedsPublicityAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsPublicityAttrKey );
+            }
+            string needsRegistrationAttrKey = GetAttributeValue( AttributeKey.NeedsRegistrationAttrKey );
+            if (!String.IsNullOrEmpty( needsRegistrationAttrKey ))
+            {
+                NeedsRegistrationAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsRegistrationAttrKey );
+            }
+            string needsCalendarAttrKey = GetAttributeValue( AttributeKey.NeedsCalendarAttrKey );
+            if (!String.IsNullOrEmpty( needsCalendarAttrKey ))
+            {
+                NeedsCalendarAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsCalendarAttrKey );
+            }
+            string needsCateringAttrKey = GetAttributeValue( AttributeKey.NeedsCateringAttrKey );
+            if (!String.IsNullOrEmpty( needsCateringAttrKey ))
+            {
+                NeedsCateringAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsCateringAttrKey );
+            }
+            string needsChildcareAttrKey = GetAttributeValue( AttributeKey.NeedsChildcareAttrKey );
+            if (!String.IsNullOrEmpty( needsChildcareAttrKey ))
+            {
+                NeedsChildcareAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsChildcareAttrKey );
+            }
+            string needsChildcareCateringAttrKey = GetAttributeValue( AttributeKey.NeedsChildcareCateringAttrKey );
+            if (!String.IsNullOrEmpty( needsChildcareCateringAttrKey ))
+            {
+                NeedsChildcareCateringAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsChildcareCateringAttrKey );
+            }
+            string needsOpsAttrKey = GetAttributeValue( AttributeKey.NeedsOpsAttrKey );
+            if (!String.IsNullOrEmpty( needsOpsAttrKey ))
+            {
+                NeedsOpsAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsOpsAttrKey );
+            }
+            string needsProductionAttrKey = GetAttributeValue( AttributeKey.NeedsProductionAttrKey );
+            if (!String.IsNullOrEmpty( needsProductionAttrKey ))
+            {
+                NeedsProductionAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsProductionAttrKey );
+            }
+
             Guid locationGuid = Guid.Empty;
             if (Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ))
             {
-                DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
+                LocationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
+                var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == LocationDT.Id ).ToList();
                 locs.LoadAttributes();
                 Locations = locs;
             }
             Guid ministryGuid = Guid.Empty;
             if (Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ))
             {
-                DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
-                var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                MinistryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
+                var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDT.Id );
                 min.LoadAttributes();
                 Ministries = min.ToList();
             }
@@ -480,9 +432,469 @@ namespace Rock.Blocks.Plugin.EventCalendar
             return hasRole;
         }
 
+        private List<EventFormCalendar> GetEventDataSQL( DateTime start, DateTime end )
+        {
+            using (RockContext context = new RockContext())
+            {
+                var sqlParams = new SqlParameter[] {
+                    new SqlParameter( "@eventDetailsContentChannelId", EventDetailsContentChannelId ),
+                    new SqlParameter( "@start", start.ToString( "yyyy-MM-dd" ) ),
+                    new SqlParameter( "@end", end.ToString( "yyyy-MM-dd" ) ),
+                    new SqlParameter( "@eventDatesAttrId", EventDatesAttr.Id ),
+                    new SqlParameter( "@eventDateAttrId", EventDateAttr.Id ),
+                    new SqlParameter( "@requestStatusAttrId", RequestStatusAttr.Id ),
+                    new SqlParameter( "@ministryAttrId", MinistryAttr.Id ),
+                    new SqlParameter( "@ministryContactAttrId", ContactAttr.Id ),
+                    new SqlParameter( "@isSameAttrId", IsSameAttr.Id ),
+                    new SqlParameter( "@needsSpaceAttrId", NeedsSpaceAttr.Id ),
+                    new SqlParameter( "@needsOnlineAttrId", NeedsOnlineAttr.Id ),
+                    new SqlParameter( "@needsPublicityAttrId", NeedsPublicityAttr.Id ),
+                    new SqlParameter( "@needsRegistrationAttrId", NeedsRegistrationAttr.Id ),
+                    new SqlParameter( "@needsCalendarAttrId", NeedsCalendarAttr.Id ),
+                    new SqlParameter( "@needsCateringAttrId", NeedsCateringAttr.Id ),
+                    new SqlParameter( "@needsChildcareAttrId", NeedsChildcareAttr.Id ),
+                    new SqlParameter( "@needsChildcareCateringAttrId", NeedsChildcareCateringAttr.Id ),
+                    new SqlParameter( "@needsOpsAttrId", NeedsOpsAttr.Id ),
+                    new SqlParameter( "@needsProductionAttrId", NeedsProductionAttr.Id ),
+                    new SqlParameter( "@startTimeAttrId", StartTimeAttr.Id ),
+                    new SqlParameter( "@startBufferAttrId", StartBufferAttr.Id ),
+                    new SqlParameter( "@endTimeAttrId", EndTimeAttr.Id ),
+                    new SqlParameter( "@endBufferAttrId", EndBufferAttr.Id ),
+                    new SqlParameter( "@roomAttrId", LocationAttr.Id ),
+                    new SqlParameter( "@infrastructureSpaceAttrId", InfrastructureSpaceAttr.Id ),
+                    new SqlParameter( "@ministryDTId", MinistryDT.Id ),
+                    new SqlParameter( "@locationDTId", LocationDT.Id ) };
+                var query = context.Database.SqlQuery<EventData>( $@"
+SELECT ParentId AS 'parentId',
+       ChildId AS 'id',
+       Title AS 'title',
+       RequestStatus AS 'requestStatus',
+       IsSame AS 'isSame',
+       EventDate AS 'eventDate',
+       CAST(CONCAT(LEFT(EventDate, 10), ' ', LEFT(StartTime, 8)) AS DateTime) AS 'start',
+       CAST(CONCAT(LEFT(EventDate, 10), ' ', LEFT(AdjustedStartTime, 8)) AS DateTime) AS 'adjustedStart',
+       CAST(AdjustedStartTime AS varchar(8)) AS 'adjustedStartTime', 
+       StartTime AS 'startTime',
+       (CASE WHEN StartBuffer IS NOT NULL THEN CAST(StartBuffer AS int) ELSE 0 END) AS 'startBuffer',
+       CAST(CONCAT(LEFT(EventDate, 10), ' ', LEFT(EndTime, 8)) AS DateTime) AS 'end',
+       CAST(CONCAT(LEFT(EventDate, 10), ' ', LEFT(AdjustedEndTime, 8)) AS DateTime) AS 'adjustedEnd',
+       CAST(AdjustedEndTime AS varchar(8)) AS 'adjustedEndTime',
+       EndTime AS 'endTime',
+       (CASE WHEN EndBuffer IS NOT NULL THEN CAST(EndBuffer AS int) ELSE 0 END) AS 'endBuffer',
+       Calendar AS 'calendar',
+       STRING_AGG(Room, ', ') AS 'location',
+       CreatedDateTime AS 'createdDateTime',
+       CreatedByPersonId AS 'createdByPersonId',
+       CreatedByPersonName AS 'createdByPersonName',
+       ModifiedDateTime AS 'modifiedDateTime',
+       ModifiedByPersonId AS 'modifiedByPersonId',
+       ModifiedByPersonName AS 'modifiedByPersonName',
+       NeedsSpace AS 'needsSpace',
+       NeedsOnline AS 'needsOnline',
+       NeedsPublicity AS 'needsPublicity',
+       NeedsRegistration AS 'needsRegistration',
+       NeedsCalendar AS 'needsCalendar',
+       NeedsCatering AS 'needsCatering',
+       NeedsChildcare AS 'needsChildcare',
+       NeedsChildcareCatering AS 'needsChildcareCatering',
+       NeedsOps AS 'needsOps',
+       NeedsProduction AS 'needsProduction',
+       MinistryContact AS 'contact',
+       Ministry AS 'ministry',
+       InfrastructureSpaces AS 'infrastructureSpaces'
+FROM (
+         SELECT ParentId,
+                ChildId,
+                Title,
+                RequestStatus,
+                IsSame,
+                EventDate,
+                AdjustedStartTime,
+                StartTime,
+                StartBuffer,
+                (CASE WHEN AdjustedEndTime = '00:00:00' THEN '23:59:00' ELSE AdjustedEndTime END) AS 'AdjustedEndTime',
+                (CASE WHEN EndTime = '00:00:00' THEN '23:59:00' ELSE EndTime END) AS 'EndTime',
+                EndBuffer,
+                DefinedValue.Value   AS 'Room',
+                AttributeValue.Value AS 'Calendar',
+                rooms.CreatedDateTime,
+                CreatedByPersonId,
+                CreatedByPersonName,
+                rooms.ModifiedDateTime,
+                ModifiedByPersonId,
+                ModifiedByPersonName,
+                NeedsSpace,
+                NeedsOnline,
+                NeedsPublicity,
+                NeedsRegistration,
+                NeedsCalendar,
+                NeedsCatering,
+                NeedsChildcare,
+                NeedsChildcareCatering,
+                NeedsOps,
+                NeedsProduction,
+                MinistryContact,
+                Ministry,
+                InfrastructureSpaces
+         FROM (
+                  SELECT ParentId,
+                         ChildId,
+                         Title,
+                         RequestStatus,
+                         IsSame,
+                         EventDates,
+                         EventDate,
+                         AdjustedStartTime,
+                         StartTime,
+                         StartBuffer,
+                         AdjustedEndTime,
+                         EndTime,
+                         EndBuffer,
+                         TRIM(value) AS RoomGuid,
+                         CreatedDateTime,
+                         CreatedByPersonId,
+                         CreatedByPersonName,
+                         ModifiedDateTime,
+                         ModifiedByPersonId,
+                         ModifiedByPersonName,
+                         NeedsSpace,
+                         NeedsOnline,
+                         NeedsPublicity,
+                         NeedsRegistration,
+                         NeedsCalendar,
+                         NeedsCatering,
+                         NeedsChildcare,
+                         NeedsChildcareCatering,
+                         NeedsOps,
+                         NeedsProduction,
+                         MinistryContact,
+                         Ministry,
+                         InfrastructureSpaces
+                  FROM (
+                           SELECT ParentId,
+                                  ChildId,
+                                  Title,
+                                  RequestStatus,
+                                  IsSame,
+                                  EventDates,
+                                  TRIM(value) AS 'EventDate',
+                                  AdjustedStartTime,
+                                  StartTime,
+                                  StartBuffer,
+                                  AdjustedEndTime,
+                                  EndTime,
+                                  EndBuffer,
+                                  CreatedDateTime,
+                                  CreatedByPersonId,
+                                  CreatedByPersonName,
+                                  ModifiedDateTime,
+                                  ModifiedByPersonId,
+                                  ModifiedByPersonName,
+                                  NeedsSpace,
+                                  NeedsOnline,
+                                  NeedsPublicity,
+                                  NeedsRegistration,
+                                  NeedsCalendar,
+                                  NeedsCatering,
+                                  NeedsChildcare,
+                                  NeedsChildcareCatering,
+                                  NeedsOps,
+                                  NeedsProduction,
+                                  MinistryContact,
+                                  Ministry,
+                                  RoomGuids,
+                                  InfrastructureSpaces
+                           FROM (
+                                    SELECT ParentId,
+                                           ChildId,
+                                           Title,
+                                           RequestStatus,
+                                           IsSame,
+                                           (CASE WHEN IsSame = 1 THEN EventDates ELSE EventDate END) AS 'EventDates',
+                                           CreatedDateTime,
+                                           CreatedByPersonId,
+                                           CreatedByPersonName,
+                                           ModifiedDateTime,
+                                           ModifiedByPersonId,
+                                           ModifiedByPersonName,
+                                           NeedsSpace,
+                                           NeedsOnline,
+                                           NeedsPublicity,
+                                           NeedsRegistration,
+                                           NeedsCalendar,
+                                           NeedsCatering,
+                                           NeedsChildcare,
+                                           NeedsChildcareCatering,
+                                           NeedsOps,
+                                           NeedsProduction,
+                                           MinistryContact,
+                                           Ministry,
+                                           StartTime,
+                                           StartBuffer,
+                                           (CASE
+                                                WHEN StartBuffer IS NOT NULL AND StartBuffer > 0
+                                                    THEN CAST(DATEADD(N, -1 * StartBuffer, CAST(StartTime AS DATETIME)) AS Time)
+                                                ELSE StartTime END)                                  AS 'AdjustedStartTime',
+                                           EndTime,
+                                           EndBuffer,
+                                           (CASE
+                                                WHEN EndBuffer IS NOT NULL AND EndBuffer > 0
+                                                    THEN CAST(DATEADD(N, EndBuffer, CAST(EndTime AS DATETIME)) AS Time)
+                                                ELSE EndTime END)                                    AS 'AdjustedEndTime',
+                                           RoomGuids,
+                                           InfrastructureSpaces
+                                    FROM (
+                                             SELECT ParentId,
+                                                    ChildContentChannelItemId AS 'ChildId',
+                                                    parentWithAVs.Title,
+                                                    RequestStatus,
+                                                    EventDates,
+                                                    parentWithAVs.CreatedDateTime,
+                                                    CreatedByPersonId,
+                                                    CreatedByPersonName,
+                                                    parentWithAVs.ModifiedDateTime,
+                                                    ModifiedByPersonId,
+                                                    ModifiedByPersonName,
+                                                    NeedsSpace,
+                                                    NeedsOnline,
+                                                    NeedsPublicity,
+                                                    NeedsRegistration,
+                                                    NeedsCalendar,
+                                                    NeedsCatering,
+                                                    NeedsChildcare,
+                                                    NeedsChildcareCatering,
+                                                    NeedsOps,
+                                                    NeedsProduction,
+                                                    IsSame,
+                                                    MinistryContact,
+                                                    Ministry
+                                             FROM (
+                                                      SELECT *
+                                                      FROM (
+                                                               SELECT DISTINCT Id AS 'ParentId',
+                                                                               Title,
+                                                                               RequestStatus,
+                                                                               CreatedDateTime,
+                                                                               CreatedByPersonAliasId,
+                                                                               ModifiedDateTime,
+                                                                               ModifiedByPersonAliasId
+                                                               FROM ContentChannelItem
+                                                                        INNER JOIN (
+                                                                   SELECT EntityId, value AS 'Event Date'
+                                                                   FROM (
+                                                                            SELECT EntityId, Value AS 'Dates'
+                                                                            FROM AttributeValue
+                                                                            WHERE AttributeId = @eventDatesAttrId 
+                                                                        ) AS dates
+                                                                            CROSS APPLY STRING_SPLIT(Dates, ',')
+                                                                   WHERE value BETWEEN @start AND @end
+                                                               ) AS filterDates
+                                                                                   ON EntityId = Id
+                                                                        CROSS APPLY (SELECT Value AS 'RequestStatus'
+                                                                                     FROM AttributeValue
+                                                                                     WHERE AttributeId = @requestStatusAttrId 
+                                                                                       AND ContentChannelItem.Id = AttributeValue.EntityId) AS status
+                                                               WHERE [RequestStatus] NOT LIKE 'Cancelled%'
+                                                                 AND [RequestStatus] != 'Denied'
+                                                                 AND [RequestStatus] != 'Draft'
+                                                                 AND [RequestStatus] != 'Submitted'
+                                                           ) AS parentItems
+                                                               CROSS APPLY (
+                                                          SELECT Value AS 'EventDates'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @eventDatesAttrId 
+                                                            AND EntityId = ParentId
+                                                      ) AS eventDates
+                                                               CROSS APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsSpace'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsSpaceAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsSpace
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsOnline'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsOnlineAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsOnline
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsPublicity'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsPublicityAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsPublicity
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsRegistration'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsRegistrationAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsRegistration
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsCalendar'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsCalendarAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsCalendar
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsCatering'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsCateringAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsCatering
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsChildcare'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsChildcareAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsChildcare
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsChildcareCatering'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsChildcareCateringAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsChildcareCatering
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsOps'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsOpsAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsOps
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsProduction'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsProductionAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsProduction
+                                                               CROSS APPLY (
+                                                          SELECT ValueAsBoolean AS 'IsSame'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @isSameAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS isSame
+                                                               OUTER APPLY (
+                                                          SELECT Value AS 'MinistryGuid'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @ministryAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS ministryGuid
+                                                               OUTER APPLY (
+                                                          SELECT Value AS 'MinistryContact'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @ministryContactAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS contact
+                                                      WHERE NeedsSpace = 1
+                                                  ) AS parentWithAVs
+                                                      LEFT OUTER JOIN (
+                                                 SELECT Value AS 'Ministry', Guid
+                                                 FROM DefinedValue
+                                                 WHERE DefinedTypeId = @ministryDTId
+                                             ) AS dv ON MinistryGuid = Guid
+                                                      LEFT OUTER JOIN (
+                                                 SELECT Id, PersonId AS 'CreatedByPersonId'
+                                                 FROM PersonAlias
+                                             ) AS cbpa
+                                                                      ON cbpa.Id = CreatedByPersonAliasId
+                                                      LEFT OUTER JOIN (
+                                                 SELECT Id, PersonId AS 'ModifiedByPersonId'
+                                                 FROM PersonAlias
+                                             ) AS mbpa
+                                                                      ON mbpa.Id = ModifiedByPersonAliasId
+                                                      LEFT OUTER JOIN (
+                                                 SELECT Id, CONCAT(NickName, ' ', LastName) AS 'CreatedByPersonName'
+                                                 FROM Person
+                                             ) AS cbp ON CreatedByPersonId = cbp.Id
+                                                      LEFT OUTER JOIN (
+                                                 SELECT Id, CONCAT(NickName, ' ', LastName) AS 'ModifiedByPersonName'
+                                                 FROM Person
+                                             ) AS mbp ON ModifiedByPersonId = mbp.Id
+                                                      INNER JOIN ContentChannelItemAssociation ON ContentChannelItemId = ParentId
+                                                      INNER JOIN ContentChannelItem
+                                                                 ON ChildContentChannelItemId =
+                                                                    ContentChannelItem.Id AND
+                                                                    ContentChannelId =
+                                                                    @eventDetailsContentChannelId
+                                         ) AS ccia
+                                             OUTER APPLY (
+                                        SELECT Value AS 'EventDate'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @eventDateAttrId
+                                          AND EntityId = ChildId
+                                    ) AS EventDate
+                                             OUTER APPLY (
+                                        SELECT Value AS 'StartTime'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @startTimeAttrId
+                                          AND EntityId = ChildId
+                                    ) AS StartTime
+                                             OUTER APPLY (
+                                        SELECT Value AS 'EndTime'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @endTimeAttrId
+                                          AND EntityId = ChildId
+                                    ) AS EndTime
+                                             OUTER APPLY (
+                                        SELECT ValueAsNumeric AS 'StartBuffer'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @startBufferAttrId
+                                          AND EntityId = ChildId
+                                    ) AS StartBuffer
+                                             OUTER APPLY (
+                                        SELECT ValueAsNumeric AS 'EndBuffer'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @endBufferAttrId
+                                          AND EntityId = ChildId
+                                    ) AS EndBuffer
+                                             CROSS APPLY (
+                                        SELECT Value AS 'RoomGuids'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @roomAttrId
+                                          AND EntityId = ChildId
+                                    ) AS RoomGuids
+                                             OUTER APPLY (
+                                        SELECT Value AS 'InfrastructureSpaces'
+                                        FROM AttributeValue
+                                        WHERE AttributeId = @infrastructureSpaceAttrId
+                                          AND EntityId = ChildId
+                                    ) AS InfrastructureSpaces
+                                ) AS childWithAVs
+                                    CROSS APPLY STRING_SPLIT(EventDates, ',')
+                       ) AS eventDates
+                           CROSS APPLY STRING_SPLIT(RoomGuids, ',')
+              ) AS rooms
+                  INNER JOIN DefinedValue
+                             ON RoomGuid = CAST(Guid AS varchar(100)) AND DefinedTypeId = @locationDTId
+                  LEFT OUTER JOIN AttributeValue ON AttributeId = 18373 AND EntityId = DefinedValue.Id
+     ) AS events
+GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
+         AdjustedStartTime, StartTime, StartBuffer,
+         AdjustedEndTime, EndTime, EndBuffer, CreatedDateTime, CreatedByPersonId,
+         CreatedByPersonName, ModifiedDateTime,
+         ModifiedByPersonId, ModifiedByPersonName, NeedsSpace, NeedsOnline,
+         NeedsPublicity, NeedsRegistration,
+         NeedsCalendar, NeedsCatering, NeedsChildcare, NeedsChildcareCatering,
+         NeedsOps, NeedsProduction, Ministry,
+         MinistryContact, InfrastructureSpaces, Calendar
+", sqlParams ).ToList();
+
+                var colors = GetAttributeValue( AttributeKey.CalendarColors ).Split( '|' ).ToList();
+                return query.GroupBy( e => e.calendar ).Select( c =>
+                {
+                    var color = colors.FirstOrDefault( col => col.Split( '^' )[0] == c.Key );
+                    return new EventFormCalendar
+                    {
+                        name = c.Key,
+                        events = c.OrderBy( e => e.start ).ToList(),
+                        color = color != null ? ("rgba(" + color.Split( '^' )[1] + ", .7)") : "rgba(78, 135, 140, .7)",
+                        border = color != null ? ("rgba(" + color.Split( '^' )[1] + ", 1)") : "rgba(78, 135, 140, 1)"
+                    };
+                } ).ToList();
+            }
+        }
+
         #endregion Helpers
 
-        public class CalendarBlockViewModel
+        private class CalendarBlockViewModel
         {
             public List<ContentChannelItemViewModel> events { get; set; }
             public List<DefinedValueViewModel> locations { get; set; }
@@ -494,29 +906,53 @@ namespace Rock.Blocks.Plugin.EventCalendar
             public bool isEventAdmin { get; set; }
         }
 
-        public class EventFormCalendar
+        private class EventFormCalendar
         {
             public string name { get; set; }
             public string color { get; set; }
             public string border { get; set; }
-            public List<EventFormEvent> events { get; set; }
+            public List<EventData> events { get; set; }
         }
 
-        public class EventFormEvent
+        private class EventData
         {
-            public int id { get; set; }
             public int parentId { get; set; }
-            public DateTime start { get; set; }
-            public DateTime end { get; set; }
-            public int startBuffer { get; set; }
-            public int endBuffer { get; set; }
+            public int id { get; set; }
             public string title { get; set; }
+            public string requestStatus { get; set; }
+            public bool isSame { get; set; }
+            public string eventDate { get; set; }
+            public DateTime start { get; set; }
+            public DateTime adjustedStart { get; set; }
+            public string adjustedStartTime { get; set; }
+            public string startTime { get; set; }
+            public int startBuffer { get; set; }
+            public DateTime end { get; set; }
+            public DateTime adjustedEnd { get; set; }
+            public string adjustedEndTime { get; set; }
+            public string endTime { get; set; }
+            public int endBuffer { get; set; }
+            public string calendar { get; set; }
             public string location { get; set; }
-            public string ministry { get; set; }
-            public List<string> resources { get; set; }
-            public int submitterId { get; set; }
-            public string submitter { get; set; }
-            public string contact { get; set; }
+            public DateTime createdDateTime { get; set; }
+            public int createdByPersonId { get; set; }
+            public string createdByPersonName { get; set; }
+            public DateTime modifiedDateTime { get; set; }
+            public int modifiedByPersonId { get; set; }
+            public string modifiedByPersonName { get; set; }
+            public bool needsSpace { get; set; }
+            public bool needsOnline { get; set; }
+            public bool needsPublicity { get; set; }
+            public bool needsRegistration { get; set; }
+            public bool needsCalendar { get; set; }
+            public bool needsCatering { get; set; }
+            public bool needsChildcare { get; set; }
+            public bool needsChildcareCatering { get; set; }
+            public bool needsOps { get; set; }
+            public bool needsProduction { get; set; }
+            public String contact { get; set; }
+            public String ministry { get; set; }
+            public String infrastructureSpaces { get; set; }
         }
 
     }

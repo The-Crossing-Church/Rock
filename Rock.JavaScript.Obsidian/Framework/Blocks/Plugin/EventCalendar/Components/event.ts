@@ -39,13 +39,6 @@ export default defineComponent({
       if(this.event) {
         let start = DateTime.fromISO(this.event.start)
         let end = DateTime.fromISO(this.event.end)
-        let duration = Interval.fromDateTimes(start, end).toDuration()
-        let range = ""
-        if(duration.hours > 1) {
-          range = duration.hours + " hours"
-        } else if(duration.hours == 1) {
-          range = "1 hour"
-        }
         let timeFrame =  this.event.adjustedStart.toFormat("t") + " - " + this.event.adjustedEnd.toFormat("t") 
         if((this.event.startBuffer && this.event.startBuffer > 0) || (this.event.endBuffer && this.event.endBuffer > 0)) {
           timeFrame += " (Event Time: " + start.toFormat("t") + " - " + end.toFormat("t") + ")"
@@ -89,8 +82,8 @@ export default defineComponent({
     },
     getTimeFrame(relatedEvent: any) {
       if(relatedEvent) {
-        let start = relatedEvent.adjustedStart
-        let end = relatedEvent.adjustedEnd
+        let start = (typeof relatedEvent.adjustedStart === 'string') ? DateTime.fromISO(relatedEvent.adjustedStart) : relatedEvent.adjustedStart
+        let end = (typeof relatedEvent.adjustedEnd === 'string') ? DateTime.fromISO(relatedEvent.adjustedEnd) : relatedEvent.adjustedEnd
         if(!start) {
           start = DateTime.fromISO(relatedEvent.start)
           if(relatedEvent.startBuffer && relatedEvent.startBuffer > 0) {
@@ -109,8 +102,6 @@ export default defineComponent({
     },
     openModal(e: any) {
       // e.preventDefault()
-      console.log('open modal')
-      console.log(this.event)
       this.modal = true
     },
     openInForm() {
@@ -139,9 +130,9 @@ export default defineComponent({
       <i class="far fa-clock"></i> {{selectedTimeFrame}}
     </div>
     <div>
-      {{event.ministry}}: {{event.submitter}}
+      {{event.ministry}}: {{event.createdByPersonName}}
     </div>
-    <div v-if="event.submitter != event.contact">
+    <div v-if="event.createdByPersonName != event.contact">
       Event Contact: {{event.contact}}
     </div>
     <div>
@@ -150,40 +141,35 @@ export default defineComponent({
     <div class="mt-2">
       Resources
       <div class="chip-group">
-        <tcc-chip v-for="r in event.resources" :disabled="true">
-          <template v-if="r == 'Room'">
-            <i class="mr-1 fas fa-door-open"></i> Physical Space
-          </template>
-          <template v-else-if="r == 'Catering'">
-            <i class="mr-1 fas fa-utensils"></i> Catering
-          </template>
-          <template v-else-if="r == 'Childcare'">
-            <i class="mr-1 fas fa-child"></i> Childcare
-          </template>
-          <template v-else-if="r == 'Childcare Catering'">
-            <i class="mr-1 fas fa-pizza-slice"></i> Childcare Catering
-          </template>
-          <template v-else-if="r == 'Online Event'">
-            <i class="mr-1 fas fa-child"></i> Zoom
-          </template>
-          <template v-else-if="r == 'Publicity'">
-            <i class="mr-1 fas fa-bullhorn"></i> Publicity
-          </template>
-          <template v-else-if="r == 'Registration'">
-            <i class="mr-1 fas fa-laptop"></i> Registration
-          </template>
-          <template v-else-if="r == 'Extra Resources'">
-            <i class="mr-1 fas fa-cogs"></i> Ops Request
-          </template>
-          <template v-else-if="r == 'Web Calendar'">
-            <i class="mr-1 fas fa-calendar"></i> Web Calendar
-          </template>
-          <template v-else-if="r == 'Production'">
-            <i class="mr-1 fas fa-music"></i> Production
-          </template>
-          <template v-else>
-            {{r}}
-          </template>
+        <tcc-chip v-if="event.needsSpace" :disabled="true">
+          <i class="mr-1 fas fa-door-open"></i> Physical Space
+        </tcc-chip>
+        <tcc-chip v-if="event.needsCatering" :disabled="true">
+          <i class="mr-1 fas fa-utensils"></i> Catering
+        </tcc-chip>
+        <tcc-chip v-if="event.needsChildcare" :disabled="true">
+          <i class="mr-1 fas fa-child"></i> Childcare
+        </tcc-chip>
+        <tcc-chip v-if="event.needsChildcareCatering" :disabled="true">
+          <i class="mr-1 fas fa-pizza-slice"></i> Childcare Catering
+        </tcc-chip>
+        <tcc-chip v-if="event.needsOnline" :disabled="true">
+          <i class="mr-1 fas fa-child"></i> Zoom
+        </tcc-chip>
+        <tcc-chip v-if="event.needsPublicity" :disabled="true">
+          <i class="mr-1 fas fa-bullhorn"></i> Publicity
+        </tcc-chip>
+        <tcc-chip v-if="event.needsRegistration" :disabled="true">
+          <i class="mr-1 fas fa-laptop"></i> Registration
+        </tcc-chip>
+        <tcc-chip v-if="event.needsOps" :disabled="true">
+          <i class="mr-1 fas fa-cogs"></i> Ops Request
+        </tcc-chip>
+        <tcc-chip v-if="event.needsCalendar" :disabled="true">
+          <i class="mr-1 fas fa-calendar"></i> Web Calendar
+        </tcc-chip>
+        <tcc-chip v-if="event.needsProduction" :disabled="true">
+          <i class="mr-1 fas fa-music"></i> Production
         </tcc-chip>
       </div>
     </div>
