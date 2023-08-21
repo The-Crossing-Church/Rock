@@ -45,8 +45,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
 
     [EventCalendarField( "Event Calendar", "The event calendar to be displayed", true, "8A444668-19AF-4417-9C74-09F842572974", order: 0 )]
     [LinkedPage( "Details Page", "Detail page for events", order: 1 )]
-    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 2 )]
-    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedEvents.lava' %}", "", 3 )]
+    [AttributeField( name: "Priority Attribute", allowMultiple: false, entityTypeGuid: "71632E1A-1E7F-42B9-A630-EC99F375303A", order: 2 )]
+    [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for this HTML block.", false, order: 3 )]
+    [CodeEditorField( "Lava Template", "Lava template to use to display the list of events.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 400, true, @"{% include '~~/Assets/Lava/FeaturedEvents.lava' %}", "", 4 )]
 
     public partial class FeaturedEvents : Rock.Web.UI.RockBlock
     {
@@ -88,7 +89,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             DateTime today = RockDateTime.Now;
             StartDate = new DateTime( today.Year, today.Month, 1, 0, 0, 0 ).AddDays( -7 );
             var eventCalendar = new EventCalendarService( new RockContext() ).Get( GetAttributeValue( "EventCalendar" ).AsGuid() );
-            if ( !String.IsNullOrEmpty( PageParameter( PageParameterKey.Audience ) ) )
+            if (!String.IsNullOrEmpty( PageParameter( PageParameterKey.Audience ) ))
             {
                 List<string> auds = PageParameter( PageParameterKey.Audience ).Split( ',' ).ToList();
                 DefinedType audienceDT = new DefinedTypeService( rockContext ).Get( Guid.Parse( Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE ) );
@@ -98,11 +99,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             {
                 Audiences = new List<Guid>();
             }
-            if ( eventCalendar != null )
+            if (eventCalendar != null)
             {
                 CalendarId = eventCalendar.Id;
             }
-            //LoadAllInRange();
             LoadFeaturedEvents();
         }
 
@@ -118,7 +118,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                          m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
                                          m.EventItem.IsActive &&
                                          m.EventItem.IsApproved &&
-                                         ( Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ) )
+                                         (Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ))
                             ).ToList()
                             .Where( m =>
                             {
@@ -126,11 +126,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                 string featured = m.AttributeValues["FeaturedDates"].Value;
                                 DateTime featuredStart;
                                 DateTime featuredEnd;
-                                if ( !String.IsNullOrEmpty( featured ) )
+                                if (!String.IsNullOrEmpty( featured ))
                                 {
                                     featuredStart = DateTime.Parse( featured.Split( ',' ).First() );
                                     featuredEnd = DateTime.Parse( featured.Split( ',' ).Last() );
-                                    if ( DateTime.Compare( featuredStart, RockDateTime.Now ) <= 0 && DateTime.Compare( featuredEnd, RockDateTime.Now ) >= 0 )
+                                    if (DateTime.Compare( featuredStart, RockDateTime.Now ) <= 0 && DateTime.Compare( featuredEnd, RockDateTime.Now ) >= 0)
                                     {
                                         return true;
                                     }
@@ -139,7 +139,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                 return false;
                             }
                             ).ToList();
-            if ( events.Count() < 8 )
+            if (events.Count() < 8)
             {
                 //Add additional upcoming events to this list to fil out the carousel a bit more
                 var ids = events.Select( e => e.Id ).ToList();
@@ -148,16 +148,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
                                          m.EventItem.IsActive &&
                                          m.EventItem.IsApproved &&
                                          !ids.Contains( m.Id ) &&
-                                         ( Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ) )
+                                         (Audiences.Count() == 0 || m.EventItem.EventItemAudiences.Any( a => Audiences.Contains( a.DefinedValue.Guid ) ))
                             ).ToList().Where( m =>
                                         m.NextStartDateTime.HasValue &&
                                         DateTime.Compare( m.NextStartDateTime.Value, RockDateTime.Now ) >= 0
                             ).OrderBy( m => m.NextStartDateTime ).Take( 8 - events.Count() ).ToList();
                 events.AddRange( addEvents );
             }
+            //Sort Events by Priority
+            Guid? priorityAttrGuid = GetAttributeValue( "PriorityAttribute" ).AsGuidOrNull();
+            if (priorityAttrGuid.HasValue)
+            {
+                var priorityAttr = new AttributeService( _context ).Get( priorityAttrGuid.Value );
+                events = events.OrderBy( e => e.AttributeValues.Where( av => av.Key == priorityAttr.Key ).FirstOrDefault().Value.SortValue ).ToList();
+            }
 
             //If we are filtering by an audience, show only one featured event! 
-            if ( Audiences.Count() == 1 )
+            if (Audiences.Count() == 1)
             {
                 events = events.Take( 1 ).ToList();
             }
@@ -169,158 +176,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
             mergeFields.Add( "CurrentPerson", CurrentPerson );
 
             lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
-        }
-
-        /// <summary>
-        /// Load list of events occuring soon
-        /// </summary>
-        private void LoadAllInRange()
-        {
-            var rockContext = new RockContext();
-            var eventItemOccurrenceService = new EventItemOccurrenceService( rockContext );
-
-            // Grab events
-            var qry = eventItemOccurrenceService
-                    .Queryable( "EventItem, EventItem.EventItemAudiences,Schedule" )
-                    .Where( m =>
-                        m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == CalendarId ) &&
-                        m.EventItem.IsActive &&
-                        m.EventItem.IsApproved &&
-                        m.CreatedDateTime.HasValue &&
-                        m.CreatedDateTime.Value > StartDate.Value );
-
-            // Get the occurrences
-            var occurrences = qry.ToList();
-            var occurrencesWithDates = occurrences
-                .Select( o =>
-                {
-                    var eventOccurrenceDate = new EventOccurrenceDate
-                    {
-                        EventItemOccurrence = o
-                    };
-
-                    if ( o.Schedule != null )
-                    {
-                        eventOccurrenceDate.ScheduleOccurrences = o.Schedule.GetOccurrences( StartDate.Value, StartDate.Value.AddMonths( 3 ) ).ToList();
-                    }
-                    else
-                    {
-                        eventOccurrenceDate.ScheduleOccurrences = new List<Occurrence>();
-                    }
-
-                    return eventOccurrenceDate;
-                } )
-                .Where( d => d.ScheduleOccurrences.Any() )
-                .ToList();
-
-            //CalendarEventDates = new List<DateTime>();
-
-            var eventOccurrenceSummaries = new List<EventOccurrenceSummary>();
-            foreach ( var occurrenceDates in occurrencesWithDates )
-            {
-                var eventItemOccurrence = occurrenceDates.EventItemOccurrence;
-                foreach ( var scheduleOccurrence in occurrenceDates.ScheduleOccurrences )
-                {
-
-                    var datetime = scheduleOccurrence.Period.StartTime.Value;
-                    var occurrenceEndTime = scheduleOccurrence.Period.EndTime;
-
-                    if ( datetime >= RockDateTime.Today )
-                    {
-                        if ( ( !String.IsNullOrEmpty( Search ) && eventItemOccurrence.EventItem.Name.ToLower().Contains( Search.ToLower() ) ) || String.IsNullOrEmpty( Search ) )
-                        {
-                            eventOccurrenceSummaries.Add( new EventOccurrenceSummary
-                            {
-                                EventItemOccurrence = eventItemOccurrence,
-                                Name = eventItemOccurrence.EventItem.Name,
-                                DateTime = datetime,
-                                Date = datetime.ToShortDateString(),
-                                Time = datetime.ToShortTimeString(),
-                                EndDate = occurrenceEndTime != null ? occurrenceEndTime.Value.ToShortDateString() : null,
-                                EndTime = occurrenceEndTime != null ? occurrenceEndTime.Value.ToShortTimeString() : null,
-                                Campus = eventItemOccurrence.Campus != null ? eventItemOccurrence.Campus.Name : "All Campuses",
-                                Location = eventItemOccurrence.Campus != null ? eventItemOccurrence.Campus.Name : "All Campuses",
-                                LocationDescription = eventItemOccurrence.Location,
-                                Description = eventItemOccurrence.EventItem.Description,
-                                Summary = eventItemOccurrence.EventItem.Summary,
-                                OccurrenceNote = eventItemOccurrence.Note.SanitizeHtml(),
-                                DetailPage = string.IsNullOrWhiteSpace( eventItemOccurrence.EventItem.DetailsUrl ) ? null : eventItemOccurrence.EventItem.DetailsUrl,
-                                PhotoPath = eventItemOccurrence.EventItem.Photo != null ? eventItemOccurrence.EventItem.Photo.Path.Substring( 1 ) : ""
-                            } );
-                        }
-                    }
-                }
-            }
-
-            var eventSummaries = eventOccurrenceSummaries
-                .OrderBy( e => e.DateTime )
-                .GroupBy( e => e.Name )
-                .Select( e => e.ToList() )
-                .ToList();
-
-            eventOccurrenceSummaries = eventOccurrenceSummaries
-                .OrderBy( e => e.DateTime )
-                .ThenBy( e => e.Name )
-                .ToList();
-
-            var mergeFields = new Dictionary<string, object>();
-            mergeFields.Add( "StartDate", StartDate.Value );
-            mergeFields.Add( "DetailsPage", LinkedPageRoute( "DetailsPage" ) );
-            mergeFields.Add( "EventItems", eventSummaries );
-            mergeFields.Add( "EventItemOccurrences", eventOccurrenceSummaries );
-            mergeFields.Add( "CurrentPerson", CurrentPerson );
-
-            lOutput.Text = GetAttributeValue( "LavaTemplate" ).ResolveMergeFields( mergeFields, GetAttributeValue( "EnabledLavaCommands" ) );
-        }
-
-        #endregion
-
-        #region Helper Classes
-
-        /// <summary>
-        /// A class to store event item occurrence data for liquid
-        /// </summary>
-        [DotLiquid.LiquidType( "EventItemOccurrence", "DateTime", "Name", "Date", "Time", "EndDate", "EndTime", "Campus", "Location", "LocationDescription", "Description", "Summary", "OccurrenceNote", "DetailPage", "PhotoPath" )]
-        public class EventOccurrenceSummary
-        {
-            public EventItemOccurrence EventItemOccurrence { get; set; }
-
-            public DateTime DateTime { get; set; }
-
-            public string Name { get; set; }
-
-            public string Date { get; set; }
-
-            public string Time { get; set; }
-
-            public string EndDate { get; set; }
-
-            public string EndTime { get; set; }
-
-            public string PhotoPath { get; set; }
-            public string Campus { get; set; }
-
-            public string Location { get; set; }
-
-            public string LocationDescription { get; set; }
-
-            public string Summary { get; set; }
-
-            public string Description { get; set; }
-
-            public string OccurrenceNote { get; set; }
-
-            public string DetailPage { get; set; }
-        }
-
-        /// <summary>
-        /// A class to store the event item occurrences dates
-        /// </summary>
-        public class EventOccurrenceDate
-        {
-            public EventItemOccurrence EventItemOccurrence { get; set; }
-
-            public List<Occurrence> ScheduleOccurrences { get; set; }
         }
 
         #endregion
