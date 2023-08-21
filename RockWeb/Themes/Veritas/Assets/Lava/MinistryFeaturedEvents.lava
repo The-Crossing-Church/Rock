@@ -23,11 +23,8 @@
                     {{ i.Schedule.FriendlyScheduleText }} <br/>
                   {% endif %}
                   <br/>
-                  <div class="d-none d-md-block">
+                  <div class="truncate">
                     {{i.EventItem.Description}}
-                  </div>
-                  <div class="d-block d-md-none">
-                    {{i.EventItem.Description  | TruncateWords:30 }}
                   </div>
                   <br/>
                   <div class='text--centered'>
@@ -44,6 +41,17 @@
     </div>
   </div>
 </div>
+<style>
+  @media (max-width: 767px) {
+    .truncate {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      text-overflow: -o-ellipsis-lastline;
+    }
+  }
+</style>
 <script>
   $(document).ready(() => {
       let tallest = 0
