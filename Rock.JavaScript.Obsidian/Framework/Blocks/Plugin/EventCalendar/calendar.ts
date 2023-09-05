@@ -366,9 +366,7 @@ export default defineComponent({
     },
     selectMonth(month: number) {
       if(this.currentDate.month != month) {
-        this.currentDate = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year})
-        console.log('select month')
-        console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+        this.currentDateAsString = DateTime.fromObject({ day: 1, month: month, year: this.currentDate.year}).toFormat('yyyy-MM-dd')
       }
     },
     getYearPickerClassName(year: number) {
@@ -380,9 +378,7 @@ export default defineComponent({
     },
     selectYear(year: number) {
       if(this.currentDate.year != year) {
-        this.currentDate = DateTime.fromObject({ day: 1, month: this.currentDate.month, year: year})
-        console.log('select year')
-        console.log(this.currentDate.toFormat("MM/dd/yyyy"))
+        this.currentDateAsString = DateTime.fromObject({ day: 1, month: this.currentDate.month, year: year}).toFormat('yyyy-MM-dd')
       }
     },
     newEvent() {
@@ -443,7 +439,7 @@ export default defineComponent({
             }
           }
         }
-      }
+      } 
     }
   },
   mounted() {

@@ -138,8 +138,6 @@ export default defineComponent({
             if(typeof col[j].adjustedEnd === 'string') {
               col[j].adjustedEnd = DateTime.fromISO(col[j].adjustedEnd)
             }
-            console.log(col[j])
-            console.log(col[j].adjustedStart, col[j].adjustedEnd)
             let intersection = interval.intersection(Interval.fromDateTimes(col[j].adjustedStart, col[j].adjustedEnd)) as Interval
             if(intersection != null) {
               noIntersections = false
