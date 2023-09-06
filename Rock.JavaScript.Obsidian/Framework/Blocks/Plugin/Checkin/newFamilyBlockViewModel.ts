@@ -1,0 +1,40 @@
+import { DefinedValue, DefinedType, Attribute, Person, PhoneNumber, Group } from "../../../ViewModels"
+export type NewFamilyBlockViewModel = {
+  showTitle: string;
+  titleDefinedType: DefinedType;
+  showNickName: string;
+  showMiddleName: string;
+  showSuffix: string;
+  suffixDefinedType: DefinedType;
+  connectionStatusDefinedType: DefinedType;
+  defaultConnectionStatus: DefinedValue;
+  requireConnectionStatus: String;
+  requireGender: string;
+  requireBirthDate: string;
+  requireGradeOrAbility: string;
+  showMaritalStatus: string;
+  maritalStatusDefinedType: DefinedType;
+  defaultAdultMaritalStatus: DefinedValue;
+  defaultChildMaritalStatus: DefinedValue;
+  showEmail: boolean;
+  showEmailOptOut: boolean;
+  showCell: boolean;
+  showSMSEnabled: boolean;
+  showAddress: boolean;
+  existingPersonPhoneCantBeMessaged: boolean;
+  adultAttributes: Attribute[];
+  childAttributes: Attribute[];
+  abilityLevelDefinedType: DefinedType;
+  abilityLevelAttribute: Attribute;
+  gradeDefinedType: DefinedType;
+  graduationYear: number;
+  existingPerson: Person;
+  emptyPerson: Person;
+  existingPersonPhoneNumber: PhoneNumber;
+  emptyPersonPhoneNumber: PhoneNumber;
+  Groups: Group[];
+  GroupStartDOBAttribute: Attribute;
+  GroupEndDOBAttribute: Attribute;
+  GroupAbilityAttribute: Attribute;
+  GroupGradeAttribute: Attribute;
+}
