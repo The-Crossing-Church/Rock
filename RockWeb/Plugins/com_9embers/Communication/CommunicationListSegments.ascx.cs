@@ -298,12 +298,12 @@ namespace RockWeb.Plugins.com_9embers.Communication
                 ddlPrevCommunication.DataSource = commService
                     .Queryable().AsNoTracking()
                     .Where( c =>
-                        c.SenderPersonAlias.PersonId == CurrentPersonId.Value &&
+                        c.CreatedByPersonAlias.PersonId == CurrentPersonId.Value &&
                         c.Status != CommunicationStatus.Transient &&
                         ( ( c.Name != null && c.Name != "" ) || ( c.Subject != null && c.Subject != "" ) )
                     )
                     .OrderByDescending( c => c.CreatedDateTime )
-                    .Take( 10 )
+                    .Take( 20 )
                     .ToList()
                     .Select( c => new
                     {
