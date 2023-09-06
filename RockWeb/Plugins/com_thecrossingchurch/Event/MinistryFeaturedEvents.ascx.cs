@@ -46,7 +46,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Event
     [EventCalendarField( "Event Calendar", "The event calendar to be displayed", true, "8A444668-19AF-4417-9C74-09F842572974", order: 0 )]
     [LinkedPage( "Details Page", "Detail page for events", order: 1 )]
     [DefinedValueField( "Audiences", Description = "The audiences for this ministry", Key = "Audiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, Order = 2 )]
-    [DefinedValueField( "Additional Audiences", Description = "Additional audiences to use when going to all events", Key = "AdditionalAudiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, Order = 3 )]
+    [DefinedValueField( "Additional Audiences", Description = "Additional audiences to use when going to all events", Key = "AdditionalAudiences", DefinedTypeGuid = Rock.SystemGuid.DefinedType.MARKETING_CAMPAIGN_AUDIENCE_TYPE, AllowMultiple = true, IsRequired = false, Order = 3 )]
     [DefinedValueField( "Ministry", Key = "Ministry", DefinedTypeGuid = "c5696677 -82e5-4329-a8c2-2b006f589636", AllowMultiple = false, IsRequired = false, Order = 4 )]
     [BooleanField( "Upcoming Events Only", "Selecting this option will only show upcoming events, deselecting it will include events currently being featured on the main calendar page", defaultValue: false, order: 5 )]
     [IntegerField( "Limit", "Max number of events to display", required: false, order: 6 )]
