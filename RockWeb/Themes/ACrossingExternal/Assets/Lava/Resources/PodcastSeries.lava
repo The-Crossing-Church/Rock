@@ -5,7 +5,7 @@
 {% assign SortedItems = SortedItems | AddToArray:tmbt %}
 {% assign weeds = Items | Where:'Series','With You in the Weeds' | First %}
 {% assign SortedItems = SortedItems | AddToArray:weeds %}
-{% assign placed = Items | Where:'Series','Placed For a Purpose' | First %}
+{% assign placed = Items | Where:'Series','Placed For A Purpose' | First %}
 {% assign SortedItems = SortedItems | AddToArray:placed %}
 {% assign abl = Items | Where:'Series','Christian Meditation for A Bigger Life' | First %}
 {% assign SortedItems = SortedItems | AddToArray:abl %}
