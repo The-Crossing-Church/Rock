@@ -1,4 +1,18 @@
-﻿{% for s in Items %}
+﻿{% assign SortedItems = '[]' | FromJSON %}
+{% assign rhythm = Items | Where:'Series','Rhythm' | First %}
+{% assign SortedItems = SortedItems | AddToArray:rhythm %}
+{% assign tmbt = Items | Where:'Series','Ten Minute Bible Talks' | First %}
+{% assign SortedItems = SortedItems | AddToArray:tmbt %}
+{% assign weeds = Items | Where:'Series','With You in the Weeds' | First %}
+{% assign SortedItems = SortedItems | AddToArray:weeds %}
+{% assign placed = Items | Where:'Series','Placed For a Purpose' | First %}
+{% assign SortedItems = SortedItems | AddToArray:placed %}
+{% assign abl = Items | Where:'Series','Christian Meditation for A Bigger Life' | First %}
+{% assign SortedItems = SortedItems | AddToArray:abl %}
+{% assign goingThere = Items | Where:'Series','Going There' | First %}
+{% assign SortedItems = SortedItems | AddToArray:goingThere %}
+{% assign Items = SortedItems %}
+{% for s in Items %}
     {% assign classname = '' %}
     {% assign mod = forloop.index0 | Modulo:2 %}
     {% if mod > 0 %}

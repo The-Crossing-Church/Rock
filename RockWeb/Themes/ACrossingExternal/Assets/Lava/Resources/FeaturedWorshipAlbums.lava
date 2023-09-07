@@ -1,4 +1,4 @@
-﻿{[ carousel carouselid:'albums' itemheight:'315' containerclass:'full-width background--grey' ]}
+﻿{[ carousel carouselid:'albums' itemheight:'315' containerclass:'full-width' ]}
     [[ title ]]
         Crossing Music
     [[ endtitle ]]

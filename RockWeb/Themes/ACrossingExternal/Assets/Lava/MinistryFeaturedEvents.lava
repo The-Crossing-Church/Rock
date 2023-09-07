@@ -45,13 +45,11 @@
   @media (max-width: 767px) {
     .truncate {
       overflow: hidden;
+      max-height: 113px;
       display: -webkit-box;
       -webkit-line-clamp: 5;
       -webkit-box-orient: vertical;
       text-overflow: -o-ellipsis-lastline;
-    }
-    .truncate p {
-      margin-bottom: 0px;
     }
   }
 </style>
