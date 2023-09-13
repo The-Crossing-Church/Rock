@@ -457,7 +457,7 @@ namespace Rock.Blocks.Plugin.Checkin
             viewModel.GroupStartDOBAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrStartDOB ).AsGuid() ).ToViewModel();
             viewModel.GroupEndDOBAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrEndDOB ).AsGuid() ).ToViewModel();
             viewModel.GroupAbilityAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrAbility ).AsGuid() ).ToViewModel();
-            viewModel.GroupGradeAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrGrade ).AsGuid() ).ToViewModel();
+            viewModel.GroupGradeAttribute = groupGradeAttribute.ToViewModel();
             ExistingPersonId = PageParameter( PageParameterKey.ExistingPersonId ).AsIntegerOrNull();
             if (ExistingPersonId.HasValue)
             {
@@ -522,6 +522,7 @@ namespace Rock.Blocks.Plugin.Checkin
         private List<Guid> adultAttributeCategories { get; set; }
         private List<Rock.Model.Attribute> childAttributes { get; set; }
         private Rock.Model.Attribute abilityAttribute { get; set; }
+        private Rock.Model.Attribute groupGradeAttribute { get; set; }
         private List<Rock.Model.Attribute> adultAttributes { get; set; }
 
         #endregion
@@ -536,11 +537,18 @@ namespace Rock.Blocks.Plugin.Checkin
                 Group family = null;
                 var groupType = GroupTypeCache.GetFamilyGroupType();
                 GroupService grp_svc = new GroupService( context );
+                DefinedValueService dv_svc = new DefinedValueService( context );
                 Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
                 Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
                 List<Person> people = new List<Person>();
                 List<GroupMember> members = new List<GroupMember>();
                 List<GroupViewModel> groups = new List<GroupViewModel>();
+                DateTime? gradeTransition = GlobalAttributesCache.Get().GetValue( "GradeTransitionDate" ).MonthDayStringAsDateTime();
+                int GraduationYear = RockDateTime.Now.Year;
+                if (RockDateTime.Now >= gradeTransition)
+                {
+                    GraduationYear++;
+                }
                 for (int i = 0; i < parents.Count(); i++)
                 {
                     Person p = FromViewModel( parents[i] );
@@ -571,7 +579,14 @@ namespace Rock.Blocks.Plugin.Checkin
                 childAttributes.Add( abilityAttribute );
                 for (int i = 0; i < children.Count(); i++)
                 {
+                    Group selected = grp_svc.Get( placements[i].SelectedGroup );
+                    selected.LoadAttributes();
                     Person p = FromViewModel( children[i] );
+                    var selectedGradeGuid = selected.AttributeValues[groupGradeAttribute.Key];
+                    if (selectedGradeGuid != null)
+                    {
+                        p.GraduationYear = GraduationYear + selectedGradeGuid.Value.AsInteger();
+                    }
                     context.People.Add( p );
                     context.SaveChanges();
                     people.Add( p );
@@ -582,7 +597,6 @@ namespace Rock.Blocks.Plugin.Checkin
                     var role = groupType.Roles.FirstOrDefault( gr => gr.Guid.ToString().ToUpper() == SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD );
                     AddFamilyMember( family, p, role );
                     //Group Placement
-                    Group selected = grp_svc.Get( placements[i].SelectedGroup );
                     GroupMember checkinGroup = new GroupMember { PersonId = p.Id, GroupId = selected.Id, GroupRoleId = selected.GroupType.DefaultGroupRole.Id };
                     context.GroupMembers.Add( checkinGroup );
                     groups.Add( selected.ToViewModel() );
@@ -699,6 +713,7 @@ namespace Rock.Blocks.Plugin.Checkin
             childAttributeCategories = GetAttributeValue( AttributeKey.ChildAttributeCategories ).SplitDelimitedValues( false ).AsGuidOrNullList().Where( g => g.HasValue ).Select( g => g.Value ).ToList();
             childAttributes = attr_svc.Queryable().Where( attr => attr.Categories.Any( c => childAttributeCategories.Contains( c.Guid ) ) ).ToList().ToList();
             abilityAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.AbilityLevelAttribute ).AsGuid() );
+            groupGradeAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrGrade ).AsGuid() );
         }
 
         private void AddFamilyMember( Group family, Person person, GroupTypeRoleCache role )

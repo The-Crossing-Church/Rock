@@ -195,14 +195,14 @@ export default defineComponent({
         }
       }
       if(this.abilityDefinedType?.definedValues) {
-        let options = this.abilityDefinedType.definedValues.sort((a: any, b: any) => { return a.order - b.order }).map((value: any) => {
+        let options = this.abilityDefinedType.definedValues.filter((value: any) => { return value.isActive }).sort((a: any, b: any) => { return a.order - b.order }).map((value: any) => {
           let val = { text: value.value, value: value.guid, description: value.description }
           return { text: value.value, value: "dv_" + JSON.stringify(val) }
         })
         this.gradeAbilityOptions.push(...options)
       }
       if(this.gradeDefinedType) {
-        let options = this.gradeDefinedType.definedValues.sort((a: any, b: any) => { return a.order - b.order }).map((value: any) => {
+        let options = this.gradeDefinedType.definedValues.filter((value: any) => { return !value.description.includes("Preschool") && value.order < 8 }).sort((a: any, b: any) => { return a.order - b.order }).map((value: any) => {
           return { text: value.description, value: "go_" + value.value }
         })
         this.gradeAbilityOptions.push(...options)

@@ -97,7 +97,7 @@ export default defineComponent({
     {{person.nickName}} has SMS disabled for their mobile phone, they will not be able to receive alerts from the CK Desk if something were to happen to their child. Please confirm with the parent we can enable messaging for their device.
   </div>
   <div v-if="person.phoneNumberCantBeMessaged">
-    {{person.nickName}} has replied STOP to CK Desk Alerts, they will not be able to receive alerts from the CK Desk if something were to happen to their child. The parent will need to text the word "START" to 573-397-7375 to resubscribe them to the CK Desk number.
+    {{person.nickName}} has replied STOP to CK Desk Alerts, they will not be able to receive alerts from the CK Desk if something were to happen to their child. Please confirm with the parent we are allowed to text them emergency alerts and let the Staff Super know this parent needs to be removed from the SMS Stop Group for CK Desk Notifications.
   </div>
 </div>
 `
