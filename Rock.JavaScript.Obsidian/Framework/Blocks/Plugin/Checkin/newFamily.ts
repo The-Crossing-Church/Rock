@@ -3,6 +3,7 @@ import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/bloc
 import { Person, PhoneNumber } from "../../../ViewModels"
 import { NewFamilyBlockViewModel } from "./newFamilyBlockViewModel"
 import { useStore } from "../../../Store/index"
+import { Button } from "ant-design-vue"
 import Panel from "../../../Controls/panel"
 import Modal from "../../../Controls/modal"
 import PersonPicker from "../../../Controls/personPicker"
@@ -15,7 +16,8 @@ export default defineComponent({
     "rck-panel": Panel,
     "rck-modal": Modal,
     "pkr-person": PersonPicker,
-    "row-member": Member
+    "row-member": Member,
+    "a-btn": Button
   },
   setup() {
     const viewModel = useConfigurationValues<NewFamilyBlockViewModel | null>();
@@ -59,7 +61,8 @@ export default defineComponent({
       showValidation: false,
       showResults: false,
       message: "",
-      alertClass: "alert alert-success"
+      alertClass: "alert alert-success",
+      loading: false
     }
   },
   computed: {
@@ -93,6 +96,7 @@ export default defineComponent({
       }
     },
     processForm() {
+      this.loading = true
       this.showValidation = false
       this.showValidation = true
       let members = this.$refs.member as any[]
@@ -104,6 +108,10 @@ export default defineComponent({
         }
       })
       if(!hasErrors) {
+        let el = document.getElementById('updateProgress')
+        if(el) {
+          el.style.display = 'block'
+        }
         let numbers = [] as any[]
         this.parents.forEach((p: any) => {
           numbers.push(...p.phoneNumbers)
@@ -135,6 +143,7 @@ export default defineComponent({
                 this.message += "<br/>"
               }
             }
+            this.message += `<a href="/Person/${res.data.people[0].id}" class="btn btn-primary my-2">View Profile<a/>`
             this.alertClass = "alert alert-success"
             this.showResults = true
           } else {
@@ -145,8 +154,18 @@ export default defineComponent({
           }
         }).catch((err) => {
           this.showValidation = false
+        }).finally(() => {
+          this.loading = false
+          if(el) {
+            el.style.display = 'none'
+          }
         })
+      } else {
+        this.loading = false
       }
+    },
+    openForm() {
+      window.location.href = window.location.href.split("?")[0]
     }
   },
   watch: {
@@ -160,7 +179,7 @@ export default defineComponent({
       p.phoneNumberCantBeMessaged = this.viewModel.existingPersonPhoneCantBeMessaged
     } else {
       p.ageClassification = 1
-      p.phoneNumbers = [ this.viewModel?.emptyPersonPhoneNumber ]
+      p.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
     }
     this.parents.push(p)
 
@@ -171,6 +190,7 @@ export default defineComponent({
   template: `
 <div class="container" v-if="showResults">
   <div :class="alertClass" v-html="message"></div>
+  <a class="pull-right btn btn-primary mt-2" @click="openForm">New Family Form</a>
 </div>
 <div class="container" v-else>
   <div class="alert alert-warning" role="alert" v-if="matchesFoundAlert">
@@ -284,9 +304,9 @@ export default defineComponent({
       </a>
     </div>
     <div class="w-100 mt-3">
-      <a class="pull-right btn btn-primary" @click="processForm">
+      <a-btn class="pull-right btn btn-primary" :loading="loading" @click="processForm">
         Process Family
-      </a>
+      </a-btn>
     </div>
   </rck-panel>
   <rck-modal v-model="modal">

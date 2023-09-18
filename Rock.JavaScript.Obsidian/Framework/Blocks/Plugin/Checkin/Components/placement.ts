@@ -155,14 +155,7 @@ export default defineComponent({
       
     },
     template: `
-<div class="row mt-4" v-if="isValid != true">
-  <div class="col col-xs-12">
-    <div class="alert alert-danger">
-      {{isValid}}
-    </div>
-  </div>
-</div>
-<div class="row mt-4" v-else>
+<div class="row mt-4" v-if="isValid == true">
   <div class="col col-xs-12 col-md-6">
     <rck-ddl
       :options="groupOptions"

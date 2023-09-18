@@ -66,11 +66,13 @@ export default defineComponent({
           type="email"
         ></rck-txt>
       </div>
+      <!--
       <div :class="'col col-xs-12 col-md-' + colWidth.small" v-if="showEmailOptOut">
         <rck-chk
           label="Opt out of mass email communications"
         ></rck-chk>
       </div>
+      -->
     </div>
   </div>
   <div :class="'col col-xs-12 col-md-' + colWidth.normal" v-if="showCell">
