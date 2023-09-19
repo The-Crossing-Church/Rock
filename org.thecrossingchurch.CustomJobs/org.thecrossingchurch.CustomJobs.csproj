@@ -105,9 +105,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jobs\EventFormConversion.cs" />
+    <Compile Include="Jobs\HubspotIntegrationMatching.cs" />
     <Compile Include="Jobs\HubspotQuickSync.cs" />
     <Compile Include="Jobs\HubspotGivingIntegration.cs" />
-    <Compile Include="Jobs\HubspotIntegration.cs" />
+    <Compile Include="Jobs\HubspotIntegrationPatching.cs" />
     <Compile Include="Jobs\CrossingStudentsSteps.cs" />
     <Compile Include="Jobs\MensGroupSync.cs" />
     <Compile Include="Jobs\PodcastSync.cs" />
