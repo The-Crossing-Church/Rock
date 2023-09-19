@@ -1,0 +1,206 @@
+{% assign date = 'Global' | PageParameter:'Date' | SanitizeSql %}
+{% assign serviceTimes = 'Global' | PageParameter:'ServiceTimes' | AsString | SanitizeSql %}
+{% assign earlyCheckin = 'Global' | PageParameter:'EarlyCheckin' %}
+{% assign checkinArea = 'Global' | PageParameter:'CheckInArea' | AsInteger %}
+
+<html>
+    <head>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 20px;
+                padding: 0in .4in 0in .4in;
+            }
+
+            table {
+                border-style: none;
+            }
+
+            table>tbody>tr>td {
+            padding: 5px 8px !important;
+            font-size:16px;
+            border-style: none;
+            }
+
+            table>thead>tr>th {
+            padding: 12px 8px !important;
+            font-size:20px;
+            border-style: none;
+
+            }
+
+        </style>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="container">
+        {% sql return:'locations' checkinArea:'{{checkinArea}}' date:'{{date}}' %}
+            SELECT DISTINCT LocationId,
+                            Location,
+                            ScheduleId,
+                            Name                                   AS 'Schedule',
+                            OccurrenceDate,
+                            SortOrder,
+                            CAST(CONCAT(OccurrenceDate, ' ',
+                                        SUBSTRING(iCalendarContent, CHARINDEX('DTSTART', iCalendarContent) + 17, 2), ':',
+                                        SUBSTRING(iCalendarContent, CHARINDEX('DTSTART', iCalendarContent) + 19, 2), ':',
+                                        SUBSTRING(iCalendarContent, CHARINDEX('DTSTART', iCalendarContent) + 21,
+                                                  2)) AS DATETIME) AS [StartTime]
+            FROM Schedule
+                     INNER JOIN (
+                SELECT LocationId,
+                       Location,
+                       GroupId,
+                       GroupName,
+                       ScheduleId,
+                       OccurrenceDate,
+                       LocationTypeValueId,
+                       CAST(Value AS int) AS 'SortOrder'
+                FROM AttributeValue
+                         RIGHT OUTER JOIN (
+                    SELECT LocationId,
+                           Name AS 'Location',
+                           GroupId,
+                           GroupName,
+                           ScheduleId,
+                           OccurrenceDate,
+                           LocationTypeValueId
+                    FROM Location
+                             INNER JOIN (
+                        SELECT GroupId, LocationId, ScheduleId, OccurrenceDate, [GroupName]
+                        FROM AttendanceOccurrence
+                                 INNER JOIN (
+                            SELECT Id, Name AS 'GroupName'
+                            FROM [Group]
+                            WHERE GroupTypeId IN (SELECT ChildGroupTypeId
+                                                  FROM GroupTypeAssociation
+                                                  WHERE GroupTypeId = @checkinArea
+                                                  UNION
+                                                  SELECT GroupTypeAssociation.ChildGroupTypeId
+                                                  FROM GroupTypeAssociation
+                                                           INNER JOIN (
+                                                      SELECT ChildGroupTypeId
+                                                      FROM GroupTypeAssociation
+                                                      WHERE GroupTypeId = @checkinArea
+                                                  ) AS cgt ON cgt.ChildGroupTypeId = GroupTypeId)
+                               OR GroupTypeId = @checkinArea
+                        ) AS GT ON GT.Id = AttendanceOccurrence.GroupId
+                        WHERE OccurrenceDate = @date
+                        {% if serviceTimes != '' and serviceTimes != null %}
+                          AND ScheduleId IN ({{serviceTimes}})
+                        {% endif %}
+                    ) AS AO ON LocationId = Location.Id
+                    {% if earlyCheckin != 'Yes' %}
+                        WHERE Name NOT LIKE '%Multi-Age%' --Exclude Multi-Age
+                    {% endif %}
+                ) AS Loc ON LocationId = EntityId AND AttributeId = {{sortAttrId}}
+            ) AS SortedLoc ON ScheduleId = Schedule.Id
+            ORDER BY StartTime, SortOrder, Location
+        {% endsql %}
+
+        {% for page in locations %}
+            {% sql return:'rows' checkinArea:'{{checkinArea}}' date:'{{date}}' location:'{{page.LocationId}}' schedule:'{{page.ScheduleId}}'  %}
+                SELECT G.Id
+                     , G.[Name]                               AS [GroupName]
+                     , AC.Code                                AS [SecurityCode]
+                     , P.NickName + ' ' + P.LastName          AS [Name]
+                     , CONVERT(varchar, P.BirthDate, 101)     AS [BirthDate]
+                     , dbo.Cust_Bema_GetParentNickNames(P.Id) AS [ParentNames]
+                     , ALLERGY.[Value]                        AS [Allergy]
+                     , MedInfo.[Value]                        AS [MedInfo]
+                     , MEDICAL.[Value]                        AS [MedicalNotes]
+                     , AO.[OccurrenceDate]
+                FROM Attendance A
+                         INNER JOIN AttendanceOccurrence AS ao ON a.OccurrenceId = ao.Id
+                         LEFT OUTER JOIN AttendanceCode AC ON AC.Id = A.AttendanceCodeId
+                         INNER JOIN PersonAlias PA ON PA.Id = A.PersonAliasId
+                         INNER JOIN Person P ON P.Id = PA.PersonId
+                         INNER JOIN [Group] G ON G.Id = AO.GroupId
+                         LEFT OUTER JOIN AttributeValue ALLERGY ON ALLERGY.EntityId = P.Id AND ALLERGY.AttributeId = 676
+                         LEFT OUTER JOIN AttributeValue MedInfo ON MedInfo.EntityId = P.Id AND MedInfo.AttributeId = 4141
+                         LEFT OUTER JOIN AttributeValue MEDICAL ON MEDICAL.EntityId = P.Id AND MEDICAL.AttributeId = 2855
+                WHERE (G.GroupTypeId IN (SELECT ChildGroupTypeId
+                                         FROM GroupTypeAssociation
+                                         WHERE GroupTypeId = @checkinArea
+                                         UNION
+                                         SELECT GroupTypeAssociation.ChildGroupTypeId
+                                         FROM GroupTypeAssociation
+                                                  INNER JOIN (
+                                             SELECT ChildGroupTypeId
+                                             FROM GroupTypeAssociation
+                                             WHERE GroupTypeId = @checkinArea
+                                         ) AS cgt ON cgt.ChildGroupTypeId = GroupTypeId)
+                    OR G.GroupTypeId = @checkinArea
+                    )
+                  AND AO.LocationId = @location
+                  AND AO.ScheduleId = @schedule
+                  AND AO.OccurrenceDate = @date
+                  AND A.DidAttend = 1
+                ORDER BY P.FirstName, G.Id
+            {% endsql %}
+
+            {% assign ct = rows | Size %}
+            {% if ct > 0 %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th colspan="6">
+                                <h3>{{ page.Location }} ({{rows | Size}} Kids)</h3>
+                            </th>
+                            <th style="text-align: right;">
+                                <small>
+                                    <i>
+                                        {{ date | Date:'MM-dd-yyyy' }} <br/>
+                                        {{page.Schedule}}
+                                    </i>
+                                </small>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th>Security</th>
+                            <th style="width: 150px;">Name</th>
+                            <th style="width: 115px;">Birth Date</th>
+                            <th style="width: 160px;">Regular Group</th>
+                            <th style="width: 150px;">Parent Names</th>
+                            <th style="width: 250px;">Medical Situation Code</th>
+                            <th style="width: 360px;">Food Allergies &#124; Medical Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            <!--Test for row color-->
+                            {% assign rowTest = forloop.index | Modulo:2 %}
+                            {% if rowTest == 1 %}
+                                <tr style="background:#f9f9f9">
+                            {% else %}
+                                <tr style="background:#f1f1f1">
+                            {% endif %}
+
+                                <td>{{ row.SecurityCode }}</td>
+                                <td>{{ row.Name }}</td>
+                                <td>{{ row.BirthDate }}</td>
+                                <td>
+                                    {% capture regexTime %}[0-9]{1,2}:[0-9][0-9]{% endcapture %}
+                                    {% assign hasJunk = row.GroupName | RegExMatch: regexTime %}
+                                    {% if hasJunk %}
+                                        {% assign grpName = row.GroupName | Split:':' | Last | Slice:3,50 | Split:'(' | First %}
+                                        {{ grpName }}
+                                    {% else %}
+                                        {{ row.GroupName }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ row.ParentNames }}</td>
+                                <td >{{ row.MedicalNotes | Split:',' | Join:', ' }}</td>
+                                <td>{{ row.Allergy }} {% if row.Allergy and row.Allergy != '' and row.MedInfo and row.MedInfo != '' %} &#124; {% endif %}{{ row.MedInfo }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if forloop.rindex > 1 %}
+                    <p style="page-break-after: always;">&nbsp;</p>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        </div>
+    </body>
+</html>

@@ -170,76 +170,57 @@
         ORDER BY LocationSortOrder, PickUpLocation, NickName
     {% endsql %}
 
-    {% assign pageNumber = 1 | AsInteger %}
-
-    <h3>
-        {{ occurrence.Location }} ({{occurrence.Schedule}})
-        <span class='pull-right'><small><i>{{ date | Date:'MM-dd-yyyy' }}</i></small></span>
-    </h3>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Security</th>
-                <th>Name</th>
-                <th>Birth Date</th>
-                <th>Pick-up Location</th>
-                <th>Parent Names</th>
-                <th>Medical Situation Code</th>
-                <th>Food Allergies &#124; Medical Information</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                {% assign pageTest = forloop.index | Modulo:26 %}
-                {% if pageTest == 0 %}
-                    {% assign pageNumber = pageNumber | Plus:1 %}
-        </tbody>
-    </table>
-
-    <p style="page-break-after: always;">&nbsp;</p>
-
-    <h3>
-        {{ occurrence.Location }} ({{occurrence.Schedule}})
-        <span class='pull-right'><small><i>{{ date | Date:'MM-dd-yyyy' }}</i></small></span>
-    </h3>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Security</th>
-                <th>Name</th>
-                <th>Birth Date</th>
-                <th>Pick-up Location</th>
-                <th>Parent Names</th>
-                <th>Medical Situation Code</th>
-                <th>Food Allergies &#124; Medical Information</th>
-            </tr>
-        </thead>
-        <tbody>
-
-                {% endif %}
-
-                {% assign isOddRow = forloop.index | Modulo:2 %}
-                {% if isOddRow == 1 %}
-                    <tr style="background:#f9f9f9">
-                {% else %}
-                    <tr style="background:#f1f1f1">
-                {% endif %}
-
-                    <td>{{ row.Code }}</td>
-                    <td>{{ row.NickName }} {{row.LastName}}</td>
-                    <td>{{ row.BirthDate | Date:'MM/dd/yyyy' }}</td>
-                    <td>{{ row.PickUpLocation }}</td>
-                    <td>{{ row.ParentNames }}</td>
-                    <td>{{ row.MedCode }}</td>
-                    <td>{{ row.Allergy }} {% if row.Allergy and row.Allergy != '' and row.MedInfo and row.MedInfo != '' %} &#124; {% endif %}{{ row.MedInfo }}</td>
+    {% assign ct = rows | Size %}
+    {% if ct > 0 %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th colspan="6">
+                        <h3>{{ occurrence.Location }} ({{rows | Size}} Kids)</h3>
+                    </th>
+                    <th style="text-align: right;">
+                        <small>
+                            <i>
+                                {{ date | Date:'MM-dd-yyyy' }} <br/>
+                                {{ occurrence.Schedule }}
+                            </i>
+                        </small>
+                    </th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <p style="page-break-after: always;">&nbsp;</p>
+                <tr>
+                    <th>Security</th>
+                    <th>Name</th>
+                    <th>Birth Date</th>
+                    <th>Pick-up Location</th>
+                    <th>Parent Names</th>
+                    <th>Medical Situation Code</th>
+                    <th>Food Allergies &#124; Medical Information</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <!--Test for row color-->
+                    {% assign rowTest = forloop.index | Modulo:2 %}
+                    {% if rowTest == 1 %}
+                        <tr style="background:#f9f9f9">
+                    {% else %}
+                        <tr style="background:#f1f1f1">
+                    {% endif %}
+                            <td>{{ row.Code }}</td>
+                            <td>{{ row.NickName }} {{row.LastName}}</td>
+                            <td>{{ row.BirthDate | Date:'MM/dd/yyyy' }}</td>
+                            <td>{{ row.PickUpLocation }}</td>
+                            <td>{{ row.ParentNames }}</td>
+                            <td>{{ row.MedCode }}</td>
+                            <td>{{ row.Allergy }} {% if row.Allergy and row.Allergy != '' and row.MedInfo and row.MedInfo != '' %} &#124; {% endif %}{{ row.MedInfo }}</td>
+                        </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if forloop.rindex > 1 %}
+            <p style="page-break-after: always;">&nbsp;</p>
+        {% endif %}
+    {% endif %}
 {% endfor %}
         </div>
     </body>
