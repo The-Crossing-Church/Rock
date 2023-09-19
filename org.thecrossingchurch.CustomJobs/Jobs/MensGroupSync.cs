@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 
 namespace org.thecrossingchurch.CustomJobs.Jobs
 {
@@ -112,15 +114,31 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
             {
                 RegistrationService reg_svc = new RegistrationService( context );
                 RegistrationInstanceService ri_svc = new RegistrationInstanceService( context );
+                RegistrationTemplatePlacementService rtp_svc = new RegistrationTemplatePlacementService( context );
+                RelatedEntityService re_svc = new RelatedEntityService( context );
                 GroupMemberService gm_svc = new GroupMemberService( context );
                 List<int> excludeIds = new List<int>();
                 if (_excludeGroup != null)
                 {
                     excludeIds = _excludeGroup.Members.Select( gm => gm.Person.PrimaryAliasId.Value ).ToList();
                 }
+                RegistrationTemplatePlacement placement = rtp_svc.Queryable().FirstOrDefault( rtp => rtp.RegistrationTemplateId == template.Id );
+                var registrationInstances = ri_svc.Queryable().Where( ri => ri.RegistrationTemplateId == template.Id );
+                List<int> regIds = registrationInstances.Select( ri => ri.Id ).ToList();
+                int groupEntityTypeId = EntityTypeCache.Get( Guid.Parse( Rock.SystemGuid.EntityType.GROUP ) ).Id;
+                int registrationTemplatePlacementEntityTypeId = placement != null ? placement.TypeId : 0;
+                int registrationInstanceEntityTypeId = registrationInstances.Count() > 0 ? registrationInstances.First().TypeId : 0;
+
+                //Find Placement Groups and members of them
+                var relatedEntities = re_svc.Queryable().Where( re => (re.PurposeKey == RelatedEntityPurposeKey.RegistrationTemplateGroupPlacementTemplate || re.PurposeKey == RelatedEntityPurposeKey.RegistrationInstanceGroupPlacement) && ((registrationTemplatePlacementEntityTypeId > 0 && re.SourceEntityTypeId == registrationTemplatePlacementEntityTypeId && re.SourceEntityId == placement.Id) || (registrationInstanceEntityTypeId > 0 && re.SourceEntityTypeId == registrationInstanceEntityTypeId && regIds.Contains( re.SourceEntityId ))) && re.TargetEntityTypeId == groupEntityTypeId ).Select( re => re.TargetEntityId ).Distinct();
+
+                var groupMembers = gm_svc.Queryable().Join( relatedEntities,
+                    gm => gm.GroupId,
+                    re => re,
+                    ( gm, re ) => gm
+                ).Where( gm => gm.GroupMemberStatus != GroupMemberStatus.Inactive && gm.IsArchived == false ).Select( gm => gm.Person ).Distinct();
 
                 //Registrants of event registration that have been modified recently and not yet placed
-                var registrationInstances = ri_svc.Queryable().Where( ri => ri.RegistrationTemplateId == template.Id );
                 var validRegistrations = reg_svc.Queryable()
                     .Join( registrationInstances,
                         r => r.RegistrationInstanceId,
@@ -128,10 +146,19 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                         ( r, ri ) => r
                     )
                     .Where( r => startDate <= r.ModifiedDateTime )
-                    .SelectMany( r => r.Registrants )
-                    .Where( rr => !rr.GroupMemberId.HasValue && (excludeIds.Count() == 0 || !excludeIds.Contains( rr.PersonAliasId.Value )) )
-                    .Select( rr => rr.PersonAlias.Person ).Where( p => p.RecordStatusValueId == 3 && p.Gender == Gender.Male ).Distinct();
-                UpdateGroupMembership( group, validRegistrations );
+                    .SelectMany( r => r.Registrants ).Where( rr => rr.PersonAliasId.HasValue && !excludeIds.Contains( rr.PersonAliasId.Value ) ).Select( rr => rr.PersonAlias.Person ).Where( p => p.RecordStatusValueId == 3 && p.Gender == Gender.Male ).Distinct();
+
+                var unplacedRegistrants =
+                                            from registrant in validRegistrations
+                                            join member in groupMembers on registrant.Id equals member.Id into data
+                                            from groupMember in data.DefaultIfEmpty()
+                                            select new
+                                            {
+                                                registrant,
+                                                groupMember
+                                            };
+                unplacedRegistrants = unplacedRegistrants.Where( r => r.groupMember == null );
+                UpdateGroupMembership( group, unplacedRegistrants.Select( r => r.registrant ) );
             }
         }
 
