@@ -26,6 +26,8 @@ using System;
 using RestSharp;
 using Rock;
 using Newtonsoft.Json;
+using Rock.Security;
+using Rock.Web.Cache;
 
 namespace org.crossingchurch.PodcastSync.Jobs
 {
@@ -99,14 +101,13 @@ namespace org.crossingchurch.PodcastSync.Jobs
                 megaphoneIdAttr = new AttributeService( rockContext ).Get( idAttrGuid );
             }
             string key = dataMap.GetString( "MegaphoneAPIKey" );
-            Rock.Model.Attribute attr = new AttributeService( rockContext ).Queryable().FirstOrDefault( a => a.EntityTypeId == null && a.Key == key );
-            AttributeValue megaphoneApiKey = new AttributeValueService( rockContext ).Queryable().OrderByDescending( a => a.Id ).FirstOrDefault( av => av.AttributeId == attr.Id );
+            string megaphoneApiKey = Encryption.DecryptString( GlobalAttributesCache.Get().GetValue( key ) );
             string netId = dataMap.GetString( "MegaphoneNetworkId" );
             bool allTime = dataMap.GetBooleanFromString( "Runforalltime" );
 
             for (int i = 0; i < series.Count(); i++)
             {
-                var podcasts = GetPodcasts( netId, series[i].GetAttributeValue( "MegaphonePodcastId" ), megaphoneApiKey.Value, allTime, job.LastRunDateTime );
+                var podcasts = GetPodcasts( netId, series[i].GetAttributeValue( "MegaphonePodcastId" ), megaphoneApiKey, allTime, job.LastRunDateTime );
                 ProcessPodcasts( podcasts, series[i].GetAttributeValue( "PodcastSeries" ), series[i].GetAttributeValue( "SeriesImage" ) );
             }
         }
