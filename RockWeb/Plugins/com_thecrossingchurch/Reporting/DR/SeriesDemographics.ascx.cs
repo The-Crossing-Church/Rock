@@ -11,6 +11,8 @@ using Rock.Model;
 using Rock.Attribute;
 using System.Data.SqlClient;
 using Newtonsoft.Json;
+using DocumentFormat.OpenXml.Vml.Presentation;
+using Microsoft.Graph;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.DR
 {
@@ -69,9 +71,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.DR
             watchChannel = new ContentChannelService( context ).Get( watchChannelGuid.Value );
             watchInteractionChannel = new InteractionChannelService( context ).Get( watchInteractionChannelGuid.Value );
 
-            if ( !Page.IsPostBack )
+            if (!Page.IsPostBack)
             {
-                if ( Request.Params["isViewersRequest"].AsBoolean() )
+                if (Request.Params["isViewersRequest"].AsBoolean())
                 {
                     Response.Write( BuildViewersFunnel() );
                     Response.End();
@@ -98,7 +100,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.DR
                                     SELECT Id
                                     FROM ContentChannelItem
                                     WHERE ContentChannelId = @ContentChannelId
-                                    AND CAST(StartDateTime AS DATE) = @SundayDate
                                 ) AS cci ON EntityId = cci.Id
                                 WHERE InteractionChannelId = @ChannelId
                             ) AS ic ON ComponentId = InteractionComponentId
@@ -138,7 +139,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.DR
                         ) AS interactionSession
                 ) AS allSermonViewers ON allSermonViewers.IpAddress = currentSermonViewers.IpAddress
                 GROUP BY Range
-            ", new SqlParameter( "@ChannelId", watchInteractionChannel.Id ), new SqlParameter( "@ContentChannelId", watchChannel.Id ), new SqlParameter( "@SundayDate", dt.ToString( "yyyy-MM-dd" ) ) );
+            ", new SqlParameter( "@ChannelId", watchInteractionChannel.Id ), new SqlParameter( "@ContentChannelId", watchChannel.Id ) );
             return JsonConvert.SerializeObject( query );
         }
         #endregion
