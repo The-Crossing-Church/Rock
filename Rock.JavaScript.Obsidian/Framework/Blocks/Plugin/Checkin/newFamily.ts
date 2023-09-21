@@ -175,7 +175,11 @@ export default defineComponent({
     let p = JSON.parse(JSON.stringify(this.viewModel?.emptyPerson))
     if(this.viewModel?.existingPerson && this.viewModel.existingPerson.id > 0) {
       p = this.viewModel.existingPerson
-      p.phoneNumbers = [ this.viewModel.existingPersonPhoneNumber ]
+      if(this.viewModel.existingPersonPhoneNumber) {
+        p.phoneNumbers = [ this.viewModel.existingPersonPhoneNumber ]
+      } else {
+        p.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
+      }
       p.phoneNumberCantBeMessaged = this.viewModel.existingPersonPhoneCantBeMessaged
     } else {
       p.ageClassification = 1
