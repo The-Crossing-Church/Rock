@@ -238,6 +238,7 @@ export default defineComponent({
         :showEmailOptOut="viewModel.showEmailOptOut"
         :showCell="viewModel.showCell"
         :showSMS="viewModel.showSMSEnabled"
+        :phoneType="viewModel.phoneType"
         :attributes="viewModel.adultAttributes"
         :canRemove="parents.length > 1"
         :person="p"

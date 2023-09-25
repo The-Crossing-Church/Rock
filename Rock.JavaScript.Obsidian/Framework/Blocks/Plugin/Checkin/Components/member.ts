@@ -53,6 +53,10 @@ export default defineComponent({
       showEmailOptOut: Boolean,
       showCell: Boolean,
       showSMS: Boolean,
+      phoneType: {
+        type: Object as PropType<DefinedValue>,
+        required: false
+      },
       showMaritalStatus: Boolean,
       showBirthDate: Boolean,
       requireBirthDate: Boolean,
@@ -191,6 +195,7 @@ export default defineComponent({
     :showEmailOptOut="showEmailOptOut"
     :showCell="showCell"
     :showSMS="showSMS"
+    :phoneType="phoneType"
     :person="person"
     v-on:checkForDuplicates="debounce(checkForDuplicates, 1000)"
   ></contact-info>

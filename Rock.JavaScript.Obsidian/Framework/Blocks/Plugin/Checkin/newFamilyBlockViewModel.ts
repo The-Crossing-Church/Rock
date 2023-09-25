@@ -20,6 +20,7 @@ export type NewFamilyBlockViewModel = {
   showEmailOptOut: boolean;
   showCell: boolean;
   showSMSEnabled: boolean;
+  phoneType: DefinedValue;
   showAddress: boolean;
   existingPersonPhoneCantBeMessaged: boolean;
   adultAttributes: Attribute[];

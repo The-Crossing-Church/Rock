@@ -22,6 +22,10 @@ export default defineComponent({
       showEmailOptOut: Boolean,
       showCell: Boolean,
       showSMS: Boolean,
+      phoneType: {
+        type: Object as PropType<DefinedValue>,
+        required: false
+      },
       person: {
         type: Object as PropType<Person>,
         required: false
@@ -64,6 +68,7 @@ export default defineComponent({
           v-model="person.Email"
           v-on:blur="checkForDuplicates"
           type="email"
+          :rules="['required']"
         ></rck-txt>
       </div>
       <!--
@@ -78,12 +83,15 @@ export default defineComponent({
   <div :class="'col col-xs-12 col-md-' + colWidth.normal" v-if="showCell">
     <div class="row">
       <div :class="'col col-xs-12 col-md-' + colWidth.small">
-        <rck-lbl>Mobile Phone Number</rck-lbl>
-        <rck-phn
-          v-model="person.phoneNumbers[0].numberFormatted"
-          type="phone"
-          v-on:blur="checkForDuplicates"
-        ></rck-phn>
+        <div class="form-group required">
+          <rck-phn
+            v-model="person.phoneNumbers[0].numberFormatted"
+            type="phone"
+            v-on:blur="checkForDuplicates"
+            :rules="['required']"
+            :label="phoneType.value + ' Phone Number'"
+          ></rck-phn>
+        </div>
       </div>
       <div :class="'col col-xs-12 col-md-' + colWidth.small" v-if="(person.id > 0 && !person.phoneNumbers[0].isMessagingEnabled)">
         <rck-chk

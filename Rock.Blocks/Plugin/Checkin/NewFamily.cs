@@ -425,6 +425,7 @@ namespace Rock.Blocks.Plugin.Checkin
             viewModel.ShowEmailOptOut = GetAttributeValue( AttributeKey.ShowEmailOptOut ).AsBoolean();
             viewModel.ShowCell = GetAttributeValue( AttributeKey.ShowCell ).AsBoolean();
             viewModel.ShowSMSEnabled = GetAttributeValue( AttributeKey.ShowSMSEnabled ).AsBoolean();
+            viewModel.PhoneType = dv_svc.Get( GetAttributeValue( AttributeKey.MobileDefinedValue ).AsGuid() );
             viewModel.ShowAddress = GetAttributeValue( AttributeKey.ShowAddress ).AsBoolean();
             viewModel.ExistingPersonPhoneCantBeMessaged = false;
             viewModel.AdultAttributeCategories = adultAttributeCategories;
@@ -538,6 +539,7 @@ namespace Rock.Blocks.Plugin.Checkin
                 var groupType = GroupTypeCache.GetFamilyGroupType();
                 GroupService grp_svc = new GroupService( context );
                 DefinedValueService dv_svc = new DefinedValueService( context );
+                PhoneNumberService phn_svc = new PhoneNumberService( context );
                 Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
                 Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
                 List<Person> people = new List<Person>();
@@ -571,6 +573,13 @@ namespace Rock.Blocks.Plugin.Checkin
                             family = new Group() { GroupTypeId = groupType.Id, Name = p.LastName };
                             context.Groups.Add( family );
                             context.SaveChanges();
+                        }
+                        if (!String.IsNullOrEmpty( phonenumbers[i].NumberFormatted ))
+                        {
+                            phonenumbers[i].PersonId = p.Id;
+                            phonenumbers[i].Number = phonenumbers[i].NumberFormatted.Replace( "(", "" ).Replace( ")", "" ).Replace( "-", "" ).Replace( " ", "" );
+                            PhoneNumber number = PhoneFromViewModel( phonenumbers[i] );
+                            context.PhoneNumbers.Add( number );
                         }
                         var role = groupType.Roles.FirstOrDefault( gr => gr.Guid.ToString().ToUpper() == SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT );
                         AddFamilyMember( family, p, role );
@@ -698,6 +707,20 @@ namespace Rock.Blocks.Plugin.Checkin
             return p;
         }
 
+        private PhoneNumber PhoneFromViewModel( PhoneNumberViewModel viewModel )
+        {
+            PhoneNumber phoneNumber = new PhoneNumber()
+            {
+                PersonId = viewModel.PersonId,
+                Number = viewModel.Number,
+                NumberFormatted = viewModel.NumberFormatted,
+                NumberTypeValueId = viewModel.NumberTypeValueId,
+                IsMessagingEnabled = viewModel.IsMessagingEnabled,
+                IsUnlisted = viewModel.IsUnlisted
+            };
+            return phoneNumber;
+        }
+
         private void SetProperties()
         {
             context = new RockContext();
@@ -755,6 +778,7 @@ namespace Rock.Blocks.Plugin.Checkin
             public bool ShowEmailOptOut { get; set; }
             public bool ShowCell { get; set; }
             public bool ShowSMSEnabled { get; set; }
+            public DefinedValue PhoneType { get; set; }
             public bool ShowAddress { get; set; }
             public List<Guid> AdultAttributeCategories { get; set; }
             public List<Rock.Model.Attribute> AdultAttributes { get; set; }
