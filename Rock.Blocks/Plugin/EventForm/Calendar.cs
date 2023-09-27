@@ -680,14 +680,14 @@ FROM (
                                                                                ModifiedByPersonAliasId
                                                                FROM ContentChannelItem
                                                                         INNER JOIN (
-                                                                   SELECT EntityId, value AS 'Event Date'
+                                                                   SELECT EntityId, TRIM(value) AS 'Event Date'
                                                                    FROM (
                                                                             SELECT EntityId, Value AS 'Dates'
                                                                             FROM AttributeValue
                                                                             WHERE AttributeId = @eventDatesAttrId 
                                                                         ) AS dates
                                                                             CROSS APPLY STRING_SPLIT(Dates, ',')
-                                                                   WHERE value BETWEEN @start AND @end
+                                                                   WHERE TRIM(value) BETWEEN @start AND @end
                                                                ) AS filterDates
                                                                                    ON EntityId = Id
                                                                         CROSS APPLY (SELECT Value AS 'RequestStatus'
@@ -816,7 +816,7 @@ FROM (
                                                                     @eventDetailsContentChannelId
                                          ) AS ccia
                                              OUTER APPLY (
-                                        SELECT Value AS 'EventDate'
+                                        SELECT CONVERT(char(10), Value, 126) AS 'EventDate'
                                         FROM AttributeValue
                                         WHERE AttributeId = @eventDateAttrId
                                           AND EntityId = ChildId
