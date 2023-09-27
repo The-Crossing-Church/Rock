@@ -26,6 +26,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
     [CategoryField( "One Time Event Category", "", false, "Rock.Model.RegistrationTemplate", required: true, order: 1, category: "Events" )]
     [CategoryField( "Studies Event Category", "", false, "Rock.Model.RegistrationTemplate", required: true, order: 2, category: "Events" )]
     [RegistrationTemplateField( "Sign Up Template", "", true, order: 3, category: "Events" )]
+    [AttributeField( name: "Has Been Placed Attribute", category: "Events", order: 4, required: true, allowMultiple: false, entityTypeGuid: "8A25E5CE-1B4F-4825-BCEA-216167836305", entityTypeQualifierColumn: "RegistrationTemplateId", entityTypeQualifierValue: "470" )]
     public class MensGroupSync : IJob
     {
         private Group _excludeGroup { get; set; }
@@ -67,13 +68,15 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
             Guid? oteCategoryGuid = dataMap.GetString( "OneTimeEventCategory" ).AsGuidOrNull();
             Guid? studiesCategoryGuid = dataMap.GetString( "StudiesEventCategory" ).AsGuidOrNull();
             Guid? signUpRegistrationTemplateGuid = dataMap.GetString( "SignUpTemplate" ).AsGuidOrNull();
+            Guid? placedAttrGuid = dataMap.GetString( "HasBeenPlacedAttribute" ).AsGuidOrNull();
 
-            if (oteGroupGuid.HasValue && studiesGroupGuid.HasValue && signupGroupGuid.HasValue && disengagedGroupGuid.HasValue && groupTypeGuid.HasValue && oteCategoryGuid.HasValue && studiesCategoryGuid.HasValue && signUpRegistrationTemplateGuid.HasValue)
+            if (oteGroupGuid.HasValue && studiesGroupGuid.HasValue && signupGroupGuid.HasValue && disengagedGroupGuid.HasValue && groupTypeGuid.HasValue && oteCategoryGuid.HasValue && studiesCategoryGuid.HasValue && signUpRegistrationTemplateGuid.HasValue && placedAttrGuid.HasValue)
             {
                 GroupService grp_svc = new GroupService( _context );
                 GroupTypeService gt_svc = new GroupTypeService( _context );
                 CategoryService cat_svc = new CategoryService( _context );
                 RegistrationTemplateService reg_svc = new RegistrationTemplateService( _context );
+                AttributeService attr_svc = new AttributeService( _context );
                 oteGroup = grp_svc.Get( oteGroupGuid.Value );
                 studiesGroup = grp_svc.Get( studiesGroupGuid.Value );
                 signupGroup = grp_svc.Get( signupGroupGuid.Value );
@@ -82,11 +85,12 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                 oteCategory = cat_svc.Get( oteCategoryGuid.Value );
                 studiesCategory = cat_svc.Get( studiesCategoryGuid.Value );
                 signUpTemplate = reg_svc.Get( signUpRegistrationTemplateGuid.Value );
+                Rock.Model.Attribute placedAttr = attr_svc.Get( placedAttrGuid.Value );
                 if (excludeGroupGuid.HasValue)
                 {
                     _excludeGroup = grp_svc.Get( excludeGroupGuid.Value );
                 }
-                UpdateSignUpGroup( signupGroup, startDate, signUpTemplate );
+                UpdateSignUpGroup( signupGroup, startDate, signUpTemplate, placedAttr );
                 List<Group> excludeGroups = grp_svc.GetByGroupTypeId( groupType.Id ).ToList();
                 if (_excludeGroup != null)
                 {
@@ -108,57 +112,43 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
             return currentRange;
         }
 
-        private void UpdateSignUpGroup( Group group, DateTime startDate, RegistrationTemplate template )
+        private void UpdateSignUpGroup( Group group, DateTime startDate, RegistrationTemplate template, Rock.Model.Attribute placedAttr )
         {
             using (RockContext context = new RockContext())
             {
                 RegistrationService reg_svc = new RegistrationService( context );
                 RegistrationInstanceService ri_svc = new RegistrationInstanceService( context );
-                RegistrationTemplatePlacementService rtp_svc = new RegistrationTemplatePlacementService( context );
-                RelatedEntityService re_svc = new RelatedEntityService( context );
-                GroupMemberService gm_svc = new GroupMemberService( context );
+                AttributeValueService av_svc = new AttributeValueService( context );
                 List<int> excludeIds = new List<int>();
                 if (_excludeGroup != null)
                 {
                     excludeIds = _excludeGroup.Members.Select( gm => gm.Person.PrimaryAliasId.Value ).ToList();
                 }
-                RegistrationTemplatePlacement placement = rtp_svc.Queryable().FirstOrDefault( rtp => rtp.RegistrationTemplateId == template.Id );
                 var registrationInstances = ri_svc.Queryable().Where( ri => ri.RegistrationTemplateId == template.Id );
-                List<int> regIds = registrationInstances.Select( ri => ri.Id ).ToList();
-                int groupEntityTypeId = EntityTypeCache.Get( Guid.Parse( Rock.SystemGuid.EntityType.GROUP ) ).Id;
-                int registrationTemplatePlacementEntityTypeId = placement != null ? placement.TypeId : 0;
-                int registrationInstanceEntityTypeId = registrationInstances.Count() > 0 ? registrationInstances.First().TypeId : 0;
+                var attributeValues = av_svc.Queryable().Where( av => av.AttributeId == placedAttr.Id && av.ValueAsBoolean == true );
 
-                //Find Placement Groups and members of them
-                var relatedEntities = re_svc.Queryable().Where( re => (re.PurposeKey == RelatedEntityPurposeKey.RegistrationTemplateGroupPlacementTemplate || re.PurposeKey == RelatedEntityPurposeKey.RegistrationInstanceGroupPlacement) && ((registrationTemplatePlacementEntityTypeId > 0 && re.SourceEntityTypeId == registrationTemplatePlacementEntityTypeId && re.SourceEntityId == placement.Id) || (registrationInstanceEntityTypeId > 0 && re.SourceEntityTypeId == registrationInstanceEntityTypeId && regIds.Contains( re.SourceEntityId ))) && re.TargetEntityTypeId == groupEntityTypeId ).Select( re => re.TargetEntityId ).Distinct();
-
-                var groupMembers = gm_svc.Queryable().Join( relatedEntities,
-                    gm => gm.GroupId,
-                    re => re,
-                    ( gm, re ) => gm
-                ).Where( gm => gm.GroupMemberStatus != GroupMemberStatus.Inactive && gm.IsArchived == false ).Select( gm => gm.Person ).Distinct();
-
-                //Registrants of event registration that have been modified recently and not yet placed
-                var validRegistrations = reg_svc.Queryable()
-                    .Join( registrationInstances,
-                        r => r.RegistrationInstanceId,
-                        ri => ri.Id,
-                        ( r, ri ) => r
-                    )
-                    .Where( r => startDate <= r.ModifiedDateTime )
-                    .SelectMany( r => r.Registrants ).Where( rr => rr.PersonAliasId.HasValue && !excludeIds.Contains( rr.PersonAliasId.Value ) ).Select( rr => rr.PersonAlias.Person ).Where( p => p.RecordStatusValueId == 3 && p.Gender == Gender.Male ).Distinct();
-
-                var unplacedRegistrants =
-                                            from registrant in validRegistrations
-                                            join member in groupMembers on registrant.Id equals member.Id into data
-                                            from groupMember in data.DefaultIfEmpty()
-                                            select new
-                                            {
-                                                registrant,
-                                                groupMember
-                                            };
-                unplacedRegistrants = unplacedRegistrants.Where( r => r.groupMember == null );
-                UpdateGroupMembership( group, unplacedRegistrants.Select( r => r.registrant ) );
+                //Registrants of event registration that have been created recently 
+                var validRegistrations = reg_svc.Queryable().Join( registrationInstances,
+                    r => r.RegistrationInstanceId,
+                    ri => ri.Id,
+                    ( r, ri ) => r
+                ).Where( r => startDate <= r.CreatedDateTime )
+                .SelectMany( r => r.Registrants )
+                .Where( rr => rr.PersonAliasId.HasValue && !excludeIds.Contains( rr.PersonAliasId.Value ) );
+                //Left join on placed attribute so we can filter out people who have been palced
+                var unplacedRegistrants = from registrant in validRegistrations
+                                          join av in attributeValues on registrant.Id equals av.EntityId into data
+                                          from avOrNull in data.DefaultIfEmpty()
+                                          select new
+                                          {
+                                              registrant,
+                                              avOrNull
+                                          };
+                var unplacedPeople = unplacedRegistrants.Where( i => i.avOrNull == null ).Select( rr => rr.registrant.PersonAlias.Person )
+                .Where( p => p.RecordStatusValueId == 3 && p.Gender == Gender.Male )
+                .Distinct();
+                //Update group membership
+                UpdateGroupMembership( group, unplacedPeople );
             }
         }
 
@@ -224,6 +214,12 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                 gm_svc.AddRange( addMembers );
                 context.SaveChanges();
             }
+        }
+
+        private class GroupRegistrantCompare
+        {
+            public int PersonId { get; set; }
+            public int Count { get; set; }
         }
     }
 }
