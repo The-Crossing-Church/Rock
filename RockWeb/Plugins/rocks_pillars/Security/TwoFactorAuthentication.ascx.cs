@@ -4,22 +4,23 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.Entity;
-using System.Data.SqlClient;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web;
+using System.Web.Hosting;
 using System.Web.UI;
+using System.Web.UI.WebControls;
+
 using Rock;
 using Rock.Attribute;
+using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
 using Rock.Security;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
-using System.Text.RegularExpressions;
-using System.Web.UI.WebControls;
-using Rock.Communication;
-using System.Web.Hosting;
+
+using rocks.pillars.TwoFactorAuthentication.Security.Authentication;
 
 namespace RockWeb.Plugins.rocks_pillars.Security
 {
@@ -180,31 +181,29 @@ namespace RockWeb.Plugins.rocks_pillars.Security
         {
             if ( login != null )
             {
-                var token = login.Person.GetAttributeValue( _2FAAttributeKey );
+                var tokenList = new List<_2FAToken>();
+                tokenList.FromEncryptedString( login.Person.GetAttributeValue( _2FAAttributeKey ) );
 
-                string code = string.Empty;
-                DateTime? expires = DateTime.MinValue;
+                var token = tokenList.FirstOrDefault( t => t.Code == tbCode.Text.AsInteger() );
 
-                var parts = Encryption.DecryptString( token ).Split( '|' );
-                if ( parts.Length == 2 )
+                if ( token != null && token.CreatedDateTime.HasValue && token.CreatedDateTime.Value.AddDays( codeValidFor ) >= RockDateTime.Now )
                 {
-                    code = parts[0];
-                    expires = parts[1].AsDateTime();
-                }
+                    tokenList.Remove( token );
 
-                if ( code.IsNotNullOrWhiteSpace() && 
-                    code == tbCode.Text &&
-                    expires.HasValue && expires >= RockDateTime.Now )
-                {
-                    token = String.Format( "{0}|{1}", GenerateCode(), RockDateTime.Now.ToString( "o" ) );
+                    var newToken = ( new _2FAToken( GenerateCode(), RockDateTime.Now ) );
+                    tokenList.Add( newToken );
 
-                    string encryptedToken = Encryption.EncryptString( token );
-                    login.Person.SetAttributeValue( _2FAAttributeKey, encryptedToken );
+                    string encryptedTokens = tokenList.EncryptedString();
+                    string encryptedToken = newToken.EncryptedString();
+
+                    login.Person.SetAttributeValue( _2FAAttributeKey, encryptedTokens );
                     login.Person.SaveAttributeValue( _2FAAttributeKey, rockContext );
 
-                    var tokenCookie = new HttpCookie( _2FAAttributeKey );
-                    tokenCookie.Value = encryptedToken;
-                    tokenCookie.Expires = RockDateTime.Now.AddDays( authorizationValidFor );
+                    var tokenCookie = new HttpCookie( _2FAAttributeKey )
+                    {
+                        Value = encryptedToken,
+                        Expires = RockDateTime.Now.AddDays( authorizationValidFor )
+                    };
 
                     Response.Cookies.Remove( _2FAAttributeKey );
                     Response.Cookies.Add( tokenCookie );
@@ -236,20 +235,35 @@ namespace RockWeb.Plugins.rocks_pillars.Security
 
         private string ValidateExistingToken()
         {
-            if ( Request.Cookies[_2FAAttributeKey] != null && login != null )
+            if ( Request.Cookies[_2FAAttributeKey] != null && login != null && login.Person != null )
             {
-                var token = login.Person.GetAttributeValue( _2FAAttributeKey );
-                if ( Request.Cookies[_2FAAttributeKey].Value == token )
+                var tokenList = new List<_2FAToken>();
+                tokenList.FromEncryptedString( login.Person.GetAttributeValue( _2FAAttributeKey ) );
+
+                var savedTokenCount = tokenList.Count;
+
+                foreach ( var token in tokenList.ToList() )
                 {
-                    var parts = Encryption.DecryptString( token ).Split( '|' );
-                    if ( parts.Length == 2 )
+                    if ( token.CreatedDateTime.HasValue && token.CreatedDateTime.Value.AddDays( authorizationValidFor ) >= RockDateTime.Now )
                     {
-                        var tokenTime = parts[1].AsDateTime();
-                        if ( tokenTime.HasValue && tokenTime.Value.AddDays( authorizationValidFor ) >= RockDateTime.Now )
+                        string encryptedCookieToken = Request.Cookies[_2FAAttributeKey].Value;
+                        var cookieToken = new _2FAToken( Encryption.DecryptString( encryptedCookieToken ) );
+
+                        if ( token.Code == cookieToken.Code )
                         {
-                            return token;
+                            return encryptedCookieToken;
                         }
                     }
+                    else
+                    {
+                        tokenList.Remove( token );
+                    }
+                }
+
+                if ( tokenList.Count != savedTokenCount )
+                {
+                    login.Person.SetAttributeValue( _2FAAttributeKey, tokenList.EncryptedString() );
+                    login.Person.SaveAttributeValue( _2FAAttributeKey, rockContext );
                 }
             }
 
@@ -313,6 +327,7 @@ namespace RockWeb.Plugins.rocks_pillars.Security
             pnlSelect.Visible = false;
             pnlEnterCode.Visible = true;
 
+            tbCode.Text = string.Empty;
             tbCode.Attributes["autocomplete"] = "one-time-code";
             tbCode.Focus();
         }
@@ -323,16 +338,19 @@ namespace RockWeb.Plugins.rocks_pillars.Security
             {
                 if (login != null)
                 {
-                    string code = GenerateCode().ToString();
-                    DateTime expires = RockDateTime.Now.AddSeconds(codeValidFor);
-                    string token = string.Format("{0}|{1}", code, expires.ToString("o"));
-                    login.Person.SetAttributeValue(_2FAAttributeKey, Encryption.EncryptString(token));
+                    var tokenList = new List<_2FAToken>();
+                    tokenList.FromEncryptedString( login.Person.GetAttributeValue( _2FAAttributeKey ) );
+
+                    var newToken = ( new _2FAToken( GenerateCode(), RockDateTime.Now ) );
+                    tokenList.Add( newToken );
+
+                    login.Person.SetAttributeValue(_2FAAttributeKey, tokenList.EncryptedString() );
                     login.Person.SaveAttributeValue(_2FAAttributeKey, rockContext);
 
                     // Send Code to Person
                     var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields(null);
                     mergeFields.Add("Person", login.Person);
-                    mergeFields.Add("Code", code);
+                    mergeFields.Add("Code", newToken.Code );
 
                     RockMessage rockMessage = null;
                     RockMessageRecipient recipient = null;
@@ -488,6 +506,8 @@ namespace RockWeb.Plugins.rocks_pillars.Security
         }
 
         #endregion
+
+
 
     }
 }
