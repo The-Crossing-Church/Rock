@@ -1,28 +1,31 @@
-﻿{[ rescarousel carouselid:'resources-carousel' containerclass:'full-width background--grey' ]}
-    [[ title ]]Featured[[ endtitle ]]
-    {% for i in Items %}
-        {% assign featuredRange = i | Attribute:'FeatureDates' %}
-        {% assign featuredStart = i | Attribute:'FeatureDates' | Split:' to ' | First %}
-        {% assign featuredEnd = i | Attribute:'FeatureDates' | Split:' to ' | Last %}
-        {% assign today = 'Now' | Date:'MM/dd/yyyy' %}
-        {% if featuredRange != '' %}
-            {% assign isFeatured = today | DateIsBetween:featuredStart,featuredEnd %}
-            {% if isFeatured == true %}
-              [[ item ]]
-                <div class='hover' data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description' | Escape }}</div>">
-                  <a href="/small-group-resources/{{i.PrimarySlug}}">
-                      <div style="padding: 8px">
-                        <div class='img-wrapper'>
-                          <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+﻿{% assign ct = Items | Size %}
+{% if ct > 0 %}
+  {[ rescarousel carouselid:'resources-carousel' containerclass:'full-width background--grey' ]}
+      [[ title ]]Featured[[ endtitle ]]
+      {% for i in Items %}
+          {% assign featuredRange = i | Attribute:'FeatureDates' %}
+          {% assign featuredStart = i | Attribute:'FeatureDates' | Split:' to ' | First %}
+          {% assign featuredEnd = i | Attribute:'FeatureDates' | Split:' to ' | Last %}
+          {% assign today = 'Now' | Date:'MM/dd/yyyy' %}
+          {% if featuredRange != '' %}
+              {% assign isFeatured = today | DateIsBetween:featuredStart,featuredEnd %}
+              {% if isFeatured == true %}
+                [[ item ]]
+                  <div class='hover' data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description' | Escape }}</div>">
+                    <a href="/small-group-resources/{{i.PrimarySlug}}">
+                        <div style="padding: 8px">
+                          <div class='img-wrapper'>
+                            <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                          </div>
+                          <div style='font-size: .9375em; font-weight: light;'>
+                            {{i.Title}}
+                          </div>
                         </div>
-                        <div style='font-size: .9375em; font-weight: light;'>
-                          {{i.Title}}
-                        </div>
-                      </div>
-                  </a>
-                </div>
-              [[ enditem ]]
-            {% endif %}
-        {% endif %}
-    {% endfor %}
-{[ endrescarousel ]}
+                    </a>
+                  </div>
+                [[ enditem ]]
+              {% endif %}
+          {% endif %}
+      {% endfor %}
+  {[ endrescarousel ]}
+{% endif %}
