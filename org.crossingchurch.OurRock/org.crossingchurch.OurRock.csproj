@@ -97,6 +97,7 @@
     <Compile Include="Reporting\DataTransform\Person\AllowCheckInByTransform.cs" />
     <Compile Include="Reporting\DataTransform\Person\CanCheckInTransform.cs" />
     <Compile Include="Rest\Controllers\EventFormCalendarController.cs" />
+    <Compile Include="Web\UI\Controls\PageTitle.cs" />
     <Compile Include="Workflow\Action\Groups\AddPersonToGroupFromAttribute.cs" />
     <Compile Include="Workflow\Action\Checkin\FilterGroupsForMultiAge.cs" />
   </ItemGroup>
