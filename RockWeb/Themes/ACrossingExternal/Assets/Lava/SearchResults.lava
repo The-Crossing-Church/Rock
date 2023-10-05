@@ -130,7 +130,7 @@
     <div class="row row-equal-height">
         {% for i in Staff %}
             <div class='col col-xs-12 col-md-4 text--centered staff-result'>
-                <img src="{{i | Attribute:'Image'}}" style="width: 100%;"/>
+                <img src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'Person','FullName'}}" style="width: 100%;"/>
                 <br/><br/>
                 <h3>{{i | Attribute:'Person','FullName' }}</h3>
                 <h4>{{i | Attribute:'Person','Object' | Attribute:'Position'}}</h4>
@@ -147,7 +147,7 @@
                         <div class="modal-body">
                             <div class='row'>
                                 <div class='col col-xs-12 col-md-5 justify-center'>
-                                    <img src="{{i | Attribute:'Image'}}" style="width: 100%;"/>
+                                    <img src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'Person','FullName'}}" style="width: 100%;"/>
                                 </div>
                                 <div class='col col-xs-12 col-md-7'>
                                     <h1>{{i | Attribute:'Person','FullName' }}</h1>

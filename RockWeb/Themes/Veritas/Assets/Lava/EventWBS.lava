@@ -14,7 +14,7 @@
                 {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy @ h:mm tt' }}
                 <i class='fa expand-icon pull-right'></i>
             </div>
-        </a> 
+        </a>
         <div class='collapse' id="dateList">
             <ul class="list-unstyled">
                 {% for scheduledDate in scheduledDates %}
@@ -35,7 +35,7 @@
                         {% assign nextDate = sdates | First %}
                         {% assign diff = 'Now' DateDiff:nextDate %}
                         {% if diff > 0 %}
-                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %} 
+                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %}
                         {% endif %}
                     {% endif %}
                 {% endif %}
@@ -57,7 +57,7 @@
     {% endif %}
     <br/>
     <div class="wbs-title background--grey text--upper">About This Bible Study</div>
-    {{ Event.Description }} 
+    {{ Event.Description }}
     <div class="row">
       <div class="col col-xs-12" style="min-height: 40px; margin-bottom: 10px;">
       {% if EventItemOccurrence.ContactEmail != '' %}
@@ -77,7 +77,7 @@
           {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
           {% assign showRegistration = true %}
           {% assign registrationMessage = '' %}
-              
+
           {% if daysTillStartDate and daysTillStartDate > 0 %}
             {% assign showRegistration = false %}
             {% if eventItemOccurrenceLinkagesCount == 1 %}
@@ -86,7 +86,7 @@
               {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
             {% endif %}
           {% endif %}
-    
+
           {% if daysTillEndDate and daysTillEndDate < 0 %}
             {% assign showRegistration = false %}
               {% if eventItemOccurrenceLinkagesCount == 1 %}
@@ -95,7 +95,7 @@
                 {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
               {% endif %}
           {% endif %}
-    
+
           {% if showRegistration == true %}
             {% assign statusLabel = RegistrationStatusLabels[eventItemOccurrenceLinkage.RegistrationInstanceId] %}
             {% if eventItemOccurrenceLinkagesCount == 1 %}
@@ -103,7 +103,7 @@
             {% else %}
               {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
             {% endif %}
-    
+
             {% if statusLabel == 'Full' %}
               {% if eventItemOccurrenceLinkagesCount == 1 %}
                 {% assign registrationButtonText = 'Registration Full' %}
@@ -164,7 +164,7 @@
   </div>
   <div class="col col-xs-12 col-md-4">
     {% if Event.Photo.Guid %}
-      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" alt="{{ Event.Name }}" class="title-image img-responsive" />
     {% endif %}
   </div>
 </div>
@@ -180,7 +180,7 @@
 }
 .wbs-title {
     padding: 2px 4px;
-    
+
 }
 </style>
 {% stylesheet compile:'less' %}

@@ -45,23 +45,9 @@
         </div>
     </div>
     <div class='col col-xs-12 col-md-5'>
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                Title
-            </span>
-        </label>
-        {% endcomment %}
-        <h2>{{Item.Title}}</h2>
+        <h1 class="h2">{{Item.Title}}</h1>
         <br/>
         {% if cat == 'Sermon' %}
-            {% comment %}
-            <label>
-                <span class='floating--title'>
-                    Speaker
-                </span>
-            </label>
-            {% endcomment %}
             {% assign pastor = Item | Attribute:'Author','FullName' %}
             {% if pastor != '' %}
                 <a href="/Resources/Search?q={{Item | Attribute:'Author','FullName'}}"><h4>{{Item | Attribute:'Author','FullName'}}</h4></a>
@@ -69,33 +55,12 @@
                 <h4>{{Item | Attribute:'GuestSpeaker'}}</h4>
             {% endif %}
         {% else %}
-            {% comment %}
-            <label>
-                <span class='floating--title'>
-                    Author
-                </span>
-            </label>
-            {% endcomment %}
             <h4>{{Item | Attribute:'Author','FullName'}}</h4>
         {% endif %}
         <br/>
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                Description
-            </span>
-        </label>
-        {% endcomment %}
         <p>{{Item.Content}}</p>
         <br/>
         {% if cat == 'Sermon' %}
-            {% comment %}
-            <label>
-                <span class='floating--title'>
-                    Listen
-                </span>
-            </label>
-            {% endcomment %}
             <div>
                 <audio controls>
                     <source src="{{Item | Attribute:'SermonAudio'}}" type="audio/mpeg" />
@@ -116,13 +81,6 @@
                 {% endif %}
             {% endif %}
             {% if notes != '' or hasBothVideos %}
-                {% comment %}
-                <label>
-                    <span class='floating--title'>
-                        Extras
-                    </span>
-                </label>
-                {% endcomment %}
                 <div>
                     {% if notes != '' %}
                         {% if cat == 'Sermon' %}
@@ -133,24 +91,17 @@
                     {% endif %}
                     {% if currentVideo == 'Service' %}
                         {% if sermon != '' %}
-                            <a class='btn btn-primary mb-1' href="/Resource/Watch/{{Item.PrimarySlug}}?T=Sermon">Watch Sermon Video</a>
+                            <a class='btn btn-primary mb-1' href="{{ 'Global' | Page:'Path' }}?T=Sermon">Watch Sermon Video</a>
                         {% endif %}
                     {% else %}
                         {% if service != '' %}
-                            <a class='btn btn-primary mb-1'  href="/Resource/Watch/{{Item.PrimarySlug}}?T=Service">Watch Full Service</a>
+                            <a class='btn btn-primary mb-1'  href="{{ 'Global' | Page:'Path' }}?T=Service">Watch Full Service</a>
                         {% endif %}
                     {% endif %}
                 </div>
                 <br/>
             {% endif %}
         {% endif %}
-        {% comment %}
-        <label>
-            <span class='floating--title'>
-                Share
-            </span>
-        </label>
-        {% endcomment %}
         <div class="row">
           <div class="col col-xs-12">
             <div class='social-media'>

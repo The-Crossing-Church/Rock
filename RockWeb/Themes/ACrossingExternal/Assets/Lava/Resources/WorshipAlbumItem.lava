@@ -5,7 +5,7 @@
         </div>
     </div>
     <div class='col col-xs-12 col-md-8'>
-        <h2>{{Item.Title}}</h2>
+        <h1 class="h2">{{Item.Title}}</h1>
         <br/>
         {{Item.Content}}
         <br/>
