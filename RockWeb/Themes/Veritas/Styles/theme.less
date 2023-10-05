@@ -721,7 +721,7 @@ header:not(.panel-heading) {
   text-align: center;
   padding-top: 16px;
 }
-.py-custom-2x {
+.py-custom-2x, .pt-custom-2x {
   padding-top: 2rem !important;
 }
 
@@ -742,7 +742,7 @@ h1 {
   letter-spacing: 1px;
   margin: 0 auto;
 }
-h2 {
+h2, .h2 {
   font-size: 2.25em;
   line-height: 1.1875em;
   font-weight: 800;
@@ -774,7 +774,7 @@ h5 {
   h1 {
     font-size: 1.875em;
   }
-  h2 {
+  h2, .h2 {
     font-size: 1.5em;
   }
   h3 {
@@ -1170,6 +1170,13 @@ footer {
   .border--bottom {
     border-bottom: 8px solid @color-dark-teal;
   }
+
+.screen-skip {
+  visibility: hidden;
+  height: 0px;
+  speak: none;
+}
+
   // 5. Responsive Overrides
   // -------------------------
   // default styling should be for phones 767px or less
