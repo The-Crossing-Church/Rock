@@ -53,7 +53,7 @@
     AND LocationId IN (
         SELECT ID
         FROM Location
-        WHERE Name LIKE 'Multi-Age'
+        WHERE Name LIKE '%Multi-Age%'
     )
     ORDER BY [Order]
 {% endsql %}
