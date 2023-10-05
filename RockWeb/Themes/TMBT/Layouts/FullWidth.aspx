@@ -1,4 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="Site.Master" AutoEventWireup="true" Inherits="Rock.Web.UI.RockPage" %>
+<%@ Register TagPrefix="tcc" Namespace="org.crossingchurch.OurRock.Web.UI.Controls" Assembly="org.crossingchurch.OurRock" %>
 
 <asp:Content ID="ctMain" ContentPlaceHolderID="main" runat="server">
     
@@ -8,7 +9,7 @@
         
         <!-- Page Title -->
         <Rock:PageIcon ID="PageIcon" runat="server" />
-        <h1 class="pagetitle py-custom-2x"><Rock:PageTitle ID="PageTitle" runat="server" /></h1>
+        <tcc:PageTitle ID="PageTitle" runat="server" Tag="h1" />
         
         <!-- Breadcrumbs -->    
         <Rock:PageBreadCrumbs ID="PageBreadCrumbs" runat="server" />
