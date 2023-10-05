@@ -1,4 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="Site.Master" AutoEventWireup="true" Inherits="Rock.Web.UI.RockPage" %>
+<%@ Register TagPrefix="tcc" Namespace="org.crossingchurch.OurRock.Web.UI.Controls" Assembly="org.crossingchurch.OurRock" %>
 
 <asp:Content ID="ctMain" ContentPlaceHolderID="main" runat="server">
 
@@ -7,7 +8,8 @@
         <!-- Start Content Area -->
         
         <!-- Page Title -->
-        <Rock:PageIcon ID="PageIcon" runat="server" /> <h1 class="pagetitle"><Rock:PageTitle ID="PageTitle" runat="server" /></h1>
+        <Rock:PageIcon ID="PageIcon" runat="server" /> 
+        <tcc:PageTitle ID="PageTitle" runat="server" Tag="h1" CssClasses="pagetitle py-custom-2x" />
         <Rock:PageBreadCrumbs ID="PageBreadCrumbs" runat="server" />
                     
         <!-- Ajax Error -->
