@@ -367,12 +367,20 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             //Elementary, Multiage exists
             var elem = attendance.Where( x => x.Occurrence.Group.GroupTypeId == 129 ).ToList().Select( e =>
             {
-                var scheduleStart = new DateTime( e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0 ).Add( e.Occurrence.Schedule.StartTimeOfDay );
-                var ts = scheduleStart - e.StartDateTime;
-                if ( ts.TotalMinutes <= 45 )
+                //Check if is first for person on day
+                var otherAttendancesOnDay = attendance.Where(a => a.PersonAliasId == e.PersonAliasId && a.Occurrence.OccurrenceDate == e.Occurrence.OccurrenceDate ).ToList().OrderBy(a => a.Occurrence.Schedule.StartTimeOfDay);
+                List<int> idsInOrder = otherAttendancesOnDay.Select( a => a.Id ).ToList();
+                int currentAttIdx = idsInOrder.IndexOf( e.Id );
+                if(currentAttIdx == 0 )
                 {
                     return e;
                 }
+                //var scheduleStart = new DateTime( e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0 ).Add( e.Occurrence.Schedule.StartTimeOfDay );
+                //var ts = scheduleStart - e.StartDateTime;
+                //if ( ts.TotalMinutes <= 45 )
+                //{
+                //    return e;
+                //}
                 return new Attendance() { Id = -1 };
             } ).Where( e => e.Id > 0 ).GroupBy( x => new { x.Occurrence.OccurrenceDate, x.Occurrence.ScheduleId, x.Occurrence.LocationId } ).Select( x =>
             {
@@ -398,17 +406,30 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             } ).Distinct().ToList();
             var elemMultiAge = attendance.Where( x => x.Occurrence.Group.GroupTypeId == 129 ).ToList().Select( e =>
             {
-                var scheduleStart = new DateTime( e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0 ).Add( e.Occurrence.Schedule.StartTimeOfDay );
-                var ts = scheduleStart - e.StartDateTime;
-                if ( ts.TotalMinutes > 45 )
+                //Check if is first for person on day
+                var otherAttendancesOnDay = attendance.Where( a => a.PersonAliasId == e.PersonAliasId && a.Occurrence.OccurrenceDate == e.Occurrence.OccurrenceDate ).ToList().OrderBy( a => a.Occurrence.Schedule.StartTimeOfDay );
+                List<int> idsInOrder = otherAttendancesOnDay.Select( a => a.Id ).ToList();
+                int currentAttIdx = idsInOrder.IndexOf( e.Id );
+                if( currentAttIdx > 0 )
                 {
                     var isK2 = false;
-                    if ( e.Occurrence.Group.Name.Contains( "Kindergarten" ) || e.Occurrence.Group.Name.Contains( "1st" ) || e.Occurrence.Group.Name.Contains( "2nd" ) )
+                    if (e.Occurrence.Group.Name.Contains( "Kindergarten" ) || e.Occurrence.Group.Name.Contains( "1st" ) || e.Occurrence.Group.Name.Contains( "2nd" ))
                     {
                         isK2 = true;
                     }
                     return new { isValid = true, att = e, isK2 = isK2 };
                 }
+                //var scheduleStart = new DateTime( e.StartDateTime.Year, e.StartDateTime.Month, e.StartDateTime.Day, 0, 0, 0 ).Add( e.Occurrence.Schedule.StartTimeOfDay );
+                //var ts = scheduleStart - e.StartDateTime;
+                //if ( ts.TotalMinutes > 45 )
+                //{
+                //    var isK2 = false;
+                //    if ( e.Occurrence.Group.Name.Contains( "Kindergarten" ) || e.Occurrence.Group.Name.Contains( "1st" ) || e.Occurrence.Group.Name.Contains( "2nd" ) )
+                //    {
+                //        isK2 = true;
+                //    }
+                //    return new { isValid = true, att = e, isK2 = isK2 };
+                //}
                 return new { isValid = false, att = new Attendance() { }, isK2 = false };
             } ).Where( e => e.isValid == true ).GroupBy( x => new { x.isK2, x.att.Occurrence.OccurrenceDate, x.att.Occurrence.ScheduleId } ).Select( x =>
             {
