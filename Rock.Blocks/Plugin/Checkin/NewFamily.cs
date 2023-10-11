@@ -286,6 +286,12 @@ namespace Rock.Blocks.Plugin.Checkin
         Category = "Check-in Group",
         Order = 7
     )]
+    [GroupField(
+        "Multi-Age Group",
+        Key = AttributeKey.MultiAge,
+        Category = "Check-in Group",
+        Order = 8
+    )]
     [WorkflowTypeField(
         "Person Workflow(s)",
         Key = AttributeKey.PersonWorkflows,
@@ -365,6 +371,7 @@ namespace Rock.Blocks.Plugin.Checkin
             public const string GroupAttrGrade = "GroupAttrGrade";
             public const string OverrideA = "OverrideA";
             public const string OverrideB = "OverrideB";
+            public const string MultiAge = "MultiAge";
             public const string PersonWorkflows = "PersonWorkflows";
             public const string AdultWorkflows = "AdultWorkflows";
             public const string ChildWorkflows = "ChildWorkflows";
@@ -542,6 +549,7 @@ namespace Rock.Blocks.Plugin.Checkin
                 PhoneNumberService phn_svc = new PhoneNumberService( context );
                 Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
                 Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
+                Group multiAge = grp_svc.Get( GetAttributeValue( AttributeKey.MultiAge ).AsGuid() );
                 List<Person> people = new List<Person>();
                 List<GroupMember> members = new List<GroupMember>();
                 List<GroupViewModel> groups = new List<GroupViewModel>();
@@ -637,6 +645,19 @@ namespace Rock.Blocks.Plugin.Checkin
                             members.Add( overrideGroup );
                             groups.Add( overrideB.ToViewModel() );
                         }
+                    }
+                    if (multiAge != null && selectedGradeValue.Value.AsInteger() < 13)
+                    {
+                        //Add Elementary Kids to Multi-Age Group
+                        GroupMember multiAgeGroup = new GroupMember
+                        {
+                            PersonId = p.Id,
+                            GroupId = multiAge.Id,
+                            GroupRoleId = multiAge.GroupType.DefaultGroupRole.Id
+                        };
+                        context.GroupMembers.Add( multiAgeGroup );
+                        members.Add( multiAgeGroup );
+                        groups.Add( multiAge.ToViewModel() );
                     }
                 }
                 context.SaveChanges();
