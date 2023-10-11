@@ -591,10 +591,10 @@ namespace Rock.Blocks.Plugin.Checkin
                     Group selected = grp_svc.Get( placements[i].SelectedGroup );
                     selected.LoadAttributes();
                     Person p = FromViewModel( children[i] );
-                    var selectedGradeGuid = selected.AttributeValues[groupGradeAttribute.Key];
-                    if (selectedGradeGuid != null)
+                    var selectedGradeValue = selected.AttributeValues[groupGradeAttribute.Key];
+                    if (selectedGradeValue != null && !String.IsNullOrEmpty( selectedGradeValue.Value ))
                     {
-                        p.GraduationYear = GraduationYear + selectedGradeGuid.Value.AsInteger();
+                        p.GraduationYear = GraduationYear + selectedGradeValue.Value.AsInteger();
                     }
                     context.People.Add( p );
                     context.SaveChanges();

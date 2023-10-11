@@ -152,6 +152,7 @@ export default defineComponent({
             this.alertClass = "alert alert-danger"
             this.showResults = true
           }
+          window.scrollTo(0, 0)
         }).catch((err) => {
           this.showValidation = false
         }).finally(() => {
