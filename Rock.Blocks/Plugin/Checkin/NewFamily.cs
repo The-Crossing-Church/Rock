@@ -646,7 +646,7 @@ namespace Rock.Blocks.Plugin.Checkin
                             groups.Add( overrideB.ToViewModel() );
                         }
                     }
-                    if (multiAge != null && selectedGradeValue.Value.AsInteger() < 13)
+                    if (multiAge != null && !String.IsNullOrEmpty( selectedGradeValue.Value ) && selectedGradeValue.Value.AsInteger() < 13)
                     {
                         //Add Elementary Kids to Multi-Age Group
                         GroupMember multiAgeGroup = new GroupMember
