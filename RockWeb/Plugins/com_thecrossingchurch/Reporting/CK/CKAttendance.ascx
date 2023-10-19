@@ -8,6 +8,8 @@
         });
     }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js" integrity="sha512-UnrKxsCMN9hFk7M56t4I4ckB4N/2HHi0w/7+B/1JsXIX3DmyBcsGpT3/BsuZMZf+6mAr0vP81syWtfynHJ69JA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <div class="panel panel-block">
@@ -43,12 +45,13 @@
             </div>
         </div>
         <br />
-        <div class="custom-container" id="DataContainer" runat="server" Visible="false" >
+        <div class="custom-container" id="DataContainer" runat="server" visible="false">
             <asp:PlaceHolder ID="phContent" runat="server" Visible="false" />
         </div>
-        <div class="row mt-3 d-none">
+        <div class="row mt-3 ">
             <div class="pull-right">
-                <Rock:BootstrapButton ID="btnExport" runat="server" Text="Export" CssClass="btn btn-primary" OnClick="btnExport_Click" />
+                <button class="btn btn-primary" id="btnExport" runat="server" visible="false" onclick="exportToXLS();return false;">Export to Excel</button>
+                <%--<Rock:BootstrapButton Visible="false" ID="btnExport" runat="server" Text="Export" CssClass="btn btn-primary d-none" OnClick="btnExport_Click" />--%>
             </div>
         </div>
     </ContentTemplate>
@@ -68,10 +71,55 @@
 </div>
 <script>
     function displayGroups(el) {
-        console.log('display:', $(el), $(el)[0].parentElement)
         $('#att-modal #att-modal-title').text($(el)[0].parentElement.parentElement.firstChild.innerText)
         $('#att-modal #att-modal-body').html(el.dataset.content + "<div class='row'><div class='col col-xs-8'><b>Total</b></div><div class='col col-xs-4'><b>" + el.innerText + "</b></div></div>")
         $('#att-modal').modal()
+    }
+    function exportToXLS() {
+        let elements = document.querySelectorAll('.att-schedule > div')
+        let workbook = new ExcelJS.Workbook()
+        let sheet = workbook.addWorksheet('Attendance')
+        elements.forEach((el) => {
+            let data = []
+            for (let child of el.children) {
+                data.push(child.innerText + (child.classList.contains("att-closed") ? "**" : "") + (child.classList.contains("att-threshold") ? "__" : ""))
+            }
+            sheet.addRow(data)
+        })
+        sheet._rows.forEach((row) => {
+            row._cells.forEach((cell) => {
+                if (cell._value.value.includes('**')) {
+                    cell._value.value = cell._value.value.replace('**', '')
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'ffd3afaf' },
+                    }
+                } else if (cell._value.value.includes('__')) {
+                    cell._value.value = cell._value.value.replace('__', '')
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'ffd3d3d3' },
+                    }
+                }
+                let reg = /^[0-9]+$/
+                if (cell._value.value.match(reg)) {
+                    sheet.getCell(cell._address).value = parseInt(cell._value.value)
+                }
+            })
+        })
+        sheet.columns[0].width = 30
+        sheet.views = [{ state: 'frozen', xSplit: 2, ySplit: 0 }]
+        workbook.xlsx.writeBuffer().then(function (data) {
+            let blob = new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+            let link = document.createElement("a")
+            link.href = window.URL.createObjectURL(blob)
+            link.download = "CK Attendance Report"
+            link.style = "display: none;"
+            document.body.appendChild(link)
+            link.click()
+        })
     }
 </script>
 <style>
@@ -123,7 +171,8 @@
         display: flex;
         align-items: center;
     }
-    .att-location-title, .att-schedule-title { 
+
+    .att-location-title, .att-schedule-title {
         position: sticky;
         left: 0;
         z-index: 10;
@@ -134,12 +183,12 @@
         min-width: 75px;
     }
 
-    .att-data div, .att-threshold, .att-date, .att-date-threshold, .att-total-threshold, .att-total-data {
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+        .att-data div, .att-threshold, .att-date, .att-date-threshold, .att-total-threshold, .att-total-data {
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
     .att-data {
         cursor: pointer;
@@ -148,6 +197,7 @@
     .att-closed {
         background-color: #d3afaf;
     }
+
     .att-date-threshold {
         background-color: #fff;
     }

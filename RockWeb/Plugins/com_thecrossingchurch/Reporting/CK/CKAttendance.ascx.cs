@@ -5,33 +5,17 @@ using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
-
 using Rock;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 using Rock.Attribute;
-using System.Text.RegularExpressions;
-using System.Net.Sockets;
-using System.Net;
-using Rock.CheckIn;
 using System.Data.Entity;
 using System.Web.UI.HtmlControls;
 using System.Data;
-using System.Text;
-using System.Web;
-using System.IO;
-using OfficeOpenXml;
-using OfficeOpenXml.Style;
-using System.Drawing;
 using Newtonsoft.Json;
-using DocumentFormat.OpenXml.VariantTypes;
 using WebGrease.Css.Extensions;
-using Rock.Rest.Controllers;
 using System.Diagnostics;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
-using System.IdentityModel.Metadata;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
 {
@@ -58,30 +42,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
         private DateTime end;
         private List<int> svcTimes;
         //Configuration Variables
-        private int pageNum;
-        private int noteTypeId;
         private NoteType noteType;
         private Rock.Model.Page notesPage;
         private Guid? locationSortGuid;
         //Local Variables
-        public string csv
-        {
-            get
-            {
-                if (ViewState["csv"] != null)
-                {
-                    return ViewState["csv"].ToString();
-                }
-                else
-                {
-                    return "";
-                }
-            }
-            set
-            {
-                ViewState["csv"] = value;
-            }
-        }
         private List<DateAttendance> data;
         private List<DateThreshold> thresholdData;
         private List<ScheduleLocations> scheduleLocations;
@@ -93,7 +57,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
         protected void Page_Load( object sender, EventArgs e )
         {
             ScriptManager scriptManager = ScriptManager.GetCurrent( this.Page );
-            scriptManager.RegisterPostBackControl( this.btnExport );
             ScriptManager.RegisterStartupScript( Page, this.GetType(), "AKey", "notes();", true );
         }
 
@@ -124,8 +87,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
             }
             start = stDate.SelectedDate.Value;
             end = endDate.SelectedDate.Value;
-            pageNum = GetAttributeValue( "NotesPage" ).AsInteger();
-            noteTypeId = GetAttributeValue( "NoteTypeId" ).AsInteger();
             locationSortGuid = GetAttributeValue( "LocationSort" ).AsGuidOrNull();
             Guid? noteTypeGuid = GetAttributeValue( "NoteType" ).AsGuidOrNull();
             Guid? notePageGuid = GetAttributeValue( "NotesPage" ).AsGuidOrNull();
@@ -156,31 +117,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
             end = endDate.SelectedDate.Value;
             svcTimes = lbSchedules.SelectedValues.Select( x => Int32.Parse( x ) ).ToList();
             GetAttendance();
-        }
-
-        /// <summary>
-        /// Handles the Click event of the btnExport control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void btnExport_Click( object sender, EventArgs e )
-        {
-            var excel = GenerateExcel();
-            byte[] byteArray;
-            using (MemoryStream ms = new MemoryStream())
-            {
-                excel.SaveAs( ms );
-                byteArray = ms.ToArray();
-            }
-            Response.Clear();
-            Response.Buffer = true;
-            Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            Response.AddHeader( "content-disposition", "attachment;filename=AttendanceExport.xlsx" );
-            Response.Cache.SetCacheability( HttpCacheability.Public );
-            Response.Charset = "";
-            Response.BinaryWrite( byteArray );
-            Response.Flush();
-            Response.End();
         }
 
         protected void sdrpDates_SelectedDateRangeChanged( object sender, EventArgs e )
@@ -526,6 +462,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
             phContent.Controls.Add( container );
             phContent.Visible = true;
             DataContainer.Visible = true;
+            btnExport.Visible = true;
         }
 
         /// <summary>
@@ -548,14 +485,35 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
                         locId => locId,
                         ( l, locId ) => l
                     ).ToList();
+                Rock.Model.Attribute historicThresholdAttr;
+                List<DateTime> dates = new List<DateTime>();
+                List<HistoricThreshold> historicThresholds = new List<HistoricThreshold>();
                 if (historicThresholdAttrGuid.HasValue)
                 {
                     //Pull data into a list of <Date, Int> for threshold data by room
-                    Rock.Model.Attribute historicThresholdAttr = new AttributeService( rockContext ).Get( historicThresholdAttrGuid.Value );
-                    var historicThresholds = new AttributeValueService( rockContext ).Queryable().Where( av => av.AttributeId == historicThresholdAttr.Id ).Join( locationIds, av => av.EntityId, locId => locId, ( av, locId ) => av ).ToList().Select( av => new { av.EntityId, Data = av.Value.Split( '|' ).Select( v => new { Date = DateTime.Parse( v.Split( '^' ).First() ), Threshold = Int32.Parse( v.Split( '^' ).Last() ) } ).ToList() } ).ToList();
+                    historicThresholdAttr = new AttributeService( rockContext ).Get( historicThresholdAttrGuid.Value );
+                    historicThresholds = new AttributeValueService( rockContext ).Queryable().Where( av => av.AttributeId == historicThresholdAttr.Id )
+                        .Join( locationIds,
+                            av => av.EntityId,
+                            locId => locId,
+                            ( av, locId ) => av
+                        ).ToList().Select( av =>
+                            new HistoricThreshold
+                            {
+                                EntityId = av.EntityId,
+                                Data = av.Value.Split( '|' ).Select( v => new HistoricThresholdData { Date = DateTime.Parse( v.Split( '^' ).First() ), Threshold = Int32.Parse( v.Split( '^' ).Last() ) } ).ToList()
+                            }
+                        ).ToList();
                     //Build Threshold data object and filter to dates relevant to the data we are looking at
-                    var dates = historicThresholds.SelectMany( t => t.Data.Select( d => d.Date ) ).Distinct().OrderBy( d => d.Date ).ToList();
+                    dates = historicThresholds.SelectMany( t => t.Data.Select( d => d.Date ) ).Distinct().OrderBy( d => d.Date ).ToList();
+                }
+                if (dates.Count() > 0)
+                {
                     var indexOfDatesAfterStart = dates.Count() - dates.Where( d => d > startDate ).Count() - 1;
+                    if (indexOfDatesAfterStart < 0)
+                    {
+                        indexOfDatesAfterStart = 0;
+                    }
                     for (var i = indexOfDatesAfterStart; i < dates.Count(); i++)
                     {
                         var threshold = new DateThreshold() { Date = dates[i] };
@@ -623,82 +581,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
             }
         }
 
-        public void GenerateCSV()
-        {
-            var html = "";
-            foreach (HtmlGenericControl c in phContent.Controls)
-            {
-                System.IO.TextWriter tw = new System.IO.StringWriter();
-                HtmlTextWriter htw = new HtmlTextWriter( tw );
-                c.RenderControl( htw );
-                html += tw.ToString();
-            }
-            html = html.Replace( "<div class=\"custom-row\">", "\r\n" );
-            html = html.Replace( "</div>", "," );
-            html = html.Replace( "<div class=\"custom-col\">", "" );
-            html = html.Replace( "<div class=\"custom-col name-col\">", "" );
-            html = html.Replace( "<div class=\"custom-col first-custom-col\">", "" );
-            html = html.Replace( "<div class=\"custom-row bg-secondary\">", "\r\n" );
-            html = html.Replace( "<div class=\"service-group\">", "\r\n" );
-            html = html.Replace( "<div class=\"custom-row service-time\">", "" );
-            html = html.Replace( "<div class=\"custom-col name-col bg-secondary\">", "" );
-            html = html.Replace( "<div class=\"custom-seperator\">", "" );
-            html = html.Replace( "<div class=\"custom-col service-time name-col\">", "" );
-            html = html.Replace( "<div class=\"custom-col over-threshold\">", "" );
-
-            this.csv = html;
-        }
-
-        public ExcelPackage GenerateExcel()
-        {
-            ExcelPackage excel = new ExcelPackage();
-            excel.Workbook.Properties.Title = "CK Attendance";
-            // add author info
-            Rock.Model.UserLogin userLogin = Rock.Model.UserLoginService.GetCurrentUser();
-            if (userLogin != null)
-            {
-                excel.Workbook.Properties.Author = userLogin.Person.FullName;
-            }
-            else
-            {
-                excel.Workbook.Properties.Author = "Rock";
-            }
-            ExcelWorksheet worksheet = excel.Workbook.Worksheets.Add( "Attendance" );
-            worksheet.PrinterSettings.LeftMargin = .5m;
-            worksheet.PrinterSettings.RightMargin = .5m;
-            worksheet.PrinterSettings.TopMargin = .5m;
-            worksheet.PrinterSettings.BottomMargin = .5m;
-
-            var raw_data = csv.Replace( "\r\n", "\n" );
-            var row_data = raw_data.Split( '\n' );
-
-            for (var i = 1; i <= row_data.Length; i++)
-            {
-                if (row_data[i - 1].Contains( ',' ) && i != row_data.Length - 1)
-                {
-                    var col_data = row_data[i - 1].Split( ',' );
-                    for (var j = 1; j <= col_data.Length; j++)
-                    {
-                        if (col_data[j - 1].Length > 2 && col_data[j - 1].Substring( 0, 2 ) == "**")
-                        {
-                            col_data[j - 1] = col_data[j - 1].Substring( 2 );
-                            Color c = System.Drawing.ColorTranslator.FromHtml( "#9A0000" );
-                            worksheet.Cells[i, j].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                            worksheet.Cells[i, j].Style.Fill.BackgroundColor.SetColor( c );
-                        }
-                        if (col_data[j - 1].Length > 2 && col_data[j - 1].Contains( "<br/>" ))
-                        {
-                            col_data[j - 1] = col_data[j - 1].Replace( "<br/>", "\r\n" );
-                            worksheet.Cells[i, j].Style.WrapText = true;
-                        }
-                        worksheet.Cells[i, j].Value = col_data[j - 1];
-
-                    }
-                }
-            }
-            return excel;
-        }
-
         #endregion
         [DebuggerDisplay( "Group: {Group}, Order: {Order}, Count: {Count}" )]
         private class GroupAttendance
@@ -764,6 +646,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
         {
             public DateTime Date { get; set; }
             public List<ScheduleThreshold> Thresholds { get; set; }
+        }
+        private class HistoricThreshold
+        {
+            public int? EntityId { get; set; }
+            public List<HistoricThresholdData> Data { get; set; }
+        }
+        private class HistoricThresholdData
+        {
+            public DateTime Date { get; set; }
+            public int Threshold { get; set; }
         }
     }
 }
