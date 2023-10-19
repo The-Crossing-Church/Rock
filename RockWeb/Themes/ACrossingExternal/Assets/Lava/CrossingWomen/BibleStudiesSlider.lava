@@ -3,25 +3,43 @@
         {% for i in Items %}
             [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]
             [[ slide ]]
-                <div class='img-wrapper'>
-                    <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'ImageAltText'}}"/>
+                <div class="d-flex">
+                    {% if forloop.index0 == 0 %}
+                        {% assign idx = forloop.length | Minus: 1 %}
+                    {% else %}
+                        {% assign idx = forloop.index0 | Minus: 1 %}
+                    {% endif %}
+                    <div class='img-wrapper'>
+                        <img class="d-block" style="max-width: 250px;" src="{{Items[idx] | Attribute:'Image'}}" alt="{{Items[idx] | Attribute:'ImageAltText'}}"/>
+                    </div>
+                    <div class='img-wrapper'>
+                        <img class="d-block" style="max-width: 250px;" src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'ImageAltText'}}"/>
+                    </div>
+                    {% if forloop.last %}
+                        {% assign idx = 0 %}
+                    {% else %}
+                        {% assign idx = forloop.index0 | Plus: 1 %}
+                    {% endif %}
+                    <div class='img-wrapper'>
+                        <img class="d-block" style="max-width: 250px;" src="{{Items[idx] | Attribute:'Image'}}" alt="{{Items[idx] | Attribute:'ImageAltText'}}"/>
+                    </div>
                 </div>
             [[ endslide ]]
         {% endfor %}
     {[ endimgslider ]}
 </div>
 <style>
-    .wbs-slider-wrapper {
-        max-width: 60%;
+    .img-wrapper {
+        padding: 8px;
     }
-    @media only screen and (max-width: 991px) {
-        .wbs-slider-wrapper {
-            max-width: 80%;
+    @media only screen and (max-width: 819px) {
+        .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:first-child {
+            display: none;
         }
     }
     @media only screen and (max-width: 576px) {
-        .wbs-slider-wrapper {
-            max-width: 100%;
+        .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:first-child, .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:last-child {
+            display: none;
         }
     }
 </style>
