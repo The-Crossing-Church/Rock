@@ -49,6 +49,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
         private List<DateAttendance> data;
         private List<DateThreshold> thresholdData;
         private List<ScheduleLocations> scheduleLocations;
+        private List<int> groupTypeIds;
 
         #endregion
 
@@ -227,7 +228,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
             using (var rockContext = new RockContext())
             {
                 var areas = GetAttributeValues( "CheckInAreas" ).AsGuidList();
-                List<int> groupTypeIds = new List<int>();
+                groupTypeIds = new List<int>();
                 GroupTypeService gt_svc = new GroupTypeService( rockContext );
                 foreach (var area in areas)
                 {
@@ -315,6 +316,22 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
             notesTitle.AddCssClass( "att-location-title" );
             notesTitle.InnerText = "Notes";
             notes.Controls.Add( notesTitle );
+            var dayTotal = new HtmlGenericControl( "div" );
+            dayTotal.AddCssClass( "att-schedule-total" );
+            var dayTotalTitle = new HtmlGenericControl( "div" );
+            dayTotalTitle.AddCssClass( "att-location-title" );
+            dayTotalTitle.InnerText = "Day's Total";
+            dayTotal.Controls.Add( dayTotalTitle );
+            var dayUniqueTotal = new HtmlGenericControl( "div" );
+            dayUniqueTotal.AddCssClass( "att-schedule-total" );
+            var dayUniqueTotalTitle = new HtmlGenericControl( "div" );
+            dayUniqueTotalTitle.AddCssClass( "att-location-title" );
+            dayUniqueTotalTitle.InnerText = "Day's Unique Total";
+            dayUniqueTotal.Controls.Add( dayUniqueTotalTitle );
+            var dailyTotalContainer = new HtmlGenericControl( "div" );
+            dailyTotalContainer.AddCssClass( "att-schedule" );
+            dailyTotalContainer.Controls.Add( dayTotal );
+            dailyTotalContainer.Controls.Add( dayUniqueTotal );
             RockContext context = new RockContext();
             NoteService note_svc = new NoteService( context );
             AttendanceOccurrenceService ao_svc = new AttendanceOccurrenceService( context );
@@ -375,6 +392,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
                                     noteCol.AddCssClass( "att-total-data" );
                                     noteCol.InnerText = "";
                                     notes.Controls.Add( noteCol );
+                                    var dayTotalCol = new HtmlGenericControl( "div" );
+                                    dayTotalCol.AddCssClass( "att-total-data" );
+                                    dayTotalCol.InnerText = "";
+                                    dayTotal.Controls.Add( dayTotalCol );
+                                    var dayUniqueTotalCol = new HtmlGenericControl( "div" );
+                                    dayUniqueTotalCol.AddCssClass( "att-total-data" );
+                                    dayUniqueTotalCol.InnerText = "";
+                                    dayUniqueTotal.Controls.Add( dayUniqueTotalCol );
                                 }
                             }
                         }
@@ -393,11 +418,11 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
                                 total.Controls.Add( totalCol );
                                 if (i == 0)
                                 {
+                                    DateTime checkDate = dataInThreshold[j].Date;
+                                    var occurrencesOnDate = ao_svc.Queryable().Where( ao => ao.OccurrenceDate == checkDate );
                                     //Find any existing notes for date
                                     if (noteType != null)
                                     {
-                                        DateTime checkDate = dataInThreshold[j].Date;
-                                        var occurrencesOnDate = ao_svc.Queryable().Where( ao => ao.OccurrenceDate == checkDate );
                                         var notesForDate = note_svc.Queryable().Where( n => n.NoteTypeId == noteType.Id ).Join( occurrencesOnDate,
                                             n => n.EntityId,
                                             ao => ao.Id,
@@ -421,6 +446,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
                                             notes.Controls.Add( noteCol );
                                         }
                                     }
+                                    //Fill in Day's Total Info
+                                    var totalCheckIns = occurrencesOnDate.Where( ao => groupTypeIds.Contains( ao.Group.GroupTypeId ) && ao.OccurrenceDate > stDate.SelectedDate.Value && (endDate.SelectedDate.HasValue ? ao.OccurrenceDate < endDate.SelectedDate.Value : true) && lbSchedules.SelectedValuesAsInt.Contains( ao.ScheduleId.Value ) ).SelectMany( ao => ao.Attendees ).Where( a => a.DidAttend.Value );
+                                    var dayTotalCol = new HtmlGenericControl( "div" );
+                                    dayTotalCol.AddCssClass( "att-total-data" );
+                                    dayTotalCol.InnerText = totalCheckIns.Count().ToString();
+                                    dayTotal.Controls.Add( dayTotalCol );
+                                    var dayUniqueTotalCol = new HtmlGenericControl( "div" );
+                                    dayUniqueTotalCol.AddCssClass( "att-total-data" );
+                                    dayUniqueTotalCol.InnerText = totalCheckIns.Select( a => a.PersonAliasId ).Distinct().Count().ToString();
+                                    dayUniqueTotal.Controls.Add( dayUniqueTotalCol );
                                 }
                             }
                             var attendanceCol = new HtmlGenericControl( "div" );
@@ -456,7 +491,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
                 schedule.Controls.Add( total );
                 container.Controls.Add( schedule );
             }
-            //Add Notes Row
+            //Add Notes and Daily totals Rows
+            container.Controls.Add( dailyTotalContainer );
             container.Controls.Add( notes );
 
             phContent.Controls.Add( container );
