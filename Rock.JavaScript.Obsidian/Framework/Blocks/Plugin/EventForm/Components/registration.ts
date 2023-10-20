@@ -55,7 +55,7 @@ export default defineComponent({
         if(this.e?.attributeValues?.EventDate) {
           return this.e.attributeValues?.EventDate
         } else {
-          let dates = this.request?.attributeValues?.EventDates.split(",").map((d: string) => d.trim)
+          let dates = this.request?.attributeValues?.EventDates.split(",").map((d: string) => d.trim() )
           if(dates && dates.length > 0) {
             return dates[dates.length - 1]
           }
@@ -85,7 +85,6 @@ export default defineComponent({
           if(this.request.id == 0 || this.request.attributeValues.RequestStatus == 'Draft') {
             return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
           }
-          //TODO COOKSEY
           //if newly requesting registration, two weeks from today, else two weeks from submission date
           //Existing request, no pending changes
           if(this.original?.attributeValues?.NeedsRegistration == 'True') {
@@ -128,6 +127,13 @@ export default defineComponent({
           if(this.e?.attributeValues?.RegistrationFeeType) {
             let items = val.split(",").filter((i: string) => { return i != "No Fees" })
             this.e.attributeValues.RegistrationFeeType = items.join(",")
+          }
+        }
+      },
+      'e.attributeValues.RegistrationStartDate'(val, original) {
+        if(val) {
+          if(this.request?.attributeValues && !this.request?.attributeValues?.WebCalendarGoLive) {
+            this.request.attributeValues.WebCalendarGoLive = val
           }
         }
       },

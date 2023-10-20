@@ -506,7 +506,10 @@ export default defineComponent({
           }
         }
         if(this.viewModel.request.attributeValues.NeedsWebCalendar == 'True') {
-          if(this.rules.required(this.viewModel.request.attributeValues?.WebCalendarDescription, '') != true ) {
+          if(this.rules.required(this.viewModel.request.attributeValues?.WebCalendarDescription, '') != true || 
+            this.rules.required(this.viewModel.request.attributeValues?.WebCalendarGoLive, '') != true || 
+            this.rules.dateCannotBeAfterEvent(this.viewModel.request.attributeValues?.WebCalendarGoLive, lastDate.toFormat("yyyy-MM-dd"), '') != true
+          ) {
             requestIsValid = false
             let idx = invalidSections.indexOf('Calendar')
             if(idx < 0) {
@@ -687,6 +690,33 @@ export default defineComponent({
           pubDateCutOff = DateTime.fromISO(this.viewModel.request.attributeValues.PublicityStartDate).minus({days: 21})
         }
         let sixWeeksTense = DateTime.now() > pubDateCutOff ? 'was' : 'is'
+        let registrationFirstGoLive = ''
+        if(this.viewModel.request.attributeValues.IsSame == 'True') {
+          if(this.viewModel.events && this.viewModel.events.length > 0 ) {
+            let event = this.viewModel.events[0]
+            registrationFirstGoLive = event?.attributeValues?.RegistrationStartDate as string
+          }
+        } else {
+          let registrationDates = this.viewModel.events.map((e: any) => { 
+            let str = e?.attributeValues?.RegistrationStartDate.trim() 
+            if(str) {
+              return DateTime.fromFormat(str, 'yyyy-MM-dd')
+            }
+          }).sort((a: any, b: any) => {
+            if(a < b) {
+              return -1
+            } else if(a > b) {
+              return 1
+            }
+            return 0
+          })
+          if(registrationDates && registrationDates.length > 0) {
+            let regDate = registrationDates[0]
+            registrationFirstGoLive = regDate?.toFormat('yyyy-MM-dd') as string
+          }
+        }
+        let registrationTense = this.findTense(14, registrationFirstGoLive)
+        let webCalTense = this.findTense(14, this.viewModel.request.attributeValues.WebCalendarGoLive)
         //Drafts, cut anything that is past-deadline
         if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
           if(twoWeeksTense == 'was') {
@@ -715,17 +745,21 @@ export default defineComponent({
             if(invalidSections.includes('Childcare Catering')) {
               this.viewModel.request.attributeValues.NeedsChildCareCatering = 'False'
             }
-            if(invalidSections.includes('Registration')) {
-              this.viewModel.request.attributeValues.NeedsRegistration = 'False'
-            }
-            if(invalidSections.includes('Calendar')) {
-              this.viewModel.request.attributeValues.NeedsWebCalendar = 'False'
-            }
             if(invalidSections.includes('Production')) {
               this.viewModel.request.attributeValues.NeedsProductionAccommodations = 'False'
             }
             if(invalidSections.includes('Ops')) {
               this.viewModel.request.attributeValues.NeedsOpsAccommodations = 'False'
+            }
+          }
+          if(registrationTense == 'was') {
+            if(invalidSections.includes('Registration')) {
+              this.viewModel.request.attributeValues.NeedsRegistration = 'False'
+            }
+          }
+          if(webCalTense == 'was') {
+            if(invalidSections.includes('Calendar')) {
+              this.viewModel.request.attributeValues.NeedsWebCalendar = 'False'
             }
           }
           if(thirtyDaysTense == 'was' && invalidSections.includes('Childcare')) {
@@ -740,9 +774,13 @@ export default defineComponent({
             this.readonlySections.push('Catering')
             this.readonlySections.push('Childcare Catering')
             this.readonlySections.push('Ops')
-            this.readonlySections.push('Registration')
-            this.readonlySections.push('Calendar')
             this.readonlySections.push('Production')
+          }
+          if(registrationTense == 'was') {
+            this.readonlySections.push('Registration')
+          }
+          if(webCalTense == 'was') {
+            this.readonlySections.push('Calendar')
           }
           if(thirtyDaysTense == 'was') {
             this.readonlySections.push('Childcare')
@@ -793,7 +831,7 @@ export default defineComponent({
       this.preFillModal = false
       this.preFillSource = ""
     }, 
-    findTense(numDays: any): String {
+    findTense(numDays: any, specificDate?: any): String {
       if (this.viewModel?.request.attributeValues) {
         let av = this.viewModel?.request?.attributeValues.EventDates
         if (av) {
@@ -803,6 +841,9 @@ export default defineComponent({
             let first = dates.map((i) => {
               return DateTime.fromFormat(i, 'yyyy-MM-dd')
             })?.sort().shift()?.minus({ days: numDays })
+            if(specificDate) {
+              first = DateTime.fromFormat(specificDate, 'yyyy-MM-dd').minus({ days: numDays })
+            }
             let isFuneralRequest = false
             let val = this.viewModel.request.attributeValues.Ministry
             let ministry = {} as DefinedValue
@@ -1238,7 +1279,7 @@ export default defineComponent({
     <template v-if="step == publicityStep">
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
-        <tcc-web-cal :request="viewModel.request" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal" :readonly="readonlySections.includes('Calendar')"></tcc-web-cal>
+        <tcc-web-cal :request="viewModel.request" :originalRequest="viewModel.originalRequest" :ministries="viewModel.ministries" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal" :readonly="readonlySections.includes('Calendar')"></tcc-web-cal>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>

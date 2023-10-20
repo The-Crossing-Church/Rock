@@ -67,7 +67,7 @@ export default defineComponent({
         selected: {} as ContentChannelItem,
         loading: false,
         dateMenu: false,
-        view: 'week',
+        view: 'day',
         isMobile: false,
         currentDate: DateTime.now(),
         currentDateAsString: DateTime.now().toFormat("yyyy-MM-dd"),
@@ -444,7 +444,6 @@ export default defineComponent({
   },
   mounted() {
     if(window.screen.width < 768) {
-      this.view = 'day'
       this.isMobile = true
     }
     this.loadData(this.currentDate.startOf('week').minus({days: 8}), this.currentDate.endOf('week').plus({days: 13}))
