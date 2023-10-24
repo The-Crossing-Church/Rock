@@ -82,7 +82,7 @@
         elements.forEach((el) => {
             let data = []
             for (let child of el.children) {
-                data.push(child.innerText + (child.classList.contains("att-closed") ? "**" : "") + (child.classList.contains("att-threshold") ? "__" : ""))
+                data.push(child.innerText + (child.classList.contains("att-closed") ? "**" : "") + (child.classList.contains("att-threshold") ? "__" : "") + (child.classList.contains("att-total-threshold") ? "__" : ""))
             }
             sheet.addRow(data)
         })

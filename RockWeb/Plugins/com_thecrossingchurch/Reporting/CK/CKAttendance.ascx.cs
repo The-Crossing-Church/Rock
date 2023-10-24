@@ -285,6 +285,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
 
         private void BuildControl()
         {
+            if (data.Count() == 0)
+            {
+                return;
+            }
             scheduleLocations = data
                 .SelectMany( d => d.Attendance.Select( s => new ScheduleLocations { ScheduleId = s.ScheduleId, Schedule = s.Schedule, ScheduleStart = s.ScheduleStart } ) )
                 .GroupBy( d => new { d.ScheduleId, d.Schedule, d.ScheduleStart } ) //Distinct() won't work here, group and select first to get distinct results
@@ -389,15 +393,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting.CK
                                 if (i == 0)
                                 {
                                     var noteCol = new HtmlGenericControl( "div" );
-                                    noteCol.AddCssClass( "att-total-data" );
+                                    noteCol.AddCssClass( "att-total-threshold" );
                                     noteCol.InnerText = "";
                                     notes.Controls.Add( noteCol );
                                     var dayTotalCol = new HtmlGenericControl( "div" );
-                                    dayTotalCol.AddCssClass( "att-total-data" );
+                                    dayTotalCol.AddCssClass( "att-total-threshold" );
                                     dayTotalCol.InnerText = "";
                                     dayTotal.Controls.Add( dayTotalCol );
                                     var dayUniqueTotalCol = new HtmlGenericControl( "div" );
-                                    dayUniqueTotalCol.AddCssClass( "att-total-data" );
+                                    dayUniqueTotalCol.AddCssClass( "att-total-threshold" );
                                     dayUniqueTotalCol.InnerText = "";
                                     dayUniqueTotal.Controls.Add( dayUniqueTotalCol );
                                 }
