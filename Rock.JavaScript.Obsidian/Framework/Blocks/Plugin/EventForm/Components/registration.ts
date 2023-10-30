@@ -130,13 +130,6 @@ export default defineComponent({
           }
         }
       },
-      'e.attributeValues.RegistrationStartDate'(val, original) {
-        if(val) {
-          if(this.request?.attributeValues && !this.request?.attributeValues?.WebCalendarGoLive) {
-            this.request.attributeValues.WebCalendarGoLive = val
-          }
-        }
-      },
       errors: {
         handler(val) {
           this.$emit("validation-change", { ref: this.refName, errors: val})
