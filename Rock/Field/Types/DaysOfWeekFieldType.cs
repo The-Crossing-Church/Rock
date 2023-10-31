@@ -17,8 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Reporting;
@@ -31,9 +32,9 @@ namespace Rock.Field.Types
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><path d=""M12.81,2.75H11.5V1.44A.44.44,0,0,0,11.06,1h-.87a.44.44,0,0,0-.44.44V2.75H6.25V1.44A.44.44,0,0,0,5.81,1H4.94a.44.44,0,0,0-.44.44V2.75H3.19A1.31,1.31,0,0,0,1.88,4.06v9.63A1.31,1.31,0,0,0,3.19,15h9.62a1.31,1.31,0,0,0,1.31-1.31V4.06A1.31,1.31,0,0,0,12.81,2.75Zm0,10.77a.17.17,0,0,1-.16.17H3.35a.17.17,0,0,1-.16-.17V5.38h9.62Z""/><rect x=""4.03"" y=""5.85"" width=""1.87"" height=""7.33"" rx=""0.3""/><rect x=""6.79"" y=""5.85"" width=""1.87"" height=""7.33"" rx=""0.3""/></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.DAYS_OF_WEEK )]
     public class DaysOfWeekFieldType : FieldType
     {
-
         #region Formatting
 
         /// <inheritdoc/>
@@ -50,6 +51,53 @@ namespace Rock.Field.Types
             return dayNames.AsDelimited( ", " );
         }
 
+        #endregion
+
+        #region EditControl
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.ContainsFilterComparisonTypes;
+            }
+        }
+
+        /// <summary>
+        /// Formats the filter value value.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public override string FormatFilterValueValue( Dictionary<string, ConfigurationValue> configurationValues, string value )
+        {
+            string formattedValue = string.Empty;
+
+            if ( !string.IsNullOrWhiteSpace( value ) )
+            {
+                List<DayOfWeek> daysOfWeek = value.Split( ',' ).Select( a => ( DayOfWeek ) ( a.AsInteger() ) ).ToList();
+                List<string> dayNames = daysOfWeek.Select( a => a.ConvertToString() ).ToList();
+                return AddQuotes( dayNames.AsDelimited( "' AND '" ) );
+            }
+
+            return string.Empty;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -64,10 +112,6 @@ namespace Rock.Field.Types
                 ? GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) )
                 : GetCondensedTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
         }
-
-        #endregion
-
-        #region EditControl
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -115,45 +159,8 @@ namespace Rock.Field.Types
             }
         }
 
+
+#endif
         #endregion
-
-        #region Filter Control
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.ContainsFilterComparisonTypes;
-            }
-        }
-
-        /// <summary>
-        /// Formats the filter value value.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public override string FormatFilterValueValue( Dictionary<string, ConfigurationValue> configurationValues, string value )
-        {
-            string formattedValue = string.Empty;
-
-            if ( !string.IsNullOrWhiteSpace( value ) )
-            {
-                List<DayOfWeek> daysOfWeek = value.Split( ',' ).Select( a => ( DayOfWeek ) ( a.AsInteger() ) ).ToList();
-                List<string> dayNames = daysOfWeek.Select( a => a.ConvertToString() ).ToList();
-                return AddQuotes( dayNames.AsDelimited( "' AND '" ) );
-            }
-
-            return string.Empty;
-        }
-
-        #endregion
-
     }
 }

@@ -29,76 +29,6 @@ namespace Rock.SystemGuid
         public const string JOB_PULSE = "CB24FF2A-5AD3-4976-883F-DAF4EFC1D7C7";
 
         /// <summary>
-        /// The Job for migrating pre-v8.0 attendance records to occurrence records
-        /// </summary>
-        public const string MIGRATE_ATTENDANCE_OCCURRENCE = "98A2DCA5-5E2E-482A-A7CA-15DAD5B4EA65";
-
-        /// <summary>
-        /// The Job for migrating family check-in identifiers to person alternate ids
-        /// </summary>
-        public const string MIGRATE_FAMILY_CHECKIN_IDS = "E782C667-EF07-4AD2-86B7-01C1935AAF5B";
-
-        /// <summary>
-        /// The Job to run Post v8.0 Data Migrations
-        /// </summary>
-        public const string DATA_MIGRATIONS_80 = "AF760EF9-66BD-4A4D-AF95-749AA789ACAA";
-
-        /// <summary>
-        /// The Job to run Post v8.4 Data Migrations
-        /// </summary>
-        public const string DATA_MIGRATIONS_84 = "79FBDA04-ADFD-40D4-824F-E07D660F7858";
-
-        /// <summary>
-        /// The Job to run Post v7.4 Data Migrations
-        /// </summary>
-        public const string DATA_MIGRATIONS_74 = "FF760EF9-66BD-4A4D-AF95-749AA789ACAF";
-
-        /// <summary>
-        /// The Job to run Post v9 Data Migrations for DISC data
-        /// </summary>
-        public const string DATA_MIGRATIONS_90_DISC = "A839DFEC-B1A3-499C-9BB3-03241E8E5305";
-
-        /// <summary>
-        /// The Job to run Post v10.0 Data Migrations for AttributeValue.ValueAsNumeric
-        /// </summary>
-        public const string DATA_MIGRATIONS_100_ATTRIBUTEVALUE_VALUEASNUMERIC = "0A7573C9-D977-4A7E-BDD6-66DD36CBF6F3";
-
-        /// <summary>
-        /// The Job to run Post v10.0 Data Migrations for SundayDate
-        /// </summary>
-        public const string DATA_MIGRATIONS_100_SUNDAYDATE = "CC263453-B290-4393-BB91-1C1C87CAE291";
-
-        /// <summary>
-        /// The Job to run Post v9 Data Migrations to convert Scheduled Transaction Notes to History
-        /// </summary>
-        public const string DATA_MIGRATIONS_90_SCHEDULEDTRANSACTIONNOTESTOHISTORY = "6707AA98-7CF8-4258-A75A-0881CD68B0D9";
-
-        /// <summary>
-        /// The Job to run Post v9 Data Migrations
-        /// </summary>
-        public const string DATA_MIGRATIONS_90 = "3F279016-C7D1-490F-835D-8FFE6D943A32";
-
-        /// <summary>
-        /// The Job to run Post v10.3 Data Migrations for Spiritual Gifts Assessment updates
-        /// </summary>
-        public const string DATA_MIGRATIONS_103_SPIRITUAL_GIFTS = "B16F889F-3349-4CA9-976D-7EF098DD8BC6";
-
-        /// <summary>
-        /// The Job to run Post v11 Data Migrations to update Date Keys on several tables
-        /// </summary>
-        public const string DATA_MIGRATIONS_110_POPULATE_DATE_KEYS = "E56FD4FC-02F8-4A46-A91D-E86C2B635870";
-
-        /// <summary>
-        /// The job to run Post V11 to create an index on <seealso cref="Rock.Model.CommunicationRecipient.ResponseCode"/>
-        /// </summary>
-        public const string DATA_MIGRATIONS_110_COMMUNICATIONRECIPIENT_RESPONSECODE_INDEX = "131F9418-777B-4A34-A19B-EB9A65893602";
-
-        /// <summary>
-        /// The Job to run Post v11 Data Migrations to update Related DataView Id in DataView Filter table.
-        /// </summary>
-        public const string DATA_MIGRATIONS_110_POPULATE_RELATED_DATAVIEW_ID = "C3882742-714B-4E82-8894-4B944142CDC7";
-
-        /// <summary>
         /// The Job to run Post v12 to update interaction indexes.
         /// </summary>
         public const string DATA_MIGRATIONS_120_UPDATE_INTERACTION_INDEXES = "090CB437-F74B-49B0-8B51-BF2A491DD36D";
@@ -149,19 +79,89 @@ namespace Rock.SystemGuid
         public const string DATA_MIGRATIONS_133_ADD_INTERACTION_SESSION_INTERACTION_SESSION_LOCATION_ID_INDEX = "219BF98C-C10C-4B19-86DB-C69D9B8705FC";
 
         /// <summary>
+        /// The Job to run the Post v13.6 Data Migration to fix the eRA Start Date issue (#5072)
+        /// </summary>
+        public const string DATA_MIGRATIONS_136_FIX_INCORRECT_ERA_START_DATE = "C02ADF2E-A5C3-484F-9C7B-666AB7C5B333";
+
+        /// <summary>
         /// The Job to Migrate pre-v8.0 History Summary Data
         /// </summary>
         public const string MIGRATE_HISTORY_SUMMARY_DATA = "CF2221CC-1E0A-422B-B0F7-5D81AF1DDB14";
 
         /// <summary>
-        /// The Job to Migrate pre-v7.0 PageViews and Communication Recipient Activity to Interactions
+        /// The Job to run Post v14.0 Data Migrations for Add missing Media Element interactions
         /// </summary>
-        public const string MIGRATE_INTERACTIONS_DATA = "189AE3F1-92E9-4394-ACC5-0F244967F32E";
+        public const string DATA_MIGRATIONS_140_ADD_MISSING_MEDIA_ELEMENT_INTERACTIONS = "3E6817DA-CEE0-42F8-A30E-FF787719493C";
 
         /// <summary>
-        /// The job to migrate pre-v7.0 Communication Medium data from JSON to regular fields
+        /// The Job to run Post v14.0 Data Migrations to update current sessions
         /// </summary>
-        public const string MIGRATE_COMMUNICATION_MEDIUM_DATA = "E7C54AAB-451E-4E89-8083-CF398D37416E";
+        public const string DATA_MIGRATIONS_140_UPDATE_CURRENT_SESSIONS = "53A6804F-5895-4E19-907D-916B5CF175AB";
+
+        /// <summary>
+        /// The Job to run Post v14.1 Data Migrations to update current sessions that might have 1900-01-01 set as the DurationLastCalculatedDateTime
+        /// </summary>
+        public const string DATA_MIGRATIONS_141_UPDATE_CURRENT_SESSIONS_1900 = "12925E67-1E4F-47E5-BB5E-DD411909F90E";
+
+        /// <summary>
+        /// The Job to run Post v14.1 Data Migrations to add some missing indexes
+        /// </summary>
+        public const string DATA_MIGRATIONS_141_ADD_MISSING_INDEXES = "B1970CD1-1DDD-46FC-B259-6D151D53374D";
+
+        /// <summary>
+        /// The Job to run Post v14.1 Data Migrations to update the ValueAs___ columns after migration.
+        /// </summary>
+        public const string DATA_MIGRATIONS_141_UPDATE_VALUEAS_ATTRIBUTE_VALUE_COLUMNS = "f7786b0a-e80a-4f19-b0c4-d4f85f4affa2";
+
+        /// <summary>
+        /// The Job to run Post v14.1 Data Migrations for Update AttributeValues of type SlidingDateRangeFieldType to RoundTrip format.
+        /// </summary>
+        public const string DATA_MIGRATIONS_141_UPDATE_SLIDING_DATE_RANGE_VALUE = "59D32B1D-5D9A-4B1E-836A-43BBE89BA004";
+
+        /// <summary>
+        /// The Job to run Post v14.1 Data Migrations to update current sessions that might have 1900-01-01 set as the DurationLastCalculatedDateTime
+        /// </summary>
+        public const string DATA_MIGRATIONS_141_RECREATE_METRIC_ANALYTICS_VIEWS = "8AF951F3-742B-433C-B7C0-BDF71B9A78FC";
+
+        /// <summary>
+        /// The Job to run Post v14.1 Data Migrations to replace all existing instances of the TransactionEntryBlock with a new instance of the UtilityPaymentEntry block.
+        /// </summary>
+        public const string DATA_MIGRATIONS_150_REPLACE_TRANSACTION_ENTRY_BLOCKS_WITH_UTILITY_PAYMENT_ENTRY_BLOCK = "8A013CC5-CB51-48F3-8AF8-767BDECACAFE";
+
+        /// <summary>
+        /// The Job to run Post v15.1 Data Migrations to cleanup duplicate mobile interaction entries.
+        /// </summary>
+        public const string DATA_MIGRATIONS_151_DUPLICATE_MOBILE_INTERACTIONS_CLEANUP = "D3D60B90-48D1-4718-905E-39638B44C665";
+
+        /// <summary>
+        /// The Job to run Post v15.0 Data Migrations to add a new mobile rest group and add existing mobile applications into that group.
+        /// </summary>
+        public const string DATA_MIGRATIONS_150_MOBILE_APPLICATION_USERS_REST_GROUP = "480E996E-6A31-40DB-AE98-BFF85CDED506";
+
+        /// <summary>
+        /// The Job to run Post v140 to add FK indexes on RegistrationRegistrant.RegistrationTemplateId, GroupMember.GroupTypeId, and ConnectionRequest.ConnectionTypeId.
+        /// </summary>
+        public const string DATA_MIGRATIONS_140_CREATE_FK_INDEXES = "D96BD1F7-6A4A-4DC0-B10D-40031F709573";
+
+        /// <summary>
+        /// The Job to run Post v15.1 Data Migrations for System Phone Numbers.
+        /// </summary>
+        public const string DATA_MIGRATIONS_150_SYSTEM_PHONE_NUMBERS = "6DFE731E-F28B-40B3-8383-84212A301214";
+
+        /// <summary>
+        /// The Job to run Post v15.2 Data Migrations for the AttributeValue.IX_ValueAsPersonId index.
+        /// </summary>
+        public const string DATA_MIGRATIONS_152_IX_VALUE_AS_PERSON_ID = "5DC19FB3-AB0B-48F3-817D-9023C65C5F8A";
+
+        /// <summary>
+        /// The Job to run Post v15.1 Replace Web Forms Blocks with Obsidian Blocks.
+        /// </summary>
+        public const string DATA_MIGRATIONS_150_REPLACE_WEB_FORMS_BLOCKS_WITH_OBSIDIAN_BLOCKS = "EA00D1D4-709A-4102-863D-08471AA2C345";
+
+        /// <summary>
+        /// The Job to run Post v15.2 to replace web forms blocks with Obsidian blocks.
+        /// </summary>
+        public const string DATA_MIGRATIONS_152_REPLACE_WEB_FORMS_BLOCKS_WITH_OBSIDIAN_BLOCKS = "4232194C-90AE-4B44-93E7-1E5DE984A9E1";
 
         /// <summary>
         /// The Job to run Post v12.4 Data Migrations to decrypt the expiration month / year and the name on card fields.
@@ -225,5 +225,20 @@ namespace Rock.SystemGuid
         /// The Process Elevated Security Job. <see cref="Rock.Jobs.ProcessElevatedSecurity"/>
         /// </summary>
         public const string PROCESS_ELEVATED_SECURITY = "A1AF9D7D-E968-4AF6-B203-6BB4FD625714";
+
+        /// <summary>
+        /// The <see cref="Rock.Jobs.UpdatePersonalizationData" /> job.
+        /// </summary>
+        public const string UPDATE_PERSONALIZATION_DATA = "67CFE1FE-7C64-4328-8576-F1A4BFD0EA8B";
+
+        /// <summary>
+        /// The <see cref="Rock.Jobs.ProcessReminders"/> job.
+        /// </summary>
+        public const string PROCESS_REMINDERS = "3F697C80-4C33-4552-9038-D3470445EA40";
+
+        /// <summary>
+        /// The <see cref="Rock.Jobs.UpdatePersistedAttributeValues">Update Persisted Attribute Values</see> job.
+        /// </summary>
+        public const string UPDATE_PERSISTED_ATTRIBUTE_VALUE = "A7DDA4B0-BA1D-49F1-8749-5E7A9876AE70";
     }
 }

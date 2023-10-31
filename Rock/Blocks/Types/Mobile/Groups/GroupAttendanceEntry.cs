@@ -90,8 +90,22 @@ namespace Rock.Blocks.Types.Mobile.Groups
         Key = AttributeKeys.AttendanceNoteLabel,
         Order = 6 )]
 
+    [BooleanField("Show Pending Members",
+        Description = "Shows pending members of the group.",
+        DefaultBooleanValue = false,
+        Key = AttributeKeys.ShowPendingMembers,
+        Order = 7)]
+
+    [BooleanField( "Show Inactive Members",
+        Description = "Shows inactive members of the group.",
+        DefaultBooleanValue = false,
+        Key = AttributeKeys.ShowInactiveMembers,
+        Order = 8 )]
+
     #endregion
 
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_GROUPS_GROUP_ATTENDANCE_ENTRY_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( "08AE409C-9E4C-42D1-A93C-A554A3EEA0C3")]
     public class GroupAttendanceEntry : RockMobileBlockType
     {
         #region Block Attributes
@@ -135,6 +149,16 @@ namespace Rock.Blocks.Types.Mobile.Groups
             /// The attendance note label attribute key.
             /// </summary>
             public const string AttendanceNoteLabel = "AttendanceNoteLabel";
+
+            /// <summary>
+            /// The show pending members attribute key.
+            /// </summary>
+            public const string ShowPendingMembers = "ShowPendingMembers";
+
+            /// <summary>
+            /// The show inactive members attribute key.
+            /// </summary>
+            public const string ShowInactiveMembers = "ShowInactiveMembers";
         }
 
         /// <summary>
@@ -192,6 +216,18 @@ namespace Rock.Blocks.Types.Mobile.Groups
         /// The attendance note label text that appears above the notes field.
         /// </value>
         protected string AttendanceNoteLabel => GetAttributeValue( AttributeKeys.AttendanceNoteLabel );
+
+        /// <summary>
+        ///  Gets whether or not we should display inactive members.
+        /// </summary>
+        /// <value>The show inactive members.</value>
+        protected bool ShowInactiveMembers => GetAttributeValue( AttributeKeys.ShowInactiveMembers ).AsBoolean();
+
+        /// <summary>
+        /// Gets whether or not we should display pending members.
+        /// </summary>
+        /// <value>The show pending members.</value>
+        protected bool ShowPendingMembers => GetAttributeValue(AttributeKeys.ShowPendingMembers ).AsBoolean();
 
         #endregion
 
@@ -261,6 +297,18 @@ namespace Rock.Blocks.Types.Mobile.Groups
                     .Select( a => a.PersonAlias.PersonId )
                     .Distinct()
                     .ToList();
+            }
+
+            // Filtering out pending members.
+            if( !ShowPendingMembers )
+            {
+                group.Members = group.Members.Where( m => m.GroupMemberStatus != GroupMemberStatus.Pending ).ToList();
+            }
+
+            // Filtering out inactive members.
+            if ( !ShowInactiveMembers )
+            {
+                group.Members = group.Members.Where( m => m.GroupMemberStatus != GroupMemberStatus.Inactive ).ToList();
             }
 
             return group.Members

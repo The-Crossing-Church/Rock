@@ -259,6 +259,12 @@ namespace Rock.Model
 
             var connectionStatusViewModels = connectionStatusQuery.ToList();
 
+            var connectionRequestService = new ConnectionRequestService( rockContext );
+            var requestIds = connectionRequestViewModelQuery.Select( cr => cr.Id );
+            var statusRequests = connectionRequestService.Queryable().Where( cr => requestIds.Contains( cr.Id ) ).ToList();
+            statusRequests.LoadFilteredAttributes( rockContext, attribute => attribute.IsGridColumn );
+            var currentPerson = new PersonAliasService( rockContext ).GetPersonNoTracking( currentPersonAliasId );
+
             foreach ( var statusViewModel in connectionStatusViewModels )
             {
                 var requestsOfStatusQuery = connectionRequestViewModelQuery.Where( cr => cr.StatusId == statusViewModel.Id );
@@ -287,10 +293,28 @@ namespace Rock.Model
                 foreach ( var requestViewModel in statusViewModel.Requests )
                 {
                     requestViewModel.CanConnect = CanConnect( requestViewModel, connectionOpportunity, connectionType );
+
+                    var connectionRequest = statusRequests.First( cr => cr.Id == requestViewModel.Id );
+                    var attributeValues = connectionRequest.AttributeValues
+                        .Where( a => IsAuthorizedToViewAndNotEmpty( a, currentPerson, connectionRequest ) )
+                        .Select( a => $"<strong>{a.Value.AttributeName}:</strong> {connectionRequest.GetAttributeTextValue( a.Key )}" );
+                    requestViewModel.RequestAttributes = string.Join( "<br>", attributeValues );
                 }
             }
 
             return connectionStatusViewModels;
+        }
+
+        /// <summary>
+        /// Checks if the attribute value is not empty, is a grid column and the current person is authorized to view it.
+        /// </summary>
+        /// <param name="a">The attribute value attribute key dictionary</param>
+        /// <param name="currentPerson">The current person</param>
+        /// <param name="connectionRequest">The connection request</param>
+        /// <returns></returns>
+        private static bool IsAuthorizedToViewAndNotEmpty( KeyValuePair<string, AttributeValueCache> a, Person currentPerson, ConnectionRequest connectionRequest )
+        {
+            return !string.IsNullOrWhiteSpace( a.Value.Value ) && connectionRequest.Attributes[a.Key].IsAuthorized( Authorization.VIEW, currentPerson );
         }
 
         /// <summary>
@@ -313,11 +337,12 @@ namespace Rock.Model
             // Set the Connection Request Id here so that the GetConnectionRequestViewModelQuery method can filter correctly.
             args.ConnectionRequestId = connectionRequestId;
 
-            var connectionOpportunity = Queryable()
+            var connectionRequest = Queryable()
+                .Include( cr => cr.ConnectionOpportunity )
                 .AsNoTracking()
                 .Where( cr => cr.Id == connectionRequestId )
-                .Select( cr => cr.ConnectionOpportunity )
                 .FirstOrDefault();
+            var connectionOpportunity = connectionRequest.ConnectionOpportunity;
 
             var query = GetConnectionRequestViewModelQuery( currentPersonAliasId, connectionOpportunity.Id, args );
             var viewModel = query.FirstOrDefault();
@@ -329,6 +354,14 @@ namespace Rock.Model
 
             var connectionType = ConnectionTypeCache.Get( viewModel.ConnectionTypeId );
             viewModel.CanConnect = CanConnect( viewModel, connectionOpportunity, connectionType );
+
+            var rockContext = Context as RockContext;
+            var currentPerson = new PersonAliasService( rockContext ).GetPersonNoTracking( currentPersonAliasId );
+            connectionRequest.LoadAttributes( rockContext );
+            var attributeValues = connectionRequest.AttributeValues
+                .Where( a => connectionRequest.Attributes[a.Key].IsGridColumn && IsAuthorizedToViewAndNotEmpty( a, currentPerson, connectionRequest ) )
+                .Select( a => $"<strong>{a.Value.AttributeName}:</strong> {connectionRequest.GetAttributeTextValue( a.Key )}" );
+            viewModel.RequestAttributes = string.Join( "<br>", attributeValues );
 
             if ( !statusIconsTemplate.IsNullOrWhiteSpace() )
             {
@@ -347,6 +380,130 @@ namespace Rock.Model
         /// <returns></returns>
         /// <exception cref="ArgumentException">An args object is required</exception>
         public IQueryable<ConnectionRequestViewModel> GetConnectionRequestViewModelQuery(
+            int currentPersonAliasId,
+            int connectionOpportunityId,
+            ConnectionRequestViewModelQueryArgs args )
+        {
+            var query = GetConnectionRequestViewModelSecurityQuery( currentPersonAliasId, connectionOpportunityId, args );
+
+            return query.Select( cr => new ConnectionRequestViewModel
+            {
+                Id = cr.Id,
+                ConnectionOpportunityId = cr.ConnectionOpportunityId,
+                ConnectionTypeId = cr.ConnectionTypeId,
+                PlacementGroupId = cr.PlacementGroupId,
+                PlacementGroupRoleId = cr.PlacementGroupRoleId,
+                PlacementGroupMemberStatus = cr.PlacementGroupMemberStatus,
+                PlacementGroupRoleName = cr.PlacementGroupRoleName,
+                Comments = cr.Comments,
+                StatusId = cr.StatusId,
+                PersonId = cr.PersonId,
+                PersonAliasId = cr.PersonAliasId,
+                PersonEmail = cr.PersonEmail,
+                PersonNickName = cr.PersonNickName,
+                PersonLastName = cr.PersonLastName,
+                PersonPhotoId = cr.PersonPhotoId,
+                PersonPhones = cr.PersonPhones,
+                CampusId = cr.CampusId,
+                CampusName = cr.CampusName,
+                Campus = cr.Campus,
+                CampusCode = cr.CampusCode,
+                ConnectorPersonNickName = cr.ConnectorPersonNickName,
+                ConnectorPersonLastName = cr.ConnectorPersonLastName,
+                ConnectorPersonId = cr.ConnectorPersonId,
+                ConnectorPhotoId = cr.ConnectorPhotoId,
+                ConnectorPersonAliasId = cr.ConnectorPersonAliasId,
+                ActivityCount = cr.ActivityCount,
+                DateOpened = cr.DateOpened,
+                GroupName = cr.GroupName,
+                StatusName = cr.StatusName,
+                StatusHighlightColor = cr.StatusHighlightColor,
+                IsStatusCritical = cr.IsStatusCritical,
+                IsAssignedToYou = cr.IsAssignedToYou,
+                IsCritical = cr.IsCritical,
+                IsIdle = cr.IsIdle,
+                IsUnassigned = cr.IsUnassigned,
+                ConnectionState = cr.ConnectionState,
+                LastActivityTypeName = cr.LastActivityTypeName,
+                Order = cr.Order,
+                LastActivityTypeId = cr.LastActivityTypeId,
+                LastActivityDate = cr.LastActivityDate,
+                FollowupDate = cr.FollowupDate,
+                CanCurrentUserEdit = cr.CanCurrentUserEdit,
+            } );
+        }
+
+        /// <summary>
+        /// Gets the connection request view model with full model query.
+        /// </summary>
+        /// <param name="currentPersonAliasId">The current person alias identifier.</param>
+        /// <param name="connectionOpportunityId">The connection opportunity identifier.</param>
+        /// <param name="args">The arguments.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">An args object is required</exception>
+        public IQueryable<ConnectionRequestViewModelWithModel> GetConnectionRequestViewModelWithFullModelQuery(
+            int currentPersonAliasId,
+            int connectionOpportunityId,
+            ConnectionRequestViewModelQueryArgs args )
+        {
+            var query = GetConnectionRequestViewModelSecurityQuery( currentPersonAliasId, connectionOpportunityId, args );
+
+            return query.Select( cr => new ConnectionRequestViewModelWithModel
+            {
+                Id = cr.Id,
+                ConnectionRequest = cr.ConnectionRequest,
+                ConnectionOpportunityId = cr.ConnectionOpportunityId,
+                ConnectionTypeId = cr.ConnectionTypeId,
+                PlacementGroupId = cr.PlacementGroupId,
+                PlacementGroupRoleId = cr.PlacementGroupRoleId,
+                PlacementGroupMemberStatus = cr.PlacementGroupMemberStatus,
+                PlacementGroupRoleName = cr.PlacementGroupRoleName,
+                Comments = cr.Comments,
+                StatusId = cr.StatusId,
+                PersonId = cr.PersonId,
+                PersonAliasId = cr.PersonAliasId,
+                PersonEmail = cr.PersonEmail,
+                PersonNickName = cr.PersonNickName,
+                PersonLastName = cr.PersonLastName,
+                PersonPhotoId = cr.PersonPhotoId,
+                PersonPhones = cr.PersonPhones,
+                CampusId = cr.CampusId,
+                CampusName = cr.CampusName,
+                CampusCode = cr.CampusCode,
+                ConnectorPersonNickName = cr.ConnectorPersonNickName,
+                ConnectorPersonLastName = cr.ConnectorPersonLastName,
+                ConnectorPersonId = cr.ConnectorPersonId,
+                ConnectorPhotoId = cr.ConnectorPhotoId,
+                ConnectorPersonAliasId = cr.ConnectorPersonAliasId,
+                ActivityCount = cr.ActivityCount,
+                DateOpened = cr.DateOpened,
+                GroupName = cr.GroupName,
+                StatusName = cr.StatusName,
+                StatusHighlightColor = cr.StatusHighlightColor,
+                IsStatusCritical = cr.IsStatusCritical,
+                IsAssignedToYou = cr.IsAssignedToYou,
+                IsCritical = cr.IsCritical,
+                IsIdle = cr.IsIdle,
+                IsUnassigned = cr.IsUnassigned,
+                ConnectionState = cr.ConnectionState,
+                LastActivityTypeName = cr.LastActivityTypeName,
+                Order = cr.Order,
+                LastActivityTypeId = cr.LastActivityTypeId,
+                LastActivityDate = cr.LastActivityDate,
+                FollowupDate = cr.FollowupDate,
+                CanCurrentUserEdit = cr.CanCurrentUserEdit,
+            } );
+        }
+
+        /// <summary>
+        /// Gets the connection request query.
+        /// </summary>
+        /// <param name="currentPersonAliasId">The current person alias identifier.</param>
+        /// <param name="connectionOpportunityId">The connection opportunity identifier.</param>
+        /// <param name="args">The arguments.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">An args object is required</exception>
+        private IQueryable<ConnectionRequestViewModelSecurity> GetConnectionRequestViewModelSecurityQuery(
             int currentPersonAliasId,
             int connectionOpportunityId,
             ConnectionRequestViewModelQueryArgs args )
@@ -412,6 +569,7 @@ namespace Rock.Model
                     } ).ToList(),
                     CampusId = cr.CampusId,
                     CampusName = cr.Campus.Name,
+                    Campus = cr.Campus,
                     CampusCode = cr.Campus.ShortCode,
                     ConnectorPersonNickName = cr.ConnectorPersonAlias.Person.NickName,
                     ConnectorPersonLastName = cr.ConnectorPersonAlias.Person.LastName,
@@ -571,6 +729,7 @@ namespace Rock.Model
                         PersonPhones = cr.PersonPhones,
                         CampusId = cr.CampusId,
                         CampusName = cr.CampusName,
+                        Campus = cr.Campus,
                         CampusCode = cr.CampusCode,
                         ConnectorPersonNickName = cr.ConnectorPersonNickName,
                         ConnectorPersonLastName = cr.ConnectorPersonLastName,
@@ -619,6 +778,7 @@ namespace Rock.Model
                         PersonPhones = cr.PersonPhones,
                         CampusId = cr.CampusId,
                         CampusName = cr.CampusName,
+                        Campus = cr.Campus,
                         CampusCode = cr.CampusCode,
                         ConnectorPersonNickName = cr.ConnectorPersonNickName,
                         ConnectorPersonLastName = cr.ConnectorPersonLastName,
@@ -681,6 +841,7 @@ namespace Rock.Model
                         PersonPhones = cr.PersonPhones,
                         CampusId = cr.CampusId,
                         CampusName = cr.CampusName,
+                        Campus = cr.Campus,
                         CampusCode = cr.CampusCode,
                         ConnectorPersonNickName = cr.ConnectorPersonNickName,
                         ConnectorPersonLastName = cr.ConnectorPersonLastName,
@@ -803,50 +964,7 @@ namespace Rock.Model
                     break;
             }
 
-            return connectionRequestsQuery.Select( cr => new ConnectionRequestViewModel
-            {
-                Id = cr.Id,
-                ConnectionOpportunityId = cr.ConnectionOpportunityId,
-                ConnectionTypeId = cr.ConnectionTypeId,
-                PlacementGroupId = cr.PlacementGroupId,
-                PlacementGroupRoleId = cr.PlacementGroupRoleId,
-                PlacementGroupMemberStatus = cr.PlacementGroupMemberStatus,
-                PlacementGroupRoleName = cr.PlacementGroupRoleName,
-                Comments = cr.Comments,
-                StatusId = cr.StatusId,
-                PersonId = cr.PersonId,
-                PersonAliasId = cr.PersonAliasId,
-                PersonEmail = cr.PersonEmail,
-                PersonNickName = cr.PersonNickName,
-                PersonLastName = cr.PersonLastName,
-                PersonPhotoId = cr.PersonPhotoId,
-                PersonPhones = cr.PersonPhones,
-                CampusId = cr.CampusId,
-                CampusName = cr.CampusName,
-                CampusCode = cr.CampusCode,
-                ConnectorPersonNickName = cr.ConnectorPersonNickName,
-                ConnectorPersonLastName = cr.ConnectorPersonLastName,
-                ConnectorPersonId = cr.ConnectorPersonId,
-                ConnectorPhotoId = cr.ConnectorPhotoId,
-                ConnectorPersonAliasId = cr.ConnectorPersonAliasId,
-                ActivityCount = cr.ActivityCount,
-                DateOpened = cr.DateOpened,
-                GroupName = cr.GroupName,
-                StatusName = cr.StatusName,
-                StatusHighlightColor = cr.StatusHighlightColor,
-                IsStatusCritical = cr.IsStatusCritical,
-                IsAssignedToYou = cr.IsAssignedToYou,
-                IsCritical = cr.IsCritical,
-                IsIdle = cr.IsIdle,
-                IsUnassigned = cr.IsUnassigned,
-                ConnectionState = cr.ConnectionState,
-                LastActivityTypeName = cr.LastActivityTypeName,
-                Order = cr.Order,
-                LastActivityTypeId = cr.LastActivityTypeId,
-                LastActivityDate = cr.LastActivityDate,
-                FollowupDate = cr.FollowupDate,
-                CanCurrentUserEdit = cr.CanCurrentUserEdit,
-            } );
+            return connectionRequestsQuery;
         }
 
         /// <summary>
@@ -902,7 +1020,7 @@ namespace Rock.Model
             }
 
             // 3) The person is assigned to the request or the request security allows it and the connection type has EnableRequestSecurity
-            return (connectionRequest.ConnectorPersonAlias != null && connectionRequest.ConnectorPersonAlias.PersonId == currentPerson.Id )
+            return ( connectionRequest.ConnectorPersonAlias != null && connectionRequest.ConnectorPersonAlias.PersonId == currentPerson.Id )
                     || connectionRequest.IsAuthorized( Authorization.EDIT, currentPerson );
         }
 

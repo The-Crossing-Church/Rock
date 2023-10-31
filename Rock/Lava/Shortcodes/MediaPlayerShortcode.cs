@@ -33,12 +33,12 @@ namespace Rock.Lava.Shortcodes
     /// Lava shortcode for displaying scripture links
     /// </summary>
     [LavaShortcodeMetadata(
-        name: "Media Player",
-        tagName: "mediaplayer",
-        description: "Media Player displays a single URL or a Media Element in a player that can also record metric data.",
-        documentation: DocumentationMetadata,
-        parameters: ParameterNamesMetadata,
-        enabledCommands: "" )]
+        Name = "Media Player",
+        TagName = "mediaplayer",
+        Description = "Media Player displays a single URL or a Media Element in a player that can also record metric data.",
+        Documentation = DocumentationMetadata,
+        Parameters = ParameterNamesMetadata,
+        Categories = "C3270142-E72E-4FBF-BE94-9A2505DE7D54" )]
     public class MediaPlayerShortcode : LavaShortcodeBase, ILavaBlock
     {
         #region Attribute Constants
@@ -109,6 +109,12 @@ namespace Rock.Lava.Shortcodes
             /// after 2 seconds without user activity. Default is true.
             /// </summary>
             public const string HideControls = "hidecontrols";
+
+            /// <summary>
+            /// When enabled the on screen controls will automatically hide
+            /// until the media has started playing.
+            /// </summary>
+            public const string HideControlsStopped = "hidecontrolsstopped";
 
             /// <summary>
             /// Specifies either the id or the guid of the media element to
@@ -262,6 +268,7 @@ so you can customize this to be exactly what you want.</p>
     <li><strong>controls</strong> (play-large,play,progress,current-time,mute,volume,captions,settings,pip,airplay,fullscreen) - The user interface controls to make available to the user during playback. This is a comma separated string of control identifiers. Use a blank string if you don't want any controls to show up.</li>
     <li><strong>debug</strong> (false) - Enables developer level logging information to the JavaScript console during operation.</li>
     <li><strong>hidecontrols</strong> (true) - When enabled the on screen controls will automatically hide after 2 seconds without user activity.</li>
+    <li><strong>hidecontrolsstopped</strong> (false) - When enabled the on screen controls will automatically hide until the media has started playing.</li>
     <li><strong>media</strong> - Specifies either the id or the guid of the media element to load from. This will automatically set the video URL. If a thumbnail URL has not been provided it will be set as well.</li>
     <li><strong>muted</strong> (false) - If enabled then the media player will initially be muted.</li>
     <li><strong>primarycolor</strong> - The primary color to use for player elements, such as the play button. This can be any valid CSS color. Default is to use the primary brand color of the theme.</li>
@@ -351,7 +358,19 @@ so you can customize this to be exactly what you want.</p>
             var currentPerson = GetCurrentPerson( context );
             var parms = ParseMarkup( _markup, context );
 
-            RenderToWriter( parms, currentPerson, result );
+            Guid? sessionGuid;
+
+            // Attempt to get the session guid
+            try
+            {
+                sessionGuid = ( HttpContext.Current.Handler as RockPage )?.Session["RockSessionId"]?.ToString().AsGuidOrNull();
+            }
+            catch
+            {
+                sessionGuid = null;
+            }
+
+            RenderToWriter( parms, currentPerson, sessionGuid, result );
         }
 
         /// <summary>
@@ -382,8 +401,9 @@ so you can customize this to be exactly what you want.</p>
         /// </summary>
         /// <param name="parms">The parameters that will be used to construct the content.</param>
         /// <param name="currentPerson">The current person.</param>
+        /// <param name="rockSessionGuid">The current Rock session unique identifier.</param>
         /// <param name="result">The writer that output should be written to.</param>
-        internal static void RenderToWriter( Dictionary<string, string> parms, Person currentPerson, TextWriter result )
+        internal static void RenderToWriter( Dictionary<string, string> parms, Person currentPerson, Guid? rockSessionGuid, TextWriter result )
         {
             var options = new MediaPlayerOptions
             {
@@ -399,6 +419,7 @@ so you can customize this to be exactly what you want.</p>
                 RelatedEntityId = parms[ParameterKeys.RelatedEntityId].AsIntegerOrNull(),
                 RelatedEntityTypeId = parms[ParameterKeys.RelatedEntityTypeId].AsIntegerOrNull(),
                 SeekTime = parms[ParameterKeys.SeekTime].AsIntegerOrNull() ?? 10,
+                SessionGuid = rockSessionGuid,
                 TrackProgress = true,
                 Type = parms[ParameterKeys.Type],
                 Volume = parms[ParameterKeys.Volume].AsDoubleOrNull() ?? 1.0,
@@ -430,7 +451,14 @@ so you can customize this to be exactly what you want.</p>
 }})();
 </script>";
 
-            result.WriteLine( $"<div id=\"{elementId}\" style=\"{style}\"></div>" );
+            var classAttribute = string.Empty;
+
+            if ( parms[ParameterKeys.HideControlsStopped].AsBoolean( false ) )
+            {
+                classAttribute = " class=\"mediaplayer-hidecontrolswhenstopped\"";
+            }
+
+            result.WriteLine( $"<div id=\"{elementId}\" style=\"{style}\"${classAttribute}></div>" );
             result.WriteLine( script );
 
             // If we have a RockPage related to the current request then
@@ -475,6 +503,7 @@ so you can customize this to be exactly what you want.</p>
                 { ParameterKeys.Controls, "play-large,play,progress,current-time,mute,volume,captions,settings,pip,airplay,fullscreen" },
                 { ParameterKeys.Debug, "false" },
                 { ParameterKeys.HideControls, "true" },
+                { ParameterKeys.HideControlsStopped, "false" },
                 { ParameterKeys.Media, "" },
                 { ParameterKeys.Muted, "false" },
                 { ParameterKeys.PrimaryColor, "var(--brand-primary)" },

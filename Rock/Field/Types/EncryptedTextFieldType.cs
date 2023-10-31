@@ -16,9 +16,11 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Security;
 using Rock.Web.UI.Controls;
@@ -30,13 +32,76 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.ENCRYPTED_TEXT )]
     public class EncryptedTextFieldType : TextFieldType
     {
-
         #region Configuration
 
+        private const string IS_PASSWORD_KEY = "ispassword";
         private const string NUMBER_OF_ROWS = "numberofrows";
         private const string ALLOW_HTML = "allowhtml";
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( privateConfigurationValues != null &&
+                privateConfigurationValues.ContainsKey( IS_PASSWORD_KEY ) &&
+                privateConfigurationValues[IS_PASSWORD_KEY].AsBoolean() )
+            {
+                return "********";
+            }
+
+            return Encryption.DecryptString( privateValue );
+        }
+
+        /// <summary>
+        /// Setting to determine whether the value from this control is sensitive.  This is used for determining
+        /// whether or not the value of this attribute is logged when changed.
+        /// </summary>
+        /// <returns>
+        ///   <c>false</c> By default, any field is not sensitive.
+        /// </returns>
+        public override bool IsSensitive()
+        {
+            return true;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Determines whether this filter has a filter control
+        /// </summary>
+        /// <returns></returns>
+        public override bool HasFilterControl()
+        {
+            return false;
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <inheritdoc/>
+        public override bool IsPersistedValueSupported( Dictionary<string, string> privateConfigurationValues )
+        {
+            // Persisted values store the unencrypted value in the database, which is bad.
+            return false;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -99,11 +164,11 @@ namespace Rock.Field.Types
             {
                 if ( controls.Count > 3 && controls[3] != null && controls[3] is NumberBox )
                 {
-                    configurationValues[NUMBER_OF_ROWS].Value = ( (NumberBox)controls[3] ).Text;
+                    configurationValues[NUMBER_OF_ROWS].Value = ( ( NumberBox ) controls[3] ).Text;
                 }
                 if ( controls.Count > 4 && controls[4] != null && controls[4] is RockCheckBox )
                 {
-                    configurationValues[ALLOW_HTML].Value = ( (RockCheckBox)controls[4] ).Checked.ToString();
+                    configurationValues[ALLOW_HTML].Value = ( ( RockCheckBox ) controls[4] ).Checked.ToString();
                 }
             }
 
@@ -119,54 +184,29 @@ namespace Rock.Field.Types
         {
             // Process TextFieldType first.
             base.SetConfigurationValues( controls, configurationValues );
-            
+
             if ( controls != null && configurationValues != null )
             {
                 if ( controls.Count > 3 && controls[3] != null && controls[3] is NumberBox && configurationValues.ContainsKey( NUMBER_OF_ROWS ) )
                 {
-                    ( (NumberBox)controls[3] ).Text = configurationValues[NUMBER_OF_ROWS].Value;
+                    ( ( NumberBox ) controls[3] ).Text = configurationValues[NUMBER_OF_ROWS].Value;
                 }
 
                 if ( controls.Count > 4 && controls[4] != null && controls[4] is RockCheckBox && configurationValues.ContainsKey( ALLOW_HTML ) )
                 {
-                    ( (RockCheckBox)controls[4] ).Checked = configurationValues[ALLOW_HTML].Value.AsBoolean();
+                    ( ( RockCheckBox ) controls[4] ).Checked = configurationValues[ALLOW_HTML].Value.AsBoolean();
                 }
 
             }
         }
 
-        #endregion
-
-        #region Formatting
-
-        /// <summary>
-        /// Returns the field's current value(s)
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">Information about the value</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
-        /// <returns></returns>
-        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        /// <inheritdoc/>
+        public override string FormatValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            return base.FormatValue( parentControl, Encryption.DecryptString( value ), configurationValues, condensed );
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        /// <summary>
-        /// Setting to determine whether the value from this control is sensitive.  This is used for determining
-        /// whether or not the value of this attribute is logged when changed.
-        /// </summary>
-        /// <returns>
-        ///   <c>false</c> By default, any field is not sensitive.
-        /// </returns>
-        public override bool IsSensitive()
-        {
-            return true;
-        }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -225,10 +265,6 @@ namespace Rock.Field.Types
             base.SetEditValue( control, configurationValues, Encryption.DecryptString( value ) );
         }
 
-        #endregion
-
-        #region Filter Control
-
         // Note: Even though this is a 'text' type field, the comparisons like 'Starts with', 'Contains', etc. can't be performed
         // on the encrypted text. Every time the same value is encrypted, the value is different. So a binary comparison cannot be performed.
 
@@ -246,16 +282,7 @@ namespace Rock.Field.Types
             return null;
         }
 
-        /// <summary>
-        /// Determines whether this filter has a filter control
-        /// </summary>
-        /// <returns></returns>
-        public override bool HasFilterControl()
-        {
-            return false;
-        }
-
+#endif
         #endregion
-
     }
 }

@@ -15,8 +15,8 @@
 // </copyright>
 //
 import { computed, defineComponent, nextTick, PropType, ref, watch } from "vue";
-import RockButton from "../Elements/rockButton";
-import { trackModalState } from "../Util/page";
+import RockButton from "./rockButton";
+import { trackModalState } from "@Obsidian/Utility/page";
 
 export default defineComponent({
     name: "Dialog",
@@ -35,6 +35,10 @@ export default defineComponent({
             type: Boolean as PropType<boolean>,
             default: true
         }
+    },
+
+    emits: {
+        "update:modelValue": (_v: boolean) => true
     },
 
     setup(props, { emit, slots }) {
@@ -72,6 +76,9 @@ export default defineComponent({
 
         watch(() => props.modelValue, () => {
             trackModalState(props.modelValue);
+            if (props.modelValue) {
+                centerOnScreen();
+            }
         });
 
         return {
@@ -86,7 +93,6 @@ export default defineComponent({
 
     template: `
 <teleport to="body" v-if="modelValue">
-    <div>
         <div class="modal-backdrop fade in" style="z-index: 1060;"></div>
 
         <div @click="shake" class="modal-scrollable" style="z-index: 1060;">
@@ -108,7 +114,6 @@ export default defineComponent({
                 </div>
             </div>
         </div>
-    </div>
 </teleport>
 `
 });

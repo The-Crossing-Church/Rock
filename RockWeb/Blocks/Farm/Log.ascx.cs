@@ -33,6 +33,7 @@ namespace RockWeb.Blocks.Farm
     [Category( "Farm" )]
     [Description( "Shows a list of Web Farm logs." )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "63ADDB5A-75D6-4E86-A031-98B3451C49A3" )]
     public partial class Log : RockBlock, ISecondaryBlock
     {
         #region Keys
@@ -154,7 +155,7 @@ namespace RockWeb.Blocks.Farm
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gLog control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

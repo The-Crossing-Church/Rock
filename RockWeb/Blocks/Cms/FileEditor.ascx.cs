@@ -42,6 +42,7 @@ namespace RockWeb.Blocks.Cms
         Key = AttributeKey.RelativeFilePath )]
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "0F1DADBC-6B12-4BAA-A828-FD1AA86AA387" )]
     public partial class FileEditor : RockBlock
     {
         #region Page Parameter Keys
@@ -85,6 +86,25 @@ namespace RockWeb.Blocks.Cms
                     {".less",CodeEditorMode.Css },
                     {".css",CodeEditorMode.Css },
                     {".lava",CodeEditorMode.Lava }
+                };
+            }
+        }
+
+        private List<string> RestrictedFileExtension
+        {
+            get
+            {
+                return new List<string>()
+                {
+                    ".bin",
+                    ".png",
+                    ".jpg",
+                    ".ico",
+                    ".jpeg",
+                    ".config",
+                    ".eot",
+                    ".woff",
+                    ".woff2"
                 };
             }
         }
@@ -178,17 +198,28 @@ namespace RockWeb.Blocks.Cms
         /// </summary>
         private void ShowDetail()
         {
+            nbWarningMessage.Visible = false;
+            pnlEditDetails.Visible = false;
             string fileUrl = Server.MapPath( _fileRelativePath );
             if ( string.IsNullOrWhiteSpace( _fileRelativePath )  || !File.Exists( fileUrl ) )
             {
                 nbWarningMessage.Text = "Invalid file relative path";
                 nbWarningMessage.NotificationBoxType = NotificationBoxType.Danger;
+                nbWarningMessage.Visible = true;
+                return;
+            }
+
+            string ext = Path.GetExtension( _fileRelativePath );
+            if ( RestrictedFileExtension.Any( a => ext.Equals( a, StringComparison.OrdinalIgnoreCase ) ) )
+            {
+                nbWarningMessage.Text = "viewing/editing the file is not allowed.";
+                nbWarningMessage.NotificationBoxType = NotificationBoxType.Danger;
+                nbWarningMessage.Visible = true;
                 return;
             }
 
             hfRelativePath.Value = _fileRelativePath;
-            string ext = Path.GetExtension( _fileRelativePath );
-
+            pnlEditDetails.Visible = true;
             if ( EditorMode.ContainsKey( ext.ToLower() ) )
             {
                 ceFilerEditor.EditorMode = EditorMode[ext];

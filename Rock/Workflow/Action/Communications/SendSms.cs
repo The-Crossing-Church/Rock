@@ -36,22 +36,21 @@ namespace Rock.Workflow.Action
     [Export( typeof( ActionComponent ) )]
     [ExportMetadata( "ComponentName", "SMS Send" )]
 
-    [DefinedValueField(
+    [SystemPhoneNumberField(
         "From",
-        Description = "The number to originate message from (configured under Admin Tools > Communications > SMS Phone Numbers).",
+        Description = "The number to originate message from (configured under Admin Tools > Communications > System Phone Numbers).",
         Key = AttributeKey.FromFromDropDown,
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
         IsRequired = false,
         AllowMultiple = false,
-        DisplayDescription = true,
         Order = 0 )]
+
     [WorkflowAttribute(
         "From (From Attribute)",
-        Description = "The number to originate message from (configured under Admin Tools > Communications > SMS Phone Numbers). This will be used if a value is not entered for the From value above.",
+        Description = "The number to originate message from (configured under Admin Tools > Communications > System Phone Numbers). This will be used if a value is not entered for the From value above.",
         IsRequired = false,
         Order = 1,
         Key = AttributeKey.FromFromAttribute,
-        FieldTypeClassNames = new string[] { "Rock.Field.Types.DefinedValueFieldType" } )]
+        FieldTypeClassNames = new string[] { "Rock.Field.Types.SystemPhoneNumberFieldType", "Rock.Field.Types.DefinedValueFieldType" } )]
 
     [WorkflowTextOrAttribute(
         "Recipient",
@@ -82,6 +81,7 @@ namespace Rock.Workflow.Action
         DefaultBooleanValue = false,
         Order = 5,
         Key = AttributeKey.SaveCommunicationHistory )]
+    [Rock.SystemGuid.EntityTypeGuid( "F22FA171-B5E7-497F-9AE6-F7B98A377D0E")]
     public class SendSms : ActionComponent
     {
         #region Workflow Attributes
@@ -116,39 +116,28 @@ namespace Rock.Workflow.Action
             var mergeFields = GetMergeFields( action );
 
             // Get the From value
-            int? fromId = null;
+            SystemPhoneNumberCache fromPhoneNumber = null;
             Guid? fromGuid = GetAttributeValue( action, AttributeKey.FromFromDropDown ).AsGuidOrNull();
             if ( fromGuid.HasValue )
             {
-                var fromValue = DefinedValueCache.Get( fromGuid.Value, rockContext );
+                var fromValue = SystemPhoneNumberCache.Get( fromGuid.Value, rockContext );
                 if ( fromValue != null )
                 {
-                    fromId = fromValue.Id;
+                    fromPhoneNumber = fromValue;
                 }
             }
 
-            if ( !fromId.HasValue )
+            if ( fromPhoneNumber == null )
             {
                 Guid fromGuidFromAttribute = GetAttributeValue( action, AttributeKey.FromFromAttribute ).AsGuid();
 
                 fromGuid = action.GetWorkflowAttributeValue( fromGuidFromAttribute ).AsGuidOrNull();
 
-                var fromValue = DefinedValueCache.Get( fromGuid.Value, rockContext );
+                var fromValue = SystemPhoneNumberCache.Get( fromGuid.Value, rockContext );
                 if ( fromValue != null )
                 {
-                    fromId = fromValue.Id;
+                    fromPhoneNumber = fromValue;
                 }
-            }
-
-            var smsFromDefinedValues = DefinedTypeCache.Get( SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() ).DefinedValues;
-
-            // Now can we do our final check to ensure the guid is a valid SMS From Defined Value
-            if ( !fromId.HasValue || !smsFromDefinedValues.Any( a => a.Id == fromId ) )
-            {
-                var msg = string.Format( $"'From' could not be found for selected value ('{fromGuid}')" );
-                errorMessages.Add( msg );
-                action.AddLogEntry( msg, true );
-                return false;
             }
 
             // Get the recipients
@@ -274,7 +263,7 @@ namespace Rock.Workflow.Action
             {
                 var smsMessage = new RockSMSMessage();
                 smsMessage.SetRecipients( recipients );
-                smsMessage.FromNumber = DefinedValueCache.Get( fromId.Value );
+                smsMessage.FromSystemPhoneNumber = fromPhoneNumber;
                 smsMessage.Message = message;
                 smsMessage.CreateCommunicationRecord = GetAttributeValue( action, "SaveCommunicationHistory" ).AsBoolean();
                 smsMessage.CommunicationName = action.ActionTypeCache.Name;

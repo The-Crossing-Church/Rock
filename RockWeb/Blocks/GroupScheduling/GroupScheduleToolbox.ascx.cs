@@ -99,6 +99,7 @@ namespace RockWeb.Blocks.GroupScheduling
         Key = AttributeKey.SchedulingResponseEmail,
         Order = 5 )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "7F9CEA6F-DCE5-4F60-A551-924965289F1D" )]
     public partial class GroupScheduleToolbox : RockBlock
     {
         protected class AttributeKey
@@ -904,8 +905,11 @@ $('#{0}').tooltip();
 
                 // limit to schedules that haven't had a schedule preference set yet
                 sortedScheduleList = sortedScheduleList.Where( a =>
-                    !configuredScheduleIds.Contains( a.Id )
-                    || ( selectedScheduleId.HasValue && a.Id == selectedScheduleId.Value ) ).ToList();
+                    a.IsActive
+                    && a.IsPublic.HasValue
+                    && a.IsPublic.Value
+                    && ( !configuredScheduleIds.Contains( a.Id )
+                    || ( selectedScheduleId.HasValue && a.Id == selectedScheduleId.Value ) ) ).ToList();
 
                 ddlGroupScheduleAssignmentSchedule.Items.Clear();
                 ddlGroupScheduleAssignmentSchedule.Items.Add( new ListItem() );
@@ -1777,8 +1781,13 @@ $('#{0}').tooltip();
 
                     if ( attendanceId.HasValue )
                     {
-                        // if there is an attendanceId, this is an attendance that they just signed up for, but they might have either unselected it, or changed the location, so remove it
-                        attendanceService.ScheduledPersonRemove( attendanceId.Value );
+                        // if there is an attendanceId, this is an attendance that they just signed up for,
+                        // but they might have either unselected it, or changed the location, so remove it
+                        var attendance = attendanceService.Get( attendanceId.Value );
+                        if ( attendance != null )
+                        {
+                            attendanceService.Delete( attendance );
+                        }
                     }
 
                     if ( cbSignupSchedule.Checked )
@@ -1843,7 +1852,7 @@ $('#{0}').tooltip();
 
                 foreach ( var personGroupLocation in personGroupLocationList )
                 {
-                    foreach ( var schedule in personGroupLocation.Schedules )
+                    foreach ( var schedule in personGroupLocation.Schedules.Where( a => ( a.IsPublic ?? true ) && a.IsActive ) )
                     {
                         // Find if this has max volunteers here.
                         int maximumCapacitySetting = 0;

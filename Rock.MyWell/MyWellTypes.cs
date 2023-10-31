@@ -1386,6 +1386,16 @@ namespace Rock.MyWell
         /// </value>
         [JsonProperty( "updated_at" )]
         public DateTime? UpdatedDateTimeUTC { get; set; }
+
+        /// <summary>
+        /// Newtonsoft.Json.JsonExtensionData instructs the Newtonsoft.Json.JsonSerializer to deserialize properties with no
+        /// matching class member into the specified collection
+        /// </summary>
+        /// <value>
+        /// The other data.
+        /// </value>
+        [Newtonsoft.Json.JsonExtensionData( ReadData = true, WriteData = false )]
+        public IDictionary<string, Newtonsoft.Json.Linq.JToken> _additionalData { get; set; }
     }
 
     /// <summary>
@@ -1445,7 +1455,22 @@ namespace Rock.MyWell
         /// The data.
         /// </value>
         [JsonProperty( "data" )]
-        public object Data { get; set; }
+        public TransactionVoidRefundResponseData Data { get; set; }
+    }
+
+    /// <summary>
+    /// Class TransactionVoidRefundResponseData.
+    /// Implements the <see cref="Rock.MyWell.TransactionResponseData" />
+    /// </summary>
+    /// <seealso cref="Rock.MyWell.TransactionResponseData" />
+    public class TransactionVoidRefundResponseData : TransactionResponseData
+    {
+        /// <summary>
+        /// Gets or sets the referenced transaction identifier.
+        /// </summary>
+        /// <value>The referenced transaction identifier.</value>
+        [JsonProperty( "referenced_transaction_id" )]
+        public string ReferencedTransactionId { get; set; }
     }
 
     #endregion Transactions
@@ -2124,15 +2149,16 @@ namespace Rock.MyWell
         public QueryDateTimeRange DateTimeRangeUTC { get; set; }
 
         /// <summary>
-        /// Maximum records to return (0-100, optional)
-        /// Gets or sets the limit (MyWell default is 10, but we can set it to 0 to get all of them )
+        /// Maximum records to return (0-2500, optional. If left null, default is 10)
+        /// Gets or sets the limit. We can't specify "All", so we'll have to fetch until
+        /// we get them all.
         /// https://sandbox.gotnpgateway.com/docs/api/#search-transactions
         /// </summary>
         /// <value>
         /// The limit.
         /// </value>
         [JsonProperty( "limit", NullValueHandling = NullValueHandling.Ignore )]
-        public int? Limit { get; set; } = 0;
+        public int? Limit { get; set; } = null;
 
         /// <summary>
         /// Number of records to offset the return by (optional)

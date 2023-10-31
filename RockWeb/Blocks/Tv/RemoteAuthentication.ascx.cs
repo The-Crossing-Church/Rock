@@ -28,13 +28,10 @@ using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.Tv
 {
-    /// <summary>
-    /// Template block for developers to use to start a new block.
-    ///
-    /// 10/15/2021 - JME
-    /// The code from this block was taken primarily from the MobileApplicationDetail.ascx block.
-    /// 
-    /// </summary>
+    /*
+    10/15/2021 - JME
+    The code from this block was taken primarily from the MobileApplicationDetail.ascx block.
+    */
     [DisplayName( "Remote Authentication" )]
     [Category( "TV > TV Apps" )]
     [Description( "Authenticates an individual for a remote system." )]
@@ -51,12 +48,12 @@ namespace RockWeb.Blocks.Tv
         CodeEditorTheme.Rock,
         300,
         false,
-        "default",
         @"<div class=""mb-4"">
     <h1>Hello
     {{ CurrentPerson.NickName }}</h1>
-    <span>Enter your security code below to authenicate to your application.</span>
+    <span>Enter your security code below to authenticate your application.</span>
 </div>",
+        "default",
         1,
         AttributeKey.HeaderContent)]
 
@@ -66,10 +63,8 @@ namespace RockWeb.Blocks.Tv
         CodeEditorTheme.Rock,
         300,
         false,
-        "",@"<div>
-    <h1>Success!</h1>
-    <span>{{ CurrentPerson.NickName }}, you have successfully authenicated to your application.</span>
-</div>",
+        "",
+        "default",
         2,
         AttributeKey.FooterContent )]
 
@@ -79,8 +74,11 @@ namespace RockWeb.Blocks.Tv
         CodeEditorTheme.Rock,
         300,
         false,
+        @"<div>
+    <h1>Success!</h1>
+    <span>{{ CurrentPerson.NickName }}, you have successfully authenicated to your application.</span>
+</div>",
         "default",
-        "",
         3,
         AttributeKey.SuccessMessage )]
 
@@ -93,6 +91,7 @@ namespace RockWeb.Blocks.Tv
         AttributeKey.CodeExpirationDuration)]
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "3080C707-4594-4DDD-95B5-DEF82141DE6A" )]
     public partial class RemoteAuthentication : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
@@ -226,7 +225,7 @@ namespace RockWeb.Blocks.Tv
                 siteId = site.Id;
             }
 
-            // Get matching remote authenication record
+            // Get matching remote authentication record
             var rockContext = new RockContext();
             var remoteAuthenticationService = new RemoteAuthenticationSessionService( rockContext );
 
@@ -276,7 +275,5 @@ namespace RockWeb.Blocks.Tv
         }
 
         #endregion
-
-
     }
 }

@@ -18,12 +18,14 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
@@ -33,11 +35,84 @@ namespace Rock.Field.Types
     /// Stored as Assessment type's Guid.
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class AssessmentTypesFieldType : SelectFromListFieldType
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.ASSESSMENT_TYPE )]
+    public class AssessmentTypesFieldType : SelectFromListFieldType, IEntityReferenceFieldType
     {
         #region Configuration
 
         private const string INCLUDE_INACTIVE_KEY = "includeInactive";
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Gets the list source of Assessment types from the database
+        /// </summary>
+        /// <value>
+        /// The list source.
+        /// </value>
+        internal override Dictionary<string, string> GetListSource( Dictionary<string, ConfigurationValue> configurationValues )
+        {
+            bool includeInactive = ( configurationValues != null && configurationValues.ContainsKey( INCLUDE_INACTIVE_KEY ) && configurationValues[INCLUDE_INACTIVE_KEY].Value.AsBoolean() );
+
+            return new AssessmentTypeService( new RockContext() )
+                .Queryable().AsNoTracking()
+                .OrderBy( t => t.Title )
+                .Where( t => t.IsActive || includeInactive )
+                .Select( t => new
+                {
+                    t.Guid,
+                    t.Title,
+                } )
+                .ToDictionary( t => t.Guid.ToString(), t => t.Title );
+        }
+
+        #endregion
+
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( privateValue.IsNullOrWhiteSpace() )
+            {
+                return null;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var valueGuidList = privateValue.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ).AsGuidList();
+
+                var ids = new AssessmentTypeService( rockContext )
+                    .Queryable()
+                    .Where( at => valueGuidList.Contains( at.Guid ) )
+                    .Select( at => at.Id )
+                    .ToList();
+
+                var assessmentTypeEntityTypeId = EntityTypeCache.GetId<AssessmentType>().Value;
+
+                return ids
+                    .Select( id => new ReferencedEntity( assessmentTypeEntityTypeId, id ) )
+                    .ToList();
+            }
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Title property of a AssessmentType and
+            // should have its persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<AssessmentType>().Value, nameof( AssessmentType.Title ) )
+            };
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -110,41 +185,7 @@ namespace Rock.Field.Types
             }
         }
 
+#endif
         #endregion
-
-        /// <summary>
-        /// Creates the control(s) necessary for prompting user for a new value
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="id"></param>
-        /// <returns>
-        /// The control
-        /// </returns>
-        public override System.Web.UI.Control EditControl( Dictionary<string, ConfigurationValue> configurationValues, string id )
-        {
-            return base.EditControl( configurationValues, id );
-        }
-
-        /// <summary>
-        /// Gets the list source of Assessment types from the database
-        /// </summary>
-        /// <value>
-        /// The list source.
-        /// </value>
-        internal override Dictionary<string, string> GetListSource( Dictionary<string, ConfigurationValue> configurationValues )
-        {
-            bool includeInactive = ( configurationValues != null && configurationValues.ContainsKey( INCLUDE_INACTIVE_KEY ) && configurationValues[INCLUDE_INACTIVE_KEY].Value.AsBoolean() );
-
-            return new AssessmentTypeService( new RockContext() )
-                .Queryable().AsNoTracking()
-                .OrderBy( t => t.Title )
-                .Where( t => t.IsActive || includeInactive )
-                .Select( t => new
-                {
-                    t.Guid,
-                    t.Title,
-                } )
-                .ToDictionary( t => t.Guid.ToString(), t => t.Title );
-        }
     }
 }

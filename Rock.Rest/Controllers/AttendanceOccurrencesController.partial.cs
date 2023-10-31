@@ -23,20 +23,22 @@ using Ical.Net;
 using Rock.Data;
 using Rock.Model;
 using Rock.Rest.Filters;
+using Rock.Web.Cache;
 
 namespace Rock.Rest.Controllers
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public partial class AttendanceOccurrencesController
     {
         /// <summary>
-        /// Gets all the occurrences for a group for the selected dates, location and schedule.
+        /// Gets all the occurrences for a group for the selected dates, location and schedule, sorted by occurrence data in ascending order.
         /// </summary>
         /// <returns></returns>
         [Authenticate, Secured]
         [System.Web.Http.Route( "api/AttendanceOccurrences/GetFutureGroupOccurrences" )]
+        [Rock.SystemGuid.RestActionGuid( "D5B342D0-CDFF-4895-9716-B1EEEF19C38C" )]
         public List<GroupOccurrenceResponse> GetFutureGroupOccurrences( int groupId, DateTime? toDateTime = null, string locationIds = null, string scheduleIds = null )
         {
             using ( var rockContext = new RockContext() )
@@ -45,9 +47,9 @@ namespace Rock.Rest.Controllers
                 var group = new GroupService( rockContext ).Get( groupId );
 
                 var occurrences = new AttendanceOccurrenceService( rockContext )
-                    .GetFutureGroupOccurrences( group, toDateTime, locationIds, scheduleIds);
+                    .GetFutureGroupOccurrences( group, toDateTime, locationIds, scheduleIds );
 
-                var response = new List<GroupOccurrenceResponse>(); 
+                var response = new List<GroupOccurrenceResponse>();
                 foreach ( var occurrence in occurrences )
                 {
                     response.Add( new GroupOccurrenceResponse( occurrence ) );
@@ -61,10 +63,11 @@ namespace Rock.Rest.Controllers
         /// </summary>
         /// <returns></returns>
         [Authenticate, Secured]
-        [System.Web.Http.Route("api/AttendanceOccurrences/CreateGroupOccurrence")]
+        [System.Web.Http.Route( "api/AttendanceOccurrences/CreateGroupOccurrence" )]
+        [Rock.SystemGuid.RestActionGuid( "07AE6B44-790D-42C5-AA02-BBEFA63E97ED" )]
         public AttendanceOccurrence CreateGroupOccurrence( int groupId, DateTime occurrenceDate, int? scheduleId = null, int? locationId = null )
         {
-            return new AttendanceOccurrenceService( new RockContext () ).GetOrAdd( occurrenceDate, groupId, locationId, scheduleId );
+            return new AttendanceOccurrenceService( new RockContext() ).GetOrAdd( occurrenceDate, groupId, locationId, scheduleId );
         }
 
         /// <summary>
@@ -88,7 +91,7 @@ namespace Rock.Rest.Controllers
             private void GetOccurrenceTitle()
             {
                 bool hasSchedule = ( Occurrence.Schedule != null );
-                
+
                 if ( hasSchedule )
                 {
                     var calendarEvent = Occurrence.Schedule.GetICalEvent();
@@ -116,12 +119,25 @@ namespace Rock.Rest.Controllers
                 }
 
                 // Add Location title.
-                if ( Occurrence.Location != null )
+                if ( Occurrence.LocationId.HasValue )
+                {
+                    var location = NamedLocationCache.Get( Occurrence.LocationId.Value );
+                    if ( location != null )
+                    {
+                        DisplayTitle = string.Format(
+                            "{0} - {1}",
+                            DisplayTitle,
+                            location.ToString() );
+                    }
+                }
+
+                // Add Name if it has one
+                if ( ! string.IsNullOrEmpty( Occurrence.Name ) )
                 {
                     DisplayTitle = string.Format(
-                        "{0} - {1}",
+                        "{0} ({1})",
                         DisplayTitle,
-                        Occurrence.Location.EntityStringValue );
+                        Occurrence.Name );
                 }
             }
 

@@ -44,6 +44,7 @@ namespace Rock.Workflow.Action.CheckIn
         Category = "",
         Order = 0 )]
 
+    [Rock.SystemGuid.EntityTypeGuid( "176E0639-6482-4AED-957F-FDAA7AAA44FA")]
     public class FilterLocationsByLocationSelectionStrategy : CheckInActionComponent
     {
         private class AttributeKey
@@ -58,6 +59,12 @@ namespace Rock.Workflow.Action.CheckIn
             if ( checkInState == null )
             {
                 return false;
+            }
+
+            if ( checkInState.ManagerLoggedIn )
+            {
+                // If the manager is logged in don't filter or return an error. The manager should get an un-loadblanced list in order to choose the desired location.
+                return true;
             }
 
             var family = checkInState.CheckIn.CurrentFamily;
@@ -79,16 +86,13 @@ namespace Rock.Workflow.Action.CheckIn
                 foreach ( var checkinGroupType in person.GroupTypes )
                 {
                     var attributeLocationSelectionStrategy = ( CheckinConfigurationHelper.LocationSelectionStrategy? ) checkinGroupType.GroupType.GetAttributeValue( GroupTypeAttributeKey.CHECKIN_GROUPTYPE_LOCATION_SELECTION_STRATEGY ).AsIntegerOrNull() ?? null;
-
                     if ( attributeLocationSelectionStrategy == null || attributeLocationSelectionStrategy == CheckinConfigurationHelper.LocationSelectionStrategy.Ask )
                     {
                         // Either this is not set for some reason or the location should not be automatically selected, so don't filter the locations.
                         continue;
                     }
 
-                    var selectedCheckinSchedules = person.PossibleSchedules.Where( s => s.Selected == true ).ToList();
-
-                    FilterLocationList( checkinGroupType, remove, attributeLocationSelectionStrategy.Value, selectedCheckinSchedules );
+                    FilterLocationList( checkinGroupType, remove, attributeLocationSelectionStrategy.Value, person.SelectedSchedules );
                 }
             }
 
@@ -136,9 +140,9 @@ namespace Rock.Workflow.Action.CheckIn
         {
             if ( attributeLocationSelectionStrategy == CheckinConfigurationHelper.LocationSelectionStrategy.Balance )
             {
-                // Check the locations in the sorted or for the first one that has all the schedules available and use it if it exists.
-                var locationForSchedules = locationList.Where( l => l.Schedules.Select( s => s.Schedule.Id ).Intersect( selectedSchedules.Select( ss => ss.Schedule.Id ) ).Count() == selectedSchedules.Count ).FirstOrDefault();
-                if ( locationForSchedules != null )
+                // Remove the location/schedule that we want to use from locationList. Then remove any Location in locationList from the list of locations in checkinGroup.
+                locationList.Remove( locationForSchedules );
+                foreach ( var location in locationList )
                 {
                     locationList.Remove( locationForSchedules );
                     foreach ( var location in locationList )
@@ -157,33 +161,36 @@ namespace Rock.Workflow.Action.CheckIn
                 }
             }
 
+            var locationsSelectedForSchedule = new List<( int locationId, int scheduleId )>();
+
             // There is no location that has all of the selected schedules for this person so we need to choose each schedule location in the sorted list order.
-            // As a practical matter this will probably not be more than two. The choosing will be done by removing the schedules from the locations that are not needed.
+            // The list of locations is already ordered in preference. So loop through the locations for each schedule until to find the preferred one.
+            // The choosing will be done by removing the schedules from the locations that are not needed for that schedule.
             foreach ( var selectedSchedule in selectedSchedules )
             {
-                var foundFirstMatch = false;
                 foreach ( var location in locationList )
                 {
-                    if ( location.Schedules.Select( s => s.Schedule.Id ).Contains( selectedSchedule.Schedule.Id ) )
+                    var locationContainsSchedule = location.Schedules.Select( s => s.Schedule.Id ).Contains( selectedSchedule.Schedule.Id );
+                    var scheduleHasALocationSelected = locationsSelectedForSchedule.Where( x => x.scheduleId == selectedSchedule.Schedule.Id ).Any();
+
+                    if ( locationContainsSchedule && !scheduleHasALocationSelected )
                     {
-                        if ( foundFirstMatch )
-                        {
-                            var checkinLocation = checkinGroup.Locations.FirstOrDefault( l => l.Location.Id == location.Location.Id );
-                            var locationschedule = checkinLocation.Schedules.FirstOrDefault( s => s.Schedule.Id == selectedSchedule.Schedule.Id );
-                            if ( remove )
-                            {
-                                checkinLocation.Schedules.Remove( locationschedule );
-                            }
-                            else
-                            {
-                                locationschedule.ExcludedByFilter = true;
-                            }
-                        }
-                        else
-                        {
-                            foundFirstMatch = true;
-                        }
+                        locationsSelectedForSchedule.Add( (locationId: location.Location.Id, scheduleId: selectedSchedule.Schedule.Id) );
                     }
+                }
+            }
+
+            // Remove or exclude location/schedules not in locationsSelectedForSchedule
+            foreach( var location in locationList )
+            {
+                var schedulesToKeepForLocation = locationsSelectedForSchedule.Where( x => x.locationId == location.Location.Id ).Select( x => x.scheduleId ).ToList();
+                if ( remove )
+                {
+                    location.Schedules.RemoveAll( ss => !schedulesToKeepForLocation.Contains( ss.Schedule.Id ) );
+                }
+                else
+                {
+                    location.Schedules.Where( ss => !schedulesToKeepForLocation.Contains( ss.Schedule.Id ) ).ToList().ForEach( ss => ss.ExcludedByFilter = true );
                 }
             }
         }

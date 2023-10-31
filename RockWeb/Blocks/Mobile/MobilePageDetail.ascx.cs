@@ -36,11 +36,14 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
+using DisplayInNavWhen = Rock.Model.DisplayInNavWhen;
+
 namespace RockWeb.Blocks.Mobile
 {
     [DisplayName( "Mobile Page Detail" )]
     [Category( "Mobile" )]
     [Description( "Edits and configures the settings of a mobile page." )]
+    [Rock.SystemGuid.BlockTypeGuid( "E3C4547A-E29B-4CBA-9610-6C19D939183B" )]
     public partial class MobilePageDetail : RockBlock
     {
         #region PageParameterKeys
@@ -581,8 +584,7 @@ namespace RockWeb.Blocks.Mobile
             {
                 fields.Add( new KeyValuePair<string, string>( "Page URL", additionalSettings.WebPageUrl ) );
             }
-
-            fields.Add( new KeyValuePair<string, string>( "Display In Navigation", page.DisplayInNavWhen == DisplayInNavWhen.WhenAllowed ? "<i class='fa fa-check'></i>" : string.Empty ) );
+            fields.Add( new KeyValuePair<string, string>( "Display In Navigation", page.DisplayInNavWhen.GetDescription() ?? page.DisplayInNavWhen.ToStringSafe() ) );
 
             if ( page.IconBinaryFileId.HasValue )
             {
@@ -686,7 +688,7 @@ namespace RockWeb.Blocks.Mobile
             {
                 page = new Rock.Model.Page
                 {
-                    DisplayInNavWhen = DisplayInNavWhen.WhenAllowed
+                    DisplayInNavWhen = DisplayInNavWhen.Never
                 };
             }
 
@@ -718,7 +720,7 @@ namespace RockWeb.Blocks.Mobile
             tbName.Text = page.PageTitle;
             tbInternalName.Text = page.InternalName;
             tbDescription.Text = page.Description;
-            cbDisplayInNavigation.Checked = page.DisplayInNavWhen == DisplayInNavWhen.WhenAllowed;
+           
             tbCssClass.Text = page.BodyCssClass;
             cbHideNavigationBar.Checked = additionalSettings.HideNavigationBar;
             cbShowFullScreen.Checked = additionalSettings.ShowFullScreen;
@@ -726,6 +728,9 @@ namespace RockWeb.Blocks.Mobile
             ceEventHandler.Text = additionalSettings.LavaEventHandler;
             ceCssStyles.Text = additionalSettings.CssStyles;
             imgPageIcon.BinaryFileId = page.IconBinaryFileId;
+
+            ddlMenuDisplayWhen.BindToEnum<Rock.Model.DisplayInNavWhen>();
+            ddlMenuDisplayWhen.SetValue( page.DisplayInNavWhen.ToStringSafe().AsIntegerOrNull() ?? page.DisplayInNavWhen.ConvertToInt() );
 
             ddlPageType.BindToEnum<MobilePageType>();
             ddlPageType.SetValue( additionalSettings.PageType.ConvertToInt() );
@@ -808,40 +813,7 @@ namespace RockWeb.Blocks.Mobile
         /// </summary>
         private List<EntityTypeCache> GetContextTypesRequired( BlockCache block )
         {
-            var contextTypesRequired = new List<EntityTypeCache>();
-
-            int properties = 0;
-            foreach ( var attribute in block.BlockType.GetCompiledType().GetCustomAttributes( typeof( ContextAwareAttribute ), true ) )
-            {
-                var contextAttribute = ( ContextAwareAttribute ) attribute;
-
-                if ( !contextAttribute.Contexts.Any() )
-                {
-                    // If the entity type was not specified in the attribute, look for a property that defines it
-                    string propertyKeyName = string.Format( "ContextEntityType{0}", properties > 0 ? properties.ToString() : string.Empty );
-                    properties++;
-
-                    Guid guid = Guid.Empty;
-                    if ( Guid.TryParse( block.GetAttributeValue( propertyKeyName ), out guid ) )
-                    {
-                        contextTypesRequired.Add( EntityTypeCache.Get( guid ) );
-                    }
-                }
-                else
-                {
-                    foreach ( var context in contextAttribute.Contexts )
-                    {
-                        var entityType = context.EntityType;
-
-                        if ( entityType != null && !contextTypesRequired.Any( e => e.Guid.Equals( entityType.Guid ) ) )
-                        {
-                            contextTypesRequired.Add( entityType );
-                        }
-                    }
-                }
-            }
-
-            return contextTypesRequired;
+            return block?.ContextTypesRequired ?? new List<EntityTypeCache>();
         }
 
         /// <summary>
@@ -1094,7 +1066,7 @@ namespace RockWeb.Blocks.Mobile
             page.Description = tbDescription.Text;
             page.BodyCssClass = tbCssClass.Text;
             page.LayoutId = ddlLayout.SelectedValueAsId().Value;
-            page.DisplayInNavWhen = cbDisplayInNavigation.Checked ? DisplayInNavWhen.WhenAllowed : DisplayInNavWhen.Never;
+            page.DisplayInNavWhen = ddlMenuDisplayWhen.SelectedValue.ConvertToEnumOrNull<Rock.Model.DisplayInNavWhen>() ?? DisplayInNavWhen.Never;
             page.AdditionalSettings = additionalSettings.ToJson();
             int? oldIconId = null;
             if ( page.IconBinaryFileId != imgPageIcon.BinaryFileId )

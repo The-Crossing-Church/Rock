@@ -22,6 +22,7 @@ using Rock.Attribute;
 using Rock.Common.Mobile;
 using Rock.Common.Mobile.Blocks.Content;
 using Rock.Common.Mobile.Enums;
+using Rock.Mobile;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks.Types.Mobile.Cms
@@ -106,6 +107,8 @@ namespace Rock.Blocks.Types.Mobile.Cms
 
     #endregion
 
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_CMS_HERO_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( "A8597994-BD47-4A15-8BB1-4B508977665F")]
     public class Hero : RockMobileBlockType
     {
         /// <summary>
@@ -302,7 +305,6 @@ namespace Rock.Blocks.Types.Mobile.Cms
         /// <returns>The XAML content.</returns>
         protected virtual string GetContent()
         {
-            string applicationRoot = GlobalAttributesCache.Value( "PublicApplicationRoot" );
             var deviceData = RequestContext.GetHeader( "X-Rock-DeviceData" ).FirstOrDefault().FromJsonOrNull<DeviceData>() ?? new DeviceData();
             var additionalSettings = GetAdditionalSettings();
             var title = Title;
@@ -343,7 +345,7 @@ namespace Rock.Blocks.Types.Mobile.Cms
 <AbsoluteLayout HorizontalOptions=""Fill""
                 StyleClass=""hero""
                 HeightRequest=""{height}"">
-    <Rock:Image Source=""{applicationRoot}/GetImage.ashx?Guid={imageGuid}&amp;height={imageHeight}""
+    <Rock:Image Source=""{MobileHelper.BuildPublicApplicationRootUrl( $"GetImage.ashx?Guid={imageGuid}&amp;height={imageHeight}" )}""
                 StyleClass=""hero-image""
                 Aspect=""AspectFill""
                 AbsoluteLayout.LayoutBounds=""0,0,1,1""

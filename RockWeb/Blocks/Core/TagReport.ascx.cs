@@ -37,6 +37,7 @@ namespace RockWeb.Blocks.Core
     [DisplayName( "Tag Report" )]
     [Category( "Core" )]
     [Description( "Block for viewing entities with a selected tag" )]
+    [Rock.SystemGuid.BlockTypeGuid( "005E5980-E2D2-4958-ACB6-BECBC6D1F5C4" )]
     public partial class TagReport : Rock.Web.UI.RockBlock, ISecondaryBlock
     {
         #region Properties
@@ -90,6 +91,11 @@ namespace RockWeb.Blocks.Core
                         if ( TagEntityType.Name == "Rock.Model.Person" )
                         {
                             gReport.ColumnsOfType<SelectField>().First().Visible = true;
+                            // The order of the DataKeyNames is important here, the grid uses the first value as the identifier
+                            // and so placing the EntityId first means when performing a Communication action the PersonId will be used,
+                            // and the gReport_RowSelected and gReport_Delete event handlers also use the second indexed value as the Identifier, thus
+                            // ensuring the actual TaggedItemId is used when a row item is selected.
+                            gReport.DataKeyNames = new string[] { "EntityId", "Id" };
                             gReport.Actions.ShowAdd = _tag.IsAuthorized( Rock.Security.Authorization.TAG, CurrentPerson );
                         }
 
@@ -156,7 +162,14 @@ namespace RockWeb.Blocks.Core
         {
             using ( var rockContext = new RockContext() )
             {
-                var taggedItem = new TaggedItemService( rockContext ).Get( e.RowKeyId );
+                var id = e.RowKeyId;
+                if ( e.RowKeyValues != null )
+                {
+                    // If multiple RowKeyValues are in use, the second value represents the actual TaggedItemId.
+                    id = e.RowKeyValues.Count > 1 ? ( int ) e.RowKeyValues[1] : e.RowKeyId;
+                }
+
+                var taggedItem = new TaggedItemService( rockContext ).Get( id );
                 if ( taggedItem != null )
                 {
                     var entityType = EntityTypeCache.Get( taggedItem.EntityTypeId );
@@ -187,8 +200,15 @@ namespace RockWeb.Blocks.Core
         {
             using ( var rockContext = new RockContext() )
             {
+                var id = e.RowKeyId;
+                if ( e.RowKeyValues != null )
+                {
+                    // If multiple RowKeyValues are in use, the second value represents the actual TaggedItemId.
+                    id = e.RowKeyValues.Count > 1 ? ( int ) e.RowKeyValues[1] : e.RowKeyId;
+                }
+
                 var taggedItemService = new TaggedItemService( rockContext );
-                var taggedItem = taggedItemService.Get( e.RowKeyId );
+                var taggedItem = taggedItemService.Get( id );
                 if ( taggedItem != null && taggedItem.IsAuthorized( Rock.Security.Authorization.TAG, CurrentPerson ) )
                 {
                     string errorMessage;
@@ -316,7 +336,13 @@ namespace RockWeb.Blocks.Core
                             EntityGuid = t.EntityGuid,
                             CreatedDateTime = t.CreatedDateTime,
                             EntityId = e.Id,
-                        } ); ;
+                        } );
+
+                var sortProperty = gReport.SortProperty;
+                if ( gReport.AllowSorting && sortProperty != null )
+                {
+                    results = results.Sort( sortProperty );
+                }
 
                 // Tell the grid that it has a list of the EntityType for the Tag (Person, Group, etc).
                 // Also tell it to get the Entities (Group, Person, etc) using EntityId (instead of Id)

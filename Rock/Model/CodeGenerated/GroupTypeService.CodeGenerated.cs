@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -73,6 +74,12 @@ namespace Rock.Model
                 return false;
             }
 
+            if ( new Service<GroupMember>( Context ).Queryable().Any( a => a.GroupTypeId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", GroupType.FriendlyTypeName, GroupMember.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<GroupMemberScheduleTemplate>( Context ).Queryable().Any( a => a.GroupTypeId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", GroupType.FriendlyTypeName, GroupMemberScheduleTemplate.FriendlyTypeName );
@@ -106,7 +113,7 @@ namespace Rock.Model
     /// GroupType View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( GroupType ) )]
-    public partial class GroupTypeViewModelHelper : ViewModelHelper<GroupType, Rock.ViewModel.GroupTypeViewModel>
+    public partial class GroupTypeViewModelHelper : ViewModelHelper<GroupType, GroupTypeBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -115,17 +122,16 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.GroupTypeViewModel CreateViewModel( GroupType model, Person currentPerson = null, bool loadAttributes = true )
+        public override GroupTypeBag CreateViewModel( GroupType model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.GroupTypeViewModel
+            var viewModel = new GroupTypeBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
                 AdministratorTerm = model.AdministratorTerm,
                 AllowAnyChildGroupType = model.AllowAnyChildGroupType,
                 AllowedScheduleTypes = ( int ) model.AllowedScheduleTypes,
@@ -135,6 +141,9 @@ namespace Rock.Model
                 AllowSpecificGroupMemberWorkflows = model.AllowSpecificGroupMemberWorkflows,
                 AttendanceCountsAsWeekendService = model.AttendanceCountsAsWeekendService,
                 AttendancePrintTo = ( int ) model.AttendancePrintTo,
+                AttendanceReminderFollowupDays = model.AttendanceReminderFollowupDays,
+                AttendanceReminderSendStartOffsetMinutes = model.AttendanceReminderSendStartOffsetMinutes,
+                AttendanceReminderSystemCommunicationId = model.AttendanceReminderSystemCommunicationId,
                 AttendanceRule = ( int ) model.AttendanceRule,
                 DefaultGroupRoleId = model.DefaultGroupRoleId,
                 Description = model.Description,
@@ -170,6 +179,7 @@ namespace Rock.Model
                 RSVPReminderSystemCommunicationId = model.RSVPReminderSystemCommunicationId,
                 ScheduleCancellationWorkflowTypeId = model.ScheduleCancellationWorkflowTypeId,
                 ScheduleConfirmationEmailOffsetDays = model.ScheduleConfirmationEmailOffsetDays,
+                ScheduleConfirmationLogic = ( int ) model.ScheduleConfirmationLogic,
                 ScheduleConfirmationSystemCommunicationId = model.ScheduleConfirmationSystemCommunicationId,
                 ScheduleReminderEmailOffsetDays = model.ScheduleReminderEmailOffsetDays,
                 ScheduleReminderSystemCommunicationId = model.ScheduleReminderSystemCommunicationId,
@@ -258,6 +268,10 @@ namespace Rock.Model
             target.AllowSpecificGroupMemberWorkflows = source.AllowSpecificGroupMemberWorkflows;
             target.AttendanceCountsAsWeekendService = source.AttendanceCountsAsWeekendService;
             target.AttendancePrintTo = source.AttendancePrintTo;
+            target.AttendanceReminderFollowupDays = source.AttendanceReminderFollowupDays;
+            target.AttendanceReminderFollowupDaysList = source.AttendanceReminderFollowupDaysList;
+            target.AttendanceReminderSendStartOffsetMinutes = source.AttendanceReminderSendStartOffsetMinutes;
+            target.AttendanceReminderSystemCommunicationId = source.AttendanceReminderSystemCommunicationId;
             target.AttendanceRule = source.AttendanceRule;
             target.DefaultGroupRoleId = source.DefaultGroupRoleId;
             target.Description = source.Description;
@@ -295,15 +309,10 @@ namespace Rock.Model
             target.RSVPReminderSystemCommunicationId = source.RSVPReminderSystemCommunicationId;
             target.ScheduleCancellationWorkflowTypeId = source.ScheduleCancellationWorkflowTypeId;
             target.ScheduleConfirmationEmailOffsetDays = source.ScheduleConfirmationEmailOffsetDays;
+            target.ScheduleConfirmationLogic = source.ScheduleConfirmationLogic;
             target.ScheduleConfirmationSystemCommunicationId = source.ScheduleConfirmationSystemCommunicationId;
-            #pragma warning disable 612, 618
-            target.ScheduleConfirmationSystemEmailId = source.ScheduleConfirmationSystemEmailId;
-            #pragma warning restore 612, 618
             target.ScheduleReminderEmailOffsetDays = source.ScheduleReminderEmailOffsetDays;
             target.ScheduleReminderSystemCommunicationId = source.ScheduleReminderSystemCommunicationId;
-            #pragma warning disable 612, 618
-            target.ScheduleReminderSystemEmailId = source.ScheduleReminderSystemEmailId;
-            #pragma warning restore 612, 618
             target.SendAttendanceReminder = source.SendAttendanceReminder;
             target.ShowAdministrator = source.ShowAdministrator;
             target.ShowConnectionStatus = source.ShowConnectionStatus;
@@ -326,7 +335,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.GroupTypeViewModel ToViewModel( this GroupType model, Person currentPerson = null, bool loadAttributes = false )
+        public static GroupTypeBag ToViewModel( this GroupType model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new GroupTypeViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

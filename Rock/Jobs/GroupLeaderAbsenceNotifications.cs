@@ -19,9 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web;
-using Quartz;
 using Rock.Attribute;
 using Rock.Communication;
 using Rock.Data;
@@ -33,7 +31,6 @@ namespace Rock.Jobs
     /// <summary>
     /// This job sends a list of group member absences to the group's leaders.
     /// </summary>
-    /// <seealso cref="Quartz.IJob" />
     [DisplayName( "Group Leader Absence Notifications" )]
     [Description( "This job sends a list of group member absences to the group's leaders." )]
 
@@ -62,11 +59,10 @@ namespace Rock.Jobs
 
     #endregion
 
-    [DisallowConcurrentExecution]
-    public class GroupLeaderAbsenceNotifications : IJob
+    public class GroupLeaderAbsenceNotifications : RockJob
     {
         /// <summary>
-        /// Keys for DataMap Field Attributes.
+        /// Keys to use for job Attributes.
         /// </summary>
         private static class AttributeKey
         {
@@ -87,15 +83,12 @@ namespace Rock.Jobs
         {
         }
 
-        /// <summary>
-        /// Job that will sync groups. Called by the <see cref="IScheduler" /> when an <see cref="ITrigger" />
-        /// fires that is associated with the <see cref="IJob" />.
-        /// </summary>
-        public virtual void Execute( IJobExecutionContext context )
+        /// <inheritdoc cref="RockJob.Execute()"/>
+        public override void Execute()
         {
             try
             {
-                ProcessJob( context );
+                ProcessJob();
             }
             catch ( Exception ex )
             {
@@ -107,10 +100,8 @@ namespace Rock.Jobs
         /// <summary>
         /// Private method called by Execute() to process the job.
         /// </summary>
-        private void ProcessJob( IJobExecutionContext context )
+        private void ProcessJob()
         {
-            JobDataMap dataMap = context.JobDetail.JobDataMap;
-
             int notificationsSent = 0;
             int errorsEncountered = 0;
             int absentMembersCount = 0;
@@ -119,10 +110,10 @@ namespace Rock.Jobs
             // get groups set to sync
             RockContext rockContext = new RockContext();
 
-            Guid? groupTypeGuid = dataMap.GetString( AttributeKey.GroupType ).AsGuidOrNull();
-            Guid? systemEmailGuid = dataMap.GetString( AttributeKey.NotificationEmail ).AsGuidOrNull();
-            Guid? groupRoleFilterGuid = dataMap.GetString( AttributeKey.GroupRoleFilter ).AsGuidOrNull();
-            int minimumAbsences = dataMap.GetString( AttributeKey.MinimumAbsences ).AsInteger();
+            Guid? groupTypeGuid = GetAttributeValue( AttributeKey.GroupType ).AsGuidOrNull();
+            Guid? systemEmailGuid = GetAttributeValue( AttributeKey.NotificationEmail ).AsGuidOrNull();
+            Guid? groupRoleFilterGuid = GetAttributeValue( AttributeKey.GroupRoleFilter ).AsGuidOrNull();
+            int minimumAbsences = GetAttributeValue( AttributeKey.MinimumAbsences ).AsInteger();
 
             // get system email
             var emailService = new SystemCommunicationService( rockContext );
@@ -130,26 +121,32 @@ namespace Rock.Jobs
             SystemCommunication systemEmail = null;
             if ( !systemEmailGuid.HasValue || systemEmailGuid == Guid.Empty )
             {
-                context.Result = "Job failed. Unable to find System Email";
+                this.Result = "Job failed. Unable to find System Email.";
                 throw new Exception( "No system email found." );
             }
 
             if ( minimumAbsences == default( int ) )
             {
-                context.Result = "Job failed. The is no minimum absense count entered.";
-                throw new Exception( "No minimum absense count found." );
+                this.Result = "Job failed. There is no minimum absence count entered.";
+                throw new Exception( "No minimum absence count found." );
             }
             systemEmail = emailService.Get( systemEmailGuid.Value );
 
             // get group members
             if ( !groupTypeGuid.HasValue || groupTypeGuid == Guid.Empty )
             {
-                context.Result = "Job failed. Unable to find group type";
+                this.Result = "Job failed. Unable to find group type.";
                 throw new Exception( "No group type found." );
             }
 
-            var groupMemberQry = new GroupMemberService( rockContext ).Queryable( "Group, Group.Members.GroupRole" )
-                                     .Where( m => m.Group.GroupType.Guid == groupTypeGuid.Value );
+            var groupMemberQry = new GroupMemberService( rockContext )
+                .Queryable( "Group, Group.Members.GroupRole" )
+                .Where( m =>
+                    !m.Group.IsArchived
+                    && m.Group.IsActive
+                    && m.Group.GroupType.Guid == groupTypeGuid.Value
+                    && m.GroupMemberStatus != GroupMemberStatus.Inactive
+                );
 
             if ( groupRoleFilterGuid.HasValue )
             {
@@ -163,11 +160,18 @@ namespace Rock.Jobs
                 var group = groupGroupMember.Key;
                 var filteredPersons = groupGroupMember.Select( a => a.PersonId );
                 // get list of leaders
-                var groupLeaders = group.Members.Where( m => m.GroupRole.IsLeader == true && m.Person != null && m.Person.Email != null && m.Person.Email != string.Empty );
+                var groupLeaders = group.Members.Where( m =>
+                    !m.IsArchived
+                    && m.GroupMemberStatus != GroupMemberStatus.Inactive
+                    && m.GroupRole.IsLeader == true
+                    && m.Person != null
+                    && m.Person.Email != null
+                    && m.Person.Email != string.Empty
+                );
 
                 if ( !groupLeaders.Any() )
                 {
-                    errorList.Add( "Unable to send emails to members in group " + group.Name + " because there is no group leader" );
+                    errorList.Add( "Unable to send emails to members in group " + group.Name + " because there is no group leader." );
                     continue;
                 }
 
@@ -226,7 +230,7 @@ namespace Rock.Jobs
                 }
             }
 
-            context.Result = string.Format( "Sent {0} emails to leaders for {1} absent members. {2} errors encountered. {3} times Send reported a fail.", notificationsSent, absentMembersCount, errorsEncountered, sendFailed );
+            this.Result = string.Format( "Sent {0} emails to leaders for {1} absent members. {2} errors encountered. {3} times Send reported a fail.", notificationsSent, absentMembersCount, errorsEncountered, sendFailed );
 
             if ( errorList.Any() )
             {
@@ -235,7 +239,7 @@ namespace Rock.Jobs
                 sb.Append( "Errors in GroupLeaderAbsenceNotifications: " );
                 errorList.ForEach( e => { sb.AppendLine(); sb.Append( e ); } );
                 string errors = sb.ToString();
-                context.Result += errors;
+                this.Result += errors;
                 throw new Exception( errors );
             }
 

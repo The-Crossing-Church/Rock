@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -61,6 +62,24 @@ namespace Rock.Model
                 return false;
             }
 
+            if ( new Service<NotificationMessageType>( Context ).Queryable().Any( a => a.RelatedMobileApplicationSiteId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, NotificationMessageType.FriendlyTypeName );
+                return false;
+            }
+
+            if ( new Service<NotificationMessageType>( Context ).Queryable().Any( a => a.RelatedTvApplicationSiteId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, NotificationMessageType.FriendlyTypeName );
+                return false;
+            }
+
+            if ( new Service<NotificationMessageType>( Context ).Queryable().Any( a => a.RelatedWebSiteId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, NotificationMessageType.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<PersonalDevice>( Context ).Queryable().Any( a => a.SiteId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, PersonalDevice.FriendlyTypeName );
@@ -72,6 +91,18 @@ namespace Rock.Model
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, RemoteAuthenticationSession.FriendlyTypeName );
                 return false;
             }
+
+            if ( new Service<RequestFilter>( Context ).Queryable().Any( a => a.SiteId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, RequestFilter.FriendlyTypeName );
+                return false;
+            }
+
+            if ( new Service<SystemPhoneNumber>( Context ).Queryable().Any( a => a.MobileApplicationSiteId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Site.FriendlyTypeName, SystemPhoneNumber.FriendlyTypeName );
+                return false;
+            }
             return true;
         }
     }
@@ -80,7 +111,7 @@ namespace Rock.Model
     /// Site View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( Site ) )]
-    public partial class SiteViewModelHelper : ViewModelHelper<Site, Rock.ViewModel.SiteViewModel>
+    public partial class SiteViewModelHelper : ViewModelHelper<Site, SiteBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -89,17 +120,16 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.SiteViewModel CreateViewModel( Site model, Person currentPerson = null, bool loadAttributes = true )
+        public override SiteBag CreateViewModel( Site model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.SiteViewModel
+            var viewModel = new SiteBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
                 AdditionalSettings = model.AdditionalSettings,
                 AllowedFrameDomains = model.AllowedFrameDomains,
                 AllowIndexing = model.AllowIndexing,
@@ -118,6 +148,8 @@ namespace Rock.Model
                 EnableMobileRedirect = model.EnableMobileRedirect,
                 EnablePageViewGeoTracking = model.EnablePageViewGeoTracking,
                 EnablePageViews = model.EnablePageViews,
+                EnablePersonalization = model.EnablePersonalization,
+                EnableVisitorTracking = model.EnableVisitorTracking,
                 ErrorPage = model.ErrorPage,
                 ExternalUrl = model.ExternalUrl,
                 FavIconBinaryFileId = model.FavIconBinaryFileId,
@@ -229,6 +261,8 @@ namespace Rock.Model
             target.EnableMobileRedirect = source.EnableMobileRedirect;
             target.EnablePageViewGeoTracking = source.EnablePageViewGeoTracking;
             target.EnablePageViews = source.EnablePageViews;
+            target.EnablePersonalization = source.EnablePersonalization;
+            target.EnableVisitorTracking = source.EnableVisitorTracking;
             target.ErrorPage = source.ErrorPage;
             target.ExternalUrl = source.ExternalUrl;
             target.FavIconBinaryFileId = source.FavIconBinaryFileId;
@@ -270,7 +304,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.SiteViewModel ToViewModel( this Site model, Person currentPerson = null, bool loadAttributes = false )
+        public static SiteBag ToViewModel( this Site model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new SiteViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

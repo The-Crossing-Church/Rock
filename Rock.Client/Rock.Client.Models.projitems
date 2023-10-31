@@ -47,12 +47,15 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeMatrixItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeMatrixTemplate.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeQualifier.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeReferencedEntity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributesExport.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeValueHistorical.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AttributeValueReferencedEntity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Audit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AuditDetail.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Auth.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AuthAuditLog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AuthClaim.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AuthClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\AuthScope.cs" />
@@ -61,6 +64,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BenevolenceRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BenevolenceRequestDocument.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BenevolenceResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BenevolenceType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BenevolenceWorkflow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BinaryFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BinaryFileData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BinaryFileType.cs" />
@@ -68,6 +73,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\BlockType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Campus.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\CampusSchedule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\CampusTopic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Category.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Communication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\CommunicationAttachment.cs" />
@@ -86,6 +92,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ConnectionRequestActivity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ConnectionRequestWorkflow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ConnectionStatus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ConnectionStatusAutomation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ConnectionType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ConnectionWorkflow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ContentChannel.cs" />
@@ -93,6 +100,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ContentChannelItemAssociation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ContentChannelItemSlug.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ContentChannelType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ContentCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ContentCollectionSource.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ControlTotalResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\DataView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\DataViewFilter.cs" />
@@ -188,7 +197,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractionImport.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractionImportInteraction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractionSession.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractionSessionLocation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractionsImport.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractiveExperience.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractiveExperienceAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractiveExperienceAnswer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractiveExperienceOccurrence.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractiveExperienceSchedule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\InteractiveExperienceScheduleCampus.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\LavaShortcode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Layout.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Location.cs" />
@@ -223,6 +239,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Person.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonalDevice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonAlias.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonAliasPersonalization.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonalizationSegment.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonalizedEntity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonalLink.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonalLinkSection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonalLinkSectionOrder.cs" />
@@ -231,6 +250,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonPreviousName.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonScheduleExclusion.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonSearchKey.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonSearchPhoneNumber.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonSearchResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonSignal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\PersonToken.cs" />
@@ -251,8 +271,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RegistrationTemplateFormField.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RegistrationTemplatePlacement.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RelatedEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Reminder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ReminderType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RemoteAuthenticationSession.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Report.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\ReportField.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RequestFilter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RestAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\RestController.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\Schedule.cs" />
@@ -293,9 +317,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowActionForm.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowActionFormAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowActionFormSection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowActionType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowActivity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowActivityType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowFormBuilderTemplate.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowLog.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowTrigger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeGenerated\WorkflowType.cs" />

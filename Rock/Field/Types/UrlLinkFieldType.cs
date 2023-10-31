@@ -16,8 +16,11 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+using System.Web.UI.WebControls;
+#endif
 using Rock.Attribute;
 using Rock.Reporting;
 using Rock.Web.UI.Controls;
@@ -30,6 +33,7 @@ namespace Rock.Field.Types
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><g><path d=""M14.08,3.32a3.15,3.15,0,0,0-2.16-.92,3.08,3.08,0,0,0-2.28.92L8.38,4.56a4.07,4.07,0,0,1,.88.61l1.11-1.11a2.07,2.07,0,0,1,1.48-.61A2.1,2.1,0,0,1,13.34,7L10.86,9.51a2.16,2.16,0,0,1-3,0A2.13,2.13,0,0,1,7.28,8,2.1,2.1,0,0,1,7.58,7a1.4,1.4,0,0,0-1-.36h0a3.14,3.14,0,0,0,5,3.65l2.48-2.48A3.32,3.32,0,0,0,15,5.55,3.24,3.24,0,0,0,14.08,3.32Zm-8.45,8.6a2.07,2.07,0,0,1-1.48.61A2.1,2.1,0,0,1,2.66,9L5.14,6.47a2.16,2.16,0,0,1,3,0A2.13,2.13,0,0,1,8.72,8,2.1,2.1,0,0,1,8.42,9a1.45,1.45,0,0,0,.95.36h.05a3.14,3.14,0,0,0-2.8-4.57,3.12,3.12,0,0,0-2.22.92L1.92,8.22A3.15,3.15,0,0,0,4,13.6a3.21,3.21,0,0,0,2.4-.92l1.24-1.24a4.46,4.46,0,0,1-.88-.61Z""/></g></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.URL_LINK )]
     public class UrlLinkFieldType : FieldType
     {
         /// <summary>
@@ -49,6 +53,119 @@ namespace Rock.Field.Types
         }
 
         #region Configuration
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( string.IsNullOrWhiteSpace( privateValue ) )
+            {
+                return string.Empty;
+            }
+
+            var shouldAlwaysShowCondensed = privateConfigurationValues.GetValueOrNull( ConfigurationKey.ShouldAlwaysShowCondensed ).AsBoolean();
+            if ( shouldAlwaysShowCondensed )
+            {
+                return privateValue;
+            }
+
+            // Try to create a valid absolute Uri.
+            Uri uri;
+            if ( privateValue.StartsWith( "/" ) )
+            {
+                // Process as a relative Uri.
+                Uri.TryCreate( privateValue, UriKind.Relative, out uri );
+            }
+            else
+            {
+                // Try to process as an absolute Uri...
+                if ( !Uri.TryCreate( privateValue, UriKind.Absolute, out uri ) )
+                {
+                    // ... but if not, try adding a default "http://" prefix.
+                    Uri.TryCreate( "http://" + privateValue, UriKind.Absolute, out uri );
+                }
+            }
+
+            // If we have a valid Uri create a link, otherwise just display the unformatted value.
+            if ( uri != null )
+            {
+                return string.Format( "<a href='{0}'>{1}</a>",
+                    uri.IsAbsoluteUri ? uri.AbsoluteUri : uri.OriginalString,
+                    privateValue );
+            }
+
+            return privateValue;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        /// <summary>
+        /// Tests the value to ensure that it is a valid value.  If not, message will indicate why
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="required"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public override bool IsValid( string value, bool required, out string message )
+        {
+            if ( !string.IsNullOrWhiteSpace( value ) )
+            {
+                if ( Uri.TryCreate( value, UriKind.Absolute, out Uri _ ) )
+                {
+                    message = "The link provided is not valid";
+                    return true;
+                }
+            }
+
+            return base.IsValid( value, required, out message );
+        }
+
+        #endregion
+
+        #region FilterControl
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override Model.ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.StringFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <inheritdoc/>
+        public override bool IsPersistedValueInvalidated( Dictionary<string, string> oldPrivateConfigurationValues, Dictionary<string, string> newPrivateConfigurationValues )
+        {
+            var oldShouldAlwaysShowCondensed = oldPrivateConfigurationValues.GetValueOrNull( ConfigurationKey.ShouldAlwaysShowCondensed )?.AsBoolean() ?? false;
+            var newShouldAlwaysShowCondensed = newPrivateConfigurationValues.GetValueOrNull( ConfigurationKey.ShouldAlwaysShowCondensed )?.AsBoolean() ?? false;
+
+            if ( oldShouldAlwaysShowCondensed != newShouldAlwaysShowCondensed )
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
         /// <summary>
         /// Returns a list of the configuration keys
         /// </summary>
@@ -92,7 +209,7 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override Dictionary<string, ConfigurationValue> ConfigurationValues( List<Control> controls )
         {
-            Dictionary<string, ConfigurationValue> configurationValues = new Dictionary<string, ConfigurationValue>();
+            var configurationValues = new Dictionary<string, ConfigurationValue>();
             configurationValues.Add( ConfigurationKey.ShouldRequireTrailingForwardSlash, new ConfigurationValue( "Ensure Trailing Forward Slash",
                 "When set, the URL must end with a forward slash (/) to be valid.", "false" ) );
 
@@ -135,42 +252,20 @@ namespace Rock.Field.Types
                 }
             }
         }
-        #endregion
 
-        #region Formatting
-
-        /// <summary>
-        /// Returns the field's current value(s)
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">Information about the value</param>
-        /// <param name="configurationValues"></param>
-        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
-        /// <returns></returns>
-        public override string FormatValue( System.Web.UI.Control parentControl, string value, System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        /// <inheritdoc/>
+        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
             var shouldAlwaysShowCondensed = configurationValues.GetValueOrNull( ConfigurationKey.ShouldAlwaysShowCondensed ).AsBoolean();
+            var showCondensed = condensed || shouldAlwaysShowCondensed;
 
-            if ( string.IsNullOrWhiteSpace( value ) )
-            {
-                return string.Empty;
-            }
-            else
-            {
-                if ( condensed || shouldAlwaysShowCondensed )
-                {
-                    return value;
-                }
-                else
-                {
-                    return string.Format( "<a href='{0}'>{0}</a>", value );
-                }
-            }
+            // Original implementation returned HTML formatted string when not condensed
+            // and the plain text string when condensed.
+            return !showCondensed
+               ? GetHtmlValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+               : GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
 
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -187,47 +282,7 @@ namespace Rock.Field.Types
             return new UrlLinkBox { ID = id, ShouldRequireTrailingForwardSlash = shouldRequireTrailingForwardSlash ?? false };
         }
 
-        /// <summary>
-        /// Tests the value to ensure that it is a valid value.  If not, message will indicate why
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="required"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        public override bool IsValid( string value, bool required, out string message )
-        {
-            if ( !string.IsNullOrWhiteSpace( value ) )
-            {
-                Uri validatedUri;
-                if ( Uri.TryCreate( value, UriKind.Absolute, out validatedUri ) )
-                {
-                    message = "The link provided is not valid";
-                    return true;
-                }
-            }
-
-            return base.IsValid( value, required, out message );
-        }
-
+#endif
         #endregion
-
-        #region FilterControl
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.StringFilterComparisonTypes;
-            }
-        }
-
-        #endregion
-
     }
 }

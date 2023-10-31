@@ -93,6 +93,7 @@ namespace Rock.MyWell
         Order = 6 )]
 
     #endregion Component Attributes
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MYWELL_FINANCIAL_GATEWAY )]
     public class MyWellGateway : GatewayComponent, IHostedGatewayComponent, IAutomatedGatewayComponent, IFeeCoverageGatewayComponent/*, IObsidianFinancialGateway*/
     {
         #region Attribute Keys
@@ -446,8 +447,12 @@ namespace Rock.MyWell
         public void UpdatePaymentInfoFromPaymentControl( FinancialGateway financialGateway, Control hostedPaymentInfoControl, ReferencePaymentInfo referencePaymentInfo, out string errorMessage )
         {
             errorMessage = null;
-            var tokenResponse = ( hostedPaymentInfoControl as MyWellHostedPaymentControl ).PaymentInfoTokenRaw.FromJsonOrNull<TokenizerResponse>();
-            if ( tokenResponse?.IsSuccessStatus() != true )
+            var myWellHostedPaymentControl = hostedPaymentInfoControl as MyWellHostedPaymentControl;
+            var tokenResponse = myWellHostedPaymentControl.PaymentInfoTokenRaw.FromJsonOrNull<TokenizerResponse>();
+
+            bool successful = tokenResponse?.IsSuccessStatus() ?? false;
+
+            if ( !successful )
             {
                 if ( tokenResponse?.HasValidationError() == true )
                 {
@@ -455,11 +460,13 @@ namespace Rock.MyWell
                 }
 
                 errorMessage = tokenResponse?.Message ?? "null response from GetHostedPaymentInfoToken";
-                referencePaymentInfo.ReferenceNumber = ( hostedPaymentInfoControl as MyWellHostedPaymentControl ).PaymentInfoToken;
+                referencePaymentInfo.ReferenceNumber = myWellHostedPaymentControl.PaymentInfoToken;
+                referencePaymentInfo.InitialCurrencyTypeValue = myWellHostedPaymentControl.CurrencyTypeValue;
             }
             else
             {
-                referencePaymentInfo.ReferenceNumber = ( hostedPaymentInfoControl as MyWellHostedPaymentControl ).PaymentInfoToken;
+                referencePaymentInfo.ReferenceNumber = myWellHostedPaymentControl.PaymentInfoToken;
+                referencePaymentInfo.InitialCurrencyTypeValue = myWellHostedPaymentControl.CurrencyTypeValue;
             }
         }
 
@@ -1336,7 +1343,7 @@ namespace Rock.MyWell
             if ( response.IsSuccessStatus() )
             {
                 var transaction = new FinancialTransaction();
-                transaction.TransactionCode = transactionId;
+                transaction.TransactionCode = response.Data.Id;
                 errorMessage = string.Empty;
                 return transaction;
             }
@@ -1764,26 +1771,51 @@ namespace Rock.MyWell
                 TransactionTypeSearch = new QuerySearchTransactionType( TransactionType.sale )
             };
 
-            var searchResult = this.SearchTransactions( this.GetGatewayUrl( financialGateway ), this.GetPrivateApiKey( financialGateway ), queryTransactionStatusRequest );
-
-            if ( !searchResult.IsSuccessStatus() )
-            {
-                errorMessage = searchResult.Message;
-                return null;
-            }
-
+            List<TransactionQueryResultData> transactionQueryResultList = new List<TransactionQueryResultData>();
+            bool getMoreTransactions = true;
+            int offset = 0;
             errorMessage = string.Empty;
 
+            // NOTE 2500 is the max that MyWell supports
+            int fetchLimit = 2500;
             var paymentList = new List<Payment>();
 
-            if ( searchResult.Data == null )
+            while ( getMoreTransactions )
+            {
+                queryTransactionStatusRequest.Limit = fetchLimit;
+                queryTransactionStatusRequest.Offset = offset;
+                TransactionSearchResult searchResult = this.SearchTransactions( this.GetGatewayUrl( financialGateway ), this.GetPrivateApiKey( financialGateway ), queryTransactionStatusRequest );
+                int expectedTotal = searchResult?.TotalCount ?? 0;
+
+                if ( !searchResult.IsSuccessStatus() )
+                {
+                    errorMessage = searchResult.Message;
+                    return null;
+                }
+
+                var downloadedTransactions = searchResult.Data ?? new TransactionQueryResultData[0];
+                var actualDownloadCount = downloadedTransactions.Count();
+
+                transactionQueryResultList.AddRange( downloadedTransactions );
+
+                errorMessage = string.Empty;
+                if ( !downloadedTransactions.Any() || actualDownloadCount < fetchLimit )
+                {
+                    getMoreTransactions = false;
+                }
+
+                offset += fetchLimit;
+            }
+
+            if ( !transactionQueryResultList.Any() )
             {
                 // If no payments were found for the date range, searchResult.Data will be null,
                 // so just return an empty paymentList.
                 return paymentList;
             }
+            
 
-            foreach ( var transaction in searchResult.Data )
+            foreach ( var transaction in transactionQueryResultList )
             {
                 if ( !transaction.TransactionType.HasValue || ( transaction.TransactionType != TransactionType.sale ) )
                 {

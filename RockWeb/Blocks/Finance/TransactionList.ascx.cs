@@ -32,6 +32,7 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using Rock.Utility;
+using System.Web.Util;
 
 namespace RockWeb.Blocks.Finance
 {
@@ -148,6 +149,14 @@ namespace RockWeb.Blocks.Finance
         Key = AttributeKey.ShowDaysSinceLastTransaction
         )]
 
+    [BooleanField( "Hide Transactions in Pending Batches",
+        Description = "When enabled, transactions in a batch whose status is 'Pending' will be filtered out from the list.",
+        DefaultBooleanValue = false,
+        Order = 13,
+        Key = AttributeKey.HideTransactionsInPendingBatches
+        )]
+
+    [Rock.SystemGuid.BlockTypeGuid( "E04320BC-67C3-452D-9EF6-D74D8C177154" )]
     public partial class TransactionList : Rock.Web.UI.RockBlock, ISecondaryBlock, IPostBackEventHandler, ICustomGridColumns
     {
         #region Keys
@@ -231,6 +240,11 @@ namespace RockWeb.Blocks.Finance
             /// The show days since last transaction
             /// </summary>
             public const string ShowDaysSinceLastTransaction = "ShowDaysSinceLastTransaction";
+
+            /// <summary>
+            /// The hide transactions in pending batches
+            /// </summary>
+            public const string HideTransactionsInPendingBatches = "HideTransactionsInPendingBatches";
         }
 
         #endregion Keys
@@ -253,7 +267,6 @@ namespace RockWeb.Blocks.Finance
         private Dictionary<int, string> _currencyTypes;
         private Dictionary<int, string> _creditCardTypes;
         private List<PersonDetail> _personDetails;
-        private Dictionary<int, FinancialAccount> _financialAccountLookup;
         private Dictionary<int, List<int>> _imageBinaryFileIdLookupByTransactionId;
 
         private string _batchPageRoute = null;
@@ -630,8 +643,7 @@ namespace RockWeb.Blocks.Finance
                     var accountIds = e.Value.SplitDelimitedValues().AsIntegerList().Where( a => a > 0 ).ToList();
                     if ( accountIds.Any() && apAccount.Visible )
                     {
-                        var service = new FinancialAccountService( new RockContext() );
-                        var accountNames = service.GetByIds( accountIds ).OrderBy( a => a.Order ).OrderBy( a => a.Name ).Select( a => a.Name ).ToList().AsDelimited( ", ", " or " );
+                        var accountNames = FinancialAccountCache.GetByIds( accountIds ).OrderBy( a => a.Order ).OrderBy( a => a.Name ).Select( a => a.Name ).ToList().AsDelimited( ", ", " or " );
                         e.Value = accountNames;
                     }
                     else
@@ -1267,9 +1279,8 @@ namespace RockWeb.Blocks.Finance
             var accountIds = ( gfTransactions.GetUserPreference( "Account" ) ?? "" ).SplitDelimitedValues().AsIntegerList().Where( a => a > 0 ).ToList();
             if ( accountIds.Any() )
             {
-                var service = new FinancialAccountService( new RockContext() );
-                var accounts = service.GetByIds( accountIds ).OrderBy( a => a.Order ).OrderBy( a => a.Name ).ToList();
-                apAccount.SetValues( accounts );
+                var accounts = FinancialAccountCache.GetByIds( accountIds ).OrderBy( a => a.Order ).OrderBy( a => a.Name ).ToList();
+                apAccount.SetValuesFromCache( accounts );
             }
             else
             {
@@ -1541,8 +1552,8 @@ namespace RockWeb.Blocks.Finance
                 lDaysSinceLastTransactionGridField.Visible = GetAttributeValue( AttributeKey.ShowDaysSinceLastTransaction ).AsBoolean();
             }
 
+            var hideTransactionsInPendingBatches = GetAttributeValue( AttributeKey.HideTransactionsInPendingBatches ).AsBoolean();
             var rockContext = new RockContext();
-            _financialAccountLookup = new FinancialAccountService( rockContext ).Queryable().AsNoTracking().ToList().ToDictionary( k => k.Id, v => v );
 
             SortProperty sortProperty = gTransactions.SortProperty;
 
@@ -1564,6 +1575,11 @@ namespace RockWeb.Blocks.Finance
                 else
                 {
                     financialTransactionDetailQry = financialTransactionDetailQry.Where( a => a.Transaction.TransactionDateTime.HasValue );
+                }
+               
+                if ( hideTransactionsInPendingBatches )
+                {
+                    financialTransactionDetailQry = financialTransactionDetailQry.Where( a => a.Transaction.Batch == null || a.Transaction.Batch.Status != BatchStatus.Pending );
                 }
 
                 if ( _availableAttributes != null && _availableAttributes.Any() )
@@ -1627,7 +1643,7 @@ namespace RockWeb.Blocks.Finance
                         AccountId = a.AccountId,
                         Amount = a.Amount,
                         EntityId = a.EntityId,
-                        EntityTypeId = a.EntityId
+                        EntityTypeId = a.EntityTypeId
                     },
                     Summary = a.Transaction.FutureProcessingDateTime.HasValue ? "[charge pending] " + a.Summary : a.Transaction.Summary,
                     FinancialPaymentDetail = new PaymentDetailInfo
@@ -1655,6 +1671,11 @@ namespace RockWeb.Blocks.Finance
                 else
                 {
                     financialTransactionQry = financialTransactionQry.Where( a => a.TransactionDateTime.HasValue );
+                }
+
+                if ( hideTransactionsInPendingBatches )
+                {
+                    financialTransactionQry = financialTransactionQry.Where( a => a.Batch == null || a.Batch.Status != BatchStatus.Pending );
                 }
 
                 // Filter to configured accounts.
@@ -1699,6 +1720,8 @@ namespace RockWeb.Blocks.Finance
                         TransactionDateTime = a.TransactionDateTime ?? a.FutureProcessingDateTime.Value,
                         FutureProcessingDateTime = a.FutureProcessingDateTime,
                         TransactionDetails = a.TransactionDetails.Select( d => new DetailInfo { AccountId = d.AccountId, Amount = d.Amount, EntityId = d.EntityId, EntityTypeId = d.EntityTypeId } ),
+                        Refunds = a.Refunds.Select( r => new RefundInfo { TransactionId = r.Id, TransactionCode = r.FinancialTransaction.TransactionCode } ),
+                        RefundForTransactionId = ( a.RefundDetails == null ) ? null : a.RefundDetails.OriginalTransactionId,
                         SourceTypeValueId = a.SourceTypeValueId,
                         TotalAmount = a.TransactionDetails.Sum( d => ( decimal? ) d.Amount ),
                         TransactionCode = a.TransactionCode,
@@ -1979,8 +2002,9 @@ namespace RockWeb.Blocks.Finance
             if ( showImages )
             {
                 _imageBinaryFileIdLookupByTransactionId = new FinancialTransactionImageService( rockContext ).Queryable().Where( a => qry.Any( q => q.Id == a.TransactionId ) )
-                    .Select( a => new { a.TransactionId, a.BinaryFileId } ).GroupBy( a => a.TransactionId ).ToList()
-                    .ToDictionary( k => k.Key, v => v.Select( x => x.BinaryFileId ).ToList() );
+                    .Select( a => new { a.TransactionId, a.BinaryFileId, a.Order } )
+                    .GroupBy( a => a.TransactionId )
+                    .ToDictionary( k => k.Key, v => v.OrderBy( x => x.Order ).Select( x => x.BinaryFileId ).ToList() );
             }
             else
             {
@@ -2035,8 +2059,8 @@ namespace RockWeb.Blocks.Finance
                 var summaryQryList = accountSummaryQry1.ToList().Select( a => new AccountSummaryRow
                 {
                     AccountId = a.AccountId,
-                    Order = _financialAccountLookup[a.AccountId].Order,
-                    Name = _financialAccountLookup[a.AccountId].Name,
+                    Order = FinancialAccountCache.Get( a.AccountId )?.Order ?? 0,
+                    Name = FinancialAccountCache.Get( a.AccountId )?.Name,
                     TotalAmount = a.TotalAmount
                 } );
 
@@ -2089,14 +2113,14 @@ namespace RockWeb.Blocks.Finance
                 List<string> summary = null;
                 if ( txn.TransactionDetail != null )
                 {
-                    string summaryLine = string.Format( "{0}: {1}", _financialAccountLookup[txn.TransactionDetail.AccountId].Name, txn.TransactionDetail.Amount.FormatAsCurrency() );
+                    string summaryLine = string.Format( "{0}: {1}", FinancialAccountCache.Get( txn.TransactionDetail.AccountId )?.Name, txn.TransactionDetail.Amount.FormatAsCurrency() );
                     summary = new List<string>();
                     summary.Add( summaryLine );
                 }
                 else if ( txn.TransactionDetails != null )
                 {
                     var accountGuids = GetAttributeValue( AttributeKey.Accounts ).SplitDelimitedValues().AsGuidList();
-                    summary = txn.TransactionDetails.Select( a => new { Account = _financialAccountLookup[a.AccountId], a.Amount } )
+                    summary = txn.TransactionDetails.Select( a => new { Account = FinancialAccountCache.Get( a.AccountId ), a.Amount } )
                     .Select( d => new
                     {
                         IsOther = accountGuids.Any() && !accountGuids.Contains( d.Account.Guid ),
@@ -2270,6 +2294,10 @@ namespace RockWeb.Blocks.Finance
             /// </value>
             public IEnumerable<DetailInfo> TransactionDetails { get; set; }
             public int? ForeignCurrencyCodeValueId { get; set; }
+
+            public IEnumerable<RefundInfo> Refunds { get; set; }
+
+            public int? RefundForTransactionId { get; set; }
         }
 
         private class DetailInfo : RockDynamic
@@ -2292,6 +2320,12 @@ namespace RockWeb.Blocks.Finance
             public int PersonAliasId { get; set; }
             public int PersonId { get; set; }
             public string FullName { get; set; }
+        }
+
+        private class RefundInfo : RockDynamic
+        {
+            public int TransactionId { get; set; }
+            public string TransactionCode { get; set; }
         }
     }
 }

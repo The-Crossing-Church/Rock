@@ -34,9 +34,6 @@ using Rock.Web;
 
 namespace RockWeb.Blocks.Cms
 {
-    /// <summary>
-    /// Template block for developers to use to start a new block.
-    /// </summary>
     [DisplayName( "Universal Search" )]
     [Category( "CMS" )]
     [Description( "A block to search for all indexable entity types in Rock." )]
@@ -113,6 +110,7 @@ namespace RockWeb.Blocks.Cms
         EditorMode = CodeEditorMode.Lava,
         Category = "CustomSetting",
         Key = AttributeKey.PostHtml )]
+    [Rock.SystemGuid.BlockTypeGuid( "FDF1BBFF-7A7B-4F4E-BF34-831203B0FEAC" )]
     public partial class UniversalSearch : RockBlockCustomSettings
     {
         #region AttributeKeys
@@ -201,10 +199,30 @@ namespace RockWeb.Blocks.Cms
 
             if ( !Page.IsPostBack )
             {
-                // check if this is a redirect from the smart search of a document
+                // Check if this is a request for a specific document from the results list of smart search.
+                // Smart search may specify either a search term or a specific document in the "Q" query parameter,
+                // because the Search component [Result URL] setting is used for both types of request.
                 if ( PageParameter( PageParameterKey.DocumentType ).IsNotNullOrWhiteSpace() && PageParameter( PageParameterKey.DocumentId ).IsNotNullOrWhiteSpace() )
                 {
+                    // First, check if the document parameters are specified as part of the request route.
+                    // This is a legacy request format that should be avoided, because it fails to process search requests containing special characters such as "/".
                     RedirectToDocument( PageParameter( PageParameterKey.DocumentType ), PageParameter( PageParameterKey.DocumentId ) );
+                }
+                else if ( !string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.Q ) ) )
+                {
+                    // Parse the "Q" parameter to determine if it is a specific document reference.
+                    var queryParts = PageParameter( PageParameterKey.Q ).SplitDelimitedValues("/");
+                    if ( queryParts.Length == 2 )
+                    { 
+                        var documentType = queryParts[0];
+
+                        var indexDocumentEntityType = EntityTypeCache.Get( documentType, createNew:false );
+                        if ( indexDocumentEntityType != null )
+                        {
+                            var documentId = queryParts[1];
+                            RedirectToDocument( documentType, documentId );
+                        }
+                    }
                 }
 
                 ConfigureSettings();
@@ -376,7 +394,19 @@ namespace RockWeb.Blocks.Cms
             {
                 long totalResultsAvailable = 0;
 
-                var results = client.Search( term, searchType, selectedEntities, fieldCriteria, _itemsPerPage, _currentPageNum * _itemsPerPage, out totalResultsAvailable );
+                List<Rock.UniversalSearch.IndexModels.IndexModelBase> results;
+
+                try
+                {
+
+                    results = client.Search( term, searchType, selectedEntities, fieldCriteria, _itemsPerPage, _currentPageNum * _itemsPerPage, out totalResultsAvailable );
+                }
+                catch ( Exception ex )
+                {
+                    nbWarnings.Text = "An Error Occurred";
+                    nbWarnings.Details = ex.Message;
+                    return;
+                }
 
                 if ( GetAttributeValue( AttributeKey.UseCustomResults ).AsBoolean() )
                 {

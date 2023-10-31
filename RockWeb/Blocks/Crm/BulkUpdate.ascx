@@ -1,42 +1,9 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="BulkUpdate.ascx.cs" Inherits="RockWeb.Blocks.Crm.BulkUpdate" %>
 
-<script src="/SignalR/hubs"></script>
-<script type="text/javascript">
-    $(function () {
-        var proxy = $.connection.rockMessageHub;
-
-        proxy.client.bulkUpdateProgress = function (completed, total) {
-            var $bar = $('#<%= pnlProcessing.ClientID %> .js-progress-bar');
-
-            $bar.prop('aria-valuenow', completed);
-            $bar.prop('aria-valuemax', total);
-            $bar.css('width', (completed.replace(',','') / total.replace(',','') * 100) + '%');
-            $bar.text(completed + '/' + total);
-
-            $('#<%= pnlProcessing.ClientID %> .js-progress-div').slideDown();
-            $('#<%= pnlProcessing.ClientID %> .js-processing-spinner').slideUp();
-        };
-
-        proxy.client.bulkUpdateStatus = function (status, alertClass) {
-            var $jsResults = $('#<%= pnlProcessing.ClientID %> .js-results');
-            $jsResults.removeClass('alert-danger').removeClass('alert-success').removeClass('alert-warning');
-            $jsResults.addClass(alertClass);
-
-            $('#<%= pnlProcessing.ClientID %> .js-results').html(status).slideDown();
-            $('#<%= pnlProcessing.ClientID %> .js-progress-div').slideUp();
-        };
-
-        $.connection.hub.start().done(function () {
-            $('#<%= hfConnectionId.ClientID %>').val($.connection.hub.id);
-        });
-    });
-</script>
-
 <asp:UpdatePanel ID="upPanel" runat="server">
     <ContentTemplate>
 
         <asp:HiddenField ID="hfSelectedItems" runat="server"  />
-        <asp:HiddenField ID="hfConnectionId" runat="server" />
 
         <div class="panel panel-block">
 
@@ -122,8 +89,8 @@
                                 <Rock:DefinedValuePicker ID="dvpSuffix" runat="server" />
 
                                 <Rock:DefinedValuePicker ID="dvpRecordStatus" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlRecordStatus_SelectedIndexChanged" />
-                                <Rock:DefinedValuePicker ID="dvpInactiveReason" runat="server" Visible="false" Label="Inactive Reason"></Rock:DefinedValuePicker>
-                                <Rock:RockTextBox ID="tbInactiveReasonNote" runat="server" TextMode="MultiLine" Rows="2" Visible="false" Label="Inactive Reason Note"></Rock:RockTextBox>
+                                <Rock:DefinedValuePicker ID="dvpInactiveReason" runat="server" Visible="false" Label="Inactive Reason" FormGroupCssClass="bulk-item-visible" />
+                                <Rock:RockTextBox ID="tbInactiveReasonNote" runat="server" TextMode="MultiLine" Rows="2" Visible="false" Label="Inactive Reason Note" FormGroupCssClass="bulk-item-visible" />
                             </div>
                         </div>
 
@@ -158,9 +125,9 @@
                                 <Rock:RockTextBox ID="tbSystemNote" runat="server" TextMode="MultiLine" Rows="2"></Rock:RockTextBox>
                             </div>
                             <div class="col-sm-6">
-                                <Rock:DefinedValuePicker ID="dvpReviewReason" runat="server" Enabled="false" 
+                                <Rock:DefinedValuePicker ID="dvpReviewReason" runat="server" Enabled="false"
                                     Label="<span class='js-select-item'><i class='fa fa-circle-o'></i></span> Review Reason" />
-                                <Rock:RockTextBox ID="tbReviewReasonNote" runat="server" Enabled="false" 
+                                <Rock:RockTextBox ID="tbReviewReasonNote" runat="server" Enabled="false"
                                     Label="<span class='js-select-item'><i class='fa fa-circle-o'></i></span> Review Reason Note" TextMode="MultiLine" Rows="2"></Rock:RockTextBox>
                             </div>
                         </div>
@@ -242,23 +209,8 @@
 
                 </asp:Panel>
 
-                <asp:Panel ID="pnlProcessing" runat="server" Visible="false">
-
-                    <div class="js-processing-spinner">
-                        <i class="fa fa-spinner fa-spin"></i>
-                        Preparing...
-                    </div>
-
-                    <div class="js-progress-div margin-t-lg" style="display: none;">
-                        <strong>Progress</strong><br />
-                        <div class="progress">
-                            <div class="progress-bar js-progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemax="0">0/0</div>
-                        </div>
-                    </div>
-
-                    <div class="js-results alert alert-success" style="display: none;"></div>
-                </asp:Panel>
-
+                <Rock:TaskActivityProgressReporter ID="tapReporter" runat="server" />
+                <Rock:NotificationBox ID="nbTapReportFailed" runat="server" Visible="false" NotificationBoxType="Info" Text="Bulk update task started. It should be completed shortly."></Rock:NotificationBox>
             </div>
         </div>
 

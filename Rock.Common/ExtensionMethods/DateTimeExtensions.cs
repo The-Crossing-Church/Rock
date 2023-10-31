@@ -442,7 +442,7 @@ namespace Rock
         /// <param name="dt">The date to check.</param>
         /// <param name="startOfWeek">The start of week.</param>
         /// <returns></returns>
-        [Obsolete( "Use SundayDate without the firstDayOfWeek parameter" )]
+        [Obsolete( "Use SundayDate without the firstDayOfWeek parameter", true )]
         [RockObsolete( "1.10" )]
         public static DateTime SundayDate( this DateTime dt, DayOfWeek startOfWeek = DayOfWeek.Monday )
         {
@@ -676,6 +676,19 @@ namespace Rock
             var unspecifiedDateTime = DateTime.SpecifyKind( dateTime, DateTimeKind.Unspecified );
 
             return new DateTimeOffset( unspecifiedDateTime, RockDateTime.OrgTimeZoneInfo.GetUtcOffset( unspecifiedDateTime ) );
+        }
+
+        /// <summary>
+        /// Takes a DateTimeOffset and converts it into the organization timezone.
+        /// </summary>
+        /// <param name="dateTimeOffset">The date time offset.</param>
+        /// <remarks>This probably isn't the method you're looking for.
+        /// In 99.9% of cases you should be able to use the .DateTime property,
+        /// but this is used when a remote client has to set a specific spot in time.</remarks>
+        /// <returns>DateTime.</returns>
+        public static DateTime ToOrganizationDateTime( this DateTimeOffset dateTimeOffset )
+        {
+            return dateTimeOffset.ToOffset( RockDateTime.OrgTimeZoneInfo.GetUtcOffset( dateTimeOffset ) ).DateTime;
         }
 
         /// <summary>

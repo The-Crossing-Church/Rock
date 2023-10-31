@@ -31,6 +31,7 @@ namespace Rock.Search.Person
     [Description("Business Name Search")]
     [Export(typeof(SearchComponent))]
     [ExportMetadata("ComponentName", "Business Name")]
+    [Rock.SystemGuid.EntityTypeGuid( "944ACDD0-A4AC-4E5A-8689-E2D8EF773BC2")]
     public class BusinessName : SearchComponent
     {
         /// <summary>
@@ -78,9 +79,10 @@ namespace Rock.Search.Person
         {
             var searchQry = GetSearchResults( searchterm );
 
+            // Note: extra spaces intentional with the label span to keep the markup from showing in the search input on selection
             return searchQry
                 .OrderBy( q => q.LastName )
-                .Select( b => b.LastName )
+            .Select( b => b.PrimaryCampus == null ? b.LastName : b.LastName + "                                                          <span class='search-accessory label label-default pull-right'>" + (b.PrimaryCampus.ShortCode != "" ? b.PrimaryCampus.ShortCode : b.PrimaryCampus.Name) + "</span>" )
                 .Distinct();
         }
     }

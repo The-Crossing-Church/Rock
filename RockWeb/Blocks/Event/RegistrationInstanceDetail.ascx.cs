@@ -26,6 +26,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Security;
 using Rock.Web;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -56,6 +57,7 @@ namespace RockWeb.Blocks.Event
         Order = 1 )]
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "22B67EDB-6D13-4D29-B722-DF45367AA3CB" )]
     public partial class RegistrationInstanceDetail : RegistrationInstanceBlock
     {
         #region Attribute Keys
@@ -273,29 +275,35 @@ namespace RockWeb.Blocks.Event
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnSave_Click( object sender, EventArgs e )
         {
-            RegistrationInstance instance = null;
+            RegistrationInstance registrationInstance = null;
 
             bool newInstance = false;
 
+            int? existingRegistrationTemplateId = PageParameter( PageParameterKey.RegistrationTemplateId ).AsIntegerOrNull() ?? hfRegistrationTemplateId.Value.AsIntegerOrNull();
+
             using ( var rockContext = new RockContext() )
             {
-                var service = new RegistrationInstanceService( rockContext );
+                var registrationInstanceService = new RegistrationInstanceService( rockContext );
 
                 int? registrationInstanceId = hfRegistrationInstanceId.Value.AsIntegerOrNull();
                 if ( registrationInstanceId.HasValue )
                 {
-                    instance = service.Get( registrationInstanceId.Value );
+                    registrationInstance = registrationInstanceService.Get( registrationInstanceId.Value );
                 }
 
-                if ( instance == null )
+                if ( registrationInstance == null )
                 {
-                    instance = new RegistrationInstance();
-                    instance.RegistrationTemplateId = PageParameter( PageParameterKey.RegistrationTemplateId ).AsInteger();
-                    service.Add( instance );
+                    registrationInstance = new RegistrationInstance();
+                    if ( existingRegistrationTemplateId.HasValue )
+                    {
+                        registrationInstance.RegistrationTemplateId = existingRegistrationTemplateId.Value;
+                    }
+
+                    registrationInstanceService.Add( registrationInstance );
                     newInstance = true;
                 }
 
-                rieDetails.GetValue( instance );
+                rieDetails.GetValue( registrationInstance );
 
                 if ( !Page.IsValid )
                 {
@@ -308,8 +316,12 @@ namespace RockWeb.Blocks.Event
             if ( newInstance )
             {
                 var qryParams = new Dictionary<string, string>();
-                qryParams.Add( PageParameterKey.RegistrationTemplateId, PageParameter( PageParameterKey.RegistrationTemplateId ) );
-                qryParams.Add( PageParameterKey.RegistrationInstanceId, instance.Id.ToString() );
+                if ( existingRegistrationTemplateId.HasValue )
+                {
+                    qryParams.Add( PageParameterKey.RegistrationTemplateId, existingRegistrationTemplateId.ToString() );
+                }
+
+                qryParams.Add( PageParameterKey.RegistrationInstanceId, registrationInstance.Id.ToString() );
                 NavigateToCurrentPage( qryParams );
             }
             else
@@ -317,14 +329,14 @@ namespace RockWeb.Blocks.Event
                 // Reload instance and show readonly view
                 using ( var rockContext = new RockContext() )
                 {
-                    instance = new RegistrationInstanceService( rockContext ).Get( instance.Id );
-                    ShowReadonlyDetails( instance );
+                    registrationInstance = new RegistrationInstanceService( rockContext ).Get( registrationInstance.Id );
+                    ShowReadonlyDetails( registrationInstance );
 
                     // show send payment reminder link
                     if ( !string.IsNullOrWhiteSpace( GetAttributeValue( AttributeKey.PaymentReminderPage ) ) &&
-                        ( ( instance.RegistrationTemplate.SetCostOnInstance.HasValue && instance.RegistrationTemplate.SetCostOnInstance == true && instance.Cost.HasValue && instance.Cost.Value > 0 ) ||
-                            instance.RegistrationTemplate.Cost > 0 ||
-                            instance.RegistrationTemplate.Fees.Count > 0 ) )
+                        ( ( registrationInstance.RegistrationTemplate.SetCostOnInstance.HasValue && registrationInstance.RegistrationTemplate.SetCostOnInstance == true && registrationInstance.Cost.HasValue && registrationInstance.Cost.Value > 0 ) ||
+                            registrationInstance.RegistrationTemplate.Cost > 0 ||
+                            registrationInstance.RegistrationTemplate.Fees.Count > 0 ) )
                     {
                         btnSendPaymentReminder.Visible = true;
                     }
@@ -389,6 +401,39 @@ namespace RockWeb.Blocks.Event
             NavigateToParentPage( qryParams );
         }
 
+        protected void btnCopy_Click( object sender, EventArgs e )
+        {
+            var rockContext = new RockContext();
+            var registrationInstance = new RegistrationInstanceService( rockContext ).Get( hfRegistrationInstanceId.Value.AsInteger() );
+            if ( registrationInstance != null )
+            {
+                // Clone the Registration Instance without the old Id.
+                var newRegistrationInstance = registrationInstance.CloneWithoutIdentity();
+
+                // delete account from registration if account is inactive
+                if( !registrationInstance.Account.IsActive )
+                {
+                    newRegistrationInstance.Account = null;
+                    newRegistrationInstance.AccountId = 0;
+                }
+
+                hfRegistrationInstanceId.Value = newRegistrationInstance.Id.ToString();
+                hfRegistrationTemplateId.Value = newRegistrationInstance.RegistrationTemplateId.ToString();
+                newRegistrationInstance.Name = registrationInstance.Name + " - Copy";
+                newRegistrationInstance.IsActive = true;
+
+                if ( newRegistrationInstance.RegistrationTemplateId > 0 )
+                {
+                    newRegistrationInstance.RegistrationTemplate = new RegistrationTemplateService( rockContext ).Get( newRegistrationInstance.RegistrationTemplateId );
+                }
+
+                registrationInstance.LoadAttributes();
+                newRegistrationInstance.CopyAttributesFrom( registrationInstance );
+
+                ShowEditDetails( newRegistrationInstance, rockContext );
+            }
+        }
+
         #endregion Events
 
         #region Methods
@@ -445,9 +490,12 @@ namespace RockWeb.Blocks.Event
                     Guid? accountGuid = GetAttributeValue( AttributeKey.DefaultAccount ).AsGuidOrNull();
                     if ( accountGuid.HasValue )
                     {
-                        var account = new FinancialAccountService( rockContext ).Get( accountGuid.Value );
-                        registrationInstance.AccountId = account != null ? account.Id : 0;
+                        var account = FinancialAccountCache.Get( accountGuid.Value );
+                        registrationInstance.AccountId = account != null && account.IsActive ? account.Id : 0;
                     }
+
+                    // Do not allow copying an empty Registration Instance.
+                    btnCopy.Visible = false;
                 }
 
                 if ( registrationInstance.RegistrationTemplate == null && registrationInstance.RegistrationTemplateId > 0 )
@@ -618,6 +666,7 @@ namespace RockWeb.Blocks.Event
 
             lDetails.Visible = !string.IsNullOrWhiteSpace( registrationInstance.Details );
             lDetails.Text = registrationInstance.Details;
+            btnCopy.ToolTip = $"Copy { registrationInstance.Name }";
         }
 
         /// <summary>

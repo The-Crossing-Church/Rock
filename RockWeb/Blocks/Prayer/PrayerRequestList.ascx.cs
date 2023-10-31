@@ -41,13 +41,14 @@ namespace RockWeb.Blocks.Prayer
     [SecurityAction( Authorization.APPROVE, "The roles and/or users that have access to approve prayer requests and comments." )]
 
     [LinkedPage( "Detail Page", "", false, Order = 0 )]
-    [IntegerField( "Expires After (Days)", "Number of days until the request will expire.", false, 14, "", 1, "ExpireDays" )]
+    [IntegerField( "Expires After (days)", "Number of days until the request will expire.", false, 14, "", 1, "ExpireDays" )]
     [BooleanField( "Show Prayer Count", "If enabled, the block will show the current prayer count for each request in the list.", false, "", 2 )]
     [BooleanField( "Show 'Approved' column", "If enabled, the Approved column will be shown with a Yes/No toggle button.", true, "", 3, "ShowApprovedColumn" )]
     [BooleanField( "Show Grid Filter", "If enabled, the grid filter will be visible.", true, "", 4 )]
     [BooleanField( "Show Public Only", "If enabled, it will limit the list only to the prayer requests that are public.", false, order: 5 )]
 
     [ContextAware( typeof( Rock.Model.Person ) )]
+    [Rock.SystemGuid.BlockTypeGuid( "4D6B686A-79DF-4EFC-A8BA-9841C248BF74" )]
     public partial class PrayerRequestList : RockBlock, ICustomGridColumns
     {
         #region Fields
@@ -56,16 +57,6 @@ namespace RockWeb.Blocks.Prayer
         /// The prayer request key parameter used in the QueryString for detail page.
         /// </summary>
         private static readonly string _PrayerRequestKeyParameter = "PrayerRequestId";
-
-        /// <summary>
-        /// Holds whether or not the person can add, edit, and delete.
-        /// </summary>
-        private bool _canAddEditDelete = false;
-
-        /// <summary>
-        /// Holds whether or not the person can approve requests.
-        /// </summary>
-        private bool _canApprove = false;
 
         /// <summary>
         /// Gets or sets the available attributes.
@@ -114,17 +105,25 @@ namespace RockWeb.Blocks.Prayer
             gPrayerRequests.GridRebind += gPrayerRequests_GridRebind;
 
             // Block Security and special attributes (RockPage takes care of View)
-            _canApprove = IsUserAuthorized( "Approve" );
-            _canAddEditDelete = IsUserAuthorized( Authorization.EDIT );
-            gPrayerRequests.Actions.ShowAdd = _canAddEditDelete;
-            gPrayerRequests.IsDeleteEnabled = _canAddEditDelete;
+            var canAddEditDelete = IsUserAuthorized( Authorization.EDIT );
+            gPrayerRequests.Actions.ShowAdd = canAddEditDelete;
+            gPrayerRequests.IsDeleteEnabled = canAddEditDelete;
 
-            // if there is a Person as the ContextEntity, there is no need to show the Name column
+            // If there is a Person as the ContextEntity, there is no need to show the Name column
             gPrayerRequests.GetColumnByHeaderText( "Name" ).Visible = this.ContextEntity<Rock.Model.Person>() == null;
-
-
             gPrayerRequests.GetColumnByHeaderText( "Prayer Count" ).Visible = GetAttributeValue( "ShowPrayerCount" ).AsBoolean();
-            gPrayerRequests.GetColumnByHeaderText( "Approved?" ).Visible = GetAttributeValue( "ShowApprovedColumn" ).AsBoolean();
+
+            // Is the Approved columnn supposed to show?
+            var showApprovedColumn = GetAttributeValue( "ShowApprovedColumn" ).AsBoolean();
+            gPrayerRequests.GetColumnByHeaderText( "Approved?" ).Visible = showApprovedColumn;
+
+            // But if showing, check if the person is not authorized to approve and hide the column anyhow
+            if ( showApprovedColumn && !IsUserAuthorized( Authorization.APPROVE ) )
+            {
+                gPrayerRequests.GetColumnByHeaderText( "Approved?" ).Visible = false;
+            }
+
+            AddDynamicControls();
         }
 
         /// <summary>
@@ -211,7 +210,6 @@ namespace RockWeb.Blocks.Prayer
             cbShowExpired.Checked = gfFilter.GetUserPreference( FilterSetting.ShowExpired ).AsBooleanOrNull() ?? false;
 
             BindAttributes();
-            AddDynamicControls();
         }
 
         /// <summary>
@@ -768,21 +766,6 @@ namespace RockWeb.Blocks.Prayer
         {
             if ( e.Row.RowType == DataControlRowType.DataRow )
             {
-                if ( !_canApprove )
-                {
-                    foreach ( TableCell cell in e.Row.Cells )
-                    {
-                        foreach ( Control c in cell.Controls )
-                        {
-                            Toggle toggle = c as Toggle;
-                            if ( toggle != null )
-                            {
-                                toggle.Enabled = false;
-                            }
-                        }
-                    }
-                }
-
                 var prayerRequest = e.Row.DataItem as PrayerRequest;
 
                 Literal lFullname = e.Row.FindControl( "lFullname" ) as Literal;

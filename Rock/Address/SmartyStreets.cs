@@ -40,6 +40,7 @@ namespace Rock.Address
     [TextField( "Auth Token", "The Smarty Streets Authorization Token. NOTE: This can be left blank and will be ignored if 'Use Managed API Key' is enabled.", false, "", "", 3 )]
     [TextField( "Acceptable DPV Codes", "The Smarty Streets Delivery Point Validation (DPV) match code values that are considered acceptable levels of standardization (see http://smartystreets.com/kb/liveaddress-api/field-definitions#dpvmatchcode for details).", false, "Y,S,D", "", 4 )]
     [TextField( "Acceptable Precisions", "The Smarty Streets latitude & longitude precision values that are considered acceptable levels of geocoding (see http://smartystreets.com/kb/liveaddress-api/field-definitions#precision for details).", false, "Zip7,Zip8,Zip9", "", 5 )]
+    [Rock.SystemGuid.EntityTypeGuid( "4278E7EF-221B-45E6-B9C6-5D11884389EF")]
     public class SmartyStreets : VerificationComponent
     {
         /// <summary>
@@ -66,7 +67,7 @@ namespace Rock.Address
             var request = new RestRequest( Method.POST );
             request.RequestFormat = DataFormat.Json;
             request.AddHeader( "Accept", "application/json" );
-            request.AddBody( payload );
+            request.AddJsonBody( payload );
             var response = client.Execute( request );
 
             if ( response.StatusCode == HttpStatusCode.OK )
@@ -123,50 +124,19 @@ namespace Rock.Address
         /// <returns></returns>
         public MapCoordinate GetLocationFromPostalCode( string postalCode, out string resultMsg )
         {
-            MapCoordinate result = null;
-            resultMsg = string.Empty;
+            return GetZipCodeLocation( new[] { new { zipcode = postalCode } }, out resultMsg );
+        }
 
-            if ( this.IsActive )
-            {
-
-                SmartyStreetsAPIKey apiKey = GetAPIKey();
-
-                var payload = new[] { new { zipcode = postalCode } };
-
-                var client = new RestClient( string.Format( "https://us-zipcode.api.smartystreets.com/lookup?auth-id={0}&auth-token={1}", apiKey.AuthID, apiKey.AuthToken ) );
-                var request = new RestRequest( Method.POST );
-                request.RequestFormat = DataFormat.Json;
-                request.AddHeader( "Accept", "application/json" );
-                request.AddBody( payload );
-                var response = client.Execute( request );
-
-                if ( response.StatusCode == HttpStatusCode.OK )
-                {
-                    var lookupResponse = JsonConvert.DeserializeObject( response.Content, typeof( List<LookupResponse> ) ) as List<LookupResponse>;
-                    if ( lookupResponse != null && lookupResponse.Any()  && lookupResponse.First().zipcodes.Any() )
-                    {
-                        var zipcode = lookupResponse.First().zipcodes.FirstOrDefault();
-                        result = new MapCoordinate();
-                        result.Latitude = zipcode.latitude;
-                        result.Longitude = zipcode.longitude;
-                        resultMsg = JsonConvert.SerializeObject( zipcode );
-                    }
-                    else
-                    {
-                        resultMsg = "No Match";
-                    }
-                }
-                else
-                {
-                    resultMsg = response.StatusDescription;
-                }
-            }
-            else
-            {
-                resultMsg = "Smarty Steets is not active.";
-            }
-
-            return result;
+        /// <summary>
+        /// Gets the location from city and state combination.
+        /// </summary>
+        /// <param name="city">The city.</param>
+        /// <param name="state">The state.</param>
+        /// <param name="resultMsg">The result MSG.</param>
+        /// <returns></returns>
+        public MapCoordinate GetLocationFromCityState( string city, string state, out string resultMsg )
+        {
+            return GetZipCodeLocation( new[] { new { city, state } }, out resultMsg );
         }
 
         private SmartyStreetsAPIKey GetAPIKey()
@@ -176,10 +146,10 @@ namespace Rock.Address
             {
                 var lastKeyUpdate = Rock.Web.SystemSettings.GetValue( "core_SmartyStreetsApiKeyLastUpdate" ).AsDateTime() ?? DateTime.MinValue;
                 var hoursSinceLastUpdate = ( RockDateTime.Now - lastKeyUpdate ).TotalHours;
-                if ( hoursSinceLastUpdate > 24 || true )
+                if ( hoursSinceLastUpdate > 24 )
                 {
                     var rockInstanceId = Rock.Web.SystemSettings.GetRockInstanceId();
-                    var getAPIKeyClient = new RestClient( "https://www.rockrms.com/api/SmartyStreets/GetSmartyStreetsApiKey?rockInstanceId={rockInstanceId}" );
+                    var getAPIKeyClient = new RestClient( $"https://www.rockrms.com/api/SmartyStreets/GetSmartyStreetsApiKey?rockInstanceId={rockInstanceId}" );
 
                     // If debugging locally
                     // var getAPIKeyClient = new RestClient( $"http://localhost:57822/api/SmartyStreets/GetSmartyStreetsApiKey?rockInstanceId={rockInstanceId}" );
@@ -215,6 +185,52 @@ namespace Rock.Address
             }
 
             return apiKey;
+        }
+
+        private MapCoordinate GetZipCodeLocation( dynamic payload, out string resultMsg )
+        {
+            MapCoordinate result = null;
+            resultMsg = string.Empty;
+
+            if ( this.IsActive )
+            {
+
+                SmartyStreetsAPIKey apiKey = GetAPIKey();
+
+                var client = new RestClient( string.Format( "https://us-zipcode.api.smartystreets.com/lookup?auth-id={0}&auth-token={1}", apiKey.AuthID, apiKey.AuthToken ) );
+                var request = new RestRequest( Method.POST );
+                request.RequestFormat = DataFormat.Json;
+                request.AddHeader( "Accept", "application/json" );
+                request.AddJsonBody( payload );
+                var response = client.Execute( request );
+
+                if ( response.StatusCode == HttpStatusCode.OK )
+                {
+                    var lookupResponse = JsonConvert.DeserializeObject( response.Content, typeof( List<LookupResponse> ) ) as List<LookupResponse>;
+                    if ( lookupResponse != null && lookupResponse.Any()  && lookupResponse.First().zipcodes.Any() )
+                    {
+                        var zipcode = lookupResponse.First().zipcodes.FirstOrDefault();
+                        result = new MapCoordinate();
+                        result.Latitude = zipcode.latitude;
+                        result.Longitude = zipcode.longitude;
+                        resultMsg = JsonConvert.SerializeObject( zipcode );
+                    }
+                    else
+                    {
+                        resultMsg = "No Match";
+                    }
+                }
+                else
+                {
+                    resultMsg = response.StatusDescription;
+                }
+            }
+            else
+            {
+                resultMsg = "Smarty Steets is not active.";
+            }
+
+            return result;
         }
 
 #pragma warning disable

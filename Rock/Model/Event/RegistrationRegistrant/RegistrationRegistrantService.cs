@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Linq.Expressions;
-
 using Rock.Data;
 using Rock.Reporting;
 using Rock.Utility;
@@ -153,8 +152,11 @@ namespace Rock.Model
 
             if ( options.RegistrationInstanceId.HasValue )
             {
+                // PlacementId for 'ByPlacement' method is needed in order to allow a registrant to be available for other placement groups in the same instance.
                 allInstancesPlacementGroupInfoQuery =
-                    registrationInstanceService.GetRegistrationInstancePlacementGroups( registrationInstanceService.Get( options.RegistrationInstanceId.Value ) )
+                    registrationInstanceService.GetRegistrationInstancePlacementGroupsByPlacement(
+                        registrationInstanceService.Get( options.RegistrationInstanceId.Value ),
+                        options.RegistrationTemplatePlacementId )
                         .Where( a => a.GroupTypeId == registrationTemplatePlacement.GroupTypeId )
                         .SelectMany( a => a.Members ).Select( a => a.PersonId )
                         .Select( s => new InstancePlacementGroupPersonId
@@ -167,7 +169,10 @@ namespace Rock.Model
             {
                 foreach ( var registrationInstanceId in options.RegistrationTemplateInstanceIds )
                 {
-                    var instancePlacementGroupInfoQuery = registrationInstanceService.GetRegistrationInstancePlacementGroups( registrationInstanceService.Get( registrationInstanceId ) )
+                    // PlacementId for 'ByPlacement' method is needed in order to allow a registrant to be available for other placement groups in the same instance.
+                    var instancePlacementGroupInfoQuery = registrationInstanceService.GetRegistrationInstancePlacementGroupsByPlacement(
+                        registrationInstanceService.Get( registrationInstanceId ),
+                        options.RegistrationTemplatePlacementId )
                     .Where( a => a.GroupTypeId == registrationTemplatePlacement.GroupTypeId )
                     .SelectMany( a => a.Members ).Select( a => a.PersonId )
                     .Select( s => new InstancePlacementGroupPersonId
@@ -282,7 +287,7 @@ namespace Rock.Model
         /// <param name="alreadyPlacedInGroup">if set to <c>true</c> [already placed in group].</param>
         /// <param name="registrationInstanceName"></param>
         /// <param name="options">The options.</param>
-        [Obsolete( "Use the other GroupPlacementRegistrant constructor " )]
+        [Obsolete( "Use the other GroupPlacementRegistrant constructor ", true )]
         [RockObsolete( "1.10.3" )]
         public GroupPlacementRegistrant( RegistrationRegistrant registrationRegistrant, Person person, bool alreadyPlacedInGroup, string registrationInstanceName, GetGroupPlacementRegistrantsParameters options )
             : this( registrationRegistrant, person, alreadyPlacedInGroup, registrationRegistrant.Registration.RegistrationInstance, options )

@@ -40,6 +40,7 @@ namespace RockWeb.Blocks.Crm
     [Category( "CRM" )]
     [Description( "Lists Person Merge Requests" )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "4CBFB5FC-0174-489A-8B95-90BB8FAA2144" )]
     public partial class PersonMergeRequestList : RockBlock, ICustomGridColumns
     {
         #region Base Control Methods
@@ -94,7 +95,7 @@ namespace RockWeb.Blocks.Crm
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

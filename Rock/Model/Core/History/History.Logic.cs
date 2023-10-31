@@ -88,8 +88,8 @@ namespace Rock.Model
                                     }
                                     else
                                     {
-                                        string summaryVerb;
-                                        string summaryValue;
+                                        string summaryVerb = "Modified";
+                                        string summaryValue = ChangeType;
 
                                         if ( this.OldValue == null && this.NewValue != null )
                                         {
@@ -103,7 +103,7 @@ namespace Rock.Model
                                             summaryVerb = "Deleted";
                                             summaryValue = $"value of <span class='field-value'>{this.OldValue}</span>";
                                         }
-                                        else
+                                        else if ( this.OldValue != this.NewValue )
                                         {
                                             summaryVerb = "Modified";
                                             summaryValue = $"value from <span class='field-value'>{this.OldValue}</span> to <span class='field-value'>{this.NewValue}</span>";
@@ -362,12 +362,12 @@ namespace Rock.Model
                     {
                         if ( !string.IsNullOrEmpty( this.OldValue ) )
                         {
-                            stringBuilder.Append( $" old value of <span class='field-name'>{this.OldValue}</span>, " );
+                            stringBuilder.Append( $" Old value of <span class='field-name'>{this.OldValue}</span>. " );
                         }
 
                         if ( !string.IsNullOrEmpty( this.NewValue ) )
                         {
-                            stringBuilder.Append( $" new value of <span class='field-name'>{this.NewValue}</span>, " );
+                            stringBuilder.Append( $" New value of <span class='field-name'>{this.NewValue}</span>. " );
                         }
                     }
 

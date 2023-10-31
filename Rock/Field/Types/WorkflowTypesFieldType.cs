@@ -18,12 +18,14 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Reporting;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
@@ -33,29 +35,21 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class WorkflowTypesFieldType : FieldType
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.WORKFLOW_TYPES )]
+    public class WorkflowTypesFieldType : FieldType, IEntityReferenceFieldType
     {
-
         #region Formatting
 
-        /// <summary>
-        /// Returns the field's current value(s)
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">Information about the value</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
-        /// <returns></returns>
-        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
         {
             string formattedValue = string.Empty;
 
-            if ( !string.IsNullOrWhiteSpace( value ) )
+            if ( !string.IsNullOrWhiteSpace( privateValue ) )
             {
-                var names = new List<string>();
                 var guids = new List<Guid>();
 
-                foreach ( string guidValue in value.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ) )
+                foreach ( string guidValue in privateValue.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ) )
                 {
                     Guid? guid = guidValue.AsGuidOrNull();
                     if ( guid.HasValue )
@@ -68,22 +62,117 @@ namespace Rock.Field.Types
                 {
                     using ( var rockContext = new RockContext() )
                     {
-                        var workflowTypes = new WorkflowTypeService( rockContext ).Queryable().AsNoTracking().Where( a => guids.Contains( a.Guid ) );
+                        var workflowTypes = new WorkflowTypeService( rockContext )
+                            .Queryable()
+                            .AsNoTracking()
+                            .Where( a => guids.Contains( a.Guid ) );
                         if ( workflowTypes.Any() )
                         {
-                            formattedValue = string.Join( ", ", ( from workflowType in workflowTypes select workflowType.Name ).ToArray() );
+                            formattedValue = string.Join( ", ", ( from workflowType in workflowTypes select workflowType.Name ) );
                         }
                     }
                 }
             }
 
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
-
+            return formattedValue;
         }
 
         #endregion
 
         #region Edit Control
+
+        #endregion
+
+        #region FilterControl
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.ContainsFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( string.IsNullOrWhiteSpace( privateValue ) )
+            {
+                return null;
+            }
+
+            var guids = new List<Guid>();
+
+            foreach ( string guidValue in privateValue.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ) )
+            {
+                Guid? guid = guidValue.AsGuidOrNull();
+                if ( guid.HasValue )
+                {
+                    guids.Add( guid.Value );
+                }
+            }
+
+            if ( guids.Any() )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    var workflowTypeIds = new WorkflowTypeService( rockContext )
+                        .Queryable()
+                        .AsNoTracking()
+                        .Where( w => guids.Contains( w.Guid ) )
+                        .Select( w => w.Id )
+                        .ToList();
+                    if ( workflowTypeIds.Any() )
+                    {
+                        return workflowTypeIds.Select( w => new ReferencedEntity( EntityTypeCache.GetId<WorkflowType>().Value, w ) )
+                        .ToList();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Name property of a WorkflowTypes and
+            // should have its persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<WorkflowType>().Value, nameof( WorkflowType.Name ) )
+            };
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
+        /// <summary>
+        /// Returns the field's current value(s)
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">Information about the value</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
+        /// <returns></returns>
+        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        {
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
+        }
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -153,10 +242,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region FilterControl
-
         /// <summary>
         /// Gets the filter value control.
         /// </summary>
@@ -167,28 +252,14 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override Control FilterValueControl( Dictionary<string, ConfigurationValue> configurationValues, string id, bool required, FilterMode filterMode )
         {
-            var control = base.FilterValueControl(configurationValues, id, required, filterMode );
-            WorkflowTypePicker workflowTypePicker = (WorkflowTypePicker)control;
+            var control = base.FilterValueControl( configurationValues, id, required, filterMode );
+            WorkflowTypePicker workflowTypePicker = ( WorkflowTypePicker ) control;
             workflowTypePicker.Required = required;
             workflowTypePicker.AllowMultiSelect = false;
             return control;
         }
 
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.ContainsFilterComparisonTypes;
-            }
-        }
-
+#endif
         #endregion
-
     }
 }

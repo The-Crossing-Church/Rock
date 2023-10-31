@@ -33,6 +33,7 @@ using Rock.Chart;
 using Rock.Data;
 using Rock.Model;
 using Rock.Reporting;
+using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
@@ -92,6 +93,7 @@ namespace RockWeb.Blocks.Finance
         DefaultIntegerValue = 180,
         Order = 0 )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "48E4225F-8948-4FB0-8F00-1B43D3D9B3C3" )]
     public partial class GivingAnalytics : RockBlock
     {
         private static class AttributeKeys
@@ -193,17 +195,23 @@ btnCopyToClipboard.ClientID );
         {
             base.OnLoad( e );
 
-            var chartStyleDefinedValueGuid = this.GetAttributeValue( AttributeKeys.ChartStyle ).AsGuidOrNull();
+            var chartStyle = GetChartStyle();
+            lcAmount.SetChartStyle( chartStyle );
+            lcAmount.YValueFormatString = "currency";
+            bcAmount.SetChartStyle( chartStyle );
+            bcAmount.YValueFormatString = "currency";
 
-            lcAmount.Options.SetChartStyle( chartStyleDefinedValueGuid );
-            bcAmount.Options.xaxis = new AxisOptions { mode = AxisMode.categories, tickLength = 0 };
-            bcAmount.Options.series.bars.barWidth = 0.6;
-            bcAmount.Options.series.bars.align = "center";
-
-            // Set chart style after setting options so they are not overwritten.
-            bcAmount.Options.SetChartStyle( chartStyleDefinedValueGuid );
-
-            if ( !Page.IsPostBack )
+            if ( Page.IsPostBack )
+            {
+                // Assign event handlers to process the postback.
+                var detailPage = GetAttributeValue( AttributeKeys.DetailPage ).AsGuidOrNull();
+                if ( detailPage.HasValue )
+                {
+                    lcAmount.ChartClick += ChartClickEventHandler;
+                    bcAmount.ChartClick += ChartClickEventHandler;
+                }
+            }
+            else
             {
                 BuildDynamicControls( false );
 
@@ -223,6 +231,40 @@ btnCopyToClipboard.ClientID );
 
                 lSlidingDateRangeHelp.Text = SlidingDateRangePicker.GetHelpHtml( RockDateTime.Now );
             }
+        }
+
+        /// <summary>
+        /// Gets the chart style.
+        /// </summary>
+        /// <value>
+        /// The chart style.
+        /// </value>
+        private ChartStyle GetChartStyle()
+        {
+            var chartStyle = new ChartStyle();
+
+            var chartStyleDefinedValueGuid = GetAttributeValue( AttributeKeys.ChartStyle ).AsGuidOrNull();
+
+            if ( chartStyleDefinedValueGuid.HasValue )
+            {
+                var rockContext = new RockContext();
+                var definedValue = DefinedValueCache.Get( chartStyleDefinedValueGuid.Value );
+                if ( definedValue != null )
+                {
+                    try
+                    {
+                        definedValue.LoadAttributes( rockContext );
+
+                        chartStyle = ChartStyle.CreateFromJson( definedValue.Value, definedValue.GetAttributeValue( AttributeKeys.ChartStyle ) );
+                    }
+                    catch
+                    {
+                        // intentionally ignore and default to basic style
+                    }
+                }
+            }
+
+            return chartStyle;
         }
 
         /// <summary>
@@ -303,7 +345,7 @@ btnCopyToClipboard.ClientID );
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The ChartClickArgs.</param>
-        protected void lcAmount_ChartClick( object sender, ChartClickArgs e )
+        protected void ChartClickEventHandler( object sender, ChartClickArgs e )
         {
             if ( GetAttributeValue( AttributeKeys.DetailPage ).AsGuidOrNull().HasValue )
             {
@@ -530,8 +572,8 @@ btnCopyToClipboard.ClientID );
             bcAmount.ShowTooltip = true;
             if ( GetAttributeValue( AttributeKeys.DetailPage ).AsGuidOrNull().HasValue )
             {
-                lcAmount.ChartClick += lcAmount_ChartClick;
-                bcAmount.ChartClick += lcAmount_ChartClick;
+                lcAmount.ChartClick += ChartClickEventHandler;
+                bcAmount.ChartClick += ChartClickEventHandler;
             }
 
             var dateRange = SlidingDateRangePicker.CalculateDateRangeFromDelimitedValues( drpSlidingDateRange.DelimitedValues );
@@ -539,7 +581,6 @@ btnCopyToClipboard.ClientID );
             if ( pnlChart.Visible )
             {
                 var groupBy = hfGroupBy.Value.ConvertToEnumOrNull<ChartGroupBy>() ?? ChartGroupBy.Week;
-                lcAmount.TooltipFormatter = null;
                 double? chartDataWeekCount = null;
                 double? chartDataMonthCount = null;
                 int maxXLabelCount = 20;
@@ -550,92 +591,54 @@ btnCopyToClipboard.ClientID );
                     chartDataMonthCount = ( dateRange.End.Value - dateRange.Start.Value ).TotalDays / 30;
                 }
 
+                lcAmount.TooltipContentScript = GetChartTooltipScript( groupBy );
+
+                string intervalType = null;
+                string intervalSize = null;
                 switch ( groupBy )
                 {
                     case ChartGroupBy.Week:
                         {
                             if ( chartDataWeekCount < maxXLabelCount )
                             {
-                                lcAmount.Options.xaxis.tickSize = new string[] { "7", "day" };
+                                intervalType = "day";
+                                intervalSize = "7";
                             }
-                            else
-                            {
-                                lcAmount.Options.xaxis.tickSize = null;
-                            }
-
-                            lcAmount.TooltipFormatter = @"
-function(item) {
-    var itemDate = new Date(item.series.chartData[item.dataIndex].DateTimeStamp);
-    var dateText = 'Weekend of <br />' + itemDate.toLocaleDateString();
-    var seriesLabel = item.series.label || ( item.series.labels ? item.series.labels[item.dataIndex] : null );
-    var pointValue = item.series.chartData[item.dataIndex].YValue.toLocaleString() || item.series.chartData[item.dataIndex].YValueTotal.toLocaleString() || '-';
-    return dateText + '<br />' + seriesLabel + ': ' + pointValue;
-}
-";
                         }
-
                         break;
 
                     case ChartGroupBy.Month:
                         {
                             if ( chartDataMonthCount < maxXLabelCount )
                             {
-                                lcAmount.Options.xaxis.tickSize = new string[] { "1", "month" };
+                                intervalType = "month";
+                                intervalSize = "1";
                             }
-                            else
-                            {
-                                lcAmount.Options.xaxis.tickSize = null;
-                            }
-
-                            lcAmount.TooltipFormatter = @"
-function(item) {
-    var month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    var itemDate = new Date(item.series.chartData[item.dataIndex].DateTimeStamp);
-    var dateText = month_names[itemDate.getMonth()] + ' ' + itemDate.getFullYear();
-    var seriesLabel = item.series.label || ( item.series.labels ? item.series.labels[item.dataIndex] : null );
-    var pointValue = item.series.chartData[item.dataIndex].YValue.toLocaleString() || item.series.chartData[item.dataIndex].YValueTotal.toLocaleString() || '-';
-    return dateText + '<br />' + seriesLabel + ': ' + pointValue;
-}
-";
                         }
-
                         break;
 
                     case ChartGroupBy.Year:
                         {
-                            lcAmount.Options.xaxis.tickSize = new string[] { "1", "year" };
-                            lcAmount.TooltipFormatter = @"
-function(item) {
-    var itemDate = new Date(item.series.chartData[item.dataIndex].DateTimeStamp);
-    var dateText = itemDate.getFullYear();
-    var seriesLabel = item.series.label || ( item.series.labels ? item.series.labels[item.dataIndex] : null );
-    var pointValue = item.series.chartData[item.dataIndex].YValue.toLocaleString() || item.series.chartData[item.dataIndex].YValueTotal.toLocaleString() || '-';
-    return dateText + '<br />' + seriesLabel + ': ' + pointValue;
-}
-";
+                            intervalType = "year";
+                            intervalSize = "1";
                         }
-
                         break;
                 }
+                lcAmount.SeriesGroupIntervalType = intervalType;
+                lcAmount.SeriesGroupIntervalSize = intervalSize;
 
-                bcAmount.TooltipFormatter = lcAmount.TooltipFormatter;
+                bcAmount.TooltipContentScript = lcAmount.TooltipContentScript;
 
                 var chartData = this.GetGivingChartData();
-                var jsonSetting = new JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    ContractResolver = new Rock.Utility.IgnoreUrlEncodedKeyContractResolver()
-                };
-                string chartDataJson = JsonConvert.SerializeObject( chartData, Formatting.None, jsonSetting );
-
                 var singleDateTime = chartData.GroupBy( a => a.DateTimeStamp ).Count() == 1;
                 if ( singleDateTime )
                 {
-                    bcAmount.ChartData = chartDataJson;
+                    var chartDataByCategory = ChartDataFactory.GetCategorySeriesFromChartData( chartData );
+                    bcAmount.SetChartDataItems( chartDataByCategory );
                 }
                 else
                 {
-                    lcAmount.ChartData = chartDataJson;
+                    lcAmount.SetChartDataItems( chartData );
                 }
 
                 bcAmount.Visible = singleDateTime;
@@ -653,6 +656,83 @@ function(item) {
             }
 
             SaveSettings();
+        }
+
+        private string GetChartTooltipScript( ChartGroupBy groupBy )
+        {
+            var currencyCode = RockCurrencyCodeInfo.GetCurrencyCode();
+
+            var tooltipScriptTemplate = @"
+function(tooltipModel)
+{
+    var colors = tooltipModel.labelColors[0];
+    var style = 'background:' + colors.backgroundColor;
+    style += '; border-color:' + colors.borderColor;
+    style += '; border-width: 2px';
+    style += '; width: 10px';
+    style += '; height: 10px';
+    style += '; margin-right: 10px';
+    style += '; display: inline-block';
+    var span = '<span style=""' + style + '""></span>';
+    var currencyCode = '<currencyCode>';
+    var dp = tooltipModel.dataPoints[0];
+    var dataset = _chartData.data.datasets[dp.datasetIndex];
+    var dataValue = dataset.data[dp.index];
+    var bodyText = dataset.label + ': ' +  Intl.NumberFormat( undefined, {style: 'currency', currency: currencyCode}).format( dataValue.y );
+<assignContent>
+    var html = '<table><thead>';
+    html += '<tr><th style=""text-align:center"">' + headerText + '</th></tr>';
+    html += '</thead><tbody>';
+    html += '<tr><td>' + span + bodyText  + '</td></tr>';
+    html += '</tbody></table>';
+    return html;
+}
+";
+            tooltipScriptTemplate = tooltipScriptTemplate.Replace( "<currencyCode>", currencyCode );
+
+            string tooltipScript;
+            switch ( groupBy )
+            {
+                case ChartGroupBy.Week:
+                default:
+                    {
+                        var assignContentScript = @"
+var headerText = 'Weekend of <br />' + tooltipModel.title;
+";
+
+                        tooltipScript = tooltipScriptTemplate
+                            .Replace( "<assignContent>", assignContentScript );
+                    }
+                    break;
+
+                case ChartGroupBy.Month:
+                    {
+                        var assignContentScript = @"
+var month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var itemDate = new Date( dataValue.x );
+var headerText = month_names[itemDate.getMonth()] + ' ' + itemDate.getFullYear();
+";
+
+                        tooltipScript = tooltipScriptTemplate
+                            .Replace( "<assignContent>", assignContentScript );
+
+                    }
+                    break;
+
+                case ChartGroupBy.Year:
+                    {
+                        var assignContentScript = @"
+var itemDate = new Date( dataValue.x );
+var headerText = dp.label;
+";
+
+                        tooltipScript = tooltipScriptTemplate
+                            .Replace( "<assignContent>", assignContentScript );
+                    }
+                    break;
+            }
+
+            return tooltipScript;
         }
 
         /// <summary>
@@ -857,6 +937,9 @@ function(item) {
             var groupBy = hfGroupBy.Value.ConvertToEnumOrNull<ChartGroupBy>() ?? ChartGroupBy.Week;
             var graphBy = hfGraphBy.Value.ConvertToEnumOrNull<TransactionGraphBy>() ?? TransactionGraphBy.Total;
 
+            bool allowOnlyActive = tglInactive.Checked;
+            bool allowOnlyTaxDeductible = tglTaxDeductible.Checked;
+
             // Collection of async queries to run before assembling date
             var qryTasks = new List<Task>();
             var taskInfos = new List<TaskInfo>();
@@ -878,7 +961,9 @@ function(item) {
                     accountIds,
                     currencyTypeIds,
                     sourceIds,
-                    transactionTypeIds );
+                    transactionTypeIds,
+                    allowOnlyActive,
+                    allowOnlyTaxDeductible );
 
                 if ( ds != null )
                 {
@@ -985,7 +1070,9 @@ function(item) {
                         accountIds,
                         currencyTypeIds,
                         sourceIds,
-                        transactionTypeIds ).Tables[0];
+                        transactionTypeIds,
+                        allowOnlyActive,
+                        allowOnlyTaxDeductible ).Tables[0];
 
                     foreach ( DataRow row in dtPersonSummary.Rows )
                     {
@@ -1176,6 +1263,8 @@ function(item) {
 
             var groupBy = hfGroupBy.Value.ConvertToEnumOrNull<ChartGroupBy>() ?? ChartGroupBy.Week;
             var graphBy = hfGraphBy.Value.ConvertToEnumOrNull<TransactionGraphBy>() ?? TransactionGraphBy.Total;
+            bool allowOnlyActive = tglInactive.Checked;
+            bool allowOnlyTaxDeductible = tglTaxDeductible.Checked;
 
             GiversViewBy viewBy = GiversViewBy.Giver;
             if ( !hideViewByOption )
@@ -1196,9 +1285,8 @@ function(item) {
 
                 var threadRockContextAnalytics = new RockContextAnalytics();
                 threadRockContextAnalytics.Database.CommandTimeout = databaseTimeoutSeconds;
-
                 var dt = new FinancialTransactionDetailService( threadRockContextAnalytics ).GetGivingAnalyticsPersonSummaryDataSet(
-                    start, end, minAmount, maxAmount, accountIds, currencyTypeIds, sourceIds, transactionTypeIds )
+                    start, end, minAmount, maxAmount, accountIds, currencyTypeIds, sourceIds, transactionTypeIds, allowOnlyActive, allowOnlyTaxDeductible )
                     .Tables[0];
 
                 foreach ( DataRow row in dt.Rows )
@@ -1287,7 +1375,7 @@ function(item) {
                 threadRockContextAnalytics.Database.CommandTimeout = databaseTimeoutSeconds;
 
                 var dt = new FinancialTransactionDetailService( threadRockContextAnalytics ).GetGivingAnalyticsAccountTotalsDataSet(
-                    start, end, accountIds, currencyTypeIds, sourceIds, transactionTypeIds )
+                    start, end, accountIds, currencyTypeIds, sourceIds, transactionTypeIds, allowOnlyActive, allowOnlyTaxDeductible )
                     .Tables[0];
                 foreach ( DataRow row in dt.Rows )
                 {

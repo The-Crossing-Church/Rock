@@ -10,6 +10,7 @@
                 </h1>
             </div>
             <div class="panel-body">
+                <asp:ValidationSummary ID="valSummaryTop" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                 <Rock:NotificationBox ID="nbLoggingMessage" runat="server" NotificationBoxType="Warning" Visible="false" />
 
                 <asp:Panel runat="server" ID="pnlReadOnlySettings">
@@ -17,6 +18,15 @@
                     <Rock:RockLiteral runat="server" ID="litDomains" Label="Domains" CssClass="col-sm-9" />
                     <div class="actions">
                         <asp:Button runat="server" ID="btnEdit" Text="Edit" CssClass="btn btn-primary" OnClick="btnEdit_Click" />
+
+                        <Rock:BootstrapButton
+                            ID="btnDeleteLog"
+                            runat="server"
+                            CssClass="btn btn-link"
+                            Text="Delete Log"
+                            DataLoadingText="Deleting Log ..."
+                            OnClick="btnDeleteLog_Click" />
+
                     </div>
                 </asp:Panel>
 
@@ -35,11 +45,13 @@
                         RepeatDirection="Horizontal" />
 
                     <Rock:NumberBox runat="server" ID="txtMaxFileSize" Label="Max File Size (MB)"
+                        NumberType="Integer" MinimumValue="1"
                         Help="The maximum size that the output file is allowed to reach before being rolled over to backup files."
                         CssClass="input-width-md js-max-file-size"
                         ValidationGroup="LoggingSettings"></Rock:NumberBox>
 
-                    <Rock:NumberBox runat="server" ID="txtFilesToRetain" Label="Retained Backup Files" NumberType="Integer" MinimumValue="1"
+                    <Rock:NumberBox runat="server" ID="txtFilesToRetain" Label="Retained Backup Files"
+                        NumberType="Integer" MinimumValue="1"
                         Help="The maximum number of backup files that are kept before the oldest is erased."
                         CssClass="input-width-md js-files-to-retain"
                         ValidationGroup="LoggingSettings"></Rock:NumberBox>
@@ -55,14 +67,6 @@
                             DataLoadingText="Saving..."
                             ValidationGroup="LoggingSetting"
                             OnClick="btnLoggingSave_Click" />
-
-                        <Rock:BootstrapButton
-                            ID="btnDeleteLog"
-                            runat="server"
-                            CssClass="btn btn-link"
-                            Text="Delete Log"
-                            DataLoadingText="Deleting Log ..."
-                            OnClick="btnDeleteLog_Click" />
                     </div>
                 </asp:Panel>
             </div>

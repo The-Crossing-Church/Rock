@@ -17,13 +17,15 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Web.UI;
 using System.Linq;
-
+#if WEBFORMS
+using System.Web.UI;
+#endif
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.UI.Controls;
 using Rock.Attribute;
+using Rock.Web.Cache;
 
 namespace Rock.Field.Types
 {
@@ -33,10 +35,105 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class FinancialGatewayFieldType : FieldType, IEntityFieldType
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.FINANCIAL_GATEWAY )]
+    public class FinancialGatewayFieldType : FieldType, IEntityFieldType, IEntityReferenceFieldType
     {
-
         #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            string formattedValue = string.Empty;
+
+            Guid? financialGatewayGuid = privateValue.AsGuidOrNull();
+            if ( financialGatewayGuid.HasValue )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    var financialGatewayName = new FinancialGatewayService( rockContext ).GetSelect( financialGatewayGuid.Value, s => s.Name );
+                    formattedValue = financialGatewayName;
+                }
+            }
+
+            return formattedValue;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region IEntityFieldType
+
+        /// <summary>
+        /// Gets the entity.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public IEntity GetEntity( string value )
+        {
+            return GetEntity( value, null );
+        }
+
+        /// <summary>
+        /// Gets the entity.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns></returns>
+        public IEntity GetEntity( string value, RockContext rockContext )
+        {
+            var guid = value.AsGuidOrNull();
+            if ( guid.HasValue )
+            {
+                rockContext = rockContext ?? new RockContext();
+                return new FinancialGatewayService( rockContext ).Get( guid.Value );
+            }
+
+            return null;
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            Guid? guid = privateValue.AsGuidOrNull();
+
+            if ( !guid.HasValue )
+            {
+                return null;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var financialGatewayId = new FinancialGatewayService( rockContext ).GetId( guid.Value );
+
+                if ( !financialGatewayId.HasValue )
+                {
+                    return null;
+                }
+
+                return new List<ReferencedEntity>
+                {
+                    new ReferencedEntity( EntityTypeCache.GetId<FinancialGateway>().Value, financialGatewayId.Value )
+                };
+            }
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Name property of a Financial Gateway and
+            // should have its persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<FinancialGateway>().Value, nameof( FinancialGateway.Name ) )
+            };
+        }
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns the field's current value(s)
@@ -48,25 +145,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            string formattedValue = string.Empty;
-
-            Guid? financialGatewayGuid = value.AsGuidOrNull();
-            if ( financialGatewayGuid.HasValue )
-            {
-                using ( var rockContext = new RockContext() )
-                {
-                    var financialGatewayName = new FinancialGatewayService( rockContext ).GetSelect( financialGatewayGuid.Value, s => s.Name );
-                    formattedValue = financialGatewayName;
-                }
-            }
-
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
-
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -78,7 +160,7 @@ namespace Rock.Field.Types
         /// </returns>
         public override Control EditControl( Dictionary<string, ConfigurationValue> configurationValues, string id )
         {
-            return new FinancialGatewayPicker { ID = id, ShowAll = false };
+            return new FinancialGatewayPicker { ID = id, IncludeInactive = false, ShowAllGatewayComponents = false };
         }
 
         /// <summary>
@@ -133,9 +215,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region IEntityFieldType
         /// <summary>
         /// Gets the edit value as the IEntity.Id
         /// </summary>
@@ -162,33 +241,7 @@ namespace Rock.Field.Types
             SetEditValue( control, configurationValues, guidValue );
         }
 
-        /// <summary>
-        /// Gets the entity.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public IEntity GetEntity( string value )
-        {
-            return GetEntity( value, null );
-        }
-
-        /// <summary>
-        /// Gets the entity.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="rockContext">The rock context.</param>
-        /// <returns></returns>
-        public IEntity GetEntity( string value, RockContext rockContext )
-        {
-            var guid = value.AsGuidOrNull();
-            if ( guid.HasValue )
-            {
-                rockContext = rockContext ?? new RockContext();
-                return new FinancialGatewayService( rockContext ).Get( guid.Value );
-            }
-
-            return null;
-        }
+#endif
         #endregion
     }
 }

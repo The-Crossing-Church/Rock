@@ -31,6 +31,7 @@ namespace Rock.Model
     [RockDomain( "Communication" )]
     [Table( "SmsPipeline" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "64DA3A06-FD39-4E5B-8126-38404FB0092A")]
     public class SmsPipeline : Model<SmsPipeline>
     {
         #region Entity Properties
@@ -76,6 +77,16 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public virtual ICollection<SmsAction> SmsActions { get; set; } = new Collection<SmsAction>();
+
+        #endregion
+
+        #region Methods
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return Name;
+        }
 
         #endregion
     }

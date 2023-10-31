@@ -30,6 +30,7 @@ namespace Rock.Model
     [RockDomain( "Core" )]
     [Table( "RemoteAuthenticationSession" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "2FDEE857-08BE-47F3-8E86-B2027F545EE8")]
     public partial class RemoteAuthenticationSession : Model<RemoteAuthenticationSession>
     {
         #region Entity Properties
@@ -107,8 +108,14 @@ namespace Rock.Model
         /// <value>
         /// The device unique identifier.
         /// </value>
+        /// <remarks>
+        /// Unique identifiers for passwordless authentication can be either email addresses or phone numbers.
+        /// Since email addresses are larger between the two,
+        /// and email fields in Rock are 75 characters,
+        /// we need the new column size to be email length (75).
+        /// </remarks>
         [DataMember]
-        [MaxLength( 45 )]
+        [MaxLength( 75 )]
         public string DeviceUniqueIdentifier { get; set; }
 
         /// <summary>

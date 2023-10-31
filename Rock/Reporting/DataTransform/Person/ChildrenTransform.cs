@@ -31,6 +31,7 @@ namespace Rock.Reporting.DataTransform.Person
     [Description( "Transform result to Children" )]
     [Export( typeof( DataTransformComponent ) )]
     [ExportMetadata( "ComponentName", "Person Children Transformation" )]
+    [Rock.SystemGuid.EntityTypeGuid( "C4440BAA-AEFC-455B-983D-9D6CCFA8C5D9")]
     public class ChildrenTransform : DataTransformComponent<Rock.Model.Person>
     {
         /// <summary>
@@ -93,7 +94,7 @@ namespace Rock.Reporting.DataTransform.Person
             int childRoleId = GroupTypeCache.GetFamilyGroupType().Roles.Where( a => a.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid() ).Select( a => a.Id ).FirstOrDefault();
 
             var qry = new PersonService( (RockContext)serviceInstance.Context ).Queryable()
-                .Where( p => p.Members.Where( a => a.GroupRoleId  == childRoleId )
+                .Where( p => p.Members.Where( a => a.GroupRoleId  == childRoleId && a.IsArchived == false )
                     .Any( a => a.Group.Members
                     .Any( c => c.GroupRoleId == adultRoleId && idQuery.Contains( c.PersonId ) ) ) );
 

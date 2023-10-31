@@ -156,7 +156,7 @@
                 inProgress = {},
 
                 // Handler function to determine whether or not the fetch operation is complete.
-                onProgressNotification = function () {
+                onProgressNotification = function (parentNode) {
                     var numberInQueue = Object.keys(inProgress).length;
 
                     // If we've drained the queue of all items to prefetch,
@@ -164,7 +164,13 @@
                     // and we have not already resolved the deferred, return
                     // control to the caller.
                     if (toExpandParentItems.length === 0 && toExpandCategories.length === 0 && numberInQueue === 0 && dfd.state() !== 'resolved') {
-                        dfd.resolve();
+                        if (startingNode && parentNode) {
+                            if (startingNode.id === parentNode.id) {
+                                dfd.resolve();
+                            }
+                        } else {
+                            dfd.resolve();
+                        }
                     }
                 },
 
@@ -290,7 +296,9 @@
                 }
 
                 // When databound, check to see if fetching is complete
-                this.events.on('nodes:dataBound', onProgressNotification);
+                this.events.on('nodes:dataBound', (event,parentNode) => {
+                    onProgressNotification(parentNode);
+                });
 
                 // Get initial node's data
                 getNodes(id, startingNode);
@@ -405,7 +413,6 @@
             for (i = 0; i < nodeArray.length; i++) {
                 nodeArray[i].isOpen = false;
             }
-
             // If a parent node is supplied, append the result set to the parent node.
             if (parentNode) {
                 parentNode.children = nodeArray;
@@ -416,8 +423,8 @@
 
             // Trigger "internal" databound event and trigger "public" databound event
             // via the $el to notify the DOM
-            this.events.trigger('nodes:dataBound');
-            this.$el.trigger('rockTree:dataBound');
+            this.events.trigger('nodes:dataBound', [parentNode]);
+            this.$el.trigger('rockTree:dataBound', [parentNode]);
             
             return nodeArray;
         },
@@ -476,13 +483,14 @@
                     var tmp = document.createElement("DIV");
                     tmp.innerHTML = node.name;
                     var nodeText = tmp.textContent || tmp.innerText || "";
+                    var titleText = self.escapeHtml(nodeText.trim());
 
                     var countInfoHtml = '';
                     if (typeof (node.countInfo) !== 'undefined' && node.countInfo !== null) {
                         countInfoHtml = '<span class="label label-tree">' + node.countInfo + '</span>';
                     }
 
-                    $li.append('<span class="rocktree-name" title="' + nodeText.trim() + '"> <span class="rocktree-node-name-text">' + node.name + '</span>' + countInfoHtml + '</span>');
+                    $li.append('<span class="rocktree-name" title="' + titleText + '"> <span class="rocktree-node-name-text">' + node.name + '</span>' + countInfoHtml + '</span>');
                     var $rockTreeNameNode = $li.find('.rocktree-name');
 
                     if (!self.options.categorySelection && node.isCategory) {
@@ -546,6 +554,23 @@
             });
                         
             this.$el.trigger('rockTree:rendered');
+        },
+
+        escapeHtml: function (unencodedString) {
+            // This method is based on he.js (https://github.com/mathiasbynens/he).
+            var regexEscape = /["&'<>`]/g;
+            var escapeMap = {
+                '"': '&quot;',
+                '&': '&amp;',
+                '\'': '&#x27;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '`': '&#x60;'
+            };
+
+            return unencodedString.replace(regexEscape, function ($0) {
+                return escapeMap[$0];
+            });
         },
 
         // clear the error message
@@ -685,11 +710,12 @@
                     var $li = $(li);
                     var nodeId = $li.attr('data-id');
 
+                    var foundNode = _findNodeById(nodeId, self.nodes);
                     selectedNodes.push({
                         id: nodeId,
                         // get the li text excluding child text
                         name: $li.contents(':not(ul)').text(),
-                        path: _findNodeById(nodeId, self.nodes)?.path
+                        path: foundNode ? foundNode.path : undefined
                     });
                 });
 

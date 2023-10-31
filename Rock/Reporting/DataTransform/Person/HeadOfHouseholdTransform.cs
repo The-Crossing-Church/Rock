@@ -31,6 +31,7 @@ namespace Rock.Reporting.DataTransform.Person
     [Description( "Transform result to Head of Household" )]
     [Export( typeof( DataTransformComponent ) )]
     [ExportMetadata( "ComponentName", "Person Head of Household Transformation" )]
+    [Rock.SystemGuid.EntityTypeGuid( "BFE088F6-EACF-47BE-9363-3464D9FB556F")]
     public class HeadOfHouseholdTransform : DataTransformComponent<Rock.Model.Person>
     {
         /// <summary>
@@ -95,7 +96,7 @@ namespace Rock.Reporting.DataTransform.Person
 
             var headOfHouseholdQry = new GroupService( ( RockContext ) serviceInstance.Context ).Queryable()
                     .Where( gm => gm.GroupTypeId == familyGroupType.Id && gm.Members.Any( m => idQuery.Contains( m.PersonId ) ) )
-                    .SelectMany( f => f.Members.Where( a => !a.Person.IsDeceased ) )
+                    .SelectMany( f => f.Members.Where( a => !a.Person.IsDeceased && a.IsArchived == false ) )
                     .GroupBy( m =>
                         m.GroupId,
                         ( key, g ) => g

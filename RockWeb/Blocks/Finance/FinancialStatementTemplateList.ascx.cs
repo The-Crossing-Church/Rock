@@ -42,6 +42,7 @@ namespace RockWeb.Blocks.Finance
         Key = AttributeKey.DetailPage,
         Order = 0 )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "65057F07-85D5-4795-91A1-86D8F67A65DC" )]
     public partial class FinancialStatementTemplateList : RockBlock, ICustomGridColumns
     {
         #region Attribute Keys
@@ -228,7 +229,7 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

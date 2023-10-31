@@ -89,6 +89,8 @@ namespace Rock.Lava
             return LavaSecurityHelper.IsAuthorized( context, commandName );
         }
 
+        public bool IncludeClosingTokenInParseResult { get; set; } = true;
+
         #region IRockLavaElement Implementation
 
         /// <summary>
@@ -183,6 +185,11 @@ namespace Rock.Lava
                 _baseRenderer = baseRenderer;
 
                 OnRender( context, result );
+            }
+            catch ( Exception ex )
+            {
+                // Throw a user-friendly error message that is suitable for rendering to output.
+                throw new Exception( $"(Block: {this.InternalElementName}) {ex.Message}", ex );
             }
             finally
             {

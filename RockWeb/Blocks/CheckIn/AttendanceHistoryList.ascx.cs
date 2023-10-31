@@ -25,6 +25,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Security;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
@@ -35,10 +36,11 @@ namespace RockWeb.Blocks.Checkin
     /// Block for displaying the attendance history of a person or a group.
     /// </summary>
     [DisplayName( "Attendance History" )]
-    [Category( "Checkin" )]
+    [Category( "Check-in" )]
     [Description( "Block for displaying the attendance history of a person or a group." )]
     [BooleanField( "Filter Attendance By Default", "Sets the default display of Attended to Did Attend instead of [All]", false )]
     [ContextAware]
+    [Rock.SystemGuid.BlockTypeGuid( "21FFA70E-18B3-4148-8FC4-F941100B49B8" )]
     public partial class AttendanceHistoryList : RockBlock, ICustomGridColumns
     {
         #region Fields
@@ -384,7 +386,7 @@ namespace RockWeb.Blocks.Checkin
                 }
             }
 
-            var qry = qryAttendance
+            var qryAttendanceListItems = qryAttendance
                 .Select( a => new
                 {
                     LocationId = a.Occurrence.LocationId,
@@ -397,25 +399,38 @@ namespace RockWeb.Blocks.Checkin
                     GroupTypeId = a.Occurrence.Group != null ? a.Occurrence.Group.GroupTypeId : (int?)null,
                     StartDateTime = a.StartDateTime,
                     EndDateTime = a.EndDateTime,
-                    DidAttend = a.DidAttend
+                    DidAttend = a.DidAttend,
+                    Group = a.Occurrence.Group
                 } );
 
             SortProperty sortProperty = gHistory.SortProperty;
             if ( sortProperty != null )
             {
-                qry = qry.Sort( sortProperty );
+                qryAttendanceListItems = qryAttendanceListItems.Sort( sortProperty );
             }
             else
             {
-                qry = qry.OrderByDescending( p => p.StartDateTime );
+                qryAttendanceListItems = qryAttendanceListItems.OrderByDescending( p => p.StartDateTime );
             }
+
+            // Filter out attendance records where the current user does not have View permission for the Group.
+            var securedAttendanceItems = qryAttendanceListItems
+                .ToList()
+                .Where( a => ( a.Group != null && a.Group.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) ) || a.Group == null )
+                .ToList();
 
             // build a lookup for _checkinAreaPaths for OnRowDatabound
             _checkinAreaPaths = new GroupTypeService( rockContext ).GetAllCheckinAreaPaths().ToList();
 
             // build a lookup for _locationpaths for OnRowDatabound
+            var locationIdList = securedAttendanceItems.Select( a => a.LocationId )
+                .Distinct()
+                .ToList();
+
             _locationPaths = new Dictionary<int, string>();
-            var qryLocations = new LocationService( rockContext ).Queryable().Where( a => qry.Any( b => b.LocationId == a.Id ) );
+            var qryLocations = new LocationService( rockContext )
+                .Queryable()
+                .Where( l => locationIdList.Contains( l.Id ) );
             foreach ( var location in qryLocations )
             {
                 var parentLocation = location.ParentLocation;
@@ -437,7 +452,7 @@ namespace RockWeb.Blocks.Checkin
             }
 
             gHistory.EntityTypeId = EntityTypeCache.Get<Attendance>().Id;
-            gHistory.DataSource = qry.ToList();
+            gHistory.DataSource = securedAttendanceItems;
             gHistory.DataBind();
         }
 

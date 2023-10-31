@@ -19,8 +19,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-using Quartz;
-
 using Rock;
 using Rock.Attribute;
 using Rock.Data;
@@ -32,14 +30,13 @@ namespace Rock.Jobs
     /// <summary>
     /// Job to process the signature documents
     /// </summary>
-    [DisplayName( "Process Signature Documents" )]
+    [DisplayName( "Process Signature Documents (Legacy Document Providers)" )]
     [Description( "Sends any digital signature invites that need to be sent for groups that require a signed document." )]
 
     [IntegerField( "Resend Invite After Number Days", "Number of days after sending last invite to sign, that a new invite should be resent.", false, 5, "", 0 )]
     [IntegerField( "Max Invites", "Maximum number of times an invite should be sent", false, 3, "", 1 )]
     [IntegerField( "Check For Signature Days", "Number of days after document was last sent to check for signature", false, 30, "", 2 )]
-    [DisallowConcurrentExecution]
-    public class ProcessSignatureDocuments : IJob
+    public class ProcessSignatureDocuments : RockJob
     {
         /// <summary> 
         /// Empty constructor for job initialization
@@ -52,25 +49,12 @@ namespace Rock.Jobs
         {
         }
 
-        /// <summary>
-        /// Called by the <see cref="IScheduler" /> when a <see cref="ITrigger" />
-        /// fires that is associated with the <see cref="IJob" />.
-        /// </summary>
-        /// <param name="context">The execution context.</param>
-        /// <remarks>
-        /// The implementation may wish to set a  result object on the
-        /// JobExecutionContext before this method exits.  The result itself
-        /// is meaningless to Quartz, but may be informative to
-        /// <see cref="IJobListener" />s or
-        /// <see cref="ITriggerListener" />s that are watching the job's
-        /// execution.
-        /// </remarks>
-        public virtual void Execute( IJobExecutionContext context )
+        /// <inheritdoc cref="RockJob.Execute()" />
+        public override void Execute()
         {
-            JobDataMap dataMap = context.JobDetail.JobDataMap;
-            int resendDays = dataMap.GetString( "ResendInviteAfterNumberDays" ).AsIntegerOrNull() ?? 5;
-            int maxInvites = dataMap.GetString( "MaxInvites" ).AsIntegerOrNull() ?? 2;
-            int checkDays = dataMap.GetString( "CheckForSignatureDays" ).AsIntegerOrNull() ?? 30;
+            int resendDays = GetAttributeValue( "ResendInviteAfterNumberDays" ).AsIntegerOrNull() ?? 5;
+            int maxInvites = GetAttributeValue( "MaxInvites" ).AsIntegerOrNull() ?? 2;
+            int checkDays = GetAttributeValue( "CheckForSignatureDays" ).AsIntegerOrNull() ?? 30;
             string folderPath = System.Web.Hosting.HostingEnvironment.MapPath( "~/App_Data/Cache/SignNow" );
 
             var errorMessages = new List<string>();
@@ -99,7 +83,7 @@ namespace Rock.Jobs
                     var updateErrorMessages = new List<string>();
                     var status = document.Status;
                     int? binaryFileId = document.BinaryFileId;
-                    if ( docTypeService.UpdateDocumentStatus( document, folderPath, out updateErrorMessages ) )
+                    if ( docTypeService.UpdateLegacyProviderDocumentStatus( document, folderPath, out updateErrorMessages ) )
                     {
                         if ( status != document.Status || !binaryFileId.Equals( document.BinaryFileId )  )
                         {
@@ -168,11 +152,11 @@ namespace Rock.Jobs
                         var sendErrorMessages = new List<string>();
                         if ( document != null )
                         {
-                            docTypeService.SendDocument( document, gm.Person.Email, out sendErrorMessages );
+                            docTypeService.SendLegacyProviderDocument( document, gm.Person.Email, out sendErrorMessages );
                         }
                         else
                         {
-                            docTypeService.SendDocument( gm.DocumentType, gm.Person, gm.Person, documentName, gm.Person.Email, out sendErrorMessages );
+                            docTypeService.SendLegacyProviderDocument( gm.DocumentType, gm.Person, gm.Person, documentName, gm.Person.Email, out sendErrorMessages );
                         }
 
                         if ( !errorMessages.Any() )
@@ -193,7 +177,7 @@ namespace Rock.Jobs
                 throw new Exception( "One or more exceptions occurred processing signature documents..." + Environment.NewLine + errorMessages.AsDelimited( Environment.NewLine ) );
             }
 
-            context.Result = string.Format( "{0} signature requests sent; {1} existing document's status updated", signatureRequestsSent, documentsUpdated );
+            this.Result = string.Format( "{0} signature requests sent; {1} existing document's status updated", signatureRequestsSent, documentsUpdated );
         }
     }
 }

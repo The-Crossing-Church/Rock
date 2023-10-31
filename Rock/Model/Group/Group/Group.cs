@@ -24,11 +24,12 @@ using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 using System.Runtime.Serialization;
 using Rock.Data;
-using Rock.UniversalSearch;
-using Rock.Web.Cache;
+using Rock.Enums.Group;
 using Rock.Lava;
-
+using Rock.Security;
+using Rock.UniversalSearch;
 using Rock.Utility.Enums;
+using Rock.Web.Cache;
 
 namespace Rock.Model
 {
@@ -44,6 +45,7 @@ namespace Rock.Model
 
     // Support Analytics Tables, but only for GroupType Family
     [Analytics( "GroupTypeId", "10", true, true )]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.GROUP )]
     public partial class Group : Model<Group>, IOrdered, IHasActiveFlag, IRockIndexable, ICacheable
     {
         #region Entity Properties
@@ -172,7 +174,7 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public bool? AllowGuests { get; set; }
-       
+
         /// <summary>
         /// Gets or sets a value indicating whether the group should be shown in group finders
         /// </summary>
@@ -303,7 +305,7 @@ namespace Rock.Model
         /// The inactive reason note.
         /// </value>
         [DataMember]
-        public string InactiveReasonNote  { get; set; }
+        public string InactiveReasonNote { get; set; }
 
         /// <summary>
         /// Gets or sets the system communication to use for sending an RSVP reminder.
@@ -368,15 +370,6 @@ namespace Rock.Model
         public string GroupSalutationFull { get; set; }
 
         /// <summary>
-        /// Gets or sets the rsvp additional reminder details.
-        /// </summary>
-        /// <value>
-        /// The rsvp additional reminder details.
-        /// </value>
-        [DataMember]
-        public string RSVPReminderAdditionalDetails { get; set; }
-
-        /// <summary>
         /// Gets or sets the confirmation additional details.
         /// </summary>
         /// <value>
@@ -384,6 +377,43 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public string ConfirmationAdditionalDetails { get; set; }
+
+        /// <summary>
+        /// Gets or sets the system communication to use for sending a reminder.
+        /// </summary>
+        /// <value>
+        /// The reminder system communication identifier.
+        /// </value>
+        [DataMember]
+        public int? ReminderSystemCommunicationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of days prior to an event date that a reminder should be sent.
+        /// </summary>
+        /// <value>
+        /// The number of days.
+        /// </value>
+        [DataMember]
+        public int? ReminderOffsetDays { get; set; }
+
+
+        /// <summary>
+        /// Gets or sets the reminder additional details.
+        /// </summary>
+        /// <value>
+        /// The reminder additional details.
+        /// </value>
+        [DataMember]
+        public string ReminderAdditionalDetails { get; set; }
+
+        /// <summary>
+        /// Gets or sets the schedule confirmation logic.
+        /// </summary>
+        /// <value>
+        /// The schedule confirmation logic.
+        /// </value>
+        [DataMember]
+        public ScheduleConfirmationLogic? ScheduleConfirmationLogic { get; set; }
 
         #endregion
 
@@ -526,25 +556,6 @@ namespace Rock.Model
         public virtual ICollection<EventItemOccurrenceGroupMap> Linkages { get; set; } = new Collection<EventItemOccurrenceGroupMap>();
 
         /// <summary>
-        /// Gets a value indicating whether [allows interactive bulk indexing].
-        /// </summary>
-        /// <value>
-        /// <c>true</c> if [allows interactive bulk indexing]; otherwise, <c>false</c>.
-        /// </value>
-        /// <exception cref="System.NotImplementedException"></exception>
-        [NotMapped]
-        public bool AllowsInteractiveBulkIndexing => true;
-
-        /// <summary>
-        /// Gets or sets the history change list.
-        /// </summary>
-        /// <value>
-        /// The history change list.
-        /// </value>
-        [NotMapped]
-        public virtual History.HistoryChangeList HistoryChangeList { get; set; }
-
-        /// <summary>
         /// Gets or sets the <see cref="Rock.Model.DefinedValue"/> representing the Group's status. DefinedType depends on this group's <see cref="Rock.Model.GroupType.GroupTypePurposeValue"/>
         /// </summary>
         /// <value>
@@ -568,6 +579,29 @@ namespace Rock.Model
         /// The inactive group reason.
         /// </value>
         public virtual DefinedValue InactiveReasonValue { get; set; }
+
+        /// <summary>
+        /// Provides a <see cref="Dictionary{TKey, TValue}"/> of actions that this model supports, and the description of each.
+        /// </summary>
+        public override Dictionary<string, string> SupportedActions
+        {
+            get
+            {
+                if ( _supportedActions == null )
+                {
+                    _supportedActions = new Dictionary<string, string>();
+                    _supportedActions.Add( Authorization.VIEW, "The roles and/or users that have access to view." );
+                    _supportedActions.Add( Authorization.MANAGE_MEMBERS, "The roles and/or users that have access to manage the group members." );
+                    _supportedActions.Add( Authorization.EDIT, "The roles and/or users that have access to edit." );
+                    _supportedActions.Add( Authorization.ADMINISTRATE, "The roles and/or users that have access to administrate." );
+                    _supportedActions.Add( Authorization.SCHEDULE, "The roles and/or users that may perform scheduling." );
+                }
+
+                return _supportedActions;
+            }
+        }
+
+        private Dictionary<string, string> _supportedActions;
 
         #endregion
 

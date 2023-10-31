@@ -18,11 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
@@ -32,7 +34,8 @@ namespace Rock.Field.Types
     /// Stored as "StepProgram.Guid|StepType.Guid"
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class StepProgramStepTypeFieldType : FieldType
+    [Rock.SystemGuid.FieldTypeGuid( "B00149C7-08D6-448C-AF21-948BF453DF7E" )]
+    public class StepProgramStepTypeFieldType : FieldType, IEntityReferenceFieldType
     {
         #region Keys
 
@@ -50,6 +53,152 @@ namespace Rock.Field.Types
         #endregion Keys
 
         #region Configuration
+
+        #endregion Configuration
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var formattedValue = string.Empty;
+            GetModelsFromAttributeValue( privateValue, out var stepProgram, out var stepType );
+
+            if ( stepType != null )
+            {
+                formattedValue = "Step Type: " + stepType.Name;
+            }
+            else if ( stepProgram != null )
+            {
+                formattedValue = "Step Program: " + stepProgram.Name;
+            }
+
+            return formattedValue;
+        }
+
+        #endregion Formatting
+
+        #region Edit Control
+
+        #endregion Edit Control
+
+        #region Parse Helpers
+
+        /// <summary>
+        /// Gets the models from the delimited values.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="stepProgramGuid">The step program unique identifier.</param>
+        /// <param name="stepTypeGuid">The step type unique identifier.</param>
+        public static void ParseDelimitedGuids( string value, out Guid? stepProgramGuid, out Guid? stepTypeGuid )
+        {
+            var parts = ( value ?? string.Empty ).Split( '|' );
+
+            if ( parts.Length == 1 )
+            {
+                // If there is only one guid, assume it is the type
+                stepProgramGuid = null;
+                stepTypeGuid = parts[0].AsGuidOrNull();
+                return;
+            }
+
+            stepProgramGuid = parts.Length > 0 ? parts[0].AsGuidOrNull() : null;
+            stepTypeGuid = parts.Length > 1 ? parts[1].AsGuidOrNull() : null;
+        }
+
+        /// <summary>
+        /// Gets the models from the delimited values.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="stepProgram">The step program</param>
+        /// <param name="stepType">The step type</param>
+        private void GetModelsFromAttributeValue( string value, out StepProgram stepProgram, out StepType stepType )
+        {
+            stepProgram = null;
+            stepType = null;
+
+            ParseDelimitedGuids( value, out var stepProgramGuid, out var stepTypeGuid );
+
+            if ( stepProgramGuid.HasValue || stepTypeGuid.HasValue )
+            {
+                var rockContext = new RockContext();
+
+                if ( stepProgramGuid.HasValue )
+                {
+                    var stepProgramService = new StepProgramService( rockContext );
+                    stepProgram = stepProgramService.Queryable().AsNoTracking().FirstOrDefault( sp => sp.Guid == stepProgramGuid.Value );
+                }
+
+                if ( stepTypeGuid.HasValue )
+                {
+                    var stepTypeService = new StepTypeService( rockContext );
+                    stepType = stepTypeService.Queryable().AsNoTracking().FirstOrDefault( sp => sp.Guid == stepTypeGuid.Value );
+                }
+            }
+        }
+
+        #endregion Parse Helpers
+
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            ParseDelimitedGuids( privateValue, out var stepProgramGuid, out var stepTypeGuid );
+
+            if ( !stepProgramGuid.HasValue && !stepTypeGuid.HasValue )
+            {
+                return null;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                if ( stepTypeGuid.HasValue )
+                {
+                    var stepTypeId = StepTypeCache.GetId( stepTypeGuid.Value );
+
+                    if ( stepTypeId.HasValue )
+                    {
+                        return new List<ReferencedEntity>
+                        {
+                            new ReferencedEntity( EntityTypeCache.GetId<StepType>().Value, stepTypeId.Value )
+                        };
+                    }
+                }
+
+                if ( stepProgramGuid.HasValue )
+                {
+                    var stepProgramId = new StepProgramService( rockContext ).GetId( stepProgramGuid.Value );
+
+                    if ( stepProgramId.HasValue )
+                    {
+                        return new List<ReferencedEntity>
+                        {
+                            new ReferencedEntity( EntityTypeCache.GetId<StepProgram>().Value, stepProgramId.Value )
+                        };
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Name property of StepType and
+            // StepProgram and should have its persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<StepType>().Value, nameof( StepType.Name ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<StepProgram>().Value, nameof( StepProgram.Name ) )
+            };
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -122,10 +271,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion Configuration
-
-        #region Formatting
-
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -136,24 +281,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            var formattedValue = string.Empty;
-            GetModelsFromAttributeValue( value, out var stepProgram, out var stepType );
-
-            if ( stepType != null )
-            {
-                formattedValue = "Step Type: " + stepType.Name;
-            }
-            else if ( stepProgram != null )
-            {
-                formattedValue = "Step Program: " + stepProgram.Name;
-            }
-
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        #endregion Formatting
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -244,63 +375,7 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion Edit Control
-
-        #region Parse Helpers
-
-        /// <summary>
-        /// Gets the models from the delimited values.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="stepProgramGuid">The step program unique identifier.</param>
-        /// <param name="stepTypeGuid">The step type unique identifier.</param>
-        public static void ParseDelimitedGuids( string value, out Guid? stepProgramGuid, out Guid? stepTypeGuid )
-        {
-            var parts = ( value ?? string.Empty ).Split( '|' );
-
-            if ( parts.Length == 1 )
-            {
-                // If there is only one guid, assume it is the type
-                stepProgramGuid = null;
-                stepTypeGuid = parts[0].AsGuidOrNull();
-                return;
-            }
-
-            stepProgramGuid = parts.Length > 0 ? parts[0].AsGuidOrNull() : null;
-            stepTypeGuid = parts.Length > 1 ? parts[1].AsGuidOrNull() : null;
-        }
-
-        /// <summary>
-        /// Gets the models from the delimited values.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="stepProgram">The step program</param>
-        /// <param name="stepType">The step type</param>
-        private void GetModelsFromAttributeValue( string value, out StepProgram stepProgram, out StepType stepType )
-        {
-            stepProgram = null;
-            stepType = null;
-
-            ParseDelimitedGuids( value, out var stepProgramGuid, out var stepTypeGuid );
-
-            if ( stepProgramGuid.HasValue || stepTypeGuid.HasValue )
-            {
-                var rockContext = new RockContext();
-
-                if ( stepProgramGuid.HasValue )
-                {
-                    var stepProgramService = new StepProgramService( rockContext );
-                    stepProgram = stepProgramService.Queryable().AsNoTracking().FirstOrDefault( sp => sp.Guid == stepProgramGuid.Value );
-                }
-
-                if ( stepTypeGuid.HasValue )
-                {
-                    var stepTypeService = new StepTypeService( rockContext );
-                    stepType = stepTypeService.Queryable().AsNoTracking().FirstOrDefault( sp => sp.Guid == stepTypeGuid.Value );
-                }
-            }
-        }
-
-        #endregion Parse Helpers
+#endif
+        #endregion
     }
 }

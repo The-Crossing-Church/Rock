@@ -33,8 +33,54 @@ namespace Rock.Migrations.RockStartup
     {
         public int StartupOrder => 0;
 
+
         /// <summary>
-        /// Method that will be run at Rock startup
+        /// A GUID list of data migration jobs that run automatically run once after an update and then delete themselves from the ServiceJob table.
+        /// </summary>
+        public static List<Guid> startupRunOnceJobGuids = new List<Guid>
+        {
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_120_UPDATE_INTERACTION_INDEXES.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_120_ADD_COMMUNICATIONRECIPIENT_INDEX.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_120_ADD_COMMUNICATION_GET_QUEUED_INDEX.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_124_UPDATE_GROUP_SALUTATIONS.AsGuid(),
+            SystemGuid.ServiceJob.POST_INSTALL_DATA_MIGRATIONS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_124_DECRYPT_FINANCIAL_PAYMENT_DETAILS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_125_UPDATE_STEP_PROGRAM_COMPLETION.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_125_ADD_COMMUNICATION_SYSTEM_COMMUNICATION_ID_INDEX.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_127_REBUILD_GROUP_SALUTATIONS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_130_ADD_INTERACTION_INTERACTION_COMPONENT_ID_INDEX.AsGuid(),
+			SystemGuid.ServiceJob.DATA_MIGRATIONS_136_FIX_INCORRECT_ERA_START_DATE.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_140_ADD_MISSING_MEDIA_ELEMENT_INTERACTIONS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_140_UPDATE_CURRENT_SESSIONS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_140_CREATE_FK_INDEXES.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_141_UPDATE_CURRENT_SESSIONS_1900.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_141_ADD_MISSING_INDEXES.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_141_UPDATE_VALUEAS_ATTRIBUTE_VALUE_COLUMNS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_141_UPDATE_SLIDING_DATE_RANGE_VALUE.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_141_RECREATE_METRIC_ANALYTICS_VIEWS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_150_SYSTEM_PHONE_NUMBERS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_150_REPLACE_TRANSACTION_ENTRY_BLOCKS_WITH_UTILITY_PAYMENT_ENTRY_BLOCK.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_150_MOBILE_APPLICATION_USERS_REST_GROUP.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_151_DUPLICATE_MOBILE_INTERACTIONS_CLEANUP.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_150_REPLACE_WEB_FORMS_BLOCKS_WITH_OBSIDIAN_BLOCKS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_152_REPLACE_WEB_FORMS_BLOCKS_WITH_OBSIDIAN_BLOCKS.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_152_IX_VALUE_AS_PERSON_ID.AsGuid()
+        };
+
+
+        /// <summary>
+        /// A GUID list of data migration jobs that are scheduled to run at 2 AM when usage is low because they would affect performance
+        /// </summary>
+        public static List<Guid> scheduledRunOnceJobGuids = new List<Guid>
+        {
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_122_INTERACTION_PERSONAL_DEVICE_ID.AsGuid(),
+            SystemGuid.ServiceJob.DATA_MIGRATIONS_133_ADD_INTERACTION_SESSION_INTERACTION_SESSION_LOCATION_ID_INDEX.AsGuid()
+        };
+
+        /// <summary>
+        /// Method that will be run at Rock startup to run post update service jobs.
+        /// These jobs are run asynchronously so Post update jobs must not be order dependent
+        /// and must be able to run at the same time as other jobs.
         /// </summary>
         public void OnStartup()
         {
@@ -52,8 +98,7 @@ namespace Rock.Migrations.RockStartup
             bool runJobsInContext = Convert.ToBoolean( ConfigurationManager.AppSettings["RunJobsInIISContext"] );
             if ( !runJobsInContext )
             {
-                // RunJobsInIISContext isn't enabled on this server, so don't run these DataMigrationsStartups unless
-                // this is a developer environment
+                // RunJobsInIISContext isn't enabled on this server, so don't run these DataMigrationsStartups unless this is a developer environment
                 if ( !System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment )
                 {
                     // RunJobsInIISContext isn't enabled, and this isn't a developer environment so exit without running DataMigrationsStartups.
@@ -61,46 +106,12 @@ namespace Rock.Migrations.RockStartup
                 }
             }
 
-            List<Guid> runOnceJobGuids = new List<Guid>
-            {
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_74.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_80.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_84.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_90_DISC.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_90.AsGuid(),
-                SystemGuid.ServiceJob.MIGRATE_HISTORY_SUMMARY_DATA.AsGuid(),
-                SystemGuid.ServiceJob.MIGRATE_ATTENDANCE_OCCURRENCE.AsGuid(),
-                SystemGuid.ServiceJob.MIGRATE_FAMILY_CHECKIN_IDS.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_90_SCHEDULEDTRANSACTIONNOTESTOHISTORY.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_100_ATTRIBUTEVALUE_VALUEASNUMERIC.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_100_SUNDAYDATE.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_103_SPIRITUAL_GIFTS.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_110_POPULATE_DATE_KEYS.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_110_COMMUNICATIONRECIPIENT_RESPONSECODE_INDEX.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_110_POPULATE_RELATED_DATAVIEW_ID.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_120_UPDATE_INTERACTION_INDEXES.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_120_ADD_COMMUNICATIONRECIPIENT_INDEX.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_120_ADD_COMMUNICATION_GET_QUEUED_INDEX.AsGuid(),
-                
-                /* MDP 07-22-2021
-                
-                NOTE: We intentionally are excluding SystemGuid.ServiceJob.DATA_MIGRATIONS_122_INTERACTION_PERSONAL_DEVICE_ID
-                from DataMigrationStartup and will just wait for it to run at 2am.
-                See https://app.asana.com/0/0/1199506067368201/f
-
-                */
-                
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_124_UPDATE_GROUP_SALUTATIONS.AsGuid(),
-                SystemGuid.ServiceJob.POST_INSTALL_DATA_MIGRATIONS.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_124_DECRYPT_FINANCIAL_PAYMENT_DETAILS.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_125_UPDATE_STEP_PROGRAM_COMPLETION.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_125_ADD_COMMUNICATION_SYSTEM_COMMUNICATION_ID_INDEX.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_127_REBUILD_GROUP_SALUTATIONS.AsGuid(),                
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_130_ADD_INTERACTION_INTERACTION_COMPONENT_ID_INDEX.AsGuid()
-            };
-
             // run any of the above jobs if they still exist (they haven't run and deleted themselves)
-            var runOnceJobIds = new Model.ServiceJobService( new Rock.Data.RockContext() ).Queryable().Where( a => runOnceJobGuids.Contains( a.Guid ) ).Select( a => a.Id ).ToList();
+            var runOnceJobIds = new Model.ServiceJobService( new Rock.Data.RockContext() ).Queryable()
+                .Where( a => startupRunOnceJobGuids.Contains( a.Guid ) )
+                .OrderBy( a => a.Id )
+                .Select( a => a.Id )
+                .ToList();
 
             // start a task that will run any incomplete RunOneJobs (one at a time)
             Task.Run( () =>
@@ -112,7 +123,7 @@ namespace Rock.Migrations.RockStartup
                      try
                      {
                          var job = jobService.Get( runOnceJobId );
-                         jobService.RunNow( job, out _ );
+                         jobService.RunNow( job );
                      }
                      catch ( Exception ex )
                      {

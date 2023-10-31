@@ -35,6 +35,7 @@ namespace RockWeb.Blocks.Finance
     [DisplayName( "Gateway Detail" )]
     [Category( "Finance" )]
     [Description( "Displays the details of the given financial gateway." )]
+    [Rock.SystemGuid.BlockTypeGuid( "B4D8CBCA-00F6-4D81-B8B6-170373D28128" )]
     public partial class GatewayDetail : RockBlock
     {
         #region Constants
@@ -349,8 +350,28 @@ namespace RockWeb.Blocks.Finance
                         Rock.Attribute.Helper.UpdateAttributes( GatewayComponentEntityType.GetEntityType(), GatewayEntityType.Id, "EntityTypeId", GatewayComponentEntityType.Id.ToString(), rockContext );
                         gateway.LoadAttributes( rockContext );
                     }
+
+                    try
+                    {
+                        Type selectedComponentType = Rock.Reflection.FindType( typeof( GatewayComponent ), GatewayComponentEntityType.Name );
+                        if ( tbName.Text.IsNullOrWhiteSpace() )
+                        {
+                            tbName.Text = Rock.Reflection.GetDisplayName( selectedComponentType );
+                        }
+
+                        if ( tbDescription.Text.IsNullOrWhiteSpace() )
+                        {
+                            tbDescription.Text = Rock.Reflection.GetDescription( selectedComponentType );
+                        }
+                    }
+                    catch
+                    {
+                        // ignore if there is a problem getting the name or description from the selected type
+                    }
                 }
             }
+
+
 
             phAttributes.Controls.Clear();
             Rock.Attribute.Helper.AddEditControls( gateway, phAttributes, SetValues, BlockValidationGroup, new List<string> { "Active", "Order" } );

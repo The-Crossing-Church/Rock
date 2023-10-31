@@ -16,8 +16,10 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Rock.Attribute;
 using Rock.Reporting;
 using Rock.Web.UI.Controls;
@@ -28,15 +30,67 @@ namespace Rock.Field.Types
     /// 
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.HTML )]
     public class HtmlFieldType : FieldType
     {
-
         #region Configuration
 
         private const string TOOLBAR = "toolbar";
         private const string DOCUMENT_FOLDER_ROOT = "documentfolderroot";
         private const string IMAGE_FOLDER_ROOT = "imagefolderroot";
         private const string USER_SPECIFIC_ROOT = "userspecificroot";
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override Model.ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.StringFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return privateValue.StripHtml();
+        }
+
+        /// <inheritdoc/>
+        public override string GetHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            // The base method will encode for HTML which we don't want. The
+            // privateValue is the raw HTML we want to return.
+            return privateValue;
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            // We need to clean up the HTML right around the truncate length.
+            return privateValue.TruncateHtml( CondensedTruncateLength );
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -70,7 +124,7 @@ namespace Rock.Field.Types
             ddl.Items.Add( "Full" );
 
             var tbDocumentRoot = new RockTextBox();
-            controls.Add(tbDocumentRoot);
+            controls.Add( tbDocumentRoot );
             tbDocumentRoot.AutoPostBack = true;
             tbDocumentRoot.TextChanged += OnQualifierUpdated;
             tbDocumentRoot.Label = "Document Root Folder";
@@ -108,19 +162,22 @@ namespace Rock.Field.Types
 
             if ( controls.Count > 0 && controls[0] is RockDropDownList )
             {
-                configurationValues[TOOLBAR].Value = ( (RockDropDownList)controls[0] ).SelectedValue;
+                configurationValues[TOOLBAR].Value = ( ( RockDropDownList ) controls[0] ).SelectedValue;
             }
+
             if ( controls.Count > 1 && controls[1] is RockTextBox )
             {
-                configurationValues[DOCUMENT_FOLDER_ROOT].Value = ( (RockTextBox)controls[1] ).Text;
+                configurationValues[DOCUMENT_FOLDER_ROOT].Value = ( ( RockTextBox ) controls[1] ).Text;
             }
+
             if ( controls.Count > 2 && controls[2] is RockTextBox )
             {
-                configurationValues[IMAGE_FOLDER_ROOT].Value = ( (RockTextBox)controls[2] ).Text;
+                configurationValues[IMAGE_FOLDER_ROOT].Value = ( ( RockTextBox ) controls[2] ).Text;
             }
+
             if ( controls.Count > 3 && controls[3] is RockCheckBox )
             {
-                configurationValues[USER_SPECIFIC_ROOT].Value = ( (RockCheckBox)controls[3] ).Checked.ToString();
+                configurationValues[USER_SPECIFIC_ROOT].Value = ( ( RockCheckBox ) controls[3] ).Checked.ToString();
             }
 
             return configurationValues;
@@ -137,26 +194,25 @@ namespace Rock.Field.Types
             {
                 if ( controls.Count > 0 && controls[0] is RockDropDownList && configurationValues.ContainsKey( TOOLBAR ) )
                 {
-                    ( (RockDropDownList)controls[0] ).SetValue( configurationValues[TOOLBAR].Value );
+                    ( ( RockDropDownList ) controls[0] ).SetValue( configurationValues[TOOLBAR].Value );
                 }
+
                 if ( controls.Count > 1 && controls[1] is RockTextBox && configurationValues.ContainsKey( DOCUMENT_FOLDER_ROOT ) )
                 {
-                    ( (RockTextBox)controls[1] ).Text = configurationValues[DOCUMENT_FOLDER_ROOT].Value;
+                    ( ( RockTextBox ) controls[1] ).Text = configurationValues[DOCUMENT_FOLDER_ROOT].Value;
                 }
+
                 if ( controls.Count > 2 && controls[2] is RockTextBox && configurationValues.ContainsKey( IMAGE_FOLDER_ROOT ) )
                 {
-                    ( (RockTextBox)controls[2] ).Text = configurationValues[IMAGE_FOLDER_ROOT].Value;
+                    ( ( RockTextBox ) controls[2] ).Text = configurationValues[IMAGE_FOLDER_ROOT].Value;
                 }
+
                 if ( controls.Count > 3 && controls[3] is RockCheckBox && configurationValues.ContainsKey( USER_SPECIFIC_ROOT ) )
                 {
-                    ( (RockCheckBox)controls[3] ).Checked = configurationValues[USER_SPECIFIC_ROOT].Value.AsBoolean();
+                    ( ( RockCheckBox ) controls[3] ).Checked = configurationValues[USER_SPECIFIC_ROOT].Value.AsBoolean();
                 }
             }
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -193,28 +249,10 @@ namespace Rock.Field.Types
 
             if ( configurationValues != null && configurationValues.ContainsKey( USER_SPECIFIC_ROOT ) )
             {
-                editor.UserSpecificRoot = configurationValues[USER_SPECIFIC_ROOT].Value.AsBoolean(false);
+                editor.UserSpecificRoot = configurationValues[USER_SPECIFIC_ROOT].Value.AsBoolean( false );
             }
 
             return editor;
-        }
-
-        #endregion
-
-        #region Filter Control
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.StringFilterComparisonTypes;
-            }
         }
 
         /// <summary>
@@ -256,7 +294,22 @@ namespace Rock.Field.Types
             // the HTML Editor can cause a postback loop if OnChange and AutoPostback is enabled, so disable the HasChangeHandler
         }
 
-        #endregion
+        /// <summary>
+        /// Returns the field's current value(s)
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">Information about the value</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
+        /// <returns></returns>
+        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        {
+            return !condensed
+                ? GetHtmlValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedHtmlValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
+        }
 
+#endif
+        #endregion
     }
 }

@@ -26,6 +26,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Constants;
 using Rock.Data;
+using Rock.Enums.Group;
 using Rock.Model;
 using Rock.Security;
 using Rock.UniversalSearch;
@@ -40,6 +41,7 @@ namespace RockWeb.Blocks.Groups
     [DisplayName( "Group Type Detail" )]
     [Category( "Groups" )]
     [Description( "Displays the details of the given group type for editing." )]
+    [Rock.SystemGuid.BlockTypeGuid( "78B8EE69-71A7-43C1-B00B-ED13828FE104" )]
     public partial class GroupTypeDetail : RockBlock
     {
         #region Properties
@@ -357,8 +359,6 @@ namespace RockWeb.Blocks.Groups
 
         #region Events
 
-        #region Action Events
-
         /// <summary>
         /// Handles the Click event of the btnSave control.
         /// </summary>
@@ -384,7 +384,7 @@ namespace RockWeb.Blocks.Groups
 
             int groupTypeId = hfGroupTypeId.Value.AsInteger();
 
-            var groupTypeGroupRequirementsListInDatabase = groupRequirementService.Queryable().Where( a => a.GroupTypeId == groupTypeId ).ToList(); 
+            var groupTypeGroupRequirementsListInDatabase = groupRequirementService.Queryable().Where( a => a.GroupTypeId == groupTypeId ).ToList();
 
             if ( groupTypeId == 0 )
             {
@@ -476,7 +476,7 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( li.Selected )
                 {
-                    allowedScheduleTypes = allowedScheduleTypes | (ScheduleType)li.Value.AsInteger();
+                    allowedScheduleTypes = allowedScheduleTypes | ( ScheduleType ) li.Value.AsInteger();
                 }
             }
 
@@ -485,7 +485,19 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( li.Selected )
                 {
-                    locationSelectionMode = locationSelectionMode | (GroupLocationPickerMode)li.Value.AsInteger();
+                    locationSelectionMode = locationSelectionMode | ( GroupLocationPickerMode ) li.Value.AsInteger();
+                }
+            }
+
+            var attendanceFollowupDays = new List<int>();
+            foreach ( ListItem item in cblAttendanceReminderFollowupDays.Items )
+            {
+                if ( item.Selected )
+                {
+                    if ( int.TryParse( item.Value, out int followupDays ) )
+                    {
+                        attendanceFollowupDays.Add( followupDays );
+                    }
                 }
             }
 
@@ -510,8 +522,12 @@ namespace RockWeb.Blocks.Groups
             groupType.GroupAttendanceRequiresSchedule = cbGroupAttendanceRequiresSchedule.Checked;
             groupType.AttendanceCountsAsWeekendService = cbWeekendService.Checked;
             groupType.SendAttendanceReminder = cbSendAttendanceReminder.Checked;
+            groupType.AttendanceReminderSystemCommunicationId = ddlAttendanceReminderCommunication.SelectedValue.AsIntegerOrNull();
+            groupType.AttendanceReminderSendStartOffsetMinutes = nbAttendanceReminderOffsetMinutes.Text.AsIntegerOrNull();
+            groupType.AttendanceReminderFollowupDaysList = attendanceFollowupDays;
             groupType.AttendanceRule = ddlAttendanceRule.SelectedValueAsEnum<AttendanceRule>();
             groupType.GroupCapacityRule = ddlGroupCapacityRule.SelectedValueAsEnum<GroupCapacityRule>();
+            groupType.IsCapacityRequired = cbRequireCapacityRule.Checked;
             groupType.AttendancePrintTo = ddlPrintTo.SelectedValueAsEnum<PrintTo>();
             groupType.AllowedScheduleTypes = allowedScheduleTypes;
             groupType.LocationSelectionMode = locationSelectionMode;
@@ -549,6 +565,7 @@ namespace RockWeb.Blocks.Groups
             groupType.ScheduleCancellationWorkflowTypeId = wtpScheduleCancellationWorkflowType.SelectedValueAsId();
             groupType.ScheduleReminderSystemCommunicationId = ddlScheduleReminderSystemCommunication.SelectedValue.AsIntegerOrNull();
             groupType.ScheduleReminderEmailOffsetDays = nbScheduleReminderOffsetDays.Text.AsIntegerOrNull();
+            groupType.ScheduleConfirmationLogic = ddlScheduleConfirmationLogic.SelectedValueAsEnum<ScheduleConfirmationLogic>();
 
             // if GroupHistory is turned off, we'll delete group and group member history for this group type
             bool deleteGroupHistory = false;
@@ -686,9 +703,23 @@ namespace RockWeb.Blocks.Groups
             NavigateToParentPage();
         }
 
-        #endregion
-
-        #region Control Events
+        /// <summary>
+        /// Handles the SelectedIndexChanged event of the ddlGroupCapacityRule control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void ddlGroupCapacityRule_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            if ( ddlGroupCapacityRule.SelectedIndex == 0 )
+            {
+                cbRequireCapacityRule.Visible = false;
+                cbRequireCapacityRule.Checked = false;
+            }
+            else
+            {
+                cbRequireCapacityRule.Visible = true;
+            }
+        }
 
         /// <summary>
         /// Handles the SelectedIndexChanged event of the gtpInheritedGroupType control.
@@ -703,7 +734,33 @@ namespace RockWeb.Blocks.Groups
             BindInheritedAttributes( gtpInheritedGroupType.SelectedValueAsInt(), groupTypeService, attributeService );
         }
 
-        #endregion
+        /// <summary>
+        /// Handles the CheckedChanged event of the cbSchedulingEnabled control.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void cbSchedulingEnabled_CheckedChanged( object sender, EventArgs e )
+        {
+            ScheduleTypesRequired();
+        }
+
+        /// <summary>
+        /// Sets the requirement of the "Schedule Types" control based on the checked state of the "Scheduling Enabled" control.
+        /// </summary>
+        private void ScheduleTypesRequired()
+        {
+            cblScheduleTypes.Required = cbSchedulingEnabled.Checked;
+        }
+
+        /// <summary>
+        /// Handles the CheckedChanged event of the cbSendAttendanceReminder control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void cbSendAttendanceReminder_CheckedChanged( object sender, EventArgs e )
+        {
+            AttendanceReminderCommunicationRequired();
+        }
 
         #endregion
 
@@ -745,6 +802,7 @@ namespace RockWeb.Blocks.Groups
 
                 groupType.ScheduleConfirmationSystemCommunicationId = systemCommunicationIdLookup.GetValueOrNull( Rock.SystemGuid.SystemCommunication.SCHEDULING_CONFIRMATION.AsGuid() );
                 groupType.ScheduleReminderSystemCommunicationId = systemCommunicationIdLookup.GetValueOrNull( Rock.SystemGuid.SystemCommunication.SCHEDULING_REMINDER.AsGuid() );
+                groupType.AttendanceReminderSystemCommunicationId = systemCommunicationIdLookup.GetValueOrNull( Rock.SystemGuid.SystemCommunication.GROUP_ATTENDANCE_REMINDER.AsGuid() );
 
                 // hide the panel drawer that show created and last modified dates
                 pdAuditDetails.Visible = false;
@@ -837,7 +895,9 @@ namespace RockWeb.Blocks.Groups
             ddlGroupStatusDefinedType.Enabled = !groupType.IsSystem;
             ddlGroupStatusDefinedType.SetValue( groupType.GroupStatusDefinedTypeId );
 
-            ddlGroupCapacityRule.SetValue( (int)groupType.GroupCapacityRule );
+            ddlGroupCapacityRule.SetValue( ( int ) groupType.GroupCapacityRule );
+            cbRequireCapacityRule.Visible = groupType.GroupCapacityRule != GroupCapacityRule.None;
+            cbRequireCapacityRule.Checked = groupType.IsCapacityRequired;
 
             cbAllowAnyChildGroupType.Checked = groupType.AllowAnyChildGroupType;
             rcwAllowedChildGroupTypes.Visible = !cbAllowAnyChildGroupType.Checked;
@@ -874,7 +934,7 @@ namespace RockWeb.Blocks.Groups
             cblScheduleTypes.Enabled = !groupType.IsSystem;
             foreach ( ListItem li in cblScheduleTypes.Items )
             {
-                ScheduleType scheduleType = (ScheduleType)li.Value.AsInteger();
+                ScheduleType scheduleType = ( ScheduleType ) li.Value.AsInteger();
                 li.Selected = ( groupType.AllowedScheduleTypes & scheduleType ) == scheduleType;
             }
 
@@ -885,7 +945,7 @@ namespace RockWeb.Blocks.Groups
             cblLocationSelectionModes.Enabled = !groupType.IsSystem;
             foreach ( ListItem li in cblLocationSelectionModes.Items )
             {
-                GroupLocationPickerMode mode = (GroupLocationPickerMode)li.Value.AsInteger();
+                GroupLocationPickerMode mode = ( GroupLocationPickerMode ) li.Value.AsInteger();
                 li.Selected = ( groupType.LocationSelectionMode & mode ) == mode;
             }
 
@@ -901,8 +961,22 @@ namespace RockWeb.Blocks.Groups
             cbTakesAttendance.Checked = groupType.TakesAttendance;
             cbWeekendService.Checked = groupType.AttendanceCountsAsWeekendService;
             cbSendAttendanceReminder.Checked = groupType.SendAttendanceReminder;
-            ddlAttendanceRule.SetValue( (int)groupType.AttendanceRule );
-            ddlPrintTo.SetValue( (int)groupType.AttendancePrintTo );
+            ddlAttendanceReminderCommunication.SetValue( groupType.AttendanceReminderSystemCommunicationId.ToString() );
+            nbAttendanceReminderOffsetMinutes.Text = groupType.AttendanceReminderSendStartOffsetMinutes.ToString();
+            foreach ( var followupDays in groupType.AttendanceReminderFollowupDaysList )
+            {
+                foreach ( ListItem item in cblAttendanceReminderFollowupDays.Items )
+                {
+                    if ( item.Value == followupDays.ToString() )
+                    {
+                        item.Selected = true;
+                    }
+                }
+            }
+            AttendanceReminderCommunicationRequired();
+
+            ddlAttendanceRule.SetValue( ( int ) groupType.AttendanceRule );
+            ddlPrintTo.SetValue( ( int ) groupType.AttendancePrintTo );
             cbGroupAttendanceRequiresSchedule.Checked = groupType.GroupAttendanceRequiresSchedule;
             cbGroupAttendanceRequiresLocation.Checked = groupType.GroupAttendanceRequiresLocation;
 
@@ -914,7 +988,9 @@ namespace RockWeb.Blocks.Groups
 
             // Scheduling
             cbSchedulingEnabled.Checked = groupType.IsSchedulingEnabled;
-
+            ScheduleTypesRequired();
+            cblScheduleTypes.RequiredErrorMessage = "A 'Group Schedule Option' must be selected under 'Attendance / Check-In' when Scheduling is enabled.";
+            ddlScheduleConfirmationLogic.SetValue( ( int ) groupType.ScheduleConfirmationLogic );
             ddlScheduleConfirmationSystemCommunication.SetValue( groupType.ScheduleConfirmationSystemCommunicationId );
             cbRequiresReasonIfDeclineSchedule.Checked = groupType.RequiresReasonIfDeclineSchedule;
             nbScheduleConfirmationOffsetDays.Text = groupType.ScheduleConfirmationEmailOffsetDays.ToString();
@@ -968,7 +1044,7 @@ namespace RockWeb.Blocks.Groups
                 .ToList();
             BindGroupAttributesGrid();
 
-            GroupTypeGroupRequirementsState = new GroupRequirementService(rockContext).Queryable().Where(a => a.GroupTypeId.HasValue && a.GroupTypeId == groupType.Id ).ToList();
+            GroupTypeGroupRequirementsState = new GroupRequirementService( rockContext ).Queryable().Where( a => a.GroupTypeId.HasValue && a.GroupTypeId == groupType.Id ).ToList();
             BindGroupTypeGroupRequirementsGrid();
 
             GroupMemberAttributesState = attributeService.GetByEntityTypeId( new GroupMember().TypeId, true ).AsQueryable()
@@ -989,6 +1065,14 @@ namespace RockWeb.Blocks.Groups
             }
 
             BindMemberWorkflowTriggersGrid();
+        }
+
+        /// <summary>
+        /// Sets the required attribute of the Attendance Reminder Communication Template control.
+        /// </summary>
+        private void AttendanceReminderCommunicationRequired()
+        {
+            ddlAttendanceReminderCommunication.Required = cbSendAttendanceReminder.Checked;
         }
 
         /// <summary>
@@ -1080,6 +1164,8 @@ namespace RockWeb.Blocks.Groups
             ddlScheduleReminderSystemCommunication.Items.Add( new ListItem() );
             ddlRsvpReminderSystemCommunication.Items.Clear();
             ddlRsvpReminderSystemCommunication.Items.Add( new ListItem() );
+            ddlAttendanceReminderCommunication.Items.Clear();
+            ddlAttendanceReminderCommunication.Items.Add(new ListItem());
 
             // Get a list of System Communications - these are used for Group Scheduling and RSVP Reminders.
             var systemCommunications = new SystemCommunicationService( new RockContext() )
@@ -1099,8 +1185,9 @@ namespace RockWeb.Blocks.Groups
             {
                 foreach ( var scheduleReminder in scheduleReminderCommunications )
                 {
-                    ddlScheduleConfirmationSystemCommunication.Items.Add( new ListItem(scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
-                    ddlScheduleReminderSystemCommunication.Items.Add( new ListItem(scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
+                    ddlScheduleConfirmationSystemCommunication.Items.Add( new ListItem( scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
+                    ddlScheduleReminderSystemCommunication.Items.Add( new ListItem( scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
+                    ddlAttendanceReminderCommunication.Items.Add( new ListItem( scheduleReminder.Title, scheduleReminder.Id.ToString() ) );
                 }
             }
 
@@ -1114,6 +1201,7 @@ namespace RockWeb.Blocks.Groups
                 ddlRsvpReminderSystemCommunication.Items.Add( new ListItem( rsvpReminder.Title, rsvpReminder.Id.ToString() ) );
             }
 
+            ddlScheduleConfirmationLogic.BindToEnum<ScheduleConfirmationLogic>();
         }
 
         /// <summary>
@@ -1164,7 +1252,7 @@ namespace RockWeb.Blocks.Groups
                     dlgGroupTypeAttribute.Show();
                     break;
                 case "GROUPATTRIBUTES":
-                    if (cbEnableIndexing.Visible && cbEnableIndexing.Checked )
+                    if ( cbEnableIndexing.Visible && cbEnableIndexing.Checked )
                     {
                         edtGroupAttributes.IsIndexingEnabledVisible = true;
                     }
@@ -1440,8 +1528,8 @@ namespace RockWeb.Blocks.Groups
         /// <param name="qualifierValue">The qualifier value.</param>
         /// <param name="viewStateAttributes">The view state attributes.</param>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="AddAuthorizationsFromGroupType">if set to <c>true</c> for new attributes this will copy the explicit permissions for the group type into the attribute.</param>
-        private void SaveAttributes( int entityTypeId, string qualifierColumn, string qualifierValue, List<Attribute> viewStateAttributes, RockContext rockContext, GroupType groupType, bool AddAuthorizationsFromGroupType )
+        /// <param name="addAuthorizationsFromGroupType">if set to <c>true</c> for new attributes this will copy the explicit permissions for the group type into the attribute.</param>
+        private void SaveAttributes( int entityTypeId, string qualifierColumn, string qualifierValue, List<Attribute> viewStateAttributes, RockContext rockContext, GroupType groupType, bool addAuthorizationsFromGroupType )
         {
             // Get the existing attributes for this entity type and qualifier value
             var attributeService = new AttributeService( rockContext );
@@ -1468,7 +1556,7 @@ namespace RockWeb.Blocks.Groups
 
                 // If AddAuthorizationsFromGroupType is true and this is a new attribute then set the explicit authorizations to match the explicit authorizations of the GroupType.
                 var groupTypeId = qualifierValue.AsIntegerOrNull();
-                if ( groupTypeId.HasValue && groupTypeId > 0 && attributeState.Id == 0 && AddAuthorizationsFromGroupType )
+                if ( groupTypeId.HasValue && groupTypeId > 0 && attributeState.Id == 0 && addAuthorizationsFromGroupType )
                 {
                     // If this is a new group type then this will be null since it is still in an uncommitted transaction and not in the cache.
                     // Also there are no explicit authorizations to copy.
@@ -1501,7 +1589,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
         protected void gGroupTypeRoles_Edit( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             gGroupTypeRoles_ShowEdit( attributeGuid );
         }
 
@@ -1569,7 +1657,7 @@ namespace RockWeb.Blocks.Groups
         /// <exception cref="System.NotImplementedException"></exception>
         protected void gGroupTypeRoles_Delete( object sender, RowEventArgs e )
         {
-            Guid rowGuid = (Guid)e.RowKeyValue;
+            Guid rowGuid = ( Guid ) e.RowKeyValue;
 
             string errorMessage = string.Empty;
             var groupTypeRoleService = new GroupTypeRoleService( new RockContext() );
@@ -1950,7 +2038,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
         protected void gGroupTypeAttributes_Edit( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             gGroupTypeAttributes_ShowEdit( attributeGuid );
         }
 
@@ -2002,7 +2090,7 @@ namespace RockWeb.Blocks.Groups
         /// <exception cref="System.NotImplementedException"></exception>
         protected void gGroupTypeAttributes_Delete( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             GroupTypeAttributesState.RemoveEntity( attributeGuid );
 
             BindGroupTypeAttributesGrid();
@@ -2114,7 +2202,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
         protected void gGroupAttributes_Edit( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             gGroupAttributes_ShowEdit( attributeGuid );
         }
 
@@ -2129,7 +2217,7 @@ namespace RockWeb.Blocks.Groups
             {
                 attribute = new Attribute();
                 attribute.FieldTypeId = FieldTypeCache.Get( Rock.SystemGuid.FieldType.TEXT ).Id;
-                if (hfGroupTypeId.Value.AsInteger() > 0)
+                if ( hfGroupTypeId.Value.AsInteger() > 0 )
                 {
                     attribute.EntityTypeQualifierColumn = "GroupTypeId";
                     attribute.EntityTypeQualifierValue = hfGroupTypeId.Value;
@@ -2172,7 +2260,7 @@ namespace RockWeb.Blocks.Groups
         /// <exception cref="System.NotImplementedException"></exception>
         protected void gGroupAttributes_Delete( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             GroupAttributesState.RemoveEntity( attributeGuid );
 
             BindGroupAttributesGrid();
@@ -2284,7 +2372,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
         protected void gGroupMemberAttributes_Edit( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             gGroupMemberAttributes_ShowEdit( attributeGuid );
         }
 
@@ -2336,7 +2424,7 @@ namespace RockWeb.Blocks.Groups
         /// <exception cref="System.NotImplementedException"></exception>
         protected void gGroupMemberAttributes_Delete( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             GroupMemberAttributesState.RemoveEntity( attributeGuid );
 
             BindGroupMemberAttributesGrid();
@@ -2469,6 +2557,29 @@ namespace RockWeb.Blocks.Groups
                 ddlGroupRequirementType.Items.Add( new ListItem( item.Name, item.Id.ToString() ) );
             }
 
+            // Get a list of Field Types that are for dates.
+            HashSet<int> fieldTypeIds = new HashSet<int>();
+            fieldTypeIds.Add( FieldTypeCache.GetId( Rock.SystemGuid.FieldType.DATE.AsGuid() ).Value );
+            fieldTypeIds.Add( FieldTypeCache.GetId( Rock.SystemGuid.FieldType.DATE_TIME.AsGuid() ).Value );
+
+            ddlDueDateGroupAttribute.DataSource = GroupAttributesState.Where( a => fieldTypeIds.Contains( a.FieldTypeId ) ).ToList();
+            ddlDueDateGroupAttribute.DataBind();
+
+            // Make sure that the Due Date controls are not visible unless the requirement has a due date.
+            ddlDueDateGroupAttribute.Visible = false;
+            ddlDueDateGroupAttribute.Required = false;
+            dpDueDate.Visible = false;
+            dpDueDate.Required = false;
+
+            rblAppliesToAgeClassification.Items.Clear();
+
+            foreach ( var ageClassification in Enum.GetValues( typeof( AppliesToAgeClassification ) ).Cast<AppliesToAgeClassification>() )
+            {
+                rblAppliesToAgeClassification.Items.Add( new ListItem( ageClassification.ConvertToString( true ), ageClassification.ConvertToString( false ) ) );
+            }
+
+            rblAppliesToAgeClassification.DataBind();
+
             var selectedGroupTypeGroupRequirement = this.GroupTypeGroupRequirementsState.FirstOrDefault( a => a.Guid == groupTypeGroupRequirementGuid );
             grpGroupRequirementGroupRole.GroupTypeId = hfGroupTypeId.Value.AsIntegerOrNull();
             if ( selectedGroupTypeGroupRequirement != null )
@@ -2476,12 +2587,33 @@ namespace RockWeb.Blocks.Groups
                 ddlGroupRequirementType.SelectedValue = selectedGroupTypeGroupRequirement.GroupRequirementTypeId.ToString();
                 grpGroupRequirementGroupRole.GroupRoleId = selectedGroupTypeGroupRequirement.GroupRoleId;
                 cbMembersMustMeetRequirementOnAdd.Checked = selectedGroupTypeGroupRequirement.MustMeetRequirementToAddMember;
+
+                var groupRequirementType = list.Where( r => r.Id == selectedGroupTypeGroupRequirement.GroupRequirementTypeId ).First();
+
+                ShowDueDateQualifierControls();
+                rblAppliesToAgeClassification.SelectedValue = selectedGroupTypeGroupRequirement.AppliesToAgeClassification.ToString();
+                dvpAppliesToDataView.SetValue( selectedGroupTypeGroupRequirement.AppliesToDataViewId );
+                cbAllowLeadersToOverride.Checked = selectedGroupTypeGroupRequirement.AllowLeadersToOverride;
+                if ( groupRequirementType.DueDateType == DueDateType.GroupAttribute )
+                {
+                    ddlDueDateGroupAttribute.Visible = true;
+                    ddlDueDateGroupAttribute.Required = true;
+                    ddlDueDateGroupAttribute.SetValue( selectedGroupTypeGroupRequirement.DueDateAttributeId.HasValue ? selectedGroupTypeGroupRequirement.DueDateAttributeId.ToString() : string.Empty );
+                }
+
+                if ( groupRequirementType.DueDateType == DueDateType.ConfiguredDate )
+                {
+                    dpDueDate.Visible = true;
+                    dpDueDate.Required = true;
+                    dpDueDate.SelectedDate = selectedGroupTypeGroupRequirement.DueDateStaticDate.Value;
+                }
             }
             else
             {
                 ddlGroupRequirementType.SelectedIndex = 0;
                 grpGroupRequirementGroupRole.GroupRoleId = null;
                 cbMembersMustMeetRequirementOnAdd.Checked = false;
+                rblAppliesToAgeClassification.SetValue( AppliesToAgeClassification.All.ToString() );
             }
 
             nbDuplicateGroupRequirement.Visible = false;
@@ -2489,6 +2621,21 @@ namespace RockWeb.Blocks.Groups
             hfGroupTypeGroupRequirementGuid.Value = groupTypeGroupRequirementGuid.ToString();
 
             ShowDialog( "GroupTypeGroupRequirements", true );
+        }
+
+        /// <summary>
+        /// Handles the DataBound event of the lAppliesToDataViewId control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
+        protected void lAppliesToDataViewId_OnDataBound( object sender, Rock.Web.UI.Controls.RowEventArgs e )
+        {
+            Literal lAppliesToDataViewId = sender as Literal;
+            GroupRequirement requirement = e.Row.DataItem as GroupRequirement;
+            if ( requirement != null )
+            {
+                lAppliesToDataViewId.Text = requirement.AppliesToDataViewId.HasValue ? "<i class=\"fa fa-check\"></i>" : string.Empty;
+            }
         }
 
         /// <summary>
@@ -2522,7 +2669,26 @@ namespace RockWeb.Blocks.Groups
                 groupTypeGroupRequirement.GroupRole = null;
             }
 
-            // make sure we aren't adding a duplicate group requirement (same group requirement type and role)
+            groupTypeGroupRequirement.AppliesToAgeClassification = rblAppliesToAgeClassification.SelectedValue.ConvertToEnum<AppliesToAgeClassification>();
+            groupTypeGroupRequirement.AppliesToDataViewId = dvpAppliesToDataView.SelectedValueAsId();
+            groupTypeGroupRequirement.AllowLeadersToOverride = cbAllowLeadersToOverride.Checked;
+
+            if ( groupTypeGroupRequirement.GroupRequirementType.DueDateType == DueDateType.ConfiguredDate )
+            {
+                groupTypeGroupRequirement.DueDateStaticDate = dpDueDate.SelectedDate;
+            }
+
+            if ( groupTypeGroupRequirement.GroupRequirementType.DueDateType == DueDateType.GroupAttribute )
+            {
+                // Set this due date attribute if it exists.
+                var groupDueDateAttributes = AttributeCache.AllForEntityType<Group>().Where( a => a.Key == ddlDueDateGroupAttribute.SelectedValue );
+                if ( groupDueDateAttributes.Any() )
+                {
+                    groupTypeGroupRequirement.DueDateAttributeId = groupDueDateAttributes.First().Id;
+                }
+            }
+
+            // Make sure we aren't adding a duplicate group requirement (same group requirement type and role).
             var duplicateGroupRequirement = this.GroupTypeGroupRequirementsState.Any( a =>
                 a.GroupRequirementTypeId == groupTypeGroupRequirement.GroupRequirementTypeId
                 && a.GroupRoleId == groupTypeGroupRequirement.GroupRoleId
@@ -2579,6 +2745,17 @@ namespace RockWeb.Blocks.Groups
             gGroupTypeGroupRequirements.DataBind();
         }
 
+        protected string GroupRequirementHasDataView( object dataViewValue )
+        {
+            var dataViewId = dataViewValue.ToString().AsIntegerOrNull();
+            if ( dataViewId.HasValue )
+            {
+                return "<i class=\"fa fa-check\"></i>";
+            }
+
+            return string.Empty;
+        }
+
         #endregion
 
         #region Group Member Workflow Trigger Grid and Picker
@@ -2600,7 +2777,7 @@ namespace RockWeb.Blocks.Groups
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
         protected void gMemberWorkflowTriggers_Edit( object sender, RowEventArgs e )
         {
-            Guid attributeGuid = (Guid)e.RowKeyValue;
+            Guid attributeGuid = ( Guid ) e.RowKeyValue;
             gMemberWorkflowTriggers_ShowEdit( attributeGuid );
         }
 
@@ -2780,7 +2957,7 @@ namespace RockWeb.Blocks.Groups
         /// <exception cref="System.NotImplementedException"></exception>
         protected void gMemberWorkflowTriggers_Delete( object sender, RowEventArgs e )
         {
-            Guid rowGuid = (Guid)e.RowKeyValue;
+            Guid rowGuid = ( Guid ) e.RowKeyValue;
             MemberWorkflowTriggersState.RemoveEntity( rowGuid );
 
             BindMemberWorkflowTriggersGrid();
@@ -3025,5 +3202,58 @@ namespace RockWeb.Blocks.Groups
         }
 
         #endregion
+
+        protected void ddlGroupRequirementType_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            ShowDueDateQualifierControls();
+        }
+
+        /// <summary>
+        /// Shows the Due Date qualifier controls.
+        /// </summary>
+        protected void ShowDueDateQualifierControls()
+        {
+            int groupRequirementTypeId = ddlGroupRequirementType.SelectedValue.AsInteger();
+            var rockContext = new RockContext();
+            var groupRequirementTypeService = new GroupRequirementTypeService( rockContext );
+            var groupRequirementTypes = groupRequirementTypeService.Queryable().Where( grt => grt.Id == groupRequirementTypeId );
+            if ( !groupRequirementTypes.Any() )
+            {
+                return;
+            }
+
+            var groupRequirementType = groupRequirementTypes.First();
+
+            switch ( groupRequirementType.DueDateType )
+            {
+                case DueDateType.Immediate:
+                case DueDateType.DaysAfterJoining:
+                    {
+                        ddlDueDateGroupAttribute.Visible = false;
+                        ddlDueDateGroupAttribute.Required = false;
+                        dpDueDate.Visible = false;
+                        dpDueDate.Required = false;
+                        break;
+                    }
+
+                case DueDateType.ConfiguredDate:
+                    {
+                        ddlDueDateGroupAttribute.Visible = false;
+                        ddlDueDateGroupAttribute.Required = false;
+                        dpDueDate.Visible = true;
+                        dpDueDate.Required = true;
+                        break;
+                    }
+
+                case DueDateType.GroupAttribute:
+                    {
+                        ddlDueDateGroupAttribute.Visible = true;
+                        ddlDueDateGroupAttribute.Required = true;
+                        dpDueDate.Visible = false;
+                        dpDueDate.Required = false;
+                        break;
+                    }
+            }
+        }
     }
 }

@@ -16,11 +16,15 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
+#endif
 
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
@@ -30,15 +34,144 @@ namespace Rock.Field.Types
     /// Stored as "GroupType.Guid|Group.Guid"
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class GroupTypeGroupFieldType : FieldType
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.GROUP_TYPE_GROUP )]
+    public class GroupTypeGroupFieldType : FieldType, IEntityReferenceFieldType
     {
-
         #region Configuration
 
         /// <summary>
         /// Configuration Key for Group Picker Label
         /// </summary>
         public static readonly string CONFIG_GROUP_PICKER_LABEL = "groupPickerLabel";
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( !TryGetValueParts( privateValue, out var groupTypeGuid, out var groupGuid ) )
+            {
+                return string.Empty;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                if ( groupGuid.HasValue )
+                {
+                    var groupName = new GroupService( rockContext ).GetSelect( groupGuid.Value, g => g.Name );
+
+                    if ( groupName != null )
+                    {
+                        return $"Group: {groupName}";
+                    }
+                }
+                else if ( groupTypeGuid.HasValue )
+                {
+                    var groupTypeName = new GroupTypeService( rockContext ).GetSelect( groupTypeGuid.Value, gt => gt.Name );
+
+                    if ( groupTypeName != null )
+                    {
+                        return $"Group type: {groupTypeName}";
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Tries the get the parts of the database value.
+        /// </summary>
+        /// <param name="privateValue">The private value.</param>
+        /// <param name="groupTypeGuid">On return contains the group type unique identifier.</param>
+        /// <param name="groupGuid">On return contains the group unique identifier.</param>
+        /// <returns><c>true</c> if either <paramref name="groupTypeGuid"/> or <paramref name="groupGuid"/> are valid, <c>false</c> otherwise.</returns>
+        private bool TryGetValueParts( string privateValue, out Guid? groupTypeGuid, out Guid? groupGuid )
+        {
+            string[] parts = ( privateValue ?? string.Empty ).Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries );
+
+            if ( parts.Length > 0 )
+            {
+                groupTypeGuid = parts[0].AsGuidOrNull();
+                groupGuid = parts.Length > 1 ? parts[1].AsGuidOrNull() : null;
+            }
+            else
+            {
+                groupTypeGuid = null;
+                groupGuid = null;
+            }
+
+            return groupTypeGuid.HasValue || groupGuid.HasValue;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( !TryGetValueParts( privateValue, out var groupTypeGuid, out var groupGuid ) )
+            {
+                return null;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                // We only use one of these at a time when formatting the value
+                // so we don't need to reference both.
+                if ( groupGuid.HasValue )
+                {
+                    var groupId = new GroupService( rockContext ).GetId( groupGuid.Value );
+
+                    if ( groupId.HasValue )
+                    {
+                        return new List<ReferencedEntity>
+                        {
+                            new ReferencedEntity( EntityTypeCache.GetId<Group>().Value, groupId.Value )
+                        };
+                    }
+                }
+                else if ( groupTypeGuid.HasValue )
+                {
+                    var groupTypeId = GroupTypeCache.GetId( groupTypeGuid.Value );
+
+                    if ( groupTypeId.HasValue )
+                    {
+                        return new List<ReferencedEntity>
+                        {
+                            new ReferencedEntity( EntityTypeCache.GetId<GroupType>().Value, groupTypeId.Value )
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Name property of a Group and
+            // the Name property of a GroupType. It should have its
+            // persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<GroupType>().Value, nameof( GroupType.Name ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<Group>().Value, nameof( Group.Name ) )
+            };
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -100,16 +233,12 @@ namespace Rock.Field.Types
             if ( controls != null && controls.Count == 1 && configurationValues != null )
             {
                 var textBoxGroupPickerLabel = controls[0] as RockTextBox;
-                if ( textBoxGroupPickerLabel != null && configurationValues?.ContainsKey(CONFIG_GROUP_PICKER_LABEL) == true )
+                if ( textBoxGroupPickerLabel != null && configurationValues?.ContainsKey( CONFIG_GROUP_PICKER_LABEL ) == true )
                 {
                     textBoxGroupPickerLabel.Text = configurationValues[CONFIG_GROUP_PICKER_LABEL].Value;
                 }
             }
         }
-
-        #endregion
-
-        #region Formatting
 
         /// <summary>
         /// Returns the field's current value(s)
@@ -121,47 +250,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            string formattedValue = string.Empty;
-
-            Guid? groupTypeGuid = null;
-            Guid? groupGuid = null;
-
-            string[] parts = ( value ?? string.Empty ).Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries );
-            if ( parts.Length > 0 )
-            {
-                groupTypeGuid = parts[0].AsGuidOrNull();
-                if ( parts.Length > 1 )
-                {
-                    groupGuid = parts[1].AsGuidOrNull();
-                }
-            }
-
-            using ( var rockContext = new RockContext() )
-            {
-                if ( groupGuid.HasValue )
-                {
-                    var group = new GroupService( rockContext ).GetNoTracking( groupGuid.Value );
-                    if ( group != null )
-                    {
-                        formattedValue = "Group: " + group.Name;
-                    }
-                }
-                else if ( groupTypeGuid.HasValue )
-                {
-                    var groupType = new GroupTypeService( rockContext ).GetNoTracking( groupTypeGuid.Value );
-                    if ( groupType != null )
-                    {
-                        formattedValue = "Group type: " + groupType.Name;
-                    }
-                }
-            }
-
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -178,7 +270,7 @@ namespace Rock.Field.Types
             {
                 editControl.GroupControlLabel = configurationValues[CONFIG_GROUP_PICKER_LABEL].Value;
             }
-             
+
             return editControl;
         }
 
@@ -261,7 +353,7 @@ namespace Rock.Field.Types
             }
         }
 
+#endif
         #endregion
-
     }
 }

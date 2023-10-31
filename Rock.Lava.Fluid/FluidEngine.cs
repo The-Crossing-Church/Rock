@@ -69,7 +69,8 @@ namespace Rock.Lava.Fluid
         /// <returns></returns>
         protected override ILavaRenderContext OnCreateRenderContext()
         {
-            var fluidContext = new global::Fluid.TemplateContext( _templateOptions );
+            var options = GetTemplateOptions();
+            var fluidContext = new global::Fluid.TemplateContext( options );
             var context = new FluidRenderContext( fluidContext );
 
             return context;
@@ -141,6 +142,10 @@ namespace Rock.Lava.Fluid
                 {
                     return new LavaDateTimeValue( dto );
                 }
+                else if ( value is TimeSpan ts )
+                {
+                    return new LavaTimeSpanValue( ts );
+                }
 
                 // This converter cannot process the value.
                 return null;
@@ -165,7 +170,7 @@ namespace Rock.Lava.Fluid
                 // return the appropriate Fluid wrapper to short-circuit further conversion attempts.
                 if ( value is IDictionary<string, object> liquidDictionary )
                 {
-                    return new DictionaryValue( new ObjectDictionaryFluidIndexable<object>( liquidDictionary, _templateOptions ) );
+                    return new DictionaryValue( new ObjectDictionaryFluidIndexable<object>( liquidDictionary, templateOptions ) );
                 }
 
                 var valueType = value.GetType();
@@ -631,25 +636,22 @@ namespace Rock.Lava.Fluid
                 encoder = NullEncoder.Default;
             }
 
-            var writer = new StringWriter( sb );
-
-            try
+            using ( var writer = new StringWriter( sb ) )
             {
-                template.Render( templateContext.FluidContext, encoder, writer );
+                try
+                {
+                    template.Render( templateContext.FluidContext, encoder, writer );
 
-                writer.Flush();
-                result.Text = sb.ToString();
+                    writer.Flush();
+                    result.Text = sb.ToString();
 
-            }
-            catch ( LavaInterruptException )
-            {
-                // The render was terminated intentionally, so return the current buffer content.
-                writer.Flush();
-                result.Text = sb.ToString();
-            }
-            finally
-            {
-                writer.Dispose();
+                }
+                catch ( LavaInterruptException )
+                {
+                    // The render was terminated intentionally, so return the current buffer content.
+                    writer.Flush();
+                    result.Text = sb.ToString();
+                }
             }
 
             return result;
@@ -727,11 +729,9 @@ namespace Rock.Lava.Fluid
 
         protected override ILavaTemplate OnParseTemplate( string lavaTemplate )
         {
-            string liquidTemplate;
+            var fluidTemplate = CreateNewFluidTemplate( lavaTemplate, out _ );
 
-            var fluidTemplate = CreateNewFluidTemplate( lavaTemplate, out liquidTemplate );
-
-            var newTemplate = new FluidTemplateProxy( fluidTemplate );
+            var newTemplate = new FluidTemplateProxy( fluidTemplate, lavaTemplate );
 
             return newTemplate;
         }

@@ -31,6 +31,7 @@ namespace Rock.Reporting.DataTransform.Person
     [Description( "Transform result to Spouse" )]
     [Export( typeof( DataTransformComponent ) )]
     [ExportMetadata( "ComponentName", "Person Spouse Transformation" )]
+    [Rock.SystemGuid.EntityTypeGuid( "EEA38696-F924-4014-BAD7-014B1638FF82")]
     public class SpouseTransform : DataTransformComponent<Rock.Model.Person>
     {
         /// <summary>
@@ -108,7 +109,7 @@ namespace Rock.Reporting.DataTransform.Person
                     .Any( pgm =>
                         // person is adult
                         pgm.GroupRoleId == adultRoleId
-
+                        && a.IsArchived == false
                         && personQuery.Any( origPerson =>
                             // person is in the original personQuery 
                             origPerson.Id == pgm.PersonId

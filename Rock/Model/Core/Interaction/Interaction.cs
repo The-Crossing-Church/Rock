@@ -16,6 +16,7 @@
 //
 
 using System;
+using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.ModelConfiguration;
@@ -26,12 +27,20 @@ using Rock.Lava;
 namespace Rock.Model
 {
     /// <summary>
-    /// Represents a interaction <see cref="Rock.Model.Interaction"/>.
+    /// Represents a record of an interaction (or communication, etc.) between an
+    /// individual and the organization. It serves as a fundamental building block
+    /// for tracking and managing various forms of engagements, communications, and
+    /// activities of people.
+    ///
+    /// Note: Due to the amount of interaction data in a system, these should be
+    /// queried using the InteractionComponentId and optionally the
+    /// InteractionDateKey (when practical).
     /// </summary>
     [RockDomain( "Core" )]
     [NotAudited]
     [Table( "Interaction" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.INTERACTION )]
     public partial class Interaction : Model<Interaction>
     {
         /* Custom Indexes:
@@ -67,7 +76,7 @@ namespace Rock.Model
         public DateTime InteractionDateTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the operation. For example: 'Viewed', 'Opened', 'Click', 'Prayed', 'Form Viewed', 'Form Completed'
+        /// Gets or sets the operation. For example: 'View', 'Opened', 'Click', 'Prayed', 'Form Viewed', 'Form Completed', 'Complete', 'Incomplete', 'Watch', 'Present'.
         /// </summary>
         /// <value>
         /// The operation.
@@ -91,16 +100,16 @@ namespace Rock.Model
         /// <list type="bullet">
         /// <item>
         ///     <term>Page Views</term>
-        ///     <description>null, Page is the Component, Site is the Channel</description></item>
+        ///     <description>EntityId is left null, Page is the Component, Site is the Channel</description></item>
         /// <item>
         ///     <term>Communication Recipient Activity</term>
-        ///     <description><see cref="Rock.Model.CommunicationRecipient" /> Id. Communication is the Component, single Channel</description></item>
+        ///     <description>EntityId is the <see cref="Rock.Model.CommunicationRecipient" /> Id. Communication is the Component, single Channel</description></item>
         /// <item>
         ///     <term>Content Channel Activity</term>
-        ///     <description>null, ContentChannel is the Component, single Channel</description></item>
+        ///     <description>EntityId is left null, ContentChannel is the Component, single Channel</description></item>
         /// <item>
         ///     <term>Workflow Form Entry</term>
-        ///     <description><see cref="Workflow"/> Id, WorkflowType is the Component, single Channel </description></item>
+        ///     <description>EntityId is the <see cref="Workflow"/> Id, WorkflowType is the Component, single Channel </description></item>
         /// </list>
         /// </summary>
         /// <value>
@@ -362,8 +371,25 @@ namespace Rock.Model
             {
                 try
                 {
-                    var uri = new Uri( url );
-                    var urlParams = System.Web.HttpUtility.ParseQueryString( uri.Query );
+                    NameValueCollection urlParams;
+
+                    if ( Uri.TryCreate( url, UriKind.Absolute, out var uri ) )
+                    {
+                        urlParams = System.Web.HttpUtility.ParseQueryString( uri.Query );
+                    }
+                    else if ( url.IndexOf( "?" ) >= 0 )
+                    {
+                        // If it's not a full URI but has a "?" character then
+                        // assume it's a special format from an external application
+                        // and just take everything after the "?".
+                        urlParams = System.Web.HttpUtility.ParseQueryString( url.Substring( url.IndexOf( "?" ) + 1 ) );
+                    }
+                    else
+                    {
+                        // Assume it's just a plain query string already.
+                        urlParams = System.Web.HttpUtility.ParseQueryString( url );
+                    }
+
                     this.Source = urlParams.Get( "utm_source" ).Truncate( 25 );
                     this.Medium = urlParams.Get( "utm_medium" ).Truncate( 25 );
                     this.Campaign = urlParams.Get( "utm_campaign" ).Truncate( 50 );
@@ -372,7 +398,7 @@ namespace Rock.Model
                 }
                 catch ( Exception ex )
                 {
-                    ExceptionLogService.LogException( new Exception( $"Error parsing '{url}' to the uri.", ex ), null );
+                    ExceptionLogService.LogException( new Exception( $"Error parsing '{url}' to UTM fields.", ex ), null );
                 }
             }
         }

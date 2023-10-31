@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -75,6 +76,12 @@ namespace Rock.Model
                 return false;
             }
 
+            if ( new Service<GroupRequirement>( Context ).Queryable().Any( a => a.AppliesToDataViewId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", DataView.FriendlyTypeName, GroupRequirement.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<GroupRequirementType>( Context ).Queryable().Any( a => a.DataViewId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", DataView.FriendlyTypeName, GroupRequirementType.FriendlyTypeName );
@@ -93,9 +100,21 @@ namespace Rock.Model
                 return false;
             }
 
+            if ( new Service<InteractiveExperienceSchedule>( Context ).Queryable().Any( a => a.DataViewId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", DataView.FriendlyTypeName, InteractiveExperienceSchedule.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<Metric>( Context ).Queryable().Any( a => a.DataViewId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", DataView.FriendlyTypeName, Metric.FriendlyTypeName );
+                return false;
+            }
+
+            if ( new Service<PersonalizationSegment>( Context ).Queryable().Any( a => a.FilterDataViewId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", DataView.FriendlyTypeName, PersonalizationSegment.FriendlyTypeName );
                 return false;
             }
 
@@ -124,7 +143,7 @@ namespace Rock.Model
     /// DataView View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( DataView ) )]
-    public partial class DataViewViewModelHelper : ViewModelHelper<DataView, Rock.ViewModel.DataViewViewModel>
+    public partial class DataViewViewModelHelper : ViewModelHelper<DataView, DataViewBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -133,20 +152,20 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.DataViewViewModel CreateViewModel( DataView model, Person currentPerson = null, bool loadAttributes = true )
+        public override DataViewBag CreateViewModel( DataView model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.DataViewViewModel
+            var viewModel = new DataViewBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
                 CategoryId = model.CategoryId,
                 DataViewFilterId = model.DataViewFilterId,
                 Description = model.Description,
+                DisableUseOfReadOnlyContext = model.DisableUseOfReadOnlyContext,
                 EntityTypeId = model.EntityTypeId,
                 IncludeDeceased = model.IncludeDeceased,
                 IsSystem = model.IsSystem,
@@ -154,6 +173,7 @@ namespace Rock.Model
                 Name = model.Name,
                 PersistedLastRefreshDateTime = model.PersistedLastRefreshDateTime,
                 PersistedLastRunDurationMilliseconds = model.PersistedLastRunDurationMilliseconds,
+                PersistedScheduleId = model.PersistedScheduleId,
                 PersistedScheduleIntervalMinutes = model.PersistedScheduleIntervalMinutes,
                 RunCount = model.RunCount,
                 RunCountLastRefreshDateTime = model.RunCountLastRefreshDateTime,
@@ -231,6 +251,7 @@ namespace Rock.Model
             target.CategoryId = source.CategoryId;
             target.DataViewFilterId = source.DataViewFilterId;
             target.Description = source.Description;
+            target.DisableUseOfReadOnlyContext = source.DisableUseOfReadOnlyContext;
             target.EntityTypeId = source.EntityTypeId;
             target.ForeignGuid = source.ForeignGuid;
             target.ForeignKey = source.ForeignKey;
@@ -240,6 +261,7 @@ namespace Rock.Model
             target.Name = source.Name;
             target.PersistedLastRefreshDateTime = source.PersistedLastRefreshDateTime;
             target.PersistedLastRunDurationMilliseconds = source.PersistedLastRunDurationMilliseconds;
+            target.PersistedScheduleId = source.PersistedScheduleId;
             target.PersistedScheduleIntervalMinutes = source.PersistedScheduleIntervalMinutes;
             target.RunCount = source.RunCount;
             target.RunCountLastRefreshDateTime = source.RunCountLastRefreshDateTime;
@@ -260,7 +282,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.DataViewViewModel ToViewModel( this DataView model, Person currentPerson = null, bool loadAttributes = false )
+        public static DataViewBag ToViewModel( this DataView model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new DataViewViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

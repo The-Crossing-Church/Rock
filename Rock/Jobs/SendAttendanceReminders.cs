@@ -22,8 +22,6 @@ using System.Linq;
 using System.Text;
 using System.Web;
 
-using Quartz;
-
 using Rock.Attribute;
 using Rock.Communication;
 using Rock.Data;
@@ -37,7 +35,7 @@ namespace Rock.Jobs
     /// <summary>
     /// Job to process communications
     /// </summary>
-    [DisplayName( "Send Attendance Reminders" )]
+    [DisplayName( "Send Attendance Reminders for Group Type" )]
     [Description( "Sends a reminder to group leaders about entering attendance for their group meeting." )]
 
     #region Job Attributes
@@ -70,10 +68,22 @@ namespace Rock.Jobs
         DefaultValue = "1",
         Order = 3 )]
 
+    [CampusesField( name:"Campuses",
+        description: "When set will filter groups by the campuses selected. This requires that groups have a campus set to work.",
+        required: false,
+        includeInactive: false,
+        order: 4,
+        key: AttributeKey.Campuses )]
+
+    [GroupField( "Parent Group",
+        Description = "When set only groups under this parent (at any level in the hierarchy) will be considered.",
+        Key = AttributeKey.ParentGroup,
+        IsRequired = false,
+        Order = 4 )]
+
     #endregion Job Attributes
 
-    [DisallowConcurrentExecution]
-    public class SendAttendanceReminder : IJob
+    public class SendAttendanceReminder : RockJob
     {
         #region Attribute Keys
 
@@ -101,6 +111,16 @@ namespace Rock.Jobs
             /// The method to use when determining how the notice should be sent.
             /// </summary>
             public const string SendUsingConfiguration = "SendUsingConfiguration";
+
+            /// <summary>
+            /// The campuses the groups should belong to.
+            /// </summary>
+            public const string Campuses = "Campuses";
+
+            /// <summary>
+            /// The parent group of the group.
+            /// </summary>
+            public const string ParentGroup = "ParentGroup";
         }
 
         #endregion Attribute Keys
@@ -110,76 +130,81 @@ namespace Rock.Jobs
         /// </summary>
         public SendAttendanceReminder() { }
 
-        /// <summary>
-        /// Executes the specified context.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        public virtual void Execute( IJobExecutionContext context )
+        /// <inheritdoc cref="RockJob.Execute()" />
+        public override void Execute()
         {
             var rockContext = new RockContext();
-            var dataMap = context.JobDetail.JobDataMap;
-            var groupType = GroupTypeCache.Get( dataMap.GetString( AttributeKey.GroupType ).AsGuid() );
-            var isGroupTypeValid = groupType.TakesAttendance && groupType.SendAttendanceReminder;
+            var groupType = GroupTypeCache.Get( GetAttributeValue( AttributeKey.GroupType ).AsGuid() );
             var results = new StringBuilder();
             
-            context.Result = "0 attendance reminders sent.";
+            this.Result = "0 attendance reminders sent.";
 
-            if ( !isGroupTypeValid )
+            if ( groupType.SendAttendanceReminder )
             {
-                var warning = $"Group Type {groupType.Name} isn't setup to take attendance or send attendance reminders.";
+                var warning = $"Group Type {groupType.Name} has been configured to send reminders through the \"Send Group Attendance Reminders\" job and this legacy job is no longer required.";
                 results.Append( FormatWarningMessage( warning ) );
-                RockLogger.Log.Warning( RockLogDomains.Jobs, warning );
-                context.Result = results.ToString();
+                Log( RockLogLevel.Warning, warning );
+                this.Result = results.ToString();
                 throw new RockJobWarningException( warning );
             }
 
-            var systemEmailGuid = dataMap.GetString( AttributeKey.SystemEmail ).AsGuid();
+            if ( !groupType.TakesAttendance)
+            {
+                var warning = $"Group Type {groupType.Name} isn't setup to take attendance.";
+                results.Append( FormatWarningMessage( warning ) );
+                Log( RockLogLevel.Warning, warning );
+                this.Result = results.ToString();
+                throw new RockJobWarningException( warning );
+            }
+
+            var systemEmailGuid = GetAttributeValue( AttributeKey.SystemEmail ).AsGuid();
             var systemCommunication = new SystemCommunicationService( rockContext ).Get( systemEmailGuid );
 
-            var jobPreferredCommunicationType = ( CommunicationType ) dataMap.GetString( AttributeKey.SendUsingConfiguration ).AsInteger();
+            var jobPreferredCommunicationType = ( CommunicationType ) GetAttributeValue( AttributeKey.SendUsingConfiguration ).AsInteger();
             var isSmsEnabled = MediumContainer.HasActiveSmsTransport() && !string.IsNullOrWhiteSpace( systemCommunication.SMSMessage );
 
             if ( jobPreferredCommunicationType == CommunicationType.SMS && !isSmsEnabled )
             {
                 // If sms selected but not usable default to email.
                 var errorMessage = $"The job is setup to send via SMS but either SMS isn't enabled or no SMS message was found in system communication {systemCommunication.Title}.";
-                HandleErrorMessage( context, errorMessage );
+                HandleErrorMessage( errorMessage );
             }
 
             if ( jobPreferredCommunicationType != CommunicationType.Email && string.IsNullOrWhiteSpace( systemCommunication.SMSMessage ) )
             {
                 var warning = $"No SMS message found in system communication {systemCommunication.Title}. All attendance reminders were sent via email.";
                 results.Append( FormatWarningMessage( warning ) );
-                RockLogger.Log.Warning( RockLogDomains.Jobs, warning );
+                Log( RockLogLevel.Warning, warning );
                 jobPreferredCommunicationType = CommunicationType.Email;
             }
 
-            var occurrences = GetOccurenceDates( groupType, dataMap, rockContext );
+            var occurrences = GetOccurenceDates( groupType, rockContext );
             var groupIds = occurrences.Where( o => o.Value.Any() ).Select( o => o.Key ).ToList();
             var leaders = GetGroupLeaders( groupIds, rockContext );
             var attendanceRemindersResults = SendAttendanceReminders( leaders, occurrences, systemCommunication, jobPreferredCommunicationType, isSmsEnabled );
 
             results.AppendLine( $"{attendanceRemindersResults.MessagesSent} attendance reminders sent." );
             results.Append( FormatWarningMessages( attendanceRemindersResults.Warnings ) );
-            context.Result = results.ToString();
+            this.Result = results.ToString();
 
-            HandleErrorMessages( context, attendanceRemindersResults.Errors );
+            HandleErrorMessages( attendanceRemindersResults.Errors );
         }
 
         /// <summary>
         /// Gets the occurrence dates.
         /// </summary>
         /// <param name="groupType">Type of the group.</param>
-        /// <param name="dataMap">The data map.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns></returns>
-        private Dictionary<int, List<DateTime>> GetOccurenceDates( GroupTypeCache groupType, JobDataMap dataMap, RockContext rockContext )
+        private Dictionary<int, List<DateTime>> GetOccurenceDates( GroupTypeCache groupType, RockContext rockContext )
         {
-            var dates = GetSearchDates( dataMap );
+            var dates = GetSearchDates();
             var startDate = dates.Min();
             var endDate = dates.Max().AddDays( 1 );
+            var campuses = GetAttributeValue( AttributeKey.Campuses ).SplitDelimitedValues().AsGuidList();
+            var parentGroup = GetAttributeValue( AttributeKey.ParentGroup ).AsGuidOrNull();
 
-            var occurrences = GetAllOccurenceDates( groupType, dates, startDate, endDate, rockContext );
+            var occurrences = GetAllOccurenceDates( groupType, dates, startDate, endDate, campuses, parentGroup, rockContext );
 
             // Remove any occurrences during group type exclusion date ranges
             RemoveExclusionDates( groupType, occurrences );
@@ -193,9 +218,8 @@ namespace Rock.Jobs
         /// <summary>
         /// Gets the search dates.
         /// </summary>
-        /// <param name="dataMap">The data map.</param>
         /// <returns></returns>
-        private List<DateTime> GetSearchDates( JobDataMap dataMap )
+        private List<DateTime> GetSearchDates()
         {
 
             // Get the occurrence dates that apply
@@ -206,7 +230,7 @@ namespace Rock.Jobs
 
             try
             {
-                var reminderDays = dataMap.GetString( AttributeKey.SendReminders ).Split( ',' );
+                var reminderDays = GetAttributeValue( AttributeKey.SendReminders ).Split( ',' );
                 foreach ( string reminderDay in reminderDays )
                 {
                     if ( reminderDay.Trim().IsNotNullOrWhiteSpace() )
@@ -235,8 +259,10 @@ namespace Rock.Jobs
         /// <param name="startDate">The start date.</param>
         /// <param name="endDate">The end date.</param>
         /// <param name="rockContext">The rock context.</param>
+        /// <param name="campuses">The campuses to filter by</param>
+        /// <param name="parentGroupGuid">The parent group of the group</param>
         /// <returns></returns>
-        private static Dictionary<int, List<DateTime>> GetAllOccurenceDates( GroupTypeCache groupType, List<DateTime> dates, DateTime startDate, DateTime endDate, RockContext rockContext )
+        private static Dictionary<int, List<DateTime>> GetAllOccurenceDates( GroupTypeCache groupType, List<DateTime> dates, DateTime startDate, DateTime endDate, List<Guid> campuses, Guid? parentGroupGuid, RockContext rockContext )
         {
             var groupService = new GroupService( rockContext );
 
@@ -248,6 +274,18 @@ namespace Rock.Jobs
                 .IsActive()
                 .HasSchedule()
                 .HasActiveLeader();
+
+            if ( campuses.Count > 0 )
+            {
+                groupsToRemind = groupsToRemind.Where( g => g.CampusId.HasValue && campuses.Contains( g.Campus.Guid ) );
+            }
+
+            if ( parentGroupGuid.HasValue )
+            {
+                var parentGroup = groupService.Get( parentGroupGuid.Value );
+                var descendantIds = groupService.GetAllDescendentGroupIds( parentGroup.Id, false ).ToList();
+                groupsToRemind = groupsToRemind.Where( g => descendantIds.Contains( g.Id ) );
+            }
 
             foreach ( var group in groupsToRemind )
             {
@@ -424,7 +462,7 @@ namespace Rock.Jobs
             return FormatMessages( warnings, "Warning" );
         }
 
-        private void HandleErrorMessage( IJobExecutionContext context, string errorMessage )
+        private void HandleErrorMessage( string errorMessage )
         {
             if ( errorMessage.IsNullOrWhiteSpace() )
             {
@@ -432,23 +470,22 @@ namespace Rock.Jobs
             }
 
             var errorMessages = new List<string> { errorMessage };
-            HandleErrorMessages( context, errorMessages );
+            HandleErrorMessages( errorMessages );
         }
 
         /// <summary>
         /// Handles the error messages. Throws an exception if there are any items in the errorMessages parameter
         /// </summary>
-        /// <param name="context">The context.</param>
         /// <param name="errorMessages">The error messages.</param>
-        private void HandleErrorMessages( IJobExecutionContext context, List<string> errorMessages )
+        private void HandleErrorMessages( List<string> errorMessages )
         {
             if ( errorMessages.Any() )
             {
-                StringBuilder sb = new StringBuilder( context.Result.ToString() );
+                StringBuilder sb = new StringBuilder( this.Result.ToString() );
                 sb.Append( FormatMessages( errorMessages, "Error" ) );
 
                 var resultMessage = sb.ToString();
-                context.Result = resultMessage;
+                this.Result = resultMessage;
                 var exception = new Exception( resultMessage );
 
                 HttpContext context2 = HttpContext.Current;

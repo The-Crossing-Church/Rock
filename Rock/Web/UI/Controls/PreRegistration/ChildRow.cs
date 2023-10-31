@@ -43,6 +43,9 @@ namespace Rock.Web.UI.Controls
         private PlaceHolder _phAttributes;
         private RockRadioButtonList _rblCommunicationPreference;
         private LinkButton _lbDelete;
+        private ImageEditor _imgProfile;
+        private RacePicker _rpRace;
+        private EthnicityPicker _epEthnicity;
 
         /// <summary>
         /// Gets or sets the caption.
@@ -297,6 +300,126 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether [show profile photo].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show profile photo]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowProfilePhoto
+        {
+            get
+            {
+                EnsureChildControls();
+                return _imgProfile.Visible;
+            }
+            set
+            {
+                EnsureChildControls();
+                _imgProfile.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [require profile photo].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [require profile photo]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RequireProfilePhoto
+        {
+            get
+            {
+                EnsureChildControls();
+                return _imgProfile.Required;
+            }
+            set
+            {
+                EnsureChildControls();
+                _imgProfile.Required = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show race].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show race]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowRace
+        {
+            get
+            {
+                EnsureChildControls();
+                return _rpRace.Visible;
+            }
+            set
+            {
+                EnsureChildControls();
+                _rpRace.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show ethnicity].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show ethnicity]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowEthnicity
+        {
+            get
+            {
+                EnsureChildControls();
+                return _epEthnicity.Visible;
+            }
+            set
+            {
+                EnsureChildControls();
+                _epEthnicity.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [require race].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [require race]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RequireRace
+        {
+            get
+            {
+                EnsureChildControls();
+                return _rpRace.Required;
+            }
+            set
+            {
+                EnsureChildControls();
+                _rpRace.Required = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [require ethnicity].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [require ethnicity]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RequireEthnicity
+        {
+            get
+            {
+                EnsureChildControls();
+                return _epEthnicity.Required;
+            }
+            set
+            {
+                EnsureChildControls();
+                _epEthnicity.Required = value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the relationship type list.
         /// </summary>
         /// <value>
@@ -498,7 +621,7 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return _ddlGradePicker.SelectedValueAsInt();
+                return _ddlGradePicker.SelectedValueAsInt( false );
             }
 
             set
@@ -600,7 +723,7 @@ namespace Rock.Web.UI.Controls
             get
             {
                 EnsureChildControls();
-                return ((CommunicationType?) _rblCommunicationPreference.SelectedValue.AsIntegerOrNull()) ?? CommunicationType.Email;
+                return ( ( CommunicationType? ) _rblCommunicationPreference.SelectedValue.AsIntegerOrNull() ) ?? CommunicationType.Email;
             }
             set
             {
@@ -608,6 +731,67 @@ namespace Rock.Web.UI.Controls
                 _rblCommunicationPreference.SelectedValue = value.ConvertToInt().ToString();
             }
         }
+
+        /// <summary>
+        /// Gets or sets the profile photo binary identifier.
+        /// </summary>
+        /// <value>
+        /// The profile photo binary identifier.
+        /// </value>
+        public int? ProfilePhotoId
+        {
+            get
+            {
+                EnsureChildControls();
+                return _imgProfile.BinaryFileId;
+            }
+            set
+            {
+                EnsureChildControls();
+                _imgProfile.BinaryFileId = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the Race value identifier.
+        /// </summary>
+        /// <value>
+        /// The RaceValue identifier.
+        /// </value>
+        public int? RaceValueId
+        {
+            get
+            {
+                EnsureChildControls();
+                return _rpRace.SelectedValueAsId();
+            }
+            set
+            {
+                EnsureChildControls();
+                _rpRace.SetValue( value );
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the EthnicityValue identifier.
+        /// </summary>
+        /// <value>
+        /// The EthnicityValue identifier.
+        /// </value>
+        public int? EthnicityValueId
+        {
+            get
+            {
+                EnsureChildControls();
+                return _epEthnicity.SelectedValueAsId();
+            }
+            set
+            {
+                EnsureChildControls();
+                _epEthnicity.SetValue( value );
+            }
+        }
+
         /// <summary>
         /// Gets or sets the validation group.
         /// </summary>
@@ -633,6 +817,8 @@ namespace Rock.Web.UI.Controls
                 _ebEmail.ValidationGroup = value;
                 _rblCommunicationPreference.ValidationGroup = value;
                 _ddlRelationshipType.ValidationGroup = value;
+                _rpRace.ValidationGroup = value;
+                _epEthnicity.ValidationGroup = value;
                 foreach ( var ctrl in _phAttributes.Controls )
                 {
                     var rockCtrl = ctrl as IRockControl;
@@ -673,12 +859,12 @@ namespace Rock.Web.UI.Controls
                 EnsureChildControls();
                 ValidationErrors.Clear();
 
-                if( _tbNickName.Required && _tbNickName.Text.IsNullOrWhiteSpace())
+                if( _tbNickName.Required && _tbNickName.Text.IsNullOrWhiteSpace() )
                 {
                     return false;
                 }
 
-                if( _tbLastName.Required && _tbLastName.Text.IsNullOrWhiteSpace())
+                if( _tbLastName.Required && _tbLastName.Text.IsNullOrWhiteSpace() )
                 {
                     return false;
                 }
@@ -688,12 +874,12 @@ namespace Rock.Web.UI.Controls
                     return false;
                 }
 
-                if ( _bpBirthdate.Required && _bpBirthdate.SelectedDate == null)
+                if ( _bpBirthdate.Required && _bpBirthdate.SelectedDate == null )
                 {
                     return false;
                 }
 
-                if( _ddlGradePicker.Required && _ddlGradePicker.SelectedIndex == 0)
+                if( _ddlGradePicker.Required && _ddlGradePicker.SelectedIndex == 0 )
                 {
                     return false;
                 }
@@ -709,6 +895,21 @@ namespace Rock.Web.UI.Controls
                 }
 
                 if ( !_pnbMobile.IsValid )
+                {
+                    return false;
+                }
+
+                if ( _imgProfile.Required && _imgProfile.BinaryFileId == null )
+                {
+                    return false;
+                }
+
+                if ( _rpRace.Required && _rpRace.SelectedIndex == 0 )
+                {
+                    return false;
+                }
+
+                if ( _epEthnicity.Required && _epEthnicity.SelectedIndex == 0 )
                 {
                     return false;
                 }
@@ -751,6 +952,9 @@ namespace Rock.Web.UI.Controls
             _phAttributes = new PlaceHolder();
             _lbDelete = new LinkButton();
             _rblCommunicationPreference = new RockRadioButtonList();
+            _imgProfile = new ImageEditor() { RequiredErrorMessage = "Profile photo is required for the child." };
+            _rpRace = new RacePicker();
+            _epEthnicity = new EthnicityPicker();
         }
 
         /// <summary>
@@ -775,6 +979,9 @@ namespace Rock.Web.UI.Controls
             _phAttributes.ID = "_phAttributes";
             _lbDelete.ID = "_lbDelete";
             _rblCommunicationPreference.ID = "_rblCommunicationPreference";
+            _imgProfile.ID = "_imgProfile";
+            _rpRace.ID = "_rpRace";
+            _epEthnicity.ID = "_epEthnicity";
 
             Controls.Add( _lNickName );
             Controls.Add( _lLastName );
@@ -790,6 +997,9 @@ namespace Rock.Web.UI.Controls
             Controls.Add( _ddlRelationshipType );
             Controls.Add( _phAttributes );
             Controls.Add( _lbDelete );
+            Controls.Add( _imgProfile );
+            Controls.Add( _rpRace );
+            Controls.Add( _epEthnicity );
 
             _lNickName.Label = "First Name";
 
@@ -983,6 +1193,44 @@ namespace Rock.Web.UI.Controls
                     writer.RenderEndTag();
                 }
 
+                if ( this.ShowRace )
+                {
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, GetColumnStyle( 3 ) );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    _rpRace.RenderControl( writer );
+                    writer.RenderEndTag();
+                }
+
+                if ( this.ShowRace )
+                {
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, GetColumnStyle( 3 ) );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    _epEthnicity.RenderControl( writer );
+                    writer.RenderEndTag();
+                }
+
+                writer.RenderEndTag();
+
+                if ( this.ShowProfilePhoto )
+                {
+                    // Create row for profile photo
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, GetColumnStyle( 6 ) );
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    _imgProfile.RenderControl( writer );
+                    writer.RenderEndTag();
+                    writer.AddAttribute( HtmlTextWriterAttribute.Class, GetColumnStyle( 6 ) ); // filler/blocker column
+                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                    writer.RenderEndTag();
+                    writer.RenderEndTag();
+                    // end Relationship row
+                }
+
+                // Attributes row
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
                 foreach ( Control attributeCtrl in _phAttributes.Controls )
                 {
                     writer.AddAttribute( HtmlTextWriterAttribute.Class, GetColumnStyle( 3 ) );
@@ -991,7 +1239,7 @@ namespace Rock.Web.UI.Controls
                     writer.RenderEndTag();
                 }
 
-                writer.RenderEndTag();
+                writer.RenderEndTag(); // End Attributes row
 
                 writer.RenderBeginTag( HtmlTextWriterTag.Hr );
                 writer.RenderEndTag();
@@ -1206,6 +1454,30 @@ namespace Rock.Web.UI.Controls
         public Dictionary<string, string> AttributeValues { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
+        /// Gets or sets the profile photo binary file identifier.
+        /// </summary>
+        /// <value>
+        /// The profile photo binary file identifier.
+        /// </value>
+        public int? ProfilePhotoId { get; set; }
+
+        /// <summary>
+        /// Gets or sets RaceValue identifier.
+        /// </summary>
+        /// <value>
+        /// The profile RaceValue identifier.
+        /// </value>
+        public int? RaceValueId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the EthnicityValue identifier.
+        /// </summary>
+        /// <value>
+        /// The profile EthnicityValue identifier.
+        /// </value>
+        public int? EthnicityValueId { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PreRegistrationChild"/> class.
         /// </summary>
         /// <param name="person">The person.</param>
@@ -1221,6 +1493,9 @@ namespace Rock.Web.UI.Controls
             GradeOffset = person.GradeOffset;
             Age = person.Age;
             CommunicationPreference = person.CommunicationPreference;
+            ProfilePhotoId = person.PhotoId;
+            RaceValueId = person.RaceValueId;
+            EthnicityValueId = person.EthnicityValueId;
 
             var mobilePhone = person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
             MobilePhoneNumber = mobilePhone?.Number;

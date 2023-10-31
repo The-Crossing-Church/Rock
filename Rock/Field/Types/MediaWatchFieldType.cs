@@ -16,8 +16,11 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+#if WEBFORMS
 using System.Web.UI;
+#endif
 
 using Rock.Attribute;
 using Rock.Model;
@@ -31,6 +34,7 @@ namespace Rock.Field.Types
     /// watched recorded.
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.MEDIA_WATCH )]
     public class MediaWatchFieldType : FieldType
     {
         #region Configuration
@@ -66,6 +70,115 @@ namespace Rock.Field.Types
 
         /// <inheritdoc/>
         public override bool HasDefaultControl => false;
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return privateValue.IsNotNullOrWhiteSpace() ? $"{privateValue}% watched" : privateValue;
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return privateValue.IsNotNullOrWhiteSpace() ? $"{privateValue}%" : privateValue;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Formats the filter value value.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public override string FormatFilterValueValue( Dictionary<string, ConfigurationValue> configurationValues, string value )
+        {
+            return value + "% watched";
+        }
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override ComparisonType FilterComparisonType
+        {
+            get { return ComparisonHelper.NumericFilterComparisonTypes; }
+        }
+
+
+        /// <summary>
+        /// Gets the name of the attribute value field that should be bound to (Value, ValueAsDateTime, ValueAsBoolean, or ValueAsNumeric)
+        /// </summary>
+        /// <value>
+        /// The name of the attribute value field.
+        /// </value>
+        public override string AttributeValueFieldName
+        {
+            get
+            {
+                return "ValueAsNumeric";
+            }
+        }
+
+        /// <summary>
+        /// Gets a filter expression for an attribute value.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="filterValues">The filter values.</param>
+        /// <param name="parameterExpression">The parameter expression.</param>
+        /// <returns></returns>
+        public override Expression AttributeFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, List<string> filterValues, ParameterExpression parameterExpression )
+        {
+            if ( filterValues.Count == 1 )
+            {
+                MemberExpression propertyExpression = Expression.Property( parameterExpression, "ValueAsNumeric" );
+                ComparisonType comparisonType = ComparisonType.EqualTo;
+                return ComparisonHelper.ComparisonExpression( comparisonType, propertyExpression, AttributeConstantExpression( filterValues[0] ) );
+            }
+
+            return base.AttributeFilterExpression( configurationValues, filterValues, parameterExpression );
+        }
+
+        /// <summary>
+        /// Attributes the constant expression.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public override ConstantExpression AttributeConstantExpression( string value )
+        {
+            return Expression.Constant( value.AsDecimal(), typeof( decimal ) );
+        }
+
+        /// <summary>
+        /// Gets the type of the attribute value field.
+        /// </summary>
+        /// <value>
+        /// The type of the attribute value field.
+        /// </value>
+        public override Type AttributeValueFieldType
+        {
+            get
+            {
+                return typeof( decimal? );
+            }
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -232,10 +345,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Formatting
-
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -246,35 +355,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            if ( value.IsNotNullOrWhiteSpace() )
-            {
-                return $"{value}%{(condensed ? string.Empty : " watched")}";
-            }
-
-            return value;
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        /// <summary>
-        /// Formats the value as HTML.
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="condensed">if set to <c>true</c> then the value will be displayed in a condensed area; otherwise <c>false</c>.</param>
-        /// <returns></returns>
-        public override string FormatValueAsHtml( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed = false )
-        {
-            if ( value.IsNotNullOrWhiteSpace() )
-            {
-                return $"{value}%{(condensed ? string.Empty : " watched")}";
-            }
-
-            return value;
-        }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -354,9 +438,20 @@ namespace Rock.Field.Types
             // configuration.
         }
 
-        #endregion
-
-        #region Filter Control
+        /// <summary>
+        /// Formats the value as HTML.
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="condensed">if set to <c>true</c> then the value will be displayed in a condensed area; otherwise <c>false</c>.</param>
+        /// <returns></returns>
+        public override string FormatValueAsHtml( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed = false )
+        {
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
+        }
 
         /// <summary>
         /// Gets the filter value control.
@@ -377,16 +472,6 @@ namespace Rock.Field.Types
             return nbPercentage;
         }
 
-        /// <summary>
-        /// Formats the filter value value.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public override string FormatFilterValueValue( Dictionary<string, ConfigurationValue> configurationValues, string value )
-        {
-            return value + "% watched";
-        }
 
         /// <summary>
         /// Gets the filter value value.
@@ -405,75 +490,8 @@ namespace Rock.Field.Types
             return null;
         }
 
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override ComparisonType FilterComparisonType
-        {
-            get { return ComparisonHelper.NumericFilterComparisonTypes; }
-        }
 
-
-        /// <summary>
-        /// Gets the name of the attribute value field that should be bound to (Value, ValueAsDateTime, ValueAsBoolean, or ValueAsNumeric)
-        /// </summary>
-        /// <value>
-        /// The name of the attribute value field.
-        /// </value>
-        public override string AttributeValueFieldName
-        {
-            get
-            {
-                return "ValueAsNumeric";
-            }
-        }
-
-        /// <summary>
-        /// Gets a filter expression for an attribute value.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="filterValues">The filter values.</param>
-        /// <param name="parameterExpression">The parameter expression.</param>
-        /// <returns></returns>
-        public override Expression AttributeFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, List<string> filterValues, ParameterExpression parameterExpression )
-        {
-            if ( filterValues.Count == 1 )
-            {
-                MemberExpression propertyExpression = Expression.Property( parameterExpression, "ValueAsNumeric" );
-                ComparisonType comparisonType = ComparisonType.EqualTo;
-                return ComparisonHelper.ComparisonExpression( comparisonType, propertyExpression, AttributeConstantExpression( filterValues[0] ) );
-            }
-
-            return base.AttributeFilterExpression( configurationValues, filterValues, parameterExpression );
-        }
-
-        /// <summary>
-        /// Attributes the constant expression.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public override ConstantExpression AttributeConstantExpression( string value )
-        {
-            return Expression.Constant( value.AsDecimal(), typeof( decimal ) );
-        }
-
-        /// <summary>
-        /// Gets the type of the attribute value field.
-        /// </summary>
-        /// <value>
-        /// The type of the attribute value field.
-        /// </value>
-        public override Type AttributeValueFieldType
-        {
-            get
-            {
-                return typeof( decimal? );
-            }
-        }
-
+#endif
         #endregion
     }
 }

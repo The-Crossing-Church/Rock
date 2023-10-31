@@ -17,9 +17,13 @@
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
+#if WEBFORMS
+using System.Web.UI;
+#endif
 using System;
 using System.Collections.Generic;
-using System.Web.UI;
+using System.Linq;
 
 namespace Rock.Field.Types
 {
@@ -28,28 +32,21 @@ namespace Rock.Field.Types
     /// as Step.Guid
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class StepFieldType : FieldType, IEntityFieldType
+    [Rock.SystemGuid.FieldTypeGuid( "829803DB-7CA3-44F6-B1CB-669D61ED6E92" )]
+    public class StepFieldType : FieldType, IEntityFieldType, IEntityReferenceFieldType
     {
-
         #region Formatting
-         
-        /// <summary>
-        /// Returns the field's current value(s)
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">Information about the value</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
-        /// <returns></returns>
-        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
         {
-            string formattedValue = value;
+            string formattedValue = privateValue;
 
             Step step = null;
 
             using ( var rockContext = new RockContext() )
             {
-                Guid? guid = value.AsGuidOrNull();
+                Guid? guid = privateValue.AsGuidOrNull();
                 if ( guid.HasValue )
                 {
                     step = new StepService( rockContext ).GetNoTracking( guid.Value );
@@ -61,7 +58,7 @@ namespace Rock.Field.Types
                 }
             }
 
-            return base.FormatValue( parentControl, formattedValue, configurationValues, condensed );
+            return formattedValue;
         }
 
         #endregion
@@ -73,37 +70,6 @@ namespace Rock.Field.Types
         #endregion
 
         #region Entity Methods
-
-        /// <summary>
-        /// Gets the edit value as the IEntity.Id
-        /// </summary>
-        /// <param name="control">The control.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <returns></returns>
-        public int? GetEditValueAsEntityId( System.Web.UI.Control control, Dictionary<string, ConfigurationValue> configurationValues )
-        {
-            Guid guid = GetEditValue( control, configurationValues ).AsGuid();
-            using ( var rockContext = new RockContext() )
-            {
-                return new StepService( rockContext ).GetId( guid );
-            }
-        }
-
-        /// <summary>
-        /// Sets the edit value from IEntity.Id value
-        /// </summary>
-        /// <param name="control">The control.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="id">The identifier.</param>
-        public void SetEditValueFromEntityId( System.Web.UI.Control control, Dictionary<string, ConfigurationValue> configurationValues, int? id )
-        {
-            using ( var rockContext = new RockContext() )
-            {
-                var itemGuid = new StepService( rockContext ).GetGuid( id ?? 0 );
-                string guidValue = itemGuid.HasValue ? itemGuid.ToString() : string.Empty;
-                SetEditValue( control, configurationValues, guidValue );
-            }
-        }
 
         /// <summary>
         /// Gets the entity.
@@ -135,5 +101,113 @@ namespace Rock.Field.Types
 
         #endregion
 
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var guid = privateValue.AsGuidOrNull();
+
+            if ( !guid.HasValue )
+            {
+                return null;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var ids = new StepService( rockContext )
+                    .Queryable()
+                    .Where( s => s.Guid == guid.Value )
+                    .Select( s => new
+                    {
+                        s.Id,
+                        s.PersonAliasId,
+                        s.PersonAlias.PersonId,
+                        s.StepTypeId
+                    } )
+                    .FirstOrDefault();
+
+                if ( ids == null )
+                {
+                    return null;
+                }
+
+                return new List<ReferencedEntity>
+                {
+                    new ReferencedEntity( EntityTypeCache.GetId<Step>().Value, ids.Id ),
+                    new ReferencedEntity( EntityTypeCache.GetId<PersonAlias>().Value, ids.PersonAliasId ),
+                    new ReferencedEntity( EntityTypeCache.GetId<Person>().Value, ids.PersonId ),
+                    new ReferencedEntity( EntityTypeCache.GetId<StepType>().Value, ids.StepTypeId )
+                };
+            }
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<Step>().Value, nameof( Step.Id ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<Step>().Value, nameof( Step.Order ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<Step>().Value, nameof( Step.Id ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<PersonAlias>().Value, nameof( PersonAlias.PersonId ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<Person>().Value, nameof( Person.NickName ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<Person>().Value, nameof( Person.LastName ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<StepType>().Value, nameof( StepType.Name ) ),
+                new ReferencedProperty( EntityTypeCache.GetId<StepType>().Value, nameof( StepType.AllowMultiple ) )
+            };
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
+        /// <summary>
+        /// Returns the field's current value(s)
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">Information about the value</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
+        /// <returns></returns>
+        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        {
+            return GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
+        }
+
+        /// <summary>
+        /// Gets the edit value as the IEntity.Id
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public int? GetEditValueAsEntityId( Control control, Dictionary<string, ConfigurationValue> configurationValues )
+        {
+            Guid guid = GetEditValue( control, configurationValues ).AsGuid();
+            using ( var rockContext = new RockContext() )
+            {
+                return new StepService( rockContext ).GetId( guid );
+            }
+        }
+
+        /// <summary>
+        /// Sets the edit value from IEntity.Id value
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="id">The identifier.</param>
+        public void SetEditValueFromEntityId( Control control, Dictionary<string, ConfigurationValue> configurationValues, int? id )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var itemGuid = new StepService( rockContext ).GetGuid( id ?? 0 );
+                string guidValue = itemGuid.HasValue ? itemGuid.ToString() : string.Empty;
+                SetEditValue( control, configurationValues, guidValue );
+            }
+        }
+
+#endif
+        #endregion
     }
 }

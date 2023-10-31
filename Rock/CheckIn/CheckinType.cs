@@ -139,7 +139,7 @@ namespace Rock.CheckIn
         /// <value>
         ///   <c>true</c> if [allow checkout default]; otherwise, <c>false</c>.
         /// </value>
-        public bool AllowCheckoutDefault => GetSetting( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean( false );
+        public bool AllowCheckoutDefault => GetSetting( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT_KIOSK ).AsBoolean( false );
 
         /// <summary>
         /// Gets a value indicating whether [enable presence].
@@ -593,6 +593,20 @@ namespace Rock.CheckIn
             }
 
             /// <summary>
+            /// Gets the display birthdate on adults.
+            /// </summary>
+            /// <value>
+            /// The display birthdate on adults.
+            /// </value>
+            public string DisplayBirthdateOnAdults
+            {
+                get
+                {
+                    return GetAttributeForAttributeKey( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYBIRTHDATEONADULTS );
+                }
+            }
+
+            /// <summary>
             /// Gets the display birthdate on children attribute.
             /// </summary>
             /// <value>
@@ -617,6 +631,62 @@ namespace Rock.CheckIn
                 get
                 {
                     return GetAttributeForAttributeKey( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYGRADEONCHILDREN );
+                }
+            }
+
+            /// <summary>
+            /// Gets the display race on children attribute.
+            /// </summary>
+            /// <value>
+            /// The display grade on children attribute.
+            /// </value>
+            public string DisplayRaceOnChildren
+            {
+                get
+                {
+                    return GetAttributeForAttributeKey( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYRACEONCHILDREN );
+                }
+            }
+
+            /// <summary>
+            /// Gets the display ethnicity on children attribute.
+            /// </summary>
+            /// <value>
+            /// The display grade on children attribute.
+            /// </value>
+            public string DisplayEthnicityOnChildren
+            {
+                get
+                {
+                    return GetAttributeForAttributeKey( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYETHNICITYONCHILDREN );
+                }
+            }
+
+            /// <summary>
+            /// Gets the display race on adults attribute.
+            /// </summary>
+            /// <value>
+            /// The display grade on children attribute.
+            /// </value>
+            public string DisplayRaceOnAdults
+            {
+                get
+                {
+                    return GetAttributeForAttributeKey( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYRACEONADULTS );
+                }
+            }
+
+            /// <summary>
+            /// Gets the display ethnicity on adults attribute.
+            /// </summary>
+            /// <value>
+            /// The display grade on children attribute.
+            /// </value>
+            public string DisplayEthnicityOnAdults
+            {
+                get
+                {
+                    return GetAttributeForAttributeKey( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_REGISTRATION_DISPLAYETHNICITYONADULTS );
                 }
             }
 

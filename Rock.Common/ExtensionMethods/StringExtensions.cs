@@ -50,6 +50,7 @@ namespace Rock
                     // Can be "x2" if you want lowercase
                     sb.Append( b.ToString( "x2" ) );
                 }
+
                 return sb.ToString();
             }
         }
@@ -93,6 +94,7 @@ namespace Rock
                     // Can be "x2" if you want lowercase
                     sb.Append( b.ToString( "x2" ) );
                 }
+
                 return sb.ToString();
             }
         }
@@ -142,17 +144,34 @@ namespace Rock
         /// <param name="encodedString"></param>
         public static string ScrubEncodedStringForXSSObjects( this string encodedString )
         {
-            // Characters used by DOM Objects; javascript, document, window and URLs
-            char[] badCharacters = new char[] { '<', '>', ':', '*' };
-
             var decodedString = encodedString.GetFullyUrlDecodedValue();
 
-            if ( decodedString.IndexOfAny( badCharacters ) >= 0 )
+            if ( decodedString.HasXssObjects() )
             {
                 return "%2f";
             }
 
             return encodedString;
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="decodedString"/> has XSS objects.
+        /// </summary>
+        /// <param name="decodedString">The decoded string.</param>
+        /// <returns>
+        ///   <c>true</c> if <paramref name="decodedString"/> has XSS objects; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool HasXssObjects( this string decodedString )
+        {
+            // Characters used by DOM Objects; javascript, document, window and URLs
+            char[] badCharacters = new char[] { '<', '>', ':', '*' };
+
+            if ( decodedString?.IndexOfAny( badCharacters ) >= 0 )
+            {
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -185,7 +204,7 @@ namespace Rock
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="separator">The separator.</param>
-        /// <returns>Concatencated string.</returns>
+        /// <returns>Concatenated string.</returns>
         public static string JoinStrings( this IEnumerable<string> source, string separator )
         {
             return string.Join( separator, source.ToArray() );
@@ -217,6 +236,46 @@ namespace Rock
             {
                 // only one element, just use it
                 output = list[0];
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Joins an array of English strings together with a chosen delimiter, plus a final delimiter for last element, with a maximum length of results and truncation value.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="repeatDelimiter">The delimiter for all but the final string.</param>
+        /// <param name="finalDelimiter">The delimiter for only the final string.</param>
+        /// <param name="maxLength">The maximum length allowed for the concatenated string from the source (not including the <paramref name="truncation"/> string).</param>
+        /// <param name="truncation">The truncation string value (default is "..." for ellipsis).</param>
+        /// <returns>Concatenated string.</returns>
+        public static string JoinStringsWithRepeatAndFinalDelimiterWithMaxLength( this IEnumerable<String> source, string repeatDelimiter, string finalDelimiter, int? maxLength, string truncation = "..." )
+        {
+            if ( source == null || source.Count() == 0 )
+            {
+                return string.Empty;
+            }
+
+            var output = string.Empty;
+
+            var list = source.ToList();
+
+            if ( list.Count > 1 )
+            {
+                var delimited = string.Join( repeatDelimiter, list.Take( list.Count - 1 ) );
+
+                output = string.Concat( delimited, finalDelimiter, list.LastOrDefault() );
+            }
+            else
+            {
+                // only one element, just use it.
+                output = list[0];
+            }
+
+            if ( maxLength.HasValue && output.Length > maxLength.Value )
+            {
+                output = output.Substring( 0, maxLength.Value ) + truncation;
             }
 
             return output;
@@ -324,12 +383,7 @@ namespace Rock
         /// <returns></returns>
         public static string Right( this string str, int length )
         {
-            if ( str == null )
-            {
-                return string.Empty;
-            }
-
-            return str.Substring( str.Length - length );
+            return str.SubstringSafe( str.Length - length );
         }
 
         /// <summary>
@@ -441,7 +495,6 @@ namespace Rock
         public static IEnumerable<int> StringToIntList( this string str )
         {
             // https://stackoverflow.com/questions/1763613/convert-comma-separated-string-of-ints-to-int-array
-
             if ( String.IsNullOrEmpty( str ) )
             {
                 yield break;
@@ -688,18 +741,7 @@ namespace Rock
         /// <returns></returns>
         public static string Left( this string str, int length )
         {
-            if ( str == null )
-            {
-                return null;
-            }
-            else if ( str.Length <= length )
-            {
-                return str;
-            }
-            else
-            {
-                return str.Substring( 0, length );
-            }
+            return str.SubstringSafe( 0, length );
         }
 
         /// <summary>
@@ -1227,6 +1269,16 @@ namespace Rock
         }
 
         /// <summary>
+        /// Removes the trailing forwardslash.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns>System.String.</returns>
+        public static string RemoveTrailingForwardslash( this string value )
+        {
+            return value.TrimEnd( new char[] { '/' } );
+        }
+
+        /// <summary>
         /// Evaluates string, and if null or empty, returns nullValue instead.
         /// </summary>
         /// <param name="value">The value.</param>
@@ -1429,7 +1481,49 @@ namespace Rock
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Returns true/false based on whether the provided string is in a valid hex color format.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static bool IsValidHexColor( this string str )
+        {
+            if (str == null )
+            {
+                return false;
+            }
+
+            return Regex.IsMatch( str, @"^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})$" );
+        }
+
+        /// <summary>
+        /// Returns the hex color as a string if it is valid otherwise it will return the fallback or null.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="fallback"></param>
+        /// <returns></returns>
+        public static string AsHexColorString( this string str, string fallback = null )
+        {
+            if ( str.IsValidHexColor() )
+            {
+                return str;
+            }
+
+            // Return null if no fallback provided
+            if ( fallback == null )
+            {
+                return null;
+            }
+
+            // Check if fallback is a valid hex color
+            if ( fallback.IsValidHexColor() )
+            {
+                return fallback;
+            }
+
+            return null;
+        }
+
         #endregion String Extensions
     }
 }
-

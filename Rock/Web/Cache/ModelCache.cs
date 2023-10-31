@@ -69,7 +69,7 @@ namespace Rock.Web.Cache
 
             // If this model implements IHasAttributes
             var attributeModel = entity as IHasAttributes;
-            if ( attributeModel == null )
+            if ( attributeModel == null || typeof ( T ) == typeof( AttributeCache ) )
             {
                 return;
             }
@@ -456,7 +456,7 @@ namespace Rock.Web.Cache
 
                 if ( url && field is Field.ILinkableFieldType )
                 {
-                    return ( (Field.ILinkableFieldType)field ).UrlLink( value, attribute.QualifierValues );
+                    return ( field as Field.ILinkableFieldType ).UrlLink( value, attribute.QualifierValues );
                 }
 
                 return field.FormatValue( null, attribute.EntityTypeId, Id, value, attribute.QualifierValues, false );

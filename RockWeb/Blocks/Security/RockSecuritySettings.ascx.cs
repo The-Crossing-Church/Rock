@@ -21,6 +21,7 @@ using System.Web.UI;
 using System.Web.UI.WebControls;
 
 using Rock;
+using Rock.Data;
 using Rock.Model;
 using Rock.Security;
 using Rock.Utility.Enums;
@@ -35,6 +36,7 @@ namespace RockWeb.Blocks.Security
     [DisplayName( "Rock Security Settings" )]
     [Category( "Security" )]
     [Description( "Block for displaying and editing Rock's security settings." )]
+    [Rock.SystemGuid.BlockTypeGuid( "186490CD-4132-43BD-9BDF-DD04C6CD2432" )]
     public partial class RockSecuritySettings : RockBlock
     {
         private SecuritySettingsService _securitySettingsService = new SecuritySettingsService();
@@ -66,7 +68,9 @@ namespace RockWeb.Blocks.Security
             {
                 LoadSecuritySettings();
                 LoadRoleDropdownLists();
+                LoadAuthenticationSettings();
             }
+
             nbSaveResult.Visible = true;
 
             base.OnLoad( e );
@@ -110,6 +114,25 @@ namespace RockWeb.Blocks.Security
             _securitySettingsService.SecuritySettings.AccountProtectionProfileSecurityGroup.AddOrReplace( AccountProtectionProfile.Extreme, extremeProfile );
             _securitySettingsService.SecuritySettings.AccountProtectionProfileSecurityGroup.AddOrReplace( AccountProtectionProfile.High, highProfile );
 
+            _securitySettingsService.SecuritySettings.DisablePasswordlessSignInForAccountProtectionProfiles =
+                cblDisablePasswordlessSignInForAccountProtectionProfiles.SelectedValuesAsInt.Select( a => ( AccountProtectionProfile ) a ).ToList();
+
+            _securitySettingsService.SecuritySettings.PasswordlessConfirmationCommunicationTemplateGuid = ddlPasswordlessConfirmationCommunicationTemplate.SelectedValueAsGuid() ?? default;
+
+            if ( !nbPasswordlessSignInDailyIpThrottle.Text.AsIntegerOrNull().HasValue )
+            {
+                nbPasswordlessSignInDailyIpThrottle.Text = SecuritySettings.PasswordlessSignInDailyIpThrottleDefaultValue.ToString();
+            }
+
+            _securitySettingsService.SecuritySettings.PasswordlessSignInDailyIpThrottle = nbPasswordlessSignInDailyIpThrottle.Text.AsInteger();
+
+            if ( !nbPasswordlessSignInSessionDuration.Text.AsIntegerOrNull().HasValue )
+            {
+                nbPasswordlessSignInSessionDuration.Text = SecuritySettings.PasswordlessSignInSessionDurationDefaultValue.ToString();
+            }
+
+            _securitySettingsService.SecuritySettings.PasswordlessSignInSessionDuration = nbPasswordlessSignInSessionDuration.Text.AsInteger();
+            
             if ( _securitySettingsService.Save() )
             {
                 nbSaveResult.Text = "Your Security Settings have been saved.";
@@ -142,6 +165,7 @@ namespace RockWeb.Blocks.Security
             {
                 cblIgnoredAccountProtectionProfiles.Items.Add( new ListItem( item.ConvertToString(), item.ConvertToInt().ToString() ) );
                 cblDisableTokensForAccountProtectionProfiles.Items.Add( new ListItem( item.ConvertToString(), item.ConvertToInt().ToString() ) );
+                cblDisablePasswordlessSignInForAccountProtectionProfiles.Items.Add( new ListItem( item.ConvertToString(), item.ConvertToInt().ToString() ) );
             }
         }
 
@@ -207,6 +231,26 @@ namespace RockWeb.Blocks.Security
             {
                 ddlExtremeRoles.SelectedValue = extremeRole.Id.ToString();
             }
+        }
+
+        /// <summary>
+        /// Loads the authentication settings.
+        /// </summary>
+        private void LoadAuthenticationSettings()
+        {
+            nbPasswordlessSignInDailyIpThrottle.Text = _securitySettingsService.SecuritySettings.PasswordlessSignInDailyIpThrottle.ToString();
+            nbPasswordlessSignInSessionDuration.Text = _securitySettingsService.SecuritySettings.PasswordlessSignInSessionDuration.ToString();
+            
+            cblDisablePasswordlessSignInForAccountProtectionProfiles.SetValues(
+                _securitySettingsService
+                    .SecuritySettings
+                    .DisablePasswordlessSignInForAccountProtectionProfiles
+                    .Select( a => a.ConvertToInt().ToString() ) );
+            
+            var communicationTemplates = new SystemCommunicationService( new RockContext() ).Queryable().ToList();
+            ddlPasswordlessConfirmationCommunicationTemplate.DataSource = communicationTemplates;
+            ddlPasswordlessConfirmationCommunicationTemplate.DataBind();
+            ddlPasswordlessConfirmationCommunicationTemplate.SetValue( _securitySettingsService.SecuritySettings.PasswordlessConfirmationCommunicationTemplateGuid );
         }
 
         #endregion

@@ -39,6 +39,7 @@ namespace RockWeb.Blocks.Follow
     [Category( "Follow" )]
     [Description( "Block for displaying people that current person follows." )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "BD548744-DC6D-4870-9FED-BB9EA24E709B" )]
     public partial class PersonFollowingList : RockBlock, ICustomGridColumns
     {
 
@@ -183,21 +184,9 @@ namespace RockWeb.Blocks.Follow
             if ( CurrentPersonAlias != null )
             {
                 var rockContext = new RockContext();
+                var followingService = new FollowingService( rockContext );
 
-                int personAliasEntityTypeId = EntityTypeCache.Get( "Rock.Model.PersonAlias" ).Id;
-                var personAliasIds = new FollowingService( rockContext ).Queryable()
-                    .Where( f =>
-                        f.EntityTypeId == personAliasEntityTypeId &&
-                        string.IsNullOrEmpty( f.PurposeKey ) &&
-                        f.PersonAliasId == CurrentPersonAlias.Id )
-                    .Select( f => f.EntityId )
-                    .Distinct()
-                    .ToList();
-
-                var qry = new PersonAliasService( rockContext ).Queryable()
-                    .Where( p => personAliasIds.Contains( p.Id ) )
-                    .Select( p => p.Person )
-                    .Distinct();
+                var qry = followingService.GetFollowedPersonItems( CurrentPersonAlias.Id );
 
                 // Sort
                 SortProperty sortProperty = gFollowings.SortProperty;

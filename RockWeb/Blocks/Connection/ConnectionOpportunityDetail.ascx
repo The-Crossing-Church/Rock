@@ -96,7 +96,7 @@
                                             <Rock:RockBoundField DataField="Name" HeaderText="Attribute" />
                                             <Rock:RockBoundField DataField="Description" HeaderText="Description" />
                                             <Rock:RockTemplateField HeaderText="Inherited">
-                                                <ItemTemplate>(Inherited from <a href='<%# Eval("Url") %>' target='_blank'><%# Eval("GroupType") %></a>)</ItemTemplate>
+                                                <ItemTemplate>(Inherited from <a href='<%# Eval("Url") %>' target='_blank' rel='noopener noreferrer'><%# Eval("GroupType") %></a>)</ItemTemplate>
                                             </Rock:RockTemplateField>
                                         </Columns>
                                     </Rock:Grid>
@@ -262,6 +262,9 @@
                 </div>
 
                 <div class="row">
+                    <div class="col-md-12">
+                        <Rock:RockRadioButtonList ID="rblConnectionStatuses" runat="server" RepeatDirection="Horizontal" Label="Manual Trigger Status Filter" Help="Filters workflows to display based on the current status of the connection request." />
+                    </div>
                     <div class="col-md-6">
                         <Rock:RockDropDownList ID="ddlPrimaryQualifier" runat="server" Visible="false" ValidationGroup="WorkflowDetails" />
                         <Rock:RockDropDownList ID="ddlSecondaryQualifier" runat="server" Visible="false" ValidationGroup="WorkflowDetails" />

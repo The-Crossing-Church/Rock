@@ -17,10 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data.Entity;
 using System.Linq;
 using System.Text;
-
-using Quartz;
 
 using Rock.Data;
 using Rock.Model;
@@ -33,8 +32,7 @@ namespace Rock.Jobs
     [DisplayName( "Process Workflows" )]
     [Description( "Runs continuously to process in workflows activities/actions in progress." )]
 
-    [DisallowConcurrentExecution]
-    public class ProcessWorkflows : IJob
+    public class ProcessWorkflows : RockJob
     {
         /// <summary> 
         /// Empty constructor for job initialization
@@ -47,20 +45,8 @@ namespace Rock.Jobs
         {
         }
 
-        /// <summary>
-        /// Called by the <see cref="IScheduler" /> when a <see cref="ITrigger" />
-        /// fires that is associated with the <see cref="IJob" />.
-        /// </summary>
-        /// <param name="context">The execution context.</param>
-        /// <remarks>
-        /// The implementation may wish to set a  result object on the
-        /// JobExecutionContext before this method exits.  The result itself
-        /// is meaningless to Quartz, but may be informative to
-        /// <see cref="IJobListener" />s or
-        /// <see cref="ITriggerListener" />s that are watching the job's
-        /// execution.
-        /// </remarks>
-        public virtual void Execute( IJobExecutionContext context )
+        /// <inheritdoc cref="RockJob.Execute()"/>
+        public override void Execute()
         {
             int workflowsProcessed = 0;
             int workflowErrors = 0;
@@ -68,9 +54,18 @@ namespace Rock.Jobs
             var processingErrors = new List<string>();
             var exceptionMsgs = new List<string>();
 
+            // Get all the "active" workflows that are ready for processing based on their LastProcessedDateTime
+            // and the Workflow Type's ProcessingIntervalSeconds.
+            //
+            // NOTE: Be sure to use RockDateTime.Now otherwise DateTime.Now will use SysDateTime()
+            //       which would be the time on the SQL server!
             foreach ( var workflowId in new WorkflowService( new RockContext() )
                 .GetActive()
-                .Where( wf => (wf.WorkflowType.IsActive == true || !wf.WorkflowType.IsActive.HasValue ) )
+                .Where( wf => ( wf.WorkflowType.IsActive == true || !wf.WorkflowType.IsActive.HasValue ) )
+                .Where( wf =>
+                    !wf.LastProcessedDateTime.HasValue
+                    ||
+                    ( DbFunctions.AddSeconds( wf.LastProcessedDateTime.Value, wf.WorkflowType.ProcessingIntervalSeconds ?? 0 ) <= RockDateTime.Now ) )
                 .Select( w => w.Id )
                 .ToList() )
             {
@@ -87,21 +82,17 @@ namespace Rock.Jobs
                         {
                             try
                             {
-                                if ( !workflow.LastProcessedDateTime.HasValue ||
-                                    RockDateTime.Now.Subtract( workflow.LastProcessedDateTime.Value ).TotalSeconds >= ( workflowType.ProcessingIntervalSeconds ?? 0 ) )
-                                {
-                                    var errorMessages = new List<string>();
+                                var errorMessages = new List<string>();
 
-                                    var processed = workflowService.Process( workflow, out errorMessages );
-                                    if ( processed )
-                                    {
-                                        workflowsProcessed++;
-                                    }
-                                    else
-                                    {
-                                        workflowErrors++;
-                                        processingErrors.Add( string.Format( "{0} [{1}] - {2} [{3}]: {4}", workflowType.Name, workflowType.Id, workflow.Name, workflow.Id, errorMessages.AsDelimited( ", " ) ) );
-                                    }
+                                var processed = workflowService.Process( workflow, out errorMessages );
+                                if ( processed )
+                                {
+                                    workflowsProcessed++;
+                                }
+                                else
+                                {
+                                    workflowErrors++;
+                                    processingErrors.Add( string.Format( "{0} [{1}] - {2} [{3}]: {4}", workflowType.Name, workflowType.Id, workflow.Name, workflow.Id, errorMessages.AsDelimited( ", " ) ) );
                                 }
                             }
                             catch ( Exception ex )
@@ -142,7 +133,7 @@ namespace Rock.Jobs
                 throw new Exception( "One or more exceptions occurred processing workflows..." + Environment.NewLine + exceptionMsgs.AsDelimited( Environment.NewLine ) );
             }
 
-            context.Result = resultMsg.ToString();
+            this.Result = resultMsg.ToString();
         }
     }
 }

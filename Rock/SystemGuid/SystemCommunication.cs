@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
+
 namespace Rock.SystemGuid
 {
     /// <summary>
@@ -83,6 +85,16 @@ namespace Rock.SystemGuid
         public const string SECURITY_FORGOT_USERNAME = "113593ff-620e-4870-86b1-7a0ec0409208";
 
         /// <summary>
+        /// Gets the template guid for Passwordless Login Confirmation communication
+        /// </summary>
+        public const string SECURITY_CONFIRM_LOGIN_PASSWORDLESS = "A7AD9FD5-A343-4ADA-868D-A3528D650143";
+
+        /// <summary>
+        /// Gets the template guid for Confirm Account (Passwordless) communication
+        /// </summary>
+        public const string SECURITY_CONFIRM_ACCOUNT_PASSWORDLESS = "543B7C09-80C0-4DAB-8487-10569474D9C7";
+
+        /// <summary>
         /// The scheduling response communication
         /// </summary>
         public const string SCHEDULING_RESPONSE = "D095F78D-A5CF-4EF6-A038-C7B07E250611";
@@ -105,6 +117,8 @@ namespace Rock.SystemGuid
         /// <summary>
         /// Gets the template guid for digital signature invite
         /// </summary>
+        [RockObsolete( "1.14" )]
+        [Obsolete( "No longer used" )]
         public const string DIGITAL_SIGNATURE_INVITE = "791F2DE4-5A59-60AE-4F2F-FDC3EBC4FFA9";
 
         /// <summary>
@@ -218,6 +232,23 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string KIOSK_INFO_UPDATE = "BC490DD4-ABBB-7DBA-4A9E-74F07F4B5881";
 
+        /// <summary>
+        /// Gets the template guid for Reminder Notifications.
+        /// </summary>
+        public const string REMINDER_NOTIFICATION = "7899958C-BC2F-499E-A5CC-11DE1EF8DF20";
+
+        #region Sign-Up Group
+
+        /// <summary>
+        /// Gets the template guid for Sign-Up Group Reminders.
+        /// </summary>
+        public const string SIGNUP_GROUP_REMINDER = "530ADF1E-C2D9-4A67-BADF-5EF65222CA7E";
+
+        /// <summary>
+        /// Gets the template guid for Sign-Up Group Registration Confirmations.
+        /// </summary>
+        public const string SIGNUP_GROUP_REGISTRATION_CONFIRMATION = "B546C11D-6C92-400F-BA56-AAA22D7BAC01";
+
+        #endregion
     }
 }
- 

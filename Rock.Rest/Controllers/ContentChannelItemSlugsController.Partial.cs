@@ -23,7 +23,7 @@ using Rock.Rest.Filters;
 namespace Rock.Rest.Controllers
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public partial class ContentChannelItemSlugsController
     {
@@ -36,6 +36,7 @@ namespace Rock.Rest.Controllers
         [Authenticate, Secured]
         [HttpPost]
         [System.Web.Http.Route( "api/ContentChannelItemSlugs/SaveContentSlug/{contentChannelItemId}/{slug}/{contentChannelItemSlugId?}" )]
+        [Rock.SystemGuid.RestActionGuid( "378CB619-2BF6-41CB-8951-FB75E756246F" )]
         public SaveSlugResponse SaveContentSlug( int contentChannelItemId, string slug, int? contentChannelItemSlugId = null )
         {
             SaveSlugResponse response = new SaveSlugResponse();
@@ -56,29 +57,6 @@ namespace Rock.Rest.Controllers
         /// <summary>
         /// Gets the unique slug.
         /// </summary>
-        /// <param name="slug">The slug.</param>
-        /// <param name="contentChannelItemSlugId">The content channel item slug identifier.</param>
-        [RockObsolete("1.9")]
-        [System.Obsolete( "Uniqueness is now based on the content channel. Use the override GetUniqueContentSlug( contentChannelItemId, slug, contentChannelItemSlugId ) instead.", true )]
-        [Authenticate, Secured]
-        [HttpGet]
-        [System.Web.Http.Route( "api/ContentChannelItemSlugs/GetUniqueContentSlug/{slug}/{contentChannelItemSlugId?}" )]
-        public string GetUniqueContentSlug( string slug, int? contentChannelItemSlugId = null )
-        {
-            string uniquieSlug = string.Empty;
-
-            using ( var rockContext = new RockContext() )
-            {
-                var contentChannelItemSlugService = new ContentChannelItemSlugService( rockContext );
-
-                uniquieSlug = contentChannelItemSlugService.GetUniqueContentSlug( slug, contentChannelItemSlugId );
-            }
-            return uniquieSlug;
-        }
-
-        /// <summary>
-        /// Gets the unique slug.
-        /// </summary>
         /// <param name="contentChannelItemId">The content channel item identifier.</param>
         /// <param name="slug">The slug.</param>
         /// <param name="contentChannelItemSlugId">The content channel item slug identifier.</param>
@@ -86,6 +64,7 @@ namespace Rock.Rest.Controllers
         [Authenticate, Secured]
         [HttpGet]
         [System.Web.Http.Route( "api/ContentChannelItemSlugs/GetUniqueContentSlug/{contentChannelItemId}/{slug}/{contentChannelItemSlugId?}" )]
+        [Rock.SystemGuid.RestActionGuid( "98C1DB14-6693-4AE5-91BF-E2580BA44451" )]
         public string GetUniqueContentSlug( int contentChannelItemId, string slug, int? contentChannelItemSlugId = null )
         {
             string uniqueSlug = string.Empty;
@@ -95,6 +74,31 @@ namespace Rock.Rest.Controllers
                 var contentChannelItemSlugService = new ContentChannelItemSlugService( rockContext );
 
                 uniqueSlug = contentChannelItemSlugService.GetUniqueContentSlug( slug, contentChannelItemSlugId, contentChannelItemId );
+            }
+
+            return uniqueSlug ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Gets the unique slug for the content channel.
+        /// </summary>
+        /// <param name="contentChannelId">The content channel item identifier.</param>
+        /// <param name="slug">The slug.</param>
+        /// <param name="contentChannelItemSlugId">The content channel item slug identifier.</param>
+        /// <returns></returns>
+        [Authenticate, Secured]
+        [HttpGet]
+        [System.Web.Http.Route( "api/ContentChannelItemSlugs/GetUniqueContentChannelSlug/{contentChannelId}/{slug}/{contentChannelItemSlugId?}" )]
+        [Rock.SystemGuid.RestActionGuid( "98C1DB14-6693-4AE5-91BF-E2580BA44451" )]
+        public string GetUniqueContentSlugForContentChannel( int contentChannelId, string slug, int? contentChannelItemSlugId = null )
+        {
+            string uniqueSlug = string.Empty;
+
+            using ( var rockContext = new RockContext() )
+            {
+                var contentChannelItemSlugService = new ContentChannelItemSlugService( rockContext );
+
+                uniqueSlug = contentChannelItemSlugService.GetUniqueSlugForContentChannel( slug, contentChannelId, contentChannelItemSlugId );
             }
 
             return uniqueSlug ?? string.Empty;

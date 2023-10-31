@@ -16,6 +16,9 @@
 //
 using Rock.Attribute;
 using Rock.Web.UI.Controls;
+#if WEBFORMS
+using System.Web.UI;
+#endif
 
 namespace Rock.Field.Types
 {
@@ -24,6 +27,7 @@ namespace Rock.Field.Types
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><path d=""M1.52,10.6l3-1.27a.86.86,0,0,1,1,.24l1.21,1.48a9.59,9.59,0,0,0,4.36-4.36L9.58,5.48a.85.85,0,0,1-.25-1l1.27-3a.87.87,0,0,1,1-.5l2.76.64a.85.85,0,0,1,.66.83A12.52,12.52,0,0,1,2.49,15a.85.85,0,0,1-.83-.66L1,11.58A.87.87,0,0,1,1.52,10.6Z""/></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.PHONE_NUMBER )]
     public class PhoneNumberFieldType : FieldType
     {
 
@@ -32,19 +36,6 @@ namespace Rock.Field.Types
         #endregion
 
         #region Edit Control
-
-        /// <summary>
-        /// Creates the control(s) necessary for prompting user for a new value
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="id"></param>
-        /// <returns>
-        /// The control
-        /// </returns>
-        public override System.Web.UI.Control EditControl( System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id )
-        {
-            return new PhoneNumberBox { ID = id };
-        }
 
         /*/// <summary>
         /// Tests the value to ensure that it is a valid value.  If not, message will indicate why
@@ -77,7 +68,7 @@ namespace Rock.Field.Types
         /// <param name="value">The value.</param>
         /// <param name="configurationValues">The configuration values.</param>
         /// <returns></returns>
-        public override object ValueAsFieldType( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        public override object ValueAsFieldType( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
         {
             return value.AsDecimalOrNull();
         }
@@ -89,7 +80,7 @@ namespace Rock.Field.Types
         /// <param name="value">The value.</param>
         /// <param name="configurationValues">The configuration values.</param>
         /// <returns></returns>
-        public override object SortValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        public override object SortValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
         {
             // return ValueAsFieldType which returns the value as a Decimal
             return this.ValueAsFieldType( parentControl, value, configurationValues );
@@ -115,5 +106,23 @@ namespace Rock.Field.Types
 
         #endregion
 
+        #region WebForms
+#if WEBFORMS
+
+        /// <summary>
+        /// Creates the control(s) necessary for prompting user for a new value
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="id"></param>
+        /// <returns>
+        /// The control
+        /// </returns>
+        public override Control EditControl( System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id )
+        {
+            return new PhoneNumberBox { ID = id };
+        }
+
+#endif
+        #endregion
     }
 }

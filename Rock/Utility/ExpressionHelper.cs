@@ -178,8 +178,15 @@ namespace Rock.Utility
 
             var service = new AttributeValueService( ( RockContext ) serviceInstance.Context );
 
-            var attributeValues = service.Queryable().Where( v =>
-                v.EntityId.HasValue );
+            /*
+                13-Sep-2023 - DJL
+
+                Restricting the Attribute Value query to non-null values for EntityId allows the database server
+                to take advantage of an index seek rather than requiring a full index scan.
+
+                Reason: Improve Data View performance. (https://github.com/SparkDevNetwork/Rock/issues/5575)
+            */
+            var attributeValues = service.Queryable().Where( v => v.EntityId.HasValue );
 
             AttributeCache attributeCache = null;
 

@@ -39,6 +39,7 @@ namespace RockWeb.Blocks.Groups
     [Description( "Handles displaying group search results and redirects to the group detail page (via route ~/Group/) when only one match was found." )]
     [CodeEditorField( "Group URL Format", "The URL to use for linking to a group. <span class='tip tip-lava'></span>", CodeEditorMode.Lava, CodeEditorTheme.Rock, 200, false, @"~/Group/{{ Group.Id }}" )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "F1E188A5-2F9D-4BA6-BCA1-82B2450DAC1C" )]
     public partial class GroupSearch : RockBlock
     {
         #region Fields
@@ -116,7 +117,8 @@ namespace RockWeb.Blocks.Groups
                         g.Id,
                         GroupType = g.GroupType.Name,
                         Structure = ParentStructure( g ),
-                        MemberCount = g.Members.Count
+                        MemberCount = g.Members.Count,
+                        Campus = g.Campus?.Name
                     } )
                     .ToList();
                 gGroups.DataBind();

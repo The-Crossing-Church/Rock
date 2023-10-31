@@ -35,9 +35,10 @@ namespace RockWeb.Blocks.Finance
     /// </summary>
     /// <seealso cref="RockBlock" />
 
-    [DisplayName( "Text To Give Settings" )]
+    [RockObsolete( "1.14.1" )]
+    [DisplayName( "Text To Give Settings (Obsolete)" )]
     [Category( "Finance" )]
-    [Description( "Displays a person's Text To Give settings for editing." )]
+    [Description( "Obsolete. Use the Giving Configuration block." )]
 
     [LinkedPage(
         "Parent Page",
@@ -53,6 +54,7 @@ namespace RockWeb.Blocks.Finance
         IsRequired = false,
         Order = 1 )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "9069F894-FDA5-4546-93EB-CEC448B142AA" )]
     public partial class TextToGiveSettings : RockBlock
     {
         #region Keys

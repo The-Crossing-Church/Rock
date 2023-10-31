@@ -1,4 +1,4 @@
-﻿// <copyright>
+// <copyright>
 // Copyright by the Spark Development Network
 //
 // Licensed under the Rock Community License (the "License");
@@ -94,6 +94,8 @@ namespace Rock.Blocks.Types.Mobile.Cms
 
     #endregion
 
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_WORKFLOW_ENTRY_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( "9116AAD8-CF16-4BCE-B0CF-5B4D565710ED")]
     public class WorkflowEntry : RockMobileBlockType
     {
         #region Feature Keys
@@ -873,6 +875,18 @@ namespace Rock.Blocks.Types.Mobile.Cms
                 {
                     WorkflowActivity.Activate( activityType, workflow );
                 }
+            }
+
+            var workflowTypeCache = WorkflowTypeCache.Get( workflow.WorkflowTypeId );
+
+            if ( workflowTypeCache.IsPersisted == false && workflowTypeCache.IsFormBuilder && action != null )
+            {
+                /* 3/14/2022 MP
+                 If this is a FormBuilder workflow, the WorkflowType probably has _workflowType.IsPersisted == false.
+                 This is because we don't want to persist the workflow until they have submitted.
+                 So, in the case of FormBuilder, we'll persist when they submit regardless of the _workflowType.IsPersisted setting
+                */
+                workflowService.PersistImmediately( action );
             }
 
             // If the LastProcessedDateTime is equal to RockDateTime.Now we need to pause for a bit so the workflow will actually process here.

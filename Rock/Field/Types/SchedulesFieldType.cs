@@ -16,10 +16,10 @@
 //
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
@@ -33,20 +33,13 @@ namespace Rock.Field.Types
     /// Stored as a List of Schedule Guids
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class SchedulesFieldType : FieldType
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.SCHEDULES )]
+    public class SchedulesFieldType : FieldType, IEntityReferenceFieldType, ISplitMultiValueFieldType
     {
-
         #region Formatting
 
-        /// <summary>
-        /// Returns the field's current value(s)
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">Information about the value</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
-        /// <returns></returns>
-        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        /// <inheritdoc/>
+        public override string GetTextValue( string value, Dictionary<string, string> privateConfigurationValues )
         {
             string formattedValue = string.Empty;
 
@@ -69,17 +62,125 @@ namespace Rock.Field.Types
                     var schedules = guids.Select( a => NamedScheduleCache.Get( a ) ).ToList();
                     if ( schedules.Any() )
                     {
-                        formattedValue = string.Join( ", ", ( from schedule in schedules select schedule?.Name ).ToArray() );
+                        formattedValue = string.Join( ", ", ( from schedule in schedules select schedule?.Name ) );
                     }
                 }
             }
 
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
+            return formattedValue;
         }
 
         #endregion
 
         #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Determines whether this filter has a filter control
+        /// </summary>
+        /// <returns></returns>
+        public override bool HasFilterControl()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.ContainsFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( string.IsNullOrWhiteSpace( privateValue ) )
+            {
+                return null;
+            }
+
+            var guids = new List<Guid>();
+
+            foreach ( string guidValue in privateValue.Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ) )
+            {
+                Guid? guid = guidValue.AsGuidOrNull();
+                if ( guid.HasValue )
+                {
+                    guids.Add( guid.Value );
+                }
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var referencedEntities = guids.Select( a => new ScheduleService( rockContext ).Get( a ) )
+                .Select( s => s.Id )
+                .ToList()
+                .Select( s => new ReferencedEntity( EntityTypeCache.GetId<Schedule>().Value, s ) )
+                .ToList();
+
+                if ( !referencedEntities.Any() )
+                {
+                    return null;
+                }
+
+                return referencedEntities;
+            }
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Name property of a Group and
+            // should have its persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<Schedule>().Value, nameof( Schedule.Name ) )
+            };
+        }
+
+        #endregion
+
+        #region ISplitMultiValueFieldType
+
+        /// <inheritdoc/>
+        public ICollection<string> SplitMultipleValues( string privateValue )
+        {
+            return privateValue.Split( ',' );
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
+        /// <summary>
+        /// Returns the field's current value(s)
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">Information about the value</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
+        /// <returns></returns>
+        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        {
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
+        }
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -138,10 +239,8 @@ namespace Rock.Field.Types
 
                 if ( guids.Any() )
                 {
-
                     var scheduleIds = guids.Select( g => NamedScheduleCache.GetId( g ) ).Where( a => a.HasValue ).Select( a => a.Value ).ToList();
                     picker.SetValues( scheduleIds );
-
                 }
                 else
                 {
@@ -150,10 +249,6 @@ namespace Rock.Field.Types
                 }
             }
         }
-
-        #endregion
-
-        #region Filter Control
 
         /// <summary>
         /// Creates the control needed to filter (query) values using this field type.
@@ -168,29 +263,7 @@ namespace Rock.Field.Types
             return base.FilterControl( configurationValues, id, required, filterMode );
         }
 
-        /// <summary>
-        /// Determines whether this filter has a filter control
-        /// </summary>
-        /// <returns></returns>
-        public override bool HasFilterControl()
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.ContainsFilterComparisonTypes;
-            }
-        }
-
+#endif
         #endregion
     }
 }

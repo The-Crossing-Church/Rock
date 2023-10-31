@@ -41,7 +41,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
     [Description( "Block used to view the giving." )]
 
     [IntegerField(
-        "Inactive Giver Cutoff (Days)",
+        "Inactive Giver Cutoff (days)",
         Key = AttributeKey.InactiveGiverCutoff,
         Description = "The number of days after which a person is considered an inactive giver.",
         IsRequired = true,
@@ -55,6 +55,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
         Key = AttributeKey.AlertListPage,
         DefaultValue = Rock.SystemGuid.Page.GIVING_ALERTS )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "896D807D-2110-4007-AFD1-4D953B83375B" )]
     public partial class GivingOverview : Rock.Web.UI.PersonBlock
     {
         #region Constants
@@ -333,7 +334,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
                 .Select( a => new
                 {
                     TransactionDateTime = a.TransactionDateTime,
-                    TotalAmountBeforeRefund = a.TransactionDetails.Sum( d => d.Amount ),
+                    TotalAmountBeforeRefund = a.TransactionDetails.Where(td => td.Account.IsTaxDeductible == true).Sum( d => d.Amount ),
                     // For each Refund (there could be more than one) get the refund amount for each if the refunds's Detail records for the Account.
                     // Then sum that up for the total refund amount for the account
                     TotalRefundAmount = a
@@ -422,7 +423,7 @@ $@"<span title=""{growthPercentText}"" class=""small text-{ ( isGrowthPositive ?
             var kpi = kpiLast12Months + kpiLast90Days + kpiGivesAs + kpiGivingJourney;
 
             var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-            lLastGiving.Text = string.Format( @"{{[kpis style:'edgeless' iconbackground:'false' columnmin:'200px' columncount:'4' columncountmd:'4' columncountsm:'2']}}{0}{{[endkpis]}}", kpi ).ResolveMergeFields( mergeFields );
+            lLastGiving.Text = string.Format( @"{{[kpis style:'edgeless' iconbackground:'false' columnmin:'180px' columncount:'4' columncountmd:'4' columncountsm:'2']}}{0}{{[endkpis]}}", kpi ).ResolveMergeFields( mergeFields );
         }
 
         /// <summary>
@@ -515,16 +516,16 @@ $@"<span title=""{growthPercentText}"" class=""small text-{ ( isGrowthPositive ?
             var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
 
             // Typical gift KPI
-            var giftAmountMedian = FormatAsCurrency( Person.GetAttributeValue( "GiftAmountMedian" ).AsDecimal() );
-            var giftAmountIqr = FormatAsCurrency( Person.GetAttributeValue( "GiftAmountIQR" ).AsDecimal() );
+            var giftAmountMedian = Person.GetAttributeValue( "GiftAmountMedian" ).AsDecimal();
+            var giftAmountIqr = Person.GetAttributeValue( "GiftAmountIQR" ).AsDecimal();
 
             var typicalGiftKpi = GetKpiShortCode(
                 "Typical Gift",
-                $"<span class=\"currency-span\">{giftAmountMedian}</span>",
+                $"<span class=\"currency-span\">{FormatAsCurrency( giftAmountMedian )}</span>",
                 $"{giftAmountIqr}",
                 "fa-fw fa-money-bill",
                 "left",
-                $"A typical gift amount has a median value of {giftAmountMedian} with an IQR variance of {giftAmountIqr}." );
+                $"A typical gift amount has a median value of ${giftAmountMedian} with an IQR variance of ${giftAmountIqr}." );
 
             stringBuilder.Append( typicalGiftKpi );
 
@@ -726,7 +727,9 @@ $@"<span title=""{growthPercentText}"" class=""small text-{ ( isGrowthPositive ?
 
         private string FormatAsCurrency( decimal value )
         {
-            return value.FormatAsCurrencyWithDecimalPlaces( 0 );
+            // wrap the first value returned with a span for styling
+            string val = value.FormatAsCurrencyWithDecimalPlaces( 0 );
+            return String.Format( "<span>{0}</span>{1}", val.Substring( 0, 1 ), val.Substring( 1 ) );
         }
 
         #endregion Methods

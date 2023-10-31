@@ -42,6 +42,7 @@ namespace RockWeb.Blocks.Steps
     [DisplayName( "Step Type Detail" )]
     [Category( "Steps" )]
     [Description( "Displays the details of the given Step Type for editing." )]
+    [ContextAware( typeof( Campus ) )]
 
     #region Block Attributes
 
@@ -93,7 +94,8 @@ namespace RockWeb.Blocks.Steps
 
     #endregion Block Attributes
 
-    public partial class StepTypeDetail : RockBlock
+    [Rock.SystemGuid.BlockTypeGuid( "84DEAB14-70B3-4DA4-9CC2-0E0A301EE0FD" )]
+    public partial class StepTypeDetail : ContextEntityBlock
     {
         #region Attribute Keys
 
@@ -432,12 +434,13 @@ namespace RockWeb.Blocks.Steps
             var stepWorkflowTriggerService = new StepWorkflowTriggerService( rockContext );
 
             int stepTypeId = int.Parse( hfStepTypeId.Value );
-
+            bool isNew = false;
             if ( stepTypeId == 0 )
             {
                 stepType = new StepType();
                 stepType.StepProgramId = _stepProgramId;
                 stepTypeService.Add( stepType );
+                isNew = true;
             }
             else
             {
@@ -445,6 +448,7 @@ namespace RockWeb.Blocks.Steps
                                           .Include( x => x.StepWorkflowTriggers )
                                           .Where( c => c.Id == stepTypeId )
                                           .FirstOrDefault();
+                _stepProgramId = stepType.StepProgramId;
             }
 
             // Workflow Triggers: Remove deleted triggers.
@@ -541,10 +545,14 @@ namespace RockWeb.Blocks.Steps
                 }
             }
 
-            // If there are any other step types, either:
-            // Find out the maximum Order value for the steps, and set this new Step's Order value one higher than that.
-            // If there are NOT any other step Types, set Order as 0.
-            stepType.Order = stepTypes.Any() ? stepTypes.Max( st => st.Order ) + 1 : 0;
+            if ( isNew )
+            {
+                // If there are any other step types, either:
+                // Find out the maximum Order value for the steps, and set this new Step's Order value one higher than that.
+                // If there are NOT any other step Types, set Order as 0.
+                stepType.Order = stepTypes.Any() ? stepTypes.Max( st => st.Order ) + 1 : 0;
+
+            }
 
             // Update Advanced Settings
             stepType.AutoCompleteDataViewId = dvpAutocomplete.SelectedValueAsId();
@@ -1498,12 +1506,7 @@ namespace RockWeb.Blocks.Steps
 
             lReadOnlyTitle.Text = stepType.Name.FormatAsHtmlTitle();
 
-            // Create the read-only description text.
-            var descriptionListMain = new DescriptionList();
-
-            descriptionListMain.Add( "Description", stepType.Description );
-
-            lStepTypeDescription.Text = descriptionListMain.Html;
+            lStepTypeDescription.Text = stepType.Description.ScrubHtmlAndConvertCrLfToBr();;
             lStepTypeName.Text = stepType.Name;
 
             // Configure Label: Inactive
@@ -1800,6 +1803,12 @@ namespace RockWeb.Blocks.Steps
                     x.StepType.IsActive &&
                     x.CompletedDateKey != null );
 
+            var campusContext = ContextEntity<Campus>();
+            if ( campusContext != null )
+            {
+                query = query.Where( s => s.CampusId == campusContext.Id );
+            }
+
             // Apply date range
             var reportPeriod = new TimePeriod( drpSlidingDateRange.DelimitedValues );
             var dateRange = reportPeriod.GetDateRange();
@@ -1836,6 +1845,12 @@ namespace RockWeb.Blocks.Steps
                     x.StepTypeId == _stepTypeId &&
                     x.StepType.IsActive &&
                     x.StartDateKey != null );
+
+            var campusContext = ContextEntity<Campus>();
+            if ( campusContext != null )
+            {
+                query = query.Where( s => s.CampusId == campusContext.Id );
+            }
 
             // Apply date range
             var reportPeriod = new TimePeriod( drpSlidingDateRange.DelimitedValues );

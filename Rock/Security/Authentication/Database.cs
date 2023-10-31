@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Configuration;
@@ -27,6 +28,7 @@ using System.Web;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Security.Authentication.CredentialAuthentication;
 
 namespace Rock.Security.Authentication
 {
@@ -37,10 +39,17 @@ namespace Rock.Security.Authentication
     [Export( typeof( AuthenticationComponent ) )]
     [ExportMetadata( "ComponentName", "Database" )]
     [IntegerField( "BCrypt Cost Factor", "The higher this number, the more secure BCrypt can be. However it also will be slower.", false, 11 )]
-    public class Database : AuthenticationComponent
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.AUTHENTICATION_DATABASE )]
+    public class Database : AuthenticationComponent, ICredentialAuthentication
     {
+        #region Fields
+
         private readonly static byte[] _encryptionKey;
         private readonly static List<byte[]> _oldEncryptionKeys;
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Gets the type of the service.
@@ -64,6 +73,24 @@ namespace Rock.Security.Authentication
         {
             get { return false; }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether [supports change password].
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if [supports change password]; otherwise, <c>false</c>.
+        /// </value>
+        public override bool SupportsChangePassword
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Initializes the <see cref="Database" /> class.
@@ -91,51 +118,19 @@ namespace Rock.Security.Authentication
             }
         }
 
-        /// <summary>
-        /// Authenticates the specified user name.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="password">The password.</param>
-        /// <returns></returns>
-        public override bool Authenticate( UserLogin user, string password )
-        {
-            try
-            {
-                if ( AuthenticateBcrypt( user, password ) )
-                {
-                    return true;
-                }
+        #endregion
 
-                return AuthenticateSha1( user, password );
-            }
-            catch
-            {
-                return false;
-            }
-
-        }
-
-        /// <summary>
-        /// Encodes the password.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        public override String EncodePassword( UserLogin user, string password )
-        {
-            return EncodePassword( user, password, _encryptionKey );
-        }
+        #region Public Methods
 
         /// <summary>
         /// Encodes the password.
         /// </summary>
         /// <param name="user">The user.</param>
         /// <param name="password">The password.</param>
-        /// <param name="encryptionKey">The encryption key.</param>
-        /// <returns></returns>
-        private string EncodePassword( UserLogin user, string password, byte[] encryptionKey )
+        /// <returns>The encrypted password.</returns>
+        public override string EncodePassword( UserLogin user, string password )
         {
-            return EncodeBcrypt( password );
+            return EncryptPassword( password );
         }
 
         /// <summary>
@@ -151,8 +146,20 @@ namespace Rock.Security.Authentication
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
+        public override bool Authenticate( UserLogin user, string password )
+        {
+            var options = new CredentialAuthenticationOptions
+            {
+                User = user,
+                Password = password
+            };
+
+            return Authenticate( options );
+        }
+
         /// <summary>
-        /// Generates the login URL.
+        /// Generates the log in URL.
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns></returns>
@@ -182,20 +189,6 @@ namespace Rock.Security.Authentication
         public override string ImageUrl()
         {
             throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether [supports change password].
-        /// </summary>
-        /// <value>
-        /// <c>true</c> if [supports change password]; otherwise, <c>false</c>.
-        /// </value>
-        public override bool SupportsChangePassword
-        {
-            get
-            {
-                return true;
-            }
         }
 
         /// <summary>
@@ -284,6 +277,48 @@ namespace Rock.Security.Authentication
             }
         }
 
+        /// <summary>
+        /// Encrypts the string.
+        /// </summary>
+        /// <param name="valueToEncrypt">The value to encrypt.</param>
+        /// <returns></returns>
+        public string EncryptString( string valueToEncrypt )
+        {
+            return EncodeBcrypt( valueToEncrypt );
+        }
+
+        #endregion
+
+        #region ICredentialAuthentication Implementation
+
+        /// <inheritdoc/>
+        public bool Authenticate( CredentialAuthenticationOptions options )
+        {
+            try
+            {
+                if ( AuthenticateBcrypt( options.User, options.Password ) )
+                {
+                    return true;
+                }
+
+                return AuthenticateSha1( options.User, options.Password );
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <inheritdoc/>
+        public string EncryptPassword( string password )
+        {
+            return EncodeBcrypt( password );
+        }
+
+        #endregion
+
+        #region Private Methods
+
         private bool AuthenticateBcrypt( UserLogin user, string password )
         {
             try
@@ -333,16 +368,6 @@ namespace Rock.Security.Authentication
             return false;
         }
 
-        /// <summary>
-        /// Encrypts the string.
-        /// </summary>
-        /// <param name="valueToEncrypt">The value to encrypt.</param>
-        /// <returns></returns>
-        public string EncryptString(string valueToEncrypt )
-        {
-            return EncodeBcrypt( valueToEncrypt );
-        }
-
         private string EncodeBcrypt( string password )
         {
             var workFactor = ( GetAttributeValue( "BCryptCostFactor" ).AsIntegerOrNull() ?? 11 );
@@ -378,5 +403,7 @@ namespace Rock.Security.Authentication
                 return contextUser;
             }
         }
+
+        #endregion
     }
 }

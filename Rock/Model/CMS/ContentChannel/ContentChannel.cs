@@ -25,6 +25,7 @@ using Newtonsoft.Json;
 using Rock.Data;
 using Rock.Lava;
 using Rock.Tasks;
+using Rock.Transactions;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -35,6 +36,7 @@ namespace Rock.Model
     [RockDomain( "CMS" )]
     [Table( "ContentChannel" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.CONTENT_CHANNEL )]
     public partial class ContentChannel : Model<ContentChannel>, ICacheable, ICampusFilterable
     {
         #region Entity Properties
@@ -208,6 +210,15 @@ namespace Rock.Model
         [DefinedValue( SystemGuid.DefinedType.STRUCTURED_CONTENT_EDITOR_TOOLS )]
         public int? StructuredContentToolValueId { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether [enable personalization].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [enable personalization]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool EnablePersonalization { get; set; }
+
         #endregion Entity Properties
 
         #region Navigation Properties
@@ -305,11 +316,8 @@ namespace Rock.Model
         private ICollection<Category> _categories;
 
         /// <summary>
-        /// Gets the supported actions.
+        /// Provides a <see cref="Dictionary{TKey, TValue}"/> of actions that this model supports, and the description of each.
         /// </summary>
-        /// <value>
-        /// The supported actions.
-        /// </value>
         [NotMapped]
         public override Dictionary<string, string> SupportedActions
         {
@@ -370,23 +378,19 @@ namespace Rock.Model
         public void BulkIndexDocumentsByContentChannel( int contentChannelId )
         {
             // return all approved content channel items that are in content channels that should be indexed
-            var contentChannelItemIds = new ContentChannelItemService( new RockContext() ).Queryable()
-                                            .Where( i =>
-                                                i.ContentChannelId == contentChannelId
-                                                && ( i.ContentChannel.RequiresApproval == false || i.ContentChannel.ContentChannelType.DisableStatus || i.Status == ContentChannelItemStatus.Approved ) )
-                                            .Select( a => a.Id ).ToList();
+            var contentChannelItemIds = new ContentChannelItemService( new RockContext() )
+                .Queryable()
+                .Where( i => i.ContentChannelId == contentChannelId
+                    && ( i.ContentChannel.RequiresApproval == false || i.ContentChannel.ContentChannelType.DisableStatus || i.Status == ContentChannelItemStatus.Approved ) )
+                .Select( a => a.Id )
+                .ToList();
 
             int contentChannelItemEntityTypeId = EntityTypeCache.GetId<Rock.Model.ContentChannelItem>().Value;
 
             foreach ( var contentChannelItemId in contentChannelItemIds )
             {
-                var processEntityTypeIndexMsg = new ProcessEntityTypeIndex.Message
-                {
-                    EntityTypeId = contentChannelItemEntityTypeId,
-                    EntityId = contentChannelItemId
-                };
-
-                processEntityTypeIndexMsg.Send();
+                var indexEntityTransaction = new IndexEntityTransaction( new EntityIndexInfo() { EntityTypeId = contentChannelItemEntityTypeId, EntityId = contentChannelItemId } );
+                indexEntityTransaction.Enqueue();
             }
         }
 
@@ -402,6 +406,7 @@ namespace Rock.Model
         {
             return this.Name;
         }
+
         #endregion Methods
     }
 

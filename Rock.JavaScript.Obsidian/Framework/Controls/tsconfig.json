@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "preserve",
+    "module": "ESNext"
+  },
+  "vueCompilerOptions": {
+    "extensions": [
+      ".obs"
+    ]
+  },
+  "include": [
+    "./*.ts",
+    "./*.obs"
+  ],
+  "references": [
+    { "path": "../Core" },
+    { "path": "../Enums" },
+    { "path": "../Libs" },
+    { "path": "../SystemGuids" }
+  ]
+}

@@ -17,6 +17,7 @@
 using System;
 
 using Rock.Attribute;
+using Rock.Model;
 
 namespace Rock.Field.Types
 {
@@ -25,6 +26,7 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.CONNECTION_STATE )]
     public class ConnectionStateFieldType : EnumFieldType<ConnectionState>
     {
     }

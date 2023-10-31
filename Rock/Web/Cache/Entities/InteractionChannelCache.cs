@@ -165,41 +165,7 @@ namespace Rock.Web.Cache
                 return null;
             }
         }
-
-        /// <summary>
-        /// Gets the interaction components.
-        /// </summary>
-        /// <value>
-        /// The interaction components.
-        /// </value>
-        [Obsolete( "This is not performant. Instead get the ID for the InteractionComponent from the DB using " +
-            "the InteractionComponentService and then use the ID to get the InteractionComponentCache obj from the cache.", true )]
-        [RockObsolete( "1.9.15" )]
-        public List<InteractionComponentCache> InteractionComponents
-        {
-            get
-            {
-                var components = new List<InteractionComponentCache>();
-
-                InitComponentIds();
-
-                if ( InteractionComponentIds == null )
-                {
-                    return components;
-                }
-
-                foreach ( var id in InteractionComponentIds.Keys )
-                {
-                    var component = InteractionComponentCache.Get( id );
-                    if ( component != null )
-                    {
-                        components.Add( component );
-                    }
-                }
-
-                return components;
-            }
-        }
+        
         /// <summary>
         /// The component ids
         /// </summary>
@@ -212,20 +178,18 @@ namespace Rock.Web.Cache
         /// <summary>
         /// Initializes the component ids.
         /// </summary>
-        private void InitComponentIds()
+        private void InitComponentIds( RockContext rockContext = null )
         {
             if ( InteractionComponentIds != null )
             {
                 return;
             }
 
-            using ( var rockContext = new RockContext() )
-            {
-                InteractionComponentIds = new ConcurrentDictionary<int, int>( new InteractionComponentService( rockContext )
-                    .GetByChannelId( Id )
-                    .Select( v => v.Id )
-                    .ToList().ToDictionary( k => k, v => v ) );
-            }
+            rockContext = rockContext ?? new RockContext();
+            InteractionComponentIds = new ConcurrentDictionary<int, int>( new InteractionComponentService( rockContext )
+                .GetByChannelId( Id )
+                .Select( v => v.Id )
+                .ToList().ToDictionary( k => k, v => v ) );
         }
 
         /// <summary>
@@ -235,6 +199,23 @@ namespace Rock.Web.Cache
         public void AddComponentId( int id )
         {
             InitComponentIds();
+
+            if ( InteractionComponentIds == null )
+            {
+                return;
+            }
+
+            InteractionComponentIds.TryAdd( id, id );
+        }
+
+        /// <summary>
+        /// Adds the component identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="rockContext">The rock context.</param>
+        public void AddComponentId( int id, RockContext rockContext )
+        {
+            InitComponentIds( rockContext );
 
             if ( InteractionComponentIds == null )
             {
@@ -257,8 +238,24 @@ namespace Rock.Web.Cache
                 return;
             }
 
-            int value;
-            InteractionComponentIds.TryRemove( id, out value );
+            InteractionComponentIds.TryRemove( id, out _ );
+        }
+
+        /// <summary>
+        /// Removes the component identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="rockContext">The rock context.</param>
+        public void RemoveComponentId( int id, RockContext rockContext )
+        {
+            InitComponentIds( rockContext );
+
+            if ( InteractionComponentIds == null )
+            {
+                return;
+            }
+
+            InteractionComponentIds.TryRemove( id, out _ );
         }
 
         /// <summary>
@@ -356,6 +353,51 @@ namespace Rock.Web.Cache
         }
 
         /// <summary>
+        /// Gets the channel identifier by type identifier and name, or creates a new channel if no match is found.
+        /// </summary>
+        /// <param name="channelTypeMediumValueId">The channel type medium value identifier.</param>
+        /// <param name="channelName">An optional channel name. If this value is specified it will form part of the lookup for an existing channel, or used to create a new channel if no matching channel is found.</param>
+        /// <param name="componentEntityTypeId">The component entity type identifier. This value will only be used if a new record is created.</param>
+        /// <param name="interactionEntityTypeId">The interaction entity type identifier. This value will only be used if a new record is created.</param>
+        /// <returns></returns>
+        public static int GetOrCreateChannelIdByName( int channelTypeMediumValueId, string channelName, int? componentEntityTypeId, int? interactionEntityTypeId )
+        {
+            // Get a key that differentiates a name lookup, to avoid any possible collisions.
+            var lookupKey = $"{channelTypeMediumValueId}|name={channelName}";
+
+            if ( _interactionChannelLookupFromChannelIdByEntityId.TryGetValue( lookupKey, out int channelId ) )
+            {
+                return channelId;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var interactionChannelService = new InteractionChannelService( rockContext );
+                var interactionChannel = interactionChannelService.Queryable()
+                    .Where( a =>
+                        a.ChannelTypeMediumValueId == channelTypeMediumValueId &&
+                        a.Name == channelName )
+                    .FirstOrDefault();
+
+                if ( interactionChannel == null )
+                {
+                    interactionChannel = new InteractionChannel();
+                    interactionChannel.Name = channelName;
+                    interactionChannel.ChannelTypeMediumValueId = channelTypeMediumValueId;
+                    interactionChannel.ComponentEntityTypeId = componentEntityTypeId;
+                    interactionChannel.InteractionEntityTypeId = interactionEntityTypeId;
+                    interactionChannelService.Add( interactionChannel );
+                    rockContext.SaveChanges();
+                }
+
+                var interactionChannelId = Get( interactionChannel ).Id;
+                _interactionChannelLookupFromChannelIdByEntityId.AddOrUpdate( lookupKey, interactionChannelId, ( k, v ) => interactionChannelId );
+
+                return interactionChannelId;
+            }
+        }
+
+        /// <summary>
         /// Gets the channel identifier by ForeignKey, and creates it if it doesn't exist.
         /// If foreignKey is blank, this will throw a <seealso cref="ArgumentNullException" />
         /// </summary>
@@ -364,8 +406,8 @@ namespace Rock.Web.Cache
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">ForeignKey must be specified when using GetChannelIdByForeignKey</exception>
         [Obsolete( "Use GetCreateChannelIdByForeignKey instead." )]
-        [RockObsolete("1.11")]
-        public static int GetChannelIdByForeignKey( string foreignKey, string channelName)
+        [RockObsolete( "1.11" )]
+        public static int GetChannelIdByForeignKey( string foreignKey, string channelName )
         {
             return GetCreateChannelIdByForeignKey( foreignKey, channelName, null );
         }

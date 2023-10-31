@@ -34,10 +34,9 @@ using System.Text.RegularExpressions;
 
 namespace RockWeb.Blocks.Crm
 {
-    /// <summary>
-    /// Template block for developers to use to start a new block.
-    /// </summary>
-    [DisplayName( "Person Update - Kiosk" )]
+    [DisplayName( "Person Update - Kiosk (deprecated)" )]
+    [RockObsolete( "1.15" )]
+    [Obsolete( "This block type has been deprecated." )]
     [Category( "CRM" )]
     [Description( "Block used to update a person's information from a kiosk." )]
 
@@ -109,6 +108,7 @@ namespace RockWeb.Blocks.Crm
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "61C5C8F2-6F76-4583-AB97-228878A6AB65" )]
     public partial class PersonUpdateKiosk : Rock.Web.UI.RockBlock
     {
 

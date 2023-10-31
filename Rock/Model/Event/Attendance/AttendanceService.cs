@@ -22,11 +22,17 @@ using System.Data.Entity;
 using System.Data.Entity.SqlServer;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
+using Rock.Attribute;
 using Rock.BulkImport;
 using Rock.Chart;
 using Rock.Communication;
 using Rock.Data;
+using Rock.RealTime;
+using Rock.RealTime.Topics;
+using Rock.Utility;
+using Rock.ViewModels.Event;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -204,7 +210,7 @@ namespace Rock.Model
         /// <param name="checkedInByPersonAliasId">The checked in by person alias identifier.</param>
         /// <param name="syncMatchingStreaks">Should matching <see cref="StreakType"/> models be synchronized.</param>
         /// <returns></returns>
-        [Obsolete( "The syncMatchingStreaks param is no longer used" )]
+        [Obsolete( "The syncMatchingStreaks param is no longer used", true )]
         [RockObsolete( "1.10" )]
         public Attendance AddOrUpdate( int? personAliasId, DateTime checkinDateTime,
                 int? groupId, int? locationId, int? scheduleId, int? campusId, int? deviceId,
@@ -225,6 +231,20 @@ namespace Rock.Model
         /// <param name="personId">A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.Person"/></param>
         /// <returns>The first <see cref="Rock.Model.Attendance"/> entity that matches the provided values.</returns>
         public Attendance Get( DateTime date, int locationId, int scheduleId, int groupId, int personId )
+        {
+            return Get( date, ( int? ) locationId, scheduleId, groupId, personId );
+        }
+
+        /// <summary>
+        /// Returns a specific <see cref="Rock.Model.Attendance"/> record.
+        /// </summary>
+        /// <param name="date">A <see cref="System.DateTime"/> representing the date attended.</param>
+        /// <param name="locationId">A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.Location"/>If you pass null here, the LocationId property on the occurrence must also be null.</param>
+        /// <param name="scheduleId">A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.Schedule"/></param>
+        /// <param name="groupId">A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.Group"/>.</param>
+        /// <param name="personId">A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.Person"/></param>
+        /// <returns>The first <see cref="Rock.Model.Attendance"/> entity that matches the provided values.</returns>
+        public Attendance Get( DateTime date, int? locationId, int scheduleId, int groupId, int personId )
         {
             return Queryable( "Occurrence.Group,Occurrence.Schedule,PersonAlias.Person" )
                 .FirstOrDefault( a =>
@@ -868,7 +888,7 @@ namespace Rock.Model
                     }
                     catch ( Exception ex )
                     {
-                        var emailException = new Exception( $"Exception occurred when trying to send Schedule Confirmation Email to { attendancesByPerson.Person }", ex );
+                        var emailException = new Exception( $"Exception occurred when trying to send Schedule Confirmation Email to {attendancesByPerson.Person}", ex );
                         errorMessages.Add( emailException.Message );
                         exceptionList.Add( emailException );
                     }
@@ -940,7 +960,7 @@ namespace Rock.Model
                     }
                     catch ( Exception ex )
                     {
-                        ExceptionLogService.LogException( new Exception( $"Exception occurred trying to send SendScheduleReminderSystemEmails to { attendancesByPerson.Person }", ex ) );
+                        ExceptionLogService.LogException( new Exception( $"Exception occurred trying to send SendScheduleReminderSystemEmails to {attendancesByPerson.Person}", ex ) );
                     }
                 }
             }
@@ -1102,7 +1122,7 @@ namespace Rock.Model
                 mergeFields.Add( "Attendances", attendances );
 
                 var forceCommunicationType = CommunicationType.RecipientPreference;
-                var validSmsTemplateExists = communicationMessage.SMSMessage.IsNotNullOrWhiteSpace() && communicationMessage.SMSFromDefinedValueId != null;
+                var validSmsTemplateExists = communicationMessage.SMSMessage.IsNotNullOrWhiteSpace() && communicationMessage.SmsFromSystemPhoneNumberId != null;
                 var individualHasValidSmsNumber = recipient.PhoneNumbers.Any( ph => ph.IsMessagingEnabled );
                 if ( !validSmsTemplateExists || !individualHasValidSmsNumber )
                 {
@@ -1134,7 +1154,7 @@ namespace Rock.Model
                 }
                 catch ( Exception ex )
                 {
-                    var emailException = new Exception( $"Exception occurred when trying to send Schedule Confirmation Email to { individualNotification.Individual }", ex );
+                    var emailException = new Exception( $"Exception occurred when trying to send Schedule Confirmation Email to {individualNotification.Individual}", ex );
                     sendMessageResults.Errors.Add( emailException.Message );
                     sendMessageResults.Exceptions.Add( emailException );
                 }
@@ -1271,13 +1291,24 @@ namespace Rock.Model
             groupMemberIdsThatLackGroupRequirements = null;
             GroupTypeCache resourceGroupGroupType = null;
 
-            if ( schedulerResourceParameters.ResourceGroupId.HasValue )
+            if ( schedulerResourceParameters.ResourceGroupId.HasValue || schedulerResourceParameters.ResourceGroupGuid.HasValue )
             {
                 groupMemberQry = groupMemberService.Queryable()
-                    .Where( a => a.GroupId == schedulerResourceParameters.ResourceGroupId.Value )
                     .Where( a => a.GroupMemberStatus == GroupMemberStatus.Active );
 
-                var resourceGroup = groupService.GetNoTracking( schedulerResourceParameters.ResourceGroupId.Value );
+                Group resourceGroup = null;
+
+                if ( schedulerResourceParameters.ResourceGroupId.HasValue )
+                {
+                    groupMemberQry = groupMemberQry.Where( a => a.GroupId == schedulerResourceParameters.ResourceGroupId.Value );
+                    resourceGroup = groupService.GetNoTracking( schedulerResourceParameters.ResourceGroupId.Value );
+                }
+                else
+                {
+                    groupMemberQry = groupMemberQry.Where( a => a.Group.Guid == schedulerResourceParameters.ResourceGroupGuid.Value );
+                    resourceGroup = groupService.GetNoTracking( schedulerResourceParameters.ResourceGroupGuid.Value );
+                }
+
                 if ( resourceGroup != null )
                 {
                     resourceGroupGroupType = GroupTypeCache.Get( resourceGroup.GroupTypeId );
@@ -1289,17 +1320,29 @@ namespace Rock.Model
                 }
             }
 
-            if ( schedulerResourceParameters.ResourceDataViewId.HasValue )
+            if ( schedulerResourceParameters.ResourceDataViewId.HasValue || schedulerResourceParameters.ResourceDataViewGuid.HasValue )
             {
-                var dataView = new DataViewService( rockContext ).Get( schedulerResourceParameters.ResourceDataViewId.Value );
+                DataView dataView = null;
+                var dataViewService = new DataViewService( rockContext );
+
+                if ( schedulerResourceParameters.ResourceDataViewId.HasValue )
+                {
+                    dataView = dataViewService.Get( schedulerResourceParameters.ResourceDataViewId.Value );
+                }
+                else
+                {
+                    dataView = dataViewService.Get( schedulerResourceParameters.ResourceDataViewGuid.Value );
+                }
 
                 if ( dataView != null )
                 {
-                    var dataViewGetQueryArgs = new DataViewGetQueryArgs
-                    {
-                        DbContext = rockContext
-                    };
-
+                    /*
+                        SK - 01-13-2023
+                        It's necessary to pass rockContext to dataview GetQuery method as the result is being used as part of subquery later
+                        which may result in two different rockContext if not passed.
+                    */
+                    var dataViewGetQueryArgs = new DataViewGetQueryArgs();
+                    dataViewGetQueryArgs.DbContext = rockContext;
                     personQry = dataView.GetQuery( dataViewGetQueryArgs ) as IQueryable<Person>;
                 }
             }
@@ -1317,12 +1360,8 @@ namespace Rock.Model
                 {
                     GroupMemberId = a.Id,
                     GroupRoleId = a.GroupRoleId,
-                    PersonId = a.PersonId,
+                    Person = a.Person,
                     Note = a.Note,
-                    NickName = a.Person.NickName,
-                    LastName = a.Person.LastName,
-                    SuffixValueId = a.Person.SuffixValueId,
-                    RecordTypeValueId = a.Person.RecordTypeValueId,
                     ScheduleTemplateId = a.ScheduleTemplateId,
                     ScheduleStartDate = a.ScheduleStartDate,
                     MemberAssignments = a.GroupMemberAssignments
@@ -1348,13 +1387,13 @@ namespace Rock.Model
                     var locationParam = schedulerResourceParameters.AttendanceOccurrenceLocationIds?.ToList() ?? new List<int>();
                     if ( locationParam.Any() )
                     {
-                        resourceListQuery = resourceListQuery.Where( a => a.MemberAssignments.Any( ma => locationParam.Contains( ma.LocationId.Value ) ) || a.MemberAssignments.Any( ma => ma.LocationId == null ) );
+                        resourceListQuery = resourceListQuery.Where( a => a.MemberAssignments.Any( ma => locationParam.Contains( ma.LocationId.Value ) || ma.LocationId == null ) );
                     }
 
                     var scheduleParam = schedulerResourceParameters.AttendanceOccurrenceScheduleIds?.ToList() ?? new List<int>();
                     if ( scheduleParam.Any() )
                     {
-                        resourceListQuery = resourceListQuery.Where( a => a.MemberAssignments.Any( ma => scheduleParam.Contains( ma.Schedule.Id ) ) || a.MemberAssignments.Any( ma => ma.Schedule == null ) );
+                        resourceListQuery = resourceListQuery.Where( a => a.MemberAssignments.Any( ma => scheduleParam.Contains( ma.Schedule.Id ) || ma.Schedule == null ) );
                     }
                 }
 
@@ -1410,7 +1449,7 @@ namespace Rock.Model
 
                 schedulerResourceList = resourceList.Select( a => new SchedulerResource
                 {
-                    PersonId = a.PersonId,
+                    PersonId = a.Person.Id,
 
                     /* 2020-07-17 MDP  
                      *  This is their GroupMember information from the *ResourceGroup*, and not always the Occurrence Group. 
@@ -1441,9 +1480,10 @@ namespace Rock.Model
                     .ToList(),
 
                     Note = a.Note,
-                    PersonNickName = a.NickName,
-                    PersonLastName = a.LastName,
-                    PersonName = Person.FormatFullName( a.NickName, a.LastName, a.SuffixValueId, a.RecordTypeValueId ),
+                    PersonNickName = a.Person.NickName,
+                    PersonLastName = a.Person.LastName,
+                    PersonName = Person.FormatFullName( a.Person.NickName, a.Person.LastName, a.Person.SuffixValueId, a.Person.RecordTypeValueId ),
+                    PersonPhotoUrl = a.Person.PhotoUrl,
                     HasGroupRequirementsConflict = groupMemberIdsThatLackGroupRequirements?.Contains( a.GroupMemberId ) ?? false,
                 } ).ToList();
             }
@@ -1696,7 +1736,8 @@ namespace Rock.Model
                 // sort the ResourceList first by the GroupRole.Order (so that Leaders are listed at the top, followed by Members, followed by non-group members)
                 // then sort by LastName/FirstName
                 schedulerResourceList = schedulerResourceList
-                    .OrderBy( a => a.GroupRole?.Order ?? int.MaxValue )
+                    .OrderBy( a => a.BlackoutDates?.Count ?? 0 )
+                    .ThenBy( a => a.GroupRole?.Order ?? int.MaxValue )
                     .ThenBy( a => a.PersonLastName )
                     .ThenBy( a => a.PersonNickName )
                     .ThenBy( a => a.PersonId ).ToList();
@@ -1720,7 +1761,7 @@ namespace Rock.Model
                     attendanceOccurrenceId,
                     s => new
                     {
-                        s.GroupId,
+                        s.Group,
                         s.ScheduleId,
                         s.Schedule,
                         s.LocationId,
@@ -1734,7 +1775,7 @@ namespace Rock.Model
             }
 
             int scheduleId = attendanceOccurrenceInfo.ScheduleId ?? 0;
-            var attendanceOccurrenceGroupId = attendanceOccurrenceInfo.GroupId ?? 0;
+            var attendanceOccurrenceGroupId = attendanceOccurrenceInfo.Group?.Id ?? 0;
             DateTime occurrenceDate = attendanceOccurrenceInfo.OccurrenceDate;
 
             var occurrenceFirstDayOfWeek = attendanceOccurrenceInfo.OccurrenceDate.StartOfWeek( RockDateTime.FirstDayOfWeek );
@@ -1755,6 +1796,18 @@ namespace Rock.Model
             IQueryable<PersonScheduleExclusion> personScheduleExclusionQueryForOccurrence = GetPersonScheduleExclusionQueryForOccurrenceDates( attendanceOccurrenceGroupId, scheduleOccurrenceDateList );
 
             var rockContext = this.Context as RockContext;
+
+            HashSet<int> groupMemberIdsThatLackGroupRequirements = null;
+            if ( attendanceOccurrenceInfo.Group?.SchedulingMustMeetRequirements == true )
+            {
+                groupMemberIdsThatLackGroupRequirements = new HashSet<int>(
+                    new GroupService( rockContext )
+                        .GroupMembersNotMeetingRequirements( attendanceOccurrenceInfo.Group, false )
+                        .Select( a => a.Key.Id )
+                        .ToList()
+                        .Distinct()
+                );
+            }
 
             // Create explicit joins to person alias and person tables so that rendered SQL has INNER Joins vs OUTER joins on Person and PersonAlias
             var personAliasQry = new PersonAliasService( rockContext ).Queryable();
@@ -1789,11 +1842,7 @@ namespace Rock.Model
                 ap.Attendance.RSVP,
                 ap.Attendance.DeclineReasonValueId,
                 ap.Attendance.ScheduledToAttend,
-                PersonId = ap.Person.Id,
-                NickName = ap.Person.NickName,
-                LastName = ap.Person.LastName,
-                SuffixValueId = ap.Person.SuffixValueId,
-                RecordTypeValueId = ap.Person.RecordTypeValueId,
+                ap.Person,
 
                 // set HasSchedulingConflict = true if the same person is requested/scheduled for another attendance within the same ScheduleId/Date
                 SchedulingConflicts = conflictingScheduledAttendancesQuery
@@ -1817,7 +1866,7 @@ namespace Rock.Model
             } );
 
             var scheduledAttendancesList = scheduledAttendancesQuery.ToList();
-            var personIds = scheduledAttendancesList.Select( a => a.PersonId ).Distinct().ToList();
+            var personIds = scheduledAttendancesList.Select( a => a.Person.Id ).Distinct().ToList();
 
             // create a lookup so we can find out which role the person has in the occurrence group (if they are a member)
             var attendanceOccurrenceGroupMemberLookupQuery = new GroupMemberService( rockContext )
@@ -1882,14 +1931,16 @@ namespace Rock.Model
                     var personExclusionDateRange = new DateRange( a.BlackoutDateRanges.Min( d => d.StartDate ), a.BlackoutDateRanges.Max( d => d.EndDate ) );
                     personBlackoutDates = scheduleOccurrenceDateList.Where( d => personExclusionDateRange.Contains( d ) ).ToList();
                 }
-                
+
                 var groupMemberLookupValues = attendanceOccurrenceGroupMemberLookup
-                    ?.GetValueOrNull( a.PersonId )
+                    ?.GetValueOrNull( a.Person.Id )
                     ?.OrderBy( x => x.GroupRole?.Order ?? int.MaxValue );
 
                 var attendanceOccurrenceGroupMemberInfo = groupMemberLookupValues?.FirstOrDefault();
 
                 var attendanceOccurrenceGroupMemberRoles = groupMemberLookupValues?.Select( t => t.GroupRole?.Name ).ToList().AsDelimited( ", " );
+
+                List<SchedulerResourcePreference> resourcePreferenceList = null;
 
                 var memberAssignments = attendanceOccurrenceGroupMemberInfo?.MemberAssignments;
                 ScheduledAttendanceItemMatchesPreference matchesPreference = ScheduledAttendanceItemMatchesPreference.NoPreference;
@@ -1918,6 +1969,21 @@ namespace Rock.Model
                     }
                 }
 
+                if ( matchesPreference == ScheduledAttendanceItemMatchesPreference.NotMatchesPreference )
+                {
+                    resourcePreferenceList = memberAssignments
+                        .OrderBy( x => x.Schedule.Order )
+                        .ThenBy( x => x.Schedule.GetNextStartDateTime( RockDateTime.Now.Date ) )
+                        .Select( x => new SchedulerResourcePreference
+                        {
+                            ScheduleId = x.Schedule.Id,
+                            ScheduleName = x.Schedule.Name,
+                            LocationId = x.LocationId,
+                            LocationName = x.LocationName
+                        } )
+                        .ToList();
+                }
+
                 // to get this formatted as an html data-attribute
                 // - split case so we get a ' ' char
                 // - replace ' ' with '-'
@@ -1928,28 +1994,36 @@ namespace Rock.Model
                     .Replace( ' ', '-' )
                     .ToLower();
 
+                var hasGroupRequirementsConflict = false;
+                if ( groupMemberIdsThatLackGroupRequirements != null && attendanceOccurrenceGroupMemberInfo != null )
+                {
+                    hasGroupRequirementsConflict = groupMemberIdsThatLackGroupRequirements.Contains( attendanceOccurrenceGroupMemberInfo.MemberId );
+                }
+
                 return new SchedulerResourceAttend
                 {
                     AttendanceId = a.AttendanceId,
                     OccurrenceDate = occurrenceDate,
                     ConfirmationStatus = status.ConvertToString( false ).ToLower(),
                     MatchesPreference = matchesPreferenceAsDataAttribute,
-                    PersonId = a.PersonId,
+                    PersonId = a.Person.Id,
                     DeclinedReason = DefinedValueCache.GetValue( a.DeclineReasonValueId ).EncodeHtml(),
 
                     GroupMemberId = attendanceOccurrenceGroupMemberInfo?.MemberId,
                     GroupRoleName = attendanceOccurrenceGroupMemberRoles,
+                    ResourcePreferenceList = resourcePreferenceList,
 
                     // not needed for resource that is getting listed in an occurrence
-                    ResourcePreferenceList = null,
                     ResourceScheduledList = null,
                     Note = null,
 
-                    PersonNickName = a.NickName,
-                    PersonLastName = a.LastName,
-                    PersonName = Person.FormatFullName( a.NickName, a.LastName, a.SuffixValueId, a.RecordTypeValueId ),
+                    PersonNickName = a.Person.NickName,
+                    PersonLastName = a.Person.LastName,
+                    PersonName = Person.FormatFullName( a.Person.NickName, a.Person.LastName, a.Person.SuffixValueId, a.Person.RecordTypeValueId ),
+                    PersonPhotoUrl = a.Person.PhotoUrl,
                     SchedulingConflicts = a.SchedulingConflicts,
                     BlackoutDates = personBlackoutDates,
+                    HasGroupRequirementsConflict = hasGroupRequirementsConflict,
 
                     // not needed for resource that is getting listed in an occurrence
                     DisplayedTimeSlotCount = null,
@@ -2258,31 +2332,86 @@ namespace Rock.Model
         {
             var rockContext = this.Context as RockContext;
             var scheduledAttendance = this.Queryable()
+                .Include( a => a.Occurrence.Group )
                 .FirstOrDefault( a => a.PersonAlias.PersonId == personId
-                    && a.OccurrenceId == attendanceOccurrenceId );
+                   && a.OccurrenceId == attendanceOccurrenceId );
 
+            var rsvp = RSVP.Unknown;
+            var scheduledToAttend = false;
             // If there already is a scheduled attendance
             if ( scheduledAttendance != null )
             {
+                if ( scheduledAttendance.Occurrence.GroupId.HasValue && scheduledAttendance.Occurrence.Group.GetScheduleConfirmationLogic() == Enums.Group.ScheduleConfirmationLogic.AutoAccept )
+                {
+                    rsvp = RSVP.Yes;
+                    scheduledToAttend = true;
+                }
+
                 if ( scheduledAttendance.RequestedToAttend != true )
                 {
                     scheduledAttendance.RequestedToAttend = true;
                 }
 
-                // if they previously declined, set RSVP back to Unknown if they are added as pending again
+                /* For all the attendance where RSVP is previously declined and now added as Pending again need to follow below rules for RSVP
+                     - if ScheduleConfirmationLogic is auto accept and Occurrence GroupId has value then set RSVP to Yes
+                     - else Set RSVP to Unknown
+                */
+
                 if ( scheduledAttendance.RSVP == RSVP.No )
                 {
-                    scheduledAttendance.RSVP = RSVP.Unknown;
+                    scheduledAttendance.RSVP = rsvp;
+                    scheduledAttendance.DeclineReasonValueId = null;
+                    scheduledAttendance.ScheduledToAttend = scheduledToAttend;
+                }
+                else if ( scheduledAttendance.RSVP != RSVP.Maybe )
+                {
+                    scheduledAttendance.RSVP = rsvp;
+                    scheduledAttendance.ScheduledToAttend = scheduledToAttend;
                 }
             }
-
             // There was not an already scheduled attendance, so let's add it
-            else 
+            else
             {
                 var personAliasId = new PersonAliasService( rockContext ).GetPrimaryAliasId( personId );
-                var attendanceOccurrence = new AttendanceOccurrenceService( rockContext ).Get( attendanceOccurrenceId );
-                var scheduledDateTime = attendanceOccurrence.OccurrenceDate.Add( attendanceOccurrence.Schedule.StartTimeOfDay );
-                int? campusId = new LocationService( rockContext ).GetCampusIdForLocation( attendanceOccurrence.LocationId ) ?? new GroupService( rockContext ).Get( attendanceOccurrence.GroupId.Value ).CampusId;
+                var attendanceOccurrence = new AttendanceOccurrenceService( rockContext )
+                    .Queryable()
+                    .AsNoTracking()
+                    .Include( a => a.Group )
+                    .Include( a => a.Schedule )
+                    .FirstOrDefault( a => a.Id == attendanceOccurrenceId );
+
+                if ( attendanceOccurrence == null )
+                {
+                    return null;
+                }
+
+                var scheduledDateTime = RockDateTime.Now;
+                if ( attendanceOccurrence.Schedule != null )
+                {
+                    scheduledDateTime = attendanceOccurrence.OccurrenceDate.Add( attendanceOccurrence.Schedule.StartTimeOfDay );
+                }
+
+                int? campusId = null;
+
+                if ( attendanceOccurrence.LocationId.HasValue )
+                {
+                    campusId = new LocationService( rockContext ).GetCampusIdForLocation( attendanceOccurrence.LocationId );
+                }
+
+                if ( attendanceOccurrence.Group != null )
+                {
+                    if ( !campusId.HasValue )
+                    {
+                        campusId = attendanceOccurrence.Group.CampusId;
+                    }
+
+                    if ( attendanceOccurrence.Group.GetScheduleConfirmationLogic() == Enums.Group.ScheduleConfirmationLogic.AutoAccept )
+                    {
+                        rsvp = RSVP.Yes;
+                        scheduledToAttend = true;
+                    }
+                }
+
                 scheduledAttendance = new Attendance
                 {
                     CampusId = campusId,
@@ -2293,8 +2422,10 @@ namespace Rock.Model
                     DidAttend = false,
                     RequestedToAttend = true,
                     ScheduledToAttend = false,
-                    RSVP = RSVP.Unknown
                 };
+
+                scheduledAttendance.RSVP = rsvp;
+                scheduledAttendance.ScheduledToAttend = scheduledToAttend;
 
                 this.Add( scheduledAttendance );
             }
@@ -2306,7 +2437,18 @@ namespace Rock.Model
         /// Updates attendance record to indicate person is not pending, or confirmed, or declined
         /// </summary>
         /// <param name="attendanceId">The attendance identifier.</param>
+        [Obsolete( "Use ScheduledPersonClear instead." )]
+        [RockObsolete( "1.14.2" )]
         public void ScheduledPersonRemove( int attendanceId )
+        {
+            ScheduledPersonClear( attendanceId );
+        }
+
+        /// <summary>
+        /// Updates attendance record to indicate person is not pending, or confirmed, or declined
+        /// </summary>
+        /// <param name="attendanceId">The attendance identifier.</param>
+        public void ScheduledPersonClear( int attendanceId )
         {
             var scheduledAttendance = this.Get( attendanceId );
 
@@ -2318,6 +2460,7 @@ namespace Rock.Model
             scheduledAttendance.ScheduledToAttend = false;
             scheduledAttendance.RequestedToAttend = false;
             scheduledAttendance.RSVP = RSVP.Unknown;
+            scheduledAttendance.DeclineReasonValueId = null;
         }
 
         /// <summary>
@@ -2336,6 +2479,7 @@ namespace Rock.Model
             scheduledAttendance.ScheduledToAttend = true;
             scheduledAttendance.RSVPDateTime = RockDateTime.Now;
             scheduledAttendance.RSVP = RSVP.Yes;
+            scheduledAttendance.DeclineReasonValueId = null;
         }
 
         /// <summary>
@@ -2372,6 +2516,7 @@ namespace Rock.Model
             scheduledAttendance.RequestedToAttend = true;
             scheduledAttendance.ScheduledToAttend = false;
             scheduledAttendance.RSVP = RSVP.Unknown;
+            scheduledAttendance.DeclineReasonValueId = null;
         }
 
         /// <summary>
@@ -2388,9 +2533,9 @@ namespace Rock.Model
                 return;
             }
 
-            scheduledAttendance.DeclineReasonValueId = declineReasonValueId;
             scheduledAttendance.RSVPDateTime = RockDateTime.Now;
             scheduledAttendance.RSVP = RSVP.No;
+            scheduledAttendance.DeclineReasonValueId = declineReasonValueId;
         }
 
         /// <summary>
@@ -2484,6 +2629,30 @@ namespace Rock.Model
         }
 
         /// <summary>
+        /// Gets a Queryable of Attendance Records that are Scheduled Attendances that are pending confirmation as well as the ones that are marked as confirmed as the part of auto accept.
+        /// This includes attendance records that have RequestedToAttend, not yet confirmed (not confirmed as scheduled and not declined), and didn't attend yet.
+        /// This doesn't include attendance records that occurred in prior dates.
+        /// </summary>
+        /// <returns></returns>
+        public IQueryable<Attendance> GetPendingAndAutoAcceptScheduledConfirmations()
+        {
+            var currentDate = RockDateTime.Now.Date;
+            return Queryable()
+                .Where( a => a.RequestedToAttend == true )
+                .Where( a => a.DeclineReasonValueId == null )
+                .Where( a => a.DidAttend != true )
+                .Where( a => a.Occurrence.OccurrenceDate >= currentDate )
+
+                // RSVP.Maybe is not used by the Group Scheduler. But, just in case, treat it as that the person has not responded.
+                .Where( a => ( a.ScheduledToAttend != true && ( a.RSVP == RSVP.Maybe || a.RSVP == RSVP.Unknown ) ) ||
+                    ( a.ScheduledToAttend == true && a.RSVP == RSVP.Yes && a.Occurrence.GroupId.HasValue && ( ( !a.Occurrence.Group.ScheduleConfirmationLogic.HasValue && a.Occurrence.Group.GroupType.ScheduleConfirmationLogic == Enums.Group.ScheduleConfirmationLogic.AutoAccept ) || a.Occurrence.Group.ScheduleConfirmationLogic == Enums.Group.ScheduleConfirmationLogic.AutoAccept ) ) )
+
+                // Explicitly include Group and Location objects to prevent issues with lazy loading after databinding (e.g., in GroupScheduleToolbox block).
+                .Include( a => a.Occurrence.Group.GroupType )
+                .Include( a => a.Occurrence.Location );
+        }
+
+        /// <summary>
         /// Gets a Queryable of Attendance Records that are scheduled and confirmed.
         /// </summary>
         /// <returns></returns>
@@ -2572,6 +2741,136 @@ namespace Rock.Model
             public DateTime LastScheduledDate { get; internal set; }
         }
 
+        /// <summary>
+        /// Clones scheduled people from a source attendance occurrence to a destination attendance occurrence. Cloning will be performed as follows:
+        /// <list type="bullet">
+        /// <item>The source occurrence's people will be scheduled for the destination occurrence in addition to any people who might already be scheduled for the destination occurrence.</item>
+        /// <item>The destination occurrence will only be scheduled up to its max capacity, if defined.</item>
+        /// <item>If a source occurrence person has a blackout date on the destination occurrence date, they will NOT be scheduled for the destination occurrence.</item>
+        /// <item>If a source occurrence person has a conflict on the destination occurrence date, they WILL be scheduled for the destination occurrence, as it's assumed we want to match the source occurrence date as closely as possible.</item>
+        /// </list>
+        /// <para>
+        /// The source and destination attendance occurrences must have a group, location and schedule defined.
+        /// </para>
+        /// </summary>
+        /// <param name="sourceAttendanceOccurrenceId">The source attendance occurrence Id, from which scheduled people should be cloned.</param>
+        /// <param name="destinationAttendanceOccurrenceId">The destination attendance occurrence Id, to which people should be cloned.</param>
+        /// <param name="scheduledByPersonAlias">The person alias of the person performing scheduling.</param>
+        /// <returns>An object containing the outcome of the clone attempt.</returns>
+        public CloneScheduledPeopleResult CloneScheduledPeople( int sourceAttendanceOccurrenceId, int destinationAttendanceOccurrenceId, PersonAlias scheduledByPersonAlias )
+        {
+            var rockContext = this.Context as RockContext;
+            var result = new CloneScheduledPeopleResult();
+
+            var groupLocationsQuery = new GroupLocationService( rockContext )
+                .Queryable()
+                .AsNoTracking();
+
+            var occurrences = new AttendanceOccurrenceService( rockContext )
+                .Queryable()
+                .AsNoTracking()
+                .Where( ao =>
+                    ( ao.Id == sourceAttendanceOccurrenceId || ao.Id == destinationAttendanceOccurrenceId )
+                    && ao.GroupId.HasValue
+                    && ao.LocationId.HasValue
+                    && ao.ScheduleId.HasValue
+                )
+                .Select( ao => new
+                {
+                    AttendanceOccurrence = ao,
+                    Attendees = ao.Attendees.Where( a =>
+                        ( a.RequestedToAttend == true || a.ScheduledToAttend == true )
+                        && a.PersonAliasId.HasValue
+                    ).Select( a => new
+                    {
+                        Attendee = a,
+                        a.PersonAlias.PersonId
+                    } ).ToList(),
+                    ScheduleConfig = groupLocationsQuery
+                        .Where( gl => gl.GroupId == ao.GroupId && gl.LocationId == ao.LocationId )
+                        .SelectMany( gl => gl.GroupLocationScheduleConfigs )
+                        .FirstOrDefault( config => config.ScheduleId == ao.ScheduleId )
+                } )
+                .ToList();
+
+            var source = occurrences.FirstOrDefault( o => o.AttendanceOccurrence.Id == sourceAttendanceOccurrenceId );
+            var destination = occurrences.FirstOrDefault( o => o.AttendanceOccurrence.Id == destinationAttendanceOccurrenceId );
+
+            if ( source == null || destination == null )
+            {
+                return result;
+            }
+
+            if ( destination.AttendanceOccurrence.OccurrenceDate < RockDateTime.Today )
+            {
+                // Don't allow cloning resources into a past occurrence.
+                return result;
+            }
+
+            result.AlreadyScheduledSkippedCount = source.Attendees
+                .Count( s => destination.Attendees.Any( d => d.PersonId == s.PersonId ) );
+
+            var cloneableAttendees = source.Attendees
+                .Where( s => !destination.Attendees.Any( d => d.PersonId == s.PersonId ) )
+                .ToList();
+            if ( !cloneableAttendees.Any() )
+            {
+                // The source occurrence doesn't have any attendees to clone.
+                return result;
+            }
+
+            var cloneablePersonIds = cloneableAttendees
+                .Select( a => a.PersonId )
+                .Distinct()
+                .ToList();
+
+            var alreadyScheduledCount = destination.Attendees.Count;
+            var maxCapacity = ( destination.ScheduleConfig?.MaximumCapacity ).GetValueOrDefault();
+
+            if ( maxCapacity > 0 && alreadyScheduledCount >= maxCapacity )
+            {
+                // No need to schedule any more resources, as this occurrence is already at max capacity.
+                result.OverCapacitySkippedCount = cloneablePersonIds.Count;
+                return result;
+            }
+
+            var personIdsWithScheduleExclusions = GetPersonScheduleExclusionQueryForOccurrenceDates(
+                destination.AttendanceOccurrence.GroupId.GetValueOrDefault(),
+                new List<DateTime> { destination.AttendanceOccurrence.OccurrenceDate }
+            )
+                .Where( e => cloneablePersonIds.Any( personId => e.PersonAlias.PersonId == personId ) )
+                .Select( e => e.PersonAlias.PersonId )
+                .ToList();
+
+            foreach ( var personId in cloneablePersonIds )
+            {
+                if ( maxCapacity > 0 && alreadyScheduledCount >= maxCapacity )
+                {
+                    result.OverCapacitySkippedCount++;
+                    continue;
+                }
+
+                if ( personIdsWithScheduleExclusions.Contains( personId ) )
+                {
+                    result.BlackoutSkippedCount++;
+                    continue;
+                }
+
+                // Schedule this person for the destination occurrence.
+                ScheduledPersonAddPending( personId, destinationAttendanceOccurrenceId, scheduledByPersonAlias );
+
+                result.ClonedCount++;
+                alreadyScheduledCount++;
+            }
+
+            if ( result.ClonedCount > 0 )
+            {
+                rockContext.SaveChanges();
+            }
+
+            return result;
+        }
+
         #endregion GroupScheduling Related
 
         #region RSVP Related
@@ -2581,7 +2880,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="occurrenceId">The ID of the AttendanceOccurrence record.</param>
         /// <param name="personIds">A comma-delimited list of Person IDs.</param>
-        [Obsolete( "Use the method which accepts a List<int> parameter instead." )]
+        [Obsolete( "Use the method which accepts a List<int> parameter instead.", true )]
         [RockObsolete( "1.10.4" )]
         public void RegisterRSVPRecipients( int occurrenceId, string personIds )
         {
@@ -2793,12 +3092,8 @@ namespace Rock.Model
         {
             public int GroupMemberId { get; set; }
             public int GroupRoleId { get; set; }
-            public int PersonId { get; set; }
+            public Person Person { get; set; }
             public string Note { get; set; }
-            public string NickName { get; set; }
-            public string LastName { get; set; }
-            public int? SuffixValueId { get; set; }
-            public int? RecordTypeValueId { get; set; }
             public int? ScheduleTemplateId { get; set; }
             public DateTime? ScheduleStartDate { get; set; }
             public IEnumerable<MemberAssignmentInfo> MemberAssignments { get; internal set; }
@@ -2812,6 +3107,156 @@ namespace Rock.Model
         }
 
         #endregion BulkImport related
+
+        #region RealTime Related
+
+        /// <summary>
+        /// Sends the attendance updated real time notifications for the specified
+        /// attendance records.
+        /// </summary>
+        /// <param name="attendanceGuids">The attendance unique identifiers.</param>
+        /// <returns>A task that represents this operation.</returns>
+        internal static async Task SendAttendanceUpdatedRealTimeNotificationsAsync( IEnumerable<Guid> attendanceGuids )
+        {
+            var guids = attendanceGuids.ToList();
+
+            using ( var rockContext = new RockContext() )
+            {
+                var attendanceService = new AttendanceService( rockContext );
+
+                while ( guids.Any() )
+                {
+                    // Work with at most 1,000 records at a time since it
+                    // translates to an IN query which doesn't perform well
+                    // on large sets.
+                    var guidsToProcess = guids.Take( 1_000 ).ToList();
+                    guids = guids.Skip( 1_000 ).ToList();
+
+                    try
+                    {
+                        var qry = attendanceService
+                            .Queryable()
+                            .AsNoTracking()
+                            .Where( a => attendanceGuids.Contains( a.Guid ) );
+
+                        await SendAttendanceUpdatedRealTimeNotificationsAsync( qry );
+                    }
+                    catch ( Exception ex )
+                    {
+                        Logging.RockLogger.Log.WriteToLog( Logging.RockLogLevel.Error, Logging.RockLogDomains.RealTime, ex.Message );
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Send attendance updated real time notifications for the Attendance
+        /// records returned by the query.
+        /// </summary>
+        /// <param name="qry">The query that provides the attendance records.</param>
+        /// <returns>A task that represents this operation.</returns>
+        private static async Task SendAttendanceUpdatedRealTimeNotificationsAsync( IQueryable<Attendance> qry )
+        {
+            var filteredQry = qry
+                .Where( a => a.PersonAliasId.HasValue );
+
+            var bags = GetAttendanceUpdatedMessageBags( filteredQry );
+
+            if ( !bags.Any() )
+            {
+                return;
+            }
+
+            var topicClients = RealTimeHelper.GetTopicContext<IEntityUpdated>().Clients;
+
+            var tasks = bags
+                .Select( b =>
+                {
+                    return Task.Run( () =>
+                    {
+                        var channels = EntityUpdatedTopic.GetAttendanceChannelsForBag( b );
+
+                        return topicClients
+                            .Channels( channels )
+                            .AttendanceUpdated( b );
+                    } );
+                } )
+                .ToArray();
+
+            try
+            {
+                await Task.WhenAll( tasks );
+            }
+            catch ( Exception ex )
+            {
+                Logging.RockLogger.Log.WriteToLog( Logging.RockLogLevel.Error, Logging.RockLogDomains.RealTime, ex.Message );
+            }
+        }
+
+        /// <summary>
+        /// Gets the attendance updated message bags from the query using the
+        /// most optimal pattern.
+        /// </summary>
+        /// <param name="qry">The query that provides the attendance records.</param>
+        /// <returns>A list of <see cref="AttendanceUpdatedMessageBag"/> objects that represent the attendance records.</returns>
+        private static List<AttendanceUpdatedMessageBag> GetAttendanceUpdatedMessageBags( IQueryable<Attendance> qry )
+        {
+            var publicApplicationRoot = GlobalAttributesCache.Value( "PublicApplicationRoot" );
+
+            var records = qry
+                .Select( a => new
+                {
+                    a.Guid,
+                    OccurrenceGuid = a.Occurrence.Guid,
+                    GroupGuid = ( Guid? ) a.Occurrence.Group.Guid,
+                    GroupTypeGuid = ( Guid? ) a.Occurrence.Group.GroupType.Guid,
+                    LocationGuid = ( Guid? ) a.Occurrence.Location.Guid,
+                    a.DidAttend,
+                    a.EndDateTime,
+                    a.PresentDateTime,
+                    a.RSVP,
+                    a.PersonAlias.Person
+                } )
+                .ToList();
+
+            return records
+                .Select( a =>
+                {
+                    var bag = new AttendanceUpdatedMessageBag
+                    {
+                        AttendanceGuid = a.Guid,
+                        PersonGuid = a.Person.Guid,
+                        OccurrenceGuid = a.OccurrenceGuid,
+                        GroupGuid = a.GroupGuid,
+                        GroupTypeGuid = a.GroupTypeGuid,
+                        LocationGuid = a.LocationGuid,
+                        RSVP = a.RSVP,
+                        PersonFullName = a.Person.FullName,
+                        PersonPhotoUrl = $"{publicApplicationRoot}{a.Person.PhotoUrl.TrimStart( '~', '/' )}"
+                    };
+
+                    if ( a.DidAttend == true )
+                    {
+                        if ( a.PresentDateTime.HasValue && !a.EndDateTime.HasValue )
+                        {
+                            bag.Status = Enums.Event.AttendanceStatus.IsPresent;
+                        }
+                        else
+                        {
+                            bag.Status = Enums.Event.AttendanceStatus.DidAttend;
+                        }
+                    }
+                    else
+                    {
+                        bag.Status = Enums.Event.AttendanceStatus.DidNotAttend;
+                    }
+
+                    return bag;
+                } )
+                .ToList();
+        }
+
+        #endregion
     }
 
     #region Group Scheduling related classes and types
@@ -2993,6 +3438,14 @@ namespace Rock.Model
         /// The name of the person.
         /// </value>
         public string PersonName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the photo URL for the person.
+        /// </summary>
+        /// <value>
+        /// The photo URL for the person.
+        /// </value>
+        public string PersonPhotoUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the last attendance date time.
@@ -3187,53 +3640,6 @@ namespace Rock.Model
     /// <summary>
     /// 
     /// </summary>
-    public enum ScheduledAttendanceItemMatchesPreference
-    {
-        /// <summary>
-        /// Person (group member) has a scheduling preference for the scheduled schedule and location
-        /// </summary>
-        MatchesPreference,
-
-        /// <summary>
-        /// Person (group member) has a scheduling preference for a different schedule (or the selected schedule but different location)
-        /// </summary>
-        NotMatchesPreference,
-
-        /// <summary>
-        /// Person (group member) has no scheduling preferences for the group (or the person isn't a member of the group )
-        /// </summary>
-        NoPreference
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public enum ScheduledAttendanceItemStatus
-    {
-        /// <summary>
-        /// pending
-        /// </summary>
-        Pending,
-
-        /// <summary>
-        /// confirmed
-        /// </summary>
-        Confirmed,
-
-        /// <summary>
-        /// declined
-        /// </summary>
-        Declined,
-
-        /// <summary>
-        /// Person isn't Scheduled (they would be in the list of Unscheduled resources)
-        /// </summary>
-        Unscheduled,
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     [RockObsolete( "1.12" )]
     [Obsolete( "Use GroupSchedulerResourceListSourceType instead" )]
     public enum SchedulerResourceListSourceType
@@ -3264,53 +3670,43 @@ namespace Rock.Model
         /// Show all members of the selected group
         /// </summary>
         [Description( "Group Members - All" )]
+        [EnumOrder( 1 )]
         GroupMembers,
 
         /// <summary>
         /// Show all members of the selected group that have a scheduling preference set for the selected week
         /// </summary>
         [Description( "Group Members - Matching Week" )]
+        [EnumOrder( 2 )]
         GroupMatchingPreference,
 
         /// <summary>
         /// All group members from another group
         /// </summary>
         [Description( "Alternate Group" )]
+        [EnumOrder( 4 )]
         AlternateGroup,
 
         /// <summary>
         /// The Parent group of the select group (only show if the selected group has a parent group)
         /// </summary>
         [Description( "Parent Group" )]
+        [EnumOrder( 5 )]
         ParentGroup,
 
         /// <summary>
         /// People that exist in a selected dataview
         /// </summary>
         [Description( "Data View" )]
+        [EnumOrder( 6 )]
         DataView,
 
         /// <summary>
         /// Group members whose week to work is the selected week AND whose assignment (location/schedule) matches the filters OR they have no assignment.
         /// </summary>
         [Description( "Group Members - Matching Assignment" )]
+        [EnumOrder( 3 )]
         GroupMatchingAssignment,
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public enum SchedulerResourceGroupMemberFilterType
-    {
-        /// <summary>
-        /// The show matching preference
-        /// </summary>
-        ShowMatchingPreference,
-
-        /// <summary>
-        /// The show all group members
-        /// </summary>
-        ShowAllGroupMembers
     }
 
     /// <summary>
@@ -3368,6 +3764,14 @@ namespace Rock.Model
         public int? ResourceGroupId { get; set; }
 
         /// <summary>
+        /// Gets or sets the resource group guid.
+        /// </summary>
+        /// <value>
+        /// The resource group guid.
+        /// </value>
+        public Guid? ResourceGroupGuid { get; set; }
+
+        /// <summary>
         /// If we just need the data for a specific person id
         /// </summary>
         /// <value>
@@ -3398,12 +3802,59 @@ namespace Rock.Model
         public int? ResourceDataViewId { get; set; }
 
         /// <summary>
+        /// Gets or sets the resource data view guid.
+        /// </summary>
+        /// <value>
+        /// The resource data view guid.
+        /// </value>
+        public Guid? ResourceDataViewGuid { get; set; }
+
+        /// <summary>
         /// Gets or sets the resource additional person ids.
         /// </summary>
         /// <value>
         /// The resource additional person ids.
         /// </value>
         public List<int> ResourceAdditionalPersonIds { get; set; }
+    }
+
+    /// <summary>
+    /// The result of an attempt to clone scheduled people from one attendance occurrence to another.
+    /// </summary>
+    [RockInternal( "1.15.1" )]
+    public class CloneScheduledPeopleResult
+    {
+        /// <summary>
+        /// Gets or sets the count of people skipped due to already being scheduled for the destination attendance occurrence.
+        /// </summary>
+        /// <value>
+        /// The count of people skipped due to already being scheduled for the destination attendance occurrence.
+        /// </value>
+        public int AlreadyScheduledSkippedCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the count of people skipped due to the destination attendance occurrence already being at capacity.
+        /// </summary>
+        /// <value>
+        /// The count of people skipped due to the destination attendance occurrence already being at capacity.
+        /// </value>
+        public int OverCapacitySkippedCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the count of people skipped due to a blackout within the destination attendance occurrence.
+        /// </summary>
+        /// <value>
+        /// The count of people skipped due to a blackout within the destination attendance occurrence.
+        /// </value>
+        public int BlackoutSkippedCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the count of people successfully cloned from the source attendance occurrence to the destination attendance occurrence.
+        /// </summary>
+        /// <value>
+        /// The count of people successfully cloned from the source attendance occurrence to the destination attendance occurrence.
+        /// </value>
+        public int ClonedCount { get; set; }
     }
 
     #endregion Group Scheduling related classes and types

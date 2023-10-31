@@ -15,13 +15,10 @@
 // </copyright>
 //
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.ModelConfiguration;
-using System.IO;
 using System.Runtime.Serialization;
-
 using Rock.Data;
 using Rock.Lava;
 using Rock.Storage;
@@ -35,6 +32,7 @@ namespace Rock.Model
     [RockDomain( "Core" )]
     [Table( "BinaryFile" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "9BB1A349-5998-47C1-97D5-D6CC00275662" )]
     public partial class BinaryFile : Model<BinaryFile>
     {
         #region Entity Properties
@@ -201,6 +199,27 @@ namespace Rock.Model
         [DataMember]
         public DateTime? ContentLastModified { get; set; }
 
+        /// <summary>
+        /// Gets or sets additional information for the file.
+        /// </summary>
+        /// <value>The additional information.</value>
+        [DataMember]
+        public string AdditionalInformation { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Parent EntityType ID to determine security access.
+        /// </summary>
+        /// <value>The parent entity type identifier.</value>
+        [DataMember]
+        public int? ParentEntityTypeId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the parent Entity ID to determine security access.
+        /// </summary>
+        /// <value>The parent entity identifier.</value>
+        [DataMember]
+        public int? ParentEntityId { get; set; }
+
         #endregion
 
         #region Navigation Properties
@@ -224,16 +243,6 @@ namespace Rock.Model
         public virtual BinaryFileData DatabaseData { get; set; }
 
         /// <summary>
-        /// Gets the storage provider.
-        /// </summary>
-        /// <value>
-        /// The storage provider.
-        /// </value>
-        [NotMapped]
-        [LavaVisible]
-        public virtual Storage.ProviderComponent StorageProvider { get; private set; }
-
-        /// <summary>
         /// Gets or sets the document.
         /// </summary>
         /// <value>
@@ -243,65 +252,6 @@ namespace Rock.Model
         public virtual Document Document { get; set; }
 
         #endregion
-
-        /// <summary>
-        /// Gets or sets the content stream.
-        /// </summary>
-        /// <value>
-        /// The content stream.
-        /// </value>
-        [NotMapped]
-        [HideFromReporting]
-        public virtual Stream ContentStream
-        {
-            get
-            {
-                if ( _stream == null )
-                {
-                    if ( StorageProvider != null )
-                    {
-                        _stream = StorageProvider.GetContentStream( this );
-                    }
-                }
-                else
-                {
-                    if ( _stream.CanSeek )
-                    {
-                        _stream.Position = 0;
-                    }
-                    else
-                    {
-                        _stream = StorageProvider.GetContentStream( this );
-                    }
-                }
-
-                return _stream;
-            }
-            set
-            {
-                _stream = value;
-                ContentIsDirty = true;
-                ContentLastModified = RockDateTime.Now;
-            }
-        }
-        private Stream _stream;
-        internal bool ContentIsDirty = false;
-
-        /// <summary>
-        /// Gets the storage settings.
-        /// </summary>
-        /// <value>
-        /// The storage settings.
-        /// </value>
-        [NotMapped]
-        [HideFromReporting]
-        public virtual Dictionary<string, string> StorageSettings
-        {
-            get
-            {
-                return StorageEntitySettings.FromJsonOrNull<Dictionary<string, string>>() ?? new Dictionary<string, string>();
-            }
-        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> containing the name of the file and  represents this instance.

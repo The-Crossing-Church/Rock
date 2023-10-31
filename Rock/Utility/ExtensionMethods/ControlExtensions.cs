@@ -70,7 +70,7 @@ namespace Rock
             {
                 if ( parentControl is Rock.Web.UI.RockBlock )
                 {
-                    return (Rock.Web.UI.RockBlock)parentControl;
+                    return ( Rock.Web.UI.RockBlock ) parentControl;
                 }
                 parentControl = parentControl.Parent;
             }
@@ -89,7 +89,7 @@ namespace Rock
             {
                 if ( parentControl is System.Web.UI.UpdatePanel )
                 {
-                    return (System.Web.UI.UpdatePanel)parentControl;
+                    return ( System.Web.UI.UpdatePanel ) parentControl;
                 }
                 parentControl = parentControl.Parent;
             }
@@ -180,6 +180,40 @@ namespace Rock
                 }
             }
 
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the first control in a parent container matching the specified condition.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="condition">The condition.</param>
+        /// <returns></returns>
+        public static System.Web.UI.Control FindFirstInParentContainerWhere( this System.Web.UI.Control control, Func<System.Web.UI.Control, bool> condition )
+        {
+            if ( control == null )
+            {
+                return null;
+            }
+            var parentControl = control.Parent;
+            while ( parentControl != null )
+            {
+                foreach ( var child in parentControl.Controls )
+                {
+                    if ( child is System.Web.UI.Control c )
+                    {
+                        if ( c == control )
+                        {
+                            continue;
+                        }
+                        if ( condition( c ) )
+                        {
+                            return c;
+                        }
+                    }
+                }
+                parentControl = parentControl.Parent;
+            }
             return null;
         }
 
@@ -564,50 +598,6 @@ namespace Rock
 
             listControl.DataTextField = "Value";
             listControl.DataValueField = "Key";
-            listControl.DataBind();
-
-            if ( insertBlankOption )
-            {
-                listControl.Items.Insert( 0, new ListItem() );
-            }
-        }
-
-        /// <summary>
-        /// Binds to the values of a definedType using the definedValue's Id as the listitem value.
-        /// NOTE: In most cases, instead of using BindToDefinedType, use <see cref="Rock.Web.UI.Controls.DefinedValuePicker"/> instead
-        /// </summary>
-        /// <param name="listControl">The list control.</param>
-        /// <param name="definedType">Type of the defined.</param>
-        /// <param name="insertBlankOption">if set to <c>true</c> [insert blank option].</param>
-        /// <param name="useDescriptionAsText">if set to <c>true</c> [use description as text].</param>
-        [RockObsolete( "1.9" )]
-        [Obsolete( "Use DefinedValuePicker instead.", true )]
-        public static void BindToDefinedType( this ListControl listControl, DefinedTypeCache definedType, bool insertBlankOption = false, bool useDescriptionAsText = false )
-        {
-            // For IDefinedValuePicker types: Before this section of code was added, BindToDefinedType did not update DefinedTypeId, because not all ListControls have it.
-            // If BindToDefinedType was used instead of DefinedTypeId, the control did show the defined values and the user was be able to pick it, and save.
-            // However, when the selected value(s) was/were set pragmatically, the list gets re-populated using DefinedTypeId. Because it is not set, the list will be empty except for the selected value(s)
-            // For IDefinedValuePicker DefinedTypeId should be set instead of using BindToDefinedType.
-            if ( listControl is Rock.Web.UI.Controls.IDefinedValuePicker )
-            {
-                Web.UI.Controls.IDefinedValuePicker definedValuePicker = ( Rock.Web.UI.Controls.IDefinedValuePicker ) listControl;
-                definedValuePicker.DefinedTypeId = definedType.Id;
-                definedValuePicker.DisplayDescriptions = useDescriptionAsText;
-                return;
-            }
-
-            var ds = definedType.DefinedValues
-                .Select( v => new
-                {
-                    Name = v.Value,
-                    v.Description,
-                    v.Id
-                } );
-
-            listControl.SelectedIndex = -1;
-            listControl.DataSource = ds;
-            listControl.DataTextField = useDescriptionAsText ? "Description" : "Name";
-            listControl.DataValueField = "Id";
             listControl.DataBind();
 
             if ( insertBlankOption )

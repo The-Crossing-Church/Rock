@@ -15,8 +15,9 @@
 // </copyright>
 //
 using System.Collections.Generic;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Rock.Attribute;
 using Rock.Web.UI.Controls;
 
@@ -27,10 +28,12 @@ namespace Rock.Field.Types
     /// Stored as BinaryFile's Guid
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.LABEL )]
     public class LabelFieldType : BinaryFileFieldType
     {
 
-        #region Configuration
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Creates the HTML controls required to configure this type of field
@@ -80,6 +83,7 @@ namespace Rock.Field.Types
         {
         }
 
+#endif
         #endregion
 
     }

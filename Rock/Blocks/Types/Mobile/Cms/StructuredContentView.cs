@@ -39,8 +39,17 @@ namespace Rock.Blocks.Types.Mobile.Cms
 
     #region Block Attributes
 
+    [CodeEditorField( "Document Not Found Content",
+        Description = "Template used to render when a document isn't found. Lava is not enabled. Leave blank to display nothing.",
+        IsRequired = false,
+        EditorMode = Rock.Web.UI.Controls.CodeEditorMode.Xml,
+        Key = AttributeKeys.DocumentNotFoundContent,
+        Order = 0 )]
+
     #endregion
 
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_CMS_STRUCTUREDCONTENTVIEW_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( "A8BBE3F8-F3CC-4C0A-AB2F-5085F5BF59E7")]
     public class StructuredContentView : RockMobileBlockType
     {
         /// <summary>
@@ -48,6 +57,10 @@ namespace Rock.Blocks.Types.Mobile.Cms
         /// </summary>
         public static class AttributeKeys
         {
+            /// <summary>
+            /// The document not found content attribute key.
+            /// </summary>
+            public const string DocumentNotFoundContent = "DocumentNotFoundContent";
         }
 
         #region Attribute Properties
@@ -80,8 +93,9 @@ namespace Rock.Blocks.Types.Mobile.Cms
         /// </returns>
         public override object GetMobileConfigurationValues()
         {
-            var config = new
+            var config = new Rock.Common.Mobile.Blocks.Cms.StructuredContentView.Configuration
             {
+                DocumentNotFoundContent = GetAttributeValue( AttributeKeys.DocumentNotFoundContent ) ?? ""   
             };
 
             return config;

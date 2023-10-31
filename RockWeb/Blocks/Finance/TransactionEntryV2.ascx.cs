@@ -30,7 +30,7 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Lava;
 using Rock.Model;
-using Rock.Transactions;
+using Rock.Tasks;
 using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
@@ -190,8 +190,16 @@ namespace RockWeb.Blocks.Finance
         Description = "The Lava template to use to provide the cover the fees prompt to the individual. <span class='tip tip-lava'></span>",
         EditorMode = CodeEditorMode.Lava,
         Key = AttributeKey.FeeCoverageMessage,
-        DefaultValue = @"Make my gift go further. Please increase my gift by {{ Percentage }}% ({{ AmountHTML }}) to help cover the electronic transaction fees.",
+        DefaultValue = "Make my gift go further. Please increase my gift by {%if IsPercentage %} {{ Percentage }}% ({{ AmountHTML }}) {% else %} {{ AmountHTML }} {% endif %} to help cover the electronic transaction fees.",
         Order = 28 )]
+
+    [BooleanField(
+        "Disable Captcha Support",
+        Description = "If set to 'Yes' the CAPTCHA verification step will not be performed.",
+        Key = AttributeKey.DisableCaptchaSupport,
+        DefaultBooleanValue = false,
+        Order = 29
+        )]
 
     #region Scheduled Transactions
 
@@ -301,6 +309,17 @@ namespace RockWeb.Blocks.Finance
         Category = AttributeCategory.TextOptions,
         Order = 5 )]
 
+    [CodeEditorField( "Account Header Template",
+        Key = AttributeKey.AccountHeaderTemplate,
+        Description = "The Lava Template to use as the amount input label for each account.",
+        EditorMode = CodeEditorMode.Lava,
+        EditorTheme = CodeEditorTheme.Rock,
+        EditorHeight = 50,
+        IsRequired = true,
+        DefaultValue = "{{ Account.PublicName }}",
+        Category = AttributeCategory.TextOptions,
+        Order = 6 )]
+
     [CodeEditorField(
         "Amount Summary Template",
         Key = AttributeKey.AmountSummaryTemplate,
@@ -308,7 +327,7 @@ namespace RockWeb.Blocks.Finance
         Description = "The text (HTML) to display on the amount summary page. <span class='tip tip-lava'></span>",
         DefaultValue = DefaultAmountSummaryTemplate,
         Category = AttributeCategory.TextOptions,
-        Order = 6 )]
+        Order = 7 )]
 
     [CodeEditorField(
         "Finish Lava Template",
@@ -317,7 +336,7 @@ namespace RockWeb.Blocks.Finance
         Description = "The text (HTML) to display on the success page. <span class='tip tip-lava'></span>",
         DefaultValue = DefaultFinishLavaTemplate,
         Category = AttributeCategory.TextOptions,
-        Order = 7 )]
+        Order = 8 )]
 
     #endregion
 
@@ -479,6 +498,7 @@ namespace RockWeb.Blocks.Finance
     #endregion Advanced Options
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "6316D801-40C0-4EED-A2AD-55C13870664D" )]
     public partial class TransactionEntryV2 : RockBlock
     {
         #region constants
@@ -674,98 +694,54 @@ mission. We are so grateful for your commitment.</p>
         private static class AttributeKey
         {
             public const string AccountsToDisplay = "AccountsToDisplay";
-
             public const string AllowImpersonation = "AllowImpersonation";
-
             public const string AllowScheduledTransactions = "AllowScheduledTransactions";
-
             public const string BatchNamePrefix = "BatchNamePrefix";
-
             public const string FinancialGateway = "FinancialGateway";
-
             public const string EnableACH = "EnableACH";
-
             public const string EnableCreditCard = "EnableCreditCard";
-
             public const string EnableCommentEntry = "EnableCommentEntry";
-
             public const string CommentEntryLabel = "CommentEntryLabel";
-
             public const string EnableBusinessGiving = "EnableBusinessGiving";
-
             public const string EnableAnonymousGiving = "EnableAnonymousGiving";
-
             public const string AnonymousGivingTooltip = "AnonymousGivingTooltip";
-
             public const string PaymentCommentTemplate = "PaymentCommentTemplate";
-
             public const string EnableInitialBackButton = "EnableInitialBackButton";
-
             public const string FinancialSourceType = "FinancialSourceType";
-
             public const string ShowScheduledTransactions = "ShowScheduledTransactions";
-
             public const string ScheduledTransactionsTemplate = "ScheduledTransactionsTemplate";
-
             public const string ScheduledTransactionEditPage = "ScheduledTransactionEditPage";
-
             public const string GiftTerm = "GiftTerm";
-
             public const string GiveButtonNowText = "GiveButtonNowText";
-
             public const string GiveButtonScheduledText = "GiveButtonScheduledText";
-
+            public const string AccountHeaderTemplate = "AccountHeaderTemplate";
             public const string AmountSummaryTemplate = "AmountSummaryTemplate";
-
             public const string AskForCampusIfKnown = "AskForCampusIfKnown";
-
             public const string IncludeInactiveCampuses = "IncludeInactiveCampuses";
-
             public const string IncludedCampusTypes = "IncludedCampusTypes";
-
             public const string IncludedCampusStatuses = "IncludedCampusStatuses";
-
             public const string EnableMultiAccount = "EnableMultiAccount";
-
             public const string IntroMessageTemplate = "IntroMessageTemplate";
-
             public const string FinishLavaTemplate = "FinishLavaTemplate";
-
             public const string SaveAccountTitle = "SaveAccountTitle";
-
             public const string ConfirmAccountEmailTemplate = "ConfirmAccountEmailTemplate";
-
             public const string TransactionType = "Transaction Type";
-
             public const string TransactionEntityType = "TransactionEntityType";
-
             public const string EntityIdParam = "EntityIdParam";
-
             public const string AllowedTransactionAttributesFromURL = "AllowedTransactionAttributesFromURL";
-
             public const string AllowAccountOptionsInURL = "AllowAccountOptionsInURL";
-
             public const string OnlyPublicAccountsInURL = "OnlyPublicAccountsInURL";
-
             public const string InvalidAccountInURLMessage = "InvalidAccountInURLMessage";
-
             public const string ReceiptEmail = "ReceiptEmail";
-
             public const string PromptForPhone = "PromptForPhone";
-
             public const string PromptForEmail = "PromptForEmail";
-
             public const string PersonAddressType = "PersonAddressType";
-
             public const string PersonConnectionStatus = "PersonConnectionStatus";
-
             public const string PersonRecordStatus = "PersonRecordStatus";
-
             public const string EnableFeeCoverage = "EnableFeeCoverage";
-
             public const string FeeCoverageDefaultState = "FeeCoverageDefaultState";
-
             public const string FeeCoverageMessage = "FeeCoverageMessage";
+            public const string DisableCaptchaSupport = "DisableCaptchaSupport";
         }
 
         #endregion Attribute Keys
@@ -831,6 +807,8 @@ mission. We are so grateful for your commitment.</p>
 
             public const string ScheduledTransactionGuidToTransfer = "ScheduledTransactionGuid";
             public const string Transfer = "Transfer";
+
+            public const string ParticipationMode = "ParticipationMode";
         }
 
         #endregion
@@ -954,25 +932,6 @@ mission. We are so grateful for your commitment.</p>
         #region Properties
 
         /// <summary>
-        /// Gets or sets the host payment information submit JavaScript.
-        /// </summary>
-        /// <value>
-        /// The host payment information submit script.
-        /// </value>
-        protected string HostPaymentInfoSubmitScript
-        {
-            get
-            {
-                return ViewState[ViewStateKey.HostPaymentInfoSubmitScript] as string;
-            }
-
-            set
-            {
-                ViewState[ViewStateKey.HostPaymentInfoSubmitScript] = value;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the payment transaction code.
         /// </summary>
         protected string TransactionCode
@@ -1016,13 +975,22 @@ mission. We are so grateful for your commitment.</p>
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
 
-            bool enableACH = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
-            bool enableCreditCard = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
+            // Don't use captcha if the block is set to disable (DisableCaptchaSupport==true) it or if is not configured (IsAvailable==false)
+            var disableCaptchaSupport = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() || !cpCaptcha.IsAvailable;
+            cpCaptcha.Visible = !disableCaptchaSupport;
+            cpCaptcha.TokenReceived += CpCaptcha_TokenReceived;
+
+            var enableACH = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
+            var enableCreditCard = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
             if ( this.FinancialGatewayComponent != null && this.FinancialGateway != null )
             {
-                _hostedPaymentInfoControl = this.FinancialGatewayComponent.GetHostedPaymentInfoControl( this.FinancialGateway, "_hostedPaymentInfoControl", new HostedPaymentInfoControlOptions { EnableACH = enableACH, EnableCreditCard = enableCreditCard } );
+                _hostedPaymentInfoControl = this.FinancialGatewayComponent.GetHostedPaymentInfoControl( this.FinancialGateway, $"_hostedPaymentInfoControl_{this.FinancialGateway.Id}", new HostedPaymentInfoControlOptions { EnableACH = enableACH, EnableCreditCard = enableCreditCard } );
                 phHostedPaymentControl.Controls.Add( _hostedPaymentInfoControl );
-                this.HostPaymentInfoSubmitScript = this.FinancialGatewayComponent.GetHostPaymentInfoSubmitScript( this.FinancialGateway, _hostedPaymentInfoControl );
+
+                if ( disableCaptchaSupport )
+                {
+                    hfHostPaymentInfoSubmitScript.Value = this.FinancialGatewayComponent.GetHostPaymentInfoSubmitScript( this.FinancialGateway, _hostedPaymentInfoControl );
+                }
             }
 
             if ( _hostedPaymentInfoControl is IHostedGatewayPaymentControlTokenEvent )
@@ -1102,6 +1070,21 @@ mission. We are so grateful for your commitment.</p>
             }
         }
 
+        /// <summary>
+        /// Handles the TokenReceived event of the CpCaptcha control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="Captcha.TokenReceivedEventArgs"/> instance containing the event data.</param>
+        /// <exception cref="NotImplementedException"></exception>
+        private void CpCaptcha_TokenReceived( object sender, Captcha.TokenReceivedEventArgs e )
+        {
+            if ( e.IsValid )
+            {
+                hfHostPaymentInfoSubmitScript.Value = this.FinancialGatewayComponent.GetHostPaymentInfoSubmitScript( this.FinancialGateway, _hostedPaymentInfoControl );
+                cpCaptcha.Visible = false;
+            }
+        }
+
         #endregion
 
         #region Gateway Help Related
@@ -1162,7 +1145,7 @@ mission. We are so grateful for your commitment.</p>
 
             if ( hostedGatewayComponent == null )
             {
-                ShowConfigurationMessage( NotificationBoxType.Warning, "Unsupported Gateway", "This block only support Gateways that have a hosted payment interface." );
+                ShowConfigurationMessage( NotificationBoxType.Warning, "Unsupported Gateway", "This block only supports Gateways that have a hosted payment interface." );
                 pnlTransactionEntry.Visible = false;
                 return false;
             }
@@ -1249,6 +1232,7 @@ mission. We are so grateful for your commitment.</p>
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.AmountHTML, creditCardFeeCoverageAmount.FormatAsCurrency() );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsSavedAccount, false );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.CalculatedAmount, creditCardFeeCoverageAmount );
+                feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsPercentage, true );
                 cbGetPaymentInfoCoverTheFeeCreditCard.Text = feeCoverageMessageTemplate.ResolveMergeFields( feeCoverageMergeFields );
                 hfAmountWithCoveredFeeCreditCard.Value = ( totalAmount + creditCardFeeCoverageAmount ).FormatAsCurrency();
             }
@@ -1259,6 +1243,7 @@ mission. We are so grateful for your commitment.</p>
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.AmountHTML, achFeeCoverageAmount.FormatAsCurrency() );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsSavedAccount, false );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.CalculatedAmount, achFeeCoverageAmount );
+                feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsPercentage, false );
                 cbGetPaymentInfoCoverTheFeeACH.Text = feeCoverageMessageTemplate.ResolveMergeFields( feeCoverageMergeFields );
                 hfAmountWithCoveredFeeACH.Value = ( totalAmount + achFeeCoverageAmount ).FormatAsCurrency();
             }
@@ -1293,6 +1278,7 @@ mission. We are so grateful for your commitment.</p>
 
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.AmountHTML, achFeeCoverageAmount.FormatAsCurrency() );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsSavedAccount, true );
+                feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsPercentage, false );
                 cbGiveNowCoverTheFee.Text = feeCoverageMessageTemplate.ResolveMergeFields( feeCoverageMergeFields );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.CalculatedAmount, achFeeCoverageAmount );
             }
@@ -1306,6 +1292,7 @@ mission. We are so grateful for your commitment.</p>
 
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.AmountHTML, $"{RockCurrencyCodeInfo.GetCurrencySymbol()}<span class='{calculatedAmountJSHook}' decimal-places='{RockCurrencyCodeInfo.GetDecimalPlaces()}'></span>" );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsSavedAccount, true );
+                feeCoverageMergeFields.AddOrReplace( MergeFieldKey.IsPercentage, true );
                 feeCoverageMergeFields.AddOrReplace( MergeFieldKey.CalculatedAmount, null );
 
                 cbGiveNowCoverTheFee.Text = feeCoverageMessageTemplate.ResolveMergeFields( feeCoverageMergeFields );
@@ -1432,7 +1419,7 @@ mission. We are so grateful for your commitment.</p>
 
             var hostedGatewayComponentList = Rock.Financial.GatewayContainer.Instance.Components
                 .Select( a => a.Value.Value )
-                .Where( a => a is IHostedGatewayComponent )
+                .Where( a => a is IHostedGatewayComponent && !( a is TestGateway ) )
                 .Select( a => a as IHostedGatewayComponent ).ToList();
 
             rptInstalledGateways.DataSource = hostedGatewayComponentList;
@@ -1674,9 +1661,7 @@ mission. We are so grateful for your commitment.</p>
 
             if ( pnlCreateLogin.Visible )
             {
-                string errorTitle = null;
-                string errorMessage = null;
-                if ( !UserLoginService.IsValidNewUserLogin( tbUserName.Text, tbPassword.Text, tbPasswordConfirm.Text, out errorTitle, out errorMessage ) )
+                if ( !UserLoginService.IsValidNewUserLogin( tbUserName.Text, tbPassword.Text, tbPasswordConfirm.Text, out string errorTitle, out string errorMessage ) )
                 {
                     nbSaveAccountError.Title = errorTitle;
                     nbSaveAccountError.Text = errorMessage;
@@ -1820,86 +1805,6 @@ mission. We are so grateful for your commitment.</p>
                 }
             }
 
-            var allowAccountsInUrl = this.GetAttributeValue( AttributeKey.AllowAccountOptionsInURL ).AsBoolean();
-            var rockContext = new RockContext();
-            List<int> selectableAccountIds = new FinancialAccountService( rockContext ).GetByGuids( this.GetAttributeValues( AttributeKey.AccountsToDisplay ).AsGuidList() ).Select( a => a.Id ).ToList();
-            CampusAccountAmountPicker.AccountIdAmount[] accountAmounts = null;
-
-            bool enableMultiAccount = this.GetAttributeValue( AttributeKey.EnableMultiAccount ).AsBoolean();
-            if ( enableMultiAccount )
-            {
-                caapPromptForAccountAmounts.AmountEntryMode = CampusAccountAmountPicker.AccountAmountEntryMode.MultipleAccounts;
-            }
-            else
-            {
-                caapPromptForAccountAmounts.AmountEntryMode = CampusAccountAmountPicker.AccountAmountEntryMode.SingleAccount;
-            }
-
-            caapPromptForAccountAmounts.AskForCampusIfKnown = this.GetAttributeValue( AttributeKey.AskForCampusIfKnown ).AsBoolean();
-            caapPromptForAccountAmounts.IncludeInactiveCampuses = this.GetAttributeValue( AttributeKey.IncludeInactiveCampuses ).AsBoolean();
-            var includedCampusStatusIds = this.GetAttributeValues( AttributeKey.IncludedCampusStatuses )
-                .ToList()
-                .AsGuidList()
-                .Select( a => DefinedValueCache.Get( a ) )
-                .Where( a => a != null )
-                .Select( a => a.Id ).ToArray();
-
-            caapPromptForAccountAmounts.IncludedCampusStatusIds = includedCampusStatusIds;
-
-            var includedCampusTypeIds = this.GetAttributeValues( AttributeKey.IncludedCampusTypes )
-                .ToList()
-                .AsGuidList()
-                .Select( a => DefinedValueCache.Get( a ) )
-                .Where( a => a != null )
-                .Select( a => a.Id ).ToArray();
-
-            caapPromptForAccountAmounts.IncludedCampusTypeIds = includedCampusTypeIds;
-
-            if ( allowAccountsInUrl )
-            {
-                List<ParameterAccountOption> parameterAccountOptions = ParseAccountUrlOptions();
-                if ( parameterAccountOptions.Any() )
-                {
-                    selectableAccountIds = parameterAccountOptions.Select( a => a.AccountId ).ToList();
-                    string invalidAccountInURLMessage = this.GetAttributeValue( AttributeKey.InvalidAccountInURLMessage );
-                    if ( invalidAccountInURLMessage.IsNotNullOrWhiteSpace() )
-                    {
-                        var validAccountUrlIdsQuery = new FinancialAccountService( rockContext ).GetByIds( selectableAccountIds )
-                            .Where( a =>
-                                 a.IsActive &&
-                                 ( a.StartDate == null || a.StartDate <= RockDateTime.Today ) &&
-                                 ( a.EndDate == null || a.EndDate >= RockDateTime.Today ) );
-
-                        if ( this.GetAttributeValue( AttributeKey.OnlyPublicAccountsInURL ).AsBooleanOrNull() ?? true )
-                        {
-                            validAccountUrlIdsQuery = validAccountUrlIdsQuery.Where( a => a.IsPublic == true );
-                        }
-
-                        var validAccountIds = validAccountUrlIdsQuery.Select( a => a.Id ).ToList();
-
-                        if ( selectableAccountIds.Where( a => !validAccountIds.Contains( a ) ).Any() )
-                        {
-                            nbConfigurationNotification.Text = invalidAccountInURLMessage;
-                            nbConfigurationNotification.NotificationBoxType = NotificationBoxType.Validation;
-                            nbConfigurationNotification.Visible = true;
-                        }
-                    }
-
-                    var parameterAccountAmounts = parameterAccountOptions.Select( a => new CampusAccountAmountPicker.AccountIdAmount( a.AccountId, a.Amount ) { ReadOnly = !a.Enabled } );
-                    accountAmounts = parameterAccountAmounts.ToArray();
-                }
-            }
-
-            caapPromptForAccountAmounts.SelectableAccountIds = selectableAccountIds.ToArray();
-
-            // if Gateways are configured, show a warning if no Accounts are configured (we don't want to show an Accounts warning if they haven't configured a gateway yet)
-            if ( !caapPromptForAccountAmounts.SelectableAccountIds.Any() )
-            {
-                ShowConfigurationMessage( NotificationBoxType.Warning, "Configuration", "At least one Financial Account must be selected in the configuration for this block." );
-                pnlTransactionEntry.Visible = false;
-                return;
-            }
-
             bool enableACH = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
             bool enableCreditCard = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
 
@@ -1915,20 +1820,14 @@ mission. We are so grateful for your commitment.</p>
                 return;
             }
 
-            // Check if this is a transfer and that the person is the authorized person on the transaction
-            if ( !string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.Transfer ) ) && !string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.ScheduledTransactionGuidToTransfer ) ) )
-            {
-                InitializeTransfer( PageParameter( PageParameterKey.ScheduledTransactionGuidToTransfer ).AsGuidOrNull() );
+            ConfigureCampusAccountAmountPicker();
 
-                if ( _scheduledTransactionIdToBeTransferred.HasValue && selectableAccountIds.Any() )
-                {
-                    accountAmounts = GetAccountAmountsFromTransferredScheduledTransaction( rockContext, selectableAccountIds );
-                }
-            }
-
-            if ( accountAmounts != null )
+            // if Gateways are configured, show a warning if no Accounts are configured (we don't want to show an Accounts warning if they haven't configured a gateway yet)
+            if ( !caapPromptForAccountAmounts.SelectableAccountIds.Any() )
             {
-                caapPromptForAccountAmounts.AccountAmounts = accountAmounts;
+                ShowConfigurationMessage( NotificationBoxType.Warning, "Configuration", "At least one Financial Account must be selected in the configuration for this block." );
+                pnlTransactionEntry.Visible = false;
+                return;
             }
 
             string introMessageTemplate = this.GetAttributeValue( AttributeKey.IntroMessageTemplate );
@@ -1940,10 +1839,11 @@ mission. We are so grateful for your commitment.</p>
             introMessageMergeFields = LavaHelper.GetCommonMergeFields( this.RockPage );
             if ( transactionEntity != null && LavaHelper.IsLavaTemplate( introMessageTemplate ) )
             {
+                var rockContext = new RockContext();
                 introMessageMergeFields.Add( "TransactionEntity", transactionEntity );
                 var transactionEntityTypeId = transactionEntity.TypeId;
 
-                // include any Transactions that are associated with the TransactionEntity for Lava
+                // Include any Transactions that are associated with the TransactionEntity for Lava
                 var transactionEntityTransactions = new FinancialTransactionService( rockContext ).Queryable()
                     .Include( a => a.TransactionDetails )
                     .Where( a => a.TransactionDetails.Any( d => d.EntityTypeId.HasValue && d.EntityTypeId == transactionEntityTypeId && d.EntityId == transactionEntity.Id ) )
@@ -1955,6 +1855,40 @@ mission. We are so grateful for your commitment.</p>
 
                 introMessageMergeFields.Add( "TransactionEntityTransactions", transactionEntityTransactions );
                 introMessageMergeFields.Add( "TransactionEntityTransactionsTotal", transactionEntityTransactionsTotal );
+
+                // If the transactionEntityTypeId is GroupMember, it will probably be Fundraising related, so add additional merge fields that they
+                // might want available if this a Fundraising GroupMember.
+                var participationMode = PageParameters().ContainsKey( PageParameterKey.ParticipationMode ) ? PageParameter( PageParameterKey.ParticipationMode ).AsIntegerOrNull() ?? 1 : 1;
+
+                if ( EntityTypeCache.Get( transactionEntityTypeId ).Guid == Rock.SystemGuid.EntityType.GROUP_MEMBER.AsGuid() )
+                {
+                    var groupMember = new GroupMemberService( rockContext ).Get( transactionEntity.Guid );
+                    GroupService groupService = new GroupService( rockContext );
+                    if ( participationMode == ( int ) ParticipationType.Family )
+                    {
+                        var familyMemberGroupMembersInCurrentGroup = groupService.GroupMembersInAnotherGroup( groupMember.Person.GetFamily(), groupMember.Group );
+                        decimal groupFundraisingGoal = 0;
+                        foreach ( var member in familyMemberGroupMembersInCurrentGroup )
+                        {
+                            member.LoadAttributes( rockContext );
+                            member.Group.LoadAttributes( rockContext );
+                            groupFundraisingGoal += member.GetAttributeValue( "IndividualFundraisingGoal" ).AsDecimalOrNull() ?? member.Group.GetAttributeValue( "IndividualFundraisingGoal" ).AsDecimalOrNull() ?? 0;
+                        }
+
+                        var contributionTotal = new FinancialTransactionDetailService( rockContext )
+                        .GetContributionsForGroupMemberList( transactionEntityTypeId, familyMemberGroupMembersInCurrentGroup.Select( m => m.Id ).ToList() );
+                        introMessageMergeFields.Add( "FundraisingGoal", groupFundraisingGoal );
+                        introMessageMergeFields.Add( "AmountRaised", contributionTotal );
+                    }
+                    else
+                    {
+                        groupMember.LoadAttributes( rockContext );
+                        groupMember.Group.LoadAttributes( rockContext );
+                        var memberFundraisingGoal = groupMember.GetAttributeValue( "IndividualFundraisingGoal" ).AsDecimalOrNull() ?? groupMember.Group.GetAttributeValue( "IndividualFundraisingGoal" ).AsDecimalOrNull() ?? 0;
+                        introMessageMergeFields.Add( "FundraisingGoal", memberFundraisingGoal );
+                        introMessageMergeFields.Add( "AmountRaised", transactionEntityTransactionsTotal );
+                    }
+                }
 
                 introMessageMergeFields.Add( "AmountLimit", this.PageParameter( PageParameterKey.AmountLimit ).AsDecimalOrNull() );
             }
@@ -2010,6 +1944,99 @@ mission. We are so grateful for your commitment.</p>
             result.AddRange( ParseAccountUrlOptionsParameter( this.PageParameter( PageParameterKey.AccountIdsOptions ), false ) );
             result.AddRange( ParseAccountUrlOptionsParameter( this.PageParameter( PageParameterKey.AccountGlCodesOptions ), true ) );
             return result;
+        }
+
+        private void ConfigureCampusAccountAmountPicker()
+        {
+            var allowAccountsInUrl = this.GetAttributeValue( AttributeKey.AllowAccountOptionsInURL ).AsBoolean();
+            var rockContext = new RockContext();
+            List<int> selectableAccountIds = FinancialAccountCache.GetByGuids( this.GetAttributeValues( AttributeKey.AccountsToDisplay ).AsGuidList() ).Select( a => a.Id ).ToList();
+            CampusAccountAmountPicker.AccountIdAmount[] accountAmounts = null;
+
+            bool enableMultiAccount = this.GetAttributeValue( AttributeKey.EnableMultiAccount ).AsBoolean();
+            caapPromptForAccountAmounts.UseAccountCampusMappingLogic = true;
+            caapPromptForAccountAmounts.AccountHeaderTemplate = this.GetAttributeValue( AttributeKey.AccountHeaderTemplate );
+            if ( enableMultiAccount )
+            {
+                caapPromptForAccountAmounts.AmountEntryMode = CampusAccountAmountPicker.AccountAmountEntryMode.MultipleAccounts;
+            }
+            else
+            {
+                caapPromptForAccountAmounts.AmountEntryMode = CampusAccountAmountPicker.AccountAmountEntryMode.SingleAccount;
+            }
+
+            caapPromptForAccountAmounts.AskForCampusIfKnown = this.GetAttributeValue( AttributeKey.AskForCampusIfKnown ).AsBoolean();
+            caapPromptForAccountAmounts.IncludeInactiveCampuses = this.GetAttributeValue( AttributeKey.IncludeInactiveCampuses ).AsBoolean();
+            var includedCampusStatusIds = this.GetAttributeValues( AttributeKey.IncludedCampusStatuses )
+                .ToList()
+                .AsGuidList()
+                .Select( a => DefinedValueCache.Get( a ) )
+                .Where( a => a != null )
+                .Select( a => a.Id ).ToArray();
+
+            caapPromptForAccountAmounts.IncludedCampusStatusIds = includedCampusStatusIds;
+
+            var includedCampusTypeIds = this.GetAttributeValues( AttributeKey.IncludedCampusTypes )
+                .ToList()
+                .AsGuidList()
+                .Select( a => DefinedValueCache.Get( a ) )
+                .Where( a => a != null )
+                .Select( a => a.Id ).ToArray();
+
+            caapPromptForAccountAmounts.IncludedCampusTypeIds = includedCampusTypeIds;
+
+            if ( allowAccountsInUrl )
+            {
+                List<ParameterAccountOption> parameterAccountOptions = ParseAccountUrlOptions();
+                if ( parameterAccountOptions.Any() )
+                {
+                    selectableAccountIds = parameterAccountOptions.Select( a => a.AccountId ).ToList();
+                    string invalidAccountInURLMessage = this.GetAttributeValue( AttributeKey.InvalidAccountInURLMessage );
+                    if ( invalidAccountInURLMessage.IsNotNullOrWhiteSpace() )
+                    {
+                        var validAccountUrlIdsQuery = FinancialAccountCache.GetByIds( selectableAccountIds )
+                            .Where( a =>
+                                 a.IsActive &&
+                                 ( a.StartDate == null || a.StartDate <= RockDateTime.Today ) &&
+                                 ( a.EndDate == null || a.EndDate >= RockDateTime.Today ) );
+
+                        if ( this.GetAttributeValue( AttributeKey.OnlyPublicAccountsInURL ).AsBooleanOrNull() ?? true )
+                        {
+                            validAccountUrlIdsQuery = validAccountUrlIdsQuery.Where( a => a.IsPublic == true );
+                        }
+
+                        var validAccountIds = validAccountUrlIdsQuery.Select( a => a.Id ).ToList();
+
+                        if ( selectableAccountIds.Where( a => !validAccountIds.Contains( a ) ).Any() )
+                        {
+                            nbConfigurationNotification.Text = invalidAccountInURLMessage;
+                            nbConfigurationNotification.NotificationBoxType = NotificationBoxType.Validation;
+                            nbConfigurationNotification.Visible = true;
+                        }
+                    }
+
+                    var parameterAccountAmounts = parameterAccountOptions.Select( a => new CampusAccountAmountPicker.AccountIdAmount( a.AccountId, a.Amount ) { ReadOnly = !a.Enabled } );
+                    accountAmounts = parameterAccountAmounts.ToArray();
+                }
+            }
+
+            caapPromptForAccountAmounts.SelectableAccountIds = selectableAccountIds.ToArray();
+
+            // Check if this is a transfer and that the person is the authorized person on the transaction
+            if ( !string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.Transfer ) ) && !string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.ScheduledTransactionGuidToTransfer ) ) )
+            {
+                InitializeTransfer( PageParameter( PageParameterKey.ScheduledTransactionGuidToTransfer ).AsGuidOrNull() );
+
+                if ( _scheduledTransactionIdToBeTransferred.HasValue && selectableAccountIds.Any() )
+                {
+                    accountAmounts = GetAccountAmountsFromTransferredScheduledTransaction( rockContext, selectableAccountIds );
+                }
+            }
+
+            if ( accountAmounts != null )
+            {
+                caapPromptForAccountAmounts.AccountAmounts = accountAmounts;
+            }
         }
 
         /// <summary>
@@ -2214,19 +2241,15 @@ mission. We are so grateful for your commitment.</p>
         private Person GetTargetPerson( RockContext rockContext )
         {
             var targetPersonValue = Rock.Security.Encryption.DecryptString( ViewState[ViewStateKey.TargetPersonGuid] as string );
-            if ( targetPersonValue.IsNullOrWhiteSpace() )
+            string personActionId = PageParameter( PageParameterKey.Person );
+            if ( personActionId.IsNullOrWhiteSpace() && targetPersonValue.IsNullOrWhiteSpace() )
             {
-                return null;
+                // If there is no person action identifier, just use the currently logged in Person.
+                return CurrentPerson;
             }
 
-            var targetPersonGuid = targetPersonValue.AsGuidOrNull();
-            if ( targetPersonGuid == null )
-            {
-                return null;
-            }
-
-            var targetPerson = new PersonService( rockContext ).Get( targetPersonGuid.Value );
-            return targetPerson;
+            var targetPersonGuid = targetPersonValue?.AsGuidOrNull();
+            return targetPersonGuid != null ? new PersonService( rockContext ).Get( targetPersonGuid.Value ) : null;
         }
 
         /// <summary>
@@ -2315,7 +2338,6 @@ mission. We are so grateful for your commitment.</p>
         private Person _createPersonOrBusiness( bool createBusiness, string firstName, string lastName, string email )
         {
             var rockContext = new RockContext();
-            var personService = new PersonService( rockContext );
             DefinedValueCache dvcConnectionStatus = DefinedValueCache.Get( GetAttributeValue( AttributeKey.PersonConnectionStatus ).AsGuid() );
             DefinedValueCache dvcRecordStatus = DefinedValueCache.Get( GetAttributeValue( AttributeKey.PersonRecordStatus ).AsGuid() );
 
@@ -2484,25 +2506,23 @@ mission. We are so grateful for your commitment.</p>
         /// </summary>
         private void BindPersonSavedAccounts()
         {
-            ddlPersonSavedAccount.Visible = false;
+            // Get current selection before updating the drop down list items.
             var currentSavedAccountSelection = ddlPersonSavedAccount.SelectedValue;
-
-            var targetPersonValue = Rock.Security.Encryption.DecryptString( ViewState[ViewStateKey.TargetPersonGuid] as string );
-            if ( targetPersonValue.IsNullOrWhiteSpace() )
-            {
-                return;
-            }
-
-            var targetPersonGuid = targetPersonValue.AsGuidOrNull();
-            if ( targetPersonGuid == null )
-            {
-                return;
-            }
+            ddlPersonSavedAccount.Visible = false;
+            ddlPersonSavedAccount.Items.Clear();
+            pnlSavedAccounts.Visible = false;
 
             var rockContext = new RockContext();
-            var targetPersonId = new PersonService( rockContext ).Get( targetPersonGuid.Value ).Id;
+            var targetPerson = GetTargetPerson( rockContext );
+
+            // No person, no accounts
+            if ( targetPerson == null )
+            {
+                return;
+            }
+
             var personSavedAccountsQuery = new FinancialPersonSavedAccountService( rockContext )
-                .GetByPersonId( targetPersonId )
+                .GetByPersonId( targetPerson.Id )
                 .Where( a => !a.IsSystem )
                 .AsNoTracking();
 
@@ -2740,6 +2760,13 @@ mission. We are so grateful for your commitment.</p>
         /// <returns></returns>
         protected void ProcessTransaction()
         {
+            if ( !tbFirstName.IsValid )
+            {
+                nbProcessTransactionError.Text = tbFirstName.CustomValidator.ErrorMessage;
+                nbProcessTransactionError.Visible = true;
+                return;
+            }
+
             var transactionGuid = hfTransactionGuid.Value.AsGuid();
             var rockContext = new RockContext();
 
@@ -2777,6 +2804,11 @@ mission. We are so grateful for your commitment.</p>
                     if ( financialPersonSavedAccount.GatewayPersonIdentifier.IsNotNullOrWhiteSpace() )
                     {
                         paymentInfo.GatewayPersonIdentifier = financialPersonSavedAccount.GatewayPersonIdentifier;
+                    }
+                    else
+                    {
+                        // If this is from a SavedAccount, and GatewayPersonIdentifier is unknown, this is probably from an older NMI gateway transaction that only saved the GatewayPersonIdentifier to ReferenceNumber.
+                        paymentInfo.GatewayPersonIdentifier = financialPersonSavedAccount.ReferenceNumber;
                     }
                 }
             }
@@ -2996,9 +3028,14 @@ mission. We are so grateful for your commitment.</p>
             SetPaymentComment( paymentInfo, commentTransactionAccountDetails, tbCommentEntry.Text );
 
             paymentInfo.Amount = commentTransactionAccountDetails.Sum( a => a.Amount );
+            var totalFeeCoverageAmounts = commentTransactionAccountDetails.Where( a => a.FeeCoverageAmount.HasValue ).Select( a => a.FeeCoverageAmount.Value );
+            if ( totalFeeCoverageAmounts.Any() )
+            {
+                paymentInfo.FeeCoverageAmount = totalFeeCoverageAmounts.Sum();
+            }
 
-            var txnType = DefinedValueCache.Get( this.GetAttributeValue( AttributeKey.TransactionType ).AsGuidOrNull() ?? Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION.AsGuid() );
-            paymentInfo.TransactionTypeValueId = txnType.Id;
+            var transactionType = DefinedValueCache.Get( this.GetAttributeValue( AttributeKey.TransactionType ).AsGuidOrNull() ?? Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION.AsGuid() );
+            paymentInfo.TransactionTypeValueId = transactionType.Id;
 
             return paymentInfo;
         }
@@ -3006,8 +3043,6 @@ mission. We are so grateful for your commitment.</p>
         /// <summary>
         /// Shows the transaction summary.
         /// </summary>
-        /// <param name="financialTransaction">The financial transaction.</param>
-        /// <param name="paymentInfo">The payment information.</param>
         protected void ShowTransactionSummary()
         {
             var rockContext = new RockContext();
@@ -3063,7 +3098,7 @@ mission. We are so grateful for your commitment.</p>
 
             // If target person does not have a login, have them create a UserName and password
             var targetPerson = GetTargetPerson( rockContext );
-            var hasUserLogin = new UserLoginService( rockContext ).GetByPersonId( targetPerson.Id ).Any();
+            var hasUserLogin = targetPerson != null ? new UserLoginService( rockContext ).GetByPersonId( targetPerson.Id ).Any() : false;
             pnlCreateLogin.Visible = !hasUserLogin;
 
             NavigateToStep( EntryStep.ShowTransactionSummary );
@@ -3072,7 +3107,7 @@ mission. We are so grateful for your commitment.</p>
         /// <summary>
         /// Saves the transaction.
         /// </summary>
-        /// <param name="person">The person.</param>
+        /// <param name="personId">The person identifier.</param>
         /// <param name="paymentInfo">The payment information.</param>
         /// <param name="transaction">The transaction.</param>
         private void SaveTransaction( int personId, PaymentInfo paymentInfo, FinancialTransaction transaction )
@@ -3097,8 +3132,8 @@ mission. We are so grateful for your commitment.</p>
             transaction.TransactionDateTime = RockDateTime.Now;
             transaction.FinancialGatewayId = financialGateway.Id;
 
-            var txnType = DefinedValueCache.Get( this.GetAttributeValue( AttributeKey.TransactionType ).AsGuidOrNull() ?? Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION.AsGuid() );
-            transaction.TransactionTypeValueId = txnType.Id;
+            var transactionType = DefinedValueCache.Get( this.GetAttributeValue( AttributeKey.TransactionType ).AsGuidOrNull() ?? Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION.AsGuid() );
+            transaction.TransactionTypeValueId = transactionType.Id;
 
             transaction.Summary = paymentInfo.Comment1;
 
@@ -3326,6 +3361,9 @@ mission. We are so grateful for your commitment.</p>
             scheduledTransaction.AuthorizedPersonAliasId = new PersonAliasService( rockContext ).GetPrimaryAliasId( personId ).Value;
             scheduledTransaction.FinancialGatewayId = financialGateway.Id;
 
+            var transactionType = DefinedValueCache.Get( this.GetAttributeValue( AttributeKey.TransactionType ).AsGuidOrNull() ?? Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION.AsGuid() );
+            scheduledTransaction.TransactionTypeValueId = transactionType.Id;
+
             scheduledTransaction.Summary = paymentInfo.Comment1;
 
             if ( scheduledTransaction.FinancialPaymentDetail == null )
@@ -3391,10 +3429,14 @@ mission. We are so grateful for your commitment.</p>
             Guid? receiptEmail = GetAttributeValue( AttributeKey.ReceiptEmail ).AsGuidOrNull();
             if ( receiptEmail.HasValue )
             {
-                // Queue a transaction to send receipts
-                var transactionIds = new List<int> { transactionId };
-                var sendPaymentReceiptsTxn = new SendPaymentReceipts( receiptEmail.Value, transactionIds );
-                RockQueue.TransactionQueue.Enqueue( sendPaymentReceiptsTxn );
+                // Queue a bus message to send receipts
+                var sendPaymentReceiptsTask = new ProcessSendPaymentReceiptEmails.Message
+                {
+                    SystemEmailGuid = receiptEmail.Value,
+                    TransactionId = transactionId
+                };
+
+                sendPaymentReceiptsTask.Send();
             }
         }
 
@@ -3447,17 +3489,11 @@ mission. We are so grateful for your commitment.</p>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnGiveNow_Click( object sender, EventArgs e )
         {
-            if ( tbRockFullName_AmountEntry.Text.IsNotNullOrWhiteSpace() )
+            // Don't use captcha if the control is not visible
+            if ( cpCaptcha.Visible )
             {
-                /* 03/22/2021 MDP
-
-                see https://app.asana.com/0/1121505495628584/1200018171012738/f on why this is done
-
-                */
-
-                nbRockFullName_AmountEntry.Visible = true;
-                nbRockFullName_AmountEntry.NotificationBoxType = NotificationBoxType.Validation;
-                nbRockFullName_AmountEntry.Text = "Invalid Form Value";
+                nbPromptForAmountsWarning.Visible = true;
+                nbPromptForAmountsWarning.Text = "There was an issue processing your request. Please try again. If the issue persists please contact us.";
                 return;
             }
 
@@ -3588,20 +3624,6 @@ mission. We are so grateful for your commitment.</p>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnPersonalInformationNext_Click( object sender, EventArgs e )
         {
-            if ( tbRockFullName_PersonalInformation.Text.IsNotNullOrWhiteSpace() )
-            {
-                /* 03/22/2021 MDP
-
-                see https://app.asana.com/0/1121505495628584/1200018171012738/f on why this is done
-
-                */
-
-                nbRockFullName_PersonalInformation.Visible = true;
-                nbRockFullName_PersonalInformation.NotificationBoxType = NotificationBoxType.Validation;
-                nbRockFullName_PersonalInformation.Text = "Invalid Form Value";
-                return;
-            }
-
             ProcessTransaction();
         }
 

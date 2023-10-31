@@ -24,6 +24,7 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Text;
 using Rock.Data;
+using Rock.Enums.Group;
 using Rock.Security;
 using Rock.UniversalSearch;
 using Rock.UniversalSearch.IndexModels;
@@ -72,27 +73,25 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// A dictionary of actions that this class supports and the description of each.
+        /// Gets a value indicating whether [allows interactive bulk indexing].
         /// </summary>
-        public override Dictionary<string, string> SupportedActions
-        {
-            get
-            {
-                if ( _supportedActions == null )
-                {
-                    _supportedActions = new Dictionary<string, string>();
-                    _supportedActions.Add( Authorization.VIEW, "The roles and/or users that have access to view." );
-                    _supportedActions.Add( Authorization.MANAGE_MEMBERS, "The roles and/or users that have access to manage the group members." );
-                    _supportedActions.Add( Authorization.EDIT, "The roles and/or users that have access to edit." );
-                    _supportedActions.Add( Authorization.ADMINISTRATE, "The roles and/or users that have access to administrate." );
-                    _supportedActions.Add( Authorization.SCHEDULE, "The roles and/or users that may perform scheduling." );
-                }
+        /// <value>
+        /// <c>true</c> if [allows interactive bulk indexing]; otherwise, <c>false</c>.
+        /// </value>
+        /// <exception cref="System.NotImplementedException"></exception>
+        [NotMapped]
+        public bool AllowsInteractiveBulkIndexing => true;
 
-                return _supportedActions;
-            }
-        }
-
-        private Dictionary<string, string> _supportedActions;
+        /// <summary>
+        /// Gets or sets the history change list.
+        /// </summary>
+        /// <value>
+        /// The history change list.
+        /// </value>
+        [NotMapped]
+        [RockObsolete( "1.14" )]
+        [Obsolete( "Does nothing. No longer needed. We replaced this with a private property under the SaveHook class for this entity.", true )]
+        public virtual History.HistoryChangeList HistoryChangeList { get; set; }
 
         #endregion Properties
 
@@ -108,10 +107,10 @@ namespace Rock.Model
             var rockContext = new RockContext();
 
             // return people
-            var groups = new GroupService( rockContext ).Queryable().AsNoTracking()
-                                .Where( g =>
-                                     g.IsActive == true
-                                     && g.GroupType.IsIndexEnabled == true );
+            var groups = new GroupService( rockContext )
+                .Queryable()
+                .AsNoTracking()
+                .Where( g => g.IsActive == true && g.GroupType.IsIndexEnabled == true );
 
             int recordCounter = 0;
 
@@ -140,6 +139,10 @@ namespace Rock.Model
         public void IndexDocument( int id )
         {
             var groupEntity = new GroupService( new RockContext() ).Get( id );
+            if ( groupEntity == null )
+            {
+                return;
+            }
 
             // check that this group type is set to be indexed.
             if ( groupEntity.GroupType.IsIndexEnabled && groupEntity.IsActive )
@@ -200,8 +203,8 @@ namespace Rock.Model
         {
             if ( state == EntityState.Modified || state == EntityState.Deleted )
             {
-                _originalGroupTypeId = entry.OriginalValues["GroupTypeId"]?.ToString().AsIntegerOrNull();
-                _originalIsSecurityRole = entry.OriginalValues["IsSecurityRole"]?.ToString().AsBooleanOrNull();
+                _originalGroupTypeId = entry.OriginalValues[nameof( this.GroupTypeId )]?.ToString().AsIntegerOrNull();
+                _originalIsSecurityRole = entry.OriginalValues[nameof( this.IsSecurityRole )]?.ToString().AsBooleanOrNull();
             }
 
             base.PreSaveChanges( dbContext, entry, state );
@@ -421,7 +424,7 @@ namespace Rock.Model
             var result = new List<PersonGroupRequirementStatus>();
             foreach ( var groupRequirement in this.GetGroupRequirements( rockContext ).OrderBy( a => a.GroupRequirementType.Name ) )
             {
-                var requirementStatus = groupRequirement.PersonMeetsGroupRequirement( personId, this.Id, groupRoleId );
+                var requirementStatus = groupRequirement.PersonMeetsGroupRequirement( rockContext, personId, this.Id, groupRoleId );
                 result.Add( requirementStatus );
             }
 
@@ -469,20 +472,36 @@ namespace Rock.Model
         /// <returns>A list of all inherited AttributeCache objects.</returns>
         public override List<AttributeCache> GetInheritedAttributes( Rock.Data.RockContext rockContext )
         {
-            var groupType = this.GroupType;
-            if ( groupType == null && this.GroupTypeId > 0 )
+            var groupTypeCache = GroupTypeCache.Get( GroupTypeId );
+
+            return groupTypeCache?.GetInheritedAttributesForQualifier( TypeId, "GroupTypeId" );
+        }
+
+        /// <summary>
+        /// Gets the ṣchedule confirmation Logic.
+        /// </summary>
+        /// <returns></returns>
+        public ScheduleConfirmationLogic GetScheduleConfirmationLogic()
+        {
+            var scheduleConfirmationLogic = Enums.Group.ScheduleConfirmationLogic.Ask;
+            if ( this.ScheduleConfirmationLogic.HasValue )
             {
-                groupType = new GroupTypeService( rockContext )
-                    .Queryable().AsNoTracking()
-                    .FirstOrDefault( t => t.Id == this.GroupTypeId );
+                scheduleConfirmationLogic = this.ScheduleConfirmationLogic.Value;
+            }
+            else if ( this.GroupType != null )
+            {
+                scheduleConfirmationLogic = this.GroupType.ScheduleConfirmationLogic;
+            }
+            else
+            {
+                var groupType = GroupTypeCache.Get( this.GroupTypeId );
+                if ( groupType != null )
+                {
+                    scheduleConfirmationLogic = groupType.ScheduleConfirmationLogic;
+                }
             }
 
-            if ( groupType != null )
-            {
-                return groupType.GetInheritedAttributesForQualifier( rockContext, TypeId, "GroupTypeId" );
-            }
-
-            return null;
+            return scheduleConfirmationLogic;
         }
 
         #endregion

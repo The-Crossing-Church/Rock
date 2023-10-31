@@ -22,6 +22,7 @@ using System.Linq;
 using Rock.Data;
 using Rock.Logging;
 using Rock.Reporting.DataFilter;
+using Rock.SystemKey;
 using Rock.Tasks;
 using Rock.Web.Cache;
 
@@ -32,6 +33,25 @@ namespace Rock.Model
     /// </summary>
     public partial class DataViewService
     {
+        /// <summary>
+        /// Gets a boolean of whether a read-only replica of the database context was enabled.
+        /// </summary>
+        public bool ReadOnlyContextEnabled
+        {
+            get
+            {
+                var rockContext = System.Configuration.ConfigurationManager.ConnectionStrings[SystemSetting.ROCK_CONTEXT]?.ConnectionString;
+                var readOnlyContext = System.Configuration.ConfigurationManager.ConnectionStrings[SystemSetting.ROCK_CONTEXT_READ_ONLY]?.ConnectionString;
+
+                if ( rockContext != null && readOnlyContext != null && !rockContext.Equals( readOnlyContext ) )
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// Returns an enumerable collection of <see cref="Rock.Model.EntityType">EntityTypes</see> that have a DataView associated with them.
         /// </summary>
@@ -222,8 +242,7 @@ namespace Rock.Model
         /// <param name="persistedLastRunDurationMilliseconds">The time to persist dataview in milliseconds.</param>
         public static void AddRunDataViewTransaction( int dataViewId, int? timeToRunDurationMilliseconds = null, int? persistedLastRunDurationMilliseconds = null )
         {
-            RockLogger.Log.Debug( RockLogDomains.Reporting, "{methodName} dataViewId: {dataViewId} timeToRunDurationMilliseconds: {timeToRunDurationMilliseconds}", nameof( AddRunDataViewTransaction ), dataViewId, timeToRunDurationMilliseconds );
-            var updateDataViewStatisticsMsg = new UpdateDataViewStatistics.Message()
+            var dataViewInfo = new Rock.Transactions.UpdateDataViewStatisticsTransaction.DataViewInfo()
             {
                 DataViewId = dataViewId,
                 LastRunDateTime = RockDateTime.Now,
@@ -232,15 +251,17 @@ namespace Rock.Model
 
             if ( timeToRunDurationMilliseconds.HasValue )
             {
-                updateDataViewStatisticsMsg.TimeToRunDurationMilliseconds = timeToRunDurationMilliseconds;
+                RockLogger.Log.Debug( RockLogDomains.Reporting, "{methodName} dataViewId: {dataViewId} timeToRunDurationMilliseconds: {timeToRunDurationMilliseconds}", nameof( AddRunDataViewTransaction ), dataViewId, timeToRunDurationMilliseconds );
+                dataViewInfo.TimeToRunDurationMilliseconds = timeToRunDurationMilliseconds;
                 /*
                  * If the run duration is set that means this was called after the expression was
                  * already evaluated, which in turn already counted the run so we don't want to double count it here.
                  */
-                updateDataViewStatisticsMsg.ShouldIncrementRunCount = false;
+                dataViewInfo.ShouldIncrementRunCount = false;
             }
 
-            updateDataViewStatisticsMsg.Send();
+            var transaction = new Rock.Transactions.UpdateDataViewStatisticsTransaction( dataViewInfo );
+            transaction.Enqueue();
         }
 
         #endregion Static Methods

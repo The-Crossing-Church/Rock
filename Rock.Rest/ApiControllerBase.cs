@@ -30,9 +30,9 @@ using Rock.Net;
 namespace Rock.Rest
 {
     /*
-     * NOTE: We could have inherited from System.Web.Http.OData.ODataController, but that changes 
+     * NOTE: We could have inherited from System.Web.Http.OData.ODataController, but that changes
      * the response format from vanilla REST to OData format. That breaks existing Rock Rest clients.
-     * 
+     *
      */
 
     /// <summary>
@@ -59,7 +59,7 @@ namespace Rock.Rest
         {
             // Initialize as lazy since very few API calls use this yet. Once
             // it becomes more common the lazy part can be removed.
-            _rockRequestContext = new Lazy<RockRequestContext>( () => new Net.RockRequestContext( controllerContext.Request ) );
+            _rockRequestContext = new Lazy<RockRequestContext>( () => new RockRequestContext( new HttpRequestMessageWrapper( controllerContext.Request ) ) );
 
             return base.ExecuteAsync( controllerContext, cancellationToken );
         }

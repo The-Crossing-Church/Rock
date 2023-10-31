@@ -17,8 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+using System.Web.UI.WebControls;
+#endif
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Reporting;
@@ -33,9 +35,9 @@ namespace Rock.Field.Types
     [FieldTypeUsage( FieldTypeUsage.Common )]
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><g><path d=""M8,1a7,7,0,1,0,7,7A7,7,0,0,0,8,1ZM8,13.69A5.69,5.69,0,1,1,13.69,8,5.69,5.69,0,0,1,8,13.69Zm2.79-4.84L8.66,7.62V4.28a.66.66,0,0,0-1.32,0V8a.68.68,0,0,0,.33.57L10.13,10a.9.9,0,0,0,.33.09A.65.65,0,0,0,11,9.75.67.67,0,0,0,10.79,8.85Z""/></g></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.TIME )]
     public class TimeFieldType : FieldType
     {
-
         #region Formatting
 
         /// <inheritdoc/>
@@ -49,6 +51,47 @@ namespace Rock.Field.Types
             return timeValue.ToTimeString();
         }
 
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override ComparisonType FilterComparisonType
+        {
+            get { return ComparisonHelper.DateFilterComparisonTypes; }
+        }
+
+        /// <summary>
+        /// Converts the type of the value to property.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="propertyType">Type of the property.</param>
+        /// <param name="isNullableType">if set to <c>true</c> [is nullable type].</param>
+        /// <returns></returns>
+        public override object ConvertValueToPropertyType( string value, Type propertyType, bool isNullableType )
+        {
+            var timeValue = TimeSpan.MinValue;
+            if ( TimeSpan.TryParse( value, out timeValue ) )
+            {
+                return timeValue;
+            }
+            return null;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
         /// <summary>
         /// Formats time display
         /// </summary>
@@ -57,7 +100,7 @@ namespace Rock.Field.Types
         /// <param name="configurationValues">The configuration values.</param>
         /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
         /// <returns></returns>
-        public override string FormatValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
             return !condensed
                 ? GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) )
@@ -71,7 +114,7 @@ namespace Rock.Field.Types
         /// <param name="value">The value.</param>
         /// <param name="configurationValues">The configuration values.</param>
         /// <returns></returns>
-        public override object ValueAsFieldType( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        public override object ValueAsFieldType( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
         {
             return value.AsTimeSpan();
         }
@@ -83,15 +126,11 @@ namespace Rock.Field.Types
         /// <param name="value">The value.</param>
         /// <param name="configurationValues">The configuration values.</param>
         /// <returns></returns>
-        public override object SortValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        public override object SortValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
         {
             // return ValueAsFieldType which returns the value as a TimeSpan
             return this.ValueAsFieldType( parentControl, value, configurationValues );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -145,38 +184,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Filter Control
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override ComparisonType FilterComparisonType
-        {
-            get { return ComparisonHelper.DateFilterComparisonTypes; }
-        }
-
-        /// <summary>
-        /// Converts the type of the value to property.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="propertyType">Type of the property.</param>
-        /// <param name="isNullableType">if set to <c>true</c> [is nullable type].</param>
-        /// <returns></returns>
-        public override object ConvertValueToPropertyType( string value, Type propertyType, bool isNullableType )
-        {
-            var timeValue = TimeSpan.MinValue;
-            if ( TimeSpan.TryParse( value, out timeValue ) )
-            {
-                return timeValue;
-            }
-            return null;
-        }
-
         /// <summary>
         /// Determines whether this FieldType supports doing PostBack for the editControl
         /// </summary>
@@ -200,7 +207,7 @@ namespace Rock.Field.Types
             // the TimePicker can cause a postback loop if OnChange and AutoPostback is enabled, so disable the HasChangeHandler
         }
 
+#endif
         #endregion
-
     }
 }

@@ -738,14 +738,14 @@ td.grid-actions {
   display: inline-block;
   width: 100%;
   padding: 7px 14px;
-  color: @navbartop-color;
+  color: @navbar-top-color;
   background: transparent;
-  border: 1px solid @navbartop-color;
+  border: 1px solid @navbar-top-color;
   border-radius: @btn-border-radius-base;
 
   &:hover,
   &:focus {
-    color: @navbartop-color;
+    color: @navbar-top-color;
     background: fade(@white, 10%);
   }
 }
@@ -910,7 +910,7 @@ td.grid-actions {
   top: 0;
   bottom: 0;
   left: 0;
-  z-index: @zindex-navbar-fixed + 10;
+  z-index: @zindex-navbar-fixed - 20;
   display: none;
   width: @navbarside-width;
   height: 100% !important;
@@ -1298,7 +1298,8 @@ td.grid-actions {
   .picker-label {
     display: flex;
     align-items: center;
-    width: auto;
+    width: auto !important;
+    max-width: 325px;
     max-width: none;
     padding-left: 4px;
     margin-left: -4px;
@@ -1324,13 +1325,31 @@ td.grid-actions {
     }
   }
 
-  .picker-select-none {
-    display: none !important;
-  }
-
   .selected-names {
     font-size: 24px;
     font-weight: 700;
+  }
+
+  @media screen and (max-width: @screen-sm-max) {
+    .dropdown-menu {
+      position: absolute !important;
+      max-width: ~"calc(100vw - 40px)";
+    }
+  }
+}
+
+.picker-noclear {
+  .picker-select-none {
+    display: none !important;
+  }
+}
+
+@media (min-width: 430px) and (max-width: 840px) {
+  .picker-schedule {
+    .dropdown-menu {
+      right: 0;
+      left: auto;
+    }
   }
 }
 

@@ -21,6 +21,7 @@ using System.Linq;
 using System.Linq.Expressions;
 
 using Rock.Web.Cache;
+
 using Z.EntityFramework.Plus;
 
 namespace Rock.Data
@@ -199,19 +200,24 @@ namespace Rock.Data
         {
             int? id = allowIntegerIdentifier ? key.AsIntegerOrNull() : null;
 
+            // Note: Don't use Queryable() as some classes override this to put
+            // additional filters in place. That makes it incompatible with the
+            // intended purpose of this method since we are trying to get a single
+            // specific item.
+
             if ( !id.HasValue )
             {
                 var guid = key.AsGuidOrNull();
 
                 if ( guid.HasValue )
                 {
-                    return Queryable().Where( e => e.Guid == guid.Value );
+                    return _objectSet.Where( e => e.Guid == guid.Value );
                 }
 
                 id = Rock.Utility.IdHasher.Instance.GetId( key );
             }
 
-            return id.HasValue ? Queryable().Where( e => e.Id == id.Value ) : Queryable().Where( e => false );
+            return id.HasValue ? _objectSet.Where( e => e.Id == id.Value ) : _objectSet.Where( e => false );
         }
 
         #endregion
@@ -509,7 +515,7 @@ namespace Rock.Data
         /// <returns></returns>
         public virtual Guid? GetGuid( int id )
         {
-            return this.Queryable().Where( a => a.Id == id ).Select( a => ( Guid? ) a.Guid ).FirstOrDefault();
+            return this.AsNoFilter().Where( a => a.Id == id ).Select( a => ( Guid? ) a.Guid ).FirstOrDefault();
         }
 
         /// <summary>
@@ -519,7 +525,7 @@ namespace Rock.Data
         /// <returns></returns>
         public virtual int? GetId( Guid guid )
         {
-            return this.Queryable().Where( a => a.Guid == guid ).Select( a => ( int? ) a.Id ).FirstOrDefault();
+            return this.AsNoFilter().Where( a => a.Guid == guid ).Select( a => ( int? ) a.Id ).FirstOrDefault();
         }
 
         /// <summary>
@@ -861,7 +867,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="dataview">The dataview.</param>
         /// <returns>IQueryable&lt;T&gt;.</returns>
-        public IQueryable<T> GetQueryUsingDataView( Rock.Model.DataView dataview)
+        public IQueryable<T> GetQueryUsingDataView( Rock.Model.DataView dataview )
         {
             var paramExpression = this.ParameterExpression;
             var whereExpression = dataview.GetExpression( this, paramExpression );

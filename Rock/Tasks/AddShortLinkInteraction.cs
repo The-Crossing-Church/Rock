@@ -16,9 +16,11 @@
 //
 using System;
 using System.Linq;
+
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+
 using UAParser;
 
 namespace Rock.Tasks
@@ -98,12 +100,18 @@ namespace Rock.Tasks
                         personAliasId = currentUser?.Person?.PrimaryAlias?.Id;
                     }
 
+                    if ( !personAliasId.HasValue && message.VisitorPersonAliasIdKey.IsNotNullOrWhiteSpace() )
+                    {
+                        personAliasId = new PersonAliasService( rockContext ).GetSelect( message.VisitorPersonAliasIdKey, s => s.Id );
+                    }
+
                     Parser uaParser = Parser.GetDefault();
                     ClientInfo client = uaParser.Parse( userAgent );
                     var clientOs = client.OS.ToString();
                     var clientBrowser = client.UA.ToString();
 
-                    new InteractionService( rockContext ).AddInteraction( interactionComponent.Id, null, "View", message.Url, personAliasId, message.DateViewed, clientBrowser, clientOs, clientType, userAgent, message.IPAddress, message.SessionId?.AsGuidOrNull() );
+                    var interaction = new InteractionService( rockContext ).AddInteraction( interactionComponent.Id, null, "View", message.Url, personAliasId, message.DateViewed, clientBrowser, clientOs, clientType, userAgent, message.IPAddress, message.SessionId?.AsGuidOrNull() );
+                    interaction.Source = message.UtmSource;
                     rockContext.SaveChanges();
                 }
             }
@@ -147,6 +155,13 @@ namespace Rock.Tasks
             public string UserName { get; set; }
 
             /// <summary>
+            /// Gets or sets the visitor person alias identifier key.
+            /// This will get used if UserName is not specified.
+            /// </summary>
+            /// <value>The visitor person alias identifier key.</value>
+            public string VisitorPersonAliasIdKey { get; set; }
+
+            /// <summary>
             /// Gets or sets the DateTime the page was viewed.
             /// </summary>
             /// <value>
@@ -177,6 +192,11 @@ namespace Rock.Tasks
             /// Session Id.
             /// </value>
             public string SessionId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the UTM source of the link
+            /// </summary>
+            public string UtmSource { get; set; }
         }
     }
 }

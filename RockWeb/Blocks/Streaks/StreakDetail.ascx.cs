@@ -39,6 +39,7 @@ namespace RockWeb.Blocks.Streaks
     [Category( "Streaks" )]
     [Description( "Displays the details of the given streak for editing." )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "EA9857FF-6703-4E4E-A6FF-65C23EBD2216" )]
     public partial class StreakDetail : RockBlock
     {
         /// <summary>
@@ -638,9 +639,13 @@ namespace RockWeb.Blocks.Streaks
             var personImageStringBuilder = new StringBuilder();
             var person = GetPerson();
             const string photoFormat = "<div class=\"photo-icon photo-round photo-round-sm pull-left margin-r-sm js-person-popover\" personid=\"{0}\" data-original=\"{1}&w=50\" style=\"background-image: url( '{2}' ); background-size: cover; background-repeat: no-repeat;\"></div>";
+            const string nameLinkFormat = @"
+    {0}
+    <p><small><a href='/Person/{1}'>View Profile</a></small></p>
+";
 
             personImageStringBuilder.AppendFormat( photoFormat, person.Id, person.PhotoUrl, ResolveUrl( "~/Assets/Images/person-no-photo-unknown.svg" ) );
-            personImageStringBuilder.Append( person.FullName );
+            personImageStringBuilder.AppendFormat( nameLinkFormat, person.FullName, person.Id );
 
             if ( person.TopSignalColor.IsNotNullOrWhiteSpace() )
             {

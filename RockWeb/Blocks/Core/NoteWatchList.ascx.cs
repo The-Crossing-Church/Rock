@@ -58,6 +58,7 @@ namespace RockWeb.Blocks.Core
 
     // Context Aware will limit the list to watchers that are equal to the Person or Group context
     [ContextAware( typeof( Rock.Model.Group ), typeof( Rock.Model.Person ) )]
+    [Rock.SystemGuid.BlockTypeGuid( "E8718774-3DCA-4AFF-9F4C-FBA50A00BB57" )]
     public partial class NoteWatchList : RockBlock, ICustomGridColumns
     {
         public static class AttributeKey
@@ -119,7 +120,7 @@ namespace RockWeb.Blocks.Core
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

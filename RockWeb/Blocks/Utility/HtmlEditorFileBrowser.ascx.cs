@@ -34,6 +34,7 @@ namespace RockWeb.Blocks.Utility
     [DisplayName( "HtmlEditor FileBrowser" )]
     [Category( "Utility" )]
     [Description( "Block to be used as part of the RockFileBrowser HtmlEditor Plugin" )]
+    [Rock.SystemGuid.BlockTypeGuid( "17A1687B-A2C7-4160-BF2B-2424DF69E9D5" )]
     public partial class HtmlEditorFileBrowser : RockBlock
     {
         #region Page Parameter Keys
@@ -540,7 +541,7 @@ namespace RockWeb.Blocks.Utility
             <a title='Delete' class='btn btn-xs btn-square btn-danger js-delete-file action'>
                 <i class='fa fa-times'></i>
             </a>
-            <a href='{3}' target='_blank' title='Download' class='btn btn-xs btn-square btn-default js-download-file action'>
+            <a href='{3}' target='_blank' rel='noopener noreferrer' title='Download' class='btn btn-xs btn-square btn-default js-download-file action'>
                 <i class='fa fa-download'></i>
             </a>
             {4}

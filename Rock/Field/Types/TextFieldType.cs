@@ -17,9 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Reporting;
@@ -34,14 +35,95 @@ namespace Rock.Field.Types
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><path d=""M13.14,12.29h-.69L8.78,2.56A.85.85,0,0,0,8,2a.86.86,0,0,0-.81.56L3.55,12.29H2.86a.86.86,0,1,0,0,1.71H5.43a.86.86,0,1,0,0-1.71h0L5.84,11h4.27l.46,1.29h0a.86.86,0,1,0,0,1.71h2.57a.86.86,0,1,0,0-1.71Zm-6.63-3L8,5.3l1.5,4Z""/></svg>" )]
     [FieldTypeUsage( FieldTypeUsage.Common )]
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.TEXT )]
     public class TextFieldType : FieldType
     {
-
         #region Configuration
 
         private const string IS_PASSWORD_KEY = "ispassword";
         private const string MAX_CHARACTERS = "maxcharacters";
         private const string SHOW_COUNT_DOWN = "showcountdown";
+
+        /// <summary>
+        /// Determines whether the Attribute Configuration for this field has IsPassword = True
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public bool IsPassword( Dictionary<string, ConfigurationValue> configurationValues )
+        {
+            if ( configurationValues != null && configurationValues.ContainsKey( IS_PASSWORD_KEY ) )
+            {
+                return configurationValues[IS_PASSWORD_KEY].Value.AsBoolean();
+            }
+
+            return false;
+        }
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string value, Dictionary<string, string> configurationValues )
+        {
+            if ( configurationValues != null &&
+                configurationValues.ContainsKey( IS_PASSWORD_KEY ) &&
+                configurationValues[IS_PASSWORD_KEY].AsBoolean() )
+            {
+                return "********";
+            }
+
+            return value;
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedTextValue( string value, Dictionary<string, string> configurationValues )
+        {
+            if ( configurationValues != null &&
+                configurationValues.ContainsKey( IS_PASSWORD_KEY ) &&
+                configurationValues[IS_PASSWORD_KEY].AsBoolean() )
+            {
+                return "********";
+            }
+
+            return base.GetCondensedTextValue( value, configurationValues );
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region FilterControl
+
+        /// <summary>
+        /// Determines whether [has filter control].
+        /// </summary>
+        /// <returns></returns>
+        public override bool HasFilterControl()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override Model.ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.StringFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -140,21 +222,6 @@ namespace Rock.Field.Types
         }
 
         /// <summary>
-        /// Determines whether the Attribute Configuration for this field has IsPassword = True
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <returns></returns>
-        public bool IsPassword( Dictionary<string, ConfigurationValue> configurationValues )
-        {
-            if ( configurationValues != null && configurationValues.ContainsKey( IS_PASSWORD_KEY ) )
-            {
-                return configurationValues[IS_PASSWORD_KEY].Value.AsBoolean();
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// Sets the configuration value.
         /// </summary>
         /// <param name="controls"></param>
@@ -181,7 +248,7 @@ namespace Rock.Field.Types
                     }
                 }
 
-                if ( controls.Count > 2 && configurationValues.ContainsKey( SHOW_COUNT_DOWN ))
+                if ( controls.Count > 2 && configurationValues.ContainsKey( SHOW_COUNT_DOWN ) )
                 {
                     CheckBox cbShowCountDown = controls[2] as CheckBox;
                     if ( cbShowCountDown != null )
@@ -190,36 +257,6 @@ namespace Rock.Field.Types
                     }
                 }
             }
-        }
-
-        #endregion
-
-        #region Formatting
-
-        /// <inheritdoc/>
-        public override string GetTextValue( string value, Dictionary<string, string> configurationValues )
-        {
-            if ( configurationValues != null &&
-                configurationValues.ContainsKey( IS_PASSWORD_KEY ) &&
-                configurationValues[IS_PASSWORD_KEY].AsBoolean() )
-            {
-                return "********";
-            }
-
-            return value;
-        }
-
-        /// <inheritdoc/>
-        public override string GetCondensedTextValue( string value, Dictionary<string, string> configurationValues )
-        {
-            if ( configurationValues != null &&
-                configurationValues.ContainsKey( IS_PASSWORD_KEY ) &&
-                configurationValues[IS_PASSWORD_KEY].AsBoolean() )
-            {
-                return "********";
-            }
-
-            return base.GetCondensedTextValue( value, configurationValues );
         }
 
         /// <summary>
@@ -233,8 +270,8 @@ namespace Rock.Field.Types
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
             return !condensed
-                ? GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) )
-                : GetCondensedTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
 
         /// <summary>
@@ -282,10 +319,6 @@ namespace Rock.Field.Types
             return System.Web.HttpUtility.HtmlEncode( FormatValue( parentControl, entityTypeId, entityId, value, configurationValues, condensed ) );
         }
 
-        #endregion
-
-        #region Edit Control
-
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
         /// </summary>
@@ -324,10 +357,6 @@ namespace Rock.Field.Types
             return tb;
         }
 
-        #endregion
-
-        #region FilterControl
-
         /// <summary>
         /// Gets the filter compare control.
         /// </summary>
@@ -351,15 +380,6 @@ namespace Rock.Field.Types
             {
                 return base.FilterCompareControl( configurationValues, id, required, filterMode );
             }
-        }
-
-        /// <summary>
-        /// Determines whether [has filter control].
-        /// </summary>
-        /// <returns></returns>
-        public override bool HasFilterControl()
-        {
-            return true;
         }
 
         /// <summary>
@@ -410,21 +430,7 @@ namespace Rock.Field.Types
             }
         }
 
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.StringFilterComparisonTypes;
-            }
-        }
-
+#endif
         #endregion
-
     }
 }

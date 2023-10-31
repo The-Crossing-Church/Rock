@@ -38,6 +38,7 @@ namespace Rock.Reporting.DataFilter.Person
     [Description( "Select people according to their membership of Groups from a Group Data View." )]
     [Export( typeof( DataFilterComponent ) )]
     [ExportMetadata( "ComponentName", "Group Data View" )]
+    [Rock.SystemGuid.EntityTypeGuid( "09D0169F-BA45-4827-AD92-455E1B05B9F2")]
     public class GroupDataViewFilter : DataFilterComponent, IRelatedChildDataView
     {
         #region Properties
@@ -199,7 +200,7 @@ function ()
             //
             // Construct the Query to return the list of Group Members matching the filter conditions.
             //
-            var groupMemberQuery = new GroupMemberService( context ).Queryable();
+            var groupMemberQuery = new GroupMemberService( context ).Queryable( true );
 
             // Filter By Group.
             groupMemberQuery = groupMemberQuery.Where( x => groupKeys.Contains( x.GroupId ) );

@@ -54,6 +54,7 @@ namespace RockWeb.Blocks.Finance
         DefaultBooleanValue = false,
         Order = 6,
         Key = AttributeKey.EnableForeignCurrency )]
+    [Rock.SystemGuid.BlockTypeGuid( "1DE16F87-4A49-4A3C-A03E-B8488ECBEEBE" )]
     public partial class TransactionDetail : Rock.Web.UI.RockBlock
     {
         #region Keys
@@ -105,27 +106,6 @@ namespace RockWeb.Blocks.Finance
         }
 
         private List<int> TransactionImagesState { get; set; }
-
-        private Dictionary<int, string> _accountNames = null;
-
-        private Dictionary<int, string> AccountNames
-        {
-            get
-            {
-                if ( _accountNames == null )
-                {
-                    _accountNames = new Dictionary<int, string>();
-                    new FinancialAccountService( new RockContext() ).Queryable()
-                        .OrderBy( a => a.Order )
-                        .Select( a => new { a.Id, a.Name } )
-                        .ToList()
-                        .ForEach( a => _accountNames.Add( a.Id, a.Name ) );
-                    _accountNames.Add( TotalRowAccountId, "<strong>Total</strong>" );
-                }
-
-                return _accountNames;
-            }
-        }
 
         private bool UseSimpleAccountMode
         {
@@ -386,18 +366,16 @@ namespace RockWeb.Blocks.Finance
 
             if ( isValid && savedTransactionId.HasValue )
             {
-                // Requery the batch to support EF navigation properties
-                var savedTxn = GetTransaction( savedTransactionId.Value );
-                if ( savedTxn != null )
-                {
-                    savedTxn.LoadAttributes();
-                    if ( savedTxn.FinancialPaymentDetail != null )
-                    {
-                        savedTxn.FinancialPaymentDetail.LoadAttributes();
-                    }
-
-                    ShowReadOnlyDetails( savedTxn );
-                }
+                /**
+                  * 08/07/2022 - KA
+                  *
+                  * We reload the page with the new transaction here so the recently added Transaction is displayed along with the History of the transaction.
+                  * This is the ideal option because the call to RockPage.UpdateBlocks( "~/Blocks/Core/HistoryLog.ascx" ) on line 651 will trigger a page reload
+                  * but without the newly created transactionId thus the page will not display the transaction details.
+                */
+                var pageRef = new PageReference( CurrentPageReference.PageId, CurrentPageReference.RouteId );
+                pageRef.Parameters.Add( "TransactionId", savedTransactionId.ToString() );
+                NavigateToPage( pageRef );
             }
         }
 
@@ -675,6 +653,23 @@ namespace RockWeb.Blocks.Finance
             }
         }
 
+        private bool IsZeroTransaction()
+        {
+            bool hasValidAmount;
+            if ( UseSimpleAccountMode )
+            {
+                var accountAmountMinusFeeCoverageAmount = tbSingleAccountAmountMinusFeeCoverageAmount.Value ?? 0.0M;
+                var accountAmountFeeCoverageAmount = tbSingleAccountFeeCoverageAmount.Value;
+                hasValidAmount = accountAmountMinusFeeCoverageAmount != 0.0M || ( accountAmountFeeCoverageAmount.HasValue && accountAmountFeeCoverageAmount.Value != 0.0M );
+            }
+            else
+            {
+                hasValidAmount = TransactionDetailsState.Any( d => d.Amount != 0.0M || ( d.FeeCoverageAmount.HasValue && d.FeeCoverageAmount.Value != 0.0M ) );
+            }
+
+            return !hasValidAmount;
+        }
+
         /// <summary>
         /// Handles the Click event of the btnSaveThenAdd control.
         /// </summary>
@@ -808,6 +803,16 @@ namespace RockWeb.Blocks.Finance
             SetCreditCardVisibility();
             SetNonCashAssetTypeVisibility();
             _focusControl = dvpCurrencyType;
+        }
+
+        /// <summary>
+        /// Handles the TextChanged event of the tbSingleAccountAmountMinusFeeCoverageAmount control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void tbSingleAccountAmountMinusFeeCoverageAmount_TextChanged( object sender, EventArgs e )
+        {
+            hfIsZeroTransaction.Value = IsZeroTransaction().ToString();
         }
 
         /// <summary>
@@ -1426,7 +1431,7 @@ namespace RockWeb.Blocks.Finance
 
                 string rockUrlRoot = ResolveRockUrl( "/" );
 
-                lAuthorizedPerson.Text = new DescriptionList().Add( "Person", ( txn.AuthorizedPersonAlias != null && txn.AuthorizedPersonAlias.Person != null ) ? Person.GetPersonPhotoImageTag( txn.AuthorizedPersonAlias, className: "person-photo" ) + " " + txn.AuthorizedPersonAlias.Person.GetAnchorTag( rockUrlRoot ) : string.Empty ).Html;
+                lAuthorizedPerson.Text = new DescriptionList().Add( "Person", ( txn.AuthorizedPersonAlias != null && txn.AuthorizedPersonAlias.Person != null ) ? Person.GetPersonPhotoImageTag( txn.AuthorizedPersonAlias, 50, 50, className: "avatar" ) + " " + txn.AuthorizedPersonAlias.Person.GetAnchorTag( rockUrlRoot ) : string.Empty ).Html;
 
                 var detailsLeft = new DescriptionList()
                     .Add( "Date/Time", txn.TransactionDateTime.HasValue ? txn.TransactionDateTime.Value.ToString( "g" ) : string.Empty );
@@ -2054,6 +2059,7 @@ namespace RockWeb.Blocks.Finance
                 gAccountsEdit.DataBind();
                 feeColumn.Visible = hasFeeInfo;
                 feeCoverageColumn.Visible = hasFeeCoverageInfo;
+                hfIsZeroTransaction.Value = IsZeroTransaction().ToString();
             }
         }
 
@@ -2228,7 +2234,7 @@ namespace RockWeb.Blocks.Finance
         {
             if ( accountId.HasValue )
             {
-                return AccountNames.ContainsKey( accountId.Value ) ? AccountNames[accountId.Value] : string.Empty;
+                return FinancialAccountCache.Get( accountId.Value )?.Name ?? string.Empty;
             }
 
             return string.Empty;
@@ -2369,7 +2375,7 @@ namespace RockWeb.Blocks.Finance
         /// </summary>
         /// <param name="tbAccountAmount">The tb account amount.</param>
         /// <param name="transactionDetail">The transaction detail.</param>
-        private static void SetAccountAmountMinusFeeCoverageTextboxText( CurrencyBox tbAccountAmountMinusFeeCoverageAmount, FinancialTransactionDetail transactionDetail )
+        private void SetAccountAmountMinusFeeCoverageTextboxText( CurrencyBox tbAccountAmountMinusFeeCoverageAmount, FinancialTransactionDetail transactionDetail )
         {
             /* 2021-01-28 MDP
 
@@ -2386,14 +2392,18 @@ namespace RockWeb.Blocks.Finance
 
             var feeCoverageAmount = transactionDetail.FeeCoverageAmount;
             var accountAmount = transactionDetail.Amount;
+            decimal value = 0;
             if ( feeCoverageAmount.HasValue )
             {
-                tbAccountAmountMinusFeeCoverageAmount.Value = accountAmount - feeCoverageAmount.Value;
+                value = accountAmount - feeCoverageAmount.Value;
             }
             else
             {
-                tbAccountAmountMinusFeeCoverageAmount.Value = accountAmount;
+                value = accountAmount;
             }
+
+            tbAccountAmountMinusFeeCoverageAmount.Value = value;
+            hfIsZeroTransaction.Value = IsZeroTransaction().ToString();
         }
 
         /// </summary>

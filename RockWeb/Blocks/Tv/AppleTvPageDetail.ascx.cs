@@ -41,9 +41,9 @@ namespace RockWeb.Blocks.Tv
     #region Block Attributes
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "23CA8858-6D02-48A8-92C4-CE415DAB41B6" )]
     public partial class AppleTvPageDetail : Rock.Web.UI.RockBlock
     {
-
         #region Attribute Keys
 
         private static class AttributeKey
@@ -115,6 +115,12 @@ namespace RockWeb.Blocks.Tv
 
             if ( pageId != null )
             {
+                var detailBreadCrumb = pageReference.BreadCrumbs.FirstOrDefault( x => x.Name == "Application Screen Detail" );
+                if ( detailBreadCrumb != null )
+                {
+                    pageReference.BreadCrumbs.Remove( detailBreadCrumb );
+                }
+
                 var page = PageCache.Get( pageId.Value );
 
                 if ( page != null )
@@ -237,6 +243,9 @@ namespace RockWeb.Blocks.Tv
 
             page.CacheControlHeaderSettings = cpCacheSettings.CurrentCacheability.ToJson();
 
+            avcAttributes.GetEditValues( page );
+            page.SaveAttributeValues();
+
             rockContext.SaveChanges();
         }
 
@@ -245,7 +254,6 @@ namespace RockWeb.Blocks.Tv
         /// </summary>
         private void ShowEdit()
         {
-            var applicationId = PageParameter( PageParameterKey.SiteId ).AsInteger();
             var pageId = PageParameter( PageParameterKey.SitePageId ).AsInteger();
 
             if ( pageId != 0 )
@@ -260,9 +268,23 @@ namespace RockWeb.Blocks.Tv
 
                     ceTvml.Text = pageResponse.Content;
                     tbPageName.Text = page.InternalName;
-                    hlblPageGuid.Text = page.Guid.ToString();
+                    //
+                    // Configure Copy Page Guid
+                    //
+                    RockPage.AddScriptLink( this.Page, "~/Scripts/clipboard.js/clipboard.min.js" );
+                    string script = string.Format( @"
+    new ClipboardJS('#{0}');
+    $('#{0}').tooltip();
+", btnCopyToClipboard.ClientID );
+                    ScriptManager.RegisterStartupScript( btnCopyToClipboard, btnCopyToClipboard.GetType(), "share-copy", script, true );
+
+                    btnCopyToClipboard.Attributes["data-clipboard-text"] = page.Guid.ToString();
+                    btnCopyToClipboard.Attributes["title"] = string.Format( "Copy the Guid {0} to the clipboard.", page.Guid.ToString() );
 
                     cbShowInMenu.Checked = page.DisplayInNavWhen == DisplayInNavWhen.WhenAllowed;
+
+                    page.LoadAttributes();
+                    avcAttributes.AddEditControls( page, Rock.Security.Authorization.EDIT, CurrentPerson );
                 }
 
                 if ( page.CacheControlHeaderSettings != null )

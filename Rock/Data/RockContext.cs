@@ -349,6 +349,12 @@ namespace Rock.Data
         public DbSet<Rock.Model.AttributeMatrixTemplate> AttributeMatrixTemplates { get; set; }
 
         /// <summary>
+        /// Gets or sets the attribute referenced entities.
+        /// </summary>
+        /// <value>The attribute referenced entities.</value>
+        public DbSet<Rock.Model.AttributeReferencedEntity> AttributeReferencedEntities { get; set; }
+
+        /// <summary>
         /// Gets or sets the Attributes.
         /// </summary>
         /// <value>
@@ -379,6 +385,12 @@ namespace Rock.Data
         /// The attribute value historicals.
         /// </value>
         public DbSet<AttributeValueHistorical> AttributeValueHistoricals { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the attribute value referenced entities.
+        /// </summary>
+        /// <value>The attribute value referenced entities.</value>
+        public DbSet<Rock.Model.AttributeValueReferencedEntity> AttributeValueReferencedEntities { get; set; }
 
         /// <summary>
         /// Gets or sets the Attribute Values.
@@ -749,6 +761,22 @@ namespace Rock.Data
         /// The content channel types.
         /// </value>
         public DbSet<ContentChannelType> ContentChannelTypes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the content collections.
+        /// </summary>
+        /// <value>
+        /// The ccontent collections.
+        /// </value>
+        public DbSet<ContentCollection> ContentCollections { get; set; }
+
+        /// <summary>
+        /// Gets or sets the content collection sources.
+        /// </summary>
+        /// <value>
+        /// The content collection sources.
+        /// </value>
+        public DbSet<ContentCollectionSource> ContentCollectionSources { get; set; }
 
         /// <summary>
         /// Gets or sets the data views.
@@ -1303,6 +1331,54 @@ namespace Rock.Data
         public DbSet<SmsPipeline> SmsPipelines { get; set; }
 
         /// <summary>
+        /// Gets or sets the Interactive Experiences.
+        /// </summary>
+        /// <value>
+        /// the Interactive Experiences.
+        /// </value>
+        public DbSet<InteractiveExperience> InteractiveExperiences { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Interactive Experience Actions.
+        /// </summary>
+        /// <value>
+        /// the Interactive Experience Actions.
+        /// </value>
+        public DbSet<InteractiveExperienceAction> InteractiveExperienceActions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Interactive Experience Answers.
+        /// </summary>
+        /// <value>
+        /// the Interactive Experience Answers.
+        /// </value>
+        public DbSet<InteractiveExperienceAnswer> InteractiveExperienceAnswers { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Interactive Experience Occurrences.
+        /// </summary>
+        /// <value>
+        /// the Interactive Experience Occurrences.
+        /// </value>
+        public DbSet<InteractiveExperienceOccurrence> InteractiveExperienceOccurrences { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Interactive Experience Schedules.
+        /// </summary>
+        /// <value>
+        /// the Interactive Experience Schedules.
+        /// </value>
+        public DbSet<InteractiveExperienceSchedule> InteractiveExperienceSchedules { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Interactive Experience Campuses.
+        /// </summary>
+        /// <value>
+        /// the Interactive Experience Campuses.
+        /// </value>
+        public DbSet<InteractiveExperienceScheduleCampus> InteractiveExperienceScheduleCampuses { get; set; }
+
+        /// <summary>
         /// Gets or sets the Interactions.
         /// </summary>
         /// <value>
@@ -1519,6 +1595,18 @@ namespace Rock.Data
         public DbSet<NoteWatch> NoteWatches { get; set; }
 
         /// <summary>
+        /// Gets or sets the notification message types.
+        /// </summary>
+        /// <value>The notification message types.</value>
+        public DbSet<NotificationMessageType> NotificationMessageTypes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the notification messages.
+        /// </summary>
+        /// <value>The notification messages.</value>
+        public DbSet<NotificationMessage> NotificationMessages { get; set; }
+
+        /// <summary>
         /// Gets or sets the notifications.
         /// </summary>
         /// <value>
@@ -1589,6 +1677,14 @@ namespace Rock.Data
         /// the Person aliases.
         /// </value>
         public DbSet<PersonAlias> PersonAliases { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Person Preferences.
+        /// </summary>
+        /// <value>
+        /// The Person Preferences.
+        /// </value>
+        public DbSet<PersonPreference> PersonPreferences { get; set; }
 
         /// <summary>
         /// Gets or sets the badges.
@@ -1823,6 +1919,22 @@ namespace Rock.Data
         public DbSet<RelatedEntity> RelatedEntities { get; set; }
 
         /// <summary>
+        /// Gets or sets the reminders.
+        /// </summary>
+        /// <value>
+        /// The reminders.
+        /// </value>
+        public DbSet<Reminder> Reminders { get; set; }
+
+        /// <summary>
+        /// Gets or sets the reminder types.
+        /// </summary>
+        /// <value>
+        /// The reminder types.
+        /// </value>
+        public DbSet<ReminderType> ReminderTypes { get; set; }
+
+        /// <summary>
         /// Gets or sets the remote authentication sessions.
         /// </summary>
         /// <value>
@@ -2045,7 +2157,7 @@ namespace Rock.Data
         /// The system emails.
         /// </value>
         [RockObsolete( "1.10" )]
-        [Obsolete( "Use SystemCommunications instead." )]
+        [Obsolete( "Use SystemCommunications instead.", true )]
         public DbSet<SystemEmail> SystemEmails { get; set; }
 
         /// <summary>
@@ -2055,6 +2167,14 @@ namespace Rock.Data
         /// The system emails.
         /// </value>
         public DbSet<SystemCommunication> SystemCommunications { get; set; }
+
+        /// <summary>
+        /// Gets or sets the system phone numbers.
+        /// </summary>
+        /// <value>
+        /// The system phone numbers.
+        /// </value>
+        public DbSet<SystemPhoneNumber> SystemPhoneNumbers { get; set; }
 
         /// <summary>
         /// Gets or sets the Tags.
@@ -2199,6 +2319,54 @@ namespace Rock.Data
         /// The workflow types.
         /// </value>
         public DbSet<WorkflowType> WorkflowTypes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person alias personalizations.
+        /// </summary>
+        /// <value>
+        /// The person alias personalizations.
+        /// </value>
+        public DbSet<PersonAliasPersonalization> PersonAliasPersonalizations { get; set; }
+
+        /// <summary>
+        /// Gets or sets the personalized entities.
+        /// </summary>
+        /// <value>
+        /// The personalized entities.
+        /// </value>
+        public DbSet<PersonalizedEntity> PersonalizedEntities { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request filters.
+        /// </summary>
+        /// <value>
+        /// The request filters.
+        /// </value>
+        public DbSet<RequestFilter> RequestFilters { get; set; }
+
+        /// <summary>
+        /// Gets or sets the segments.
+        /// </summary>
+        /// <value>
+        /// The segments.
+        /// </value>
+        public DbSet<PersonalizationSegment> Segments { get; set; }
+
+        /// <summary>
+        /// Gets or sets the snippets.
+        /// </summary>
+        /// <value>
+        /// The snippets.
+        /// </value>
+        public DbSet<Snippet> Snippets { get; set; }
+
+        /// <summary>
+        /// Gets or sets the snippet types.
+        /// </summary>
+        /// <value>
+        /// The snippet types.
+        /// </value>
+        public DbSet<SnippetType> SnippetTypes { get; set; }
 
         #endregion
 

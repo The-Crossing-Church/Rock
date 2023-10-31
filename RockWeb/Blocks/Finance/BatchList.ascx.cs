@@ -41,29 +41,30 @@ namespace RockWeb.Blocks.Finance
     [BooleanField( "Show Accounting Code", "Should the accounting code column be displayed.", false, "", 1 )]
     [BooleanField( "Show Accounts Column", "Should the accounts column be displayed.", true, "", 2 )]
     [CodeEditorField( "Summary Lava Template", "The lava template for display the content for summary", CodeEditorMode.Lava, CodeEditorTheme.Rock, order: 3, defaultValue: @"
-         <div class='panel panel-block'>
-            <div class='panel-heading'>
-                <h1 class='panel-title'>Total Results</h1>
+         <div class=""panel panel-block"">
+            <div class=""panel-heading"">
+                <h1 class=""panel-title"">Total Results</h1>
             </div>
-            <div class='panel-body'>
+            <div class=""panel-body"">
                 {% assign totalAmount = 0 %}
                 {% for batchSummary in BatchSummary %}
-                <div class='row'>
-                    <div class='col-xs-8'>{{ batchSummary.FinancialAccount.Name }}</div>
-                    <div class='col-xs-4 text-right'>{{ batchSummary.TotalAmount | FormatAsCurrency }}</div>
+                <div class=""row"">
+                    <div class=""col-xs-8"">{{ batchSummary.FinancialAccount.Name }}</div>
+                    <div class=""col-xs-4 text-right"">{{ batchSummary.TotalAmount | FormatAsCurrency }}</div>
                 </div>
-                {% assign totalAmount = totalAmount | Plus: batchSummary.TotalAmount %}
+                {% assign totalAmount = totalAmount | Plus:batchSummary.TotalAmount %}
                 {% endfor %}
-                <div class='row'>
-                    <div class='col-xs-8'><b>Total: </div>
-                    <div class='col-xs-4 text-right'>
-                        {{ totalAmount | FormatAsCurrency }}
+                <div class=""row"">
+                    <div class=""col-xs-8""><b>Total:</b></div>
+                    <div class=""col-xs-4 text-right"">
+                        <b>{{ totalAmount | FormatAsCurrency }}</b>
                     </div>
                 </div>
             </div>
         </div>
 " )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "AB345CE7-5DC6-41AF-BBDC-8D23D52AFE25" )]
     public partial class BatchList : RockBlock, IPostBackEventHandler, ICustomGridColumns
     {
         #region Constants
@@ -76,9 +77,7 @@ namespace RockWeb.Blocks.Finance
 
         private RockDropDownList ddlAction;
         public List<AttributeCache> AvailableAttributes { get; set; }
-
-        // Dictionaries to cache values for performance
-        private static Dictionary<int, FinancialAccount> _financialAccountLookup;
+        
 
         #endregion
 
@@ -754,7 +753,6 @@ namespace RockWeb.Blocks.Finance
             try
             {
                 var rockContext = new RockContext();
-                _financialAccountLookup = new FinancialAccountService( rockContext ).Queryable().AsNoTracking().ToList().ToDictionary( k => k.Id, v => v );
 
                 var financialBatchQry = GetQuery( rockContext ).AsNoTracking();
 
@@ -964,7 +962,7 @@ namespace RockWeb.Blocks.Finance
             {
                 get
                 {
-                    return _financialAccountLookup[this.AccountId].Order;
+                    return FinancialAccountCache.Get(this.AccountId).Order;
                 }
             }
 
@@ -972,7 +970,7 @@ namespace RockWeb.Blocks.Finance
             {
                 get
                 {
-                    return _financialAccountLookup[this.AccountId].Name;
+                    return FinancialAccountCache.Get( this.AccountId ).Name;
                 }
             }
 

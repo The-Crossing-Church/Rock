@@ -778,11 +778,9 @@ namespace Rock.Web.UI.Controls
 
             this.GetValues( editedLocation );
 
-            var locationService = new LocationService( new RockContext() );
-
             string validationMessage;
 
-            var isValid = locationService.ValidateAddressRequirements( editedLocation, out validationMessage );
+            var isValid = LocationService.ValidateLocationAddressRequirements( editedLocation, out validationMessage );
 
             if ( !isValid )
             {
@@ -1042,7 +1040,7 @@ namespace Rock.Web.UI.Controls
         #region Methods
 
         /// <summary>
-        /// Sets the values. Use SetValues(null) to set defaults.
+        /// Sets the values from the location to the Address Control. Use SetValues(null) to set defaults.
         /// </summary>
         /// <param name="location">The location.</param>
         public void SetValues( Rock.Model.Location location )
@@ -1099,7 +1097,7 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
-        /// Gets the values.
+        /// Gets the values from the address control and update the fields of the specified location.
         /// </summary>
         /// <param name="location">The location.</param>
         public void GetValues( Rock.Model.Location location )
@@ -1186,8 +1184,8 @@ namespace Rock.Web.UI.Controls
         /// </summary>
         private void BindCountries()
         {
-            var definedType = DefinedTypeCache.Get( new Guid( SystemGuid.DefinedType.LOCATION_COUNTRIES ) );
-            var countryValues = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.LOCATION_COUNTRIES.AsGuid() )
+            var definedType = DefinedTypeCache.Get( SystemGuid.DefinedType.LOCATION_COUNTRIES.AsGuid() );
+            var countryValues = DefinedTypeCache.Get( SystemGuid.DefinedType.LOCATION_COUNTRIES.AsGuid() )
                 .DefinedValues
                 .OrderBy( v => v.Order )
                 .ThenBy( v => v.Value )

@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -55,6 +56,12 @@ namespace Rock.Model
         {
             errorMessage = string.Empty;
 
+            if ( new Service<AttributeValue>( Context ).Queryable().Any( a => a.ValueAsPersonId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Person.FriendlyTypeName, AttributeValue.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<PersonAlias>( Context ).Queryable().Any( a => a.PersonId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", Person.FriendlyTypeName, PersonAlias.FriendlyTypeName );
@@ -68,7 +75,7 @@ namespace Rock.Model
     /// Person View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( Person ) )]
-    public partial class PersonViewModelHelper : ViewModelHelper<Person, Rock.ViewModel.PersonViewModel>
+    public partial class PersonViewModelHelper : ViewModelHelper<Person, PersonBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -77,20 +84,20 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.PersonViewModel CreateViewModel( Person model, Person currentPerson = null, bool loadAttributes = true )
+        public override PersonBag CreateViewModel( Person model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.PersonViewModel
+            var viewModel = new PersonBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
                 AccountProtectionProfile = ( int ) model.AccountProtectionProfile,
                 AgeClassification = ( int ) model.AgeClassification,
                 AnniversaryDate = model.AnniversaryDate,
+                BirthDateKey = model.BirthDateKey,
                 BirthDay = model.BirthDay,
                 BirthMonth = model.BirthMonth,
                 BirthYear = model.BirthYear,
@@ -101,6 +108,7 @@ namespace Rock.Model
                 Email = model.Email,
                 EmailNote = model.EmailNote,
                 EmailPreference = ( int ) model.EmailPreference,
+                EthnicityValueId = model.EthnicityValueId,
                 FirstName = model.FirstName,
                 Gender = ( int ) model.Gender,
                 GivingGroupId = model.GivingGroupId,
@@ -119,10 +127,12 @@ namespace Rock.Model
                 PreferredLanguageValueId = model.PreferredLanguageValueId,
                 PrimaryCampusId = model.PrimaryCampusId,
                 PrimaryFamilyId = model.PrimaryFamilyId,
+                RaceValueId = model.RaceValueId,
                 RecordStatusLastModifiedDateTime = model.RecordStatusLastModifiedDateTime,
                 RecordStatusReasonValueId = model.RecordStatusReasonValueId,
                 RecordStatusValueId = model.RecordStatusValueId,
                 RecordTypeValueId = model.RecordTypeValueId,
+                ReminderCount = model.ReminderCount,
                 ReviewReasonNote = model.ReviewReasonNote,
                 ReviewReasonValueId = model.ReviewReasonValueId,
                 SuffixValueId = model.SuffixValueId,
@@ -204,6 +214,7 @@ namespace Rock.Model
             target.AccountProtectionProfile = source.AccountProtectionProfile;
             target.AgeClassification = source.AgeClassification;
             target.AnniversaryDate = source.AnniversaryDate;
+            target.BirthDateKey = source.BirthDateKey;
             target.BirthDay = source.BirthDay;
             target.BirthMonth = source.BirthMonth;
             target.BirthYear = source.BirthYear;
@@ -214,6 +225,7 @@ namespace Rock.Model
             target.Email = source.Email;
             target.EmailNote = source.EmailNote;
             target.EmailPreference = source.EmailPreference;
+            target.EthnicityValueId = source.EthnicityValueId;
             target.FirstName = source.FirstName;
             target.ForeignGuid = source.ForeignGuid;
             target.ForeignKey = source.ForeignKey;
@@ -234,10 +246,12 @@ namespace Rock.Model
             target.PreferredLanguageValueId = source.PreferredLanguageValueId;
             target.PrimaryCampusId = source.PrimaryCampusId;
             target.PrimaryFamilyId = source.PrimaryFamilyId;
+            target.RaceValueId = source.RaceValueId;
             target.RecordStatusLastModifiedDateTime = source.RecordStatusLastModifiedDateTime;
             target.RecordStatusReasonValueId = source.RecordStatusReasonValueId;
             target.RecordStatusValueId = source.RecordStatusValueId;
             target.RecordTypeValueId = source.RecordTypeValueId;
+            target.ReminderCount = source.ReminderCount;
             target.ReviewReasonNote = source.ReviewReasonNote;
             target.ReviewReasonValueId = source.ReviewReasonValueId;
             target.SuffixValueId = source.SuffixValueId;
@@ -262,7 +276,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.PersonViewModel ToViewModel( this Person model, Person currentPerson = null, bool loadAttributes = false )
+        public static PersonBag ToViewModel( this Person model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new PersonViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

@@ -33,6 +33,7 @@ namespace Rock.Reporting.DataTransform.Person
     [Description( "Transform result to Grandparent" )]
     [Export( typeof( DataTransformComponent ) )]
     [ExportMetadata( "ComponentName", "Person Grandparent Transformation" )]
+    [Rock.SystemGuid.EntityTypeGuid( "274742AA-0D04-4512-ACC2-05A4A181503B")]
     public class GrandparentTransform : DataTransformComponent<Rock.Model.Person>
     {
         /// <summary>
@@ -101,7 +102,7 @@ namespace Rock.Reporting.DataTransform.Person
                 .FirstOrDefault();
 
             var qry = new PersonService( (RockContext)serviceInstance.Context ).Queryable()
-                .Where( p => p.Members.Where( a => a.GroupRoleId == grandParentRoleId )
+                .Where( p => p.Members.Where( a => a.GroupRoleId == grandParentRoleId && a.IsArchived == false )
                     .Any( a => a.Group.Members
                     .Any( c => c.GroupRoleId == ownerRoleId && idQuery.Contains( c.PersonId ) ) ) );
 

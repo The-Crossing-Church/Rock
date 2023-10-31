@@ -39,6 +39,7 @@ namespace RockWeb.Blocks.Event
     [DisplayName( "Registration Instance Send Payment Reminder" )]
     [Category( "Event" )]
     [Description( "Sends payment reminders for paid registrations that have a remaining balance." )]
+    [Rock.SystemGuid.BlockTypeGuid( "ED56CD0A-0A8D-4758-A689-55B7BEC1B589" )]
     public partial class RegistrationInstancePaymentReminder : Rock.Web.UI.RockBlock
     {
         #region Fields
@@ -99,7 +100,7 @@ namespace RockWeb.Blocks.Event
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the GRegistrations control.
+        /// Handles the GridRebind event of the gRegistrations control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

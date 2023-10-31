@@ -31,6 +31,7 @@ namespace Rock.Model
     [RockDomain( "Group" )]
     [Table( "GroupLocationHistorical" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "03128778-5E7D-4FE4-9C7A-929936E06F90")]
     public partial class GroupLocationHistorical : Model<GroupLocationHistorical>, IHistoricalTracking
     {
         #region Entity Properties
@@ -191,7 +192,7 @@ namespace Rock.Model
         /// </summary>
         public GroupLocationHistoricalConfiguration()
         {
-            this.HasOptional( p => p.GroupLocation ).WithMany().HasForeignKey( p => p.GroupLocationId ).WillCascadeOnDelete( false );
+            this.HasOptional( p => p.GroupLocation ).WithMany().HasForeignKey( p => p.GroupLocationId ).WillCascadeOnDelete( true );
             this.HasRequired( p => p.Group ).WithMany().HasForeignKey( p => p.GroupId ).WillCascadeOnDelete( false );
             this.HasRequired( p => p.Location ).WithMany().HasForeignKey( p => p.LocationId ).WillCascadeOnDelete( false );
         }

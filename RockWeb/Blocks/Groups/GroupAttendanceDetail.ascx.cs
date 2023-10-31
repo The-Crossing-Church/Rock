@@ -36,7 +36,7 @@ using Rock.Web.UI.Controls;
 namespace RockWeb.Blocks.Groups
 {
     #region Block Attributes
-    [DisplayName( "Group Attendance Detail" )]
+    [DisplayName( "Group Attendance Detail (Legacy)" )]
     [Category( "Groups" )]
     [Description( "Lists the group members for a specific occurrence date time and allows selecting if they attended or not." )]
 
@@ -130,6 +130,7 @@ namespace RockWeb.Blocks.Groups
         Order = 15,
         Key = AttributeKey.AttendanceTypeLabel )]
     #endregion
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.GROUP_ATTENDANCE_DETAIL )]
     public partial class GroupAttendanceDetail : RockBlock
     {
         #region Keys
@@ -446,11 +447,6 @@ namespace RockWeb.Blocks.Groups
 
             outputBinaryFileDoc = mergeTemplateType.CreateDocument( mergeTemplate, mergeObjectList, mergeFields );
 
-            // Set the name of the output doc
-            outputBinaryFileDoc = new BinaryFileService( rockContext ).Get( outputBinaryFileDoc.Id );
-            outputBinaryFileDoc.FileName = _group.Name + " Attendance Roster" + Path.GetExtension( outputBinaryFileDoc.FileName ?? string.Empty ) ?? ".docx";
-            rockContext.SaveChanges();
-
             if ( mergeTemplateType.Exceptions != null && mergeTemplateType.Exceptions.Any() )
             {
                 if ( mergeTemplateType.Exceptions.Count == 1 )
@@ -467,11 +463,9 @@ namespace RockWeb.Blocks.Groups
                 }
             }
 
-            var uri = new UriBuilder( outputBinaryFileDoc.Url );
-            var qry = System.Web.HttpUtility.ParseQueryString( uri.Query );
-            qry["attachment"] = true.ToTrueFalse();
-            uri.Query = qry.ToString();
-            Response.Redirect( uri.ToString(), false );
+            var baseUrl = ResolveRockUrl( "~/GetFile.ashx" );
+            var getFileUrl = $"{baseUrl}?Guid={outputBinaryFileDoc.Guid}&attachment=true";
+            Response.Redirect( getFileUrl, false );
             Context.ApplicationInstance.CompleteRequest();
         }
 
@@ -1049,7 +1043,7 @@ namespace RockWeb.Blocks.Groups
             }}
         }});
 
-        $('.js-add-member').on('click', function ( e ) {{
+        $('.js-add-member').off('click').on('click', function ( e ) {{
             e.preventDefault();
             var $a = $(this);
             var memberName = $(this).parent().find('span').html();

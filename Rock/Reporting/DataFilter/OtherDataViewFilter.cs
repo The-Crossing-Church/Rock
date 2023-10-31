@@ -35,6 +35,7 @@ namespace Rock.Reporting.DataFilter
     [Description( "Filter entities using another dataview" )]
     [Export( typeof( DataFilterComponent ) )]
     [ExportMetadata( "ComponentName", "Other Data View Filter" )]
+    [Rock.SystemGuid.EntityTypeGuid( "068C1177-68E5-4D08-8386-96EE3C9880F1")]
     public class OtherDataViewFilter : DataFilterComponent, IDataFilterWithOverrides, IRelatedChildDataView
     {
         #region Properties
@@ -206,8 +207,8 @@ namespace Rock.Reporting.DataFilter
             int? dataViewId = dataViewItemPicker.SelectedValueAsId();
             if ( dataViewId.HasValue )
             {
-                int? persistedScheduleIntervalMinutes = new DataViewService( new RockContext() ).GetSelect( dataViewId.Value, s => s.PersistedScheduleIntervalMinutes );
-                cbUsePersisted.Visible = persistedScheduleIntervalMinutes.HasValue;
+                var dataView = new DataViewService( new RockContext() ).GetNoTracking( dataViewId.Value );
+                cbUsePersisted.Visible = dataView.IsPersisted();
             }
 
             cbUsePersisted.RenderControl( writer );

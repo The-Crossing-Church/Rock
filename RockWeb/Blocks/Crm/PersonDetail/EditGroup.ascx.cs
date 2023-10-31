@@ -119,6 +119,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "B4EB68FE-1A73-40FD-8236-78C9A015BDDE" )]
     public partial class EditGroup : PersonBlock
     {
         #region Attribute Keys
@@ -642,7 +643,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
                     HtmlControl divPersonImage = e.Item.FindControl( "divPersonImage" ) as HtmlControl;
                     if ( divPersonImage != null )
                     {
-                        divPersonImage.Style.Add( "background-image", @String.Format( @"url({0})", Person.GetPersonPhotoUrl( groupMember.PersonId, groupMember.PhotoId, groupMember.Age, groupMember.Gender, groupMember.RecordTypeValueGuid, groupMember.AgeClassification ) + "&width=65" ) );
+                        divPersonImage.Style.Add( "background-image", @String.Format( @"url({0})", Person.GetPersonPhotoUrl( groupMember.PersonInitials, groupMember.PhotoId, groupMember.Age, groupMember.Gender, groupMember.RecordTypeValueId, groupMember.AgeClassification ) ) );
                     }
 
                     var rblRole = e.Item.FindControl( "rblRole" ) as RadioButtonList;
@@ -1732,6 +1733,8 @@ namespace RockWeb.Blocks.Crm.PersonDetail
 
         public int PersonId { get; set; }
 
+        public string PersonInitials { get; set; }
+
         public bool ExistingGroupMember { get; set; }  // Is this person part of the original group 
 
         public bool Removed { get; set; } // Was an existing person removed from the group (to their own group)
@@ -1841,6 +1844,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
             if ( person != null )
             {
                 PersonId = person.Id;
+                PersonInitials = person.Initials;
                 TitleValueId = person.TitleValueId;
                 FirstName = person.FirstName;
                 NickName = person.NickName;

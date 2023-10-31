@@ -15,6 +15,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Drawing;
@@ -35,6 +36,8 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Oidc.Client;
+using Rock.Security.Authentication;
+using Rock.Security.Authentication.ExternalRedirectAuthentication;
 using Rock.Web.Cache;
 
 namespace Rock.Security.ExternalAuthentication
@@ -73,7 +76,8 @@ namespace Rock.Security.ExternalAuthentication
         IsRequired = false,
         Key = AttributeKey.RequestedScopes,
         Order = 6 )]
-    public class OidcClient : AuthenticationComponent
+    [Rock.SystemGuid.EntityTypeGuid( "2C964ABD-3F4D-43F8-B170-21A2A210EB30")]
+    public class OidcClient : AuthenticationComponent, IExternalRedirectAuthentication
     {
         /// <summary>
         /// Attribute Keys
@@ -190,56 +194,21 @@ namespace Rock.Security.ExternalAuthentication
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Authenticates the user based on a request from a third-party provider.  Will set the username and returnUrl values.
-        /// </summary>
-        /// <param name="request">The request.</param>
-        /// <param name="userName">Name of the user.</param>
-        /// <param name="returnUrl">The return URL.</param>
-        /// <returns></returns>
-        /// <exception cref="System.Exception">
-        /// State is invalid.
-        /// or
-        /// </exception>
+        /// <inheritdoc/>
         public override bool Authenticate( HttpRequest request, out string userName, out string returnUrl )
         {
-            userName = string.Empty;
-            returnUrl = HttpContext.Current.Session[SessionKey.ReturnUrl].ToStringSafe();
-            string redirectUri = GetRedirectUrl( request );
-            var code = request.QueryString[PageParameterKey.Code];
-            var state = request.QueryString[PageParameterKey.State];
-            var validState = HttpContext.Current.Session[SessionKey.State].ToStringSafe();
-
-            if ( validState.IsNullOrWhiteSpace() || !state.Equals( validState ) )
+            var options = new ExternalRedirectAuthenticationOptions
             {
-                throw new Exception( "State is invalid." );
-            }
+                RedirectUrl = GetRedirectUrl(),
+                Parameters = request.QueryString.ToSimpleQueryStringDictionary()
+            };
 
-            try
-            {
-                var client = new TokenClient( GetTokenUrl(), GetAttributeValue( AttributeKey.ApplicationId ), GetAttributeValue( AttributeKey.ApplicationSecret ) );
-                var response = client.RequestAuthorizationCodeAsync( code, redirectUri ).GetAwaiter().GetResult();
+            var result = Authenticate( options );
 
-                if ( response.IsError )
-                {
-                    throw new Exception( response.Error );
-                }
+            userName = result.UserName;
+            returnUrl = result.ReturnUrl;
 
-                var nonce = HttpContext.Current.Session[SessionKey.Nonce].ToStringSafe();
-                var idToken = GetValidatedIdToken( response.IdentityToken, nonce );
-                userName = HandleOidcUserAddUpdate( idToken, response.AccessToken );
-
-                HttpContext.Current.Session[SessionKey.Nonce] = string.Empty;
-                HttpContext.Current.Session[SessionKey.ReturnUrl] = string.Empty;
-                HttpContext.Current.Session[SessionKey.State] = string.Empty;
-            }
-
-            catch ( Exception ex )
-            {
-                ExceptionLogService.LogException( ex, HttpContext.Current );
-            }
-
-            return !string.IsNullOrWhiteSpace( userName );
+            return result.IsAuthenticated;
         }
 
         /// <summary>
@@ -269,23 +238,13 @@ namespace Rock.Security.ExternalAuthentication
         }
 
         /// <summary>
-        /// Generates the login URL.
+        /// Generates the log in URL.
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns></returns>
         public override Uri GenerateLoginUrl( HttpRequest request )
         {
-            string returnUrl = request.QueryString[PageParameterKey.ReturnUrl];
-            string redirectUri = GetRedirectUrl( request );
-
-            var nonce = EncodeBcrypt( System.Guid.NewGuid().ToString() );
-            var state = EncodeBcrypt( System.Guid.NewGuid().ToString() );
-
-            HttpContext.Current.Session[SessionKey.Nonce] = nonce;
-            HttpContext.Current.Session[SessionKey.State] = state;
-            HttpContext.Current.Session[SessionKey.ReturnUrl] = returnUrl;
-
-            return new Uri( GetLoginUrl( GetRedirectUrl( request ), nonce, state ) );
+            return GenerateExternalLoginUrl( GetRedirectUrl(), request.QueryString[PageParameterKey.ReturnUrl] );
         }
 
         /// <summary>
@@ -305,8 +264,7 @@ namespace Rock.Security.ExternalAuthentication
         /// <returns></returns>
         public override bool IsReturningFromAuthentication( HttpRequest request )
         {
-            return !String.IsNullOrWhiteSpace( request.QueryString[PageParameterKey.Code] )
-                    && !String.IsNullOrWhiteSpace( request.QueryString[PageParameterKey.State] );
+            return IsReturningFromExternalAuthentication( request.QueryString.ToSimpleQueryStringDictionary() );
         }
 
         /// <summary>
@@ -320,7 +278,7 @@ namespace Rock.Security.ExternalAuthentication
             throw new NotImplementedException();
         }
 
-        private string GetRedirectUrl( HttpRequest request )
+        private string GetRedirectUrl()
         {
             return GetAttributeValue( AttributeKey.RedirectUri );
         }
@@ -331,7 +289,8 @@ namespace Rock.Security.ExternalAuthentication
 
             var requestUrl = new RequestUrl( config.AuthorizationEndpoint );
 
-            return requestUrl.CreateAuthorizeUrl( GetAttributeValue( AttributeKey.ApplicationId ),
+            return requestUrl.CreateAuthorizeUrl(
+                GetAttributeValue( AttributeKey.ApplicationId ),
                 OidcConstants.ResponseTypes.Code,
                 GetScopes(),
                 $"{redirectUrl}",
@@ -352,6 +311,7 @@ namespace Rock.Security.ExternalAuthentication
             {
                 return "openid";
             }
+
             return $"openid {scopes.Replace( ",", " " )}";
         }
 
@@ -406,7 +366,7 @@ namespace Rock.Security.ExternalAuthentication
             // accessToken is required
             if ( accessToken.IsNullOrWhiteSpace() )
             {
-                //return null;
+                ////return null;
             }
 
             string username = string.Empty;
@@ -417,7 +377,6 @@ namespace Rock.Security.ExternalAuthentication
 
             using ( var rockContext = new RockContext() )
             {
-
                 // Query for an existing user
                 var userLoginService = new UserLoginService( rockContext );
                 user = userLoginService.GetByUserName( userName );
@@ -434,6 +393,7 @@ namespace Rock.Security.ExternalAuthentication
                     {
                         nickName = idToken.GetClaimValue( JwtClaimTypes.Name ).ToStringSafe();
                     }
+
                     if ( nickName.IsNullOrWhiteSpace() )
                     {
                         nickName = idToken.GetClaimValue( JwtClaimTypes.PreferredUserName ).ToStringSafe();
@@ -633,7 +593,7 @@ namespace Rock.Security.ExternalAuthentication
             {
                 extension = phone.Substring( extStartIndex );
                 phone = phone.Replace( extension, string.Empty );
-                extension = PhoneNumber.CleanNumber( extension.Replace( ";ext=", "" ) );
+                extension = PhoneNumber.CleanNumber( extension.Replace( ";ext=", string.Empty ) );
             }
 
             phone = phone.Trim();
@@ -642,7 +602,7 @@ namespace Rock.Security.ExternalAuthentication
             {
                 var phoneParts = phone.Split( new char[] { ' ', '(', ')' }, StringSplitOptions.RemoveEmptyEntries );
                 countryCode = PhoneNumber.CleanNumber( phoneParts[0] );
-                phone = string.Join( "", phoneParts, 1, phoneParts.Length - 1 );
+                phone = string.Join( string.Empty, phoneParts, 1, phoneParts.Length - 1 );
             }
 
             person.PhoneNumbers.Add( new PhoneNumber
@@ -692,6 +652,7 @@ namespace Rock.Security.ExternalAuthentication
             {
                 return "png";
             }
+
             return string.Empty;
         }
 
@@ -721,9 +682,176 @@ namespace Rock.Security.ExternalAuthentication
                 {
                     person.BirthYear = dateParts[0].AsIntegerOrNull();
                 }
+
                 person.BirthMonth = dateParts[1].AsIntegerOrNull();
                 person.BirthDay = dateParts[2].AsIntegerOrNull();
             }
         }
+
+        #region IExternalRedirectAuthentication Implementation
+
+        /// <inheritdoc/>
+        public ExternalRedirectAuthenticationResult Authenticate( ExternalRedirectAuthenticationOptions request )
+        {
+            var result = new ExternalRedirectAuthenticationResult
+            {
+                UserName = string.Empty,
+                ReturnUrl = GetRequestCookieValue( SessionKey.ReturnUrl )
+            };
+
+            var code = request.Parameters.GetValueOrNull( PageParameterKey.Code );
+            var state = request.Parameters.GetValueOrNull( PageParameterKey.State );
+
+            var validState = GetRequestCookieValue( SessionKey.State );
+
+            if ( validState.IsNullOrWhiteSpace() || !state.Equals( validState ) )
+            {
+                // Clear the OAuth cookies to require a new OAuth session.
+                DeleteResponseCookie( SessionKey.Nonce );
+                DeleteResponseCookie( SessionKey.ReturnUrl );
+                DeleteResponseCookie( SessionKey.State );
+                throw new Exception( "State is invalid." );
+            }
+
+            try
+            {
+                var client = new TokenClient( GetTokenUrl(), GetAttributeValue( AttributeKey.ApplicationId ), GetAttributeValue( AttributeKey.ApplicationSecret ) );
+                var response = client.RequestAuthorizationCodeAsync( code, GetAttributeValue( AttributeKey.RedirectUri ) ).GetAwaiter().GetResult();
+
+                if ( response.IsError )
+                {
+                    throw new Exception( response.Error );
+                }
+
+                var nonce = GetRequestCookieValue( SessionKey.Nonce );
+                var idToken = GetValidatedIdToken( response.IdentityToken, nonce );
+                result.UserName = HandleOidcUserAddUpdate( idToken, response.AccessToken );
+                result.IsAuthenticated = !string.IsNullOrWhiteSpace( result.UserName );
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex, HttpContext.Current );
+            }
+            finally
+            {
+                // Clear the OAuth cookies to require a new OAuth session.
+                DeleteResponseCookie( SessionKey.Nonce );
+                DeleteResponseCookie( SessionKey.ReturnUrl );
+                DeleteResponseCookie( SessionKey.State );
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public Uri GenerateExternalLoginUrl( string externalProviderReturnUrl, string successfulAuthenticationRedirectUrl )
+        {
+            var nonce = EncodeBcrypt( System.Guid.NewGuid().ToString() );
+            var state = EncodeBcrypt( System.Guid.NewGuid().ToString() );
+
+            SetResponseCookieValue( SessionKey.State, state );
+            SetResponseCookieValue( SessionKey.Nonce, nonce );
+            SetResponseCookieValue( SessionKey.ReturnUrl, successfulAuthenticationRedirectUrl );
+
+            // Use the OIDC RedirectUri attribute instead of the provided external provider return URL.
+            return new Uri( GetLoginUrl( GetAttributeValue( AttributeKey.RedirectUri ), nonce, state ) );
+        }
+
+        /// <inheritdoc/>
+        public bool IsReturningFromExternalAuthentication( IDictionary<string, string> parameters )
+        {
+            var isReturningFromOAuth = parameters.GetValueOrNull( PageParameterKey.Code ).IsNotNullOrWhiteSpace()
+                && parameters.GetValueOrNull( PageParameterKey.State ).IsNotNullOrWhiteSpace()
+                && GetRequestCookieValue( SessionKey.State ).IsNotNullOrWhiteSpace();
+
+            if ( !isReturningFromOAuth )
+            {
+                // If not performing the OIDC process,
+                // then ensure the OIDC cookies are cleared.
+                DeleteResponseCookie( SessionKey.Nonce );
+                DeleteResponseCookie( SessionKey.ReturnUrl );
+                DeleteResponseCookie( SessionKey.State );
+            }
+
+            return isReturningFromOAuth;
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Deletes a cookie from the response.
+        /// </summary>
+        /// <param name="cookieName">The cookie name.</param>
+        private void DeleteResponseCookie( string cookieName )
+        {
+            // To delete a cookie, the value must be cleared
+            // and the expiration date should be a past date.
+
+            // Create a cookie instance with a blank value.
+            var cookie = GetCookieInstance( cookieName, string.Empty );
+
+            // Any past date will work to expire a client cookie (except for DateTime.MinValue).
+            // Using a specific date here instead of a relative date to the current date of the server/client.
+            cookie.Expires = new DateTime( 1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc );
+
+            HttpContext.Current.Response.Cookies.Set( cookie );
+        }
+
+        /// <summary>
+        /// Creates and returns a new cookie instance with the flags required for the OIDC process.
+        /// </summary>
+        /// <param name="cookieName">The cookie name.</param>
+        /// <param name="cookieValue">The cookie value.</param>
+        /// <returns>A new cookie instance.</returns>
+        private HttpCookie GetCookieInstance(string cookieName, string cookieValue)
+        {
+            return new HttpCookie( cookieName )
+            {
+                // Prevent client-side JS from inspecting the cookie.
+                HttpOnly = true,
+
+                // Use SameSite=Lax so the cookie is sent in the OAuth redirect back to Rock.
+                SameSite = SameSiteMode.Lax,
+
+                // Only add the Secure option if the request site is using HTTPS.
+                Secure = HttpContext.Current.Request.IsSecureConnection
+                         || string.Equals( HttpContext.Current.Request.UrlProxySafe().Scheme, "https", StringComparison.OrdinalIgnoreCase ),
+
+                // Encrypt the cookie value as an extra layer of security.
+                Value = Encryption.EncryptString( cookieValue ),
+            };
+        }
+
+        /// <summary>
+        /// Gets a request cookie value or <c>""</c> if not found.
+        /// </summary>
+        /// <param name="cookieName">The cookie name.</param>
+        /// <returns>The cookie value.</returns>
+        private string GetRequestCookieValue( string cookieName )
+        {
+            var cookie = HttpContext.Current.Request.Cookies[cookieName];
+
+            if ( cookie == null )
+            {
+                return string.Empty;
+            }
+
+            return Encryption.DecryptString( cookie?.Value ).ToStringSafe();
+        }
+
+        /// <summary>
+        /// Sets a response cookie value.
+        /// </summary>
+        /// <param name="cookieName">The cookie name.</param>
+        /// <param name="cookieValue">The cookie value.</param>
+        private void SetResponseCookieValue( string cookieName, string cookieValue )
+        {
+            var cookie = GetCookieInstance( cookieName, cookieValue );
+            HttpContext.Current.Response.Cookies.Set( cookie );
+        }
+
+        #endregion
     }
 }

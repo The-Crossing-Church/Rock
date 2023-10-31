@@ -61,6 +61,7 @@ namespace RockWeb.Blocks.Communication
         Order = 1 )]
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "56ABBD0F-8F62-4094-88B3-161E71F21419" )]
     public partial class CommunicationList : Rock.Web.UI.RockBlock, ICustomGridColumns
     {
         #region Attribute Keys
@@ -160,12 +161,7 @@ namespace RockWeb.Blocks.Communication
             }
 
             rFilter.SaveUserPreference( "Created Date Range", drpCreatedDates.DelimitedValues );
-
-            if ( nreRecipientCount.LowerValue.HasValue || nreRecipientCount.UpperValue.HasValue )
-            {
-                rFilter.SaveUserPreference( "Recipient Count", nreRecipientCount.DelimitedValues );
-            }
-
+            rFilter.SaveUserPreference( "Recipient Count", nreRecipientCount.DelimitedValues );
             rFilter.SaveUserPreference( "Sent Date Range", drpSentDates.DelimitedValues );
             rFilter.SaveUserPreference( "Content", tbContent.Text );
 

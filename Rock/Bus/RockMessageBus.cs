@@ -56,6 +56,13 @@ namespace Rock.Bus
         private static bool _isBusStarted = false;
 
         /// <summary>
+        /// Wait lock for the startup process.
+        /// </summary>
+        private static SemaphoreSlim _initSemaphore = new SemaphoreSlim( 1, 1 );
+
+        private static TaskCompletionSource<bool> _busStartupCompleted = new TaskCompletionSource<bool>();
+
+        /// <summary>
         /// The bus
         /// </summary>
         private static IBusControl _bus = null;
@@ -211,17 +218,33 @@ namespace Rock.Bus
         public static Task PublishAsync<TQueue>( IEventMessage<TQueue> message, Type messageType )
             where TQueue : IPublishEventQueue, new()
         {
-            if ( !IsReady() )
-            {
-                ExceptionLogService.LogException( new BusException( $"A message was published before the message bus was ready: {RockMessage.GetLogString( message )}" ) );
-                return Task.CompletedTask;
-            }
-
             message.SenderNodeName = NodeName;
 
             // NOTE: Use Task.Run to wrap an async instead of directly using async, otherwise async will get an exception if it isn't done before the HttpContext is disposed.
             return Task.Run( async () =>
             {
+                if ( !IsReady() && _busStartupCompleted != null )
+                {
+                    /* 06/21/2022 MP
+                      
+                    If the bus is still in the process of starting, we'll wait
+                    for the bus to be started, and then do the publish. This can
+                    happen since CacheUpdateMessages can be published prior to
+                    the MessageBus getting started.
+                     
+                    */
+
+                    // Wait for up to 45 seconds.
+                    await Task.WhenAny( _busStartupCompleted.Task, Task.Delay( maxStartupWaitTimeSeconds * 1000 ) );
+                }
+
+                if ( !IsReady() )
+                {
+                    // Just in case it still isn't ready, log an exception.
+                    ExceptionLogService.LogException( new BusException( $"A message publish attempt could not be published before the message bus was able to be ready: {RockMessage.GetLogString( message )}" ) );
+                    return;
+                }
+
                 await _bus.Publish( message, messageType, context =>
                 {
                     context.TimeToLive = RockQueue.GetTimeToLive<TQueue>();
@@ -269,6 +292,7 @@ namespace Rock.Bus
             } );
         }
 
+        private const int maxStartupWaitTimeSeconds = 45;
 
         /// <summary>
         /// Configures and starts the bus.
@@ -276,38 +300,52 @@ namespace Rock.Bus
         /// <returns></returns>
         private async static Task ConfigureAndStartBusAsync()
         {
-            if ( _transportComponent == null )
+            // If the startup process is being executed, wait here.
+            await _initSemaphore.WaitAsync();
+            try
             {
-                throw new Exception( "An active transport component is required for Rock to run correctly" );
+                // If the bus has been initialized by an awaited caller, exit now.
+                if ( IsReady() )
+                {
+                    return;
+                }
+                if ( _transportComponent == null )
+                {
+                    throw new Exception( "An active transport component is required for Rock to run correctly" );
+                }
+
+                _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
+                _bus.ConnectConsumeObserver( _statObserver );
+                _bus.ConnectReceiveObserver( _receiveFaultObserver );
+
+                // Allow the bus to try to connect for some seconds at most
+                var cancelToken = new CancellationTokenSource();
+                var task = _bus.StartAsync( cancelToken.Token );
+
+                var delay = Task.Delay( TimeSpan.FromSeconds( maxStartupWaitTimeSeconds ) );
+
+                if ( await Task.WhenAny( task, delay ) == task )
+                {
+                    // Task completed within timeout.
+                    // Consider that the task may have faulted or been canceled.
+                    // We re-await the task so that any exceptions/cancellation is rethrown.
+                    // https://stackoverflow.com/a/11191070/13215483
+                    await task;
+                }
+                else
+                {
+                    // The bus did not connect after some seconds
+                    cancelToken.Cancel();
+                    throw new Exception( $"The bus failed to connect using {_transportComponent.GetType().Name} within {maxStartupWaitTimeSeconds} seconds" );
+                }
+
+                _isBusStarted = true;
+                _busStartupCompleted.SetResult( true );
             }
-
-            _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-            _bus.ConnectConsumeObserver( _statObserver );
-            _bus.ConnectReceiveObserver( _receiveFaultObserver );
-
-            // Allow the bus to try to connect for some seconds at most
-            var cancelToken = new CancellationTokenSource();
-            var task = _bus.StartAsync( cancelToken.Token );
-
-            const int delaySeconds = 45;
-            var delay = Task.Delay( TimeSpan.FromSeconds( delaySeconds ) );
-
-            if ( await Task.WhenAny( task, delay ) == task )
+            finally
             {
-                // Task completed within timeout.
-                // Consider that the task may have faulted or been canceled.
-                // We re-await the task so that any exceptions/cancellation is rethrown.
-                // https://stackoverflow.com/a/11191070/13215483
-                await task;
+                _initSemaphore.Release();
             }
-            else
-            {
-                // The bus did not connect after some seconds
-                cancelToken.Cancel();
-                throw new Exception( $"The bus failed to connect using {_transportComponent.GetType().Name} within {delaySeconds} seconds" );
-            }
-
-            _isBusStarted = true;
         }
 
         /// <summary>

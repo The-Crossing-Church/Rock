@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -135,6 +136,12 @@ namespace Rock.Model
 
             // ignoring GroupRequirement,GroupId
 
+            if ( new Service<InteractiveExperienceSchedule>( Context ).Queryable().Any( a => a.GroupId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Group.FriendlyTypeName, InteractiveExperienceSchedule.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<Person>( Context ).Queryable().Any( a => a.GivingGroupId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", Group.FriendlyTypeName, Person.FriendlyTypeName );
@@ -155,6 +162,12 @@ namespace Rock.Model
 
             // ignoring Registration,GroupId
 
+            if ( new Service<SystemPhoneNumber>( Context ).Queryable().Any( a => a.SmsNotificationGroupId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Group.FriendlyTypeName, SystemPhoneNumber.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<WorkflowActivity>( Context ).Queryable().Any( a => a.AssignedGroupId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", Group.FriendlyTypeName, WorkflowActivity.FriendlyTypeName );
@@ -168,7 +181,7 @@ namespace Rock.Model
     /// Group View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( Group ) )]
-    public partial class GroupViewModelHelper : ViewModelHelper<Group, Rock.ViewModel.GroupViewModel>
+    public partial class GroupViewModelHelper : ViewModelHelper<Group, GroupBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -177,17 +190,16 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.GroupViewModel CreateViewModel( Group model, Person currentPerson = null, bool loadAttributes = true )
+        public override GroupBag CreateViewModel( Group model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.GroupViewModel
+            var viewModel = new GroupBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
                 AllowGuests = model.AllowGuests,
                 ArchivedByPersonAliasId = model.ArchivedByPersonAliasId,
                 ArchivedDateTime = model.ArchivedDateTime,
@@ -213,11 +225,14 @@ namespace Rock.Model
                 Name = model.Name,
                 Order = model.Order,
                 ParentGroupId = model.ParentGroupId,
+                ReminderAdditionalDetails = model.ReminderAdditionalDetails,
+                ReminderOffsetDays = model.ReminderOffsetDays,
+                ReminderSystemCommunicationId = model.ReminderSystemCommunicationId,
                 RequiredSignatureDocumentTemplateId = model.RequiredSignatureDocumentTemplateId,
-                RSVPReminderAdditionalDetails = model.RSVPReminderAdditionalDetails,
                 RSVPReminderOffsetDays = model.RSVPReminderOffsetDays,
                 RSVPReminderSystemCommunicationId = model.RSVPReminderSystemCommunicationId,
                 ScheduleCancellationPersonAliasId = model.ScheduleCancellationPersonAliasId,
+                ScheduleConfirmationLogic = ( int? ) model.ScheduleConfirmationLogic,
                 ScheduleId = model.ScheduleId,
                 SchedulingMustMeetRequirements = model.SchedulingMustMeetRequirements,
                 StatusValueId = model.StatusValueId,
@@ -317,11 +332,14 @@ namespace Rock.Model
             target.Name = source.Name;
             target.Order = source.Order;
             target.ParentGroupId = source.ParentGroupId;
+            target.ReminderAdditionalDetails = source.ReminderAdditionalDetails;
+            target.ReminderOffsetDays = source.ReminderOffsetDays;
+            target.ReminderSystemCommunicationId = source.ReminderSystemCommunicationId;
             target.RequiredSignatureDocumentTemplateId = source.RequiredSignatureDocumentTemplateId;
-            target.RSVPReminderAdditionalDetails = source.RSVPReminderAdditionalDetails;
             target.RSVPReminderOffsetDays = source.RSVPReminderOffsetDays;
             target.RSVPReminderSystemCommunicationId = source.RSVPReminderSystemCommunicationId;
             target.ScheduleCancellationPersonAliasId = source.ScheduleCancellationPersonAliasId;
+            target.ScheduleConfirmationLogic = source.ScheduleConfirmationLogic;
             target.ScheduleId = source.ScheduleId;
             target.SchedulingMustMeetRequirements = source.SchedulingMustMeetRequirements;
             target.StatusValueId = source.StatusValueId;
@@ -340,7 +358,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.GroupViewModel ToViewModel( this Group model, Person currentPerson = null, bool loadAttributes = false )
+        public static GroupBag ToViewModel( this Group model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new GroupViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

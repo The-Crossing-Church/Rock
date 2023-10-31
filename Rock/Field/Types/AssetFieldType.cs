@@ -15,8 +15,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
-
+#endif
 using Newtonsoft.Json;
 
 using Rock.Attribute;
@@ -31,6 +33,7 @@ namespace Rock.Field.Types
     /// </summary>
     /// <seealso cref="Rock.Field.FieldType" />
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( "4E4E8692-23B4-49EA-88B4-2AB07899E0EE" )]
     public class AssetFieldType : FieldType
     {
         /// <summary>
@@ -46,13 +49,102 @@ namespace Rock.Field.Types
 {% endif %}
 
 <div class='fileupload-thumbnail{% if imageTypeUrl contains '/Assets/Icons/FileTypes/' %} fileupload-thumbnail-icon{% endif %}' {% if fileName != '' %}style='background-image:url({{ imageTypeUrl }}) !important;' title='{{ fileName }}'{% endif %}>
-    {% if fileName != '' %}<span class='file-link'>{{ fileName }}</span>{% else %}<span class='file-link file-link-default'></span>{% endif %}
+    {% if fileName != '' %}<span class='file-link' style='background-color: transparent'>{{ fileName }}</span>{% else %}<span class='file-link file-link-default'></span>{% endif %}
 </div>
 <div class='imageupload-dropzone'>
     <span>
         Select Asset
     </span>
 </div>";
+
+        #region Edit Control
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            Storage.AssetStorage.Asset asset = GetAssetInfoFromValue( privateValue );
+
+            if ( asset == null )
+            {
+                return string.Empty;
+            }
+
+            AssetStorageProvider assetStorageProvider = new AssetStorageProvider();
+            int? assetStorageId = asset.AssetStorageProviderId;
+
+            if ( assetStorageId != null )
+            {
+                var assetStorageService = new AssetStorageProviderService( new RockContext() );
+                assetStorageProvider = assetStorageService.Get( assetStorageId.Value );
+                assetStorageProvider.LoadAttributes();
+            }
+
+            var component = assetStorageProvider.GetAssetStorageComponent();
+
+            string uri = component.CreateDownloadLink( assetStorageProvider, asset );
+
+            return uri;
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            // Don't truncate the value.
+            return GetTextValue( privateValue, privateConfigurationValues );
+        }
+
+        /// <inheritdoc/>
+        public override string GetHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var url = GetTextValue( privateValue, privateConfigurationValues );
+
+            if ( url.IsNullOrWhiteSpace() )
+            {
+                return string.Empty;
+            }
+
+            var encodedUrl = url.EncodeHtml();
+
+            return $"<a href=\"{encodedUrl}\">{encodedUrl}</a>";
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Gets the asset information from value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        private static Storage.AssetStorage.Asset GetAssetInfoFromValue( string value )
+        {
+            Storage.AssetStorage.Asset asset = null;
+
+            if ( !value.IsNullOrWhiteSpace() )
+            {
+                asset = JsonConvert.DeserializeObject<Storage.AssetStorage.Asset>( value );
+                asset.Type = Storage.AssetStorage.AssetType.File;
+            }
+
+            return asset;
+        }
+
+        #region Persistence
+
+        /// <inheritdoc/>
+        public override bool IsPersistedValueVolatile( Dictionary<string, string> privateConfigurationValues )
+        {
+            // The download links expire so we need to keep them up to date.
+            return true;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -73,7 +165,7 @@ namespace Rock.Field.Types
                 CssClass = "picker-asset",
                 ModalSaveButtonText = "Select",
                 ModalSaveButtonCssClass = "js-singleselect aspNetDisabled",
-                ModalCssClass = "js-AssetManager-modal", 
+                ModalCssClass = "js-AssetManager-modal",
                 ButtonTextTemplate = "Select Asset",
                 PickerButtonTemplate = pickerButtonTemplate,
                 ModalTitle = "Asset Manager"
@@ -125,46 +217,11 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            Storage.AssetStorage.Asset asset = GetAssetInfoFromValue( value );
-
-            if ( asset == null )
-            {
-                return string.Empty;
-            }
-
-            AssetStorageProvider assetStorageProvider = new AssetStorageProvider();
-            int? assetStorageId = asset.AssetStorageProviderId;
-
-            if ( assetStorageId != null )
-            {
-                var assetStorageService = new AssetStorageProviderService( new RockContext() );
-                assetStorageProvider = assetStorageService.Get( assetStorageId.Value );
-                assetStorageProvider.LoadAttributes();
-            }
-
-            var component = assetStorageProvider.GetAssetStorageComponent();
-
-            string uri = component.CreateDownloadLink( assetStorageProvider, asset );
-
-            return uri;
+            // Original implementation always returns non-condensed and did not HTML format.
+            return GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
 
-        /// <summary>
-        /// Gets the asset information from value.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        private static Storage.AssetStorage.Asset GetAssetInfoFromValue( string value )
-        {
-            Storage.AssetStorage.Asset asset = null;
-
-            if ( !value.IsNullOrWhiteSpace() )
-            {
-                asset = JsonConvert.DeserializeObject<Storage.AssetStorage.Asset>( value );
-                asset.Type = Storage.AssetStorage.AssetType.File;
-            }
-
-            return asset;
-        }
+#endif
+        #endregion
     }
 }

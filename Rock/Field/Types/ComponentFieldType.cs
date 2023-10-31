@@ -16,8 +16,11 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
+#endif
 
 using Rock.Attribute;
 using Rock.Web.Cache;
@@ -30,10 +33,46 @@ namespace Rock.Field.Types
     /// Stored as EntityType.Guid
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.COMPONENT )]
     public class ComponentFieldType : FieldType
     {
-
         #region Configuration
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( privateValue.IsNullOrWhiteSpace() )
+            {
+                return string.Empty;
+            }
+
+            var entityTypeGuid = privateValue.AsGuid();
+
+            if ( entityTypeGuid != Guid.Empty )
+            {
+                var entityType = EntityTypeCache.Get( entityTypeGuid );
+
+                if ( entityType != null )
+                {
+                    return entityType.FriendlyName;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -76,7 +115,7 @@ namespace Rock.Field.Types
             if ( controls != null && controls.Count == 1 &&
                 controls[0] != null && controls[0] is TextBox )
             {
-                configurationValues["container"].Value = ( (TextBox)controls[0] ).Text;
+                configurationValues["container"].Value = ( ( TextBox ) controls[0] ).Text;
             }
 
             return configurationValues;
@@ -92,13 +131,9 @@ namespace Rock.Field.Types
             if ( controls != null && controls.Count == 1 && configurationValues != null &&
                 controls[0] != null && controls[0] is TextBox && configurationValues.ContainsKey( "container" ) )
             {
-                ( (TextBox)controls[0] ).Text = configurationValues["container"].Value;
+                ( ( TextBox ) controls[0] ).Text = configurationValues["container"].Value;
             }
         }
-
-        #endregion
-
-        #region Formatting
 
         /// <summary>
         /// Returns the field's current value(s)
@@ -110,27 +145,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            string formattedValue = string.Empty;
-
-            if ( !string.IsNullOrWhiteSpace( value ) )
-            {
-                Guid entityTypeGuid = value.AsGuid();
-                if ( entityTypeGuid != Guid.Empty )
-                {
-                    var entityType = EntityTypeCache.Get( entityTypeGuid );
-                    if ( entityType != null )
-                    {
-                        formattedValue = entityType.FriendlyName;
-                    }
-                }
-            }
-
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -197,7 +215,7 @@ namespace Rock.Field.Types
             }
         }
 
+#endif
         #endregion
-
     }
 }

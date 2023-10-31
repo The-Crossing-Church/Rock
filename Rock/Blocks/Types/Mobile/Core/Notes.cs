@@ -19,11 +19,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Rock.Attribute;
+using Rock.Communication;
 using Rock.Data;
+using Rock.Mobile;
 using Rock.Model;
 using Rock.Security;
+using Rock.Tasks;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 
@@ -62,9 +66,81 @@ namespace Rock.Blocks.Types.Mobile.Core
         Order = 2,
         FieldTypeClass = "Rock.Field.Types.ImageFieldType" )]
 
+    [BooleanField( "Use Template",
+        Description = "If enabled, notes will be displayed using the 'Notes Template', allowing you full customization of the layout.",
+        IsRequired = true,
+        DefaultBooleanValue = false,
+        Key = AttributeKey.NoteDisplayMode,
+        Order = 3 )]
+
+    [BooleanField( "Enable Group Notification",
+        Description = "If a Group is available through page context, this will send a communication to every person in a group (using the Member 'CommunicationPreference', and the 'GroupNotificationCommunicationTemplate'), when a Note is added.",
+        IsRequired = true,
+        DefaultBooleanValue = false,
+        Key = AttributeKey.EnableGroupNotification,
+        Order = 4 )]
+
+    [CommunicationTemplateField( "Group Notification Communication Template",
+        Description = "The template to use to send the communication. Note will be passed as an additional merge field.",
+        IsRequired = false,
+        Key = AttributeKey.GroupNotificationCommunicationTemplate,
+        Order = 5 )]
+
+    [BooleanField( "Use Template",
+        Description = "If enabled, notes will be displayed using the 'Notes Template', allowing you full customization of the layout.",
+        IsRequired = true,
+        DefaultBooleanValue = false,
+        Key = AttributeKey.NoteDisplayMode,
+        Order = 6 )]
+
+    [BlockTemplateField( "Notes Template",
+        Description = "The template to use when rendering the notes. Provided with a 'Notes' merge field, among some others (see documentation).",
+        TemplateBlockValueGuid = SystemGuid.DefinedValue.BLOCK_TEMPLATE_MOBILE_NOTES,
+        DefaultValue = "C9134085-D433-444D-9803-8E5CE1B053DE",
+        IsRequired = true,
+        Key = AttributeKey.NotesTemplate,
+        Order = 7 )]
+
+    [LinkedPage(
+        "Note List Page",
+        Description = "Page to link to when user taps on the 'See All' button (in template mode). Should link to a page containing a fullscreen note block.",
+        IsRequired = false,
+        Key = AttributeKey.ListPage,
+        Order = 8 )]
+
+    [BooleanField( "Show Is Alert Toggle",
+        Description = "If enabled, a person will have the option of toggling whether their note is 'Alert' or not.",
+        IsRequired = true,
+        DefaultBooleanValue = false,
+        Key = AttributeKey.ShowIsAlert,
+        Order = 9 )]
+
+    [BooleanField( "Show Is Private Toggle",
+        Description = "If enabled, a person will have the option of toggling whether their note is a 'Private' note or not.",
+        IsRequired = true,
+        DefaultBooleanValue = false,
+        Key = AttributeKey.ShowIsPrivate,
+        Order = 9 )]
+
+    [BooleanField( "Use Template",
+        Description = "If enabled, notes will be displayed using the 'Notes Template', allowing you full customization of the layout.",
+        IsRequired = true,
+        DefaultBooleanValue = false,
+        Key = AttributeKey.NoteDisplayMode,
+        Order = 10 )]
+
+    [IntegerField( "Page Load Size",
+        Description = "Determines the amount of notes to show in the initial page load. In template mode, this is the amount of notes your 'Notes' merge field will be limited to.",
+        IsRequired = true,
+        DefaultIntegerValue = 6,
+        Key = AttributeKey.PageLoadSize,
+        Order = 11 )]
+
     #endregion
 
     [ContextAware]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_CORE_NOTES_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( "5B337D89-A298-4620-A0BE-078A41BC054B" )]
     public class Notes : RockMobileBlockType
     {
         /// <summary>
@@ -86,6 +162,46 @@ namespace Rock.Blocks.Types.Mobile.Core
             /// This image is displayed next to the note if the author has no profile image.
             /// </summary>
             public const string DefaultNoteImage = "DefaultNoteImage";
+
+            /// <summary>
+            /// The mode in which we should display these notes.
+            /// </summary>
+            public const string NoteDisplayMode = "NoteDisplayMode";
+
+            /// <summary>
+            /// The mode in which we should display these notes.
+            /// </summary>
+            public const string NotesTemplate = "NoteTemplate";
+
+            /// <summary>
+            /// The mode in which we should display these notes.
+            /// </summary>
+            public const string PageLoadSize = "PageLoadSize";
+
+            /// <summary>
+            /// The mode in which we should display these notes.
+            /// </summary>
+            public const string ListPage = "DetailPage";
+
+            /// <summary>
+            /// The enable group notification attribute key.
+            /// </summary>
+            public const string EnableGroupNotification = "EnableGroupNotification";
+
+            /// <summary>
+            /// The group notification communication template attribute key.
+            /// </summary>
+            public const string GroupNotificationCommunicationTemplate = "GroupNotificationCommunicationTemplate";
+
+            /// <summary>
+            /// The show is alert attribute key. 
+            /// </summary>
+            public const string ShowIsAlert = "ShowIsAlert";
+
+            /// <summary>
+            /// The show is private attribute key.
+            /// </summary>
+            public const string ShowIsPrivate = "ShowIsPrivate";
         }
 
         /// <summary>
@@ -111,6 +227,62 @@ namespace Rock.Blocks.Types.Mobile.Core
         /// The default note image to display next to the note if the author has no profile image.
         /// </value>
         protected Guid? DefaultNoteImage => GetAttributeValue( AttributeKey.DefaultNoteImage ).AsGuidOrNull();
+
+        /// <summary>
+        /// Gets whether or not to use the template for the notes block.
+        /// </summary>
+        /// <value>
+        /// The value that indicates whether or not we should use the template.
+        /// </value>
+        protected bool UseTemplate => GetAttributeValue( AttributeKey.NoteDisplayMode ).AsBoolean();
+
+        /// <summary>
+        /// The template to use if <see cref="UseTemplate" /> is enabled.
+        /// </summary>
+        /// <value>
+        /// The XAML template to parse on the shell.
+        /// </value>
+        protected string NotesTemplate => Field.Types.BlockTemplateFieldType.GetTemplateContent( GetAttributeValue( AttributeKey.NotesTemplate ) );
+
+        /// <summary>
+        /// When in template mode, this is the amount of notes retrieved, when in List mode, this
+        /// is used to indicate the amount of notes you start with. When in list mode, this value has
+        /// a minimum of 12 (no matter what is set) on the shell.
+        /// </summary>
+        protected int PageLoadSize => GetAttributeValue( AttributeKey.PageLoadSize ).AsInteger();
+
+        /// <summary>
+        /// Gets the detail page unique identifier.
+        /// </summary>
+        /// <value>
+        /// The detail page unique identifier.
+        /// </value>
+        protected Guid? ListPageGuid => GetAttributeValue( AttributeKey.ListPage ).AsGuidOrNull();
+
+        /// <summary>
+        /// Gets a value indicating whether or not to enable group notification when a note is added.
+        /// </summary>
+        /// <value><c>true</c> if enable group notification; otherwise, <c>false</c>.</value>
+        protected bool EnableGroupNotification => GetAttributeValue( AttributeKey.EnableGroupNotification ).AsBoolean();
+
+        /// <summary>
+        /// Gets the group notification communication template.
+        /// </summary>
+        /// <value>The group notification communication template.</value>
+        protected Guid? GroupNotificationCommunicationTemplate => GetAttributeValue( AttributeKey.GroupNotificationCommunicationTemplate ).AsGuidOrNull();
+
+        /// <summary>
+        /// Gets a value indicating whether to show the is alert toggle.
+        /// </summary>
+        /// <value><c>true</c> if [show is alert]; otherwise, <c>false</c>.</value>
+        protected bool ShowIsAlert => GetAttributeValue( AttributeKey.ShowIsAlert ).AsBoolean();
+
+        /// <summary>
+        /// Gets a value indicating whether to show the is private toggle.
+        /// </summary>
+        /// <value><c>true</c> if [show is private]; otherwise, <c>false</c>.</value>
+        protected bool ShowIsPrivate => GetAttributeValue( AttributeKey.ShowIsPrivate ).AsBoolean();
+
 
         #region IRockMobileBlockType Implementation
 
@@ -169,7 +341,11 @@ namespace Rock.Blocks.Types.Mobile.Core
 
             return new
             {
-                DefaultNoteImageUrl = defaultNoteImageUrl
+                DefaultNoteImageUrl = defaultNoteImageUrl,
+                UseTemplate = UseTemplate,
+                PageLoadSize = PageLoadSize,
+                ShowIsAlert = ShowIsAlert,
+                ShowIsPrivate = ShowIsPrivate
             };
         }
 
@@ -221,7 +397,6 @@ namespace Rock.Blocks.Types.Mobile.Core
         /// <returns>The note object that the shell understands.</returns>
         private object GetNoteObject( Note note )
         {
-            var baseUrl = GlobalAttributesCache.Value( "PublicApplicationRoot" );
             var canEdit = note.IsAuthorized( Authorization.EDIT, RequestContext.CurrentPerson );
             var canReply = note.NoteType.AllowsReplies;
 
@@ -237,12 +412,18 @@ namespace Rock.Blocks.Types.Mobile.Core
                 canReply = replyDepth < note.NoteType.MaxReplyDepth.Value;
             }
 
+            string photoUrl = "";
+            if( note.CreatedByPersonAlias?.Person?.PhotoUrl != null )
+            {
+                photoUrl = MobileHelper.BuildPublicApplicationRootUrl( note.CreatedByPersonAlias.Person.PhotoUrl );
+            }
+
             return new
             {
                 note.Guid,
                 NoteTypeGuid = note.NoteType.Guid,
                 note.Text,
-                PhotoUrl = note.CreatedByPersonAlias?.Person?.PhotoId != null ? $"{baseUrl}{note.CreatedByPersonAlias.Person.PhotoUrl}" : null,
+                PhotoUrl = photoUrl,
                 Name = note.CreatedByPersonName,
                 Date = note.CreatedDateTime.HasValue ? ( DateTimeOffset? ) new DateTimeOffset( note.CreatedDateTime.Value ) : null,
                 ReplyCount = note.ChildNotes.Count( b => b.IsAuthorized( Authorization.VIEW, RequestContext.CurrentPerson ) ),
@@ -250,8 +431,56 @@ namespace Rock.Blocks.Types.Mobile.Core
                 IsPrivate = note.IsPrivateNote,
                 CanEdit = canEdit,
                 CanDelete = canEdit,
-                CanReply = canReply
+                CanReply = canReply,
             };
+        }
+
+        /// <summary>
+        /// Gets the viewable notes.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="parentNoteGuid">The parent note unique identifier.</param>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="count">The count.</param>
+        /// <returns>List&lt;Note&gt;.</returns>
+        private List<Note> GetViewableNotes( RockContext rockContext, Guid? parentNoteGuid, int startIndex, int count )
+        {
+            var noteService = new NoteService( rockContext );
+            var viewableNoteTypeIds = GetViewableNoteTypes().Select( t => t.Id ).ToList();
+
+            var entityType = EntityTypeCache.Get( ContextEntityType );
+            var entity = entityType != null ? RequestContext.GetContextEntity( entityType.GetEntityType() ) : null;
+            if ( entity == null )
+            {
+                // Indicate to caller "not found" error.
+                return null;
+            }
+
+            var notesQuery = noteService.Queryable()
+                .AsNoTracking()
+                .Include( a => a.CreatedByPersonAlias.Person )
+                .Include( a => a.ParentNote )
+                .Include( a => a.ChildNotes )
+                .Where( a => viewableNoteTypeIds.Contains( a.NoteTypeId ) )
+                .Where( a => a.EntityId == entity.Id );
+
+            if ( parentNoteGuid.HasValue )
+            {
+                notesQuery = notesQuery.Where( a => a.ParentNote.Guid == parentNoteGuid.Value );
+            }
+            else
+            {
+                notesQuery = notesQuery.Where( a => !a.ParentNoteId.HasValue );
+            }
+
+            return notesQuery
+                .OrderByDescending( a => a.IsAlert == true )
+                .ThenByDescending( a => a.CreatedDateTime )
+                .ToList()
+                .Where( a => a.IsAuthorized( Authorization.VIEW, RequestContext.CurrentPerson ) )
+                .Skip( startIndex )
+                .Take( count )
+                .ToList();
         }
 
         /// <summary>
@@ -265,49 +494,116 @@ namespace Rock.Blocks.Types.Mobile.Core
         {
             using ( var rockContext = new RockContext() )
             {
-                var noteService = new NoteService( rockContext );
-                var viewableNoteTypeIds = GetViewableNoteTypes().Select( t => t.Id ).ToList();
+                var viewableNotes = GetViewableNotes( rockContext, parentNoteGuid, startIndex, count );
 
-                var entityType = EntityTypeCache.Get( ContextEntityType );
-                var entity = entityType != null ? RequestContext.GetContextEntity( entityType.GetEntityType() ) : null;
-                if ( entity == null )
+                if ( viewableNotes == null )
                 {
-                    // Indicate to caller "not found" error.
                     return null;
                 }
 
-                var notesQuery = noteService.Queryable()
-                    .AsNoTracking()
-                    .Include( a => a.CreatedByPersonAlias.Person )
-                    .Include( a => a.ParentNote )
-                    .Include( a => a.ChildNotes )
-                    .Where( a => viewableNoteTypeIds.Contains( a.NoteTypeId ) )
-                    .Where( a => a.EntityId == entity.Id );
-
-                if ( parentNoteGuid.HasValue )
-                {
-                    notesQuery = notesQuery.Where( a => a.ParentNote.Guid == parentNoteGuid.Value );
-                }
-                else
-                {
-                    notesQuery = notesQuery.Where( a => !a.ParentNoteId.HasValue );
-                }
-
-                var viewableNotes = notesQuery
-                    .OrderByDescending( a => a.IsAlert == true )
-                    .ThenByDescending( a => a.CreatedDateTime )
-                    .ToList()
-                    .Where( a => a.IsAuthorized( Authorization.VIEW, RequestContext.CurrentPerson ) )
-                    .Skip( startIndex )
-                    .Take( count )
-                    .ToList();
-
                 var noteData = viewableNotes
+                    .OrderByDescending( n => n.CreatedDateTime )
                     .Select( a => GetNoteObject( a ) )
                     .ToList();
 
                 return noteData;
             }
+        }
+
+        /// <summary>
+        /// Sends the note added communication to group.
+        /// </summary>
+        /// <param name="group">The group.</param>
+        /// <param name="noteText">The note text.</param>
+        private void SendNoteAddedCommunicationToGroup( Group group, string noteText )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var communicationService = new CommunicationService( rockContext );
+                var groupMemberService = new GroupMemberService( rockContext );
+                var communicationTemplateService = new CommunicationTemplateService( rockContext );
+
+                // Create a new communication.
+                var communication = new Rock.Model.Communication();
+                communication.Status = CommunicationStatus.Approved;
+                communication.ReviewedDateTime = RockDateTime.Now;
+                communication.ReviewerPersonAliasId = RequestContext.CurrentPerson.PrimaryAliasId;
+                communication.SenderPersonAliasId = RequestContext.CurrentPerson.PrimaryAliasId;
+                communication.CommunicationType = CommunicationType.RecipientPreference;
+                communication.IsBulkCommunication = true;
+
+                // Setting the communication template that was provided in the block configuration.
+                var communicationTemplate = communicationTemplateService.Get( GroupNotificationCommunicationTemplate.Value );
+                communication.CommunicationTemplateId = communicationTemplate.Id;
+
+                // Copy all communication details from the Template to CommunicationData.
+                CommunicationDetails.Copy( communicationTemplate, communication );
+
+                communicationService.Add( communication );
+                rockContext.SaveChanges();
+
+                // The group members are the message recipients
+                var communicationRecipientBags = new GroupMemberService( rockContext )
+                    .Queryable()
+                    .AsNoTracking()
+                    .Where( m =>
+                        m.GroupId == group.Id &&
+                        m.GroupMemberStatus == GroupMemberStatus.Active &&
+                        m.Person != null
+                     )
+                    .Select( m => new
+                    {
+                        m.Person,
+                        GroupCommunicationPreference = m.CommunicationPreference,
+                        PersonCommunicationPreference = m.Person.CommunicationPreference
+                    } )
+                    .Distinct()
+                    .ToList();
+
+                // Let's go through and create our actual Communication Recipients from that list.
+                foreach ( var recipientBag in communicationRecipientBags )
+                {
+                    var emailMediumEntityTypeId = EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_EMAIL.AsGuid() ).Id;
+                    var smsMediumEntityTypeId = EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS.AsGuid() ).Id;
+                    var pushMediumEntityTypeId = EntityTypeCache.Get( SystemGuid.EntityType.COMMUNICATION_MEDIUM_PUSH_NOTIFICATION.AsGuid() ).Id;
+
+                    var mediumTypeId = Rock.Model.Communication.DetermineMediumEntityTypeId(
+                        emailMediumEntityTypeId,
+                        smsMediumEntityTypeId,
+                        pushMediumEntityTypeId,
+                        recipientBag.GroupCommunicationPreference,
+                        recipientBag.PersonCommunicationPreference );
+
+                    var recipient = new CommunicationRecipient
+                    {
+                        PersonAliasId = recipientBag.Person.PrimaryAliasId,
+                        MediumEntityTypeId = mediumTypeId,
+                        AdditionalMergeValues = new Dictionary<string, object>
+                        {
+                            ["Note"] = noteText
+                        }
+                    };
+
+                    // Check for duplicate recipients before adding.
+                    if ( !communication.Recipients.Any( r => r.PersonAliasId == recipientBag.Person.PrimaryAliasId ) )
+                    {
+                        communication.Recipients.Add( recipient );
+                    }
+                }
+
+                rockContext.SaveChanges();
+
+                // Send off the communication.
+                Task.Run( () =>
+                {
+                    var transactionMsg = new ProcessSendCommunication.Message()
+                    {
+                        CommunicationId = communication.Id
+                    };
+                    transactionMsg.Send();
+                } );
+            }
+
         }
 
         #region Action Methods
@@ -363,6 +659,41 @@ namespace Rock.Blocks.Types.Mobile.Core
         }
 
         /// <summary>
+        /// Gets a singular note.
+        /// </summary>
+        /// <param name="noteGuid">The note unique identifier.</param>
+        /// <returns>BlockActionResult.</returns>
+        [BlockAction]
+        public BlockActionResult GetNote( Guid noteGuid )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+
+                if ( noteGuid == null )
+                {
+                    return ActionBadRequest();
+                }
+
+                var note = new NoteService( rockContext ).Get( noteGuid );
+
+                if ( note == null )
+                {
+                    return ActionNotFound();
+                }
+
+                return ActionOk( new Rock.Common.Mobile.Blocks.Core.Notes.Note
+                {
+                    Guid = note.Guid,
+                    Text = note.Text,
+                    NoteTypeName = note.NoteType.Name,
+                    NoteTypeGuid = note.NoteType.Guid,
+                    IsAlert = note.IsAlert ?? false,
+                    IsPrivate = note.IsPrivateNote
+                } );
+            }
+        }
+
+        /// <summary>
         /// Saves the note.
         /// </summary>
         /// <param name="noteGuid">The note unique identifier.</param>
@@ -396,7 +727,9 @@ namespace Rock.Blocks.Types.Mobile.Core
 
                 var parentNote = parentNoteGuid.HasValue ? noteService.Get( parentNoteGuid.Value ) : null;
 
-                if ( !noteGuid.HasValue )
+                // If a note guid was not supplied, we're creating a new one.
+                var newNote = !noteGuid.HasValue;
+                if ( newNote )
                 {
                     if ( !noteType.IsAuthorized( Authorization.EDIT, RequestContext.CurrentPerson ) )
                     {
@@ -410,6 +743,7 @@ namespace Rock.Blocks.Types.Mobile.Core
 
                     noteService.Add( note );
                 }
+                // Otherwise, retrieve the existing note for modification.
                 else
                 {
                     note = noteService.Get( noteGuid.Value );
@@ -476,6 +810,20 @@ namespace Rock.Blocks.Types.Mobile.Core
 
                 rockContext.SaveChanges();
 
+                // If we created a new note (and the feature is enabled), we want to send a communication
+                // to the Group provided through context, if there is one. 
+                if ( newNote && EnableGroupNotification && GroupNotificationCommunicationTemplate.HasValue )
+                {
+                    // If there is a Group context, send the communication. Even in the cases where the note entity type is Group.
+                    if ( RequestContext.ContextEntities.TryGetValue( typeof( Group ), out var contextGroupEntity ) )
+                    {
+                        Task.Run( () =>
+                        {
+                            SendNoteAddedCommunicationToGroup( contextGroupEntity.Value as Group, text );
+                        } );
+                    }
+                }
+
                 return ActionOk( GetNoteObject( note ) );
             }
         }
@@ -515,6 +863,44 @@ namespace Rock.Blocks.Types.Mobile.Core
                 {
                     return ActionForbidden( errorMessage );
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets the notes template.
+        /// </summary>
+        /// <param name="parentNoteGuid">The parent note unique identifier.</param>
+        /// <returns>BlockActionResult.</returns>
+        [BlockAction]
+        public BlockActionResult GetNotesTemplate( Guid? parentNoteGuid )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var notes = GetEntityNotes( parentNoteGuid, 0, PageLoadSize );
+
+                if ( notes == null )
+                {
+                    return ActionNotFound();
+                }
+
+                var mergeFields = RequestContext.GetCommonMergeFields();
+                mergeFields.AddOrReplace( "Notes", notes );
+                mergeFields.AddOrReplace( "ListPage", ListPageGuid );
+                var content = NotesTemplate.ResolveMergeFields( mergeFields );
+
+                var editableNoteTypes = GetEditableNoteTypes()
+                    .Select( a => new
+                    {
+                        a.Guid,
+                        a.Name,
+                        a.UserSelectable
+                    } );
+
+                return ActionOk( new
+                {
+                    Content = content,
+                    EditableNoteTypes = editableNoteTypes,
+                } );
             }
         }
 

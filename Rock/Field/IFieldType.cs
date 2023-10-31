@@ -54,7 +54,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.4" )]
         Dictionary<string, string> GetPublicConfigurationValues( Dictionary<string, string> privateConfigurationValues, ConfigurationValueUsage usage, string internalValue );
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Rock.Field
         /// </remarks>
         /// <param name="privateConfigurationValues">The private configuration values that are currently selected.</param>
         /// <returns>A <see cref="Dictionary{TKey, TValue}"/> of custom key and value pairs.</returns>
-        [RockInternal]
+        [RockInternal( "1.13.4" )]
         Dictionary<string, string> GetPublicEditConfigurationProperties( Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace Rock.Field
         /// </remarks>
         /// <param name="publicConfigurationValues">The public configuration values.</param>
         /// <returns>A <see cref="Dictionary{TKey, TValue}"/> of options that are safe to store to the database.</returns>
-        [RockInternal]
+        [RockInternal( "1.13.4" )]
         Dictionary<string, string> GetPrivateConfigurationValues( Dictionary<string, string> publicConfigurationValues );
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetCondensedTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetCondensedHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -215,7 +215,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetPublicValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -324,7 +324,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetPublicEditValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -342,7 +342,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetPrivateEditValue( string publicValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -415,7 +415,7 @@ namespace Rock.Field
         /// <param name="privateValue">The private (database) value.</param>
         /// <param name="privateConfigurationValues">The private (database) configuration values.</param>
         /// <returns>A <see cref="ComparisonValue"/> that has been parsed and sanitized.</returns>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         ComparisonValue GetPublicFilterValue( string privateValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -433,7 +433,7 @@ namespace Rock.Field
         ///         release and should therefore not be directly used in any plug-ins.
         ///     </para>
         /// </remarks>
-        [RockInternal]
+        [RockInternal( "1.13.2" )]
         string GetPrivateFilterValue( ComparisonValue publicValue, Dictionary<string, string> privateConfigurationValues );
 
         /// <summary>
@@ -591,6 +591,63 @@ namespace Rock.Field
         /// Occurs when a qualifier is updated.
         /// </summary>
         event EventHandler QualifierUpdated;
+
+        #endregion
+
+        #region Persistence
+
+        /// <summary>
+        /// Determines whether this field type supports persisted values when
+        /// using the given configuration values.
+        /// </summary>
+        /// <param name="privateConfigurationValues">The private configuration values that describe the field type settings.</param>
+        /// <returns><c>true</c> if persisted values are supported; otherwise, <c>false</c>.</returns>
+        bool IsPersistedValueSupported( Dictionary<string, string> privateConfigurationValues );
+
+        /// <summary>
+        /// Determines whether the persisted values are considered volatile and
+        /// might change from outside influence. Volatile field types will have
+        /// their persisted values updated periodically by a job.
+        /// </summary>
+        /// <remarks>
+        /// An example of a volatile field type would be one that gets its
+        /// possible values from a SQL query. Outside influence might cause
+        /// the persisted values to change even if the raw value stays the same.
+        /// </remarks>
+        /// <param name="privateConfigurationValues">The private configuration values that describe the field type settings.</param>
+        /// <returns><c>true</c> if the persisted values are considered volatile; otherwise, <c>false</c>.</returns>
+        bool IsPersistedValueVolatile( Dictionary<string, string> privateConfigurationValues );
+
+        /// <summary>
+        /// Gets the persisted value placeholder text when persisted values are
+        /// not supported by the field type. This will be used for all persisted
+        /// value properties so that when they are displayed it is apparent to
+        /// the individual that they are not seeing a real value.
+        /// </summary>
+        /// <param name="privateConfigurationValues">The private configuration values that describe the field type settings.</param>
+        /// <returns>The <see cref="string"/> to use as a placeholder.</returns>
+        string GetPersistedValuePlaceholder( Dictionary<string, string> privateConfigurationValues );
+
+        /// <summary>
+        /// Determines whether any persisted values for this field type should
+        /// be invalidated and marked dirty due to the change in configuration.
+        /// </summary>
+        /// <param name="oldPrivateConfigurationValues">The old private configuration values before the change.</param>
+        /// <param name="newPrivateConfigurationValues">The new private configuration values after the change.</param>
+        /// <returns><c>true</c> if the change in configuration should cause all persisted values to be recalculated; otherwise, <c>false</c>.</returns>
+        bool IsPersistedValueInvalidated( Dictionary<string, string> oldPrivateConfigurationValues, Dictionary<string, string> newPrivateConfigurationValues );
+
+        /// <summary>
+        /// Gets all the persisted values for the private database value. This will be
+        /// called when the raw value changes and new persisted values need to be
+        /// calculated. Subclasses that need to hit the database should override this
+        /// method so they can do a single query instead of 4 separate queries.
+        /// </summary>
+        /// <param name="privateValue">The raw value.</param>
+        /// <param name="privateConfigurationValues">The private configuration values.</param>
+        /// <param name="cache">An extremely short term cache that can be used to store and retrieve data instead of hitting the database. This value may be null if no cache should be used.</param>
+        /// <returns>An instance of <see cref="PersistedValues"/> that contains all the values to be persisted.</returns>
+        PersistedValues GetPersistedValues( string privateValue, Dictionary<string, string> privateConfigurationValues, IDictionary<string, object> cache );
 
         #endregion
     }

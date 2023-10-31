@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -81,6 +82,12 @@ namespace Rock.Model
                 return false;
             }
 
+            if ( new Service<GroupType>( Context ).Queryable().Any( a => a.AttendanceReminderSystemCommunicationId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", SystemCommunication.FriendlyTypeName, GroupType.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<GroupType>( Context ).Queryable().Any( a => a.ScheduleConfirmationSystemCommunicationId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", SystemCommunication.FriendlyTypeName, GroupType.FriendlyTypeName );
@@ -118,7 +125,7 @@ namespace Rock.Model
     /// SystemCommunication View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( SystemCommunication ) )]
-    public partial class SystemCommunicationViewModelHelper : ViewModelHelper<SystemCommunication, Rock.ViewModel.SystemCommunicationViewModel>
+    public partial class SystemCommunicationViewModelHelper : ViewModelHelper<SystemCommunication, SystemCommunicationBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -127,17 +134,16 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.SystemCommunicationViewModel CreateViewModel( SystemCommunication model, Person currentPerson = null, bool loadAttributes = true )
+        public override SystemCommunicationBag CreateViewModel( SystemCommunication model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.SystemCommunicationViewModel
+            var viewModel = new SystemCommunicationBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
                 Bcc = model.Bcc,
                 Body = model.Body,
                 CategoryId = model.CategoryId,
@@ -155,7 +161,7 @@ namespace Rock.Model
                 PushOpenMessage = model.PushOpenMessage,
                 PushSound = model.PushSound,
                 PushTitle = model.PushTitle,
-                SMSFromDefinedValueId = model.SMSFromDefinedValueId,
+                SmsFromSystemPhoneNumberId = model.SmsFromSystemPhoneNumberId,
                 SMSMessage = model.SMSMessage,
                 Subject = model.Subject,
                 Title = model.Title,
@@ -248,7 +254,10 @@ namespace Rock.Model
             target.PushOpenMessage = source.PushOpenMessage;
             target.PushSound = source.PushSound;
             target.PushTitle = source.PushTitle;
+            #pragma warning disable 612, 618
             target.SMSFromDefinedValueId = source.SMSFromDefinedValueId;
+            #pragma warning restore 612, 618
+            target.SmsFromSystemPhoneNumberId = source.SmsFromSystemPhoneNumberId;
             target.SMSMessage = source.SMSMessage;
             target.Subject = source.Subject;
             target.Title = source.Title;
@@ -268,7 +277,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.SystemCommunicationViewModel ToViewModel( this SystemCommunication model, Person currentPerson = null, bool loadAttributes = false )
+        public static SystemCommunicationBag ToViewModel( this SystemCommunication model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new SystemCommunicationViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

@@ -59,6 +59,7 @@ namespace RockWeb.Blocks.Reporting
 
     [InteractionChannelsField( "Interaction Channels", "Select interaction channel to limit the display. No selection will show all.", false, "", "", order: 3 )]
     [ContextAware( typeof( Person ) )]
+    [Rock.SystemGuid.BlockTypeGuid( "FBC2066B-8E7C-43CB-AFD2-FA9408F6699D" )]
     public partial class InteractionChannelList : Rock.Web.UI.RockBlock
     {
         #region Fields
@@ -218,7 +219,7 @@ namespace RockWeb.Blocks.Reporting
 
                 if ( LavaService.RockLiquidIsEnabled )
                 {
-                    defaultTemplate = Template.Parse( GetAttributeValue( "DefaultTemplate" ) );
+                    defaultTemplate = LavaHelper.CreateDotLiquidTemplate( GetAttributeValue( "DefaultTemplate" ) );
 
                     LavaHelper.VerifyParseTemplateForCurrentEngine( GetAttributeValue( "DefaultTemplate" ) );
                 }

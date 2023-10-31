@@ -59,7 +59,7 @@ namespace Rock.Data
         /// number so that individuals cannot attempt to guess the next sequential
         /// identifier numbers.
         /// </summary>
-        /// <value>The hashed identifier key.</value>
+        /// <value>The hashed identifier key or an empty string if it could not be determined.</value>
         [DataMember]
         [NotMapped]
         public string IdKey
@@ -68,7 +68,7 @@ namespace Rock.Data
             {
                 try
                 {
-                    return IdHasher.Instance.GetHash( Id );
+                    return Id != 0 ? IdHasher.Instance.GetHash( Id ) : string.Empty;
                 }
                 catch
                 {
@@ -99,7 +99,10 @@ namespace Rock.Data
         public Guid Guid
         {
             get { return _guid; }
-            set { _guid = value; }
+            set
+            {
+                _guid = value;
+            }
         }
         private Guid _guid = Guid.NewGuid();
 
@@ -140,6 +143,8 @@ namespace Rock.Data
         #endregion
 
         #region Virtual Properties
+        
+        private int? _typeId = null;
 
         /// <summary>
         /// Gets the <see cref="Rock.Model.EntityType"/> Id for the Entity object type in Rock. If an <see cref="Rock.Model.EntityType"/> is not found
@@ -153,10 +158,18 @@ namespace Rock.Data
         {
             get
             {
-                // Read should never return null since it will create entity type if it doesn't exist
-                return EntityTypeCache.Get( typeof( T ) ).Id;
+                if ( _typeId == null )
+                {
+                    // Once this instance is created, there is no need to set the _typeId more than once.
+                    // Also, read should never return null since it will create entity type if it doesn't exist.
+                    _typeId = EntityTypeCache.Get( typeof( T ) ).Id;
+                }
+                
+                return _typeId.Value;
             }
         }
+
+        private string _typeName = null;
 
         /// <summary>
         /// Gets the unique type name of the entity.  Typically this is the qualified name of the class
@@ -170,7 +183,14 @@ namespace Rock.Data
         {
             get
             {
-                return typeof( T ).FullName;
+                if ( _typeName.IsNullOrWhiteSpace() )
+                {
+                    // Once this instance is created, there is no need to set the _typeName more than once.
+                    // Also, read should never return null since it will create entity type if it doesn't exist.
+                    _typeName = typeof( T ).FullName;
+                }
+
+                return _typeName;
             }
         }
 
@@ -452,7 +472,7 @@ namespace Rock.Data
 
                     if ( propValue is Guid )
                     {
-                        return ( (Guid)propValue ).ToString();
+                        return ( ( Guid ) propValue ).ToString();
                     }
                     else
                     {
@@ -555,7 +575,7 @@ namespace Rock.Data
                 }
                 transaction.InitiatorPersonAliasId = initiatorPersonAliasId;
 
-                Rock.Transactions.RockQueue.TransactionQueue.Enqueue( transaction );
+                transaction.Enqueue();
             }
         }
 
@@ -590,7 +610,7 @@ namespace Rock.Data
                 }
                 transaction.InitiatorPersonAliasId = initiatorPersonAliasId;
 
-                Rock.Transactions.RockQueue.TransactionQueue.Enqueue( transaction );
+                transaction.Enqueue();
             }
         }
 

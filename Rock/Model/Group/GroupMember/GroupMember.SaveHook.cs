@@ -24,6 +24,7 @@ using Humanizer;
 
 using Rock.Data;
 using Rock.Tasks;
+using Rock.Transactions;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -45,15 +46,25 @@ namespace Rock.Model
             {
                 var rockContext = ( RockContext ) this.RockContext;
                 string errorMessage;
-                if ( State != EntityContextState.Deleted
+                if ( this.State != EntityContextState.Deleted
                      && Entity.IsArchived == false
                      && Entity.GroupMemberStatus != GroupMemberStatus.Inactive )
                 {
-                    if ( !Entity.ValidateGroupMembership( rockContext, out errorMessage ) )
+                    // Bypass Group Member requirement check when group member is unarchived instead we will show 'does not meet' symbol in group member list.
+                    var previousIsArchived = this.State == EntityContextState.Modified && OriginalValues[nameof( GroupMember.IsArchived )].ToStringSafe().AsBoolean();
+                    if ( !previousIsArchived )
                     {
-                        var ex = new GroupMemberValidationException( errorMessage );
-                        ExceptionLogService.LogException( ex );
-                        throw ex;
+                        if ( !Entity.ValidateGroupMembership( rockContext, out errorMessage ) )
+                        {
+                            var ex = new GroupMemberValidationException( errorMessage );
+                            /*
+                                3/14/2023 - CWR
+
+                            We should not log exceptions that are thrown here, just allow the exception to return to the calling block.
+                            Reason: Neither a person using Rock to add or change a group member, nor a Rock admin would be helped by a log exception here.
+                           */
+                            throw ex;
+                        }
                     }
                 }
 
@@ -134,6 +145,7 @@ namespace Rock.Model
 
                 if ( group != null )
                 {
+                    this.Entity.GroupTypeId = group.GroupTypeId;
                     string oldGroupName = group.Name;
                     if ( oldGroupId.HasValue && oldGroupId.Value != group.Id )
                     {
@@ -195,12 +207,12 @@ namespace Rock.Model
                     {
                         // Updated same person in group
                         var historyItem = HistoryChanges.First( h => h.PersonId == newPersonId.Value && h.GroupId == newGroupId.Value );
-                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Role", OriginalValues["GroupRoleId"].ToStringSafe().AsIntegerOrNull(), Entity.GroupRole, Entity.GroupRoleId, rockContext );
-                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Note", OriginalValues["Note"].ToStringSafe(), Entity.Note );
-                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Status", OriginalValues["GroupMemberStatus"].ToStringSafe().ConvertToEnum<GroupMemberStatus>(), Entity.GroupMemberStatus );
-                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Communication Preference", OriginalValues["CommunicationPreference"].ToStringSafe().ConvertToEnum<CommunicationType>(), Entity.CommunicationPreference );
-                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Guest Count", OriginalValues["GuestCount"].ToStringSafe().AsIntegerOrNull(), Entity.GuestCount );
-                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Archived", OriginalValues["IsArchived"].ToStringSafe().AsBoolean(), Entity.IsArchived );
+                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Role", OriginalValues[nameof( Entity.GroupRoleId )].ToStringSafe().AsIntegerOrNull(), Entity.GroupRole, Entity.GroupRoleId, rockContext );
+                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Note", OriginalValues[nameof( Entity.Note )].ToStringSafe(), Entity.Note );
+                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Status", OriginalValues[nameof( Entity.GroupMemberStatus )].ToStringSafe().ConvertToEnum<GroupMemberStatus>(), Entity.GroupMemberStatus );
+                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Communication Preference", OriginalValues[nameof( Entity.CommunicationPreference )].ToStringSafe().ConvertToEnum<CommunicationType>(), Entity.CommunicationPreference );
+                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Guest Count", OriginalValues[nameof( Entity.GuestCount )].ToStringSafe().AsIntegerOrNull(), Entity.GuestCount );
+                        History.EvaluateChange( historyItem.PersonHistoryChangeList, $"{historyItem.Caption} Archived", OriginalValues[nameof( Entity.IsArchived )].ToStringSafe().AsBoolean(), Entity.IsArchived );
 
                         // If the groupmember was Archived, make sure it is the first GroupMember History change (since they get summarized when doing a HistoryLog and Timeline
                         bool origIsArchived = OriginalValues[nameof( GroupMember.IsArchived )].ToStringSafe().AsBoolean();
@@ -238,19 +250,6 @@ namespace Rock.Model
                         var deletedMemberPerson = Entity.Person ?? new PersonService( rockContext ).Get( Entity.PersonId );
 
                         historyItem.GroupMemberHistoryChangeList.AddChange( History.HistoryVerb.RemovedFromGroup, History.HistoryChangeType.Record, $"{deletedMemberPerson?.FullName}" ).SetCaption( $"{deletedMemberPerson?.FullName}" );
-                    }
-
-                    // process universal search indexing if required
-                    var groupType = GroupTypeCache.Get( group.GroupTypeId );
-                    if ( groupType != null && groupType.IsIndexEnabled )
-                    {
-                        var processEntityTypeIndexMsg = new ProcessEntityTypeIndex.Message
-                        {
-                            EntityTypeId = groupType.Id,
-                            EntityId = group.Id
-                        };
-
-                        processEntityTypeIndexMsg.Send();
                     }
                 }
 
@@ -361,7 +360,6 @@ namespace Rock.Model
                         PersonService.UpdatePrimaryFamily( Entity.PersonId, rockContext );
                         PersonService.UpdateGivingLeaderId( Entity.PersonId, rockContext );
 
-
                         GroupService.UpdateGroupSalutations( Entity.GroupId, rockContext );
 
                         if ( _preSaveChangesOldGroupId.HasValue && _preSaveChangesOldGroupId.Value != Entity.GroupId )
@@ -403,6 +401,15 @@ namespace Rock.Model
                             }
                         }
                     }
+                }
+
+                // process universal search indexing if required
+                var groupType = GroupTypeCache.Get( this.Entity.GroupTypeId );
+                if ( groupType != null && groupType.IsIndexEnabled && this.Entity.Group.IsActive )
+                {
+                    var GroupEntityTypeId = EntityTypeCache.GetId( Rock.SystemGuid.EntityType.GROUP );
+                    var groupIndexTransaction = new IndexEntityTransaction( new EntityIndexInfo() { EntityTypeId = GroupEntityTypeId.Value, EntityId = this.Entity.GroupId } );
+                    groupIndexTransaction.Enqueue();
                 }
 
                 SendUpdateGroupMemberMessage();

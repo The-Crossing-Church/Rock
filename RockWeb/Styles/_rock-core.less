@@ -6,8 +6,11 @@
   4. Bootstrap Overrides - When Bootstrap gets it wrong, we make it right
   5. ASP.Net Overrides - Yep they get it wrong too sometimes
 */
+@color-base-primary: red(@brand-primary), green(@brand-primary), blue(@brand-primary);
 
 :root {
+  --color-primary: @brand-primary;
+  --color-base-primary: @color-base-primary;
   --focus-state-border: 1px solid @input-border-focus;
   --focus-state-border-color: @input-border-focus;
   --focus-state-shadow: @input-focus-box-shadow;
@@ -43,6 +46,8 @@
 @import "_dashboard.less";
 @import "_grid.less";
 
+@import "_rock-obsidian.less";
+
 @import "_blocks-cms.less";
 @import "_blocks-connections.less";
 @import "_blocks-security.less";
@@ -67,6 +72,9 @@
 
 @import "./Bootstrap/mixins.less";
 
+.imports(true) { @import "_legacy-badges.less"; }
+.imports(false) {  }
+.imports(@enable-legacy-badges);
 
 // 2. HTML Overrides
 //--------------------------------
@@ -177,6 +185,7 @@ a.warning {
 
 .dropdown-menu {
   .box-shadow(@shadow-overlay);
+  max-height: 85vh;
   overflow-y: auto;
 
   &.datepicker-dropdown {
@@ -191,25 +200,27 @@ a.warning {
     left: auto;
   }
 
-  .dropdown-item-danger {
-    color: @brand-danger;
-    &:hover {
-      color: #fff;
-      background-color: @brand-danger;
-    }
-  }
-
-  .dropdown-item.btn-link {
+  .btn-link {
     width: 100%;
-    padding: 3px 20px;
+    padding: @dropdown-item-padding-y @dropdown-item-padding-x;
+    line-height: @line-height-base;
     color: @dropdown-link-color;
     text-align: left;
+    border: 0;
 
     &:hover,
     &:focus {
       color: @dropdown-link-hover-color;
       text-decoration: none;
       background-color: @dropdown-link-hover-bg;
+    }
+  }
+
+  .dropdown-item-danger {
+    color: @brand-danger;
+    &:hover {
+      color: #fff;
+      background-color: @brand-danger;
     }
   }
 }
@@ -539,12 +550,41 @@ th[align="right"] {
     }
   }
 
+  .picker-select-none {
+    margin: 1px 0 0 2px;
+  }
+
   .nav-pills {
     margin: 6px 8px;
 
     > li {
       margin-top: 6px;
       margin-bottom: 6px;
+    }
+  }
+
+  .slidingdaterange-select, 
+  .slidingdaterange-number, 
+  .slidingdaterange-daterange .input-group {
+    margin-bottom: 0;
+  }
+
+  &.panel-toolbar-right {
+    justify-content: flex-end;
+    gap: 4px 30px;
+  }
+}
+
+.panel-toolbar-border {
+  border-bottom: 1px solid #dbdbdb;
+
+  .btn {
+    box-shadow: none;
+    border: 0;
+    background: transparent;
+
+    i {
+      font-size: 75%;
     }
   }
 }
@@ -596,6 +636,10 @@ th[align="right"] {
   .panel-variant(@panel-border; @panel-heading-text-color; @panel-heading-bg; @panel-heading-border;);
   background-color: @white;
 
+  .panel-title i {
+    display: none;
+  }
+
   .panel-heading {
     display: flex;
     align-items: center;
@@ -609,38 +653,57 @@ th[align="right"] {
   }
 
   .panel-body {
+    padding: 13px 18px 15px;
 
-    .form-group.static-control {
-      margin-bottom: 2px;
-      .clearfix();
+    .form-group {
+      &.static-control {
+        line-height: 1.25;
+        margin-bottom: 16px;
 
-      label {
-        float: left;
-        width: 40%;
-        padding-right: 12px;
-        text-align: right;
-        font-size: @font-size-base;
-        line-height: @line-height-base;
-      }
+        .control-wrapper {
+          .form-control-static {
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            line-height: 1.5;
+            // force long words to wrap
+            overflow-wrap: break-word;
 
-      .form-control-static {
-        float: left;
-        width: 60%;
-        padding-top: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
+            // force link attributes to clamp to one line with ellipsis without using block
+            > a {
+              display: inline-block;
+              max-width: 100%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+        }
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        label {
+          margin-bottom: 3px;
+        }
+
       }
     }
 
     h4 {
-      font-size: @font-size-base;
+      padding: 8px 18px;
+      margin: -13px -18px 12px;
+      font-size: @font-size-sm;
       font-weight: @font-weight-semibold;
+      color: @gray-600;
+      background: @gray-200;
     }
 
-    hr {
-      margin-top: @padding-base-vertical;
-      margin-bottom: (@padding-base-vertical * 2);
+    .form-group + h4 {
+      margin-top: 24px;
     }
+
     // styles for matrix attributes
     .form-group.static-control.matrix-attribute label {
       width: 100%;
@@ -654,6 +717,10 @@ th[align="right"] {
     i.fa.fa-bars {
       cursor: pointer;
     }
+  }
+
+  .attribute-values + .attribute-values {
+    margin-top: 24px;
   }
 }
 
@@ -713,6 +780,75 @@ th[align="right"] {
 
   .panel-sidebar {
     border-right: 1px solid @panel-border;
+  }
+}
+
+.panel-waterfall {
+  .panel-variant(@panel-border; @panel-heading-text-color; transparent; transparent;);
+  box-shadow: none !important;
+  overflow: hidden;
+
+  .panel-heading {
+    padding-bottom: 8px;
+
+    + .panel-body {
+      border-top: 1px solid @panel-border;
+    }
+  }
+
+  .panel-body {
+    padding: 0 @panel-body-padding;
+
+    > .row {
+      display: flex;
+      flex-wrap: wrap;
+      // Add right border to all but last column
+      > [class*="col-"] {
+        padding-top: @panel-body-padding;
+        padding-bottom: @panel-body-padding;
+        &:not(:last-child),
+        &.show-divider {
+          border-bottom: 1px solid @panel-border;
+
+          @media (min-width: @screen-md-min) {
+            border-bottom-width: 0;
+            border-right: 1px solid @panel-border;
+          }
+        }
+      }
+    }
+  }
+
+  .panel-footer {
+    padding: 0;
+  }
+}
+
+.panel-body-columns {
+  padding: 0;
+  margin: -@panel-body-padding;
+
+  > [class*="col-"] {
+    padding: @panel-body-padding;
+  }
+
+  .sidebar {
+    background-color: @panel-drawer-bg;
+    border-bottom: 1px solid @panel-border;
+
+    &:last-child {
+      border-top: 1px solid @panel-border;
+    }
+
+    @media (min-width: @screen-md-min) {
+      border-bottom: 0;
+      border-right: 1px solid @panel-border;
+
+      &:last-child {
+        border-top: 0;
+        border-left: 1px solid @panel-border;
+      }
+    }
   }
 }
 
@@ -782,7 +918,17 @@ th[align="right"] {
   }
 }
 
+.panel-sub-header {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  padding: 4px 24px;
+  border-bottom: 1px solid @panel-border;
+  background-color: @panel-badges-bg;
+}
+
 .panel-badges {
+  --badge-size: 24px;
   display: -ms-flexbox;
   display: flex;
   -ms-flex-align: center;
@@ -800,10 +946,6 @@ th[align="right"] {
 
   .badge {
     background-color: inherit;
-  }
-
-  .badge-icon {
-    font-size: 20px;
   }
 }
 
@@ -858,47 +1000,66 @@ th[align="right"] {
 .btn-authentication {
   width: 100%;
   margin-bottom: 8px;
-
-  .button-variant(@btn-default-color; @btn-default-bg; @btn-default-border);
-
-  &:hover {
-    background-color: darken(@btn-default-bg, 10%);
-  }
+  color: @btn-default-color;
+  background-color: @btn-default-bg;
+  border-color: @btn-default-border;
 
   &.facebook,
   &.google,
   &.twitter {
-    color: #fff;
+    background-color: var(--btn-bg, @btn-default-bg);
+    border-color: var(--btn-bg, @btn-default-border);
 
     &::before {
       margin-right: 12px;
       font-family: "@{fa-font-face} Brands";
       font-weight: 400;
+      content: var(--social-icon);
+      flex: 0 0 1.25em;
     }
   }
 
   &.facebook {
-    background-color: @brand-facebook;
-
-    &::before {
-      content: @fa-var-facebook;
-    }
+    color: #fff;
+    --btn-bg: @brand-facebook;
+    --btn-hover-bg: darken(@brand-facebook, 10%);
+    --social-icon: @fa-var-facebook-f;
   }
 
   &.google {
-    background-color: @brand-googleplus;
-
-    &::before {
-      content: @fa-var-google;
+    color: @btn-default-color;
+    &:before {
+      background-image: url("/Assets/Icons/googlesigninicon.svg");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      width: 1em;
+      height: 1em;
+      content: "  ";
     }
   }
 
   &.twitter {
-    background-color: @brand-twitter;
+    color: #fff;
+    --btn-bg: @brand-twitter;
+    --btn-hover-bg: darken(@brand-twitter, 10%);
+    --social-icon: @fa-var-twitter;
+  }
 
-    &::before {
-      content: @fa-var-twitter;
-    }
+  &:hover {
+    background-color: var(--btn-hover-bg, darken(@btn-default-bg, 10%));
+  }
+}
+
+.btn-authentication-v2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: normal;
+
+  &:after {
+    content: " ";
+    flex: 0 1 1.25em;
   }
 }
 
@@ -1160,6 +1321,7 @@ div.aspNetDisabled {
   max-width: 100%;
   font-size: 14px;
   border-radius: 4px;
+  color: @text-color;
 
   @media (min-width: 480px) {
     flex-wrap: nowrap;
@@ -1195,5 +1357,30 @@ div.aspNetDisabled {
       min-height: 100px;
       overflow: auto;
     }
+  }
+}
+
+.segment-and {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  max-width: 580px;
+  margin: 32px auto;
+  .text {
+    padding: 0 6px;
+    text-transform: uppercase;
+    border: 1px solid @panel-border;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #E4E4E4;
+    font-weight: 500;
+    margin: 0 10px;
+  }
+
+  &::before,
+  &::after {
+    content: "";
+    border: 1px solid @panel-border;
+    flex: 1;
   }
 }

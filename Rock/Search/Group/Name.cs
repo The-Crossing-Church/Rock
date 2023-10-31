@@ -30,6 +30,7 @@ namespace Rock.Search.Group
     [Description("Group Name Search")]
     [Export(typeof(SearchComponent))]
     [ExportMetadata("ComponentName", "Group Name")]
+    [Rock.SystemGuid.EntityTypeGuid( "94825231-DC38-4DC0-A1D3-64B4AD6A87F0")]
     public class Name : SearchComponent
     {
         /// <summary>
@@ -76,9 +77,10 @@ namespace Rock.Search.Group
         {
             var groupQry = ( IQueryable<Model.Group> ) SearchQuery( searchterm );
 
+            // Note: extra spaces intentional with the label span to keep the markup from showing in the search input on selection
             return GetSearchResults( searchterm )
                 .OrderBy( g => g.Name )
-                .Select( g => g.Name );
+                .Select( g => g.Campus == null ? g.Name : g.Name + "                                               <span class='search-accessory label label-default pull-right'>" + (g.Campus.ShortCode != "" ? g.Campus.ShortCode : g.Campus.Name) + "</span>" );
         }
     }
 }

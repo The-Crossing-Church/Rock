@@ -51,6 +51,9 @@ using Rock.Web.UI;
 using UAParser;
 using Ical.Net;
 using Rock.Web.UI.Controls;
+using System.Web.UI;
+using Rock.Lava.DotLiquid;
+using Rock.Cms.StructuredContent;
 
 namespace Rock.Lava
 {
@@ -781,21 +784,6 @@ namespace Rock.Lava
             return string.IsNullOrWhiteSpace( inputAsString )
                 ? inputAsString
                 : inputAsString.Replace( @string, string.Empty );
-        }
-
-        /// <summary>
-        /// Trims the specified input.
-        /// </summary>
-        /// <param name="input">The input.</param>
-        /// <returns></returns>
-        public static string Trim( object input )
-        {
-            if ( input == null )
-            {
-                return string.Empty;
-            }
-
-            return input.ToString().Trim();
         }
 
         /// <summary>
@@ -1655,6 +1643,11 @@ namespace Rock.Lava
             {
                 TimeSpan difference = endDate.Value - startDate.Value;
 
+                if ( difference.TotalSeconds >= 0 && difference.TotalSeconds < 1 )
+                {
+                    return "just now";
+                }
+
                 if ( direction.ToLower() == "max" )
                 {
                     return difference.Humanize( maxUnit: unitValue );
@@ -2312,6 +2305,30 @@ namespace Rock.Lava
                         return rawValue;
                     }
 
+                    // Check qualifer for "TextValue" and if true return PersistedTextValue
+                    if (qualifier.Equals( "TextValue", StringComparison.OrdinalIgnoreCase ))
+                    {
+                        return item.AttributeValues[attributeKey].PersistedTextValue;
+                    }
+
+                    // Check qualifer for "HtmlValue" and if true return PersistedHtmlValue
+                    if (qualifier.Equals( "HtmlValue", StringComparison.OrdinalIgnoreCase ))
+                    {
+                        return item.AttributeValues[attributeKey].PersistedTextValue;
+                    }
+
+                    // Check qualifer for "CondensedTextValue" and if true return PersistedTextValue
+                    if (qualifier.Equals( "CondensedTextValue", StringComparison.OrdinalIgnoreCase ))
+                    {
+                        return item.AttributeValues[attributeKey].PersistedCondensedTextValue;
+                    }
+
+                    // Check qualifer for "CondensedHtmlValue" and if true return PersistedTextValue
+                    if (qualifier.Equals( "CondensedHtmlValue", StringComparison.OrdinalIgnoreCase ))
+                    {
+                        return item.AttributeValues[attributeKey].PersistedCondensedHtmlValue;
+                    }
+
                     // Check qualifier for 'Url' and if present and attribute's field type is a ILinkableFieldType, then return the formatted url value
                     var field = attribute.FieldType.Field;
                     if ( qualifier.Equals( "Url", StringComparison.OrdinalIgnoreCase ) && field is Rock.Field.ILinkableFieldType )
@@ -2675,16 +2692,8 @@ namespace Rock.Lava
         /// <returns></returns>
         public static List<Person> Parents( Context context, object input )
         {
-            Person person = GetPerson( input );
-
-            if ( person != null )
-            {
-                Guid adultGuid = Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_ADULT.AsGuid();
-                var parents = new PersonService( new RockContext() ).GetFamilyMembers( person.Id ).Where( m => m.GroupRole.Guid == adultGuid ).Select( a => a.Person );
-                return parents.ToList();
-            }
-
-            return new List<Person>();
+            var lavaContext = new RockLiquidRenderContext( context );
+            return LavaFilters.Parents( lavaContext, input );
         }
 
         /// <summary>
@@ -2695,16 +2704,8 @@ namespace Rock.Lava
         /// <returns></returns>
         public static List<Person> Children( Context context, object input )
         {
-            Person person = GetPerson( input );
-
-            if ( person != null )
-            {
-                Guid childGuid = Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid();
-                var children = new PersonService( new RockContext() ).GetFamilyMembers( person.Id ).Where( m => m.GroupRole.Guid == childGuid ).Select( a => a.Person );
-                return children.ToList();
-            }
-
-            return new List<Person>();
+            var lavaContext = new RockLiquidRenderContext( context );
+            return LavaFilters.Children( lavaContext, input );
         }
 
         /// <summary>
@@ -3604,27 +3605,10 @@ namespace Rock.Lava
         /// <returns></returns>
         public static object Campus( Context context, object input, object option = null )
         {
-            var person = GetPerson( input );
-
-            bool getAll = false;
-            if ( option != null && option.GetType() == typeof( string ) )
-            {
-                // if a string of "all" is specified for the option, return all of the campuses (if they are part of multiple families from different campuses)
-                if ( string.Equals( (string)option, "all", StringComparison.OrdinalIgnoreCase ) )
-                {
-                    getAll = true;
-                }
-            }
-
-            if ( getAll )
-            {
-                return person.GetFamilies().Select( a => a.Campus ).OrderBy( a => a.Name );
-            }
-            else
-            {
-                return person.GetCampus();
-            }
-
+            // Call the newer Lava Filter implementation, and inject a null Lava context.
+            // This is safe, because the Lava context is only used to retrieve the current data context,
+            // and the fallback for that process creates a new data context instead.
+            return LavaFilters.Campus( null, input, option );
         }
 
         /// <summary>
@@ -3831,7 +3815,70 @@ namespace Rock.Lava
             return stepsQuery.ToList();
         }
 
+        /// <summary>
+        /// Determines whether [is in security role] [the specified context].
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="input">The input.</param>
+        /// <param name="groupId">The role Id.</param>
+        /// <returns>
+        ///   <c>true</c> if [is in security role] [the specified context]; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool IsInSecurityRole( Context context, object input, int groupId )
+        {
+            var person = GetPerson( input );
+            var role = RoleCache.Get( groupId );
+
+            if ( person == null || role == null )
+            {
+                return false;
+            }
+
+            if ( !role.IsSecurityTypeGroup )
+            {
+                ExceptionLogService.LogException( $"RockFilter.IsInSecurityRole group with Id: {groupId} is not a SecurityRole" );
+                return false;
+            }
+
+            return role.IsPersonInRole( person.Guid );
+        }
+
         #endregion Person Filters
+
+        #region Personalize Filters
+
+        /// <summary>
+        /// Gets the set of personalization items that are relevant to the specified person.
+        /// </summary>
+        /// <param name="context">The DotLiquid context.</param>
+        /// <param name="input">The filter input, a reference to a Person or a Person object.</param>
+        /// <param name="itemTypeList">A comma-delimited list of item types to return.</param>
+        /// <returns>The value of the user preference.</returns>
+        public static List<PersonalizationItemInfo> PersonalizationItems( Context context, object input, string itemTypeList = "" )
+        {
+            // This filter implementation is only required for DotLiquid.
+            // Create a compatible context and call the newer Lava Filter implementation.
+            var lavaContext = new RockLiquidRenderContext( context );
+            return LavaFilters.PersonalizationItems( lavaContext, input, itemTypeList );
+        }
+
+        /// <summary>
+        /// Temporarily adds one or more personalization segments for the specified person.
+        /// </summary>
+        /// <remarks>
+        /// If executed in the context of a HttpRequest, the result is stored in a session cookie and applies until the cookie expires.
+        /// If no HttpRequest is active, the result is stored in the Lava context and applies only for the current render operation.
+        /// </remarks>
+        /// <param name="context">The Lava context.</param>
+        /// <param name="input">The filter input, a reference to a Person or a Person object.</param>
+        /// <param name="segmentKeyList">A comma-delimited list of segment keys to add.</param>
+        public static void AddSegment( Context context, object input, string segmentKeyList )
+        {
+            var lavaContext = new RockLiquidRenderContext( context );
+            LavaFilters.AddSegment( lavaContext, input, segmentKeyList );
+        }
+
+        #endregion
 
         #region Group Filters
 
@@ -4002,24 +4049,65 @@ namespace Rock.Lava
         /// <returns></returns>
         public static string ResolveRockUrl( string input )
         {
-            RockPage page = HttpContext.Current.Handler as RockPage;
+            if ( string.IsNullOrWhiteSpace(input) )
+            {
+                return string.Empty;
+            }
 
+            var page = HttpContext.Current?.Handler as RockPage;
+
+            // Resolve theme references.
             if ( input.StartsWith( "~~" ) )
             {
-                string theme = "Rock";
-                if ( page.Theme.IsNotNullOrWhiteSpace() )
+                var theme = "Rock";
+                if ( page != null )
                 {
-                    theme = page.Theme;
-                }
-                else if ( page.Site != null && page.Site.Theme.IsNotNullOrWhiteSpace() )
-                {
-                    theme = page.Site.Theme;
+                    // Get the theme from the current page if we have one.
+                    if ( page.Theme.IsNotNullOrWhiteSpace() )
+                    {
+                        theme = page.Theme;
+                    }
+                    else if ( page.Site != null && page.Site.Theme.IsNotNullOrWhiteSpace() )
+                    {
+                        theme = page.Site.Theme;
+                    }
                 }
 
                 input = "~/Themes/" + theme + ( input.Length > 2 ? input.Substring( 2 ) : string.Empty );
             }
 
-            return page.ResolveUrl( input );
+            // Resolve relative references.
+            string url;
+            if ( page != null )
+            {
+                url = page.ResolveUrl( input );
+            }
+            else
+            {
+                // In the absence of a HttpRequest, use the application root configuration setting as the base URL.
+                var rootUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+                if ( string.IsNullOrWhiteSpace( rootUrl ) )
+                {
+                    rootUrl = "/";
+                }
+
+                if ( input.StartsWith( "~" ) )
+                {
+                    input = input.Trim( '~' );
+                }
+
+                var uri = new Uri( input, UriKind.RelativeOrAbsolute );
+                if ( uri.IsAbsoluteUri )
+                {
+                    return uri.AbsoluteUri;
+                }
+
+                // Create an absolute Uri.
+                uri = new Uri( new Uri( rootUrl ), uri );
+                url = uri.AbsoluteUri;
+            }
+
+            return url;
         }
 
         /// <summary>
@@ -4560,7 +4648,7 @@ namespace Rock.Lava
         /// <returns></returns>
         public static string AddMetaTagToHead( string input, string attributeName, string attributeValue )
         {
-            RockPage page = HttpContext.Current.Handler as RockPage;
+            RockPage page = HttpContext.Current?.Handler as RockPage;
 
             if ( page != null )
             {
@@ -4582,7 +4670,7 @@ namespace Rock.Lava
         /// <returns></returns>
         public static string AddLinkTagToHead( string input, string attributeName, string attributeValue )
         {
-            var page = HttpContext.Current.Handler as RockPage;
+            var page = HttpContext.Current?.Handler as RockPage;
 
             if ( page != null )
             {
@@ -4627,12 +4715,10 @@ namespace Rock.Lava
         /// <returns></returns>
         public static string SetPageTitle( string input, string titleLocation )
         {
-            RockPage page = HttpContext.Current.Handler as RockPage;
+            RockPage page = HttpContext.Current?.Handler as RockPage;
 
             if ( page != null )
             {
-
-
                 if ( titleLocation.Equals( "BrowserTitle", StringComparison.InvariantCultureIgnoreCase ) || titleLocation.Equals( "All", StringComparison.InvariantCultureIgnoreCase ) )
                 {
                     page.BrowserTitle = input;
@@ -4668,9 +4754,9 @@ namespace Rock.Lava
         /// <returns></returns>
         public static string AddScriptLink( string input, bool fingerprintLink = false )
         {
-            if ( HttpContext.Current != null )
+            var page = HttpContext.Current?.Handler as RockPage;
+            if ( page != null )
             {
-                RockPage page = HttpContext.Current.Handler as RockPage;
                 RockPage.AddScriptLink( page, ResolveRockUrl( input ), fingerprintLink );
             }
 
@@ -4685,9 +4771,9 @@ namespace Rock.Lava
         /// <returns></returns>
         public static string AddCssLink( string input, bool fingerprintLink = false )
         {
-            if ( HttpContext.Current != null )
+            var page = HttpContext.Current?.Handler as RockPage;
+            if ( page != null )
             {
-                RockPage page = HttpContext.Current.Handler as RockPage;
                 RockPage.AddCSSLink( page, ResolveRockUrl( input ), fingerprintLink );
             }
 
@@ -4863,7 +4949,7 @@ namespace Rock.Lava
         /// <returns></returns>
         public static object Page( string input, string parm )
         {
-            RockPage page = HttpContext.Current.Handler as RockPage;
+            RockPage page = HttpContext.Current?.Handler as RockPage;
 
             if ( page != null )
             {
@@ -4979,7 +5065,11 @@ namespace Rock.Lava
         /// <returns></returns>
         public static object PageParameter( string input, string parm )
         {
-            RockPage page = HttpContext.Current.Handler as RockPage;
+            var page = HttpContext.Current?.Handler as RockPage;
+            if ( page == null )
+            {
+                return null;
+            }
 
             var parmReturn = page.PageParameter( parm );
 
@@ -4994,6 +5084,31 @@ namespace Rock.Lava
             }
 
             return parmReturn;
+        }
+
+        /// <summary>
+        /// Sets a parameter in the input URL and returns a modified URL in the specified format.
+        /// </summary>
+        /// <param name="inputUrl">The input URL to be modified.</param>
+        /// <param name="parameterName">The name of the URL parameter to modify.</param>
+        /// <param name="parameterValue">The new value parameter value.</param>
+        /// <param name="outputUrlFormat">The format of the output URL, specified as {"absolute"|"relative"}. If not specified, the default value is "absolute".</param>
+        /// <returns></returns>
+        public static string SetUrlParameter( object inputUrl, object parameterName, object parameterValue, object outputUrlFormat = null )
+        {
+            return LavaFilters.SetUrlParameter( inputUrl, parameterName, parameterValue, outputUrlFormat );
+        }
+
+        /// <summary>
+        /// Sets a parameter in the input URL and returns a modified URL in the specified format.
+        /// </summary>
+        /// <param name="inputUrl">The input URL to be modified.</param>
+        /// <param name="parameterName">The name of the URL parameter to modify.</param>
+        /// <param name="parameterValue">The new value parameter value.</param>
+        /// <returns></returns>
+        public static string SetUrlParameter( object inputUrl, object parameterName = null, object parameterValue = null )
+        {
+            return LavaFilters.SetUrlParameter( inputUrl, parameterName, parameterValue, null );
         }
 
         /// <summary>
@@ -5044,7 +5159,7 @@ namespace Rock.Lava
             {
                 return null;
             }
-            return (int?)input.ToString().AsDecimalOrNull();
+            return ( int? ) input.ToString().AsDecimalOrNull();
         }
 
         /// <summary>
@@ -5124,12 +5239,18 @@ namespace Rock.Lava
                 return null;
             }
 
-            // DotLiquid does not handle UTC dates correctly, so we need to return the Rock time with a Kind of "Unspecified".
-            // For example, in DotLiquid the Condition.Equals operator parses a string literal date as a local system time.
-            // If the system time is not the same timezone as Rock time, the equals comparison fails because the parsed value does not match Rock time.
-            //rockDateTime = RockDateTime.ConvertToRockOffset( rockDateTime.Value );
-
             return offset;
+        }
+
+        /// <summary>
+        /// Converts the input value to a DateTimeOffset value in Coordinated Universal Time (UTC).
+        /// If the input value does not specify an offset, the current Rock time zone is assumed.
+        /// </summary>
+        /// <param name="input">The input value to be parsed into DateTime form.</param>
+        /// <returns>A DateTimeOffset value with an offset of 0, or null if the conversion could not be performed.</returns>
+        public static DateTimeOffset? AsDateTimeUtc( object input )
+        {
+            return LavaFilters.AsDateTimeUtc( input );
         }
 
         /// <summary>
@@ -5345,7 +5466,7 @@ namespace Rock.Lava
                 return null;
             }
 
-            var template = Template.Parse( input.ToString() );
+            var template = LavaHelper.CreateDotLiquidTemplate( input.ToString() );
 
             //
             // Copy over any Registers, which often contain "internal" context information.
@@ -5371,30 +5492,64 @@ namespace Rock.Lava
         /// <param name="typeOrder">The type order.</param>
         public static void AddQuickReturn( string input, string typeName, int typeOrder = 0 )
         {
-            RockPage rockPage = HttpContext.Current.Handler as RockPage;
-
-            if ( input.IsNotNullOrWhiteSpace() )
+            if ( input.IsNullOrWhiteSpace() )
             {
+                return;
+            }
 
-                /* 08-16-2021 MDP
-                 * This is only supported for pages that have the PersonalLinks block on it.
-                 * 
-                 * 02-02-2022 SMC
-                 * Added checks to prevent this script from being called if the personalLinks script hasn't been loaded,
-                 * so that if this filter is used on a page without the Personal Links block, it will fail safely
-                 * without doing anything.
-                 */
+            var rockPage = HttpContext.Current?.Handler as RockPage;
+            if ( rockPage == null )
+            {
+                return;
+            }
 
-                input = input.EscapeQuotes();
+            /* 08-16-2021 MDP
+                * This is only supported for pages that have the PersonalLinks block on it.
+                * 
+                * 02-02-2022 SMC
+                * Added checks to prevent this script from being called if the personalLinks script hasn't been loaded,
+                * so that if this filter is used on a page without the Personal Links block, it will fail safely
+                * without doing anything.
+                */
+
+            input = input.EscapeQuotes();
+
+            if ( ScriptManager.GetCurrent( rockPage ).IsInAsyncPostBack )
+            {
                 var quickReturnScript = "" +
-                    $"$( document ).ready( function () {{" + Environment.NewLine +
-                    $"  if (typeof Rock !== 'undefined' && typeof Rock.personalLinks !== 'undefined') {{" + Environment.NewLine +
-                    $"    Rock.personalLinks.addQuickReturn( '{typeName}', {typeOrder}, '{input}' );" + Environment.NewLine +
-                    $"  }}" + Environment.NewLine +
-                    $"}});";
-
+                $"function addQuickReturnAjax(typeName, typeOrder, input) {{" + Environment.NewLine +
+                $"  if (typeof Rock !== 'undefined' && typeof Rock.personalLinks !== 'undefined') {{" + Environment.NewLine +
+                $"    Rock.personalLinks.addQuickReturn(typeName, typeOrder, input);" + Environment.NewLine +
+                $"  }}" + Environment.NewLine +
+                $"}};" + Environment.NewLine +
+                $"addQuickReturnAjax('{typeName}', {typeOrder}, '{input}');";
+                ScriptManager.RegisterStartupScript( rockPage, rockPage.GetType(), "AddQuickReturn", quickReturnScript, true );
+            }
+            else
+            {
+                var quickReturnScript = "" +
+                $"$( document ).ready( function () {{" + Environment.NewLine +
+                $"  if (typeof Rock !== 'undefined' && typeof Rock.personalLinks !== 'undefined') {{" + Environment.NewLine +
+                $"    Rock.personalLinks.addQuickReturn( '{typeName}', {typeOrder}, '{input}' );" + Environment.NewLine +
+                $"  }}" + Environment.NewLine +
+                $"}});";
                 RockPage.AddScriptToHead( rockPage, quickReturnScript, true );
             }
+        }
+
+        /// <summary>
+        /// Converts structured blocks designed with the <see cref="StructureContentEditor"/> control from JSON to HTML.
+        /// <para>
+        /// Note that this only works with JSON produced by the <see cref="StructureContentEditor"/> control as it
+        /// contains metadata used in converting the JSON content to HTML.
+        /// </para>
+        /// </summary>
+        /// <param name="content">JSON formatted string produced by the <see cref="StructureContentEditor"/> control.</param>
+        /// <returns></returns>
+        public static string RenderStructuredContentAsHtml( string content )
+        {
+            var helper = new StructuredContentHelper( content );
+            return helper.Render();
         }
 
         #endregion Misc Filters
@@ -5875,72 +6030,9 @@ namespace Rock.Lava
         /// <returns></returns>
         public static List<Note> Notes( Context context, object input, object noteType, string sortOrder = "desc", int? count = null )
         {
-            int? entityId = null;
-
-            if ( input is int )
-            {
-                entityId = Convert.ToInt32( input );
-            }
-            if ( input is IEntity )
-            {
-                IEntity entity = input as IEntity;
-                entityId = entity.Id;
-            }
-            if ( !entityId.HasValue )
-            {
-                return null;
-            }
-
-            List<int> noteTypeIds = new List<int>();
-
-            if ( noteType is int )
-            {
-                noteTypeIds.Add( (int)noteType );
-            }
-
-            if ( noteType is string )
-            {
-                noteTypeIds = ( (string)noteType ).Split( ',' ).Select( Int32.Parse ).ToList();
-            }
-
-            var notes = new NoteService( new RockContext() ).Queryable().AsNoTracking().Where( n => n.EntityId == entityId );
-
-            if ( noteTypeIds.Count > 0 )
-            {
-                notes = notes.Where( n => noteTypeIds.Contains( n.NoteTypeId ) );
-            }
-            else
-            {
-                return null;
-            }
-
-            // add sort order
-            if ( sortOrder == "desc" )
-            {
-                notes = notes.OrderByDescending( n => n.CreatedDateTime );
-            }
-            else
-            {
-                notes = notes.OrderBy( n => n.CreatedDateTime );
-            }
-
-            var filterNotes = new List<Note>();
-            foreach ( var note in notes )
-            {
-                if ( note.IsAuthorized( Authorization.VIEW, GetCurrentPerson( context ) ) )
-                {
-                    filterNotes.Add( note );
-                }
-            }
-
-            if ( !count.HasValue )
-            {
-                return filterNotes;
-            }
-            else
-            {
-                return filterNotes.Take( count.Value ).ToList();
-            }
+            // Create a compatible context and call the newer Lava Filter implementation.
+            var lavaContext = new RockLiquidRenderContext( context );
+            return LavaFilters.Notes( lavaContext, input, noteType, sortOrder, count );
         }
 
         /// <summary>
@@ -6134,6 +6226,19 @@ namespace Rock.Lava
 
                 return followedQry.Any();
             }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the input entity exists in the result set of the specified Data View.
+        /// </summary>
+        /// <param name="context">The Lava context.</param>
+        /// <param name="input">The filter input, a reference to an Entity.</param>
+        /// <param name="dataViewIdentifier">A reference to a Data View.</param>
+        /// <returns><c>true</c> if the entity exists in the Data View result set.</returns>
+        public static bool IsInDataView( Context context, object input, object dataViewIdentifier )
+        {
+            var lavaContext = new RockLiquidRenderContext( context );
+            return LavaFilters.IsInDataView( lavaContext, input, dataViewIdentifier );
         }
 
         /// <summary>

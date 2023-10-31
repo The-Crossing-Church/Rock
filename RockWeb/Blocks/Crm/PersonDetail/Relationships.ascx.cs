@@ -25,6 +25,7 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
+using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.Crm.PersonDetail
 {
@@ -69,6 +70,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "77E409D4-11CD-4009-B4CD-4B75DF2CC9FD" )]
     public partial class Relationships : Rock.Web.UI.PersonBlock
     {
         #region Attribute Keys
@@ -212,6 +214,13 @@ namespace RockWeb.Blocks.Crm.PersonDetail
         /// <param name="e">The <see cref="System.Web.UI.WebControls.RepeaterItemEventArgs"/> instance containing the event data.</param>
         protected void rGroupMembers_ItemDataBound( object sender, System.Web.UI.WebControls.RepeaterItemEventArgs e )
         {
+            var lDeceased = e.Item.FindControl( "lDeceased" ) as Literal;
+            var groupMember = e.Item.DataItem as GroupMember;
+            if ( lDeceased != null && groupMember != null && groupMember.Person?.IsDeceased == true )
+            {
+                lDeceased.Text = " (Deceased)";
+            }
+
             var lbEdit = e.Item.FindControl( "lbEdit" ) as LinkButton;
             var lbRemove = e.Item.FindControl( "lbRemove" ) as LinkButton;
 
@@ -390,8 +399,6 @@ namespace RockWeb.Blocks.Crm.PersonDetail
                         if ( group != null )
                         {
                             lGroupName.Text = group.Name.Pluralize();
-                            lGroupTypeIcon.Text = string.Format( "<i class='{0}'></i>", group.GroupType.IconCssClass );
-                            lGroupTypeIcon.Visible = group.GroupType.IconCssClass.IsNotNullOrWhiteSpace();
                             phEditActions.Visible = group.IsAuthorized( Authorization.EDIT, CurrentPerson );
 
                             if ( group.IsAuthorized( Authorization.VIEW, CurrentPerson ) )

@@ -38,6 +38,7 @@ namespace RockWeb.Blocks.Core
     [DisplayName( "Schedule Detail" )]
     [Category( "Core" )]
     [Description( "Displays the details of the given schedule." )]
+    [Rock.SystemGuid.BlockTypeGuid( "59C9C862-570C-4410-99B6-DD9064B5E594" )]
     public partial class ScheduleDetail : RockBlock
     {
         #region Control Methods
@@ -122,7 +123,9 @@ namespace RockWeb.Blocks.Core
             }
 
             schedule.Name = tbScheduleName.Text;
+            schedule.AbbreviatedName = tbScheduleAbbreviatedName.Text;
             schedule.IsActive = cbIsActive.Checked;
+            schedule.IsPublic = cbShowPublicly.Checked;
             schedule.AutoInactivateWhenComplete = cbAutoComplete.Checked;
             schedule.Description = tbScheduleDescription.Text;
             schedule.iCalendarContent = sbSchedule.iCalendarContent;
@@ -268,8 +271,14 @@ namespace RockWeb.Blocks.Core
             var sbPreviewHtml = new System.Text.StringBuilder();
             sbPreviewHtml.Append( $@"<strong>iCalendar Content</strong><div style='white-space: pre' Font-Names='Consolas' Font-Size='9'><br />{ sbSchedule.iCalendarContent }</div>" );
 
-            var calendar = Calendar.LoadFromStream( new StringReader( sbSchedule.iCalendarContent ) ).First() as Calendar;
-            var calendarEvent = calendar.Events[0] as Event;
+            var calendarList = CalendarCollection.Load( new StringReader( sbSchedule.iCalendarContent ) );
+            Calendar calendar = null;
+            if ( calendarList.Count > 0 )
+            {
+                calendar = calendarList[0] as Calendar;
+            }
+
+            var calendarEvent = calendar.Events[0];
 
             if ( calendarEvent.DtStart != null )
             {
@@ -411,7 +420,9 @@ namespace RockWeb.Blocks.Core
             SetEditMode( true );
 
             tbScheduleName.Text = schedule.Name;
+            tbScheduleAbbreviatedName.Text = schedule.AbbreviatedName;
             cbIsActive.Checked = schedule.IsActive;
+            cbShowPublicly.Checked = schedule.IsPublic ?? false;
             cbAutoComplete.Checked = schedule.AutoInactivateWhenComplete;
             tbScheduleDescription.Text = schedule.Description;
 

@@ -17,9 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Reporting;
@@ -32,6 +33,7 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.SOCIAL_MEDIA_ACCOUNT )]
     public class SocialMediaAccountFieldType : FieldType
     {
         #region Configuration
@@ -41,6 +43,116 @@ namespace Rock.Field.Types
         private const string COLOR_KEY = "color";
         private const string TEXT_TEMPLATE = "texttemplate";
         private const string BASEURL = "baseurl";
+        private const string BASEURL_ALIASES = "baseurlaliases";
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( string.IsNullOrWhiteSpace( privateValue ) )
+            {
+                return string.Empty;
+            }
+            else
+            {
+                if ( privateConfigurationValues != null )
+                {
+                    Dictionary<string, object> mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, null, new Lava.CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false } );
+                    string template = string.Empty;
+
+                    if ( privateConfigurationValues.ContainsKey( TEXT_TEMPLATE ) )
+                    {
+                        template = privateConfigurationValues[TEXT_TEMPLATE];
+                    }
+                    if ( string.IsNullOrWhiteSpace( template ) )
+                    {
+                        // If an output template is not specified, use a default.
+                        template = "<a href='{{value}}' target='_blank' rel='noopener noreferrer'>{{ value | Url:'segments' | Last }}</a>";
+                    }
+                    if ( privateConfigurationValues.ContainsKey( ICONCSSCLASS_KEY ) )
+                    {
+
+                        string iconCssClass = privateConfigurationValues[ICONCSSCLASS_KEY];
+                        if ( !iconCssClass.Contains( "fa-fw" ) )
+                        {
+                            iconCssClass = iconCssClass + " fa-fw";
+                        }
+                        mergeFields.Add( ICONCSSCLASS_KEY, iconCssClass );
+                    }
+
+                    if ( privateConfigurationValues.ContainsKey( COLOR_KEY ) && !string.IsNullOrEmpty( privateConfigurationValues[COLOR_KEY] ) )
+                    {
+                        mergeFields.Add( COLOR_KEY, privateConfigurationValues[COLOR_KEY] );
+                    }
+
+                    if ( privateConfigurationValues.ContainsKey( BASEURL ) && !string.IsNullOrEmpty( privateConfigurationValues[BASEURL] ) )
+                    {
+                        mergeFields.Add( BASEURL, privateConfigurationValues[BASEURL] );
+                    }
+
+                    if ( privateConfigurationValues.ContainsKey( NAME_KEY ) && !string.IsNullOrEmpty( privateConfigurationValues[NAME_KEY] ) )
+                    {
+                        mergeFields.Add( NAME_KEY, privateConfigurationValues[NAME_KEY] );
+                    }
+
+                    mergeFields.Add( "value", privateValue );
+
+                    return template.ResolveMergeFields( mergeFields );
+                }
+
+                return privateValue;
+            }
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <inheritdoc/>
+        public override bool IsPersistedValueSupported( Dictionary<string, string> privateConfigurationValues )
+        {
+            // Lava could cause a different result with each render
+            return false;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region FilterControl
+
+        /// <summary>
+        /// Determines whether [has filter control].
+        /// </summary>
+        /// <returns></returns>
+        public override bool HasFilterControl()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override Model.ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.EqualOrBlankFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -54,6 +166,7 @@ namespace Rock.Field.Types
             configKeys.Add( COLOR_KEY );
             configKeys.Add( TEXT_TEMPLATE );
             configKeys.Add( BASEURL );
+            configKeys.Add( BASEURL_ALIASES );
             return configKeys;
         }
 
@@ -89,7 +202,12 @@ namespace Rock.Field.Types
             var ulBaseUrl = new UrlLinkBox();
             controls.Add( ulBaseUrl );
             ulBaseUrl.Label = "Base URL";
-            textTemplate.Help = "The base URL for the social media network. If the entry does not have a URL in it this base URL will be prepended to the entered string.";
+            ulBaseUrl.Help = "The base URL for the social media network. If the entry does not have a URL in it this base URL will be prepended to the entered string.";
+
+            var tbBaseUrlAliases = new RockTextBox();
+            controls.Add( tbBaseUrlAliases );
+            tbBaseUrlAliases.Label = "Base URL Aliases";
+            tbBaseUrlAliases.Help = "A comma-delimited list of URL prefixes that are considered valid aliases for the Base URL. If any of these values are detected in the input, they will be replaced by the Base URL.";
 
             return controls;
         }
@@ -107,6 +225,7 @@ namespace Rock.Field.Types
             configurationValues.Add( COLOR_KEY, new ConfigurationValue( "Color", "The color to use for making buttons for the social media network.", "" ) );
             configurationValues.Add( TEXT_TEMPLATE, new ConfigurationValue( "Text Template", "Lava template to use to create a formatted version for the link. Primarily used for making the link text.", "" ) );
             configurationValues.Add( BASEURL, new ConfigurationValue( "Base URL", "The base URL for the social media network. If the entry does not have a URL in it this base URL will be prepended to the entered string.", "" ) );
+            configurationValues.Add( BASEURL_ALIASES, new ConfigurationValue( "Base URL Aliases", "A comma-delimited list of URL prefixes that are considered valid aliases for the Base URL. If any of these values are detected in the input, they will be replaced by the Base URL.", "" ) );
 
             if ( controls != null )
             {
@@ -138,6 +257,11 @@ namespace Rock.Field.Types
                         configurationValues[BASEURL].Value = baseUri.AbsoluteUri;
                     }
                 }
+                if ( controls.Count > 5 && controls[5] != null && controls[5] is RockTextBox )
+                {
+                    configurationValues[BASEURL_ALIASES].Value = ( ( RockTextBox ) controls[5] ).Text;
+                }
+
             }
 
             return configurationValues;
@@ -172,12 +296,12 @@ namespace Rock.Field.Types
                 {
                     ( ( UrlLinkBox ) controls[4] ).Text = configurationValues[BASEURL].Value;
                 }
+                if ( controls.Count > 5 && controls[5] != null && controls[5] is RockTextBox && configurationValues.ContainsKey( BASEURL_ALIASES ) )
+                {
+                    ( ( RockTextBox ) controls[5] ).Text = configurationValues[BASEURL_ALIASES].Value;
+                }
             }
         }
-
-        #endregion
-
-        #region Formatting
 
         /// <summary>
         /// Returns the field's current value(s)
@@ -189,59 +313,8 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-
-            if ( string.IsNullOrWhiteSpace( value ) )
-            {
-                return string.Empty;
-            }
-            else
-            {
-                if ( configurationValues != null )
-                {
-                    Dictionary<string, object> mergeFields = Lava.LavaHelper.GetCommonMergeFields( parentControl?.RockBlock()?.RockPage, null, new Lava.CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false } );
-                    string template = string.Empty;
-
-                    if ( configurationValues.ContainsKey( TEXT_TEMPLATE ) )
-                    {
-                        template = configurationValues[TEXT_TEMPLATE].Value;
-                    }
-                    if ( configurationValues.ContainsKey( ICONCSSCLASS_KEY ) )
-                    {
-
-                        string iconCssClass = configurationValues[ICONCSSCLASS_KEY].Value;
-                        if ( !iconCssClass.Contains( "fa-fw" ) )
-                        {
-                            iconCssClass = iconCssClass + " fa-fw";
-                        }
-                        mergeFields.Add( ICONCSSCLASS_KEY, iconCssClass );
-                    }
-
-                    if ( configurationValues.ContainsKey( COLOR_KEY ) && !string.IsNullOrEmpty( configurationValues[COLOR_KEY].Value ) )
-                    {
-                        mergeFields.Add( COLOR_KEY, configurationValues[COLOR_KEY].Value );
-                    }
-
-                    if ( configurationValues.ContainsKey( BASEURL ) && !string.IsNullOrEmpty( configurationValues[BASEURL].Value ) )
-                    {
-                        mergeFields.Add( BASEURL, configurationValues[BASEURL].Value );
-                    }
-
-                    if ( configurationValues.ContainsKey( NAME_KEY ) && !string.IsNullOrEmpty( configurationValues[NAME_KEY].Value ) )
-                    {
-                        mergeFields.Add( NAME_KEY, configurationValues[NAME_KEY].Value );
-                    }
-
-                    mergeFields.Add( "value", value );
-
-                    return template.ResolveMergeFields( mergeFields );
-                }
-                return value;
-            }
+            return GetHtmlValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -253,7 +326,28 @@ namespace Rock.Field.Types
         /// </returns>
         public override System.Web.UI.Control EditControl( System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id )
         {
-            return new RockTextBox { ID = id };
+            var linkBox = new UrlLinkBox
+            {
+                ID = id,
+                ValidationDisplay = ValidatorDisplay.None
+            };
+
+            if ( configurationValues != null )
+            {
+                if ( configurationValues.ContainsKey( NAME_KEY ) )
+                {
+                    linkBox.Label = configurationValues[NAME_KEY].Value;
+                }
+                if ( configurationValues.ContainsKey( BASEURL ) )
+                {
+                    linkBox.BaseUrl = configurationValues[BASEURL].Value;
+                }
+                if ( configurationValues.ContainsKey( BASEURL_ALIASES ) )
+                {
+                    linkBox.BaseUrlAliases = configurationValues[BASEURL_ALIASES].Value;
+                }
+            }
+            return linkBox;
         }
 
         /// <summary>
@@ -264,23 +358,8 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string GetEditValue( Control control, Dictionary<string, ConfigurationValue> configurationValues )
         {
-            var editControl = control as TextBox;
-            if ( editControl != null )
-            {
-                if ( configurationValues != null && configurationValues.ContainsKey( "baseurl" ) )
-                {
-                    string value = editControl.Text;
-                    if ( !value.StartsWith( configurationValues[BASEURL].Value ) && !string.IsNullOrEmpty( value ) )
-                    {
-                        return string.Format( "{0}{1}", configurationValues[BASEURL].Value, value );
-                    }
-                    else
-                    {
-                        return value;
-                    }
-                }
-            }
-            return null;
+            var editControl = control as UrlLinkBox;
+            return editControl?.Url;
         }
 
         /// <summary>
@@ -291,30 +370,12 @@ namespace Rock.Field.Types
         /// <param name="value">The value.</param>
         public override void SetEditValue( Control control, Dictionary<string, ConfigurationValue> configurationValues, string value )
         {
-            var editControl = control as TextBox;
+            var editControl = control as UrlLinkBox;
             if ( editControl != null )
             {
-                if ( string.IsNullOrEmpty( value ) )
-                {
-                    editControl.Text = value;
-                }
-                else
-                {
-                    try
-                    {
-                        editControl.Text = new Uri( value ).Segments.Last();
-                    }
-                    catch
-                    {
-                        editControl.Text = value;
-                    }
-                }
+                editControl.Url = value;
             }
         }
-
-        #endregion
-
-        #region FilterControl
 
         /// <summary>
         /// Gets the filter compare control.
@@ -339,15 +400,6 @@ namespace Rock.Field.Types
             {
                 return base.FilterCompareControl( configurationValues, id, required, filterMode );
             }
-        }
-
-        /// <summary>
-        /// Determines whether [has filter control].
-        /// </summary>
-        /// <returns></returns>
-        public override bool HasFilterControl()
-        {
-            return true;
         }
 
         /// <summary>
@@ -398,21 +450,7 @@ namespace Rock.Field.Types
             }
         }
 
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.EqualOrBlankFilterComparisonTypes;
-            }
-        }
-
+#endif
         #endregion
-
     }
 }

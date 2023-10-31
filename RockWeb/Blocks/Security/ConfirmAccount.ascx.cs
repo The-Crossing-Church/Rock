@@ -25,6 +25,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Security;
 using Rock.Tasks;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 
 namespace RockWeb.Blocks.Security
@@ -39,11 +40,12 @@ namespace RockWeb.Blocks.Security
     [CodeEditorField( "Confirmed Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "{0}, your account has been confirmed.  Thank you for creating the account.", "Captions", 0 )]
     [CodeEditorField( "Reset Password Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "{0}, enter a new password for your '{1}' account.", "Captions", 1 )]
     [CodeEditorField( "Password Reset Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "{0}, the password for your '{1}' account has been changed.", "Captions", 2 )]
-    [CodeEditorField( "Delete Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "Are you sure you want to delete the '{0}' account?", "Captions", 3 )]
+    [CodeEditorField( "Delete Caption", "The caption to display when deleting an account. When deleting passwordless accounts, 'Are you sure you want to delete the account?' will be displayed instead.", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "Are you sure you want to delete the '{0}' account?", "Captions", 3 )]
     [CodeEditorField( "Deleted Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "The account has been deleted.", "Captions", 4 )]
     [CodeEditorField( "Invalid Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "The confirmation code you've entered is not valid.  Please enter a valid confirmation code or <a href='{0}'>create a new account</a>.", "Captions", 5 )]
     [CodeEditorField( "Password Reset Unavailable Caption", "", Rock.Web.UI.Controls.CodeEditorMode.Html, Rock.Web.UI.Controls.CodeEditorTheme.Rock, 200, false, "This type of account does not allow passwords to be changed.  Please contact your system administrator for assistance changing your password.", "Captions", 6 )]
     [LinkedPage( "New Account Page", "Page to navigate to when user selects 'Create New Account' option (if blank will use 'NewAccount' page route)" )]
+    [Rock.SystemGuid.BlockTypeGuid( "734DFF21-7465-4E02-BFC3-D40F7A65FB60" )]
     public partial class ConfirmAccount : Rock.Web.UI.RockBlock, IDisallowReturnUrlBlock
     {
         #region Properties
@@ -292,6 +294,7 @@ namespace RockWeb.Blocks.Security
 
                     userLoginService.SetPassword( user, tbPassword.Text );
                     user.IsConfirmed = true;
+                    user.IsLockedOut = false; // unlock the user account if they reset their password.
                     rockContext.SaveChanges();
 
                     pnlResetSuccess.Visible = true;
@@ -324,7 +327,14 @@ namespace RockWeb.Blocks.Security
                 string caption = GetAttributeValue( "DeleteCaption" );
                 if ( caption.Contains( "{0}" ) )
                 {
-                    caption = string.Format( caption, user.UserName );
+                    if ( user.EntityTypeId.HasValue && user.EntityTypeId == EntityTypeCache.GetId( Rock.SystemGuid.EntityType.AUTHENTICATION_PASSWORDLESS.AsGuid() ) )
+                    {
+                        caption = "Are you sure you want to delete the account?";
+                    }
+                    else
+                    {
+                        caption = string.Format( caption, user.UserName );
+                    }
                 }
 
                 lDelete.Text = caption;

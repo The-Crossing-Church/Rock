@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Rock.Data;
-using Rock.ViewModel.Blocks;
+using Rock.ViewModels.Blocks;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -59,13 +59,27 @@ namespace Rock.Model
         /// <param name="registrationInstanceId">The registration instance identifier.</param>
         /// <param name="errorMessage">The error result.</param>
         /// <returns></returns>
+        [RockObsolete("1.14.1")]
+        [Obsolete( "Use GetRegistrationContext( int registrationInstanceId, int? registrationId, out string errorMessage )" )]
         public RegistrationContext GetRegistrationContext( int registrationInstanceId, out string errorMessage )
+        {
+            return GetRegistrationContext( registrationInstanceId, null, out errorMessage );
+        }
+
+        /// <summary>
+        /// Gets the generic context about the registration.
+        /// </summary>
+        /// <param name="registrationInstanceId">The registration instance identifier.</param>
+        /// <param name="registrationId">The registration identifier.</param>
+        /// <param name="errorMessage">The error result.</param>
+        /// <returns></returns>
+        public RegistrationContext GetRegistrationContext( int registrationInstanceId, int? registrationId, out string errorMessage )
         {
             var rockContext = Context as RockContext;
             errorMessage = string.Empty;
 
             // Load the instance and template
-            var registrationInstance = GetActiveRegistrationInstance( registrationInstanceId, out errorMessage );
+            var registrationInstance = GetActiveRegistrationInstance( registrationInstanceId, registrationId, out errorMessage );
             var registrationTemplate = registrationInstance?.RegistrationTemplate;
 
             if ( registrationInstance == null || registrationTemplate == null )
@@ -106,29 +120,50 @@ namespace Rock.Model
         public RegistrationContext GetRegistrationContext( int registrationInstanceId, Guid? registrationGuid, Person currentPerson, string discountCode, out string errorMessage )
         {
             var rockContext = Context as RockContext;
-            var context = GetRegistrationContext( registrationInstanceId, out errorMessage );
+            Registration registration = null;
+            if ( registrationGuid.HasValue )
+            {
+                var registrationService = new RegistrationService( rockContext );
+                registration = registrationService.Get( registrationGuid.Value );
+            }
+
+            var context = GetRegistrationContext( registrationInstanceId, registration?.Id, out errorMessage );
 
             if ( !errorMessage.IsNullOrWhiteSpace() )
             {
                 return null;
             }
 
-            // Look up and validate the discount by the code
+            // Look up and validate the discount by the code unless the registration has already been saved with the discount
             if ( discountCode.IsNotNullOrWhiteSpace() )
             {
-                var registrationTemplateDiscountService = new RegistrationTemplateDiscountService( rockContext );
-
-                context.Discount = registrationTemplateDiscountService.GetDiscountByCodeIfValid( registrationInstanceId, discountCode );
-
-                if ( context.Discount == null )
+                if ( registration == null || registration.DiscountCode.IsNullOrWhiteSpace() )
                 {
-                    errorMessage = "The discount code is not valid";
-                    return null;
+                    var registrationTemplateDiscountService = new RegistrationTemplateDiscountService( rockContext );
+
+                    context.Discount = registrationTemplateDiscountService.GetDiscountByCodeIfValid( registrationInstanceId, discountCode );
+
+                    if ( context.Discount == null )
+                    {
+                        errorMessage = "The discount code is not valid";
+                        return null;
+                    }
+                }
+                else
+                {
+                    var registrationDiscount = new RegistrationTemplateDiscountService( new RockContext() ).GetDiscountsForRegistrationInstance( registrationInstanceId ).Where( d => d.Code == discountCode ).FirstOrDefault();
+                    if ( registrationDiscount != null )
+                    {
+                        context.Discount = new RegistrationTemplateDiscountWithUsage
+                        {
+                            RegistrationTemplateDiscount = registrationDiscount
+                        };
+                    }
                 }
             }
 
             // Validate the registration
-            if ( registrationGuid.HasValue )
+            if ( registration != null )
             {
                 var registrationService = new RegistrationService( rockContext );
 
@@ -165,9 +200,10 @@ namespace Rock.Model
         /// Gets the active registration instance.
         /// </summary>
         /// <param name="registrationInstanceId">The registration instance identifier.</param>
+        /// <param name="registrationId">The registration identifier.</param>
         /// <param name="errorMessage">The error message.</param>
-        /// <returns></returns>
-        private RegistrationInstance GetActiveRegistrationInstance( int registrationInstanceId, out string errorMessage )
+        /// <returns>RegistrationInstance.</returns>
+        private RegistrationInstance GetActiveRegistrationInstance( int registrationInstanceId, int? registrationId, out string errorMessage )
         {
             errorMessage = string.Empty;
 
@@ -191,16 +227,24 @@ namespace Rock.Model
             // Make sure the registration is open
             var isBeforeRegistrationOpens = registrationInstance.StartDateTime.HasValue && registrationInstance.StartDateTime > now;
             var isAfterRegistrationCloses = registrationInstance.EndDateTime.HasValue && registrationInstance.EndDateTime < now;
-
-            if ( isAfterRegistrationCloses )
+            bool isExistingRegistration = false;
+            if ( registrationId.HasValue )
             {
-                errorMessage = $"{registrationInstance.Name} closed on {registrationInstance.EndDateTime.ToShortDateString()}.";
-                return null;
+                isExistingRegistration = new RegistrationService( Context as RockContext ).Get( registrationId.Value ) != null;
             }
-            else if ( isBeforeRegistrationOpens )
+
+            if ( !isExistingRegistration )
             {
-                errorMessage = $"{registrationTemplate.RegistrationTerm} for {registrationInstance.Name} does not open until {registrationInstance.StartDateTime.ToShortDateString()}.";
-                return null;
+                if ( isAfterRegistrationCloses )
+                {
+                    errorMessage = $"{registrationInstance.Name} closed on {registrationInstance.EndDateTime.ToShortDateString()}.";
+                    return null;
+                }
+                else if ( isBeforeRegistrationOpens )
+                {
+                    errorMessage = $"{registrationTemplate.RegistrationTerm} for {registrationInstance.Name} does not open until {registrationInstance.StartDateTime.ToShortDateString()}.";
+                    return null;
+                }
             }
 
             return registrationInstance;
@@ -212,7 +256,7 @@ namespace Rock.Model
         /// <param name="settings">The settings.</param>
         /// <param name="registrantInfo">The registrant information.</param>
         /// <returns></returns>
-        public string GetFirstName( RegistrationSettings settings, Rock.ViewModel.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo )
+        public string GetFirstName( RegistrationSettings settings, Rock.ViewModels.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo )
         {
             object value = GetPersonFieldValue( settings, registrantInfo, RegistrationPersonFieldType.FirstName );
 
@@ -238,7 +282,7 @@ namespace Rock.Model
         /// <param name="settings">The settings.</param>
         /// <param name="registrantInfo">The registrant information.</param>
         /// <returns></returns>
-        public string GetLastName( RegistrationSettings settings, Rock.ViewModel.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo )
+        public string GetLastName( RegistrationSettings settings, Rock.ViewModels.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo )
         {
             object value = GetPersonFieldValue( settings, registrantInfo, RegistrationPersonFieldType.LastName );
 
@@ -264,7 +308,7 @@ namespace Rock.Model
         /// <param name="settings">The settings.</param>
         /// <param name="registrantInfo">The registrant information.</param>
         /// <returns></returns>
-        public string GetEmail( RegistrationSettings settings, Rock.ViewModel.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo )
+        public string GetEmail( RegistrationSettings settings, Rock.ViewModels.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo )
         {
             object value = GetPersonFieldValue( settings, registrantInfo, RegistrationPersonFieldType.Email );
 
@@ -291,7 +335,7 @@ namespace Rock.Model
         /// <param name="registrantInfo">The registrant information.</param>
         /// <param name="personFieldType">Type of the person field.</param>
         /// <returns></returns>
-        public object GetPersonFieldValue( RegistrationSettings settings, Rock.ViewModel.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo, RegistrationPersonFieldType personFieldType )
+        public object GetPersonFieldValue( RegistrationSettings settings, Rock.ViewModels.Blocks.Event.RegistrationEntry.RegistrantInfo registrantInfo, RegistrationPersonFieldType personFieldType )
         {
             if ( settings != null && settings.Forms != null )
             {
@@ -446,6 +490,16 @@ namespace Rock.Model
             GroupTypeId = template.GroupTypeId;
             GroupMemberRoleId = template.GroupMemberRoleId;
             GroupMemberStatus = template.GroupMemberStatus;
+
+            // Signature Document
+            if ( template.RequiredSignatureDocumentTemplate != null && template.RequiredSignatureDocumentTemplate.IsActive )
+            {
+                SignatureDocumentTemplateId = template.RequiredSignatureDocumentTemplateId;
+                IsInlineSignatureRequired = template.RequiredSignatureDocumentTemplateId.HasValue && template.SignatureDocumentAction == SignatureDocumentAction.Embed;
+                IsSignatureDrawn = template.RequiredSignatureDocumentTemplate.SignatureType == SignatureType.Drawn;
+                SignatureDocumentTerm = template.RequiredSignatureDocumentTemplate?.DocumentTerm;
+                SignatureDocumentTemplateName = template.RequiredSignatureDocumentTemplate?.Name;
+            }
         }
 
         /// <summary>
@@ -658,10 +712,10 @@ namespace Rock.Model
         public int? FinancialGatewayId { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instance is login required.
+        /// Gets or sets a value indicating whether this instance is log in required.
         /// </summary>
         /// <value>
-        ///   <c>true</c> if this instance is login required; otherwise, <c>false</c>.
+        ///   <c>true</c> if this instance is log in required; otherwise, <c>false</c>.
         /// </value>
         public bool IsLoginRequired { get; private set; }
 
@@ -718,7 +772,7 @@ namespace Rock.Model
         /// </summary>
         /// <value>
         /// The workflow type id.
-        /// </value>        
+        /// </value>
         public int? RegistrantWorkflowTypeId { get; private set; }
 
         /// <summary>
@@ -736,5 +790,47 @@ namespace Rock.Model
         ///   <c>true</c> if [allow registration updates]; otherwise, <c>false</c>.
         /// </value>
         public bool AllowExternalRegistrationUpdates { get; private set; }
+
+        /// <summary>
+        /// Gets the <see cref="SignatureDocumentTemplate"/> identifier that
+        /// must be signed for each registrant.
+        /// </summary>
+        /// <value>
+        /// Gets the <see cref="SignatureDocumentTemplate"/> identifier.
+        /// </value>
+        public int? SignatureDocumentTemplateId { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether this registration requires the
+        /// signature document to be signed inline.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if this registration requires inline signing; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsInlineSignatureRequired { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the signature should be drawn.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if this the signature is drawn; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsSignatureDrawn { get; set; }
+
+        /// <summary>
+        /// Gets the signature document term.
+        /// </summary>
+        /// <value>
+        /// The signature document term.
+        /// </value>
+        public string SignatureDocumentTerm { get; private set; }
+
+        /// <summary>
+        /// Gets the name of the signature document template.
+        /// </summary>
+        /// <value>
+        /// The name of the signature document template.
+        /// </value>
+        public string SignatureDocumentTemplateName { get; private set; }
     }
 }

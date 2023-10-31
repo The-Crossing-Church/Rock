@@ -62,6 +62,18 @@ namespace Rock.Client
         public Rock.Client.Enums.PrintTo AttendancePrintTo { get; set; }
 
         /// <summary />
+        public string AttendanceReminderFollowupDays { get; set; }
+
+        /// <summary />
+        public List<int> AttendanceReminderFollowupDaysList { get; set; }
+
+        /// <summary />
+        public int? AttendanceReminderSendStartOffsetMinutes { get; set; }
+
+        /// <summary />
+        public int? AttendanceReminderSystemCommunicationId { get; set; }
+
+        /// <summary />
         public Rock.Client.Enums.AttendanceRule AttendanceRule { get; set; }
 
         /// <summary />
@@ -136,9 +148,9 @@ namespace Rock.Client
 			<div class=""alert alert-{{ warningLevel }} margin-t-sm"">This group is over capacity by {{ overageAmount }} {{ 'individual' | PluralizeForQuantity:overageAmount }}.</div>
 		{% endif %}
 	{% endif %}
-	
-	
-	
+
+
+
 {% if Group.Description != '' -%}
     <p class='description'>{{ Group.Description }}</p>
 {% endif -%}
@@ -172,9 +184,10 @@ namespace Rock.Client
         </dl>
         <dl>
         {% for attribute in Group.AttributeValues %}
-        <dt>{{ attribute.AttributeName }}:</dt>
-
-<dd>{{ attribute.ValueFormatted }} </dd>
+            {% if attribute.ValueFormatted != '' %}
+                <dt>{{ attribute.AttributeName }}</dt>
+                <dd>{{ attribute.ValueFormatted }}</dd>
+            {% endif %}
         {% endfor %}
         </dl>
     </div>
@@ -218,7 +231,7 @@ namespace Rock.Client
 		        <h4> {{ groupLocation.GroupLocationTypeValue.Value }} </h4>
 		        {% endif %}
 		    <a href = '{{ GroupMapUrl }}'><img class='img-thumbnail' src='{{ mapLink }}'/></a>
-		    </div>	
+		    </div>
 		    {% endif %}
 		{% endfor %}
 		{% endif %}
@@ -342,11 +355,14 @@ namespace Rock.Client
         public int? ScheduleConfirmationEmailOffsetDays { get; set; } = 4;
 
         /// <summary />
+        public Rock.Client.Enums.Group.ScheduleConfirmationLogic ScheduleConfirmationLogic { get; set; }
+
+        /// <summary />
         public int? ScheduleConfirmationSystemCommunicationId { get; set; }
 
         /// <summary />
         // Made Obsolete in Rock "1.10"
-        [Obsolete( "Use ScheduleConfirmationSystemCommunicationId instead.", false )]
+        [Obsolete( "Use ScheduleConfirmationSystemCommunicationId instead.", true )]
         public int? ScheduleConfirmationSystemEmailId { get; set; }
 
         /// <summary />
@@ -357,7 +373,7 @@ namespace Rock.Client
 
         /// <summary />
         // Made Obsolete in Rock "1.10"
-        [Obsolete( "Use ScheduleReminderSystemCommunicationId instead.", false )]
+        [Obsolete( "Use ScheduleReminderSystemCommunicationId instead.", true )]
         public int? ScheduleReminderSystemEmailId { get; set; }
 
         /// <summary />
@@ -423,6 +439,10 @@ namespace Rock.Client
             this.AllowSpecificGroupMemberWorkflows = source.AllowSpecificGroupMemberWorkflows;
             this.AttendanceCountsAsWeekendService = source.AttendanceCountsAsWeekendService;
             this.AttendancePrintTo = source.AttendancePrintTo;
+            this.AttendanceReminderFollowupDays = source.AttendanceReminderFollowupDays;
+            this.AttendanceReminderFollowupDaysList = source.AttendanceReminderFollowupDaysList;
+            this.AttendanceReminderSendStartOffsetMinutes = source.AttendanceReminderSendStartOffsetMinutes;
+            this.AttendanceReminderSystemCommunicationId = source.AttendanceReminderSystemCommunicationId;
             this.AttendanceRule = source.AttendanceRule;
             this.DefaultGroupRoleId = source.DefaultGroupRoleId;
             this.Description = source.Description;
@@ -461,15 +481,10 @@ namespace Rock.Client
             this.RSVPReminderSystemCommunicationId = source.RSVPReminderSystemCommunicationId;
             this.ScheduleCancellationWorkflowTypeId = source.ScheduleCancellationWorkflowTypeId;
             this.ScheduleConfirmationEmailOffsetDays = source.ScheduleConfirmationEmailOffsetDays;
+            this.ScheduleConfirmationLogic = source.ScheduleConfirmationLogic;
             this.ScheduleConfirmationSystemCommunicationId = source.ScheduleConfirmationSystemCommunicationId;
-            #pragma warning disable 612, 618
-            this.ScheduleConfirmationSystemEmailId = source.ScheduleConfirmationSystemEmailId;
-            #pragma warning restore 612, 618
             this.ScheduleReminderEmailOffsetDays = source.ScheduleReminderEmailOffsetDays;
             this.ScheduleReminderSystemCommunicationId = source.ScheduleReminderSystemCommunicationId;
-            #pragma warning disable 612, 618
-            this.ScheduleReminderSystemEmailId = source.ScheduleReminderSystemEmailId;
-            #pragma warning restore 612, 618
             this.SendAttendanceReminder = source.SendAttendanceReminder;
             this.ShowAdministrator = source.ShowAdministrator;
             this.ShowConnectionStatus = source.ShowConnectionStatus;
@@ -492,6 +507,9 @@ namespace Rock.Client
     /// </summary>
     public partial class GroupType : GroupTypeEntity
     {
+        /// <summary />
+        public SystemCommunication AttendanceReminderSystemCommunication { get; set; }
+
         /// <summary />
         public ICollection<GroupType> ChildGroupTypes { get; set; }
 

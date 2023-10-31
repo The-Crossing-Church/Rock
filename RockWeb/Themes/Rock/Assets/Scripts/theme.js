@@ -1,77 +1,41 @@
 function BindNavEvents() {
   $(document).ready(function() {
-    var bodyElement = $('body'),
-    navElement = $('.navbar-side'),
-    hoverDelay = 200,
-    hideDelay = 150;
+    const bodyElement = $('body');
 
-    $('.navbar-side > li').on("mouseenter", function() {
-      const $this = $(this);
-      if ($this.navUnHoverTimeout !== undefined) {
-        clearTimeout($this[0].navUnHoverTimeout);
-        $this[0].navUnHoverTimeout = undefined;
-      } else if ($this[0].navHoverTimeout === undefined) {
-        if (navElement.find('li.open').length > 0) {
-            $('.navbar-side > li').removeClass('open');
-            $('.navbar-static-side').addClass('open-secondary-nav');
-            $this.addClass('open');
-            $this[0].navHoverTimeout = undefined;
-        } else {
-          $this[0].navHoverTimeout = setTimeout(function() {
-            $this.addClass('open');
-            $('.navbar-static-side').addClass('open-secondary-nav');
-            $('body').addClass('nav-open');
-            if ($(document).height() > $(window).height()) {
-                var scrollWidth = Rock.controls.util.getScrollbarWidth();
-                $('body').css('padding-right', scrollWidth);
-                $('.navbar-fixed-top').css('right', scrollWidth);
-            }
-            $this[0].navHoverTimeout = undefined;
-          }, hoverDelay);
-        }
-      }
+    // if the window is greater than 768px then use the custom hover events
+    navMouseEvents();
+
+    // on resize, run the navMouseEvents function
+    $(window).on("resize", function() {
+      navMouseEvents();
     });
 
-    $('.navbar-side > li').on("mouseleave", function() {
-      const $this = $(this);
-      if ($this[0].navHoverTimeout !== undefined) {
-        clearTimeout($this[0].navHoverTimeout);
-        $this[0].navHoverTimeout = undefined;
-      } else if ($this[0].navUnHoverTimeout === undefined) {
-        $this[0].navUnHoverTimeout = setTimeout(function() {
-          $this.removeClass('open');
-          if ($('.navbar-side').find('li.open').length < 1) {
-            $('.navbar-static-side').removeClass('open-secondary-nav');
-            $('body')
-              .removeClass('nav-open')
-              .css('padding-right', '');
-              $('.navbar-fixed-top').css('right', '');
-          }
-          $this[0].navUnHoverTimeout = undefined;
-        }, hideDelay);
+    $('.navbar-side > li.has-children').on("click", function(e) {
+      const isOpen = $(this).hasClass('open');
+      if ($(e.target).closest('.title').length || $(window).width() > 768) {
+        $('.navbar-side > li').removeClass('open');
       }
-    });
-
-    $('.navbar-side > li.has-children').on("click", function() {
-      if ($(this).hasClass("open")) {
+      if (!isOpen) {
         $('.navbar-side > li').removeClass('open');
-        $('.navbar-static-side').removeClass('open-secondary-nav');
-      } else {
-        $('.navbar-side > li').removeClass('open');
+        bodyElement.addClass('nav-open');
         $('.navbar-static-side').addClass('open-secondary-nav');
         $(this).addClass('open');
+      } else {
+        $('.navbar-side > li').removeClass('open');
+        bodyElement.removeClass('nav-open');
+        $('.navbar-static-side').removeClass('open-secondary-nav');
       }
     });
 
-
     $('#content-wrapper').on("click", function() {
-      $('body').removeClass('nav-open');
+      bodyElement.removeClass('nav-open');
       $('.navbar-static-side').removeClass('open-secondary-nav');
       $('.navbar-side li').removeClass('open');
     });
 
     // show/hide sidebar nav
-    $('.navbar-toggle-side-left').on("click", function() {
+    $('.navbar-static-side').on("show.bs.collapse hide.bs.collapse", function(e) {
+      e.preventDefault();
       if ($('.navbar-static-side').is(':visible')) {
         bodyElement
           .addClass('navbar-side-close')
@@ -82,7 +46,82 @@ function BindNavEvents() {
           .removeClass('navbar-side-close');
       }
     });
+
+    // watch the .rock-top-header element for changes in height and write the new height to the body element as a css variable
+    var topHeader = $('.rock-top-header');
+    bodyElement.css('--top-header-height', topHeader.outerHeight() + 'px');
+    // create a new resize observer to watch for changes in the top header height
+    var topHeaderResizeObserver = new ResizeObserver(function(entries) {
+      bodyElement.css('--top-header-height', topHeader.outerHeight() + 'px');
+    });
+    // start observing the top header element
+    topHeaderResizeObserver.observe(topHeader[0]);
+
   });
+}
+
+
+function navMouseEvents() {
+  var hoverDelay = 200,
+  hideDelay = 150;
+
+  const navbarSide = $('.navbar-side');
+  const navbarSideLi = navbarSide.children('li');
+  const navbarStaticSide = $('.navbar-static-side');
+  const navbarFixedTop = $('.navbar-fixed-top');
+  const bodyElement = $('body');
+
+  if ($(window).width() > 768) {
+    navbarSideLi.on("mouseenter.sidenav", function() {
+      const $this = $(this);
+      if ($this.data('navUnHoverTimeout')) {
+        clearTimeout($this.data('navUnHoverTimeout'));
+        $this.removeData('navUnHoverTimeout');
+      } else if (!$this.data('navHoverTimeout')) {
+        const openLi = navbarSide.find('li.open');
+        if (openLi.length > 0) {
+          navbarSideLi.removeClass('open');
+          navbarStaticSide.addClass('open-secondary-nav');
+          $this.addClass('open');
+          $this.removeData('navHoverTimeout');
+        } else {
+          $this.data('navHoverTimeout', setTimeout(function() {
+            if ($(document).height() > $(window).height()) {
+              const scrollWidth = window.innerWidth - document.documentElement.clientWidth; //window.innerWidth - document.documentElement.clientWidth;
+              bodyElement.css('padding-right', scrollWidth);
+              navbarFixedTop.css('right', scrollWidth);
+            }
+
+            $this.addClass('open');
+            navbarStaticSide.addClass('open-secondary-nav');
+            bodyElement.addClass('nav-open');
+            $this.removeData('navHoverTimeout');
+          }, hoverDelay));
+        }
+      }
+    });
+
+    navbarSideLi.on("mouseleave.sidenav", function() {
+      const $this = $(this);
+      if ($this.data('navHoverTimeout')) {
+        clearTimeout($this.data('navHoverTimeout'));
+        $this.removeData('navHoverTimeout');
+      } else if (!$this.data('navUnHoverTimeout')) {
+        $this.data('navUnHoverTimeout', setTimeout(function() {
+          $this.removeClass('open');
+          if (navbarSide.find('li.open').length < 1) {
+            navbarStaticSide.removeClass('open-secondary-nav');
+            bodyElement.removeClass('nav-open').css('padding-right', '');
+            navbarFixedTop.css('right', '');
+          }
+          $this.removeData('navUnHoverTimeout');
+        }, hideDelay));
+      }
+    });
+  } else {
+    console.log("remove mouseenter mouseleave");
+    navbarSideLi.off(".sidenav");
+  }
 }
 
 function PreventNumberScroll() {
@@ -102,12 +141,66 @@ function PreventNumberScroll() {
             e.preventDefault();
         }
     });
-
-    $('.js-notetext').on("blur", function() {
-      $(this).parent().removeClass("focus-within");
-    })
-    .on("focus", function() {
-      $(this).parent().addClass("focus-within")
-    });
   });
+
+  $('.js-note-editor .meta-body').on("focusin", function() {
+    var noteBody = $(this);
+    // calculate height of noteBody
+    var height = noteBody.prop('scrollHeight');
+    noteBody.addClass("focus-within").css('height', height);
+
+
+    noteBody.on('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend', function(e) {
+      if ($(this).hasClass("focus-within")) {
+        noteBody.addClass("overflow-visible");
+      }
+    });
+
+    ResizeTextarea();
+
+    unfocusOnClickOutside(this, function() {
+        noteBody.removeClass("focus-within overflow-visible").css('height', '');
+    })
+  })
+}
+
+function unfocusOnClickOutside(element, callback) {
+    $(document).on("click.unfocus", function(e) {
+        if (!$(element).is(e.target) && $(element).has(e.target).length === 0) {
+            callback();
+            // disable the event handler to avoid unwanted behaviours
+            $(document).off(".unfocus");
+        }
+    });
+}
+
+// use mutuation observer to resize textarea
+function ResizeTextarea() {
+    $('.js-notetext').on("input", function() {
+        // resize textarea
+        var textarea = $(this);
+        textarea.css('height', 'auto').css('height', textarea.prop('scrollHeight'));
+        // get closest note-editor and resize it
+        var noteEditor = textarea.closest('.focus-within').addClass("no-transition");
+        noteEditor.css('height', 'auto').css('height', noteEditor.prop('scrollHeight'));
+    });
+}
+
+// Fixes an issue with the wait spinner caused by browser Back/Forward caching.
+function HandleBackForwardCache() {
+	// Forcibly hide the wait spinner, and clear the pending request if the page is being reloaded from bfcache. (Currently WebKit only)
+	// Browsers that implement bfcache will otherwise trigger updateprogress because the pending request is still in the PageRequestManager state.
+	// This fix is not effective for Safari browsers prior to v13, due to a known bug in the bfcache implementation.
+	// (https://bugs.webkit.org/show_bug.cgi?id=156356)
+	window.addEventListener('pageshow', function (e) {
+		if ( e.persisted ) {
+			document.querySelector('#updateProgress').style.display = 'none';
+			// Check if the page is in postback, and if so, reset the PageRequestManager state.
+			if (Sys.WebForms.PageRequestManager.getInstance().get_isInAsyncPostBack()) {
+				// Reset the PageRequestManager state. & Manually clear the request object
+				Sys.WebForms.PageRequestManager.getInstance()._processingRequest = false;
+				Sys.WebForms.PageRequestManager.getInstance()._request = null;
+			}
+		}
+	});
 }

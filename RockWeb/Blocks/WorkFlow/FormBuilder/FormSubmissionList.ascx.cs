@@ -18,6 +18,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Security;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
@@ -73,6 +74,7 @@ namespace RockWeb.Blocks.WorkFlow.FormBuilder
 
     #endregion Rock Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "A23592BB-25F7-4A81-90CD-46700724110A" )]
     public partial class FormSubmissionList : RockBlock
     {
         #region Attribute Keys
@@ -162,7 +164,7 @@ namespace RockWeb.Blocks.WorkFlow.FormBuilder
             gWorkflows.GridRebind += gWorkflows_GridRebind;
             gWorkflows.RowDataBound += gWorkflows_RowDataBound;
 
-            gWorkflows.Actions.ShowAdd = UserCanEdit;
+            gWorkflows.Actions.ShowAdd = WorkflowTypeCache.Get( PageParameter( PageParameterKeys.WorkflowTypeId ).AsInteger() ).Category.IsAuthorized( Authorization.EDIT, CurrentPerson );
             gWorkflows.Actions.AddClick += gWorkflows_Add;
 
             gWorkflows.Actions.ShowCommunicate = false;
@@ -221,7 +223,7 @@ namespace RockWeb.Blocks.WorkFlow.FormBuilder
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gList control.
+        /// Handles the GridRebind event of the gWorkflows control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="Rock.Web.UI.Controls.GridRebindEventArgs"/> instance containing the event data.</param>
@@ -258,12 +260,54 @@ namespace RockWeb.Blocks.WorkFlow.FormBuilder
             if ( e.Row.RowType == DataControlRowType.DataRow )
             {
                 var rowViewModel = e.Row.DataItem as FormSubmissionListViewModel;
-                if ( rowViewModel.Person == null )
+                var attributeFields = gWorkflows.Columns.OfType<AttributeField>();
+                var personField = attributeFields.FirstOrDefault( a => a.DataField == "Person" );
+                int? personLinkColumnIndex = gWorkflows.GetColumnIndex( gWorkflows.Columns.OfType<RockLiteralField>().First() );
+
+                if ( personField == null )
                 {
-                    int? personLinkColumnIndex = gWorkflows.GetColumnIndex( gWorkflows.Columns.OfType<PersonProfileLinkField>().First() );
                     if ( personLinkColumnIndex.HasValue && personLinkColumnIndex > -1 )
                     {
-                        var personLinkButton = e.Row.Cells[personLinkColumnIndex.Value].ControlsOfTypeRecursive<HyperLink>().FirstOrDefault();
+                        HidePersonLinkButton();
+                    }
+                }
+                else
+                {
+                    string key = gWorkflows.DataKeys[e.Row.RowIndex].Value.ToString();
+                    if ( !string.IsNullOrWhiteSpace( key ) && gWorkflows.ObjectList.ContainsKey( key ) )
+                    {
+                        var dataItem = gWorkflows.ObjectList[key] as IHasAttributes;
+                        var value = dataItem?.GetAttributeValue( personField.DataField );
+
+                        if ( string.IsNullOrWhiteSpace( value ) )
+                        {
+                            HidePersonLinkButton();
+                        }
+                        else
+                        {
+                            var personService = new PersonAliasService( new RockContext() );
+                            var personAlias = personService.Get( value.AsGuid() );
+
+                            if ( personAlias == null )
+                            {
+                                HidePersonLinkButton();
+                            }
+                            else
+                            {
+                                e.Row.Cells[personLinkColumnIndex.Value].Text = $"<a class='btn btn-default btn-sm' href='/person/{personAlias.PersonId}'><i class='fa fa-user'></i></a>";
+
+                                rowViewModel.Person = personAlias.Person;
+                                rowViewModel.PersonId = personAlias.PersonId;
+                            }
+                        }
+                    }
+                }
+
+                void HidePersonLinkButton()
+                {
+                    var personLinkButton = e.Row.Cells[personLinkColumnIndex.Value].ControlsOfTypeRecursive<HyperLink>().FirstOrDefault();
+                    if ( personLinkButton != null )
+                    {
                         personLinkButton.Visible = false;
                     }
                 }
@@ -382,8 +426,8 @@ namespace RockWeb.Blocks.WorkFlow.FormBuilder
             }
 
             // Add PersonLinkField column
-            var personLinkField = new PersonProfileLinkField();
-            personLinkField.LinkedPageAttributeKey = AttributeKeys.PersonProfilePage;
+            var personLinkField = new RockLiteralField();
+            personLinkField.ItemStyle.HorizontalAlign = HorizontalAlign.Right;
             gWorkflows.Columns.Add( personLinkField );
 
             // Add delete column
@@ -412,9 +456,7 @@ namespace RockWeb.Blocks.WorkFlow.FormBuilder
             {
                 Id = w.Id,
                 ActivatedDateTime = w.ActivatedDateTime,
-                Campus = w.Campus,
-                Person = w.InitiatorPersonAlias != null ? w.InitiatorPersonAlias.Person : null,
-                PersonId = w.InitiatorPersonAlias != null ? w.InitiatorPersonAlias.PersonId : 0
+                Campus = w.Campus
             } );
 
             gWorkflows.SetLinqDataSource( submissionsList );

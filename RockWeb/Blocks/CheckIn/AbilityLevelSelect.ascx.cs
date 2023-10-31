@@ -74,6 +74,7 @@ namespace RockWeb.Blocks.CheckIn
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "605389F5-5BC5-438F-8757-110328B0CED3" )]
     public partial class AbilityLevelSelect : CheckInBlockMultiPerson
     {
         /* 2021-05/07 ETD
@@ -317,6 +318,14 @@ namespace RockWeb.Blocks.CheckIn
             {
                 pnlNoOptions.Visible = true;
                 divAbilityLevel.Visible = false;
+
+                /*
+                 * 2023-04-14 ETD
+                 * Don't show the back button if prevent duplicate is enabled.
+                 * This option will remove the existing schedule from the list and could result in the GroupType and Person being removed as well, causing NRE errors when loading another block.
+                 * See issue 5369 for more details.
+                 */
+                lbBack.Visible = !CurrentCheckInState.CheckInType.PreventDuplicateCheckin;
 
                 lNoOptionTitle.Text = GetAttributeValue( AttributeKey.NoOptionTitle );
                 lNoOptionCaption.Text = GetAttributeValue( AttributeKey.NoOptionCaption );

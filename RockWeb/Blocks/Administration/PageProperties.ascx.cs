@@ -28,6 +28,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Security;
 using Rock.Services.NuGet;
+using Rock.Tasks;
 using Rock.Utility;
 using Rock.Web;
 using Rock.Web.Cache;
@@ -60,6 +61,7 @@ namespace RockWeb.Blocks.Administration
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "C7988C3E-822D-4E73-882E-9B7684398BAA" )]
     public partial class PageProperties : RockBlock
     {
         #region Keys
@@ -161,28 +163,22 @@ namespace RockWeb.Blocks.Administration
                     var blockContexts = new List<BlockContextsInfo>();
                     foreach ( var block in pageCache.Blocks )
                     {
-                        try
+                        foreach ( var context in block.ContextTypesRequired )
                         {
-                            var blockControl = TemplateControl.LoadControl( block.BlockType.Path ) as RockBlock;
-                            if ( blockControl != null )
+                            var blockContextsInfo = blockContexts.FirstOrDefault( t => t.EntityTypeName == context.Name );
+                            if ( blockContextsInfo == null )
                             {
-                                blockControl.SetBlock( pageCache, block );
-                                foreach ( var context in blockControl.ContextTypesRequired )
+                                blockContextsInfo = new BlockContextsInfo
                                 {
-                                    var blockContextsInfo = blockContexts.FirstOrDefault( t => t.EntityTypeName == context.Name );
-                                    if ( blockContextsInfo == null )
-                                    {
-                                        blockContextsInfo = new BlockContextsInfo { EntityTypeName = context.Name, EntityTypeFriendlyName = context.FriendlyName, BlockList = new List<BlockCache>() };
-                                        blockContexts.Add( blockContextsInfo );
-                                    }
+                                    EntityTypeName = context.Name,
+                                    EntityTypeFriendlyName = context.FriendlyName,
+                                    BlockList = new List<BlockCache>()
+                                };
 
-                                    blockContextsInfo.BlockList.Add( block );
-                                }
+                                blockContexts.Add( blockContextsInfo );
                             }
-                        }
-                        catch
-                        {
-                            // if the blocktype can't compile, just ignore it since we are just trying to find out if it had a blockContext
+
+                            blockContextsInfo.BlockList.Add( block );
                         }
                     }
 
@@ -564,6 +560,10 @@ namespace RockWeb.Blocks.Administration
             cbIncludeAdminFooter.Checked = page.IncludeAdminFooter;
             cbAllowIndexing.Checked = page.AllowIndexing;
 
+            cbEnableRateLimiting.Checked = page.IsRateLimited;
+            nbRateLimitPeriod.IntegerValue = page.RateLimitPeriod;
+            nbRequestPerPeriod.IntegerValue = page.RateLimitRequestPerPeriod;
+
             if ( page.CacheControlHeaderSettings != null )
             {
                 cpCacheSettings.CurrentCacheability = JsonConvert.DeserializeObject<RockCacheability>( page.CacheControlHeaderSettings );
@@ -771,6 +771,17 @@ namespace RockWeb.Blocks.Administration
             page.AllowIndexing = cbAllowIndexing.Checked;
 
             page.CacheControlHeaderSettings = cpCacheSettings.CurrentCacheability.ToJson();
+
+            if ( cbEnableRateLimiting.Checked )
+            {
+                page.RateLimitPeriod = nbRateLimitPeriod.IntegerValue;
+                page.RateLimitRequestPerPeriod = nbRequestPerPeriod.IntegerValue;
+            }
+            else
+            {
+                page.RateLimitPeriod = null;
+                page.RateLimitRequestPerPeriod = null;
+            }
 
             page.Description = tbDescription.Text;
             page.HeaderContent = ceHeaderContent.Text;
@@ -1050,9 +1061,13 @@ namespace RockWeb.Blocks.Administration
 
                 if ( cbDeleteInteractions.Checked )
                 {
-                    var interactionComponentService = new InteractionComponentService( rockContext );
-                    var componentQuery = interactionComponentService.QueryByPage( page );
-                    interactionComponentService.DeleteRange( componentQuery );
+                    var deleteInteractionsMsg = new DeleteInteractions.Message
+                    {
+                        PageId = page.Id,
+                        SiteId = page.SiteId
+                    };
+
+                    deleteInteractionsMsg.Send();
                 }
 
                 rockContext.SaveChanges();

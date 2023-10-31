@@ -46,6 +46,7 @@ namespace RockWeb.Blocks.Security.Oidc
         "OpenID Connect Scopes Page",
         Key = AttributeKey.ScopePage,
         Order = 2)]
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST )]
     public partial class AuthClientList : RockBlock, ICustomGridColumns
     {
         public class AttributeKey
@@ -185,7 +186,7 @@ namespace RockWeb.Blocks.Security.Oidc
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gUserLogins control.
+        /// Handles the GridRebind event of the gAuthClients control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>

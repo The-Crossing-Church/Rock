@@ -15,9 +15,10 @@
 // </copyright>
 //
 using System.Collections.Generic;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Reporting;
 using Rock.Web.UI.Controls;
@@ -30,15 +31,43 @@ namespace Rock.Field.Types
     [FieldTypeUsage( FieldTypeUsage.Common )]
     [RockPlatformSupport( Utility.RockPlatform.WebForms | Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><g><path d=""M1.65,2.46h7.7A.65.65,0,0,0,10,1.81V1.62A.66.66,0,0,0,9.35,1H1.65A.66.66,0,0,0,1,1.62v.19A.65.65,0,0,0,1.65,2.46Zm0,8h7.7A.65.65,0,0,0,10,9.81V9.62A.65.65,0,0,0,9.35,9H1.65A.65.65,0,0,0,1,9.62v.19A.65.65,0,0,0,1.65,10.46ZM14.25,5H1.72a.75.75,0,0,0,0,1.5H14.25A.74.74,0,0,0,15,5.74.8.8,0,0,0,14.25,5Zm0,8H1.72a.75.75,0,0,0,0,1.5H14.25a.74.74,0,0,0,.75-.72A.8.8,0,0,0,14.25,13Z""/></g></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.MEMO )]
     public class MemoFieldType : FieldType
     {
-
         #region Configuration
 
         private const string NUMBER_OF_ROWS = "numberofrows";
         private const string ALLOW_HTML = "allowhtml";
         private const string MAX_CHARACTERS = "maxcharacters";
         private const string SHOW_COUNT_DOWN = "showcountdown";
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region FilterControl
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override Model.ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.StringFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -171,9 +200,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -223,24 +249,6 @@ namespace Rock.Field.Types
             return tb;
         }
 
-        #endregion
-
-        #region FilterControl
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.StringFilterComparisonTypes;
-            }
-        }
-
         /// <summary>
         /// Gets the filter value control.
         /// </summary>
@@ -257,7 +265,7 @@ namespace Rock.Field.Types
             return tbValue;
         }
 
+#endif
         #endregion
-
     }
 }

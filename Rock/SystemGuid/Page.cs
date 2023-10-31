@@ -48,6 +48,21 @@ namespace Rock.SystemGuid
         public const string ACCOUNTS = "2B630A3B-E081-4204-A3E4-17BB3A5F063D";
 
         /// <summary>
+        /// The apple tv application detail
+        /// </summary>
+        public const string APPLE_TV_APPLICATION_DETAIL = "ED4341EB-3846-48B4-96D3-444D3ABBF389";
+
+        /// <summary>
+        /// The apple tv application screen detail
+        /// </summary>
+        public const string APPLE_TV_APPLICATION_SCREEN_DETAIL = "6CC8D008-8D30-416D-8A36-7D01B72A2518";
+
+        /// <summary>
+        /// The apple tv apps
+        /// </summary>
+        public const string APPLE_TV_APPS = "C8B81EBE-E98F-43EF-9E39-0491685145E2";
+
+        /// <summary>
         /// The financial account search guid
         /// ParentPage: Internal Homepage > Finance > Administration
         /// </summary>
@@ -858,6 +873,11 @@ namespace Rock.SystemGuid
         /// ParentPage: Communications
         /// </summary>
         public const string MASS_PUSH_NOTIFICATIONS = "3D97725E-5E17-411F-856C-F4B79B9BFF15";
+        
+        /// <summary>
+        /// The mobile site pages
+        /// </summary>
+        public const string MOBILE_SITE_PAGES = "37E21200-DF91-4426-89CC-7D067237A037";
 
         /// <summary>
         /// Gets the Email Preference page guid
@@ -1410,6 +1430,12 @@ namespace Rock.SystemGuid
         public const string MY_ACCOUNT_SECURITY = "290C53DC-0960-484C-B314-8301882A454C";
 
         /// <summary>
+        /// Gets the My Dashboard page guid
+        /// ParentPage: Internal Homepage
+        /// </summary>
+        public const string MY_DASHBOARD = "AE1818D8-581C-4599-97B9-509EA450376A";
+
+        /// <summary>
         /// Gets the My Settings page guid
         /// ParentPage: Internal Homepage
         /// </summary>
@@ -1637,6 +1663,24 @@ namespace Rock.SystemGuid
         public const string PURCHASES = "6A163569-2826-4EF2-8208-879DDBDC0896";
 
         /// <summary>
+        /// Reminder Edit page.
+        /// ParentPage: Reminder List.
+        /// </summary>
+        public const string REMINDER_EDIT = "2640FF34-DCC9-4604-9C5B-9E2DA590D5A7";
+
+        /// <summary>
+        /// Reminder List page.
+        /// ParentPage: People > Manage.
+        /// </summary>
+        public const string REMINDER_LIST = "E1736347-1D4F-42A6-8EC4-7595286054A6";
+
+        /// <summary>
+        /// Reminder List page.
+        /// ParentPage: General Settings.
+        /// </summary>
+        public const string REMINDER_TYPES = "3A2BA8F8-B119-4D3E-BE76-FEC81F7AC1BB";
+
+        /// <summary>
         /// Gets the Report Detail page guid
         /// ParentPage: Reports
         /// </summary>
@@ -1833,15 +1877,7 @@ namespace Rock.SystemGuid
         /// ParentPage: CMS Configuration
         /// </summary>
         public const string SITES = "7596D389-4EAB-4535-8BEE-229737F46F44";
-
-        /// <summary>
-        /// Gets the SMS Phone Numbers page guid
-        /// ParentPage: Communications
-        /// </summary>
-        [Obsolete( "Use SMS_PHONE_NUMBERS instead", true )]
-        [RockObsolete( "1.9" )]
-        public const string SMS_FROM_VALUES = "3F1EA6E5-6C61-444A-A80E-5B66F96F521B";
-
+        
         /// <summary>
         /// The SMS phone numbers
         /// ParentPage: Communications
@@ -1859,6 +1895,18 @@ namespace Rock.SystemGuid
         /// ParentPage: Engagement
         /// </summary>
         public const string STEP_PROGRAMS = "F5E8A369-4856-42E5-B187-276DFCEB1F3F";
+
+        /// <summary>
+        /// Gets the Step Program Detail page guid
+        /// ParentPage: Step Programs
+        /// </summary>
+        public const string STEP_PROGRAM_DETAIL = "6E46BC35-1FCB-4619-84F0-BB6926D2DDD5";
+
+        /// <summary>
+        /// Gets the Step Flow page guid
+        /// ParentPage: Engagement
+        /// </summary>
+        public const string STEP_FLOW = "A5FE5D33-C9E2-496D-AD8F-5B7AA496B2AC";
 
         /// <summary>
         /// Gets the Streak page guid
@@ -1924,7 +1972,7 @@ namespace Rock.SystemGuid
         /// Gets the System Email Details page guid
         /// ParentPage: System Emails
         /// </summary>
-        [Obsolete( "Use SYSTEM_COMMUNICATION_DETAIL instead." )]
+        [Obsolete( "Use SYSTEM_COMMUNICATION_DETAIL instead.", true )]
         [RockObsolete( "1.10" )]
         public const string SYSTEM_EMAIL_DETAILS = "588C72A8-7DEC-405F-BA4A-FE64F87CB817";
 
@@ -1932,7 +1980,7 @@ namespace Rock.SystemGuid
         /// Gets the System Emails page guid
         /// ParentPage: Communications
         /// </summary>
-        [Obsolete( "Use SYSTEM_COMMUNICATION_LIST instead." )]
+        [Obsolete( "Use SYSTEM_COMMUNICATION_LIST instead.", true )]
         [RockObsolete( "1.10" )]
         public const string SYSTEM_EMAILS = "89B7A631-EA6F-4DA3-9380-04EE67B63E9E";
 
@@ -2062,6 +2110,12 @@ namespace Rock.SystemGuid
         public const string WORKFLOW_ENTRY = "0550D2AA-A705-4400-81FF-AB124FDF83D7";
 
         /// <summary>
+        /// Gets the external site's Workflow Entry page guid
+        /// ParentPage: Workflows
+        /// </summary>
+        public const string EXTERNAL_WORKFLOW_ENTRY = "C58861DF-2D82-4E7A-AA5B-04165D2D34C2";
+
+        /// <summary>
         /// Gets the Workflow Trigger page guid
         /// ParentPage: Workflow Triggers
         /// </summary>
@@ -2141,5 +2195,19 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string SYSTEM_COMMUNICATION_PREVIEW = "FD8E0C71-9543-4CAB-9918-76A67EFE5093";
 
+        /// <summary>
+        /// The connection requests bulk update page
+        /// </summary>
+        public const string CONNECTION_REQUESTS_BULK_UPDATE = "1F5D34CF-89C1-426C-A139-83D87905D669";
+
+        /// <summary>
+        /// The dataview search results page
+        /// </summary>
+        public const string DATAVIEW_SEARCH_RESULTS = "6C7AB3CA-E894-4E19-96AE-C67C4C69FEDE";
+
+        /// <summary>
+        /// The report search results page
+        /// </summary>
+        public const string REPORT_SEARCH_RESULTS = "7DA4B63B-4407-47B2-8984-A54A543D8A69";
     }
 }

@@ -17,10 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.UI.WebControls;
 
@@ -31,15 +28,17 @@ using Rock.Attribute;
 using Rock.Common.Mobile.Enums;
 using Rock.Data;
 using Rock.DownhillCss;
-using Rock.Mobile;
 using Rock.Model;
 using Rock.Security;
+
 using Rock.Web;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
 using AdditionalSiteSettings = Rock.Mobile.AdditionalSiteSettings;
+using ListItem = System.Web.UI.WebControls.ListItem;
+
 using ShellType = Rock.Common.Mobile.Enums.ShellType;
 using TabLocation = Rock.Mobile.TabLocation;
 
@@ -50,6 +49,8 @@ namespace RockWeb.Blocks.Mobile
     [Description( "Edits and configures the settings of a mobile application." )]
     [LinkedPage( "Layout Detail", "", true )]
     [LinkedPage( "Page Detail", "", true )]
+    [LinkedPage( "Deep Link Detail", "", true )]
+    [Rock.SystemGuid.BlockTypeGuid( "1D001ED9-F711-4820-BED0-92150D069BA2" )]
     public partial class MobileApplicationDetail : RockBlock
     {
         /// <summary>
@@ -66,6 +67,12 @@ namespace RockWeb.Blocks.Mobile
             /// Key for Page Detail
             /// </summary>
             public const string PageDetail = "PageDetail";
+
+
+            /// <summary>
+            /// Key for Page Detail
+            /// </summary>
+            public const string DeepLinkDetail = "DeepLinkDetail";
         }
 
         #region Private Fields
@@ -87,8 +94,10 @@ namespace RockWeb.Blocks.Mobile
             Application,
             Styles,
             Layouts,
-            Pages
+            Pages,
+            DeepLinks
         }
+
         #endregion
 
         #region Base Method Overrides
@@ -112,6 +121,12 @@ namespace RockWeb.Blocks.Mobile
             gPages.Actions.AddClick += gPages_AddClick;
             gPages.Actions.ShowAdd = true;
             gPages.DataKeyNames = new[] { "Id" };
+
+            gDeepLinks.Actions.ShowMergeTemplate = false;
+            gDeepLinks.Actions.ShowExcelExport = false;
+            gDeepLinks.Actions.AddClick += gDeepLinks_AddClick;
+            gDeepLinks.Actions.ShowAdd = true;
+            gDeepLinks.DataKeyNames = new[] { "Guid" };
         }
 
         /// <summary>
@@ -190,6 +205,7 @@ namespace RockWeb.Blocks.Mobile
             liTabStyles.RemoveCssClass( "active" );
             liTabLayouts.RemoveCssClass( "active" );
             liTabPages.RemoveCssClass( "active" );
+            liTabDeepLinks.RemoveCssClass( "active" );
 
             string tabName = showTab.ConvertToString();
             hfCurrentTab.Value = tabName;
@@ -198,6 +214,7 @@ namespace RockWeb.Blocks.Mobile
             pnlStyles.Visible = tabName == Tabs.Styles.ConvertToString();
             pnlLayouts.Visible = tabName == Tabs.Layouts.ConvertToString();
             pnlPages.Visible = tabName == Tabs.Pages.ConvertToString();
+            pnlDeepLinks.Visible = tabName == Tabs.DeepLinks.ConvertToString();
 
             switch ( showTab )
             {
@@ -215,6 +232,10 @@ namespace RockWeb.Blocks.Mobile
 
                 case Tabs.Pages:
                     liTabPages.AddCssClass( "active" );
+                    break;
+
+                case Tabs.DeepLinks:
+                    liTabDeepLinks.AddCssClass( "active" );
                     break;
 
                 default:
@@ -356,6 +377,7 @@ namespace RockWeb.Blocks.Mobile
             //
             BindLayouts( siteId );
             BindPages( siteId );
+            BindRoutes( siteId );
 
             ShowStylesTabDetails( site );
 
@@ -363,6 +385,7 @@ namespace RockWeb.Blocks.Mobile
             pnlOverview.Visible = true;
             pnlEdit.Visible = false;
 
+            lbTabDeepLinks.Visible = additionalSettings.IsDeepLinkingEnabled;
             //
             // If returning from a child page make sure the correct tab is selected.
             //
@@ -378,6 +401,10 @@ namespace RockWeb.Blocks.Mobile
 
                 case "Pages":
                     ShowTab( Tabs.Pages );
+                    break;
+
+                case "Deep Links":
+                    ShowTab( Tabs.DeepLinks );
                     break;
 
                 default:
@@ -415,7 +442,10 @@ namespace RockWeb.Blocks.Mobile
                 site = new Site
                 {
                     IsActive = true,
-                    AdditionalSettings = new AdditionalSiteSettings().ToJson()
+                    AdditionalSettings = new AdditionalSiteSettings()
+                    {
+                        IsPackageCompressionEnabled = true
+                    }.ToJson()
                 };
             }
 
@@ -431,6 +461,20 @@ namespace RockWeb.Blocks.Mobile
                 additionalSettings = new AdditionalSiteSettings();
             }
 
+            var isDeepLinkingEnabled = additionalSettings.IsDeepLinkingEnabled;
+
+            if ( isDeepLinkingEnabled )
+            {
+                tbBundleId.Text = additionalSettings.BundleIdentifier;
+                tbTeamId.Text = additionalSettings.TeamIdentifier;
+                tbPackageName.Text = additionalSettings.PackageName;
+                tbCertificateFingerprint.Text = additionalSettings.CertificateFingerprint;
+                tbDeepLinkPathPrefix.Text = $"/{additionalSettings.DeepLinkPathPrefix}/";
+                tbDeepLinkPathPrefix.Enabled = false;
+                vlDeepLinkingDomain.Value = additionalSettings.DeepLinkDomains;
+            }
+
+            pnlDeepLinkSettings.Visible = isDeepLinkingEnabled;
             //
             // Set basic UI fields.
             //
@@ -445,7 +489,11 @@ namespace RockWeb.Blocks.Mobile
 
             cbEnableNotificationsAutomatically.Checked = additionalSettings.EnableNotificationsAutomatically;
             ceEditFlyoutXaml.Text = additionalSettings.FlyoutXaml;
-            ceToastXaml.Text = additionalSettings.ToastXaml;
+            cbEnableDeepLinking.Checked = additionalSettings.IsDeepLinkingEnabled;
+            cbCompressUpdatePackages.Checked = additionalSettings.IsPackageCompressionEnabled;
+            tbAuth0ClientDomain.Text = additionalSettings.Auth0Domain;
+            tbAuth0ClientId.Text = additionalSettings.Auth0ClientId;
+
             ceEditNavBarActionXaml.Text = additionalSettings.NavigationBarActionXaml;
             ceEditHomepageRoutingLogic.Text = additionalSettings.HomepageRoutingLogic;
             tbEditPushTokenUpdateValue.Text = additionalSettings.PushTokenUpdateValue;
@@ -458,7 +506,22 @@ namespace RockWeb.Blocks.Mobile
 
             ppEditLoginPage.SetValue( site.LoginPageId );
             ppEditProfilePage.SetValue( additionalSettings.ProfilePageId );
+            ppEditInteractiveExperiencePage.SetValue( additionalSettings.InteractiveExperiencePageId );
             ppCommunicationViewPage.SetValue( additionalSettings.CommunicationViewPageId );
+            ppEditSmsConversationPage.SetValue( additionalSettings.SmsConversationPageId );
+
+            ppEditInteractiveExperiencePage.SiteType = SiteType.Mobile;
+
+            int channelMediumWebsiteValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.INTERACTIONCHANNELTYPE_WEBSITE.AsGuid() ).Id;
+            var interactionChannelForSite = new InteractionChannelService( new RockContext() ).Queryable()
+                .Where( a => a.ChannelTypeMediumValueId == channelMediumWebsiteValueId && a.ChannelEntityId == site.Id ).FirstOrDefault();
+
+            if ( interactionChannelForSite != null )
+            {
+                nbPageViewRetentionPeriodDays.Text = interactionChannelForSite.RetentionDuration.ToString();
+            }
+
+            cbEnablePageViewGeoTracking.Checked = site.EnablePageViewGeoTracking;
 
             //
             // Set the API Key.
@@ -475,7 +538,10 @@ namespace RockWeb.Blocks.Mobile
             pnlEdit.Visible = true;
         }
 
-
+        /// <summary>
+        /// Shows the styles tab details.
+        /// </summary>
+        /// <param name="site">The site.</param>
         private void ShowStylesTabDetails( Site site )
         {
             using ( var rockContext = new RockContext() )
@@ -491,6 +557,13 @@ namespace RockWeb.Blocks.Mobile
                     return;
                 }
 
+                
+               
+                cbNavbarTransclucent.Checked = additionalSettings.IOSEnableBarTransparency;
+                ddlNavbarBlurStyle.Visible = cbNavbarTransclucent.Checked;
+                ddlNavbarBlurStyle.BindToEnum<IOSBlurStyle>();
+                ddlNavbarBlurStyle.SetValue((int) additionalSettings.IOSBarBlurStyle);
+                
                 cpEditBarBackgroundColor.Value = additionalSettings.BarBackgroundColor;
                 cpEditMenuButtonColor.Value = additionalSettings.MenuButtonColor;
                 cpEditActivityIndicatorColor.Value = additionalSettings.ActivityIndicatorColor;
@@ -517,6 +590,11 @@ namespace RockWeb.Blocks.Mobile
 
                 imgEditHeaderImage.BinaryFileId = site.FavIconBinaryFileId;
             }
+        }
+
+        public void CbNavbarTransclucent_CheckedChanged( object sender, EventArgs e )
+        {
+            ddlNavbarBlurStyle.Visible = ( sender as CheckBox ).Checked;
         }
 
         /// <summary>
@@ -554,8 +632,34 @@ namespace RockWeb.Blocks.Mobile
             }
             else
             {
+                var groupService = new GroupService( rockContext );
+                var groupMemberService = new GroupMemberService( rockContext );
+
+                // Create the person that is representative of the mobile application.
                 restPerson = new Person();
                 personService.Add( restPerson );
+
+                // Our default 'Mobile Application Users' RSR group.
+                var mobileApplicationUsersGroupGuid = Rock.SystemGuid.Group.GROUP_MOBILE_APPLICATION_USERS.AsGuid();
+                var mobileApplicationUsersGroup = groupService
+                    .Queryable()
+                    .FirstOrDefault( g => g.Guid == mobileApplicationUsersGroupGuid );
+
+                // This group really shouldn't ever be null, but just in case someone
+                // manually deleted it.
+                if ( mobileApplicationUsersGroup != null )
+                {
+                    var groupRoleId = GroupTypeCache.Get( mobileApplicationUsersGroup.GroupTypeId )
+                   .DefaultGroupRoleId;
+
+                    // Add the person to the default mobile rest security group.
+                    var groupMember = new GroupMember();
+                    groupMember.PersonId = restPerson.Id;
+                    groupMember.GroupId = mobileApplicationUsersGroup.Id;
+                    groupMember.GroupRoleId = groupRoleId.Value;
+
+                    groupMemberService.Add( groupMember );
+                }
             }
 
             // the rest user name gets saved as the last name on a person
@@ -587,6 +691,8 @@ namespace RockWeb.Blocks.Mobile
         /// </summary>
         /// <param name="color">The color.</param>
         /// <returns></returns>
+        [Obsolete( "Xamarin supports all of the color formatting that our color picker provides, so we don't need to include this." )]
+        [RockObsolete("1.14.1")]
         private string ParseColor( string color )
         {
             //
@@ -655,7 +761,7 @@ namespace RockWeb.Blocks.Mobile
                     p.Id,
                     p.InternalName,
                     LayoutName = p.Layout.Name,
-                    DisplayInNav = p.DisplayInNavWhen != DisplayInNavWhen.Never
+                    DisplayInNavWhen = p.DisplayInNavWhen.GetDescription() ?? p.DisplayInNavWhen.ToStringSafe()
                 } )
                 .ToList();
 
@@ -664,26 +770,98 @@ namespace RockWeb.Blocks.Mobile
         }
 
         /// <summary>
-        /// Gets the file path.
+        /// Binds the routes.
         /// </summary>
-        /// <param name="file">The file.</param>
-        /// <returns></returns>
-        private string GetFilePath( BinaryFile file )
+        /// <param name="siteId">The site identifier.</param>
+        private void BindRoutes( int siteId )
         {
-            string url = file.Url;
+            var site = new SiteService( new RockContext() ).Get( siteId );
+            var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>();
 
-            //
-            // FileSystem provider currently returns a bad URL.
-            //
-            if ( file.BinaryFileType.StorageEntityType.Name == "Rock.Storage.Provider.FileSystem" )
+            if( additionalSettings.DeepLinkDomains != null && additionalSettings.DeepLinkDomains.Contains("|") )
             {
-                url = System.Web.VirtualPathUtility.ToAbsolute( string.Format( "~/GetFile.ashx?Id={0}", file.Id ) );
-                var uri = new Uri( GlobalAttributesCache.Get().GetValue( "PublicApplicationRoot" ) );
-
-                url = uri.Scheme + "://" + uri.GetComponents( UriComponents.HostAndPort, UriFormat.UriEscaped ) + url;
+                var domainsText = additionalSettings.DeepLinkDomains.ReplaceLastOccurrence( "|", "" );
+                domainsText = domainsText.Replace( "|", ", " );
+                lblDeepLinkDomains.Text = domainsText;
             }
 
-            return url;
+            var routes = additionalSettings.DeepLinkRoutes
+                .Select( r => new
+                {
+                    Guid = r.Guid,
+                    IsUrl = r.UsesUrlAsFallback,
+                    Page = GetMobilePageTitle( r.MobilePageGuid ),
+                    Route = $"{additionalSettings.DeepLinkPathPrefix}/{r.Route}",
+                    Fallback = GetDeepLinkFallbackText( r.WebFallbackPageGuid, r.WebFallbackPageUrl )
+                } );
+
+            gDeepLinks.DataSource = routes;
+            gDeepLinks.DataBind();
+        }
+
+        /// <summary>
+        /// Gets the mobile page title.
+        /// </summary>
+        /// <param name="pageGuid">The page unique identifier.</param>
+        /// <returns></returns>
+        protected string GetMobilePageTitle( object pageGuid )
+        {
+            var guid = pageGuid as Guid?;
+            if ( guid == null )
+            {
+                return string.Empty;
+            }
+
+            using ( var context = new RockContext() )
+            {
+                var pageService = new PageService( context );
+                var page = pageService.Get( guid.Value );
+
+                if( page == null )
+                {
+                    return "No Page";
+                }
+                return page.PageTitle;
+            }
+        }
+
+        /// <summary>
+        /// Gets the deep link fallback text.
+        /// </summary>
+        /// <param name="pageGuid">The page unique identifier.</param>
+        /// <param name="fallbackUrl">The fallback URL.</param>
+        /// <returns></returns>
+        protected string GetDeepLinkFallbackText( object pageGuid, object fallbackUrl )
+        {
+            var guid = pageGuid as Guid?;
+
+            var usingPage = pageGuid != null;
+            if ( usingPage )
+            {
+                return GetMobilePageTitle( guid.Value );
+            }
+
+            return fallbackUrl as string;
+        }
+
+        /// <summary>
+        /// Whether or not the badge should be shown.
+        /// </summary>
+        /// <param name="pageGuid">The page unique identifier.</param>
+        /// <returns></returns>
+        protected bool ShowBadge( object pageGuid )
+        {
+            var usingPage = pageGuid != null;
+
+            using ( var context = new RockContext() )
+            {
+                if ( usingPage )
+                {
+                    return false;
+                }
+
+                return true;
+            }
         }
 
         #endregion
@@ -729,6 +907,7 @@ namespace RockWeb.Blocks.Mobile
             NavigateToParentPage();
         }
 
+
         /// <summary>
         /// Handles the Click event of the lbEditSave control.
         /// </summary>
@@ -761,8 +940,39 @@ namespace RockWeb.Blocks.Mobile
             site.IsActive = cbEditActive.Checked;
             site.Description = tbEditDescription.Text;
             site.LoginPageId = ppEditLoginPage.PageId;
-
+            
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>() ?? new AdditionalSiteSettings();
+
+            // Save the deep link settings, if enabled.
+            if ( cbEnableDeepLinking.Checked )
+            {
+                var deepLinkPrefix = tbDeepLinkPathPrefix.Text.Trim( '/' );
+
+                // If there is a conflict between our deep link prefix and conflicting route.
+                var conflictingRoute = new PageRouteService( rockContext ).Queryable()
+                    .AsEnumerable()
+                    .Where( r => r.Route.StartsWith( $"{deepLinkPrefix}/" ) || r.Route == deepLinkPrefix )
+                    .Any();
+
+                var conflictingDeepLinkPathPrefix = new SiteService( rockContext ).Queryable()
+                    .AsEnumerable()
+                    .Where( s => s.AdditionalSettings != null && s.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>().DeepLinkPathPrefix == deepLinkPrefix )
+                    .Any();
+
+                if ( conflictingRoute || conflictingDeepLinkPathPrefix && tbDeepLinkPathPrefix.Enabled )
+                {
+                    nbDeepLinks.Text = $"Your 'Deep Link Path Prefix ('{tbDeepLinkPathPrefix.Text}') is currently conflicting with another route or path prefix. Please check 'Settings > CMS Configuration > Routes' or pick a unique deep link path prefix.";
+                    nbDeepLinks.Visible = true;
+                    return;
+                }
+
+                additionalSettings.BundleIdentifier = tbBundleId.Text;
+                additionalSettings.TeamIdentifier = tbTeamId.Text;
+                additionalSettings.PackageName = tbPackageName.Text;
+                additionalSettings.CertificateFingerprint = tbCertificateFingerprint.Text;
+                additionalSettings.DeepLinkPathPrefix = deepLinkPrefix;
+                additionalSettings.DeepLinkDomains = vlDeepLinkingDomain.Value;
+            }
 
             // Ensure that the Downhill CSS platform is mobile
             if ( additionalSettings.DownhillSettings == null )
@@ -779,16 +989,21 @@ namespace RockWeb.Blocks.Mobile
 
             additionalSettings.PersonAttributeCategories = cpEditPersonAttributeCategories.SelectedValues.AsIntegerList();
             additionalSettings.ProfilePageId = ppEditProfilePage.PageId;
+            additionalSettings.InteractiveExperiencePageId = ppEditInteractiveExperiencePage.PageId;
             additionalSettings.CommunicationViewPageId = ppCommunicationViewPage.PageId;
+            additionalSettings.SmsConversationPageId = ppEditSmsConversationPage.PageId;
             additionalSettings.EnableNotificationsAutomatically = cbEnableNotificationsAutomatically.Checked;
             additionalSettings.FlyoutXaml = ceEditFlyoutXaml.Text;
-            additionalSettings.ToastXaml = ceToastXaml.Text;
+            additionalSettings.IsDeepLinkingEnabled = cbEnableDeepLinking.Checked;
             additionalSettings.PushTokenUpdateValue = tbEditPushTokenUpdateValue.Text;
+            additionalSettings.IsPackageCompressionEnabled = cbCompressUpdatePackages.Checked;
             additionalSettings.LockedPhoneOrientation = ddlEditLockPhoneOrientation.SelectedValueAsEnumOrNull<DeviceOrientation>() ?? DeviceOrientation.Unknown;
             additionalSettings.LockedTabletOrientation = ddlEditLockTabletOrientation.SelectedValueAsEnumOrNull<DeviceOrientation>() ?? DeviceOrientation.Unknown;
             additionalSettings.CampusFilterDataViewId = dvpCampusFilter.SelectedValueAsId();
             additionalSettings.NavigationBarActionXaml = ceEditNavBarActionXaml.Text;
             additionalSettings.HomepageRoutingLogic = ceEditHomepageRoutingLogic.Text;
+            additionalSettings.Auth0ClientId = tbAuth0ClientId.Text;
+            additionalSettings.Auth0Domain = tbAuth0ClientDomain.Text;
 
             //
             // Save the image.
@@ -807,6 +1022,9 @@ namespace RockWeb.Blocks.Mobile
                 binaryFileService.Get( site.ThumbnailBinaryFileId.Value ).IsTemporary = false;
             }
 
+            site.EnablePageViewGeoTracking = cbEnablePageViewGeoTracking.Checked;
+
+            // This is a new site.
             if ( site.Id == 0 )
             {
                 rockContext.WrapTransaction( () =>
@@ -823,6 +1041,7 @@ namespace RockWeb.Blocks.Mobile
                     var layoutService = new LayoutService( rockContext );
                     var pageName = string.Format( "{0} Homepage", site.Name );
 
+                    // Create the default layout for the homepage.
                     var layout = new Layout
                     {
                         Name = "Homepage",
@@ -836,6 +1055,7 @@ namespace RockWeb.Blocks.Mobile
                     layoutService.Add( layout );
                     rockContext.SaveChanges();
 
+                    // Create the default homepage for this mobile application.
                     var page = new Page
                     {
                         InternalName = pageName,
@@ -843,7 +1063,7 @@ namespace RockWeb.Blocks.Mobile
                         PageTitle = pageName,
                         Description = string.Empty,
                         LayoutId = layout.Id,
-                        DisplayInNavWhen = DisplayInNavWhen.WhenAllowed
+                        DisplayInNavWhen = Rock.Model.DisplayInNavWhen.WhenAllowed
                     };
 
                     pageService.Add( page );
@@ -864,6 +1084,28 @@ namespace RockWeb.Blocks.Mobile
 
                 rockContext.SaveChanges();
             }
+
+            //
+            // Create the default interaction channel for this site, and set the Retention Duration.
+            //
+            var interactionChannelService = new InteractionChannelService( rockContext );
+            int channelMediumWebsiteValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.INTERACTIONCHANNELTYPE_WEBSITE.AsGuid() ).Id;
+            var interactionChannelForSite = interactionChannelService.Queryable()
+                .Where( a => a.ChannelTypeMediumValueId == channelMediumWebsiteValueId && a.ChannelEntityId == site.Id ).FirstOrDefault();
+
+            if ( interactionChannelForSite == null )
+            {
+                interactionChannelForSite = new InteractionChannel();
+                interactionChannelForSite.ChannelTypeMediumValueId = channelMediumWebsiteValueId;
+                interactionChannelForSite.ChannelEntityId = site.Id;
+                interactionChannelService.Add( interactionChannelForSite );
+            }
+
+            interactionChannelForSite.Name = site.Name;
+            interactionChannelForSite.RetentionDuration = nbPageViewRetentionPeriodDays.Text.AsIntegerOrNull();
+            interactionChannelForSite.ComponentEntityTypeId = EntityTypeCache.Get<Rock.Model.Page>().Id;
+
+            rockContext.SaveChanges();
 
             NavigateToCurrentPage( new Dictionary<string, string>
             {
@@ -889,23 +1131,26 @@ namespace RockWeb.Blocks.Mobile
 
                 site.FavIconBinaryFileId = imgEditHeaderImage.BinaryFileId;
 
-                additionalSettings.BarBackgroundColor = ParseColor( cpEditBarBackgroundColor.Value );
-                additionalSettings.MenuButtonColor = ParseColor( cpEditMenuButtonColor.Value );
-                additionalSettings.ActivityIndicatorColor = ParseColor( cpEditActivityIndicatorColor.Value );
-                additionalSettings.DownhillSettings.TextColor = ParseColor( cpTextColor.Value );
-                additionalSettings.DownhillSettings.HeadingColor = ParseColor( cpHeadingColor.Value );
-                additionalSettings.DownhillSettings.BackgroundColor = ParseColor( cpBackgroundColor.Value );
+                additionalSettings.BarBackgroundColor = cpEditBarBackgroundColor.Value;
+                additionalSettings.IOSEnableBarTransparency = cbNavbarTransclucent.Checked;
+                additionalSettings.IOSBarBlurStyle = ddlNavbarBlurStyle.SelectedValueAsEnumOrNull<IOSBlurStyle>() ?? IOSBlurStyle.None;
 
-                additionalSettings.DownhillSettings.ApplicationColors.Primary = ParseColor( cpPrimary.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Secondary = ParseColor( cpSecondary.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Success = ParseColor( cpSuccess.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Info = ParseColor( cpInfo.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Danger = ParseColor( cpDanger.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Warning = ParseColor( cpWarning.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Light = ParseColor( cpLight.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Dark = ParseColor( cpDark.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Brand = ParseColor( cpBrand.Value );
-                additionalSettings.DownhillSettings.ApplicationColors.Info = ParseColor( cpInfo.Value );
+                additionalSettings.MenuButtonColor = cpEditMenuButtonColor.Value;
+                additionalSettings.ActivityIndicatorColor = cpEditActivityIndicatorColor.Value;
+                additionalSettings.DownhillSettings.TextColor = cpTextColor.Value;
+                additionalSettings.DownhillSettings.HeadingColor = cpHeadingColor.Value;
+                additionalSettings.DownhillSettings.BackgroundColor = cpBackgroundColor.Value;
+
+                additionalSettings.DownhillSettings.ApplicationColors.Primary = cpPrimary.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Secondary = cpSecondary.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Success = cpSuccess.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Info = cpInfo.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Danger = cpDanger.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Warning = cpWarning.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Light = cpLight.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Dark = cpDark.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Brand = cpBrand.Value;
+                additionalSettings.DownhillSettings.ApplicationColors.Info = cpInfo.Value;
 
                 additionalSettings.DownhillSettings.RadiusBase = nbRadiusBase.Text.AsDecimal();
 
@@ -924,6 +1169,11 @@ namespace RockWeb.Blocks.Mobile
 
                 rockContext.SaveChanges();
             }
+        }
+
+        protected void cbEnableDeepLinking_CheckedChanged( object sender, EventArgs e )
+        {
+            pnlDeepLinkSettings.Visible = cbEnableDeepLinking.Checked;
         }
 
         /// <summary>
@@ -977,6 +1227,16 @@ namespace RockWeb.Blocks.Mobile
         }
 
         /// <summary>
+        /// Handles the Click event of the lbTabDeepLinks control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void lbTabDeepLinks_Click( object sender, EventArgs e )
+        {
+            ShowTab( Tabs.DeepLinks );
+        }
+
+        /// <summary>
         /// Handles the Click event of the lbDeploy control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
@@ -984,121 +1244,12 @@ namespace RockWeb.Blocks.Mobile
         protected void lbDeploy_Click( object sender, EventArgs e )
         {
             var applicationId = PageParameter( "SiteId" ).AsInteger();
-            var deploymentDateTime = RockDateTime.Now;
-            var versionId = ( int ) ( deploymentDateTime.ToJavascriptMilliseconds() / 1000 );
-
-            //
-            // Generate the packages and then encode to JSON.
-            //
-            var phonePackage = MobileHelper.BuildMobilePackage( applicationId, DeviceType.Phone, versionId );
-            var tabletPackage = MobileHelper.BuildMobilePackage( applicationId, DeviceType.Tablet, versionId );
-            var phoneJson = phonePackage.ToJson();
-            var tabletJson = tabletPackage.ToJson();
 
             using ( var rockContext = new RockContext() )
             {
-                var binaryFileService = new BinaryFileService( rockContext );
-                var site = new SiteService( rockContext ).Get( applicationId );
-                var binaryFileType = new BinaryFileTypeService( rockContext ).Get( Rock.SystemGuid.BinaryFiletype.MOBILE_APP_BUNDLE.AsGuid() );
+                var siteService = new SiteService( rockContext );
 
-                // Enable this once the shell updates have been installed.
-                var enableCompression = false;
-                var mimeType = enableCompression ? "application/gzip" : "application/json";
-                var filenameExtension = enableCompression ? "json.gz" : "json";
-
-                //
-                // Prepare the phone configuration file.
-                //
-                Stream phoneJsonStream;
-                if ( enableCompression )
-                {
-                    phoneJsonStream = new MemoryStream();
-                    using ( var gzipStream = new GZipStream( phoneJsonStream, CompressionMode.Compress, true ) )
-                    {
-                        var bytes = Encoding.UTF8.GetBytes( phoneJson );
-                        gzipStream.Write( bytes, 0, bytes.Length );
-                    }
-                    phoneJsonStream.Position = 0;
-                }
-                else
-                {
-                    phoneJsonStream = new MemoryStream( Encoding.UTF8.GetBytes( phoneJson ) );
-                }
-
-                var phoneFile = new BinaryFile
-                {
-                    IsTemporary = false,
-                    BinaryFileTypeId = binaryFileType.Id,
-                    MimeType = mimeType,
-                    FileSize = phoneJson.Length,
-                    FileName = "phone." + filenameExtension,
-                    ContentStream = phoneJsonStream
-                };
-                binaryFileService.Add( phoneFile );
-
-                //
-                // Prepare the tablet configuration file.
-                //
-                Stream tabletJsonStream;
-                if ( enableCompression )
-                {
-                    tabletJsonStream = new MemoryStream();
-                    using ( var gzipStream = new GZipStream( tabletJsonStream, CompressionMode.Compress, true ) )
-                    {
-                        var bytes = Encoding.UTF8.GetBytes( tabletJson );
-                        gzipStream.Write( bytes, 0, bytes.Length );
-                    }
-                    tabletJsonStream.Position = 0;
-                }
-                else
-                {
-                    tabletJsonStream = new MemoryStream( Encoding.UTF8.GetBytes( tabletJson ) );
-                }
-
-                var tabletFile = new BinaryFile
-                {
-                    IsTemporary = false,
-                    BinaryFileTypeId = binaryFileType.Id,
-                    MimeType = mimeType,
-                    FileSize = tabletJson.Length,
-                    FileName = "tablet." + filenameExtension,
-                    ContentStream = tabletJsonStream
-                };
-                binaryFileService.Add( tabletFile );
-
-                rockContext.SaveChanges();
-
-                //
-                // Remove old configuration files.
-                //
-                if ( site.ConfigurationMobilePhoneBinaryFile != null )
-                {
-                    site.ConfigurationMobilePhoneBinaryFile.IsTemporary = true;
-                }
-
-                if ( site.ConfigurationMobileTabletBinaryFile != null )
-                {
-                    site.ConfigurationMobileTabletBinaryFile.IsTemporary = true;
-                }
-
-                //
-                // Set new configuration file references.
-                //
-                site.ConfigurationMobilePhoneBinaryFileId = phoneFile.Id;
-                site.ConfigurationMobileTabletBinaryFileId = tabletFile.Id;
-
-                //
-                // Update the last deployment date.
-                //
-                var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>() ?? new AdditionalSiteSettings();
-                additionalSettings.LastDeploymentDate = deploymentDateTime;
-                additionalSettings.LastDeploymentVersionId = versionId;
-                additionalSettings.PhoneUpdatePackageUrl = GetFilePath( phoneFile );
-                additionalSettings.TabletUpdatePackageUrl = GetFilePath( tabletFile );
-                site.AdditionalSettings = additionalSettings.ToJson();
-                site.LatestVersionDateTime = RockDateTime.Now;
-
-                rockContext.SaveChanges();
+                siteService.BuildMobileApplication( applicationId );
 
                 ShowDetail( applicationId );
             }
@@ -1255,7 +1406,6 @@ namespace RockWeb.Blocks.Mobile
             BindPages( hfSiteId.Value.AsInteger() );
         }
 
-
         /// <summary>
         /// Handles the RowDataBound event of the gPages control.
         /// </summary>
@@ -1298,5 +1448,87 @@ namespace RockWeb.Blocks.Mobile
         }
 
         #endregion
+
+        #region Deep Links Grid Event Handlers
+
+        /// <summary>
+        /// Handles the AddClick event of the gDeepLinks control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        private void gDeepLinks_AddClick( object sender, EventArgs e )
+        {
+            NavigateToLinkedPage( AttributeKey.DeepLinkDetail, new Dictionary<string, string>
+            {
+                { "SiteId", hfSiteId.Value }
+            } );
+        }
+
+        /// <summary>
+        /// Handles the GridRebind event of the gDeepLinks control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridRebindEventArgs"/> instance containing the event data.</param>
+        protected void gDeepLinks_GridRebind( object sender, GridRebindEventArgs e )
+        {
+            BindRoutes( hfSiteId.Value.AsInteger() );
+        }
+
+        /// <summary>
+        /// Handles the RowSelected event of the gDeepLinks control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gDeepLinks_RowSelected( object sender, RowEventArgs e )
+        {
+            NavigateToLinkedPage( AttributeKey.DeepLinkDetail, new Dictionary<string, string>
+            {
+                {"SiteId", hfSiteId.Value },
+                {"DeepLinkRouteGuid", e.RowKeyValue.ToString() }
+            } );
+        }
+
+        /// <summary>
+        /// Handles the GridReorder event of the gDeepLinks control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridReorderEventArgs"/> instance containing the event data.</param>
+        protected void gDeepLinks_GridReorder( object sender, GridReorderEventArgs e )
+        {
+            BindRoutes( hfSiteId.Value.AsInteger() );
+        }
+
+        /// <summary>
+        /// Handles the DeleteClick event of the gDeepLinks control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gDeepLinks_DeleteClick( object sender, RowEventArgs e )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var siteService = new SiteService( rockContext );
+                var site = siteService.Get( hfSiteId.Value.AsInteger() );
+                var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>();
+
+                var rowGuid = e.RowKeyValue.ToString().AsGuidOrNull();
+
+                if ( rowGuid == null )
+                {
+                    return;
+                }
+
+                var route = additionalSettings.DeepLinkRoutes.Where( r => rowGuid == r.Guid ).FirstOrDefault();
+                additionalSettings.DeepLinkRoutes.Remove( route );
+
+                site.AdditionalSettings = additionalSettings.ToJson();
+                rockContext.SaveChanges();
+
+                BindRoutes( site.Id );
+            }
+        }
+
+        #endregion
+
     }
 }

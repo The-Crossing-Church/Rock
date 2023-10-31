@@ -40,6 +40,7 @@ namespace RockWeb.Blocks.Communication
 
     [LinkedPage( "SMS Pipeline Detail",
         Key = AttributeKey.DetailPage )]
+    [Rock.SystemGuid.BlockTypeGuid( "DB6FD0BF-FDCE-48DA-919C-240F029518A2" )]
     public partial class SmsPipelineList : RockBlock, ICustomGridColumns
     {
         #region Attribute Keys
@@ -142,7 +143,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gEmailTemplates control.
+        /// Handles the GridRebind event of the gSmsPipelines control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>

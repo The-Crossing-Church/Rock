@@ -32,6 +32,7 @@ namespace Rock.Model
     [RockDomain( "Reporting" )]
     [Table( "MergeTemplate" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MERGE_TEMPLATE )]
     public partial class MergeTemplate : Model<MergeTemplate>, ICategorized
     {
         #region Entity Properties
@@ -176,7 +177,10 @@ namespace Rock.Model
     #region enums
 
     /// <summary>
-    /// 
+    /// Enum denoting which merge template to query for.
+    /// **NOTE**
+    /// This is copied to Rock.ViewModels.Rest.Controls.MergeTemplateOwnerShip to make accessible to other
+    /// areas of the codebase. If you make changes here, also update the other implementation if applicable.
     /// </summary>
     public enum MergeTemplateOwnership
     {

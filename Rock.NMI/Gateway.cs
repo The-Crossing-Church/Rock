@@ -129,7 +129,8 @@ namespace Rock.NMI
         IsRequired = false,
         DefaultValue = null,
         Order = 10 )]
-    public class Gateway : GatewayComponent, IThreeStepGatewayComponent, IHostedGatewayComponent, IFeeCoverageGatewayComponent, IObsidianHostedGatewayComponent
+    [Rock.SystemGuid.EntityTypeGuid( "B8282486-7866-4ED5-9F24-093D25FF0820")]
+    public class Gateway : GatewayComponent, IThreeStepGatewayComponent, IHostedGatewayComponent, IFeeCoverageGatewayComponent, IObsidianHostedGatewayComponent, IAutomatedGatewayComponent
     {
         #region Attribute Keys
 
@@ -307,10 +308,16 @@ namespace Rock.NMI
 
                 var rootElement = CreateThreeStepRootDoc( financialGateway, "sale" );
 
+                // Fixes issue #5461 - NMI gateway expects currency amount in en-US/USD format.
+                // If this executes during a browser request and the browser was set to a difference
+                // locale then Amount.ToString() would output the value in that locale which could
+                // then be not recognized by NMI.
+                var englishCulture = System.Globalization.CultureInfo.CreateSpecificCulture( "en-US" );
+
                 rootElement.Add(
                     new XElement( "ip-address", paymentInfo.IPAddress ),
                     new XElement( "currency", "USD" ),
-                    new XElement( "amount", paymentInfo.Amount.ToString() ),
+                    new XElement( "amount", paymentInfo.Amount.ToString( englishCulture ) ),
                     new XElement( "order-description", paymentInfo.Description ),
                     new XElement( "tax-amount", "0.00" ),
                     new XElement( "shipping-amount", "0.00" ) );
@@ -509,12 +516,12 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 return null;
             }
 
-            // https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#transaction_variables at 'Refund'
+            // https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#transaction_variables at 'Refund'
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add( "type", "refund" );
             queryParameters.Add( "transactionid", origTransaction.TransactionCode );
 
-            // see https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#transaction_variables
+            // see https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#transaction_variables
             // and search for 'payment***' or 'The type of payment'
             var currencyTypeIdACH = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid() );
             if ( origTransaction?.FinancialPaymentDetail?.CurrencyTypeValueId == currencyTypeIdACH )
@@ -878,7 +885,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     return paymentList;
                 }
 
-                XDocument doc = XDocument.Parse( response.Content );
+                XDocument doc = ParseXmlDocument( response.Content );
 
                 var responseNode = doc.Descendants( "nm_response" ).FirstOrDefault();
                 var jsonResponse = JsonConvert.SerializeXNode( responseNode );
@@ -1126,7 +1133,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
         /// <summary>
         /// Posts to gateway using the 3-Step API.
-        /// https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#3step_methodology
+        /// https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#3step_methodology
         /// </summary>
         /// <param name="financialGateway">The financial gateway.</param>
         /// <param name="data">The data.</param>
@@ -1256,12 +1263,43 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 return null;
             }
 
+            return ParseXmlDocument( response.Content );
+        }
+
+        /// <summary>
+        /// Parses the XML document (with a specific workaround to fix bad XML from NMI).
+        /// </summary>
+        /// <param name="xmlDocumentText">The XML document text.</param>
+        /// <returns>XDocument.</returns>
+        private XDocument ParseXmlDocument( string xmlDocumentText )
+        {
             try
             {
-                return XDocument.Parse( response.Content );
+                return XDocument.Parse( xmlDocumentText );
             }
             catch ( Exception ex )
             {
+                if ( ex is System.Xml.XmlException )
+                {
+                    /*
+                         02/24/2023 - SMC
+
+                         NMI's query API may return invalid XML with HTML entity codes (like &eacute;) contained within the
+                         document and not properly declared in the DTD.  If not corrected, this causes an error and results
+                         in the transaction not being recorded in Rock.  As a workaround for this, we will HTML decode the text
+                         to replace any HTML entity codes with their Unicode character values and if the resulting output is
+                         different than the input, we'll try to parse the document again.
+
+                         Reason:  Bad XML from NMI.
+                    */
+
+                    var newXmlDocumentText = WebUtility.HtmlDecode( xmlDocumentText );
+                    if ( newXmlDocumentText != xmlDocumentText )
+                    {
+                        return ParseXmlDocument( newXmlDocumentText );
+                    }
+                }
+
                 // This error condition is always logged, regardless of the logErrors flag, because it indicates something
                 // went wrong while converting what appears to be an XML response, which shoud never happen.
                 var loggedException = new Exception( "Invalid Response From NMI Gateway:  Unknown error.", ex );
@@ -1300,7 +1338,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         #region DirectPost API related
 
         /// <summary>
-        /// Posts to gateway using the Direct Post Api https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#methodology
+        /// Posts to gateway using the Direct Post Api https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#methodology
         /// </summary>
         /// <param name="financialGateway">The financial gateway.</param>
         /// <param name="data">The data.</param>
@@ -1400,7 +1438,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             var tokenizerToken = referencedPaymentInfo.ReferenceNumber;
             var amount = referencedPaymentInfo.Amount;
 
-            // https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#transaction_variables
+            // https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#transaction_variables
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add( "type", "sale" );
 
@@ -1555,7 +1593,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             var tokenizerToken = referencedPaymentInfo.ReferenceNumber;
             var amount = referencedPaymentInfo.Amount;
 
-            // https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#recurring_variables @ Adding a Custom Subscription
+            // https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#recurring_variables @ Adding a Custom Subscription
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add( "recurring", "add_subscription" );
 
@@ -1862,7 +1900,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             restRequest.AddParameter( "result_limit", resultLimit.ToString() );
 
             var response = restClient.Execute( restRequest );
-            XDocument doc = XDocument.Parse( response.Content );
+            XDocument doc = ParseXmlDocument( response.Content );
 
             var responseNode = doc.Descendants( "nm_response" ).FirstOrDefault();
             var jsonResponse = JsonConvert.SerializeXNode( responseNode );
@@ -1899,7 +1937,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             restRequest.AddParameter( "customer_vault_id", customerVaultId );
 
             var response = restClient.Execute( restRequest );
-            XDocument doc = XDocument.Parse( response.Content );
+            XDocument doc = ParseXmlDocument( response.Content );
 
             var customerVaultNode = doc.Descendants( "customer_vault" ).FirstOrDefault();
             var jsonResponse = JsonConvert.SerializeXNode( customerVaultNode );
@@ -1923,7 +1961,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         #region Exceptions
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <seealso cref="System.Exception" />
         public class ReferencePaymentInfoRequired : Exception
@@ -1937,7 +1975,77 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             }
         }
 
-        #endregion 
+        #endregion
+
+        #region IAutomatedGatewayComponent
+
+        /// <summary>
+        /// The most recent exception thrown by the gateway's remote API
+        /// </summary>
+        public Exception MostRecentException { get; private set; }
+
+        /// <summary>
+        /// Charges the specified payment info.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="paymentInfo">The payment info.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <param name="metadata">Optional. Additional key value pairs to send to the gateway</param>
+        /// <returns></returns>
+        /// <exception cref="ReferencePaymentInfoRequired"></exception>
+        public Payment AutomatedCharge( FinancialGateway financialGateway, ReferencePaymentInfo paymentInfo, out string errorMessage, Dictionary<string, string> metadata = null )
+        {
+            MostRecentException = null;
+
+            try
+            {
+                var transaction = Charge( financialGateway, paymentInfo, out errorMessage );
+
+                if ( !string.IsNullOrEmpty( errorMessage ) )
+                {
+                    MostRecentException = new Exception( errorMessage );
+                    return null;
+                }
+
+                var paymentDetail = transaction.FinancialPaymentDetail;
+
+                var payment = new Payment
+                {
+                    AccountNumberMasked = paymentDetail.AccountNumberMasked,
+                    Amount = paymentInfo.Amount,
+                    ExpirationMonth = paymentDetail.ExpirationMonth,
+                    ExpirationYear = paymentDetail.ExpirationYear,
+                    IsSettled = transaction.IsSettled,
+                    SettledDate = transaction.SettledDate,
+                    NameOnCard = paymentDetail.NameOnCard,
+                    Status = transaction.Status,
+                    StatusMessage = transaction.StatusMessage,
+                    TransactionCode = transaction.TransactionCode,
+                    TransactionDateTime = transaction.TransactionDateTime ?? RockDateTime.Now
+                };
+
+                if ( paymentDetail.CreditCardTypeValueId.HasValue )
+                {
+                    payment.CreditCardTypeValue = DefinedValueCache.Get( paymentDetail.CreditCardTypeValueId.Value );
+                }
+
+                if ( paymentDetail.CurrencyTypeValueId.HasValue )
+                {
+                    payment.CurrencyTypeValue = DefinedValueCache.Get( paymentDetail.CurrencyTypeValueId.Value );
+                }
+
+                payment.GatewayPersonIdentifier = paymentDetail.GatewayPersonIdentifier;
+
+                return payment;
+            }
+            catch ( Exception e )
+            {
+                MostRecentException = e;
+                throw;
+            }
+        }
+
+        #endregion IAutomatedGatewayComponent
 
         #region IHostedGatewayComponent
 
@@ -2045,7 +2153,9 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 tokenResponse = null;
             }
 
-            if ( tokenResponse?.IsSuccessStatus() != true )
+            bool successful = tokenResponse?.IsSuccessStatus() ?? false;
+
+            if ( !successful )
             {
                 if ( tokenResponse?.HasValidationError() == true )
                 {
@@ -2054,11 +2164,13 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
                 errorMessage = tokenResponse?.ErrorMessage ?? "null response from GetHostedPaymentInfoToken";
                 referencePaymentInfo.ReferenceNumber = nmiHostedPaymentControl.PaymentInfoToken;
+                referencePaymentInfo.InitialCurrencyTypeValue = nmiHostedPaymentControl.CurrencyTypeValue;
                 errorMessage = FriendlyMessageHelper.GetFriendlyMessage( errorMessage );
             }
             else
             {
                 referencePaymentInfo.ReferenceNumber = nmiHostedPaymentControl.PaymentInfoToken;
+                referencePaymentInfo.InitialCurrencyTypeValue = nmiHostedPaymentControl.CurrencyTypeValue;
             }
         }
 
@@ -2106,7 +2218,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 throw new NullFinancialGatewayException();
             }
 
-            // see https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#cv_variables
+            // see https://secure.nmi.com/merchants/resources/integration/integration_portal.php?#cv_variables
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add( "customer_vault", "add_customer" );
 
@@ -2150,22 +2262,40 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         /// <param name="queryParameters">The query parameters.</param>
         private static void PopulateAddressParameters( ReferencePaymentInfo referencedPaymentInfo, Dictionary<string, string> queryParameters )
         {
-            if ( !referencedPaymentInfo.IncludesAddressData() )
+            if ( referencedPaymentInfo.FirstName.IsNotNullOrWhiteSpace() )
             {
-                return;
+                queryParameters.Add( "first_name", referencedPaymentInfo.FirstName );
             }
 
-            queryParameters.Add( "first_name", referencedPaymentInfo.FirstName );
-            queryParameters.Add( "last_name", referencedPaymentInfo.LastName );
-            queryParameters.Add( "address1", referencedPaymentInfo.Street1 );
-            queryParameters.Add( "address2", referencedPaymentInfo.Street2 );
-            queryParameters.Add( "city", referencedPaymentInfo.City );
-            queryParameters.Add( "state", referencedPaymentInfo.State );
-            queryParameters.Add( "zip", referencedPaymentInfo.PostalCode );
-            queryParameters.Add( "country", referencedPaymentInfo.Country );
-            queryParameters.Add( "phone", referencedPaymentInfo.Phone );
-            queryParameters.Add( "email", referencedPaymentInfo.Email );
-            queryParameters.Add( "company", referencedPaymentInfo.BusinessName );
+            if ( referencedPaymentInfo.LastName.IsNotNullOrWhiteSpace() )
+            {
+                queryParameters.Add( "last_name", referencedPaymentInfo.LastName );
+            }
+
+            if ( referencedPaymentInfo.Phone.IsNotNullOrWhiteSpace() )
+            {
+                queryParameters.Add( "phone", referencedPaymentInfo.Phone );
+            }
+
+            if ( referencedPaymentInfo.Email.IsNotNullOrWhiteSpace() )
+            {
+                queryParameters.Add( "email", referencedPaymentInfo.Email );
+            }
+
+            if ( referencedPaymentInfo.BusinessName.IsNotNullOrWhiteSpace() )
+            {
+                queryParameters.Add( "company", referencedPaymentInfo.BusinessName );
+            }
+
+            if ( referencedPaymentInfo.IncludesAddressData() )
+            {
+                queryParameters.Add( "address1", referencedPaymentInfo.Street1 );
+                queryParameters.Add( "address2", referencedPaymentInfo.Street2 );
+                queryParameters.Add( "city", referencedPaymentInfo.City );
+                queryParameters.Add( "state", referencedPaymentInfo.State );
+                queryParameters.Add( "zip", referencedPaymentInfo.PostalCode );
+                queryParameters.Add( "country", referencedPaymentInfo.Country );
+            }
         }
 
         /// <summary>

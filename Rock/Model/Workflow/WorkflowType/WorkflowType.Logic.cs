@@ -14,11 +14,12 @@
 // limitations under the License.
 // </copyright>
 //
-
-using Rock.Web.Cache;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+
+using Rock.Security;
+using Rock.Web.Cache;
 
 namespace Rock.Model
 {
@@ -47,23 +48,19 @@ namespace Rock.Model
             }
         }
 
-        /// <summary>
-        /// Gets the supported actions.
-        /// </summary>
-        /// <value>
-        /// The supported actions.
-        /// </value>
-        public override Dictionary<string, string> SupportedActions
-        {
-            get
-            {
-                var supportedActions = base.SupportedActions;
-                supportedActions.AddOrReplace( "ViewList", "The roles and/or users that have access to view the workflow lists of this type." );
-                return supportedActions;
-            }
-        }
-
         #endregion Properties
+
+        /*
+            9/13/2023 - PA
+
+            WorkflowType should never be having a ParentAuthority or a ParentAuthorityPre.
+            WorflowType is the ParentAuthority of Workflow. Let say, if we were to set the ParentAuthority on the
+            WorkflowType to be Category, then anyone who has the edit on the Category would be able to edit the running
+            Workflows in the Category which is not the desired behavior. Similarly the ParentAuthorityPre were to be set to
+            Category, we would run into issues like https://github.com/SparkDevNetwork/Rock/issues/5537 where the forms in
+            the sub categories become uneditable.
+
+        */
 
         #region Public Methods
 
@@ -104,4 +101,3 @@ namespace Rock.Model
         #endregion ICacheable
     }
 }
-

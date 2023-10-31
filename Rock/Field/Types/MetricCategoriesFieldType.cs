@@ -14,14 +14,18 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
+#endif
 
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
@@ -30,10 +34,103 @@ namespace Rock.Field.Types
     /// Stored as a List of Metric.Guid|MetricCategory.Guid (MetricCategory.Guid included so we can preserve which category the metric was selected from)
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
-    public class MetricCategoriesFieldType : FieldType
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.METRIC_CATEGORIES )]
+    public class MetricCategoriesFieldType : FieldType, IEntityReferenceFieldType
     {
-
         #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string value, Dictionary<string, string> configurationValues )
+        {
+            if ( string.IsNullOrWhiteSpace( value ) )
+            {
+                return string.Empty;
+            }
+
+            var guidPairs = Rock.Attribute.MetricCategoriesFieldAttribute.GetValueAsGuidPairs( value );
+            if ( !guidPairs.Any() )
+            {
+                return string.Empty;
+            }
+
+            var metricGuids = guidPairs.Select( a => a.MetricGuid );
+
+            using ( var rockContext = new RockContext() )
+            {
+                var metrics = new MetricService( rockContext ).Queryable().AsNoTracking().Where( a => metricGuids.Contains( a.Guid ) );
+                if ( metrics.Any() )
+                {
+                    return string.Join( ", ", metrics.Select( m => m.Title ) );
+                }
+            }
+
+            return string.Empty;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Determines whether this filter has a filter control
+        /// </summary>
+        /// <returns></returns>
+        public override bool HasFilterControl()
+        {
+            return false;
+        }
+
+        #endregion
+
+        #region IEntityReferenceFieldType
+
+        /// <inheritdoc/>
+        List<ReferencedEntity> IEntityReferenceFieldType.GetReferencedEntities( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var guidPairs = Rock.Attribute.MetricCategoriesFieldAttribute.GetValueAsGuidPairs( privateValue );
+
+            if ( !guidPairs.Any() )
+            {
+                return null;
+            }
+            var metricGuids = guidPairs.Select( a => a.MetricGuid );
+
+            using ( var rockContext = new RockContext() )
+            {
+                var referencedEntities = new MetricService( rockContext )
+                                    .Queryable()
+                                    .AsNoTracking()
+                                    .Where( m => metricGuids.Contains( m.Guid ) )
+                                    .Select( m => m.Id )
+                                    .ToList()
+                                    .Select( m => new ReferencedEntity( EntityTypeCache.GetId<Metric>().Value, m ) );
+                if ( !referencedEntities.Any() )
+                {
+                    return null;
+                }
+                return referencedEntities.ToList();
+            }
+        }
+
+        /// <inheritdoc/>
+        List<ReferencedProperty> IEntityReferenceFieldType.GetReferencedProperties( Dictionary<string, string> privateConfigurationValues )
+        {
+            // This field type references the Name property of a Metric and
+            // should have its persisted values updated when changed.
+            return new List<ReferencedProperty>
+            {
+                new ReferencedProperty( EntityTypeCache.GetId<Metric>().Value, nameof( Metric.Title ) )
+            };
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns the field's current value(s)
@@ -45,30 +142,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            string formattedValue = string.Empty;
-
-            if ( !string.IsNullOrWhiteSpace( value ) )
-            {
-                var guidPairs = Rock.Attribute.MetricCategoriesFieldAttribute.GetValueAsGuidPairs( value );
-
-                var metricGuids = guidPairs.Select( a => a.MetricGuid );
-
-                using ( var rockContext = new RockContext() )
-                {
-                    var metrics = new MetricService( rockContext ).Queryable().AsNoTracking().Where( a => metricGuids.Contains( a.Guid ) );
-                    if ( metrics.Any() )
-                    {
-                        formattedValue = string.Join( ", ", ( from metric in metrics select metric.Title ).ToArray() );
-                    }
-                }
-            }
-
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -134,25 +211,21 @@ namespace Rock.Field.Types
                 {
                     // first try to get each metric from the category that it was selected from
                     var metricCategory = metricCategoryService.Queryable().Where( a => a.Metric.Guid == guidPair.MetricGuid && a.Category.Guid == guidPair.CategoryGuid ).FirstOrDefault();
-                    if (metricCategory == null)
+                    if ( metricCategory == null )
                     {
                         // if the metric isn't found in the original category, just the first one, ignoring category
                         metricCategory = metricCategoryService.Queryable().Where( a => a.Metric.Guid == guidPair.MetricGuid ).FirstOrDefault();
                     }
 
-                    if (metricCategory != null)
+                    if ( metricCategory != null )
                     {
                         metricCategories.Add( metricCategory );
                     }
                 }
-                    
+
                 picker.SetValues( metricCategories );
             }
         }
-
-        #endregion
-
-        #region Filter Control
 
         /// <summary>
         /// Creates the control needed to filter (query) values using this field type.
@@ -168,16 +241,7 @@ namespace Rock.Field.Types
             return null;
         }
 
-        /// <summary>
-        /// Determines whether this filter has a filter control
-        /// </summary>
-        /// <returns></returns>
-        public override bool HasFilterControl()
-        {
-            return false;
-        }
-
+#endif
         #endregion
-
     }
 }

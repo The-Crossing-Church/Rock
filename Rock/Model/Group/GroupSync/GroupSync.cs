@@ -29,6 +29,7 @@ namespace Rock.Model
     [RockDomain( "Group" )]
     [Table( "GroupSync" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "1C011499-1122-4429-9AFA-6578798E18A9")]
     public partial class GroupSync : Model<GroupSync>
     {
         #region Entity Properties
@@ -80,7 +81,7 @@ namespace Rock.Model
         /// The welcome system email identifier.
         /// </value>
         [DataMember]
-        [Obsolete( "Use WelcomeSystemCommunicationId instead." )]
+        [Obsolete( "Use WelcomeSystemCommunicationId instead.", true )]
         [RockObsolete( "1.10" )]
         public int? WelcomeSystemEmailId { get; set; }
 
@@ -100,7 +101,7 @@ namespace Rock.Model
         /// The exit system email identifier.
         /// </value>
         [DataMember]
-        [Obsolete( "Use ExitSystemCommunicationId instead." )]
+        [Obsolete( "Use ExitSystemCommunicationId instead.", true )]
         [RockObsolete( "1.10" )]
         public int? ExitSystemEmailId { get; set; }
 
@@ -168,7 +169,7 @@ namespace Rock.Model
         /// The welcome system email.
         /// </value>
         [DataMember]
-        [Obsolete( "Use WelcomeSystemCommunication instead." )]
+        [Obsolete( "Use WelcomeSystemCommunication instead.", true )]
         [RockObsolete( "1.10" )]
         public virtual Rock.Model.SystemEmail WelcomeSystemEmail { get; set; }
 
@@ -179,7 +180,7 @@ namespace Rock.Model
         /// The exit system email.
         /// </value>
         [DataMember]
-        [Obsolete( "Use ExitSystemCommunication instead." )]
+        [Obsolete( "Use ExitSystemCommunication instead.", true )]
         [RockObsolete( "1.10" )]
         public virtual SystemEmail ExitSystemEmail { get; set; }
 
@@ -221,12 +222,6 @@ namespace Rock.Model
             HasRequired( g => g.SyncDataView ).WithMany().HasForeignKey( g => g.SyncDataViewId ).WillCascadeOnDelete( false );
             HasOptional( g => g.WelcomeSystemCommunication ).WithMany().HasForeignKey( g => g.WelcomeSystemCommunicationId ).WillCascadeOnDelete( false );
             HasOptional( g => g.ExitSystemCommunication ).WithMany().HasForeignKey( g => g.ExitSystemCommunicationId ).WillCascadeOnDelete( false );
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            HasOptional( g => g.WelcomeSystemEmail ).WithMany().HasForeignKey( g => g.WelcomeSystemEmailId ).WillCascadeOnDelete( false );
-            HasOptional( g => g.ExitSystemEmail ).WithMany().HasForeignKey( g => g.ExitSystemEmailId ).WillCascadeOnDelete( false );
-#pragma warning restore CS0618 // Type or member is obsolete
-
         }
     }
     #endregion

@@ -105,28 +105,52 @@ namespace Rock.SystemKey
         public const string ALWAYS_SHOW_BUSINESS_IN_PERSONPICKER = "core_AlwaysShowBusinessInPersonPicker";
 
         /// <summary>
+        /// The setting to have Rock poll itself to keep it alive during times of inactivity. Usually this can stay disabled.
+        /// </summary>
+        public const string ENABLE_KEEP_ALIVE = "core_EnableKeepAlive";
+
+        /// <summary>
+        /// The PDF external render endpoint to use for the <see cref="Pdf.PdfGenerator"/> instead of the local chrome engine
+        /// For example: wss://chrome.browserless.io?token=YOUR-API-TOKEN
+        /// </summary>
+        public const string PDF_EXTERNAL_RENDER_ENDPOINT = "core_PDFExternalRenderEndpoint";
+
+        /// <summary>
+        /// The number of days that a visitor cookie persists. Default is 365.
+        /// </summary>
+        public const string VISITOR_COOKIE_PERSISTENCE_DAYS = "core_VisitorCookiePersistenceDays";
+
+        /// <summary>
         /// The day of the week that is considered the 'Start Day' (First Day Of week). This is used to compute 'SundayDate'. Default is Monday.
         /// </summary>
         public const string START_DAY_OF_WEEK = "core_StartDayOfWeek";
 
         /// <summary>
-        /// Enable a redis cache cluster
+        /// (Obsolete) Enable a redis cache cluster
         /// </summary>
+        [Obsolete( "No longer needed since we no longer support Redis." )]
+        [RockObsolete( "1.15" )]
         public const string REDIS_ENABLE_CACHE_CLUSTER = "EnableRedisCacheCluster";
 
         /// <summary>
-        /// Comma separated list of Redis endpoints (e.g. server.com:6379)
+        /// (Obsolete) Comma separated list of Redis endpoints (e.g. server.com:6379)
         /// </summary>
+        [Obsolete( "No longer needed since we no longer support Redis." )]
+        [RockObsolete( "1.15" )]
         public const string REDIS_ENDPOINT_LIST = "RedisEndpointList";
 
         /// <summary>
-        /// The redis password
+        /// (Obsolete) The redis password
         /// </summary>
+        [Obsolete( "No longer needed since we no longer support Redis." )]
+        [RockObsolete( "1.15" )]
         public const string REDIS_PASSWORD = "RedisPassword";
 
         /// <summary>
-        /// The redis database index number
+        /// (Obsolete) The redis database index number
         /// </summary>
+        [Obsolete( "No longer needed since we no longer support Redis." )]
+        [RockObsolete( "1.15" )]
         public const string REDIS_DATABASE_NUMBER = "RedisDatabaseNumber";
 
         /// <summary>
@@ -158,27 +182,6 @@ namespace Rock.SystemKey
         /// Enable Cache Manager statistics and performance counters.
         /// </summary>
         public const string CACHE_MANAGER_ENABLE_STATISTICS = "CacheManagerEnableStatistics";
-
-        /// <summary>
-        /// Settings for Do Not Disturb Start
-        /// </summary>
-        [Obsolete( "This functionality is no longer used.", true )]
-        [RockObsolete( "1.9" )]
-        public const string DO_NOT_DISTURB_START = "core_DoNotDisturbStart";
-
-        /// <summary>
-        /// Settings for Do Not Disturb End
-        /// </summary>
-        [Obsolete( "This functionality is no longer used.", true )]
-        [RockObsolete( "1.9" )]
-        public const string DO_NOT_DISTURB_END = "core_DoNotDisturbEnd";
-
-        /// <summary>
-        /// Settings for Do Not Disturb Active
-        /// </summary>
-        [Obsolete( "This functionality is no longer used.", true )]
-        [RockObsolete( "1.9" )]
-        public const string DO_NOT_DISTURB_ACTIVE = "core_DoNotDisturbActive";
 
         /// <summary>
         /// The open id connect RSA keys
@@ -244,5 +247,70 @@ namespace Rock.SystemKey
         /// The statement generator configuration
         /// </summary>
         public const string STATEMENT_GENERATOR_CONFIG = "core_StatementGeneratorConfig";
+
+        /// <summary>
+        /// The default security grant token duration in minutes.
+        /// </summary>
+        public const string DEFAULT_SECURITY_GRANT_TOKEN_DURATION = "core_DefaultSecurityGrantTokenDuration";
+
+        /// <summary>
+        /// The security grant token earliest date. This provides support to revoke existing tokens.
+        /// </summary>
+        public const string SECURITY_GRANT_TOKEN_EARLIEST_DATE = "core_SecurityGrantTokenEarliestDate";
+
+        /// <summary>
+        /// Security Settings (Account Protection profiles)
+        /// </summary>
+        public const string ROCK_SECURITY_SETTINGS = "core_RockSecuritySettings";
+
+        /// <summary>
+        /// Job Settings for <see cref="Rock.Jobs.PopulateInteractionSessionData"/>
+        /// </summary>
+        public const string POPULATE_INTERACTION_SESSION_DATA_JOB_SETTINGS = "core_PopulateInteractionSessionDataJobSettings";
+
+        /// <summary>
+        /// Number of minutes old the ROCK_SEGMENT_FILTERS cookie can be before it is considered stale and will be re-fetched from the database.
+        /// </summary>
+        public const string PERSONALIZATION_SEGMENT_COOKIE_AFFINITY_DURATION_MINUTES = "core_PersonalizationSegmentCookieAffinityDurationMinutes";
+
+        /// <summary>
+        /// Label text for the PersonRacePicker
+        /// </summary>
+        public const string PERSON_RACE_LABEL = "core_PersonRaceLabel";
+
+        /// <summary>
+        /// Label text for the PersonEthnicityPicker
+        /// </summary>
+        public const string PERSON_ETHNICITY_LABEL = "core_PersonEthnicityLabel";
+
+        /// <summary>
+        /// Label text for the PersonGenderPicker
+        /// </summary>
+        public const string PERSON_GENDER_LABEL = "core_GenderLabel";
+
+        /// <summary>
+        /// The name of the standard Rock Context.
+        /// </summary>
+        public const string ROCK_CONTEXT = "RockContext";
+
+        /// <summary>
+        /// The name of the standard Rock Context for Read Only queries.
+        /// </summary>
+        public const string ROCK_CONTEXT_READ_ONLY = "RockContextReadOnly";
+
+        /// <summary>
+        /// The Captcha site key.
+        /// </summary>
+        public const string CAPTCHA_SITE_KEY = "core_CaptchaSiteKey";
+
+        /// <summary>
+        /// The Captcha secret key.
+        /// </summary>
+        public const string CAPTCHA_SECRET_KEY = "core_CaptchaSecretKey";
+
+        /// <summary>
+        /// The label text for the SMS Opt-In checkbox
+        /// </summary>
+        public const string SMS_OPT_IN_MESSAGE_LABEL = "core_SmsOptInMessageLabel";
     }
 }

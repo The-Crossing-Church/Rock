@@ -20,7 +20,7 @@ using System.Data.Entity;
 using System.Linq;
 using Rock.Data;
 
-using Rock.ViewModel.Blocks.Event.RegistrationEntry;
+using Rock.ViewModels.Blocks.Event.RegistrationEntry;
 
 namespace Rock.Model
 {
@@ -196,7 +196,7 @@ namespace Rock.Model
                 else
                 {
                     // Add the registrant cost to the cost summary
-                    costSummary.Cost = context.RegistrationSettings.PerRegistrantCost;
+                    costSummary.Cost = registration.RegistrationGuid == null ? context.RegistrationSettings.PerRegistrantCost : registrant.Cost;
 
                     // Default the DiscountedCost to the same as the actual cost
                     costSummary.DiscountedCost = costSummary.Cost;
@@ -283,6 +283,7 @@ namespace Rock.Model
                             {
                                 // Compute the DiscountedCost using the DiscountAmountRemaining
                                 feeCostSummary.DiscountedCost = feeCostSummary.Cost - discountAmountRemaining;
+                                discountAmountRemaining = 0.0m;
                             }
                         }
                     }

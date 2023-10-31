@@ -46,6 +46,7 @@ namespace Rock.Rest.Controllers
         [Authenticate]
         [HttpGet]
         [System.Web.Http.Route( "api/MediaElements/WatchInteraction" )]
+        [Rock.SystemGuid.RestActionGuid( "A73244A1-C0DB-4EFC-A895-1612CDAAF5C2" )]
         public MediaElementInteraction GetWatchInteraction( [FromUri] Guid? mediaElementGuid = null, [FromUri] Guid? personGuid = null, Guid? personAliasGuid = null )
         {
             var rockContext = Service.Context as RockContext;
@@ -137,6 +138,7 @@ namespace Rock.Rest.Controllers
         [Authenticate]
         [HttpPost]
         [System.Web.Http.Route( "api/MediaElements/WatchInteraction" )]
+        [Rock.SystemGuid.RestActionGuid( "2368C700-B501-457C-B52B-9786E038D47D" )]
         public MediaElementInteraction PostWatchInteraction( MediaElementInteraction mediaInteraction )
         {
             var rockContext = Service.Context as RockContext;
@@ -233,9 +235,58 @@ namespace Rock.Rest.Controllers
                     WatchedPercentage = watchedPercentage
                 };
 
-                interaction = interactionService.CreateInteraction( interactionComponentId,
-                    null, "Watch", string.Empty, data.ToJson(), personAliasId, RockDateTime.Now,
-                    null, null, null, null, null, null );
+                var pageId = mediaInteraction.PageId
+                    ?? ( mediaInteraction.PageGuid.HasValue ? PageCache.GetId( mediaInteraction.PageGuid.Value ) : null );
+
+                // If the data includes all of the device information then use it.
+                if ( mediaInteraction.Application.IsNotNullOrWhiteSpace() && mediaInteraction.OperatingSystem.IsNotNullOrWhiteSpace() && mediaInteraction.ClientType.IsNotNullOrWhiteSpace() )
+                {
+                    interaction = interactionService.CreateInteraction( interactionComponentId,
+                        pageId,
+                        "Watch",
+                        mediaInteraction.OriginalUrl?.Truncate( 500, false ),
+                        data.ToJson(),
+                        personAliasId,
+                        RockDateTime.Now,
+                        mediaInteraction.Application,
+                        mediaInteraction.OperatingSystem,
+                        mediaInteraction.ClientType,
+                        null,
+                        RockRequestContext.ClientInformation.IpAddress,
+                        mediaInteraction.SessionGuid );
+
+                    interaction.SetUTMFieldsFromURL( mediaInteraction.OriginalUrl );
+                }
+                else
+                {
+                    // Otherwise fallback to UserAgent header parsing.
+                    interaction = interactionService.CreateInteraction( interactionComponentId,
+                        RockRequestContext.ClientInformation.UserAgent,
+                        mediaInteraction.OriginalUrl,
+                        RockRequestContext.ClientInformation.IpAddress,
+                        mediaInteraction.SessionGuid );
+
+                    interaction.InteractionSummary = mediaInteraction.OriginalUrl?.Truncate( 500, false );
+                    interaction.Operation = "Watch";
+                    interaction.InteractionData = data.ToJson();
+                    interaction.PersonAliasId = personAliasId;
+                    interaction.EntityId = pageId;
+                }
+
+                var pageGuid = pageId.HasValue ? PageCache.GetGuid( pageId.Value ) : null;
+
+                // We should always get this, but just in case.
+                if ( pageGuid != null )
+                {
+                    var page = PageCache.Get( pageGuid.Value );
+                    var site = SiteCache.Get( page.SiteId );
+
+                    // We can infer the medium from which someone is consuming this content by getting the SiteType
+                    // of the page the media was on (Web, Mobile, TV). We are setting this as an indexable
+                    // column for an easy way to differentiate where people are watching the most
+                    // content from.
+                    interaction.ChannelCustomIndexed1 = site.SiteType.ToString();
+                }
 
                 interaction.InteractionLength = watchedPercentage;
                 interaction.InteractionEndDateTime = RockDateTime.Now;
@@ -349,6 +400,18 @@ namespace Rock.Rest.Controllers
             public Guid? PersonGuid { get; set; }
 
             /// <summary>
+            /// Gets or sets the identifier of the page the media was viewed on.
+            /// </summary>
+            /// <value>The identifier of the page the media was viewed on.</value>
+            public int? PageId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the unique identifier of the page the media was viewed on.
+            /// </summary>
+            /// <value>The unique identifier of the page the media was viewed on.</value>
+            public Guid? PageGuid { get; set; }
+
+            /// <summary>
             /// Gets or sets the related entity type identifier.
             /// </summary>
             /// <value>
@@ -363,6 +426,64 @@ namespace Rock.Rest.Controllers
             /// The related entity identifier.
             /// </value>
             public int? RelatedEntityId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the unique session identifier. This is used to associate
+            /// the interaction with the current user session.
+            /// </summary>
+            /// <remarks>
+            /// This is not filled in when retrieving an existing watch interaction.
+            /// </remarks>
+            /// <value>
+            /// The unique session identifier.
+            /// </value>
+            public Guid? SessionGuid { get; set; }
+
+            /// <summary>
+            /// Gets or sets the original page URL (or equivalent for non-web interactions)
+            /// used to view this media. This is used to track UTM as well as
+            /// which page the individual was on when viewing the media.
+            /// </summary>
+            /// <remarks>
+            /// This is not filled in when retrieving an existing watch interaction.
+            /// </remarks>
+            /// <value>The original page URL.</value>
+            public string OriginalUrl { get; set; }
+
+            /// <summary>
+            /// Gets or sets the application name that is submitting this watch
+            /// interaction.
+            /// </summary>
+            /// <remarks>
+            /// This is not filled in when retrieving an existing watch interaction.
+            /// </remarks>
+            /// <value>
+            /// The application name that is submitting this watch interaction.
+            /// </value>
+            public string Application { get; set; }
+
+            /// <summary>
+            /// Gets or sets the operating system name and version of the device
+            /// submitting the interaction.
+            /// </summary>
+            /// <remarks>
+            /// This is not filled in when retrieving an existing watch interaction.
+            /// </remarks>
+            /// <value>
+            /// The operation system name and version of the device.
+            /// </value>
+            public string OperatingSystem { get; set; }
+
+            /// <summary>
+            /// Gets or sets the type of client submitting this interaction.
+            /// </summary>
+            /// <remarks>
+            /// This is not filled in when retrieving an existing watch interaction.
+            /// </remarks>
+            /// <value>
+            /// The type of client.
+            /// </value>
+            public string ClientType { get; set; }
         }
     }
 }

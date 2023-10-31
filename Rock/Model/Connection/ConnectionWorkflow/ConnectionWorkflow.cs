@@ -30,6 +30,7 @@ namespace Rock.Model
     [RockDomain( "Engagement" )]
     [Table( "ConnectionWorkflow" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.CONNECTION_WORKFLOW )]
     public partial class ConnectionWorkflow : Model<ConnectionWorkflow>
     {
         #region Entity Properties
@@ -80,6 +81,13 @@ namespace Rock.Model
         [DataMember]
         public string QualifierValue { get; set; }
 
+
+        /// <summary>
+        /// Gets or sets Connection Status Id used to filter workflows with manual trigger.
+        /// </summary>
+        [DataMember]
+        public int? ManualTriggerFilterConnectionStatusId { get; set; }
+
         #endregion
 
         #region Navigation Properties
@@ -111,6 +119,12 @@ namespace Rock.Model
         [DataMember]
         public virtual WorkflowType WorkflowType { get; set; }
 
+        /// <summary>
+        /// Gets or sets the <see cref="Rock.Model.ConnectionStatus"/>.
+        /// </summary>
+        [LavaVisible]
+        public virtual ConnectionStatus ManualTriggerFilterConnectionStatus { get; set; }
+
         #endregion
     }
 
@@ -129,7 +143,7 @@ namespace Rock.Model
             this.HasOptional( p => p.ConnectionType ).WithMany( p => p.ConnectionWorkflows ).HasForeignKey( p => p.ConnectionTypeId ).WillCascadeOnDelete( true );
             this.HasOptional( p => p.ConnectionOpportunity ).WithMany( p => p.ConnectionWorkflows ).HasForeignKey( p => p.ConnectionOpportunityId ).WillCascadeOnDelete( true );
             this.HasRequired( p => p.WorkflowType ).WithMany().HasForeignKey( p => p.WorkflowTypeId ).WillCascadeOnDelete( true );
-
+            this.HasOptional( p => p.ManualTriggerFilterConnectionStatus ).WithMany().HasForeignKey( p => p.ManualTriggerFilterConnectionStatusId ).WillCascadeOnDelete( false );
         }
     }
 

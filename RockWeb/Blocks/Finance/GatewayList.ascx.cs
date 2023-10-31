@@ -39,6 +39,7 @@ namespace RockWeb.Blocks.Finance
     [Category( "Finance" )]
     [Description( "Block for viewing list of financial gateways." )]
     [LinkedPage( "Detail Page" )]
+    [Rock.SystemGuid.BlockTypeGuid( "32E89BAE-C085-40B3-B872-B62E25A62BDB" )]
     public partial class GatewayList : RockBlock, ICustomGridColumns
     {
         #region Control Methods
@@ -170,15 +171,23 @@ namespace RockWeb.Blocks.Finance
             }
         }
 
-        protected string GetComponentName( object entityTypeObject )
+        protected string GetComponentDisplayName( object entityTypeObject )
         {
             var entityType = entityTypeObject as EntityType;
             if ( entityType != null )
             {
-                string name = Rock.Financial.GatewayContainer.GetComponentName( entityType.Name );
-                if ( !string.IsNullOrWhiteSpace(name))
+                var gatewayEntityType = EntityTypeCache.Get( entityType.Guid );
+                var name = Rock.Reflection.GetDisplayName( gatewayEntityType.GetEntityType() );
+
+                // If it has a DisplayName, use it as is
+                if ( !string.IsNullOrWhiteSpace( name ) )
                 {
-                    return name.SplitCase();
+                    return name;
+                }
+                else
+                {
+                    // Otherwise use the previous logic with SplitCase on the ComponentName
+                    return Rock.Financial.GatewayContainer.GetComponentName( entityType.Name ).ToStringSafe().SplitCase();
                 }
             }
 

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Web.UI.WebControls;
+using Rock.Constants;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.UI.Controls;
@@ -203,20 +204,148 @@ namespace Rock.Reporting
         /// <returns></returns>
         public static RockDropDownList ComparisonControl( ComparisonType supportedComparisonTypes, bool required = true )
         {
-            var ddl = new RockDropDownList();
+            var ddlComparisonControl = new RockDropDownList();
+            PopulateComparisonControl( ddlComparisonControl, supportedComparisonTypes, required );
+
+            return ddlComparisonControl;
+        }
+
+        /// <summary>
+        /// Populates the DropDownList with supported comparison types
+        /// </summary>
+        /// <param name="ddlComparisonControl">The DDL comparison control.</param>
+        /// <param name="supportedComparisonTypes">The supported comparison types.</param>
+        /// <param name="required">if set to <c>true</c> [required].</param>
+        public static void PopulateComparisonControl( RockDropDownList ddlComparisonControl, ComparisonType supportedComparisonTypes, bool required )
+        {
+            ddlComparisonControl.Items.Clear();
             if ( !required )
             {
-                ddl.Items.Add( new ListItem( string.Empty, "0" ) );
+                ddlComparisonControl.Items.Add( new ListItem( string.Empty, "0" ) );
             }
             foreach ( ComparisonType comparisonType in typeof( ComparisonType ).GetOrderedValues<ComparisonType>() )
             {
                 if ( ( supportedComparisonTypes & comparisonType ) == comparisonType )
                 {
-                    ddl.Items.Add( new ListItem( comparisonType.ConvertToString(), comparisonType.ConvertToInt().ToString() ) );
+                    ddlComparisonControl.Items.Add( new ListItem( comparisonType.ConvertToString(), comparisonType.ConvertToInt().ToString() ) );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Provides helper methods to get and set filter control values for number-based comparison types.
+        /// </summary>
+        public static class NumberComparisonFilter
+        {
+            private static readonly char _delimiter = '|';
+
+            /// <summary>
+            /// Parses the provided <paramref name="delimitedValue"/> and if valid, sets the values of the provided <see cref="RockDropDownList"/> and <see cref="NumberBox"/> controls.
+            /// </summary>
+            /// <param name="delimitedValue">The delimited value.</param>
+            /// <param name="comparisonTypeDropDownList">The comparison type drop down list.</param>
+            /// <param name="comparisonValueNumberBox">The comparison value number box.</param>
+            /// <param name="allowedComparisonTypes">The allowed comparison types.</param>
+            /// <param name="isComparisonTypeRequired">if set to <c>true</c> [is comparison type required].</param>
+            public static void SetValue( string delimitedValue, RockDropDownList comparisonTypeDropDownList, NumberBox comparisonValueNumberBox, ComparisonType allowedComparisonTypes = NumericFilterComparisonTypesRequired, bool isComparisonTypeRequired = false )
+            {
+                PopulateComparisonControl( comparisonTypeDropDownList, allowedComparisonTypes, isComparisonTypeRequired );
+
+                var parts = delimitedValue?.Split( _delimiter ) ?? new string [0];
+
+                if ( parts.Length == 2
+                    && parts[0] != None.IdValue
+                    && Enum.TryParse( parts[0], out ComparisonType comparisonType )
+                    && int.TryParse( parts[1], out int comparisonValue ) )
+                {
+                    comparisonTypeDropDownList.SetValue( comparisonType.ConvertToInt().ToString() );
+                    comparisonValueNumberBox.Text = comparisonValue.ToString();
+                }
+                else
+                {
+                    comparisonTypeDropDownList.SetValue( None.IdValue );
+                    comparisonValueNumberBox.Text = default;
                 }
             }
 
-            return ddl;
+            /// <summary>
+            /// Returns the currently-selected <see cref="ComparisonType"/> value from the provided <see cref="RockDropDownList"/>, if valid.
+            /// </summary>
+            /// <param name="comparisonTypeDropDownList">The comparison type drop down list.</param>
+            /// <returns>The currently-selected <see cref="ComparisonType"/> value from the provided <see cref="RockDropDownList"/>.</returns>
+            public static ComparisonType? SelectedComparisonType( RockDropDownList comparisonTypeDropDownList )
+            {
+                ComparisonType? selectedType = null;
+
+                var comparisonTypeString = comparisonTypeDropDownList.SelectedValue;
+
+                if ( comparisonTypeString != None.IdValue && Enum.TryParse( comparisonTypeString, out ComparisonType comparisonType ) )
+                {
+                    selectedType = comparisonType;
+                }
+
+                return selectedType;
+            }
+
+            /// <summary>
+            /// Returns the current <see cref="Nullable{Integer}"/> value from the provided <see cref="NumberBox"/>, if valid.
+            /// </summary>
+            /// <param name="comparisonValueNumberBox">The comparison value number box.</param>
+            /// <returns>The current <see cref="Nullable{Integer}"/> value from the provided <see cref="NumberBox"/>.</returns>
+            public static int? SelectedComparisonValue( NumberBox comparisonValueNumberBox )
+            {
+                int? selectedValue = null;
+
+                if ( int.TryParse( comparisonValueNumberBox.Text, out int comparisonValue ) )
+                {
+                    selectedValue = comparisonValue;
+                }
+
+                return selectedValue;
+            }
+
+            /// <summary>
+            /// Returns the currently-selected, delimited string values from the provided <see cref="RockDropDownList"/> and <see cref="NumberBox"/>, if valid.
+            /// </summary>
+            /// <param name="comparisonTypeDropDownList">The comparison type drop down list.</param>
+            /// <param name="comparisonValueNumberBox">The comparison value number box.</param>
+            /// <returns>The currently-selected, delimited string values from the provided <see cref="RockDropDownList"/> and <see cref="NumberBox"/>.</returns>
+            public static string SelectedValueAsDelimited( RockDropDownList comparisonTypeDropDownList, NumberBox comparisonValueNumberBox )
+            {
+                string delimited = null;
+
+                var comparisonTypeString = comparisonTypeDropDownList.SelectedValue;
+                var comparisonValueString = comparisonValueNumberBox.Text;
+
+                if ( comparisonTypeString != None.IdValue
+                    && Enum.TryParse( comparisonTypeString, out ComparisonType comparisonType )
+                    && int.TryParse( comparisonValueString, out int comparisonValue ) )
+                {
+                    delimited = $"{comparisonType.ConvertToInt()}{_delimiter}{comparisonValue}";
+                }
+
+                return delimited;
+            }
+
+            /// <summary>
+            /// Returns a friendly string value from the provided <paramref name="delimitedValue"/>, if valid.
+            /// </summary>
+            /// <param name="delimitedValue">The delimited value.</param>
+            /// <returns>A friendly string value from the provided <paramref name="delimitedValue"/>.</returns>
+            public static string ValueAsFriendlyString( string delimitedValue )
+            {
+                string friendlyString = null;
+
+                var parts = delimitedValue.Split( _delimiter );
+                if ( parts.Length == 2
+                    && Enum.TryParse( parts[0], out ComparisonType comparisonType )
+                    && int.TryParse( parts[1], out int comparisonValue ) )
+                {
+                    friendlyString = $"{comparisonType.ConvertToString( splitCase: true ) } {comparisonValue}";
+                }
+
+                return friendlyString;
+            }
         }
 
         /// <summary>
@@ -272,6 +401,19 @@ namespace Rock.Reporting
                         ComparisonType.StartsWith |
                         ComparisonType.EndsWith;
 
+
+        /// <summary>
+        /// Gets the comparison types typically used for string fields when a comparison value is required.
+        /// </summary>
+        public const ComparisonType StringFilterComparisonTypesRequired =
+                        ComparisonType.Contains |
+                        ComparisonType.DoesNotContain |
+                        ComparisonType.EqualTo |
+                        ComparisonType.NotEqualTo |
+                        ComparisonType.StartsWith |
+                        ComparisonType.EndsWith;
+
+
         /// <summary>
         /// Gets the comparison types typically used for select or boolean fields
         /// </summary>
@@ -294,6 +436,17 @@ namespace Rock.Reporting
                         ComparisonType.EqualTo |
                         ComparisonType.IsBlank |
                         ComparisonType.IsNotBlank |
+                        ComparisonType.NotEqualTo |
+                        ComparisonType.GreaterThan |
+                        ComparisonType.GreaterThanOrEqualTo |
+                        ComparisonType.LessThan |
+                        ComparisonType.LessThanOrEqualTo;
+
+        /// <summary>
+        /// Gets the comparison types typically used for numeric fields when a comparison value is required.
+        /// </summary>
+        public const ComparisonType NumericFilterComparisonTypesRequired =
+                        ComparisonType.EqualTo |
                         ComparisonType.NotEqualTo |
                         ComparisonType.GreaterThan |
                         ComparisonType.GreaterThanOrEqualTo |

@@ -29,6 +29,7 @@ namespace Rock.Model
     [RockDomain( "Group" )]
     [Table( "GroupMemberScheduleTemplate" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "D84ED719-B659-433C-BFA0-E798E52C6B24")]
     public class GroupMemberScheduleTemplate : Model<GroupMemberScheduleTemplate>
     {
         #region Entity Properties
@@ -85,6 +86,21 @@ namespace Rock.Model
         public virtual Schedule Schedule { get; set; }
 
         #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Returns a <see cref="System.String"/> containing the GroupMemberScheduleTemplate's Name that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String"/> containing the GroupMemberScheduleTemplate's Name that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            return this.Name;
+        }
+
+        #endregion Public Methods
     }
 
     #region Entity Configuration

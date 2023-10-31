@@ -32,6 +32,7 @@ namespace Rock.Model
     [NotAudited]
     [Table( "InteractionComponent" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "ACE6145B-57D6-4694-972F-EC43AF776DE7")]
     public partial class InteractionComponent : Model<InteractionComponent>, ICacheable
     {
         #region Entity Properties
@@ -69,7 +70,7 @@ namespace Rock.Model
         /// <list type="bullet">
         /// <item>
         ///     <term>Page Views</term>
-        ///     <description><see cref="Rock.Model.Site" /> Id</description></item>
+        ///     <description><see cref="Rock.Model.Page" /> Id</description></item>
         /// <item>
         ///     <term>Communication Recipient Activity</term>
         ///     <description><see cref="Rock.Model.Communication" /> Id</description></item>
@@ -139,9 +140,6 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public virtual InteractionChannel InteractionChannel { get; set; }
-
-        [NotMapped]
-        private EntityState SaveState { get; set; }
 
         #endregion
     }

@@ -158,6 +158,8 @@ namespace Rock.Blocks.Types.Mobile.Groups
 
     #endregion
 
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_GROUPS_GROUP_REGISTRATION_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.MOBILE_GROUPS_GROUP_REGISTRATION )]
     public class GroupRegistration : RockMobileBlockType
     {
         #region Block Attributes
@@ -679,7 +681,7 @@ namespace Rock.Blocks.Types.Mobile.Groups
                 LastName = lastName,
                 Email = email,
                 IsEmailActive = true,
-                EmailPreference = EmailPreference.EmailAllowed,
+                EmailPreference = Rock.Model.EmailPreference.EmailAllowed,
                 RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id,
                 ConnectionStatusValueId = ConnectionStatus?.Id,
                 RecordStatusValueId = RecordStatus?.Id

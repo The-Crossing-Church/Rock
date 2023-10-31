@@ -20,6 +20,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.UI;
@@ -112,7 +113,7 @@ namespace RockWeb.Blocks.Event
         Key = AttributeKey.FamilyTerm )]
 
     [BooleanField( "Force Email Update",
-        Description = "Force the email to be updated on the person's record.",
+        Description = "If enabled, no checkbox option will be available on the final confirmation screen regarding whether or not to update the  Registrar's email address. Instead, the registrar's email address will be updated to match the supplied Confirmation Email.",
         DefaultBooleanValue = false,
         Order = 9,
         Key = AttributeKey.ForceEmailUpdate )]
@@ -129,6 +130,7 @@ namespace RockWeb.Blocks.Event
         DefaultBooleanValue = true,
         Order = 11 )]
     #endregion BlockAttributes
+    [Rock.SystemGuid.BlockTypeGuid( "CABD2BFB-DFFF-42CD-BF1A-14F3BEE583DD" )]
     public partial class RegistrationEntry : RockBlock
     {
         private static class AttributeKey
@@ -748,7 +750,7 @@ namespace RockWeb.Blocks.Event
             {
                 if ( CurrentPerson != null && CurrentPerson.IsBusiness() )
                 {
-                    ShowError( "Invalid Login", "Sorry, the login you are using doesn't appear to be tied to a valid person record. Try logging out and logging in with a different username, or create a new account before registering for the selected event." );
+                    ShowError( "Invalid Login", "Sorry, the login you are using is not associated with a valid person record. Try logging out and logging in with a different username, or create a new account before registering for the selected event." );
                 }
                 else
                 {
@@ -808,24 +810,7 @@ namespace RockWeb.Blocks.Event
                         }
                         else
                         {
-                            var matchingRegistrationInstance = FindMatchingRegistrationInstance();
-
-                            if ( matchingRegistrationInstance == null )
-                            {
-                                ShowWarning( "Sorry", string.Format( NOT_FOUND_ERROR_MESSAGE_FORMAT, RegistrationTerm.ToLower() ) );
-                            }
-                            else if ( matchingRegistrationInstance.EndDateTime < RockDateTime.Now)
-                            {
-                                ShowWarning( "Sorry", string.Format( "{0} closed on {1}.", matchingRegistrationInstance.Name, matchingRegistrationInstance.EndDateTime.ToShortDateString() ) );
-                            }
-                            else if ( matchingRegistrationInstance.StartDateTime > RockDateTime.Today)
-                            {
-                                ShowWarning( "Sorry", string.Format( "{0} for {1} does not open until {2}.", RegistrationTerm, matchingRegistrationInstance.Name, matchingRegistrationInstance.StartDateTime.ToShortDateString() ) );
-                            }
-                            else
-                            {
-                                ShowWarning( "Sorry", string.Format( NOT_FOUND_ERROR_MESSAGE_FORMAT, RegistrationTerm.ToLower() ) );
-                            }
+                            FindMatchingRegistrationInstance();
                         }
                     }
                 }
@@ -837,13 +822,18 @@ namespace RockWeb.Blocks.Event
 
                 // Show or Hide the Credit card entry panel based on if a saved account exists and it's selected or not.
                 divNewCard.Style[HtmlTextWriterStyle.Display] = ( rblSavedCC.Items.Count == 0 || rblSavedCC.Items[rblSavedCC.Items.Count - 1].Selected ) ? "block" : "none";
+
+                if ( RegistrationTemplate == null )
+                {
+                   FindMatchingRegistrationInstance();
+                }
             }
         }
 
         /// <summary>
         /// Finds the matching registration instance if the registrationInstanceId parameter was provided.
         /// </summary>
-        private RegistrationInstance FindMatchingRegistrationInstance()
+        private void FindMatchingRegistrationInstance()
         {
             /*
                 03/16/2022 - KA
@@ -859,7 +849,7 @@ namespace RockWeb.Blocks.Event
 
             if ( !registrationInstanceId.HasValue )
             {
-                return null;
+                return;
             }
 
             var registrationInstance = new RegistrationInstanceService( new RockContext() )
@@ -871,7 +861,37 @@ namespace RockWeb.Blocks.Event
                     r.RegistrationTemplate.IsActive )
                 .FirstOrDefault();
 
-            return registrationInstance;
+            if ( registrationInstance == null )
+            {
+                ShowWarning( "Sorry", string.Format( NOT_FOUND_ERROR_MESSAGE_FORMAT, RegistrationTerm.ToLower() ) );
+            }
+            else if ( registrationInstance.EndDateTime < RockDateTime.Now )
+            {
+                ShowWarning( "Sorry", string.Format( "{0} closed on {1}.", registrationInstance.Name, registrationInstance.EndDateTime.ToShortDateString() ) );
+            }
+            else if ( registrationInstance.StartDateTime > RockDateTime.Today )
+            {
+                ShowWarning( "Sorry", string.Format( "{0} for {1} does not open until {2}.", RegistrationTerm, registrationInstance.Name, registrationInstance.StartDateTime.ToShortDateString() ) );
+            }
+            else
+            {
+                ShowWarning( "Sorry", string.Format( NOT_FOUND_ERROR_MESSAGE_FORMAT, RegistrationTerm.ToLower() ) );
+            }
+        }
+
+        /// <summary>
+        /// Updates the RegistrationInstanceState property with info from the DB. This is to ensure that any change to the RegistrationInstnaceState made while the user was registering
+        /// is considered. e.g. If the registration was at capacity, made inactive, or the period ended then the user can be prevented from saving it.
+        /// </summary>
+        private void UpdateRegistrationInstanceStateInfo()
+        {
+            if ( RegistrationInstanceState == null || RegistrationInstanceState.Id == 0 )
+            {
+                return;
+            }
+
+            RegistrationInstanceState = new RegistrationInstanceService( new RockContext() ).Get( RegistrationInstanceState.Id );
+
         }
 
         /// <summary>
@@ -1177,7 +1197,7 @@ namespace RockWeb.Blocks.Event
                 }
 
                 PercentComplete = ( currentStep / ProgressBarSteps ) * 100.0m;
-                pnlRegistrationAttributesStartProgressBar.Visible = GetAttributeValue( AttributeKey.DisplayProgressBar ).AsBoolean();
+                pnlRegistrationAttributesEndProgressBar.Visible = GetAttributeValue( AttributeKey.DisplayProgressBar ).AsBoolean();
 
                 lRegistrationAttributesEndTitle.Text = this.RegistrationAttributeTitleEnd;
                 avcRegistrationAttributesEnd.ShowCategoryLabel = false;
@@ -1472,58 +1492,61 @@ namespace RockWeb.Blocks.Event
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void lbSummaryNext_Click( object sender, EventArgs e )
         {
-            if ( CurrentPanel == PanelIndex.PanelSummary )
+            if ( Page.IsValid )
             {
-                List<string> summaryErrors = ValidateSummary();
-                if ( !summaryErrors.Any() )
+                if ( CurrentPanel == PanelIndex.PanelSummary )
                 {
-                    _saveNavigationHistory = true;
-
-                    if ( Using3StepGateway && RegistrationState.PaymentAmount > 0.0M )
+                    List<string> summaryErrors = ValidateSummary();
+                    if ( !summaryErrors.Any() )
                     {
-                        string errorMessage = string.Empty;
-                        if ( ProcessStep1( out errorMessage ) )
+                        _saveNavigationHistory = true;
+
+                        if ( Using3StepGateway && RegistrationState.PaymentAmount > 0.0M )
                         {
-                            if ( rblSavedCC.Items.Count > 0 && ( rblSavedCC.SelectedValueAsId() ?? 0 ) > 0 )
+                            string errorMessage = string.Empty;
+                            if ( ProcessStep1( out errorMessage ) )
                             {
-                                hfStep2AutoSubmit.Value = "true";
-                                ShowSummary(); // Stay on summary page so blank page does not appear when autopost occurs
+                                if ( rblSavedCC.Items.Count > 0 && ( rblSavedCC.SelectedValueAsId() ?? 0 ) > 0 )
+                                {
+                                    hfStep2AutoSubmit.Value = "true";
+                                    ShowSummary(); // Stay on summary page so blank page does not appear when autopost occurs
+                                }
+                                else
+                                {
+                                    ShowPayment();
+                                }
                             }
                             else
                             {
-                                ShowPayment();
+                                throw new Exception( errorMessage );
                             }
                         }
                         else
                         {
-                            throw new Exception( errorMessage );
+                            var registrationId = SaveChanges();
+                            if ( registrationId.HasValue )
+                            {
+                                ShowSuccess( registrationId.Value );
+                            }
+                            else
+                            {
+                                ShowSummary();
+                            }
                         }
                     }
                     else
                     {
-                        var registrationId = SaveChanges();
-                        if ( registrationId.HasValue )
-                        {
-                            ShowSuccess( registrationId.Value );
-                        }
-                        else
-                        {
-                            ShowSummary();
-                        }
+                        ShowError( "Please correct the following:", string.Format( "<ul><li>{0}</li></ul>", summaryErrors.AsDelimited( "</li><li>" ) ) );
+                        ShowSummary();
                     }
                 }
                 else
                 {
-                    ShowError( "Please correct the following:", string.Format( "<ul><li>{0}</li></ul>", summaryErrors.AsDelimited( "</li><li>" ) ) );
-                    ShowSummary();
+                    ShowStart();
                 }
-            }
-            else
-            {
-                ShowStart();
-            }
 
-            hfTriggerScroll.Value = "true";
+                hfTriggerScroll.Value = "true";
+            }
         }
 
         /// <summary>
@@ -2023,6 +2046,11 @@ namespace RockWeb.Blocks.Event
                     if ( linkage != null )
                     {
                         GroupId = linkage.GroupId;
+
+                        if ( linkage.CampusId.HasValue )
+                        {
+                            CampusId = linkage.CampusId;
+                        }
                     }
                 }
             }
@@ -2048,6 +2076,11 @@ namespace RockWeb.Blocks.Event
                     RegistrationInstanceState = linkage.RegistrationInstance;
                     GroupId = linkage.GroupId;
                     RegistrationState = new RegistrationInfo( CurrentPerson );
+
+                    if ( linkage.CampusId.HasValue )
+                    {
+                        CampusId = linkage.CampusId;
+                    }
                 }
             }
 
@@ -2075,6 +2108,10 @@ namespace RockWeb.Blocks.Event
                     RegistrationInstanceState = linkage.RegistrationInstance;
                     GroupId = linkage.GroupId;
                     RegistrationState = new RegistrationInfo( CurrentPerson );
+                    if ( linkage.CampusId.HasValue )
+                    {
+                        CampusId = linkage.CampusId;
+                    }
                 }
             }
 
@@ -2117,6 +2154,11 @@ namespace RockWeb.Blocks.Event
                     if ( linkage != null )
                     {
                         GroupId = linkage.GroupId;
+
+                        if ( linkage.CampusId.HasValue )
+                        {
+                            CampusId = linkage.CampusId;
+                        }
                     }
                 }
             }
@@ -2389,6 +2431,8 @@ namespace RockWeb.Blocks.Event
 
             if ( RegistrationState != null && RegistrationState.Registrants.Any() && RegistrationTemplate != null )
             {
+                UpdateRegistrationInstanceStateInfo();
+
                 var rockContext = new RockContext();
 
                 var registrationService = new RegistrationService( rockContext );
@@ -2405,6 +2449,21 @@ namespace RockWeb.Blocks.Event
                             .Where( r => r.PersonAlias != null )
                             .Select( r => r.PersonAlias.PersonId )
                             .ToList();
+                    }
+                }
+
+                if ( isNewRegistration )
+                {
+                    if ( RegistrationInstanceState.EndDateTime < RockDateTime.Now )
+                    {
+                        ShowWarning( "Sorry", $"{RegistrationInstanceState.Name} closed on {RegistrationInstanceState.EndDateTime}." );
+                        return null;
+                    }
+
+                    if ( !RegistrationInstanceState.IsActive )
+                    {
+                        ShowWarning( "Sorry", $"{RegistrationInstanceState.Name} is no longer active." );
+                        return null;
                     }
                 }
 
@@ -2592,7 +2651,7 @@ namespace RockWeb.Blocks.Event
                             var parameters = new Dictionary<string, string>();
                             parameters.Add( "RegistrationId", item.RegistrationId.ToString() );
                             parameters.Add( "RegistrationRegistrantId", item.Id.ToString() );
-                            newRegistration.LaunchWorkflow( RegistrationTemplate.RegistrantWorkflowTypeId, newRegistration.ToString(), parameters, null );
+                            item.LaunchWorkflow( RegistrationTemplate.RegistrantWorkflowTypeId, newRegistration.ToString(), parameters, null );
                         }
 
                         newRegistration.LaunchWorkflow( RegistrationTemplate.RegistrationWorkflowTypeId, newRegistration.ToString(), null, null );
@@ -2619,6 +2678,45 @@ namespace RockWeb.Blocks.Event
         /// <returns></returns>
         private Registration SaveRegistration( RockContext rockContext, bool hasPayment )
         {
+            /*
+                8/15/2023 - JPH
+
+                In order to successfully save the registration form values that were provided by the registrar, we must
+                have each [RegistrationTemplateForm].[Fields] collection loaded into memory below. Several individuals have
+                reported seeing missing registrant data within completed registrations, so it's possible that these Fields
+                collections are somehow empty, as part of a botched ViewState serialization/deserialization process, Etc.
+
+                The TryLoadMissingFields() method is a failsafe to ensure we have the data we need to properly save the
+                registration. This method will:
+                    1) Attempt to load any missing Fields collections;
+                    2) Return a list of any Form IDs that were actually missing Fields so we can log them to prove that
+                       this was a likely culprit for failed, past registration attempts (and so we can know to look into
+                       the issue further from this angle).
+
+                Reason: Registration entries are sometimes missing registration form data.
+                https://github.com/SparkDevNetwork/Rock/issues/5091
+             */
+            var logInstanceOrTemplateName = this.RegistrationInstanceState?.Name?.IsNotNullOrWhiteSpace() == true
+                ? this.RegistrationInstanceState.Name
+                : this.RegistrationTemplate?.Name;
+
+            var logCurrentPersonDetails = $"Current Person Name: {this.CurrentPerson?.FullName} (Person ID: {this.CurrentPerson?.Id});";
+            var logMsgPrefix = $"Legacy{( logInstanceOrTemplateName.IsNotNullOrWhiteSpace() ? $@" ""{logInstanceOrTemplateName}""" : string.Empty )} Registration; {logCurrentPersonDetails}{Environment.NewLine}";
+
+            var ( wereFieldsMissing, missingFieldsDetails ) = new RegistrationTemplateFormService( rockContext ).TryLoadMissingFields( RegistrationTemplate?.Forms?.ToList() );
+            if ( wereFieldsMissing )
+            {
+                var logMissingFieldsMsg = $"{logMsgPrefix}RegistrationTemplateForm(s) missing Fields data when trying to save Registration.{Environment.NewLine}{missingFieldsDetails}";
+
+                ExceptionLogService.LogException(
+                    new RegistrationTemplateFormFieldException( logMissingFieldsMsg ),
+                    Context,
+                    this.RockPage.PageId,
+                    this.RockPage.Site.Id,
+                    CurrentPersonAlias
+                );
+            }
+
             var registrationService = new RegistrationService( rockContext );
             var registrantService = new RegistrationRegistrantService( rockContext );
 
@@ -2681,6 +2779,18 @@ namespace RockWeb.Blocks.Event
                 }
             }
 
+            // If the Registration Instance linkage specified a Campus, load it now
+            CampusCache campus = null;
+            if ( CampusId.HasValue )
+            {
+                campus = CampusCache.Get( CampusId.Value );
+                if ( campus != null && ( !registration.CampusId.HasValue || registration.CampusId.Value != campus.Id ) )
+                {
+                    registration.CampusId = campus.Id;
+                    History.EvaluateChange( registrationChanges, "Campus", registration.CampusId?.ToString() ?? string.Empty, campus.Name );
+                }
+            }
+
             bool newRegistrar = newRegistration ||
                 registration.FirstName == null || !registration.FirstName.Equals( RegistrationState.FirstName, StringComparison.OrdinalIgnoreCase ) ||
                 registration.LastName == null || !registration.LastName.Equals( RegistrationState.LastName, StringComparison.OrdinalIgnoreCase );
@@ -2716,6 +2826,12 @@ namespace RockWeb.Blocks.Event
                     CurrentPerson.NickName = CurrentPerson.FirstName;
                 }
 
+                // For a person with no email address, this resolves null reference issues downstream.
+                if ( CurrentPerson != null && CurrentPerson.Email == null )
+                {
+                    CurrentPerson.Email = string.Empty;
+                }
+
                 // If the 'your name' value equals the currently logged in person, use their person alias id
                 if ( CurrentPerson != null &&
                 ( CurrentPerson.NickName.Trim().Equals( registration.FirstName.Trim(), StringComparison.OrdinalIgnoreCase ) ||
@@ -2740,8 +2856,29 @@ namespace RockWeb.Blocks.Event
                 }
                 else
                 {
-                    // otherwise look for one and one-only match by name/email
-                    registrar = personService.FindPerson( registration.FirstName, registration.LastName, registration.ConfirmationEmail, true );
+                    if ( RegistrationTemplate.RegistrarOption == RegistrarOption.UseFirstRegistrant )
+                    {
+                        // So, here we should probably grab the "first" registrant from the State.
+                        var firstRegistrantInfo = RegistrationState.Registrants.FirstOrDefault();
+                        bool forceEmailUpdate = GetAttributeValue( AttributeKey.ForceEmailUpdate ).AsBoolean();
+
+                        string firstName = firstRegistrantInfo.GetFirstName( RegistrationTemplate );
+                        string lastName = firstRegistrantInfo.GetLastName( RegistrationTemplate );
+                        string email = firstRegistrantInfo.GetEmail( RegistrationTemplate );
+                        var birthday = firstRegistrantInfo.GetPersonFieldValue( RegistrationTemplate, RegistrationPersonFieldType.Birthdate ).ToStringSafe().AsDateTime();
+                        var mobilePhone = firstRegistrantInfo.GetPersonFieldValue( RegistrationTemplate, RegistrationPersonFieldType.MobilePhone ).ToStringSafe();
+
+                        // Try to find a matching person based on name, email address, mobile phone, and birthday. If these were not provided they are not considered.
+                        var personQuery = new PersonService.PersonMatchQuery( firstName, lastName, email, mobilePhone, gender: null, birthDate: birthday );
+
+                        registrar = personService.FindPerson( personQuery, forceEmailUpdate );
+                    }
+                    else
+                    {
+                        // otherwise look for one and one-only match by name/email
+                        registrar = personService.FindPerson( registration.FirstName, registration.LastName, registration.ConfirmationEmail, true );
+                    }
+
                     if ( registrar != null )
                     {
                         registration.PersonAliasId = registrar.PrimaryAliasId;
@@ -2832,6 +2969,8 @@ namespace RockWeb.Blocks.Event
                         CurrentPersonAliasId ) );
 
                 // Get each registrant
+                var index = 0;
+
                 foreach ( var registrantInfo in RegistrationState.Registrants.ToList() )
                 {
                     var registrantChanges = new History.HistoryChangeList();
@@ -2844,8 +2983,61 @@ namespace RockWeb.Blocks.Event
                     string lastName = registrantInfo.GetLastName( RegistrationTemplate );
                     string email = registrantInfo.GetEmail( RegistrationTemplate );
 
+                    /*
+                        10/11/2023 - DSH
+
+                        In regards to https://github.com/SparkDevNetwork/Rock/issues/5091,
+                        we believe the issue is only with this block and not the Obsidian
+                        version of the block. Since we still can't track down what is
+                        causing the issue our plan is to at least prevent these blank
+                        registrations from being created when possible. So if either
+                        the first name or last name fields are blank (which they should
+                        never be), we will abort the registration with an error.
+                     */
+                    if ( firstName.IsNullOrWhiteSpace() || lastName.IsNullOrWhiteSpace() )
+                    {
+                        throw new RegistrationTemplateFormFieldException( "Registration cannot be completed due to missing information. Please refresh the page and try again, or contact us if the issue persists." );
+                    }
+
                     var birthday = registrantInfo.GetPersonFieldValue( RegistrationTemplate, RegistrationPersonFieldType.Birthdate ).ToStringSafe().AsDateTime();
                     var mobilePhone = registrantInfo.GetPersonFieldValue( RegistrationTemplate, RegistrationPersonFieldType.MobilePhone ).ToStringSafe();
+
+                    /*
+                        8/15/2023 - JPH
+
+                        Several individuals have reported seeing missing registrant data within completed registrations. Check
+                        each person field type to see whether it was required & non-conditional, so we know which values were missing
+                        during the saving of this registrant's data (and so we can know to look into the issue further from this angle).
+
+                        Reason: Registration entries are sometimes missing registration form data.
+                        https://github.com/SparkDevNetwork/Rock/issues/5091
+                    */
+                    var missingFieldsByFormId = new Dictionary<int, Dictionary<int, string>>();
+
+                    void NotePersonFieldDetailsIfRequiredAndMissing( RegistrationPersonFieldType personFieldType, object fieldValue )
+                    {
+                        var field = RegistrationTemplate
+                            ?.Forms
+                            ?.SelectMany( f => f.Fields
+                                .Where( ff =>
+                                    ff.FieldSource == RegistrationFieldSource.PersonField
+                                    && ff.PersonFieldType == personFieldType
+                                )
+                            ).FirstOrDefault();
+
+                        if ( field == null )
+                        {
+                            return;
+                        }
+
+                        field.NoteFieldDetailsIfRequiredAndMissing( missingFieldsByFormId, fieldValue );
+                    }
+
+                    NotePersonFieldDetailsIfRequiredAndMissing( RegistrationPersonFieldType.FirstName, firstName );
+                    NotePersonFieldDetailsIfRequiredAndMissing( RegistrationPersonFieldType.LastName, lastName );
+                    NotePersonFieldDetailsIfRequiredAndMissing( RegistrationPersonFieldType.Email, email );
+                    NotePersonFieldDetailsIfRequiredAndMissing( RegistrationPersonFieldType.Birthdate, birthday );
+                    NotePersonFieldDetailsIfRequiredAndMissing( RegistrationPersonFieldType.MobilePhone, mobilePhone );
 
                     if ( registrantInfo.Id > 0 )
                     {
@@ -2918,8 +3110,29 @@ namespace RockWeb.Blocks.Event
                         }
                     }
 
+
+                    /**
+                      * 06/07/2022 - KA
+                      * 
+                      * Logic is as follows. If the Template RegistrarOption was set to UseFirstRegistrant
+                      * then chances are a Person was created or found for the first Registrant and used
+                      * as the Registrar. In that case then we don't create a new Person for the first
+                      * Registrant. Otherwise we go ahead and create a new Person. This is of Particular
+                      * importance when the AccountProtectionProfilesForDuplicateDetectionToIgnore includes
+                      * AccountProtectionProfile.Low. That means the PersonMatch query will return a null
+                      * any time it is called. This prevents us from creating duplicate Person entities for
+                      * both the Registrar and first Registrant who are the same person in this scenario.
+                    */
+                    bool isCreatedAsRegistrant = RegistrationTemplate.RegistrarOption == RegistrarOption.UseFirstRegistrant && registrantInfo == RegistrationState.Registrants.FirstOrDefault();
+
                     if ( person == null )
                     {
+                        if ( isCreatedAsRegistrant )
+                        {
+                            person = registrar;
+                        }
+                        else
+                        {
                         // If a match was not found, create a new person
                         person = new Person();
                         person.FirstName = firstName;
@@ -2929,23 +3142,23 @@ namespace RockWeb.Blocks.Event
                         person.EmailPreference = EmailPreference.EmailAllowed;
                         person.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
                         if ( dvcConnectionStatus != null )
-                        {
-                            person.ConnectionStatusValueId = dvcConnectionStatus.Id;
-                        }
+                            {
+                                person.ConnectionStatusValueId = dvcConnectionStatus.Id;
+                            }
 
-                        if ( dvcRecordStatus != null )
-                        {
-                            person.RecordStatusValueId = dvcRecordStatus.Id;
+                            if ( dvcRecordStatus != null )
+                            {
+                                person.RecordStatusValueId = dvcRecordStatus.Id;
+                            }
                         }
                     }
 
                     int? campusId = CampusId;
+                    var updateExistingCampus = false;
                     Location location = null;
 
                     // Set any of the template's person fields
-                    foreach ( var field in RegistrationTemplate.Forms
-                        .SelectMany( f => f.Fields
-                            .Where( t => t.FieldSource == RegistrationFieldSource.PersonField ) ) )
+                    foreach ( var field in RegistrationTemplate.Forms.SelectMany( f => f.Fields.Where( t => t.FieldSource == RegistrationFieldSource.PersonField ) ) )
                     {
                         // Find the registrant's value
                         var fieldValue = registrantInfo.FieldValues
@@ -2957,8 +3170,20 @@ namespace RockWeb.Blocks.Event
                         {
                             switch ( field.PersonFieldType )
                             {
+                                case RegistrationPersonFieldType.Email:
+                                    // Only update the person's email if they are in the same family as the logged in person (not the registrar)
+                                    var isFamilyMember = CurrentPersonId.HasValue && person.GetFamilies().ToList().Select( f => f.ActiveMembers().Where( m => m.PersonId == CurrentPerson.Id ) ).Any();
+                                    if ( isFamilyMember )
+                                    {
+                                        email = fieldValue.ToString().Trim();
+                                        History.EvaluateChange( personChanges, "Email", person.Email, email );
+                                        person.Email = email;
+                                    }
+                                    break;
+
                                 case RegistrationPersonFieldType.Campus:
                                     campusId = fieldValue.ToString().AsIntegerOrNull();
+                                    updateExistingCampus = campusId != null;
                                     break;
 
                                 case RegistrationPersonFieldType.MiddleName:
@@ -3028,12 +3253,26 @@ namespace RockWeb.Blocks.Event
                                     History.EvaluateChange( personChanges, "Connection Status", DefinedValueCache.GetName( person.ConnectionStatusValueId ), DefinedValueCache.GetName( newConnectionStatusId ) );
                                     person.ConnectionStatusValueId = newConnectionStatusId;
                                     break;
+
+                                case RegistrationPersonFieldType.Race:
+                                    var raceValueId = fieldValue.ToString().AsIntegerOrNull();
+                                    History.EvaluateChange( personChanges, "Race", DefinedValueCache.GetName( person.RaceValueId ), DefinedValueCache.GetName( raceValueId ) );
+                                    person.RaceValueId = raceValueId;
+                                    break;
+
+                                case RegistrationPersonFieldType.Ethnicity:
+                                    var ethnicityValueId = fieldValue.ToString().AsIntegerOrNull();
+                                    History.EvaluateChange( personChanges, "Ethnicity", DefinedValueCache.GetName( person.EthnicityValueId ), DefinedValueCache.GetName( ethnicityValueId ) );
+                                    person.EthnicityValueId = ethnicityValueId;
+                                    break;
                             }
                         }
+
+                        field.NoteFieldDetailsIfRequiredAndMissing( missingFieldsByFormId, fieldValue );
                     }
 
                     // Save the person ( and family if needed )
-                    SavePerson( rockContext, person, registrantInfo.FamilyGuid, campusId, location, adultRoleId, childRoleId, multipleFamilyGroupIds, ref singleFamilyId );
+                    SavePerson( rockContext, person, registrantInfo.FamilyGuid, campusId, location, adultRoleId, childRoleId, multipleFamilyGroupIds, ref singleFamilyId, updateExistingCampus );
 
                     // Load the person's attributes
                     person.LoadAttributes();
@@ -3090,6 +3329,8 @@ namespace RockWeb.Blocks.Event
                                 }
                             }
                         }
+
+                        field.NoteFieldDetailsIfRequiredAndMissing( missingFieldsByFormId, fieldValue );
                     }
 
                     string registrantName = person.FullName + ": ";
@@ -3243,6 +3484,8 @@ namespace RockWeb.Blocks.Event
                                 }
                             }
                         }
+
+                        field.NoteFieldDetailsIfRequiredAndMissing( missingFieldsByFormId, fieldValue );
                     }
 
                     Task.Run( () =>
@@ -3311,6 +3554,45 @@ namespace RockWeb.Blocks.Event
                     }
 
                     registrantInfo.PersonId = person.Id;
+
+                    index++;
+
+                    if ( missingFieldsByFormId.Any() )
+                    {
+                        /*
+                            8/15/2023 - JPH
+
+                            Several individuals have reported seeing missing registrant data within completed registrations. This registrant
+                            is missing required, non-conditional Field value(s) that should have been enforced by the UI. Log an exception so
+                            we know which values were missing during the saving of this registrant's data (and so we can know to look into
+                            the issue further from this angle).
+
+                            Reason: Registration entries are sometimes missing registration form data.
+                            https://github.com/SparkDevNetwork/Rock/issues/5091
+                         */
+                        var logAllMissingFieldsSb = new StringBuilder();
+                        logAllMissingFieldsSb.AppendLine( $"{logMsgPrefix}Registrant {index} of {RegistrationState.Registrants.Count}: The following required (non-conditional) Field values were missing:" );
+
+                        foreach ( var missingFormFields in missingFieldsByFormId )
+                        {
+                            var logMissingFormFieldsSb = new StringBuilder( $"[Form ID: {missingFormFields.Key} -" );
+
+                            foreach ( var missingField in missingFormFields.Value )
+                            {
+                                logMissingFormFieldsSb.Append( $" {missingField.Value} (Field ID: {missingField.Key});" );
+                            }
+
+                            logAllMissingFieldsSb.AppendLine( $"{logMissingFormFieldsSb}]" );
+                        }
+
+                        ExceptionLogService.LogException(
+                            new RegistrationTemplateFormFieldException( logAllMissingFieldsSb.ToString() ),
+                            Context,
+                            this.RockPage.PageId,
+                            this.RockPage.Site.Id,
+                            CurrentPersonAlias
+                        );
+                    }
                 }
 
                 rockContext.SaveChanges();
@@ -3351,10 +3633,11 @@ namespace RockWeb.Blocks.Event
         /// <param name="childRoleId">The child role identifier.</param>
         /// <param name="multipleFamilyGroupIds">The multiple family group ids.</param>
         /// <param name="singleFamilyId">The single family identifier.</param>
-        /// <returns></returns>
-        private Person SavePerson( RockContext rockContext, Person person, Guid familyGuid, int? campusId, Location location, int adultRoleId, int childRoleId, Dictionary<Guid, int> multipleFamilyGroupIds, ref int? singleFamilyId )
+        /// <param name="updateExistingCampus">if set to <c>true</c> updates the existing campus for the family group to the one provided in the campusId parameter.</param>
+        /// <returns>Person.</returns>
+        private Person SavePerson( RockContext rockContext, Person person, Guid familyGuid, int? campusId, Location location, int adultRoleId, int childRoleId, Dictionary<Guid, int> multipleFamilyGroupIds, ref int? singleFamilyId, bool updateExistingCampus = false )
         {
-            if ( !person.PrimaryCampusId.HasValue && campusId.HasValue )
+            if ( campusId.HasValue && !person.PrimaryCampusId.HasValue )
             {
                 person.PrimaryCampusId = campusId;
                 rockContext.SaveChanges();
@@ -3419,7 +3702,7 @@ namespace RockWeb.Blocks.Event
             {
                 var familyGroup = new GroupService( rockContext ).Get( familyId.Value );
 
-                if ( !familyGroup.CampusId.HasValue && campusId.HasValue )
+                if ( campusId.HasValue && ( updateExistingCampus || !familyGroup.CampusId.HasValue ) )
                 {
                     familyGroup.CampusId = campusId;
                     rockContext.SaveChanges();
@@ -4190,7 +4473,7 @@ namespace RockWeb.Blocks.Event
                 if ( registrant.OnWaitList )
                 {
                     /*
-                        1/31/2020 - NA 
+                        1/31/2020 - NA
                         This conditional if block below comes from SECC via PR #4071 (https://github.com/SparkDevNetwork/Rock/pull/4071).
                         I attempted to reproduce the problem described in the PR but was unable.
 
@@ -5666,6 +5949,7 @@ namespace RockWeb.Blocks.Event
                                         {
                                             // Compute the DiscountedCost using the DiscountAmountRemaining
                                             feeCostSummary.DiscountedCost = feeCostSummary.Cost - discountAmountRemaining;
+                                            discountAmountRemaining = 0.0m;
                                         }
                                     }
                                 }
@@ -5980,26 +6264,27 @@ namespace RockWeb.Blocks.Event
             if ( CurrentPerson != null )
             {
                 // Get the saved accounts for the currently logged in user
-                var savedAccounts = new FinancialPersonSavedAccountService( new RockContext() )
-                    .GetByPersonId( CurrentPerson.Id );
+                var savedAccounts = new FinancialPersonSavedAccountService( new RockContext() ).GetByPersonId( CurrentPerson.Id );
 
                 // Verify component is valid and that it supports using saved accounts for one-time, credit card transactions
                 var ccCurrencyType = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) );
-                if ( component != null &&
-                    component.SupportsSavedAccount( false ) &&
-                    component.SupportsSavedAccount( ccCurrencyType ) )
+                if ( component != null && component.SupportsSavedAccount( false ) && component.SupportsSavedAccount( ccCurrencyType ) )
                 {
+                    var minCardExpirationDate = RockDateTime.Today.AddDays( -1 );
+
                     rblSavedCC.DataSource = savedAccounts
-                        .Where( a =>
-                            a.FinancialGatewayId == RegistrationTemplate.FinancialGateway.Id &&
-                            a.FinancialPaymentDetail != null &&
-                            a.FinancialPaymentDetail.CurrencyTypeValueId == ccCurrencyType.Id )
+                        .Where( a => a.FinancialGatewayId == RegistrationTemplate.FinancialGateway.Id
+                            && a.FinancialPaymentDetail != null
+                            && a.FinancialPaymentDetail.CurrencyTypeValueId == ccCurrencyType.Id
+                            && a.FinancialPaymentDetail.CardExpirationDate > minCardExpirationDate )
                         .OrderBy( a => a.Name )
                         .Select( a => new
                         {
-                            Id = a.Id,
+                            a.Id,
                             Name = "Use " + a.Name + " (" + a.FinancialPaymentDetail.AccountNumberMasked + ")"
-                        } ).ToList();
+                        } )
+                        .ToList();
+
                     rblSavedCC.DataBind();
                     if ( rblSavedCC.Items.Count > 0 )
                     {

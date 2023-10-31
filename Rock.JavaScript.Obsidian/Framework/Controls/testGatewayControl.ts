@@ -15,10 +15,11 @@
 // </copyright>
 //
 import { defineComponent, PropType, ref } from "vue";
-import LoadingIndicator from "../Elements/loadingIndicator";
-import TextBox from "../Elements/textBox";
-import { newGuid } from "../Util/guid";
-import { GatewayEmitStrings, onSubmitPayment } from "./gatewayControl";
+import LoadingIndicator from "./loadingIndicator";
+import TextBox from "./textBox";
+import { newGuid } from "@Obsidian/Utility/guid";
+import { onSubmitPayment } from "@Obsidian/Core/Controls/financialGateway";
+import { GatewayEmitStrings } from "@Obsidian/Enums/Controls/gatewayEmitStrings";
 
 type Settings = {
 };

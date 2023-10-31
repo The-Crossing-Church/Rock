@@ -16,12 +16,17 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Reporting;
 using Rock.Web.UI.Controls;
+#if WEBFORMS
+using System.Web.UI;
+using System.Web.UI.WebControls;
+#endif
 
 namespace Rock.Field.Types
 {
@@ -32,84 +37,29 @@ namespace Rock.Field.Types
     [FieldTypeUsage( FieldTypeUsage.Common )]
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><g><path d=""M14.25,4.25H11.94l.42-2.37a.74.74,0,0,0-.6-.87.75.75,0,0,0-.87.61l-.48,2.63H6.94l.42-2.37A.74.74,0,0,0,6.76,1a.75.75,0,0,0-.87.61L5.41,4.25H2.75a.75.75,0,0,0,0,1.5H5.14l-.81,4.5H1.75a.75.75,0,0,0,0,1.5H4.06l-.42,2.37a.74.74,0,0,0,.6.87h.14a.74.74,0,0,0,.73-.62l.48-2.63H9.06l-.43,2.37a.76.76,0,0,0,.61.87h.13a.74.74,0,0,0,.74-.62l.48-2.63h2.66a.74.74,0,1,0,0-1.47H10.86l.81-4.5,2.58,0a.75.75,0,1,0,0-1.5Zm-4.92,6H5.86l.81-4.5h3.47Z""/></g></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.INTEGER )]
     public class IntegerFieldType : FieldType
     {
 
         #region Formatting
 
-        /// <summary>
-        /// Returns the field's current value(s)
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">Information about the value</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
-        /// <returns></returns>
-        public override string FormatValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
         {
             try
             {
-                int? intValue = ( int? ) value.AsDecimalOrNull();
-                return base.FormatValue( parentControl, intValue.ToString(), configurationValues, condensed );
+                int? intValue = ( int? ) privateValue.AsDecimalOrNull();
+                return intValue.ToString();
             }
-            catch( System.OverflowException)
+            catch ( System.OverflowException )
             {
                 return "Not a valid integer";
-            }
-        }
-
-        /// <summary>
-        /// Returns the value using the most appropriate datatype
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <returns></returns>
-        public override object ValueAsFieldType( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
-        {
-            return value.AsDecimalOrNull();
-        }
-
-        /// <summary>
-        /// Returns the value that should be used for sorting, using the most appropriate datatype
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <returns></returns>
-        public override object SortValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
-        {
-            // return ValueAsFieldType which returns the value as a Decimal
-            return this.ValueAsFieldType( parentControl, value, configurationValues );
-        }
-
-        /// <summary>
-        /// Gets the align value that should be used when displaying value
-        /// </summary>
-        public override System.Web.UI.WebControls.HorizontalAlign AlignValue
-        {
-            get
-            {
-                return System.Web.UI.WebControls.HorizontalAlign.Right;
             }
         }
 
         #endregion
 
         #region Edit Control
-
-        /// <summary>
-        /// Creates the control(s) necessary for prompting user for a new value
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="id"></param>
-        /// <returns>
-        /// The control
-        /// </returns>
-        public override System.Web.UI.Control EditControl( System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id )
-        {
-            return new NumberBox { ID = id, MaximumValue = int.MaxValue.ToString(), MinimumValue = int.MinValue.ToString() };
-        }
 
         /// <summary>
         /// Tests the value to ensure that it is a valid value.  If not, message will indicate why
@@ -146,6 +96,25 @@ namespace Rock.Field.Types
         public override ComparisonType FilterComparisonType
         {
             get { return ComparisonHelper.NumericFilterComparisonTypes; }
+        }
+
+        /// <inheritdoc/>
+        public override ComparisonValue GetPublicFilterValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var values = privateValue.FromJsonOrNull<List<string>>();
+
+            if ( values?.Count == 1 )
+            {
+                return new ComparisonValue
+                {
+                    ComparisonType = ComparisonType.EqualTo,
+                    Value = GetPublicEditValue( values[0], privateConfigurationValues )
+                };
+            }
+            else
+            {
+                return base.GetPublicFilterValue( privateValue, privateConfigurationValues );
+            }
         }
 
         /// <summary>
@@ -230,5 +199,74 @@ namespace Rock.Field.Types
 
         #endregion
 
+        #region WebForms
+#if WEBFORMS
+
+        /// <summary>
+        /// Returns the field's current value(s)
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">Information about the value</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="condensed">Flag indicating if the value should be condensed (i.e. for use in a grid column)</param>
+        /// <returns></returns>
+        public override string FormatValue(Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed)
+        {
+            return !condensed
+                ? GetTextValue(value, configurationValues.ToDictionary(cv => cv.Key, cv => cv.Value.Value))
+                : GetCondensedTextValue(value, configurationValues.ToDictionary(cv => cv.Key, cv => cv.Value.Value));
+        }
+
+        /// <summary>
+        /// Returns the value using the most appropriate datatype
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public override object ValueAsFieldType(Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues)
+        {
+            return value.AsDecimalOrNull();
+        }
+
+        /// <summary>
+        /// Returns the value that should be used for sorting, using the most appropriate datatype
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public override object SortValue(Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues)
+        {
+            // return ValueAsFieldType which returns the value as a Decimal
+            return this.ValueAsFieldType(parentControl, value, configurationValues);
+        }
+
+        /// <summary>
+        /// Gets the align value that should be used when displaying value
+        /// </summary>
+        public override HorizontalAlign AlignValue
+        {
+            get
+            {
+                return HorizontalAlign.Right;
+            }
+        }
+
+        /// <summary>
+        /// Creates the control(s) necessary for prompting user for a new value
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="id"></param>
+        /// <returns>
+        /// The control
+        /// </returns>
+        public override Control EditControl(System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id)
+        {
+            return new NumberBox { ID = id, MaximumValue = int.MaxValue.ToString(), MinimumValue = int.MinValue.ToString() };
+        }
+
+#endif
+        #endregion
     }
 }

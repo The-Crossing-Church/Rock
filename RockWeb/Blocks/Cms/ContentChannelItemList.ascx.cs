@@ -89,6 +89,7 @@ namespace RockWeb.Blocks.Cms
         Key = AttributeKey.ContentChannel )]
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "B995BE3F-A9EB-4A18-AE24-E93A8796AEDE" )]
     public partial class ContentChannelItemList : RockBlock, ISecondaryBlock, ICustomGridColumns
     {
         #region Attribute Keys
@@ -279,6 +280,7 @@ namespace RockWeb.Blocks.Cms
         {
             if ( !Page.IsPostBack )
             {
+                BindFilter();
                 BindGrid();
             }
 

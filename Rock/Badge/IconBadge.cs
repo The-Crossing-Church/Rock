@@ -15,6 +15,7 @@
 // </copyright>
 //
 using System;
+using System.IO;
 using System.Web.UI;
 using Rock.Data;
 using Rock.Model;
@@ -32,7 +33,7 @@ namespace Rock.Badge
         /// </summary>
         /// <param name="person">The person.</param>
         [RockObsolete( "1.10" )]
-        [Obsolete( "This method will be removed, use the Entity param instead.", false )]
+        [Obsolete( "This method will be removed, use the Entity param instead.", true )]
         public virtual string GetToolTipText( Person person ) {
             return string.Empty;
         }
@@ -42,7 +43,7 @@ namespace Rock.Badge
         /// </summary>
         /// <param name="person">The person.</param>
         [RockObsolete( "1.10" )]
-        [Obsolete( "This method will be removed, use the Entity param instead.", false )]
+        [Obsolete( "This method will be removed, use the Entity param instead.", true )]
         public virtual string GetIconPath( Person person )
         {
             return string.Empty;
@@ -66,43 +67,20 @@ namespace Rock.Badge
             return string.Empty;
         }
 
-        /// <summary>
-        /// Renders the specified writer.
-        /// </summary>
-        /// <param name="badge">The badge.</param>
-        /// <param name="writer">The writer.</param>
-        public override void Render( BadgeCache badge, HtmlTextWriter writer )
+        /// <inheritdoc/>
+        public override void Render( BadgeCache badge, IEntity entity, TextWriter writer )
         {
-            if ( Entity != null )
+            if ( entity != null )
             {
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "badge" );
+                var tooltipText = GetToolTipText( entity );
 
-                var tooltipText = GetToolTipText( Entity );
+                writer.Write( $"<div class=\"badge\" title=\"{tooltipText.EncodeXml( true )}\">" );
 
-                if (tooltipText.IsNullOrWhiteSpace())
-                {
-#pragma warning disable CS0618 // Type or member is obsolete
-                    tooltipText = GetToolTipText( Person );
-#pragma warning restore CS0618 // Type or member is obsolete
-                }
+                var iconPath = GetIconPath( entity );
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Title, tooltipText );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.Write( $"<img src=\"{iconPath.EncodeXml( true )}\">" );
 
-                var iconPath = GetIconPath( Entity );
-
-                if ( iconPath.IsNullOrWhiteSpace() )
-                {
-#pragma warning disable CS0618 // Type or member is obsolete
-                    iconPath = GetIconPath( Person );
-#pragma warning restore CS0618 // Type or member is obsolete
-                }
-
-                writer.AddAttribute( HtmlTextWriterAttribute.Src, iconPath );
-                writer.RenderBeginTag( HtmlTextWriterTag.Img );
-                writer.RenderEndTag();
-
-                writer.RenderEndTag();
+                writer.Write( "</div>" );
             }
         }
     }

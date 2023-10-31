@@ -23,9 +23,26 @@
 using System;
 using System.Collections.Generic;
 
+#pragma warning disable CS1591
+
+namespace Rock.Client.Enums.Blocks.Security.AccountEntry
+{
+    /// <summary>
+    /// </summary>
+    public enum AccountEntryStep
+    {
+        Registration = 0x0,
+        DuplicatePersonSelection = 0x1,
+        ExistingAccount = 0x2,
+        ConfirmationSent = 0x3,
+        Completed = 0x4,
+        PasswordlessConfirmationSent = 0x5,
+    }
+
+}
+
 namespace Rock.Client.Enums
 {
-    #pragma warning disable CS1591
     /// <summary>
     /// </summary>
     public enum AccountHierarchyDirection
@@ -66,6 +83,15 @@ namespace Rock.Client.Enums
     {
         Gratitude = 0x0,
         FollowUp = 0x1,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum AppliesToAgeClassification
+    {
+        All = 0x0,
+        Adults = 0x1,
+        Children = 0x2,
     }
 
     /// <summary>
@@ -320,6 +346,16 @@ namespace Rock.Client.Enums
 
     /// <summary>
     /// </summary>
+    public enum DueDateType
+    {
+        Immediate = 0x0,
+        ConfiguredDate = 0x1,
+        GroupAttribute = 0x2,
+        DaysAfterJoining = 0x3,
+    }
+
+    /// <summary>
+    /// </summary>
     public enum EmailPreference
     {
         EmailAllowed = 0x0,
@@ -357,6 +393,7 @@ namespace Rock.Client.Enums
         AllActiveAdultsInGivingGroup = 0x0,
         PrimaryGiver = 0x1,
         AllActiveFamilyMembersInGivingGroup = 0x2,
+        DoNotSave = 0x3,
     }
 
     /// <summary>
@@ -634,6 +671,14 @@ namespace Rock.Client.Enums
 
     /// <summary>
     /// </summary>
+    public enum ParticipationType
+    {
+        Individual = 0x1,
+        Family = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
     public enum PersistedDatasetDataFormat
     {
         JSON = 0x0,
@@ -648,10 +693,10 @@ namespace Rock.Client.Enums
 
     /// <summary>
     /// </summary>
-    public enum PersonAliasType
+    public enum PersonalizationType
     {
-        FromPersonAlias = 0x0,
-        ToPersonAlias = 0x1,
+        Segment = 0x0,
+        RequestFilter = 0x1,
     }
 
     /// <summary>
@@ -727,9 +772,6 @@ namespace Rock.Client.Enums
         PersonAttribute = 0x1,
         GroupMemberAttribute = 0x2,
         RegistrantAttribute = 0x4,
-
-        [Obsolete( "Use RegistrantAttribute instead", true )]
-        RegistrationAttribute = 0x4,
     }
 
     /// <summary>
@@ -763,6 +805,16 @@ namespace Rock.Client.Enums
         ConnectionStatus = 0xc,
         MiddleName = 0xd,
         AnniversaryDate = 0xe,
+        Race = 0xf,
+        Ethnicity = 0x10,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum ReminderNotificationType
+    {
+        Communication = 0x0,
+        Workflow = 0x1,
     }
 
     /// <summary>
@@ -900,8 +952,8 @@ namespace Rock.Client.Enums
     /// </summary>
     public enum SignatureType
     {
-        Drawn = 0x0,
-        Typed = 0x1,
+        Typed = 0x0,
+        Drawn = 0x1,
     }
 
     /// <summary>
@@ -975,6 +1027,15 @@ namespace Rock.Client.Enums
 
     /// <summary>
     /// </summary>
+    public enum UnitType
+    {
+        Numeric = 0x0,
+        Currency = 0x1,
+        Percentage = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
     public enum UpdatedAddressType
     {
         None = 0x0,
@@ -1038,5 +1099,326 @@ namespace Rock.Client.Enums
         ValueEqual = 0x1,
     }
 
-    #pragma warning restore CS1591
 }
+
+namespace Rock.Client.Enums.Crm
+{
+    /// <summary>
+    /// </summary>
+    public enum AgeBracket
+    {
+        Unknown = 0x0,
+        ZeroToTwelve = 0x1,
+        ThirteenToSeventeen = 0x2,
+        EighteenToTwentyFour = 0x3,
+        TwentyFiveToThirtyFour = 0x4,
+        ThirtyFiveToFortyFour = 0x5,
+        FortyFiveToFiftyFour = 0x6,
+        FiftyFiveToSixtyFour = 0x7,
+        SixtyFiveOrOlder = 0x8,
+    }
+
+}
+
+namespace Rock.Client.Enums.Event
+{
+    /// <summary>
+    /// </summary>
+    public enum AttendanceStatus
+    {
+        DidNotAttend = 0x0,
+        DidAttend = 0x1,
+        IsPresent = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum InteractiveExperienceApprovalStatus
+    {
+        Pending = 0x0,
+        Approved = 0x1,
+        Rejected = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum InteractiveExperienceCampusBehavior
+    {
+        FilterSchedulesByCampusGeofences = 0x0,
+        DetermineCampusFromGeofence = 0x1,
+        UseIndividualsCampus = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum InteractiveExperiencePushNotificationType
+    {
+        Never = 0x0,
+        EveryAction = 0x1,
+        SpecificActions = 0x2,
+    }
+
+}
+
+namespace Rock.Client.Enums.Core
+{
+    /// <summary>
+    /// </summary>
+    public enum ColorRecipe
+    {
+        Primary = 0x0,
+        Darkest = 0x1,
+        Dark = 0x2,
+        Medium = 0x3,
+        Light = 0x4,
+        Lightest = 0x5,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum ColorScheme
+    {
+        Light = 0x0,
+        Dark = 0x1,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum NotificationMessageActionType
+    {
+        Invalid = 0x0,
+        ShowMessage = 0x1,
+        LinkToPage = 0x2,
+    }
+
+}
+
+namespace Rock.Client.Enums.Communication
+{
+    /// <summary>
+    /// </summary>
+    public enum CommunicationMessageFilter
+    {
+        ShowUnreadReplies = 0x0,
+        ShowAllReplies = 0x1,
+        ShowAllMessages = 0x2,
+    }
+
+}
+
+namespace Rock.Client.Enums.Blocks.Crm.FamilyPreRegistration
+{
+    /// <summary>
+    /// </summary>
+    public enum CommunicationPreference
+    {
+        None = 0x0,
+        Email = 0x1,
+        SMS = 0x2,
+        PushNotification = 0x3,
+    }
+
+}
+
+namespace Rock.Client.Enums.Cms
+{
+    /// <summary>
+    /// </summary>
+    public enum ContentCollectionFilterControl
+    {
+        Pills = 0x0,
+        Dropdown = 0x1,
+        Boolean = 0x2,
+    }
+
+}
+
+namespace Rock.Client.Enums.Controls
+{
+    /// <summary>
+    /// </summary>
+    public enum DayOfWeek
+    {
+        Sunday = 0x0,
+        Monday = 0x1,
+        Tuesday = 0x2,
+        Wednesday = 0x3,
+        Thursday = 0x4,
+        Friday = 0x5,
+        Saturday = 0x6,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum MergeTemplateOwnership
+    {
+        Global = 0x0,
+        Personal = 0x1,
+        PersonalAndGlobal = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum RequirementLevel
+    {
+        Unspecified = 0x0,
+        Optional = 0x1,
+        Required = 0x2,
+        Unavailable = 0x3,
+    }
+
+    /// <summary>
+    /// </summary>
+    [Flags]
+    public enum SlidingDateRangeType
+    {
+        Last = 0x0,
+        Current = 0x1,
+        DateRange = 0x2,
+        Previous = 0x4,
+        Next = 0x8,
+        Upcoming = 0x10,
+        All = -1,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum TimeUnitType
+    {
+        Hour = 0x0,
+        Day = 0x1,
+        Week = 0x2,
+        Month = 0x3,
+        Year = 0x4,
+    }
+
+}
+
+namespace Rock.Client.Enums.Reporting
+{
+    /// <summary>
+    /// </summary>
+    public enum FieldFilterSourceType
+    {
+        Attribute = 0x0,
+    }
+
+}
+
+namespace Rock.Client.Enums.Blocks.Group.GroupAttendanceDetail
+{
+    /// <summary>
+    /// </summary>
+    public enum GroupAttendanceDetailDateSelectionMode
+    {
+        None = 0x0,
+        Readonly = 0x1,
+        DatePicker = 0x2,
+        ScheduledDatePicker = 0x3,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum GroupAttendanceDetailLocationSelectionMode
+    {
+        None = 0x0,
+        Readonly = 0x1,
+        GroupLocationPicker = 0x2,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum GroupAttendanceDetailScheduleSelectionMode
+    {
+        None = 0x0,
+        Readonly = 0x1,
+        GroupLocationSchedulePicker = 0x2,
+    }
+
+}
+
+namespace Rock.Client.Enums.Blocks.Security.Login
+{
+    /// <summary>
+    /// </summary>
+    public enum LoginMethod
+    {
+        InternalDatabase = 0x0,
+        Passwordless = 0x1,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum PasswordlessLoginStep
+    {
+        Start = 0x0,
+        Verify = 0x1,
+    }
+
+}
+
+namespace Rock.Client.Enums.Blocks.Engagement.SignUp
+{
+    /// <summary>
+    /// </summary>
+    public enum RegisterMode
+    {
+        Family = 0x0,
+        Anonymous = 0x1,
+        Group = 0x2,
+    }
+
+}
+
+namespace Rock.Client.Enums.Blocks.Group.Scheduling
+{
+    /// <summary>
+    /// </summary>
+    public enum ResourceListSourceType
+    {
+        GroupMembers = 0x0,
+        GroupMatchingPreference = 0x1,
+        AlternateGroup = 0x2,
+        ParentGroup = 0x3,
+        DataView = 0x4,
+        GroupMatchingAssignment = 0x5,
+    }
+
+    /// <summary>
+    /// </summary>
+    public enum UpdateSchedulePreferenceMode
+    {
+        ReplacePreference = 0x0,
+        AddToPreference = 0x1,
+    }
+
+}
+
+namespace Rock.Client.Enums.Group
+{
+    /// <summary>
+    /// </summary>
+    public enum ScheduleConfirmationLogic
+    {
+        Ask = 0x0,
+        AutoAccept = 0x1,
+    }
+
+}
+
+namespace Rock.Client.Enums.Blocks.Cms.ContentCollectionView
+{
+    /// <summary>
+    /// </summary>
+    public enum SearchOrder
+    {
+        Relevance = 0x0,
+        Newest = 0x1,
+        Oldest = 0x2,
+        Trending = 0x3,
+        Alphabetical = 0x4,
+    }
+
+}
+
+#pragma warning restore CS1591

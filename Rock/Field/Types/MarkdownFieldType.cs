@@ -15,12 +15,15 @@
 // </copyright>
 //
 using System.Collections.Generic;
+using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Reporting;
 using Rock.Web.UI.Controls;
+using Rock.Web.Utilities;
 
 namespace Rock.Field.Types
 {
@@ -28,11 +31,78 @@ namespace Rock.Field.Types
     /// Field used to edit text in Markdown format and rendered as processed Markdown
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.MARKDOWN )]
     public class MarkdownFieldType : FieldType
     {
         #region Configuration
 
         private const string NUMBER_OF_ROWS = "numberofrows";
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return privateValue.ConvertMarkdownToHtml()?.StripHtml() ?? string.Empty;
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return privateValue.ConvertMarkdownToHtml()?.Trim().StripHtml().Truncate( CondensedTruncateLength ) ?? string.Empty;
+        }
+
+        /// <inheritdoc/>
+        public override string GetHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return privateValue.ConvertMarkdownToHtml() ?? string.Empty;
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var result = privateValue.ConvertMarkdownToHtml() ?? string.Empty;
+
+            // TrimEnd is added because ConvertMarkdownToHtml add two newlines. Described in: https://github.com/Knagis/CommonMark.NET/issues/107
+            result = result.Trim();
+
+            // Remove paragraph tags for condensed values to remove unnecessary whitespace above and below the value.
+            if ( result.StartsWith( "<p>" ) && result.EndsWith( "</p>" ) )
+            {
+                result = result.Substring( 3, result.Length - 7 );
+            }
+
+            return result.Truncate( CondensedTruncateLength );
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region FilterControl
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override Model.ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonHelper.StringFilterComparisonTypes;
+            }
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -79,7 +149,7 @@ namespace Rock.Field.Types
             {
                 if ( controls.Count > 0 && controls[0] != null && controls[0] is NumberBox )
                 {
-                    configurationValues[NUMBER_OF_ROWS].Value = ( (NumberBox)controls[0] ).Text;
+                    configurationValues[NUMBER_OF_ROWS].Value = ( ( NumberBox ) controls[0] ).Text;
                 }
             }
 
@@ -97,15 +167,10 @@ namespace Rock.Field.Types
             {
                 if ( controls.Count > 0 && controls[0] != null && controls[0] is NumberBox && configurationValues.ContainsKey( NUMBER_OF_ROWS ) )
                 {
-                    ( (NumberBox)controls[0] ).Text = configurationValues[NUMBER_OF_ROWS].Value;
+                    ( ( NumberBox ) controls[0] ).Text = configurationValues[NUMBER_OF_ROWS].Value;
                 }
             }
         }
-
-        #endregion
-
-
-        #region Formatting
 
         /// <summary>
         /// Returns the field's current value(s)
@@ -117,27 +182,13 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            var result = value.ConvertMarkdownToHtml();
+            var result = !condensed
+                ? GetHtmlValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedHtmlValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
 
-            if ( condensed )
-            {
-                // TrimEnd is added because ConvertMarkdownToHtml add two newlines. Described in: https://github.com/Knagis/CommonMark.NET/issues/107
-                result = result?.Trim() ?? string.Empty;
-                // Remove paragraph tags for values in grids and filter indicators to remove unnecessary whitespace above and below the value.
-                if ( result.StartsWith("<p>") && result.EndsWith("</p>"))
-                {
-                    result = result.Substring( 3, result.Length - 7 );
-                }
-
-                return result.Truncate( 100 );
-            }
-
+            result = HtmlSanitizer.SanitizeHtml( result );
             return result;
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -167,24 +218,6 @@ namespace Rock.Field.Types
             return mdEditor;
         }
 
-        #endregion
-
-        #region FilterControl
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonHelper.StringFilterComparisonTypes;
-            }
-        }
-
         /// <summary>
         /// Gets the filter value control.
         /// </summary>
@@ -201,6 +234,7 @@ namespace Rock.Field.Types
             return tbValue;
         }
 
+#endif
         #endregion
     }
 }

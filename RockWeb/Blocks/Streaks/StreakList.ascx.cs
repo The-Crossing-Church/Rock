@@ -55,6 +55,7 @@ namespace RockWeb.Blocks.Streaks
 
     #endregion
 
+    [Rock.SystemGuid.BlockTypeGuid( "46A5143E-8DE7-4E3D-96B3-674E8FD12949" )]
     public partial class StreakList : RockBlock, ISecondaryBlock, ICustomGridColumns
     {
         #region Keys
@@ -237,7 +238,7 @@ namespace RockWeb.Blocks.Streaks
 
                     lBiStateGraph.Text = string.Format( @"
                         <div class=""chart-container"">
-                            <ul class=""trend-chart trend-chart-sm"">{0}</ul>
+                            <ul class=""trend-chart trend-chart-sm text-info"">{0}</ul>
                         </div>", stringBuilder );
                 }
             }

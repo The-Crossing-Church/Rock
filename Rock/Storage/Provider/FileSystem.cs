@@ -31,6 +31,7 @@ namespace Rock.Storage.Provider
     [Description( "File System-driven file storage" )]
     [Export( typeof( ProviderComponent ) )]
     [ExportMetadata( "ComponentName", "FileSystem" )]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.STORAGE_PROVIDER_FILESYSTEM )]
     public class FileSystem : ProviderComponent
     {
         /// <summary>
@@ -144,6 +145,12 @@ namespace Rock.Storage.Provider
         /// <returns></returns>
         private string GetRelativePath( BinaryFile binaryFile )
         {
+            // If binaryFile has a relative path then use it since the file name and BinaryFile.Name can be different
+            if ( binaryFile != null && binaryFile.Path.IsNotNullOrWhiteSpace() && binaryFile.Path.StartsWith("~") )
+            {
+                return binaryFile.Path;
+            }
+
             if ( binaryFile != null && !string.IsNullOrWhiteSpace( binaryFile.FileName ) )
             {
                 string subFolder = string.Empty;

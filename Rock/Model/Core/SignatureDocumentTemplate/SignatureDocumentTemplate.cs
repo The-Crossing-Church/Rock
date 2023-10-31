@@ -32,6 +32,7 @@ namespace Rock.Model
     [RockDomain( "Core" )]
     [Table( "SignatureDocumentTemplate" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( "3F9828CC-8224-4AB0-98A5-6D60001EBE32")]
     public partial class SignatureDocumentTemplate : Model<SignatureDocumentTemplate>, IHasActiveFlag
     {
 
@@ -102,7 +103,7 @@ namespace Rock.Model
         /// The invite system email identifier.
         /// </value>
         [DataMember]
-        [Obsolete( "Use InviteSystemCommunicationId instead." )]
+        [Obsolete( "Use InviteSystemCommunicationId instead.", true )]
         [RockObsolete( "1.10" )]
         public int? InviteSystemEmailId { get; set; }
 
@@ -132,7 +133,8 @@ namespace Rock.Model
         public string DocumentTerm { get; set; }
 
         /// <summary>
-        /// This is used to define which kind of signature is being collected from the individual. (Ex: typed name, drawn, etc.)
+        /// This is used to define which kind of signature is being collected from the individual.
+        /// Ex: <see cref="SignatureType.Drawn"/> or <see cref="SignatureType.Typed"/>, etc.
         /// </summary>
         /// <value>
         /// The type of the signature.
@@ -178,7 +180,7 @@ namespace Rock.Model
         /// The system email.
         /// </value>
         [DataMember]
-        [Obsolete( "Use InviteSystemCommunication instead." )]
+        [Obsolete( "Use InviteSystemCommunication instead.", true )]
         [RockObsolete( "1.10" )]
         public virtual SystemEmail InviteSystemEmail { get; set; }
 
@@ -247,9 +249,6 @@ namespace Rock.Model
             this.HasOptional( t => t.ProviderEntityType ).WithMany().HasForeignKey( t => t.ProviderEntityTypeId ).WillCascadeOnDelete( false );
             this.HasOptional( t => t.InviteSystemCommunication ).WithMany().HasForeignKey( t => t.InviteSystemCommunicationId ).WillCascadeOnDelete( false );
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            this.HasOptional( t => t.InviteSystemEmail ).WithMany().HasForeignKey( t => t.InviteSystemEmailId ).WillCascadeOnDelete( false );
-#pragma warning restore CS0618 // Type or member is obsolete
             this.HasOptional( t => t.CompletionSystemCommunication ).WithMany().HasForeignKey( t => t.CompletionSystemCommunicationId ).WillCascadeOnDelete( false );
         }
     }

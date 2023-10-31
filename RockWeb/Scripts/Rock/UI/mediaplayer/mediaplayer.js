@@ -123,6 +123,15 @@ var Rock;
             }
             initializePlayer(mediaElement, plyrOptions) {
                 this.player = new Plyr(mediaElement, plyrOptions);
+                if (this.isYouTubeEmbed(this.options.mediaUrl)) {
+                    let listenrsready = false;
+                    this.player.on("statechange", () => {
+                        if (!listenrsready) {
+                            listenrsready = true;
+                            this.player.listeners.media();
+                        }
+                    });
+                }
                 this.writeDebugMessage(`Setting media URL to ${this.options.mediaUrl}`);
                 let sourceInfo = {
                     type: this.options.type === "audio" ? "audio" : "video",
@@ -335,6 +344,14 @@ var Rock;
                 });
                 this.player.on("ready", () => {
                     this.writeDebugMessage(`Event 'ready' called: ${this.player.duration}`);
+                    if (!this.player.download) {
+                        const canDownload = !this.isYouTubeEmbed(this.options.mediaUrl)
+                            && !this.isVimeoEmbed(this.options.mediaUrl)
+                            && !this.isHls(this.options.mediaUrl);
+                        if (canDownload) {
+                            this.player.download = this.options.mediaUrl;
+                        }
+                    }
                     if (this.player.duration > 0) {
                         this.prepareForPlay();
                     }
@@ -362,7 +379,10 @@ var Rock;
                     MediaElementGuid: this.options.mediaElementGuid,
                     WatchMap: MediaPlayer.toRle(this.watchBits),
                     RelatedEntityTypeId: this.options.relatedEntityTypeId,
-                    RelatedEntityId: this.options.relatedEntityId
+                    RelatedEntityId: this.options.relatedEntityId,
+                    SessionGuid: this.options.sessionGuid,
+                    OriginalUrl: window.location.href,
+                    PageId: Rock.settings.get("pageId")
                 };
                 const xmlRequest = new XMLHttpRequest();
                 const self = this;

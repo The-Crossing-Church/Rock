@@ -35,6 +35,7 @@ namespace Rock.Model
     [RockDomain( "Core" )]
     [Table( "ServiceJob" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.SERVICE_JOB )]
     public partial class ServiceJob : Model<ServiceJob>
     {
         #region Constants
@@ -239,7 +240,8 @@ namespace Rock.Model
         /// The last status message as HTML.
         /// </value>
         [LavaVisible]
-        public string LastStatusMessageAsHtml
+        [NotMapped]
+        public virtual string LastStatusMessageAsHtml
         {
             get
             {
@@ -254,7 +256,8 @@ namespace Rock.Model
         /// The cron description.
         /// </value>
         [LavaVisible]
-        public string CronDescription
+        [NotMapped]
+        public virtual string CronDescription
         {
             get
             {

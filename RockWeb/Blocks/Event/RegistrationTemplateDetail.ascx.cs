@@ -357,6 +357,7 @@ namespace RockWeb.Blocks.Event
 </p>
 
 {{ 'Global' | Attribute:'EmailFooter' }}", "", 5 )]
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.EVENT_REGISTRATION_TEMPLATE_DETAIL )]
     public partial class RegistrationTemplateDetail : RockBlock
     {
         #region Attribute Keys
@@ -1758,7 +1759,13 @@ The logged-in person's information will be used to complete the registrar inform
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void dlgRegistrantFormField_SaveClick( object sender, EventArgs e )
         {
-            FieldSave();
+            nbFormField.Visible = false;
+            if ( !FieldSave() )
+            {
+                // Don't dismiss the dialog since the field didn't save.
+                return;
+            }
+            
             HideDialog();
             BuildControls( true );
         }
@@ -1766,80 +1773,90 @@ The logged-in person's information will be used to complete the registrar inform
         /// <summary>
         /// Saves the form field
         /// </summary>
-        private void FieldSave()
+        private bool FieldSave()
         {
             var formGuid = hfFormGuid.Value.AsGuid();
 
-            if ( FormFieldsState.ContainsKey( formGuid ) )
+            if ( !FormFieldsState.ContainsKey( formGuid ) )
             {
-                var attributeForm = CreateFormField( formGuid );
+                // Just swallow this error for now
+                return true;
+            }
 
-                int? attributeId = null;
+            var attributeFormField = CreateFormField( formGuid );
+            if ( attributeFormField == null )
+            {
+                // There was a problem with the form field. Return false so the error can display
+                return false;
+            }
 
-                switch ( attributeForm.FieldSource )
-                {
-                    case RegistrationFieldSource.PersonField:
-                        {
-                            attributeForm.ShowCurrentValue = cbUsePersonCurrentValue.Checked;
-                            attributeForm.IsGridField = cbShowOnGrid.Checked;
-                            attributeForm.IsRequired = cbRequireInInitialEntry.Checked;
-                            break;
-                        }
+            int? attributeId = null;
 
-                    case RegistrationFieldSource.PersonAttribute:
-                        {
-                            attributeId = ddlPersonAttributes.SelectedValueAsInt();
-                            attributeForm.ShowCurrentValue = cbUsePersonCurrentValue.Checked;
-                            attributeForm.IsGridField = cbShowOnGrid.Checked;
-                            attributeForm.IsRequired = cbRequireInInitialEntry.Checked;
-                            break;
-                        }
-
-                    case RegistrationFieldSource.GroupMemberAttribute:
-                        {
-                            attributeId = ddlGroupTypeAttributes.SelectedValueAsInt();
-                            attributeForm.ShowCurrentValue = false;
-                            attributeForm.IsGridField = cbShowOnGrid.Checked;
-                            attributeForm.IsRequired = cbRequireInInitialEntry.Checked;
-                            break;
-                        }
-
-                    case RegistrationFieldSource.RegistrantAttribute:
-                        {
-                            Rock.Model.Attribute attribute = new Rock.Model.Attribute();
-                            edtRegistrantAttribute.GetAttributeProperties( attribute );
-                            attributeForm.Attribute = attribute;
-                            attributeForm.Id = attribute.Id;
-                            attributeForm.ShowCurrentValue = false;
-                            attributeForm.IsGridField = attribute.IsGridColumn;
-                            attributeForm.IsRequired = attribute.IsRequired;
-                            break;
-                        }
-                }
-
-                attributeForm.ShowOnWaitlist = cbShowOnWaitList.Checked;
-
-                if ( attributeId.HasValue )
-                {
-                    using ( var rockContext = new RockContext() )
+            switch ( attributeFormField.FieldSource )
+            {
+                case RegistrationFieldSource.PersonField:
                     {
-                        var attribute = new AttributeService( rockContext ).Get( attributeId.Value );
-                        if ( attribute != null )
+                        attributeFormField.ShowCurrentValue = cbUsePersonCurrentValue.Checked;
+                        attributeFormField.IsGridField = cbShowOnGrid.Checked;
+                        attributeFormField.IsRequired = cbRequireInInitialEntry.Checked;
+                        break;
+                    }
+
+                case RegistrationFieldSource.PersonAttribute:
+                    {
+                        attributeId = ddlPersonAttributes.SelectedValueAsInt();
+                        attributeFormField.ShowCurrentValue = cbUsePersonCurrentValue.Checked;
+                        attributeFormField.IsGridField = cbShowOnGrid.Checked;
+                        attributeFormField.IsRequired = cbRequireInInitialEntry.Checked;
+                        break;
+                    }
+
+                case RegistrationFieldSource.GroupMemberAttribute:
+                    {
+                        attributeId = ddlGroupTypeAttributes.SelectedValueAsInt();
+                        attributeFormField.ShowCurrentValue = false;
+                        attributeFormField.IsGridField = cbShowOnGrid.Checked;
+                        attributeFormField.IsRequired = cbRequireInInitialEntry.Checked;
+                        break;
+                    }
+
+                case RegistrationFieldSource.RegistrantAttribute:
+                    {
+                        Rock.Model.Attribute attribute = new Rock.Model.Attribute();
+                        edtRegistrantAttribute.GetAttributeProperties( attribute );
+                        attributeFormField.Attribute = attribute;
+                        attributeFormField.Id = attribute.Id;
+                        attributeFormField.ShowCurrentValue = false;
+                        attributeFormField.IsGridField = attribute.IsGridColumn;
+                        attributeFormField.IsRequired = attribute.IsRequired;
+                        break;
+                    }
+            }
+
+            attributeFormField.ShowOnWaitlist = cbShowOnWaitList.Checked;
+
+            if ( attributeId.HasValue )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    var attribute = new AttributeService( rockContext ).Get( attributeId.Value );
+                    if ( attribute != null )
+                    {
+                        attributeFormField.Attribute = attribute.Clone( false );
+                        attributeFormField.Attribute.FieldType = attribute.FieldType.Clone( false );
+                        attributeFormField.Attribute.AttributeQualifiers = new List<AttributeQualifier>();
+
+                        foreach ( var qualifier in attribute.AttributeQualifiers )
                         {
-                            attributeForm.Attribute = attribute.Clone( false );
-                            attributeForm.Attribute.FieldType = attribute.FieldType.Clone( false );
-                            attributeForm.Attribute.AttributeQualifiers = new List<AttributeQualifier>();
-
-                            foreach ( var qualifier in attribute.AttributeQualifiers )
-                            {
-                                attributeForm.Attribute.AttributeQualifiers.Add( qualifier.Clone( false ) );
-                            }
-
-                            attributeForm.AttributeId = attribute.Id;
+                            attributeFormField.Attribute.AttributeQualifiers.Add( qualifier.Clone( false ) );
                         }
+
+                        attributeFormField.AttributeId = attribute.Id;
                     }
                 }
             }
+
+            return true;
         }
 
         /// <summary>
@@ -1850,28 +1867,61 @@ The logged-in person's information will be used to complete the registrar inform
         private RegistrationTemplateFormField CreateFormField( Guid formGuid )
         {
             var attributeGuid = hfAttributeGuid.Value.AsGuid();
-
             var attributeFormField = FormFieldsState[formGuid].FirstOrDefault( a => a.Guid.Equals( attributeGuid ) );
+
+            if ( !ValidateUniqueKey() )
+            {
+                return null;
+            }
+
             if ( attributeFormField == null )
             {
-                attributeFormField = new RegistrationTemplateFormField();
-                attributeFormField.Order = FormFieldsState[formGuid].Any() ? FormFieldsState[formGuid].Max( a => a.Order ) + 1 : 0;
-                attributeFormField.Guid = attributeGuid;
+                attributeFormField = new RegistrationTemplateFormField
+                {
+                    Order = FormFieldsState[formGuid].Any() ? FormFieldsState[formGuid].Max( a => a.Order ) + 1 : 0,
+                    Guid = attributeGuid
+                };
+
                 FormFieldsState[formGuid].Add( attributeFormField );
             }
 
             attributeFormField.PreText = ceFormFieldPreHtml.Text;
             attributeFormField.PostText = ceFormFieldPostHtml.Text;
             attributeFormField.FieldSource = ddlFieldSource.SelectedValueAsEnum<RegistrationFieldSource>();
+            attributeFormField.IsInternal = cbInternalField.Checked;
+            attributeFormField.IsSharedValue = cbCommonValue.Checked;
+
             if ( ddlPersonField.Visible )
             {
                 attributeFormField.PersonFieldType = ddlPersonField.SelectedValueAsEnum<RegistrationPersonFieldType>();
             }
 
-            attributeFormField.IsInternal = cbInternalField.Checked;
-            attributeFormField.IsSharedValue = cbCommonValue.Checked;
-
             return attributeFormField;
+        }
+
+        /// <summary>
+        /// Returns false if an attribute with a different GUID but using the same key is found.
+        /// Also sets the message on the notification box and makes it visible.
+        /// </summary>
+        /// <returns></returns>
+        private bool ValidateUniqueKey()
+        {
+            var attributeGuid = hfAttributeGuid.Value.AsGuid();
+            foreach( var form in FormFieldsState )
+            {
+                var fields = form.Value;
+                foreach( var field in fields )
+                {
+                    if ( field.Guid != attributeGuid && field.Attribute?.Key == edtRegistrantAttribute.Key )
+                    {
+                        nbFormField.Text = $"The Attribute Key <strong>'{edtRegistrantAttribute.Key}'</strong> is already being used by this Registration Template";
+                        nbFormField.Visible = true;
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         #endregion
@@ -2310,8 +2360,9 @@ The logged-in person's information will be used to complete the registrar inform
         {
             var selectedTemplate = GetSelectedTemplate();
             var isNonLegacySelected = selectedTemplate != null && selectedTemplate.IsLegacy != true;
+            var isLegacySelected = selectedTemplate != null && selectedTemplate.IsLegacy == true;
 
-            cbDisplayInLine.Visible = isNonLegacySelected;
+            cbDisplayInLine.Visible = isLegacySelected;
             cbAllowExternalUpdates.Enabled = !isNonLegacySelected;
             cbAllowExternalUpdates.Help = GetAllowExternalUpdatesHelpText( !isNonLegacySelected );
 
@@ -2574,6 +2625,7 @@ The logged-in person's information will be used to complete the registrar inform
         {
             var signatureDocTemplate = registrationTemplate.RequiredSignatureDocumentTemplate;
             var isNonLegacySignatureSelected = signatureDocTemplate != null && signatureDocTemplate.IsLegacy != true;
+            var isLegacySignatureSelected = signatureDocTemplate != null && signatureDocTemplate.IsLegacy == true;
 
             if ( registrationTemplate.Id == 0 )
             {
@@ -2602,7 +2654,7 @@ The logged-in person's information will be used to complete the registrar inform
             ddlGroupMemberStatus.SetValue( registrationTemplate.GroupMemberStatus.ConvertToInt() );
             ddlSignatureDocumentTemplate.SetValue( registrationTemplate.RequiredSignatureDocumentTemplateId );
             cbDisplayInLine.Checked = registrationTemplate.SignatureDocumentAction == SignatureDocumentAction.Embed;
-            cbDisplayInLine.Visible = isNonLegacySignatureSelected;
+            cbDisplayInLine.Visible = isLegacySignatureSelected;
             wtpRegistrationWorkflow.SetValue( registrationTemplate.RegistrationWorkflowTypeId );
             wtpRegistrantWorkflow.SetValue( registrationTemplate.RegistrantWorkflowTypeId );
             ddlRegistrarOption.SetValue( registrationTemplate.RegistrarOption.ConvertToInt() );
@@ -2777,7 +2829,7 @@ The logged-in person's information will be used to complete the registrar inform
                 .ToAttributeCacheList();
 
             rcwRegistrationAttributesSummary.Visible = registrationAttributeNameList.Any();
-            rcwRegistrationAttributesSummary.Label = string.Format( "<strong>Registration Attributes</strong> ({0}) <i class='fa fa-caret-down'></i>", registrationTemplate.Forms.Count() );
+            rcwRegistrationAttributesSummary.Label = string.Format( "<strong>Registration Attributes</strong> ({0}) <i class='fa fa-caret-down'></i>", registrationAttributeNameList.Count() );
 
             StringBuilder registrationAttributeTextBuilder = new StringBuilder();
             foreach ( var registrationAttribute in registrationAttributeNameList )
@@ -2862,13 +2914,12 @@ The logged-in person's information will be used to complete the registrar inform
 
                  Normally, we order by Order, but in this particular situation it was decided
                  it would be better to order these by Name in the dropdown list.
-    
-                 Reason: To improve usability. 
+
+                 Reason: To improve usability.
             */
             var groupTypeList = new GroupTypeService( rockContext )
                 .Queryable().AsNoTracking()
                 .Where( t => t.ShowInNavigation )
-                .OrderBy( t => t.Name )
                 .ToList();
 
             gtpGroupType.GroupTypes = groupTypeList;
@@ -2879,15 +2930,11 @@ The logged-in person's information will be used to complete the registrar inform
 
             ddlFieldSource.BindToEnum<RegistrationFieldSource>();
 
-            ddlPersonField.BindToEnum<RegistrationPersonFieldType>( sortAlpha: true );
-            ddlPersonField.Items.Remove( ddlPersonField.Items.FindByValue( "0" ) );
-            ddlPersonField.Items.Remove( ddlPersonField.Items.FindByValue( "1" ) );
-
             rblFeeType.BindToEnum<RegistrationFeeType>();
 
             ddlSignatureDocumentTemplate.Items.Clear();
             ddlSignatureDocumentTemplate.Items.Add( new ListItem() );
-            SignatureDocumentTemplateState = new SignatureDocumentTemplateService( rockContext ).Queryable().AsNoTracking().OrderBy( t => t.Name ).ToList();
+            SignatureDocumentTemplateState = new SignatureDocumentTemplateService( rockContext ).Queryable().Where( d => d.IsActive || d.Name == lRequiredSignedDocument.Text ).AsNoTracking().OrderBy( t => t.Name ).ToList();
 
             foreach ( var documentType in SignatureDocumentTemplateState )
             {
@@ -3088,8 +3135,20 @@ The logged-in person's information will be used to complete the registrar inform
             if ( FormFieldsState.ContainsKey( formGuid ) )
             {
                 ShowDialog( dlgRegistrantFormField );
+                nbFormField.Visible = false;
 
                 var fieldList = FormFieldsState[formGuid];
+
+                // Find all the existing fields for the various types.
+                var personPropertyFields = FormFieldsState.SelectMany( forms => forms.Value )
+                    .Where( field => field.FieldSource == RegistrationFieldSource.PersonField )
+                    .ToList();
+                var personAttributeFields = FormFieldsState.SelectMany( forms => forms.Value )
+                    .Where( field => field.FieldSource == RegistrationFieldSource.PersonAttribute )
+                    .ToList();
+                var groupAttributeFields = FormFieldsState.SelectMany( forms => forms.Value )
+                    .Where( field => field.FieldSource == RegistrationFieldSource.GroupMemberAttribute )
+                    .ToList();
 
                 RegistrationTemplateFormField formField = fieldList.FirstOrDefault( a => a.Guid.Equals( formFieldGuid ) );
                 if ( formField == null )
@@ -3110,9 +3169,23 @@ The logged-in person's information will be used to complete the registrar inform
                 ceFormFieldPreHtml.Text = formField.PreText;
                 ceFormFieldPostHtml.Text = formField.PostText;
                 ddlFieldSource.SetValue( formField.FieldSource.ConvertToInt() );
-                ddlPersonField.SetValue( formField.PersonFieldType.ConvertToInt() );
-                lPersonField.Text = formField.PersonFieldType.ConvertToString();
 
+                // Populate the Person Field picker and then remove any fields
+                // that already exist on any form.
+                ddlPersonField.Items.Clear();
+                ddlPersonField.BindToEnum<RegistrationPersonFieldType>( sortAlpha: true );
+
+                foreach ( var field in personPropertyFields )
+                {
+                    var existingItem = ddlPersonField.Items.FindByValue( field.PersonFieldType.ConvertToInt().ToString() );
+                    if ( existingItem != null && field.Guid != formFieldGuid )
+                    {
+                        ddlPersonField.Items.Remove( existingItem );
+                    }
+                }
+
+                // Populate the Person Attribute picker and skip any attributes
+                // that already exist on the form.
                 ddlPersonAttributes.Items.Clear();
                 var person = new Person();
                 person.LoadAttributes();
@@ -3120,6 +3193,17 @@ The logged-in person's information will be used to complete the registrar inform
                     .OrderBy( a => a.Value.Name )
                     .Select( a => a.Value ) )
                 {
+                    // Check if this attribute already exists on any form and
+                    // is not the same field we are editing.
+                    var existingItem = personAttributeFields
+                        .Where( paf => paf.Guid != formFieldGuid && paf.AttributeId == attr.Id )
+                        .FirstOrDefault();
+
+                    if ( existingItem != null )
+                    {
+                        continue;
+                    }
+
                     if ( attr.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                     {
                         var listItem = new ListItem( attr.Name, attr.Id.ToString() );
@@ -3128,16 +3212,30 @@ The logged-in person's information will be used to complete the registrar inform
                     }
                 }
 
+                // Populate the Group Member Attribute picker and skip any attributes
+                // that already exist on the form.
                 ddlGroupTypeAttributes.Items.Clear();
                 var group = new Group();
                 group.GroupTypeId = gtpGroupType.SelectedGroupTypeId ?? 0;
                 var groupMember = new GroupMember();
                 groupMember.Group = group;
+                groupMember.GroupTypeId = gtpGroupType.SelectedGroupTypeId ?? 0;
                 groupMember.LoadAttributes();
                 foreach ( var attr in groupMember.Attributes
                     .OrderBy( a => a.Value.Name )
                     .Select( a => a.Value ) )
                 {
+                    // Check if this attribute already exists on any form and
+                    // is not the same field we are editing.
+                    var existingItem = groupAttributeFields
+                        .Where( gaf => gaf.Guid != formFieldGuid && gaf.AttributeId == attr.Id )
+                        .FirstOrDefault();
+
+                    if ( existingItem != null )
+                    {
+                        continue;
+                    }
+
                     if ( attr.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                     {
                         ddlGroupTypeAttributes.Items.Add( new ListItem( attr.Name, attr.Id.ToString() ) );
@@ -3147,7 +3245,12 @@ The logged-in person's information will be used to complete the registrar inform
                 var attribute = new Attribute();
                 attribute.FieldTypeId = FieldTypeCache.Get( Rock.SystemGuid.FieldType.TEXT ).Id;
 
-                if ( formField.FieldSource == RegistrationFieldSource.PersonAttribute )
+                if ( formField.FieldSource == RegistrationFieldSource.PersonField )
+                {
+                    ddlPersonField.SetValue( formField.PersonFieldType.ConvertToInt() );
+                    lPersonField.Text = formField.PersonFieldType.ConvertToString();
+                }
+                else if ( formField.FieldSource == RegistrationFieldSource.PersonAttribute )
                 {
                     ddlPersonAttributes.SetValue( formField.AttributeId );
                 }

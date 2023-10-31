@@ -63,6 +63,7 @@ namespace RockWeb.Blocks.Steps
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "8D78BC55-6E67-40AB-B453-994D69503838" )]
     public partial class StepEntry : RockBlock
     {
         #region Keys
@@ -314,7 +315,7 @@ namespace RockWeb.Blocks.Steps
                 else
                 {
                     // The workflow has run to completion, and it has no requirement for user interaction.
-                    mdWorkflowResult.Show( string.Format( "A '{0}' workflow was processed.", workflowType.Name ), ModalAlertType.Information );
+                    mdWorkflowResult.Show( string.Format( "A '{0}' workflow was started.", workflowType.Name ), ModalAlertType.Information );
 
                     return true;
                 }
@@ -758,7 +759,7 @@ namespace RockWeb.Blocks.Steps
             if ( step.StepStatus != null )
             {
                 lStatus.Text = string.Format(
-                    "<span class='label label-default' style='background-color: {0};'>{1}</span>",
+                    "<span class='label label-default' style='background-color: {0};color:#fff;'>{1}</span>",
                     step.StepStatus.StatusColorOrDefault,
                     step.StepStatus.Name );
             }

@@ -57,10 +57,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
         IsRequired = false,
         Order = 1)]
 
-    [DefinedValueField(
+    [SystemPhoneNumberField(
         "Send SMS From",
         Key = AttributeKey.SMSFrom,
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
         Description = "The phone number SMS messages should be sent from",
         IsRequired = false,
         AllowMultiple = false,
@@ -111,6 +110,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             + Rock.SystemGuid.Badge.BAPTISM + ","
             + Rock.SystemGuid.Badge.IN_SERVING_TEAM,
         Order = 7 )]
+    [Rock.SystemGuid.BlockTypeGuid( "48BBB7A7-1E1D-461E-9B64-E9CAD815E9E1" )]
     public partial class Person : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
@@ -435,14 +435,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnSend_Click( object sender, EventArgs e )
         {
-            var definedValueGuid = GetAttributeValue(AttributeKey.SMSFrom).AsGuidOrNull();
+            var systemPhoneNumberGuid = GetAttributeValue( AttributeKey.SMSFrom ).AsGuidOrNull();
             var message = tbSmsMessage.Value.Trim();
 
-            if ( message.IsNullOrWhiteSpace() || !definedValueGuid.HasValue )
+            if ( message.IsNullOrWhiteSpace() || !systemPhoneNumberGuid.HasValue )
             {
                 ResetSms();
-                DisplayResult(NotificationBoxType.Danger, "Error sending message. Please try again or contact an administrator if the error continues.");
-                if ( !definedValueGuid.HasValue )
+                DisplayResult( NotificationBoxType.Danger, "Error sending message. Please try again or contact an administrator if the error continues." );
+                if ( !systemPhoneNumberGuid.HasValue )
                 {
                     LogException(new Exception(string.Format("While trying to send an SMS from the Check-in Manager, the following error occurred: There is a misconfiguration with the {0} setting.", AttributeKey.SMSFrom)));
                 }
@@ -450,7 +450,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            var smsFromNumber = DefinedValueCache.Get(definedValueGuid.Value);
+            var smsFromNumber = SystemPhoneNumberCache.Get( systemPhoneNumberGuid.Value );
             if ( smsFromNumber == null )
             {
                 ResetSms();
@@ -475,7 +475,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 message,
                 smsFromNumber,
                 null,
-                rockContext);
+                null,
+                rockContext );
 
             DisplayResult(NotificationBoxType.Success, "Message queued.");
             ResetSms();

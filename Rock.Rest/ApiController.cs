@@ -33,6 +33,19 @@ using Rock.Tasks;
 using Rock.Utility.Settings;
 using Rock.Web.Cache;
 
+/*
+██   ██ ███████ ██    ██ ██ 
+██   ██ ██       ██  ██  ██ 
+███████ █████     ████   ██ 
+██   ██ ██         ██       
+██   ██ ███████    ██    ██ 
+---------------------------------------
+If you're here to add a new REST action to this file, you'll
+also need to configure it in Rock.Rest/App_Start/WebApiConfig.cs.
+
+You're welcome!
+ */
+
 namespace Rock.Rest
 {
     /// <summary>
@@ -77,12 +90,22 @@ namespace Rock.Rest
         [EnableQuery]
         public virtual IQueryable<T> Get()
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             var result = Service.Queryable().AsNoTracking();
             return result;
         }
 
         /// <summary>
-        /// GET endpoint to get a single record 
+        /// GET endpoint to get a single record
         /// </summary>
         /// <param name="id">The Id of the record</param>
         /// <returns></returns>
@@ -91,6 +114,16 @@ namespace Rock.Rest
         [ActionName( "GetById" )]
         public virtual T GetById( int id )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             T model;
             if ( !Service.TryGet( id, out model ) )
             {
@@ -101,7 +134,7 @@ namespace Rock.Rest
         }
 
         /// <summary>
-        /// GET endpoint to get a single record 
+        /// GET endpoint to get a single record
         /// </summary>
         /// <param name="key">The Id of the record</param>
         /// <returns></returns>
@@ -110,6 +143,16 @@ namespace Rock.Rest
         [EnableQuery]
         public virtual T Get( [FromODataUri] int key )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             T model;
             if ( !Service.TryGet( key, out model ) )
             {
@@ -135,6 +178,16 @@ namespace Rock.Rest
         [EnableQuery]
         public virtual IQueryable<T> GetByAttributeValue( [FromUri] int? attributeId = null, [FromUri] string attributeKey = null, [FromUri] string value = null, [FromUri] bool caseSensitive = false )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             // Value is always required
             if ( value.IsNullOrWhiteSpace() )
             {
@@ -182,6 +235,16 @@ namespace Rock.Rest
         [EnableQuery]
         public virtual IQueryable<T> GetByCampus( [FromUri] int campusId )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             if ( !typeof( T ).GetInterfaces().Contains( typeof( ICampusFilterable ) ) )
             {
                 var errorResponse = ControllerContext.Request.CreateErrorResponse( HttpStatusCode.BadRequest, "The model does not support campus filtering." );
@@ -206,6 +269,16 @@ namespace Rock.Rest
         [Authenticate, Secured]
         public virtual HttpResponseMessage Post( [FromBody] T value )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             if ( value == null )
             {
                 throw new HttpResponseException( HttpStatusCode.BadRequest );
@@ -245,6 +318,16 @@ namespace Rock.Rest
         [Authenticate, Secured]
         public virtual void Put( int id, [FromBody] T value )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             if ( value == null )
             {
                 throw new HttpResponseException( HttpStatusCode.BadRequest );
@@ -287,6 +370,16 @@ namespace Rock.Rest
         [Authenticate, Secured]
         public virtual void Patch( int id, [FromBody] Dictionary<string, object> values )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             // Check that something was sent in the body
             if ( values == null || !values.Keys.Any() )
             {
@@ -408,6 +501,16 @@ namespace Rock.Rest
         [Authenticate, Secured]
         public virtual void Delete( int id )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             SetProxyCreation( true );
 
             T model;
@@ -432,6 +535,16 @@ namespace Rock.Rest
         [EnableQuery]
         public IQueryable<T> GetDataView( int id )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             var rockContext = new RockContext();
             var dataView = new DataViewService( rockContext ).Get( id );
 
@@ -454,18 +567,23 @@ namespace Rock.Rest
         [HttpGet]
         public bool InDataView( int dataViewId, int entityId )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             var rockContext = new RockContext();
 
             var dataView = new DataViewService( rockContext ).Get( dataViewId );
 
             ValidateDataView( dataView );
 
-            var dataViewGetQueryArgs = new DataViewGetQueryArgs
-            {
-                DbContext = rockContext
-            };
-
-            var qryGroupsInDataView = dataView.GetQuery( dataViewGetQueryArgs ) as IQueryable<T>;
+            var qryGroupsInDataView = dataView.GetQuery() as IQueryable<T>;
             qryGroupsInDataView = qryGroupsInDataView.Where( d => d.Id == entityId );
 
             return qryGroupsInDataView.Any();
@@ -507,6 +625,16 @@ namespace Rock.Rest
         [HttpPost]
         public void LaunchWorkflow( int id, Guid workflowTypeGuid, string workflowName, [FromBody] Dictionary<string, string> workflowAttributeValues )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             T entity = null;
             if ( id > 0 )
             {
@@ -525,7 +653,7 @@ namespace Rock.Rest
                     transaction.WorkflowAttributeValues = workflowAttributeValues;
                 }
 
-                Rock.Transactions.RockQueue.TransactionQueue.Enqueue( transaction );
+                transaction.Enqueue();
             }
         }
 
@@ -541,6 +669,16 @@ namespace Rock.Rest
         [HttpPost]
         public void LaunchWorkflow( int id, int workflowTypeId, string workflowName, [FromBody] Dictionary<string, string> workflowAttributeValues )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             T entity = null;
             if ( id > 0 )
             {
@@ -559,7 +697,7 @@ namespace Rock.Rest
                     transaction.WorkflowAttributeValues = workflowAttributeValues;
                 }
 
-                Rock.Transactions.RockQueue.TransactionQueue.Enqueue( transaction );
+                transaction.Enqueue();
             }
         }
 
@@ -576,6 +714,16 @@ namespace Rock.Rest
         [EnableQuery]
         public IQueryable<T> GetFollowedItems( int? personId = null, int? personAliasId = null )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             if ( !personId.HasValue )
             {
                 if ( personAliasId.HasValue )
@@ -602,6 +750,16 @@ namespace Rock.Rest
         [HttpDelete]
         public virtual HttpResponseMessage DeleteAttributeValue( int id, string attributeKey )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             return SetAttributeValue( id, attributeKey, string.Empty );
         }
 
@@ -620,6 +778,16 @@ namespace Rock.Rest
         [HttpPost]
         public virtual HttpResponseMessage SetAttributeValue( int id, string attributeKey, string attributeValue )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             T model;
             if ( !Service.TryGet( id, out model ) )
             {
@@ -671,6 +839,16 @@ namespace Rock.Rest
         [ActionName( "SetContext" )]
         public virtual HttpResponseMessage SetContext( int id )
         {
+            /*
+             * 4-JAN-2022 DMV
+             *
+             * *** WARNING ***
+             * Changing this method signature will cause Rock
+             * implementations to lose custom security settings.
+             * See: https://app.asana.com/0/495431846745457/1201138340787294/f
+             *
+             */
+
             Guid? guid = Service.GetGuid( id );
             if ( !guid.HasValue )
             {

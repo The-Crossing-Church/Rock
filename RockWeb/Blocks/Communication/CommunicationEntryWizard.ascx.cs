@@ -106,9 +106,8 @@ namespace RockWeb.Blocks.Communication
         DefaultIntegerValue = 600,
         Order = 8 )]
 
-    [DefinedValueField( "Allowed SMS Numbers",
+    [SystemPhoneNumberField( "Allowed SMS Numbers",
         Key = AttributeKey.AllowedSMSNumbers,
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
         Description = "Set the allowed FROM numbers to appear when in SMS mode (if none are selected all numbers will be included). ",
         IsRequired = false,
         AllowMultiple = true,
@@ -139,7 +138,15 @@ namespace RockWeb.Blocks.Communication
         IsRequired = false,
         Order = 13 )]
 
+    [BooleanField( "Disable Adding Individuals to Recipient Lists",
+        Key = AttributeKey.DisableAddingIndividualsToRecipientLists,
+        Description = "When set to 'Yes' the person picker will be hidden so that additional individuals cannot be added to the recipient list.",
+        DefaultBooleanValue = false,
+        IsRequired = false,
+        Order = 14 )]
+
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.COMMUNICATION_ENTRY_WIZARD )]
     public partial class CommunicationEntryWizard : RockBlock
     {
         #region Attribute Keys
@@ -162,6 +169,7 @@ namespace RockWeb.Blocks.Communication
             public const string ShowDuplicatePreventionOption = "ShowDuplicatePreventionOption";
             public const string DefaultAsBulk = "DefaultAsBulk";
             public const string EnablePersonParameter = "EnablePersonParameter";
+            public const string DisableAddingIndividualsToRecipientLists = "DisableAddingIndividualsToRecipientLists";
         }
 
         #endregion Attribute Keys
@@ -183,9 +191,9 @@ namespace RockWeb.Blocks.Communication
 
         private const string CATEGORY_COMMUNICATION_TEMPLATE = "CategoryCommunicationTemplate";
 
-        private bool _smsTransportEnabled = MediumContainer.HasActiveSmsTransport();
-        private bool _emailTransportEnabled = MediumContainer.HasActiveEmailTransport();
-        private bool _pushTransportEnabled = MediumContainer.HasActivePushTransport();
+        private bool _smsTransportEnabled = false;
+        private bool _emailTransportEnabled = false;
+        private bool _pushTransportEnabled = false;
         #endregion
 
         #region Properties
@@ -246,6 +254,10 @@ namespace RockWeb.Blocks.Communication
             Page.Response.Cache.SetExpires( DateTime.UtcNow.AddHours( -1 ) );
             Page.Response.Cache.SetNoStore();
 
+            _smsTransportEnabled = MediumContainer.HasActiveAndAuthorizedSmsTransport( CurrentPerson );
+            _emailTransportEnabled = MediumContainer.HasActiveAndAuthorizedEmailTransport( CurrentPerson );
+            _pushTransportEnabled = MediumContainer.HasActiveAndAuthorizedPushTransport( CurrentPerson );
+
             // this event gets fired after block settings are updated. it's nice to repaint the screen if these settings would alter it
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
@@ -253,6 +265,34 @@ namespace RockWeb.Blocks.Communication
             componentImageUploader.BinaryFileTypeGuid = this.GetAttributeValue( AttributeKey.ImageBinaryFileType ).AsGuidOrNull() ?? Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
             fupEmailAttachments.BinaryFileTypeGuid = this.GetAttributeValue( AttributeKey.AttachmentBinaryFileType ).AsGuidOrNull() ?? Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
             fupMobileAttachment.BinaryFileTypeGuid = this.GetAttributeValue( AttributeKey.AttachmentBinaryFileType ).AsGuidOrNull() ?? Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
+
+            componentAssetManager.PickerButtonTemplate = @"
+{% assign iconPath = SelectedValue | FromJSON | Property:'IconPath' %}
+{% assign fileName = SelectedValue | FromJSON | Property:'Name' %}
+
+{% if iconPath != '' and fileName != '' %}
+    {% assign escFileName = fileName | UrlEncode %}
+    {% assign imageTypeUrl = iconPath | Replace: fileName, escFileName %}
+{% endif %}
+
+<div class='js-asset-thumbnail fileupload-thumbnail{% if imageTypeUrl contains '/Assets/Icons/FileTypes/' %} fileupload-thumbnail-icon{% endif %}' {% if fileName != '' %}style='background-image:url({{ imageTypeUrl }}) !important;' title='{{ fileName }}'{% endif %}>
+    {% if fileName != '' %}
+        <span class='js-asset-thumbnail-name file-link' style='background-color: transparent'>{{ fileName }}</span>
+    {% else %}
+        <span class='js-asset-thumbnail-name file-link file-link-default'></span>
+    {% endif %}
+</div>
+<div class='imageupload-dropzone'>
+    <span>
+        Select Asset
+    </span>
+</div>";
+
+            componentAssetManager.JsScriptToRegister = @"
+    Sys.Application.add_load(function (e) {
+        var data = '{{ SelectedValue }}';
+        handleAssetUpdate(e, data);
+    });";
 
             var videoProviders = Rock.Communication.VideoEmbed.VideoEmbedContainer.Instance.Dictionary.Select( c => c.Value.Key );
             lbVideoUrlHelpText.Attributes["data-original-title"] += ( videoProviders.Count() > 1 ? string.Join( ", ", videoProviders.Take( videoProviders.Count() - 1 ) ) + " and " + videoProviders.Last() : videoProviders.FirstOrDefault() ) + ".";
@@ -262,6 +302,7 @@ namespace RockWeb.Blocks.Communication
             gIndividualRecipients.GridRebind += gIndividualRecipients_GridRebind;
             gIndividualRecipients.Actions.ShowAdd = false;
             gIndividualRecipients.ShowActionRow = false;
+            gIndividualRecipients.RowItemText = "Recipient";
 
             gRecipientList.DataKeyNames = new string[] { "Id" };
             gRecipientList.GridRebind += gRecipientList_GridRebind;
@@ -319,6 +360,9 @@ function onTaskCompleted( resultData )
 
             // set the email preview visible = false on every load so that it doesn't stick around after previewing then navigating
             pnlEmailPreview.Visible = false;
+
+            // hide person picker if the block attribute setting for DisableAddingIndividualsToRecipientLists is true.
+            ppAddPerson.Visible = !GetAttributeValue( AttributeKey.DisableAddingIndividualsToRecipientLists ).AsBoolean();
 
             // Reset the Task Activity controls on the page.
             SignalRTaskActivityUiHelper.SetTaskActivityControlMode( this.RockPage, SignalRTaskActivityUiHelper.ControlModeSpecifier.Hidden );
@@ -493,7 +537,6 @@ function onTaskCompleted( resultData )
                 IndividualRecipientPersonIds = new CommunicationRecipientService( rockContext ).Queryable().AsNoTracking().Where( r => r.CommunicationId == communication.Id ).Select( a => a.PersonAlias.PersonId ).ToList();
             }
 
-
             int? personId = null;
             if ( GetAttributeValue( AttributeKey.EnablePersonParameter ).AsBoolean() )
             {
@@ -542,7 +585,6 @@ function onTaskCompleted( resultData )
             }
             else
             {
-
                 // If there aren't any Communication Groups, hide the option and only show the Individual Recipient selection
                 if ( ddlCommunicationGroupList.Items.Count <= 1 || ( communication.Id != 0 && communication.ListGroupId == null ) )
                 {
@@ -579,14 +621,17 @@ function onTaskCompleted( resultData )
             UpdateEmailAttachedFiles( false );
 
             // Mobile Text Editor
-            var valueItem = ddlSMSFrom.Items.FindByValue( communication.SMSFromDefinedValueId.ToString() );
-            if ( valueItem == null && communication.SMSFromDefinedValueId != null )
+            var valueItem = ddlSMSFrom.Items.FindByValue( communication.SmsFromSystemPhoneNumberId.ToString() );
+            if ( valueItem == null && communication.SmsFromSystemPhoneNumberId != null )
             {
-                var lookupDefinedValue = DefinedValueCache.Get( communication.SMSFromDefinedValueId.GetValueOrDefault() );
-                ddlSMSFrom.Items.Add( new ListItem( lookupDefinedValue.Description, lookupDefinedValue.Id.ToString() ) );
+                var lookupSystemPhoneNumber = SystemPhoneNumberCache.Get( communication.SmsFromSystemPhoneNumberId.GetValueOrDefault() );
+                if ( lookupSystemPhoneNumber != null && lookupSystemPhoneNumber.IsAuthorized( Rock.Security.Authorization.VIEW, this.CurrentPerson ) )
+                {
+                    ddlSMSFrom.Items.Add( new ListItem( lookupSystemPhoneNumber.Name, lookupSystemPhoneNumber.Id.ToString() ) );
+                }
             }
 
-            ddlSMSFrom.SetValue( communication.SMSFromDefinedValueId );
+            ddlSMSFrom.SetValue( communication.SmsFromSystemPhoneNumberId );
             tbSMSTextMessage.Text = communication.SMSMessage;
 
             fupMobileAttachment.BinaryFileId = communication.GetAttachmentBinaryFileIds( CommunicationType.SMS ).FirstOrDefault();
@@ -649,22 +694,22 @@ function onTaskCompleted( resultData )
             UpdateRecipientListCount();
 
             var selectedNumberGuids = GetAttributeValue( AttributeKey.AllowedSMSNumbers ).SplitDelimitedValues( true ).AsGuidList();
-            var smsFromDefinedType = DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM ) );
-            var smsDefinedValues = smsFromDefinedType.DefinedValues.Where(v => v.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) ).ToList();
+            var systemPhoneNumbers = SystemPhoneNumberCache.All()
+                .Where( spn => spn.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) )
+                .OrderBy( spn => spn.Order )
+                .ThenBy( spn => spn.Name )
+                .ThenBy( spn => spn.Id )
+                .ToList();
             if ( selectedNumberGuids.Any() )
             {
-                smsDefinedValues = smsDefinedValues.Where( v => selectedNumberGuids.Contains( v.Guid ) ).ToList();
+                systemPhoneNumbers = systemPhoneNumbers.Where( spn => selectedNumberGuids.Contains( spn.Guid ) ).ToList();
             }
 
             ddlSMSFrom.Items.Clear();
             ddlSMSFrom.Items.Add( new ListItem() );
-            foreach ( var item in smsDefinedValues )
+            foreach ( var item in systemPhoneNumbers )
             {
-                var description = string.IsNullOrWhiteSpace( item.Description )
-                    ? PhoneNumber.FormattedNumber( string.Empty, item.Value.Replace( "+", string.Empty ) )
-                    : item.Description;
-
-                ddlSMSFrom.Items.Add( new ListItem( description, item.Id.ToString() ) );
+                ddlSMSFrom.Items.Add( new ListItem( item.Name, item.Id.ToString() ) );
             }
 
             ddlSMSFrom.SelectedIndex = -1;
@@ -737,7 +782,6 @@ function onTaskCompleted( resultData )
                 result.Add( CommunicationType.SMS );
                 result.Add( CommunicationType.PushNotification );
             }
-
 
             return result;
         }
@@ -999,7 +1043,7 @@ function onTaskCompleted( resultData )
         /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
         protected void gIndividualRecipients_RowDataBound( object sender, GridViewRowEventArgs e )
         {
-            var recipientPerson = e.Row.DataItem as Person;
+            var recipientPerson = e.Row.DataItem as IndividualRecipientListInfo;
             var lRecipientAlert = e.Row.FindControl( "lRecipientAlert" ) as Literal;
             var lRecipientAlertEmail = e.Row.FindControl( "lRecipientAlertEmail" ) as Literal;
             var lRecipientAlertSMS = e.Row.FindControl( "lRecipientAlertSMS" ) as Literal;
@@ -1010,7 +1054,7 @@ function onTaskCompleted( resultData )
                 string alertClassEmail = string.Empty;
                 string alertMessageEmail = recipientPerson.Email;
                 string alertClassSMS = string.Empty;
-                string alertMessageSMS = string.Format( "{0}", recipientPerson.PhoneNumbers.FirstOrDefault( a => a.IsMessagingEnabled ) );
+                string alertMessageSMS = string.Format( "{0}", recipientPerson.SmsPhoneNumber );
 
                 // General alert info about recipient
                 if ( recipientPerson.IsDeceased )
@@ -1055,7 +1099,7 @@ function onTaskCompleted( resultData )
                 }
 
                 // SMS Related
-                if ( !recipientPerson.PhoneNumbers.Any( a => a.IsMessagingEnabled ) )
+                if ( recipientPerson.SmsPhoneNumber.IsNullOrWhiteSpace() )
                 {
                     // No SMS Number
                     alertClassSMS = "text-danger";
@@ -1075,6 +1119,7 @@ function onTaskCompleted( resultData )
         {
             List<int> recipientIdList = this.IndividualRecipientPersonIds;
 
+            // Apply sort parameters.
             using ( var rockContext = new RockContext() )
             {
                 var personService = new PersonService( rockContext );
@@ -1083,8 +1128,31 @@ function onTaskCompleted( resultData )
                     .AsNoTracking()
                     .Where( a => recipientIdList.Contains( a.Id ) )
                     .Include( a => a.PhoneNumbers )
-                    .OrderBy( a => a.LastName )
-                    .ThenBy( a => a.NickName );
+                    .Select( p => new IndividualRecipientListInfo
+                    {
+                        Id = p.Id,
+                        NickName = p.NickName,
+                        LastName = p.LastName,
+                        FullName = ( p.NickName + " " + p.LastName ).Trim(),
+                        Email = p.Email,
+                        EmailNote = p.EmailNote,
+                        IsEmailActive = p.IsEmailActive,
+                        SmsPhoneNumber = p.PhoneNumbers
+                            .Where( a => a.IsMessagingEnabled )
+                            .Select( pn => pn.NumberFormatted )
+                            .FirstOrDefault(),
+                        IsDeceased = p.IsDeceased,
+                        EmailPreference = p.EmailPreference
+                    } );
+
+                if ( gIndividualRecipients.SortProperty != null )
+                {
+                    qryPersons = qryPersons.Sort( gIndividualRecipients.SortProperty );
+                }
+                else
+                {
+                    qryPersons = qryPersons.OrderBy( a => a.LastName ).ThenBy( r => r.NickName );
+                }
 
                 // Bind the list items to the grid.
                 gIndividualRecipients.SetLinqDataSource( qryPersons );
@@ -1122,6 +1190,7 @@ function onTaskCompleted( resultData )
                 .Include( a => a.PhoneNumbers )
                 .OrderBy( a => a.LastName )
                 .ThenBy( a => a.NickName );
+
             // Bind the list items to the grid.
             gRecipientList.SetLinqDataSource( qryPersons );
             gRecipientList.DataBind();
@@ -1362,7 +1431,7 @@ function onTaskCompleted( resultData )
             }
 
             // Only add recipient preference if at least two options exists.
-            if ( recipientPreferenceEnabled )
+            if ( recipientPreferenceEnabled && ( emailTransportEnabled || smsTransportEnabled ) )
             {
                 rblCommunicationMedium.Items.Add( new ListItem( "Recipient Preference", CommunicationType.RecipientPreference.ConvertToInt().ToString() ) );
             }
@@ -1651,16 +1720,16 @@ function onTaskCompleted( resultData )
             UpdateEmailAttachedFiles( false );
 
             // SMS Fields
-            if ( communicationTemplate.SMSFromDefinedValueId.HasValue )
+            if ( communicationTemplate.SmsFromSystemPhoneNumberId.HasValue )
             {
-                var valueItem = ddlSMSFrom.Items.FindByValue( communicationTemplate.SMSFromDefinedValueId.ToString() );
+                var valueItem = ddlSMSFrom.Items.FindByValue( communicationTemplate.SmsFromSystemPhoneNumberId.ToString() );
                 if ( valueItem == null )
                 {
-                    var lookupDefinedValue = DefinedValueCache.Get( communicationTemplate.SMSFromDefinedValueId.GetValueOrDefault() );
-                    ddlSMSFrom.Items.Add( new ListItem( lookupDefinedValue.Description, lookupDefinedValue.Id.ToString() ) );
+                    var lookupSystemPhoneNumber = SystemPhoneNumberCache.Get( communicationTemplate.SmsFromSystemPhoneNumberId.GetValueOrDefault() );
+                    ddlSMSFrom.Items.Add( new ListItem( lookupSystemPhoneNumber.Name, lookupSystemPhoneNumber.Id.ToString() ) );
                 }
 
-                ddlSMSFrom.SetValue( communicationTemplate.SMSFromDefinedValueId.Value );
+                ddlSMSFrom.SetValue( communicationTemplate.SmsFromSystemPhoneNumberId.Value );
             }
 
             // only set the SMSMessage if the template has one (just in case they already typed in an SMSMessage for this communication
@@ -1750,7 +1819,7 @@ function onTaskCompleted( resultData )
             var communicationTypeIsAllowed = !allowedCommunicationTypes.Any() || allowedCommunicationTypes.Contains( communicationType );
 
             var selectedCommunicationType = SelectedCommunicationType;
-            var communicationTypeIsSelected = selectedCommunicationType == communicationType || ( selectedCommunicationType == CommunicationType.RecipientPreference && communicationType != CommunicationType.PushNotification); 
+            var communicationTypeIsSelected = selectedCommunicationType == communicationType || ( selectedCommunicationType == CommunicationType.RecipientPreference && communicationType != CommunicationType.PushNotification );
 
             return communicationTypeIsAllowed && communicationTypeIsSelected;
         }
@@ -1895,7 +1964,6 @@ function onTaskCompleted( resultData )
                         testCommunication.ReviewedDateTime = RockDateTime.Now;
                         testCommunication.ReviewerPersonAliasId = CurrentPersonAliasId;
 
-
                         foreach ( var attachment in communication.Attachments )
                         {
                             var cloneAttachment = attachment.Clone( false );
@@ -2017,6 +2085,7 @@ function onTaskCompleted( resultData )
                                 {
                                     communicationService.Delete( testCommunication );
                                 }
+
                                 rockContext.SaveChanges( disablePrePostProcessing: true );
 
                                 // Delete any Person History that was created for the Test Communication
@@ -2304,7 +2373,7 @@ function onTaskCompleted( resultData )
             {
                 var attachmentUrl = string.Format( "{0}GetFile.ashx?id={1}", System.Web.VirtualPathUtility.ToAbsolute( "~" ), binaryFileAttachment.Key );
                 var removeAttachmentJS = string.Format( "removeAttachment( this, '{0}', '{1}' );", hfEmailAttachedBinaryFileIds.ClientID, binaryFileAttachment.Key );
-                sbAttachmentsHtml.AppendLine( string.Format( "    <li><a href='{0}' target='_blank'>{1}</a> <a><i class='fa fa-times' onclick=\"{2}\"></i></a></li>", attachmentUrl, binaryFileAttachment.Value, removeAttachmentJS ) );
+                sbAttachmentsHtml.AppendLine( string.Format( "    <li><a href='{0}' target='_blank' rel='noopener noreferrer'>{1}</a> <a><i class='fa fa-times' onclick=\"{2}\"></i></a></li>", attachmentUrl, binaryFileAttachment.Value, removeAttachmentJS ) );
             }
 
             sbAttachmentsHtml.AppendLine( "  </ul>" );
@@ -2434,12 +2503,12 @@ function onTaskCompleted( resultData )
                     imgSMSImageAttachment.ImageUrl = string.Format( "{0}GetImage.ashx?guid={1}", publicAppRoot, binaryFile.Guid );
                     divAttachmentLoadError.InnerText = "Unable to load attachment from " + imgSMSImageAttachment.ImageUrl;
                     imgSMSImageAttachment.Visible = true;
-                    imgSMSImageAttachment.Width = new Unit( 50, UnitType.Percentage );
+                    imgSMSImageAttachment.Width = new Unit( 50, System.Web.UI.WebControls.UnitType.Percentage );
 
                     imgConfirmationSmsImageAttachment.ImageUrl = string.Format( "{0}GetImage.ashx?guid={1}", publicAppRoot, binaryFile.Guid );
                     divConfirmationSmsImageAttachmentLoadError.InnerText = "Unable to load attachment from " + imgSMSImageAttachment.ImageUrl;
                     imgConfirmationSmsImageAttachment.Visible = true;
-                    imgConfirmationSmsImageAttachment.Width = new Unit( 50, UnitType.Percentage );
+                    imgConfirmationSmsImageAttachment.Width = new Unit( 50, System.Web.UI.WebControls.UnitType.Percentage );
                 }
                 else
                 {
@@ -2460,12 +2529,12 @@ function onTaskCompleted( resultData )
                     imgSMSImageAttachment.ImageUrl = virtualThumbnailFilePath.Replace( "~/", publicAppRoot );
                     divAttachmentLoadError.InnerText = "Unable to load preview icon from " + imgSMSImageAttachment.ImageUrl;
                     imgSMSImageAttachment.Visible = true;
-                    imgSMSImageAttachment.Width = new Unit( 10, UnitType.Percentage );
+                    imgSMSImageAttachment.Width = new Unit( 10, System.Web.UI.WebControls.UnitType.Percentage );
 
                     imgConfirmationSmsImageAttachment.ImageUrl = string.Format( "{0}GetImage.ashx?guid={1}", publicAppRoot, binaryFile.Guid );
                     divConfirmationSmsImageAttachmentLoadError.InnerText = "Unable to load attachment from " + imgSMSImageAttachment.ImageUrl;
                     imgConfirmationSmsImageAttachment.Visible = true;
-                    imgConfirmationSmsImageAttachment.Width = new Unit( 50, UnitType.Percentage );
+                    imgConfirmationSmsImageAttachment.Width = new Unit( 50, System.Web.UI.WebControls.UnitType.Percentage );
                 }
 
                 if ( Rock.Communication.Transport.Twilio.SupportedMimeTypes.Any( a => binaryFile.MimeType.Equals( a, StringComparison.OrdinalIgnoreCase ) ) )
@@ -2554,13 +2623,13 @@ function onTaskCompleted( resultData )
         /// <param name="sender">The sender.</param>
         public void InitializeSMSFromSender( Person sender )
         {
-            var numbers = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() );
+            var numbers = SystemPhoneNumberCache.All();
             if ( numbers != null )
             {
-                foreach ( var number in numbers.DefinedValues )
+                foreach ( var number in numbers )
                 {
-                    var personAliasGuid = number.GetAttributeValue( "ResponseRecipient" ).AsGuidOrNull();
-                    if ( personAliasGuid.HasValue && sender.Aliases.Any( a => a.Guid == personAliasGuid.Value ) )
+                    var personAliasId = number.AssignedToPersonAliasId;
+                    if ( personAliasId.HasValue && sender.Aliases.Any( a => a.Id == personAliasId.Value ) )
                     {
                         ddlSMSFrom.SetValue( number.Id );
                         break;
@@ -3084,7 +3153,10 @@ function onTaskCompleted( resultData )
                     var allowedCommunicationTypes = GetAllowedCommunicationTypes();
                     var emailTransportEnabled = _emailTransportEnabled && allowedCommunicationTypes.Contains( CommunicationType.Email );
                     var smsTransportEnabled = _smsTransportEnabled && allowedCommunicationTypes.Contains( CommunicationType.SMS );
-                    var pushTransportEnabled = false; //_pushTransportEnabled && allowedCommunicationTypes.Contains( CommunicationType.PushNotification ); // Recipient preference should not use push
+
+                    // Recipient preference should not use push.
+                    // _pushTransportEnabled && allowedCommunicationTypes.Contains( CommunicationType.PushNotification );
+                    var pushTransportEnabled = false;
 
                     if ( emailTransportEnabled )
                     {
@@ -3181,11 +3253,11 @@ function onTaskCompleted( resultData )
             lblConfirmationSmsMessage.Text = messageText;
             lblConfirmationSmsTo.Text = to;
 
-            var lookupDefinedValue = DefinedValueCache.Get( communication.SMSFromDefinedValueId.GetValueOrDefault() );
-            if ( lookupDefinedValue != null )
+            var lookupSystemPhoneNumber = SystemPhoneNumberCache.Get( communication.SmsFromSystemPhoneNumberId.GetValueOrDefault() );
+            if ( lookupSystemPhoneNumber != null )
             {
                 litConfirmationSmsFromNumber.Visible = true;
-                litConfirmationSmsFromNumber.Text = string.Format( "{0} ({1})", lookupDefinedValue.Description, lookupDefinedValue.Value );
+                litConfirmationSmsFromNumber.Text = string.Format( "{0} ({1})", lookupSystemPhoneNumber.Name, lookupSystemPhoneNumber.Number );
             }
         }
 
@@ -3306,7 +3378,7 @@ function onTaskCompleted( resultData )
             details.CCEmails = ebCCList.Text;
             details.BCCEmails = ebBCCList.Text;
 
-            details.SMSFromDefinedValueId = ddlSMSFrom.SelectedValue.AsIntegerOrNull();
+            details.SmsFromSystemPhoneNumberId = ddlSMSFrom.SelectedValue.AsIntegerOrNull();
             details.SMSMessage = tbSMSTextMessage.Text;
 
             // Get Push notification settings.
@@ -3358,6 +3430,15 @@ function onTaskCompleted( resultData )
         /// </summary>
         private CommunicationRecipient GetSampleCommunicationRecipient( Rock.Model.Communication communication, RockContext rockContext )
         {
+            // Update the recipients in the communication
+            UpdateCommunicationRecipients( communication, rockContext );
+
+            // If we have recipients in the communication then just return the first one.
+            if ( communication.Recipients.Any() )
+            {
+                return communication.Recipients.First();
+            }
+
             var recipientPersonId = 0;
 
             if ( IndividualRecipientPersonIds.Count == 0 )
@@ -3381,8 +3462,39 @@ function onTaskCompleted( resultData )
             recipient.Communication = communication;
             recipient.PersonAlias = new PersonAliasService( rockContext ).GetPrimaryAlias( recipientPersonId );
 
+            // If there are additional merge fields, get the merge values connected to the sample recipient.
+            if ( communication.AdditionalMergeFields.Any() )
+            {
+                recipient.AdditionalMergeValues = new CommunicationRecipientService( rockContext )
+                    .GetByCommunicationId( communication.Id )
+                    .Where( cr => cr.PersonAlias.Id == recipient.PersonAlias.Id )
+                    .FirstOrDefault()?
+                    .AdditionalMergeValues;
+            }
+
             return recipient;
         }
+
+        #region Support Classes
+
+        /// <summary>
+        /// Information about an individual recipient that is displayed in the recipient list.
+        /// </summary>
+        private class IndividualRecipientListInfo
+        {
+            public int Id { get; set; }
+            public string NickName { get; set; }
+            public string LastName { get; set; }
+            public string FullName { get; set; }
+            public string Email { get; set; }
+            public string EmailNote { get; set; }
+            public bool IsEmailActive { get; set; }
+            public EmailPreference EmailPreference { get; set; }
+            public string SmsPhoneNumber { get; set; }
+            public bool IsDeceased { get; set; }
+        }
+
+        #endregion
 
         #region Service Classes
 
@@ -3497,7 +3609,7 @@ function onTaskCompleted( resultData )
                 communication.Subject = settings.Details.Subject.TrimForMaxLength( communication, "Subject" );
                 communication.Message = settings.Details.Message;
 
-                communication.SMSFromDefinedValueId = settings.Details.SMSFromDefinedValueId;
+                communication.SmsFromSystemPhoneNumberId = settings.Details.SmsFromSystemPhoneNumberId;
                 communication.SMSMessage = settings.Details.SMSMessage;
 
                 communication.FutureSendDateTime = settings.FutureSendDateTime;
@@ -3662,7 +3774,7 @@ function onTaskCompleted( resultData )
 
                     currentCount++;
 
-                    ReportProgress( progressReporter, 20 + decimal.Divide( currentCount, totalCount ) * 70, 0, "Processing Recipients ({0} of {1})...", currentCount, totalCount );
+                    ReportProgress( progressReporter, 20 + ( decimal.Divide( currentCount, totalCount ) * 70 ), 0, "Processing Recipients ({0} of {1})...", currentCount, totalCount );
                 }
 
                 return communication;

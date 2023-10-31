@@ -17,9 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
-
+#endif
 using Rock.Attribute;
 using Rock.Web.UI.Controls;
 
@@ -30,6 +31,7 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( "80ED0575-8FAE-4BC4-A51F-CAC211DD104F" )]
     public class ValueFilterFieldType : FieldType
     {
         #region Configuration
@@ -43,6 +45,49 @@ namespace Rock.Field.Types
         /// The comparison types
         /// </summary>
         public const string COMPARISON_TYPES = "comparisontypes";
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var filter = FilterExpression.FromJsonOrNull( privateValue );
+
+            try
+            {
+                return filter.ToString();
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Support Methods
+
+        /// <summary>
+        /// Gets the filter object that can be used to evaluate an object against the filter.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The attribute value.</param>
+        /// <returns>A CompoundFilter object that can be used to evaluate the truth of the filter.</returns>
+        public static FilterExpression GetFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, string value )
+        {
+            return FilterExpression.FromJsonOrNull( value );
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -162,10 +207,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Formatting
-
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -176,16 +217,7 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            var filter = GetFilterExpression( configurationValues, value );
-
-            try
-            {
-                return filter.ToString();
-            }
-            catch
-            {
-                return string.Empty;
-            }
+            return GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
 
         /// <summary>
@@ -232,10 +264,6 @@ namespace Rock.Field.Types
             // but keeping it here for backward compatibility.
             return System.Web.HttpUtility.HtmlEncode( FormatValue( parentControl, entityTypeId, entityId, value, configurationValues, condensed ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -310,21 +338,7 @@ namespace Rock.Field.Types
             return tvf.Filter.ToJson();
         }
 
-        #endregion
-
-        #region Support Methods
-
-        /// <summary>
-        /// Gets the filter object that can be used to evaluate an object against the filter.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="value">The attribute value.</param>
-        /// <returns>A CompoundFilter object that can be used to evaluate the truth of the filter.</returns>
-        public static FilterExpression GetFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, string value )
-        {
-            return FilterExpression.FromJsonOrNull( value );
-        }
-
+#endif
         #endregion
     }
 }

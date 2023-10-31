@@ -13,6 +13,7 @@
 
             <asp:HiddenField ID="hfTransactionId" runat="server" />
             <asp:HiddenField ID="hfBatchId" runat="server" />
+            <Rock:HiddenFieldWithClass ID="hfIsZeroTransaction" CssClass="is-zero-transaction" runat="server" />
 
             <div class="panel-heading">
                 <h1 class="panel-title">
@@ -42,7 +43,7 @@
                         <div class="col-md-6">
                             <asp:Panel ID="pnlSingleAccount" runat="server" Visible="false" CssClass="row">
                                 <div class="col-sm-6">
-                                    <Rock:CurrencyBox ID="tbSingleAccountAmountMinusFeeCoverageAmount" Label="Amount" runat="server" CssClass="input-width-lg" />
+                                    <Rock:CurrencyBox ID="tbSingleAccountAmountMinusFeeCoverageAmount" Label="Amount" runat="server" CssClass="input-width-lg" AutoPostBack="true" OnTextChanged="tbSingleAccountAmountMinusFeeCoverageAmount_TextChanged" />
                                     <Rock:CurrencyBox ID="tbSingleAccountForeignCurrencyAmount" Label="Foreign Currency Amount" runat="server" CssClass="input-width-lg" />
                                     <Rock:CurrencyBox ID="tbSingleAccountFeeAmount" Label="Processing Fees" runat="server" CssClass="input-width-lg" Help="The fee amount associated with the processing of the transaction." />
                                     <Rock:CurrencyBox ID="tbSingleAccountFeeCoverageAmount" runat="server" Label="Covered Fee" Required="false" ValidationGroup="Account" Help="The fee amount that the person elected to cover." />
@@ -81,7 +82,7 @@
                             <Rock:DefinedValuePicker ID="dvpCreditCardType" runat="server" Label="Credit Card Type" />
                             <Rock:DefinedValuePicker ID="dvpForeignCurrencyCode" runat="server" Label="Foreign Currency" AutoPostBack="true" OnSelectedIndexChanged="dvpForeignCurrencyCode_SelectedIndexChanged" />
                             <Rock:DynamicPlaceholder ID="phPaymentAttributeEdits" runat="server" />
-                            <Rock:FinancialGatewayPicker ID="gpPaymentGateway" runat="server" Label="Payment Gateway" ShowAll="true" />
+                            <Rock:FinancialGatewayPicker ID="gpPaymentGateway" runat="server" Label="Payment Gateway" IncludeInactive="true" />
                             <Rock:DataTextBox ID="tbTransactionCode" runat="server" Label="Transaction Code"
                                 SourceTypeName="Rock.Model.FinancialTransaction, Rock" PropertyName="TransactionCode" />
                             <Rock:DynamicPlaceholder ID="phAttributeEdits" runat="server" />
@@ -105,9 +106,9 @@
                         SourceTypeName="Rock.Model.FinancialTransaction, Rock" PropertyName="Summary" />
 
                     <div class="actions">
-                        <asp:LinkButton ID="lbSave" runat="server" Text="Save" AccessKey="s" ToolTip="Alt+s" CssClass="btn btn-primary" OnClick="lbSave_Click" />
-                        <asp:LinkButton ID="btnSaveThenAdd" runat="server" AccessKey="a" ToolTip="Alt+a" Text="Save Then Add" CssClass="btn btn-link" OnClick="btnSaveThenAdd_Click" />
-                        <asp:LinkButton ID="btnSaveThenViewBatch" runat="server" Text="Save Then View Batch" CssClass="btn btn-link" OnClick="btnSaveThenViewBatch_Click" />
+                        <asp:LinkButton ID="lbSave" runat="server" Text="Save" AccessKey="s" ToolTip="Alt+s" CssClass="btn btn-primary btn-transaction-save" OnClick="lbSave_Click" />
+                        <asp:LinkButton ID="btnSaveThenAdd" runat="server" AccessKey="a" ToolTip="Alt+a" Text="Save Then Add" CssClass="btn btn-link btn-transaction-save" OnClick="btnSaveThenAdd_Click" />
+                        <asp:LinkButton ID="btnSaveThenViewBatch" runat="server" Text="Save Then View Batch" CssClass="btn btn-link btn-transaction-save" OnClick="btnSaveThenViewBatch_Click" />
                         <asp:LinkButton ID="lbCancel" runat="server" Text="Cancel" AccessKey="c" ToolTip="Alt+c" CssClass="btn btn-link" CausesValidation="false" OnClick="lbCancel_Click" />
                     </div>
                 </div>
@@ -233,6 +234,37 @@
 
         <asp:HiddenField ID="hfActiveDialog" runat="server" />
 
+        <script>
+
+            Sys.Application.add_load(function () {
+                // delete/archive prompt
+                $('.btn-transaction-save').on('click', function (e) {
+                    var isZeroTransaction = $('.is-zero-transaction').val();
+                    var isSingleAccountAmountMinusFeeCoverageAmountVisible = $('#<%= tbSingleAccountAmountMinusFeeCoverageAmount.ClientID %>').is(":visible");
+
+                    if (isSingleAccountAmountMinusFeeCoverageAmountVisible) {
+                        if ($('#<%= tbSingleAccountAmountMinusFeeCoverageAmount.ClientID %>').val() > 0) {
+                            var isSingleAccountFeeCoverageAmountVisible = $('#<%= tbSingleAccountFeeCoverageAmount.ClientID %>').is(":visible");
+                            if (!isSingleAccountFeeCoverageAmountVisible || $('#<%= tbSingleAccountFeeCoverageAmount.ClientID %>').val() > 0) {
+                                return true;
+                            }
+                        }
+                    } else if (isZeroTransaction !== 'True') {
+                        return true;
+                    }
+
+                    e.preventDefault();
+                    Rock.dialogs.confirm('This will create a financial transaction without an amount. Do you want to continue?', function (result) {
+                        if (result) {
+                            window.location = e.target.href ? e.target.href : e.target.parentElement.href;
+                        }
+                    });
+                });
+
+            });
+
+        </script>
+
         <Rock:ModalDialog ID="mdAccount" runat="server" Title="Account" OnSaveClick="mdAccount_SaveClick" OnCancelScript="clearActiveDialog();" ValidationGroup="Account">
             <Content>
                 <asp:ValidationSummary ID="valSummaryAccount" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" ValidationGroup="Account" />
@@ -278,16 +310,3 @@
 
     </ContentTemplate>
 </asp:UpdatePanel>
-<style>
-    .person-photo {
-        width: 43px;
-        height: 43px;
-        background-repeat: no-repeat;
-        background-size: cover;
-        border-radius: 50%;
-    }
-
-    .label-campus {
-        border-radius: 10px;
-    }
-</style>

@@ -1,4 +1,4 @@
-﻿// <copyright>
+// <copyright>
 // Copyright by the Spark Development Network
 //
 // Licensed under the Rock Community License (the "License");
@@ -32,6 +32,7 @@ namespace Rock.Model
     [RockDomain( "Engagement" )]
     [Table( "ConnectionRequest" )]
     [DataContract]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.CONNECTION_REQUEST )]
     public partial class ConnectionRequest : Model<ConnectionRequest>, IOrdered
     {
         #region Entity Properties
@@ -136,6 +137,17 @@ namespace Rock.Model
         /// <value>
         /// The assigned group member attribute values.
         /// </value>
+        /// This field stores attrbute values that will be added to the group member record
+        /// when the individual is placed in the group. The contents is a JSON collection of
+        /// key/values. An example is below:
+        /// {"HoursServing":"1","Articles":"379f8144-cf81-48cf-b7bf-8befdc6dca55"}
+        /// 
+        /// IMPORTANT: This is not a pattern we want to repeat. The problem is that it detaches
+        /// the AttributeValue as the model of record. For example if the value represents an 
+        /// AttributeMatrix, we will not longer know when it's appropropriate to delete the 
+        /// AttributeMatrix record. Normally, we'd look for AttributeMatrix records that are not
+        /// in the AttributeValue table. But in this case we must also consider that the AttributeMatrix
+        /// could be referenced in this string. This is slow and makes it difficult 'know all the places'. 
         [DataMember]
         public string AssignedGroupMemberAttributeValues { get; set; }
 
@@ -147,6 +159,16 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public int? ConnectorPersonAliasId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="Rock.Model.ConnectionType"/> identifier.
+        /// </summary>
+        /// <value>
+        /// The connection type identifier.
+        /// </value>
+        [Required]
+        [DataMember( IsRequired = true )]
+        public int ConnectionTypeId { get; set; }
 
         /// <summary>
         /// Gets or sets the order.
@@ -281,7 +303,15 @@ namespace Rock.Model
         /// </returns>
         public override string ToString()
         {
-            return $"{ ConnectionOpportunity } Connection Request for { PersonAlias.Person }";
+            if ( PersonAlias != null )
+            {
+                return $"{ ConnectionOpportunity } Connection Request for { PersonAlias.Person }";
+            }
+            else
+            {
+                return $"{ ConnectionOpportunity } Connection Request";
+            }
+
         }
 
         #endregion

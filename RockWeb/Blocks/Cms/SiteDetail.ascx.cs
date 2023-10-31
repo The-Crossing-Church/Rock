@@ -51,6 +51,7 @@ namespace RockWeb.Blocks.Cms
         Category = "",
         Order = 0 )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "2AC06C36-869F-45F7-8C14-802781C5F70E" )]
     public partial class SiteDetail : RockBlock
     {
         #region Attribute Keys
@@ -244,9 +245,7 @@ namespace RockWeb.Blocks.Cms
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void dlgPageAttribute_SaveClick( object sender, EventArgs e )
         {
-#pragma warning disable 0618 // Type or member is obsolete
-            var attribute = SaveChangesToStateCollection( edtPageAttributes, PageAttributesState );
-#pragma warning restore 0618 // Type or member is obsolete
+            var attribute = edtPageAttributes.SaveChangesToStateCollection( PageAttributesState );
 
             // Controls will show warnings
             if ( !attribute.IsValid )
@@ -255,7 +254,6 @@ namespace RockWeb.Blocks.Cms
             }
 
             BindPageAttributesGrid();
-
             dlgPageAttribute.Hide();
         }
 
@@ -348,15 +346,20 @@ namespace RockWeb.Blocks.Cms
                     site.PageNotFoundPageId ?? -1
                 };
 
+                var otherSitesQry = siteService.Queryable().Where( s => s.Id != site.Id );
+
                 var pageQry = pageService.Queryable( "Layout" )
                     .Where( t =>
-                        t.Layout.SiteId == site.Id ||
-                        sitePages.Contains( t.Id ) );
+                        !t.IsSystem &&
+                        ( t.Layout.SiteId == site.Id ||
+                        sitePages.Contains( t.Id ) ) );
 
+                pageQry = pageQry.Where( p => !otherSitesQry.Any( s =>  s.DefaultPageId == p.Id || s.LoginPageId == p.Id || s.RegistrationPageId == p.Id || s.PageNotFoundPageId == p.Id  ) );
                 pageService.DeleteRange( pageQry );
 
                 var layoutQry = layoutService.Queryable()
                     .Where( l =>
+                        !l.IsSystem &&
                         l.SiteId == site.Id );
                 layoutService.DeleteRange( layoutQry );
                 rockContext.SaveChanges( true );
@@ -439,6 +442,8 @@ namespace RockWeb.Blocks.Cms
                 site.RequiresEncryption = cbRequireEncryption.Checked;
                 site.EnabledForShortening = cbEnableForShortening.Checked;
                 site.EnableMobileRedirect = cbEnableMobileRedirect.Checked;
+                site.EnableVisitorTracking = cbEnableVisitorTracking.Checked;
+                site.EnablePersonalization = cbEnablePersonalization.Checked;
                 site.MobilePageId = ppMobilePage.PageId;
                 site.ExternalUrl = tbExternalURL.Text;
 
@@ -901,6 +906,8 @@ namespace RockWeb.Blocks.Cms
             tbGoogleAnalytics.Text = site.GoogleAnalyticsCode;
             cbRequireEncryption.Checked = site.RequiresEncryption;
             cbEnableForShortening.Checked = site.EnabledForShortening;
+            cbEnableVisitorTracking.Checked = site.EnableVisitorTracking;
+            cbEnablePersonalization.Checked = site.EnablePersonalization;
 
             cbEnableMobileRedirect.Checked = site.EnableMobileRedirect;
             ppMobilePage.SetValue( site.MobilePage );
@@ -991,50 +998,6 @@ namespace RockWeb.Blocks.Cms
             cbRedirectTablets.Visible = mobileRedirectVisible;
 
             nbPageViewRetentionPeriodDays.Visible = cbEnablePageViews.Checked;
-        }
-
-        #endregion
-
-        #region Obsolete Code
-
-        /// <summary>
-        /// Add or update the saved state of an Attribute using values from the AttributeEditor.
-        /// Non-editable system properties of the existing Attribute state are preserved.
-        /// </summary>
-        /// <param name="editor">The AttributeEditor that holds the updated Attribute values.</param>
-        /// <param name="attributeStateCollection">The stored state collection.</param>
-        [RockObsolete( "1.11" )]
-        [Obsolete( "This method is required for backward-compatibility - new blocks should use the AttributeEditor.SaveChangesToStateCollection() extension method instead." )]
-        private Rock.Model.Attribute SaveChangesToStateCollection( AttributeEditor editor, List<Rock.Model.Attribute> attributeStateCollection )
-        {
-            // Load the editor values into a new Attribute instance.
-            Rock.Model.Attribute attribute = new Rock.Model.Attribute();
-
-            editor.GetAttributeProperties( attribute );
-
-            // Get the stored state of the Attribute, and copy the values of the non-editable properties.
-            var attributeState = attributeStateCollection.Where( a => a.Guid.Equals( attribute.Guid ) ).FirstOrDefault();
-
-            if ( attributeState != null )
-            {
-                attribute.Order = attributeState.Order;
-                attribute.CreatedDateTime = attributeState.CreatedDateTime;
-                attribute.CreatedByPersonAliasId = attributeState.CreatedByPersonAliasId;
-                attribute.ForeignGuid = attributeState.ForeignGuid;
-                attribute.ForeignId = attributeState.ForeignId;
-                attribute.ForeignKey = attributeState.ForeignKey;
-
-                attributeStateCollection.RemoveEntity( attribute.Guid );
-            }
-            else
-            {
-                // Set the Order of the new entry as the last item in the collection.
-                attribute.Order = attributeStateCollection.Any() ? attributeStateCollection.Max( a => a.Order ) + 1 : 0;
-            }
-
-            attributeStateCollection.Add( attribute );
-
-            return attribute;
         }
 
         #endregion

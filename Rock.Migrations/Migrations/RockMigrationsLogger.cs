@@ -83,6 +83,8 @@ namespace Rock.Migrations
             }
         }
 
+        private string lastLoggedCompletedMigration;
+
         /// <summary>
         /// Logs the completed migration.
         /// </summary>
@@ -91,7 +93,11 @@ namespace Rock.Migrations
             if ( lastMigrationName != null && stopwatch != null )
             {
                 stopwatch.Stop();
-                WriteToLog( $"[{stopwatch.Elapsed.TotalMilliseconds,5:#} ms] {lastMigrationName}" );
+                if ( lastLoggedCompletedMigration != lastMigrationName )
+                {
+                    WriteToLog( $"[{stopwatch.Elapsed.TotalMilliseconds,5:#} ms],{lastMigrationName}" );
+                    lastLoggedCompletedMigration = lastMigrationName;
+                }
             }
         }
 
@@ -123,7 +129,7 @@ namespace Rock.Migrations
                     logFile = new StreamWriter( filePath, true  );
                 }
 
-                logFile.WriteLine( message );
+                logFile.WriteLine( $"{RockDateTime.Now:MM/dd/yyyy HH:mm:ss.fff},{message}" );
                 logFile.Flush();
             }
             catch
@@ -154,6 +160,16 @@ namespace Rock.Migrations
             {
                 WriteToLog( "VERBOSE: " + message );
             }
+        }
+
+        /// <summary>
+        /// Logs the system information message.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        public void LogSystemInfo( string key, string value )
+        {
+            WriteToLog( $"{key}: {value}" );
         }
     }
 }

@@ -110,11 +110,10 @@ namespace RockWeb.Blocks.Communication
         Description = "Should the attachment uploader be shown for email communications.",
         DefaultBooleanValue = true,
         Order = 10 )]
-    [DefinedValueField( "Allowed SMS Numbers",
+    [SystemPhoneNumberField( "Allowed SMS Numbers",
         Key = AttributeKey.AllowedSMSNumbers,
         Description = "Set the allowed FROM numbers to appear when in SMS mode (if none are selected all numbers will be included).",
         IsRequired = false,
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM,
         AllowMultiple = true,
         Order = 11 )]
     [BooleanField( "Simple Communications Are Bulk",
@@ -155,6 +154,7 @@ namespace RockWeb.Blocks.Communication
         Order = 2 )]
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.COMMUNICATION_ENTRY )]
     public partial class CommunicationEntry : RockBlock
     {
         #region Attribute Keys
@@ -194,6 +194,7 @@ namespace RockWeb.Blocks.Communication
             public const string Person = "Person";
             public const string PersonId = "PersonId";
             public const string TemplateGuid = "TemplateGuid";
+            public const string MediumId = "MediumId";
         }
 
         #region Fields
@@ -359,7 +360,10 @@ namespace RockWeb.Blocks.Communication
             btnSave.Visible = _fullMode;
 
             _editingApproved = PageParameter( PageParameterKey.Edit ).AsBoolean() && IsUserAuthorized( "Approve" );
-
+            if( PageParameter( PageParameterKey.MediumId ).IsNotNullOrWhiteSpace() )
+            {
+                MediumEntityTypeId = PageParameter( PageParameterKey.MediumId ).AsIntegerOrNull();
+            }
         }
 
         /// <summary>
@@ -934,7 +938,7 @@ namespace RockWeb.Blocks.Communication
                         a.MediumEntityTypeId
                     } ).ToList();
 
-                mediumEntityTypeId = recipientList.Where( a => a.MediumEntityTypeId.HasValue ).Select( a => a.MediumEntityTypeId ).FirstOrDefault();
+                mediumEntityTypeId = PageParameter( PageParameterKey.MediumId ).AsIntegerOrNull() ?? recipientList.Where( a => a.MediumEntityTypeId.HasValue ).Select( a => a.MediumEntityTypeId ).FirstOrDefault();
                 Recipients = recipientList.Select( recipient => new Recipient( recipient.Person, recipient.PersonHasSMS, recipient.HasPersonalDevice, recipient.Status, recipient.StatusNote, recipient.OpenedClient, recipient.OpenedDateTime ) ).ToList();
             }
             else
@@ -1205,9 +1209,9 @@ namespace RockWeb.Blocks.Communication
                 {
                     var allowedSmsNumbersGuids = GetAttributeValue( AttributeKey.AllowedSMSNumbers ).SplitDelimitedValues( true ).AsGuidList();
 
-                    ( ( Sms ) mediumControl ).SelectedNumbers = DefinedTypeCache.Get( Rock.SystemGuid.DefinedType.COMMUNICATION_SMS_FROM.AsGuid() ).DefinedValues
-                        .Where( v => v.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) && allowedSmsNumbersGuids.ContainsOrEmpty( v.Guid ) )
-                        .Select( v => v.Guid )
+                    ( ( Sms ) mediumControl ).SelectedNumbers = SystemPhoneNumberCache.All()
+                        .Where( spn => spn.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) && allowedSmsNumbersGuids.ContainsOrEmpty( spn.Guid ) )
+                        .Select( spn => spn.Guid )
                         .ToList();
                 }
 

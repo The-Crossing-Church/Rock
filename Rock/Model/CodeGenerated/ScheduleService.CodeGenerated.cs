@@ -25,7 +25,8 @@ using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -56,6 +57,12 @@ namespace Rock.Model
             errorMessage = string.Empty;
 
             // ignoring AttendanceOccurrence,ScheduleId
+
+            if ( new Service<DataView>( Context ).Queryable().Any( a => a.PersistedScheduleId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Schedule.FriendlyTypeName, DataView.FriendlyTypeName );
+                return false;
+            }
 
             if ( new Service<EventItemOccurrence>( Context ).Queryable().Any( a => a.ScheduleId == item.Id ) )
             {
@@ -93,6 +100,12 @@ namespace Rock.Model
                 return false;
             }
 
+            if ( new Service<InteractiveExperienceSchedule>( Context ).Queryable().Any( a => a.ScheduleId == item.Id ) )
+            {
+                errorMessage = string.Format( "This {0} is assigned to a {1}.", Schedule.FriendlyTypeName, InteractiveExperienceSchedule.FriendlyTypeName );
+                return false;
+            }
+
             if ( new Service<Metric>( Context ).Queryable().Any( a => a.ScheduleId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", Schedule.FriendlyTypeName, Metric.FriendlyTypeName );
@@ -106,7 +119,7 @@ namespace Rock.Model
     /// Schedule View Model Helper
     /// </summary>
     [DefaultViewModelHelper( typeof( Schedule ) )]
-    public partial class ScheduleViewModelHelper : ViewModelHelper<Schedule, Rock.ViewModel.ScheduleViewModel>
+    public partial class ScheduleViewModelHelper : ViewModelHelper<Schedule, ScheduleBag>
     {
         /// <summary>
         /// Converts the model to a view model.
@@ -115,17 +128,17 @@ namespace Rock.Model
         /// <param name="currentPerson">The current person.</param>
         /// <param name="loadAttributes">if set to <c>true</c> [load attributes].</param>
         /// <returns></returns>
-        public override Rock.ViewModel.ScheduleViewModel CreateViewModel( Schedule model, Person currentPerson = null, bool loadAttributes = true )
+        public override ScheduleBag CreateViewModel( Schedule model, Person currentPerson = null, bool loadAttributes = true )
         {
             if ( model == null )
             {
                 return default;
             }
 
-            var viewModel = new Rock.ViewModel.ScheduleViewModel
+            var viewModel = new ScheduleBag
             {
-                Id = model.Id,
-                Guid = model.Guid,
+                IdKey = model.IdKey,
+                AbbreviatedName = model.AbbreviatedName,
                 AutoInactivateWhenComplete = model.AutoInactivateWhenComplete,
                 CategoryId = model.CategoryId,
                 CheckInEndOffsetMinutes = model.CheckInEndOffsetMinutes,
@@ -135,10 +148,10 @@ namespace Rock.Model
                 EffectiveStartDate = model.EffectiveStartDate,
                 iCalendarContent = model.iCalendarContent,
                 IsActive = model.IsActive,
+                IsPublic = model.IsPublic,
                 Name = model.Name,
                 Order = model.Order,
                 WeeklyDayOfWeek = ( int? ) model.WeeklyDayOfWeek,
-                WeeklyTimeOfDay = model.WeeklyTimeOfDay,
                 CreatedDateTime = model.CreatedDateTime,
                 ModifiedDateTime = model.ModifiedDateTime,
                 CreatedByPersonAliasId = model.CreatedByPersonAliasId,
@@ -208,6 +221,7 @@ namespace Rock.Model
         public static void CopyPropertiesFrom( this Schedule target, Schedule source )
         {
             target.Id = source.Id;
+            target.AbbreviatedName = source.AbbreviatedName;
             target.AutoInactivateWhenComplete = source.AutoInactivateWhenComplete;
             target.CategoryId = source.CategoryId;
             target.CheckInEndOffsetMinutes = source.CheckInEndOffsetMinutes;
@@ -219,6 +233,7 @@ namespace Rock.Model
             target.ForeignKey = source.ForeignKey;
             target.iCalendarContent = source.iCalendarContent;
             target.IsActive = source.IsActive;
+            target.IsPublic = source.IsPublic;
             target.Name = source.Name;
             target.Order = source.Order;
             target.WeeklyDayOfWeek = source.WeeklyDayOfWeek;
@@ -238,7 +253,7 @@ namespace Rock.Model
         /// <param name="model">The entity.</param>
         /// <param name="currentPerson" >The currentPerson.</param>
         /// <param name="loadAttributes" >Load attributes?</param>
-        public static Rock.ViewModel.ScheduleViewModel ToViewModel( this Schedule model, Person currentPerson = null, bool loadAttributes = false )
+        public static ScheduleBag ToViewModel( this Schedule model, Person currentPerson = null, bool loadAttributes = false )
         {
             var helper = new ScheduleViewModelHelper();
             var viewModel = helper.CreateViewModel( model, currentPerson, loadAttributes );

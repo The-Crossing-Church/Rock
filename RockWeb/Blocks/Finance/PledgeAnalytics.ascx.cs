@@ -48,6 +48,7 @@ namespace RockWeb.Blocks.Finance
         DefaultIntegerValue = 180,
         Order = 0 )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "72B4BBC0-1E8A-46B7-B956-A399624F513C" )]
     public partial class PledgeAnalytics : Rock.Web.UI.RockBlock
     {
         private static class AttributeKeys
@@ -116,7 +117,7 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

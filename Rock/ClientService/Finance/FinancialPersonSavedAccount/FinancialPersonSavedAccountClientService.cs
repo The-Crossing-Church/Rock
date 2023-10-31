@@ -21,7 +21,7 @@ using System.Linq;
 using Rock.ClientService.Finance.FinancialPersonSavedAccount.Options;
 using Rock.Data;
 using Rock.Model;
-using Rock.ViewModel.NonEntities;
+using Rock.ViewModels.Finance;
 using Rock.Web.Cache;
 
 namespace Rock.ClientService.Finance.FinancialPersonSavedAccount
@@ -64,8 +64,8 @@ namespace Rock.ClientService.Finance.FinancialPersonSavedAccount
         /// </summary>
         /// <param name="personId">The person identifier whose accounts should be retrieved.</param>
         /// <param name="options">The options for filtering and limiting the results.</param>
-        /// <returns>A list of <see cref="SavedFinancialAccountListItemViewModel"/> objects that represent the accounts.</returns>
-        public List<SavedFinancialAccountListItemViewModel> GetSavedFinancialAccountsForPersonAsAccountListItems( int personId, SavedFinancialAccountOptions options = null )
+        /// <returns>A list of <see cref="SavedFinancialAccountListItemBag"/> objects that represent the accounts.</returns>
+        public List<SavedFinancialAccountListItemBag> GetSavedFinancialAccountsForPersonAsAccountListItems( int personId, SavedFinancialAccountOptions options = null )
         {
             var financialPersonSavedAccountService = new FinancialPersonSavedAccountService( RockContext );
 
@@ -121,9 +121,19 @@ namespace Rock.ClientService.Finance.FinancialPersonSavedAccount
                     }
 
                     // Determine the descriptive text to associate with this account.
-                    string description = a.AccountNumberMasked != null && a.AccountNumberMasked.Length >= 4
-                        ? $"Ending in {a.AccountNumberMasked.Right( 4 )} and Expires {expirationDate}"
-                        : $"Expires {expirationDate}";
+                    string description = string.Empty;
+                    if ( expirationDate != null )
+                    {
+                        description = a.AccountNumberMasked != null && a.AccountNumberMasked.Length >= 4
+                            ? $"Ending in {a.AccountNumberMasked.Right( 4 )} and Expires {expirationDate}"
+                            : $"Expires {expirationDate}";
+                    }
+                    else
+                    {
+                        description = a.AccountNumberMasked != null && a.AccountNumberMasked.Length >= 4
+                            ? $"Ending in {a.AccountNumberMasked.Right( 4 )}"
+                            : string.Empty;
+                    }
 
                     // Determine the image to use for this account.
                     if ( a.CreditCardTypeValueId.HasValue )
@@ -133,7 +143,7 @@ namespace Rock.ClientService.Finance.FinancialPersonSavedAccount
                         image = creditCardTypeValueCache?.GetAttributeValue( SystemKey.CreditCardTypeAttributeKey.IconImage );
                     }
 
-                    return new SavedFinancialAccountListItemViewModel
+                    return new SavedFinancialAccountListItemBag
                     {
                         Value = a.Guid.ToString(),
                         Text = a.Name,

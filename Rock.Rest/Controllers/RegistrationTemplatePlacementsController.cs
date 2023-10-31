@@ -48,6 +48,7 @@ namespace Rock.Rest.Controllers
         [Authenticate, Secured]
         [HttpGet]
         [System.Web.Http.Route( "api/RegistrationTemplatePlacements/CanPlaceRegistrant" )]
+        [Rock.SystemGuid.RestActionGuid( "16A3B4EE-D158-402F-96C6-349EE9D2306E" )]
         public virtual HttpResponseMessage CanPlaceRegistrant( int registrantId, int registrationTemplatePlacementId, int groupId )
         {
             var rockContext = this.Service.Context as RockContext;
@@ -94,7 +95,10 @@ namespace Rock.Rest.Controllers
 
             RegistrationInstanceService registrationInstanceService = new RegistrationInstanceService( rockContext );
             var sharedGroupsQuery = registrationTemplatePlacementService.GetRegistrationTemplatePlacementPlacementGroups( registrationTemplatePlacement );
-            var instanceGroupsQuery = registrationInstanceService.GetRegistrationInstancePlacementGroups( registrantInfo.RegistrationInstance ).Where( a => a.GroupTypeId == registrationTemplatePlacement.GroupTypeId );
+            // The registrationTemplatePlacementId for 'ByPlacement' method is needed to determine whether the registrant can be placed based on instance placement groups.
+            var instanceGroupsQuery = registrationInstanceService.GetRegistrationInstancePlacementGroupsByPlacement(
+                registrantInfo.RegistrationInstance, registrationTemplatePlacementId
+                ).Where( a => a.GroupTypeId == registrationTemplatePlacement.GroupTypeId );
             var placementGroupsQuery = sharedGroupsQuery.Union( instanceGroupsQuery );
 
             // make sure the specified group is one of the placement groups
@@ -119,7 +123,7 @@ namespace Rock.Rest.Controllers
                 {
                     return ControllerContext.Request.CreateErrorResponse(
                         HttpStatusCode.BadRequest,
-                        $"{registrantInfo.Person} can not be in more than one {registrationTemplatePlacement.Name} group" );
+                        $"{registrantInfo.Person} cannot be in more than one {registrationTemplatePlacement.Name} group" );
                 }
             }
 
@@ -137,6 +141,7 @@ namespace Rock.Rest.Controllers
         [Authenticate, Secured]
         [HttpDelete]
         [System.Web.Http.Route( "api/RegistrationTemplatePlacements/DetachPlacementGroup" )]
+        [Rock.SystemGuid.RestActionGuid( "566D81B3-1B99-4FE4-BE3A-307F3135106B" )]
         public virtual HttpResponseMessage DetachPlacementGroup( int groupId, int registrationTemplatePlacementId, int? registrationInstanceId = null )
         {
             // since we are doing a delete, create a new RockContext instead of this.Service.Context so that ProxyCreation, etc works
@@ -147,7 +152,7 @@ namespace Rock.Rest.Controllers
             {
                 return ControllerContext.Request.CreateErrorResponse( HttpStatusCode.NotFound, "Specified group not found." );
             }
-            
+
             if ( registrationInstanceId.HasValue )
             {
                 var registrationInstanceService = new RegistrationInstanceService( rockContext );

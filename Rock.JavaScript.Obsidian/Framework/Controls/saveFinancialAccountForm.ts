@@ -15,24 +15,20 @@
 // </copyright>
 //
 
+import { Guid } from "@Obsidian/Types";
 import { defineComponent, inject, PropType } from "vue";
-import Alert from "../Elements/alert";
-import InlineCheckBox from "../Elements/inlineCheckBox";
-import RockButton from "../Elements/rockButton";
-import TextBox from "../Elements/textBox";
-import { Guid } from "../Util/guid";
-import { Person } from "../ViewModels";
-import { BlockHttp } from "../Util/block";
+import NotificationBox from "./notificationBox.obs";
+import InlineCheckBox from "./inlineCheckBox";
+import RockButton from "./rockButton";
+import TextBox from "./textBox";
 import RockForm from "./rockForm";
-import { useStore } from "../Store/index";
+import { useStore } from "@Obsidian/PageState";
+import { SaveFinancialAccountFormSaveAccountOptionsBag } from "@Obsidian/ViewModels/Rest/Controls/saveFinancialAccountFormSaveAccountOptionsBag";
+import { SaveFinancialAccountFormSaveAccountResultBag } from "@Obsidian/ViewModels/Rest/Controls/saveFinancialAccountFormSaveAccountResultBag";
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag";
+import { useHttp } from "@Obsidian/Utility/http";
 
 const store = useStore();
-
-type SaveFinancialAccountFormResult = {
-    title: string;
-    detail: string;
-    isSuccess: boolean;
-};
 
 /** A form to save a payment token for later use as a Financial Person Saved Account */
 const SaveFinancialAccountForm = defineComponent({
@@ -40,7 +36,7 @@ const SaveFinancialAccountForm = defineComponent({
     components: {
         InlineCheckBox,
         TextBox,
-        Alert,
+        NotificationBox,
         RockButton,
         RockForm
     },
@@ -58,12 +54,14 @@ const SaveFinancialAccountForm = defineComponent({
             required: true
         }
     },
-    setup () {
+    setup() {
+        const http = useHttp();
+
         return {
-            http: inject("http") as BlockHttp
+            http
         };
     },
-    data () {
+    data() {
         return {
             /** Will the payment token be saved for future use? */
             doSave: false,
@@ -91,17 +89,17 @@ const SaveFinancialAccountForm = defineComponent({
     },
     computed: {
         /** The person currently authenticated */
-        currentPerson (): Person | null {
+        currentPerson(): PersonBag | null {
             return store.state.currentPerson;
         },
 
         /** Is a new login account needed to attach the new saved financial account to? */
-        isLoginCreationNeeded () : boolean {
+        isLoginCreationNeeded(): boolean {
             return !this.currentPerson;
         },
     },
     methods: {
-        async onSubmit () {
+        async onSubmit() {
             this.errorTitle = "";
             this.errorMessage = "";
 
@@ -113,16 +111,18 @@ const SaveFinancialAccountForm = defineComponent({
 
             this.isLoading = true;
 
-            const result = await this.http.post<SaveFinancialAccountFormResult>(`/api/v2/controls/savefinancialaccountforms/${this.gatewayGuid}`, null, {
-                Password: this.password,
-                SavedAccountName: this.savedAccountName,
-                TransactionCode: this.transactionCode,
-                Username: this.username,
-                GatewayPersonIdentifier: this.gatewayPersonIdentifier
-            });
+            const options: Partial<SaveFinancialAccountFormSaveAccountOptionsBag> = {
+                gatewayGuid: this.gatewayGuid,
+                password: this.password,
+                savedAccountName: this.savedAccountName,
+                transactionCode: this.transactionCode,
+                username: this.username,
+                gatewayPersonIdentifier: this.gatewayPersonIdentifier
+            };
+            const result = await this.http.post<SaveFinancialAccountFormSaveAccountResultBag>("/api/v2/Controls/SaveFinancialAccountFormSaveAccount", null, options);
 
-            if (result?.data?.isSuccess) {
-                this.successTitle = result.data.title;
+            if (result.isSuccess && result.data?.isSuccess) {
+                this.successTitle = result.data.title || "";
                 this.successMessage = result.data.detail || "Success";
             }
             else {
@@ -135,28 +135,28 @@ const SaveFinancialAccountForm = defineComponent({
     },
     template: `
 <div>
-    <Alert v-if="successMessage" alertType="success" class="m-0">
+    <NotificationBox v-if="successMessage" alertType="success" class="m-0">
         <strong v-if="successTitle">{{successTitle}}:</strong>
         {{successMessage}}
-    </Alert>
+    </NotificationBox>
     <template v-else>
         <slot name="header">
             <h3>Make Giving Even Easier</h3>
         </slot>
-        <Alert v-if="errorMessage" alertType="danger">
+        <NotificationBox v-if="errorMessage" alertType="danger">
             <strong v-if="errorTitle">{{errorTitle}}:</strong>
             {{errorMessage}}
-        </Alert>
+        </NotificationBox>
         <InlineCheckBox label="Save account information for future gifts" v-model="doSave" />
         <RockForm v-if="doSave" @submit="onSubmit">
             <TextBox label="Name for the account" rules="required" v-model="savedAccountName" />
             <template v-if="isLoginCreationNeeded">
-                <Alert alertType="info">
+                <NotificationBox alertType="info">
                     <strong>Note:</strong>
                     For security purposes you will need to login to use your saved account information. To create
                     a login account please provide a user name and password below. You will be sent an email with
                     the account information above as a reminder.
-                </Alert>
+                </NotificationBox>
                 <TextBox label="Username" v-model="username" rules="required" />
                 <TextBox label="Password" v-model="password" type="password" rules="required" />
                 <TextBox label="Confirm Password" v-model="confirmPassword" type="password" rules="required" />

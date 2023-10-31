@@ -35,6 +35,7 @@ namespace Rock.Model
     [Table( "AttendanceOccurrence" )]
     [DataContract]
     [Analytics( false, false )]
+    [Rock.SystemGuid.EntityTypeGuid( "0F6FD7F1-7AF5-4135-843F-E34948D4EA28")]
     public partial class AttendanceOccurrence : Model<AttendanceOccurrence>
     {
         #region Entity Properties
@@ -218,6 +219,13 @@ namespace Rock.Model
         [DataMember]
         [DefinedValue( SystemGuid.DefinedType.CHECK_IN_ATTENDANCE_TYPES )]
         public int? AttendanceTypeValueId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the attendance reminder last sent date time.
+        /// </summary>
+        /// <value>The attendance reminder last sent date time.</value>
+        [DataMember]
+        public DateTime? AttendanceReminderLastSentDateTime { get; set; }
 
         #endregion
 

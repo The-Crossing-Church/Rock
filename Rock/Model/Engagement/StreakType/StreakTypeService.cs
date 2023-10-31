@@ -20,6 +20,7 @@ using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Rock.Data;
 using Rock.Field.Types;
 using Rock.Web.Cache;
@@ -326,7 +327,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="streakTypeId"></param>
         /// <param name="errorMessage"></param>
-        [Obsolete( "Use the overload with Progress instead" )]
+        [Obsolete( "Use the overload with Progress instead", true )]
         [RockObsolete( "1.10" )]
         public static void RebuildStreakTypeFromAttendance( int streakTypeId, out string errorMessage )
         {
@@ -400,7 +401,7 @@ namespace Rock.Model
         /// <param name="progress">The progress.</param>
         /// <param name="streakTypeId">The streak type identifier.</param>
         /// <param name="errorMessage">The error message.</param>
-        [Obsolete( "Use the RebuildStreakType method instead" )]
+        [Obsolete( "Use the RebuildStreakType method instead", true )]
         [RockObsolete( "1.10" )]
         public static void RebuildStreakTypeFromAttendance( IProgress<int?> progress, int streakTypeId, out string errorMessage )
         {
@@ -717,10 +718,7 @@ namespace Rock.Model
                 .Where( t => t.TransactionDateTime >= streakType.StartDate );
 
             // Set the streak type occurrence map according to the dates returned
-            var firstOccurrenceDate = transactionQuery
-                .Select( t => t.TransactionDateTime )
-                .Min();
-
+            var firstOccurrenceDate = transactionQuery.Select( t => t.TransactionDateTime ).Min();
             if ( !firstOccurrenceDate.HasValue )
             {
                 // No data to work with
@@ -752,10 +750,7 @@ namespace Rock.Model
             streakTypeCache = StreakTypeCache.Get( streakTypeCache.Id );
 
             // Get all of the attendees for the streak type
-            var personIds = transactionQuery
-                .Select( t => t.AuthorizedPersonAlias.PersonId )
-                .Distinct()
-                .ToList();
+            var personIds = transactionQuery.Select( t => t.AuthorizedPersonAlias.PersonId ).Distinct().ToList();
 
             var totalCount = personIds.LongCount();
             var batchCounter = 0;
@@ -763,6 +758,7 @@ namespace Rock.Model
 
             foreach ( var personId in personIds )
             {
+                // Create a new context every 100 persons to keep the change tracker from getting bogged down.
                 if ( batchCounter == 0 )
                 {
                     rockContext = new RockContext();
@@ -771,22 +767,33 @@ namespace Rock.Model
                 // Get the Person's Giving ID
                 var givingId = new PersonService( rockContext ).GetSelect( personId, p => p.GivingId );
 
-                // fetch all the possible PersonAliasIds that have this GivingID to help optimize the SQL
-                var givingPersonIds = new PersonAliasService( rockContext )
+                // fetch all of the Person.Id that use the givingId of the current person
+                var givingPersonIds = new PersonService( rockContext )
                     .Queryable()
                     .AsNoTracking()
-                    .Where( a => a.Person.GivingId == givingId )
-                    .Select( a => a.PersonId )
+                    .Where( p => p.GivingId == givingId )
+                    .Select( a => a.Id )
                     .ToList();
 
                 foreach ( var pId in givingPersonIds )
                 {
                     RebuildStreak( rockContext, streakTypeCache, streakType, streakType.StartDate, pId, out errorMessage );
+
+                    /*
+                    * 2023-05-30 ETD
+                    * Save changes here in case the this person has not inserted a row into Streak yet.
+                    * Otherwise the Context could try to insert the same person for the same StreakType multiple times which will violate unique key index "IX_StreakTypeId_PersonAliasId".
+                    * This can happen when a new StreakType is created for a past date where one or more persons has multiple streaks to process (e.g. weekly giving starting 3 weeks ago)
+                    */
+                    if ( errorMessage.IsNullOrWhiteSpace() )
+                    {
+                        rockContext.SaveChanges();
+                    }
                 }
 
                 if ( !errorMessage.IsNullOrWhiteSpace() )
                 {
-                    return;
+                    continue;
                 }
 
                 batchCounter++;
@@ -794,18 +801,10 @@ namespace Rock.Model
 
                 if ( batchCounter == 100 )
                 {
-                    rockContext.SaveChanges();
-                    rockContext.Dispose();
                     batchCounter = 0;
-
+                    rockContext.Dispose();
                     progress?.Report( ( int ) ( decimal.Divide( totalCounter, totalCount ) * 100 ) );
                 }
-            }
-
-            if ( batchCounter > 0 )
-            {
-                rockContext.SaveChanges();
-                rockContext.Dispose();
             }
         }
 
@@ -1968,7 +1967,7 @@ namespace Rock.Model
 
         /// <summary>
         /// Handles the financial transaction record for streaks. Use this method with the ID instead of the whole object if there is
-        /// a chance the context for the transactopm could be disposed. e.g. if this method is being run in a new Task.
+        /// a chance the context for the transaction could be disposed. e.g. if this method is being run in a new Task.
         /// </summary>
         /// <param name="transactionId">The financial transaction identifier.</param>
         public static void HandleFinancialTransactionRecord( int transactionId )
@@ -2020,10 +2019,11 @@ namespace Rock.Model
                 return;
             }
 
-            // Exclude the following transations from streaks
+            // Exclude the following transactions from streaks
             // Refunds, negative/zero amounts
-            if ( null != transaction.RefundDetails ||
-                 transaction.TotalAmount <= 0 )
+            bool isRefund = null != transaction.RefundDetails || transaction.TotalAmount <= 0;
+
+            if ( isRefund )
             {
                 // No error message, we just don't want to track these for streaks
                 return;
@@ -2040,11 +2040,9 @@ namespace Rock.Model
                 .Select( se => se.StreakTypeId );
             var enrolledInStreakTypeIds = new HashSet<int>( enrolledInStreakTypeIdQuery );
 
-            // Get the account identifier for this transaction
-            var accountService = new FinancialAccountService( rockContext );
-            var accountId = transaction.TransactionDetails.Select( t => t.AccountId ).ToIntSafe();
-            var accountAncestorIds = accountService.GetAllAncestorIds( accountId ).ToList();
-            var accountDescendentIds = accountService.GetAllDescendentIds( accountId ).ToList();
+            // Get the account identifier(s) for this transaction
+            var transactionAccountIds = transaction.TransactionDetails.Where( a => a.Amount > 0.00M ).Select( t => t.AccountId ).ToList();
+            var accountAncestorIds = FinancialAccountCache.GetByIds( transactionAccountIds ).SelectMany( s => s.GetAncestorFinancialAccountIds() ).Distinct().ToList();
 
             // Query each active streak type and mark engagement for it if the person
             // is enrolled or the streak type does not require enrollment
@@ -2058,13 +2056,11 @@ namespace Rock.Model
                 ) &&
                 (
                     // Try to match the Financial Account ID first
-                    ( s.StructureType == StreakStructureType.FinancialTransaction && s.StructureEntityId.Value == accountId ) ||
-                    // If include children, match ancestors or descendents
+                    ( s.StructureType == StreakStructureType.FinancialTransaction
+                        && transactionAccountIds.Contains( s.StructureEntityId.Value ) ||
+                    // If include children, see if the Streak's defined AccountId is one of the Ancestors of the account(s) that the transaction was posted to
                     ( s.StructureType == StreakStructureType.FinancialTransaction &&
-                        s.StructureSettings.IncludeChildAccounts &&
-                        ( accountAncestorIds.Contains( s.StructureEntityId.Value ) ||
-                          accountDescendentIds.Contains( s.StructureEntityId.Value )
-                        ) )
+                        s.StructureSettings.IncludeChildAccounts && accountAncestorIds.Contains( s.StructureEntityId.Value ) ) )
                 ) );
 
             foreach ( var streakType in matchedStreakTypes )
@@ -2260,7 +2256,7 @@ namespace Rock.Model
         /// context and saves the changes when complete.
         /// </summary>
         /// <param name="attendance"></param>
-        [Obsolete( "Use the HandleAttendanceRecord method instead" )]
+        [Obsolete( "Use the HandleAttendanceRecord method instead", true )]
         [RockObsolete( "1.10" )]
         public static void HandleAttendanceRecordAsync( Attendance attendance )
         {
@@ -2287,7 +2283,7 @@ namespace Rock.Model
         /// This method creates it's own data context and any changes will be saved automatically.
         /// </summary>
         /// <param name="occurrenceId"></param>
-        [Obsolete( "Use the HandleAttendanceRecord method instead" )]
+        [Obsolete( "Use the HandleAttendanceRecord method instead", true )]
         [RockObsolete( "1.10" )]
         public static void HandleAttendanceRecordsAsync( int occurrenceId )
         {
@@ -2309,7 +2305,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="occurrenceId"></param>
         /// <param name="errorMessage"></param>
-        [Obsolete( "Use HandleAttendanceRecord method instead" )]
+        [Obsolete( "Use HandleAttendanceRecord method instead", true )]
         [RockObsolete( "1.10" )]
         public void HandleAttendanceRecords( int occurrenceId, out string errorMessage )
         {
@@ -2374,8 +2370,7 @@ namespace Rock.Model
                         .FirstOrDefault( ic => ic.Id == structureEntityId.Value );
                     return $"{interactionComponent?.InteractionChannel?.Name} / {interactionComponent?.Name}";
                 case StreakStructureType.FinancialTransaction:
-                    var accountService = new FinancialAccountService( rockContext );
-                    return accountService.GetSelect( structureEntityId.Value, a => a.Name );
+                    return FinancialAccountCache.Get( structureEntityId.Value )?.Name;
                 default:
                     throw new NotImplementedException( string.Format( "Getting structure name for the StreakStructureType '{0}' is not implemented", structureType ) );
             }
@@ -2394,7 +2389,7 @@ namespace Rock.Model
         /// <param name="streakOccurrenceFrequency">The streak occurrence frequency.</param>
         /// <param name="unitCount">The unit count.</param>
         /// <returns></returns>
-        [Obsolete( "Downgrading the visibility of this method and renaming to GetMostRecentOccurrences" )]
+        [Obsolete( "Downgrading the visibility of this method and renaming to GetMostRecentOccurrences", true )]
         [RockObsolete( "1.10" )]
         public static OccurrenceEngagement[] GetMostRecentEngagementBits( byte[] engagementMap, byte[] occurrenceMap, DateTime mapStartDate, StreakOccurrenceFrequency streakOccurrenceFrequency, int unitCount = 24 )
         {
@@ -2475,7 +2470,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="streakTypeId"></param>
         [RockObsolete( "1.10" )]
-        [Obsolete( "Use the HandlePostSaveChanges method instead.", false )]
+        [Obsolete( "Use the HandlePostSaveChanges method instead.", true )]
         public static void UpdateEnrollmentStreakPropertiesAsync( int streakTypeId )
         {
             Task.Run( () =>
@@ -2525,7 +2520,7 @@ namespace Rock.Model
         /// <param name="errorMessage"></param>
         /// <returns></returns>
         [RockObsolete( "1.10" )]
-        [Obsolete( "Use the override with StreakTypeCache instead.", false )]
+        [Obsolete( "Use the override with StreakTypeCache instead.", true )]
         public static bool IsBitSet( byte[] map, DateTime mapStartDate, DateTime bitDate, StreakOccurrenceFrequency occurrenceFrequency, out string errorMessage )
         {
             errorMessage = string.Empty;
@@ -2606,7 +2601,7 @@ namespace Rock.Model
         /// <param name="errorMessage"></param>
         /// <param name="newValue"></param>
         /// <returns></returns>
-        [Obsolete( "Use the override with StreakTypeCache param instead" )]
+        [Obsolete( "Use the override with StreakTypeCache param instead", true )]
         [RockObsolete( "1.10" )]
         public static byte[] SetBit( byte[] map, DateTime mapStartDate, DateTime bitDate, StreakOccurrenceFrequency occurrenceFrequency, bool newValue, out string errorMessage )
         {
@@ -2803,14 +2798,14 @@ namespace Rock.Model
         /// <returns></returns>
         private static DateTime IncrementDateTime( DateTime dateTime, StreakOccurrenceFrequency streakOccurrenceFrequency, bool isReverse = false )
         {
-            var incrementBy = (isReverse) ? -1 : 1;
+            var incrementBy = ( isReverse ) ? -1 : 1;
 
             switch ( streakOccurrenceFrequency )
             {
                 case StreakOccurrenceFrequency.Daily:
                     return dateTime.AddDays( incrementBy );
                 case StreakOccurrenceFrequency.Weekly:
-                    incrementBy = (isReverse) ? -1 * DaysPerWeek : DaysPerWeek;
+                    incrementBy = ( isReverse ) ? -1 * DaysPerWeek : DaysPerWeek;
                     return dateTime.AddDays( incrementBy );
                 case StreakOccurrenceFrequency.Monthly:
                     return dateTime.AddMonths( incrementBy );
@@ -2829,7 +2824,7 @@ namespace Rock.Model
         /// <param name="occurrenceFrequency">The occurrence frequency.</param>
         /// <param name="isInclusive">if set to <c>true</c> [is inclusive].</param>
         /// <returns></returns>
-        [Obsolete( "Use the override with StreakTypeCache param instead" )]
+        [Obsolete( "Use the override with StreakTypeCache param instead", true )]
         [RockObsolete( "1.10" )]
         public static int GetFrequencyUnitDifference( DateTime startDate, DateTime endDate, StreakOccurrenceFrequency occurrenceFrequency, bool isInclusive )
         {
@@ -2919,7 +2914,7 @@ namespace Rock.Model
                     }
                     return numberOfMonths;
                 case StreakOccurrenceFrequency.Yearly:
-                    numberOfYears =  endDate.Year - startDate.Year;
+                    numberOfYears = endDate.Year - startDate.Year;
                     if ( isInclusive )
                     {
                         numberOfYears += 1;
@@ -2937,7 +2932,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="streakOccurrenceFrequency"></param>
         /// <returns></returns>
-        [Obsolete( "Use the override with StreakTypeCache param instead" )]
+        [Obsolete( "Use the override with StreakTypeCache param instead", true )]
         [RockObsolete( "1.10" )]
         public static DateTime GetMaxDateForStreakBreaking( StreakOccurrenceFrequency streakOccurrenceFrequency )
         {
@@ -3114,8 +3109,9 @@ namespace Rock.Model
             }
 
             // Get the account identifier for this transaction
-            var accountService = new FinancialAccountService( rockContext );
-            var accountDescendentIds = includeChildAccounts ? accountService.GetAllDescendentIds( structureEntityId ).ToList() : new List<int>();
+            var accountDescendentIds = includeChildAccounts
+                ? FinancialAccountCache.Get( structureEntityId )?.GetDescendentFinancialAccountIds() ?? new int[0]
+                : new int[0];
 
             var transactionService = new FinancialTransactionService( rockContext );
             var query = transactionService.Queryable()

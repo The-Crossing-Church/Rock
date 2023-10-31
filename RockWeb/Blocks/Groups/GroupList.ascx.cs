@@ -60,7 +60,7 @@ namespace RockWeb.Blocks.Groups
     [BooleanField( "Display System Column", "Should the System column be displayed?", true, "", 9 )]
     [BooleanField( "Display Security Column", "Should the Security column be displayed?", false, "", 10 )]
     [BooleanField( "Display Filter", "Should filter be displayed to allow filtering by group type?", false, "", 11 )]
-    [CustomDropdownListField( "Limit to Active Status", "Select which groups to show, based on active status. Select [All] to let the user filter by active status.", "all^[All], active^Active, inactive^Inactive", false, "all", Order = 12 )]
+    [CustomDropdownListField( "Limit to Active Status", "Select which groups (and groupmembers) to show, based on active status. Select [All] to filter by any status. Selecting Active will not show inactive/archived groups/groupmembers.", "all^[All], active^Active, inactive^Inactive", false, "all", Order = 12, Key = AttributeKey.LimittoActiveStatus )]
     [TextField( "Set Panel Title", "The title to display in the panel header. Leave empty to have the title be set automatically based on the group type or block name.", required: false, order: 13 )]
     [TextField( "Set Panel Icon", "The icon to display in the panel header. Leave empty to have the icon be set automatically based on the group type or default icon.", required: false, order: 14 )]
     [BooleanField( "Allow Add", "Should block support adding new group?", true, "", 15 )]
@@ -79,6 +79,7 @@ namespace RockWeb.Blocks.Groups
         Order = 17,
         Key = AttributeKey.RootGroup )]
     [ContextAware]
+    [Rock.SystemGuid.BlockTypeGuid( "3D7FB6BE-6BBD-49F7-96B4-96310AF3048A" )]
     public partial class GroupList : RockBlock, ICustomGridColumns
     {
         private int _groupTypesCount = 0;
@@ -118,6 +119,7 @@ namespace RockWeb.Blocks.Groups
             public const string GroupPickerType = "GroupPickerType";
             public const string RootGroup = "RootGroup";
             public const string LimittoSecurityRoleGroups = "LimittoSecurityRoleGroups";
+            public const string LimittoActiveStatus = "LimittoActiveStatus";
         }
 
         #endregion
@@ -774,10 +776,20 @@ namespace RockWeb.Blocks.Groups
                 lElevatedSecurityLevelField.Visible = onlySecurityGroups && GroupListGridMode == GridListGridMode.GroupList;
             }
 
-            var qryGroups = groupService.Queryable()
+            var qryGroups = groupService.AsNoFilter()
                 .Where( g => groupTypeIds.Contains( g.GroupTypeId ) && ( !onlySecurityGroups || g.IsSecurityRole ) );
 
-            string limitToActiveStatus = GetAttributeValue( "LimittoActiveStatus" );
+            var rootGroupGuid = GetAttributeValue( AttributeKey.RootGroup ).AsGuidOrNull();
+            if ( rootGroupGuid.HasValue )
+            {
+                var parentGroup = groupService.Get( rootGroupGuid.Value );
+                if ( parentGroup != null )
+                {
+                    qryGroups = qryGroups.Where( g => g.ParentGroupId == parentGroup.Id );
+                }
+            }
+
+            string limitToActiveStatus = GetAttributeValue( AttributeKey.LimittoActiveStatus );
 
             bool showActive = true;
             bool showInactive = true;
@@ -805,6 +817,10 @@ namespace RockWeb.Blocks.Groups
                 {
                     showInactive = false;
                 }
+                else
+                {
+                    showActive = false;
+                }
             }
 
             var groupTypePurposeValue = gfSettings.GetUserPreference( "Group Type Purpose" ).AsIntegerOrNull();
@@ -818,7 +834,7 @@ namespace RockWeb.Blocks.Groups
                 if ( personContext != null )
                 {
                     // limit to Groups that the person is a member of
-                    var qry = new GroupMemberService( rockContext ).Queryable( true )
+                    var qry = new GroupMemberService( rockContext ).Queryable( true, true )
                         .Where( m => m.PersonId == personContext.Id )
                         .Join( qryGroups, gm => gm.GroupId, g => g.Id, ( gm, g ) => new { Group = g, GroupMember = gm } );
 
@@ -826,12 +842,12 @@ namespace RockWeb.Blocks.Groups
                     if ( showActive && !showInactive )
                     {
                         // Show only active Groups and active Memberships.
-                        qry = qry.Where( gmg => gmg.Group.IsActive && gmg.GroupMember.GroupMemberStatus == GroupMemberStatus.Active );
+                        qry = qry.Where( gmg => gmg.Group.IsActive && !gmg.Group.IsArchived && gmg.GroupMember.GroupMemberStatus == GroupMemberStatus.Active && !gmg.GroupMember.IsArchived );
                     }
                     else if ( !showActive )
                     {
                         // Show only inactive Groups or inactive Memberships.
-                        qry = qry.Where( gmg => !gmg.Group.IsActive || gmg.GroupMember.GroupMemberStatus == GroupMemberStatus.Inactive );
+                        qry = qry.Where( gmg => !gmg.Group.IsActive || gmg.Group.IsArchived || gmg.GroupMember.IsArchived || gmg.GroupMember.GroupMemberStatus == GroupMemberStatus.Inactive );
                     }
 
                     if ( groupTypePurposeValue.HasValue && gfSettings.Visible )
@@ -894,6 +910,9 @@ namespace RockWeb.Blocks.Groups
                 // load with groups that have Group History
                 _groupsWithGroupHistory = new HashSet<int>( new GroupHistoricalService( rockContext ).Queryable().Where( a => qryGroups.Any( g => g.Id == a.GroupId ) ).Select( a => a.GroupId ).ToList() );
 
+                var groupMemberService = new GroupMemberService( rockContext );
+                var groupSyncService = new GroupSyncService( rockContext );
+
                 groupList = qryGroups
                     .AsEnumerable()
                     .Where( g => g.IsAuthorized( Rock.Security.Authorization.VIEW, CurrentPerson ) )
@@ -913,8 +932,8 @@ namespace RockWeb.Blocks.Groups
                         ElevatedSecurityLevel = g.ElevatedSecurityLevel,
                         IsSecurityRole = g.IsSecurityRole,
                         DateAdded = DateTime.MinValue,
-                        IsSynced = g.GroupSyncs.Any(),
-                        MemberCount = g.Members.Count()
+                        IsSynced = groupSyncService.Queryable().Any( gs => gs.GroupId == g.Id ),
+                        MemberCount = groupMemberService.Queryable().Count( gm => gm.GroupId == g.Id )
                     } )
                     .AsQueryable()
                     .Sort( sortProperty )
@@ -953,6 +972,16 @@ namespace RockWeb.Blocks.Groups
 
             var groupTypeService = new GroupTypeService( new RockContext() );
             var qry = groupTypeService.Queryable().Where( t => t.ShowInGroupList );
+
+            /*
+                04/20/2022 - KA
+
+                The GroupType filtering should use an if/else clause with the IncludeGroupTypes taking priority over the ExcludeGroupTypes
+                (refer to ReminderService.GetReminderEntityTypesByPerson for how it should work). Thus if any GroupTypes are selected as 
+                part of the IncludeGroupTypes they should not be excluded even if they are selected as part of the ExcludeGroupTypes. This
+                implementation has been left as it is because it would be too late/risky to change the behavior now since people/admins
+                have already configured it and it is working the way it is working now.
+            */
 
             List<Guid> includeGroupTypeGuids = GetAttributeValue( "IncludeGroupTypes" ).SplitDelimitedValues().Select( a => Guid.Parse( a ) ).ToList();
             if ( includeGroupTypeGuids.Count > 0 )

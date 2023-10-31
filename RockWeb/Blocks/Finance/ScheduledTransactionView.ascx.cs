@@ -29,6 +29,7 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
 using Rock.Web;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -59,6 +60,7 @@ namespace RockWeb.Blocks.Finance
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "85753750-7465-4241-97A6-E5F27EA38C8B" )]
     public partial class ScheduledTransactionView : RockBlock
     {
         #region Attribute Keys
@@ -114,26 +116,6 @@ namespace RockWeb.Blocks.Finance
         private List<FinancialScheduledTransactionDetail> TransactionDetailsState { get; set; }
 
         private int? ForeignCurrencyDefinedValueId { get; set; }
-
-        private Dictionary<int, string> _financialAccountNameLookup = null;
-
-        private Dictionary<int, string> FinancialAccountNameLookup
-        {
-            get
-            {
-                if ( _financialAccountNameLookup == null )
-                {
-                    _financialAccountNameLookup = new Dictionary<int, string>();
-                    new FinancialAccountService( new RockContext() ).Queryable()
-                        .OrderBy( a => a.Order )
-                        .Select( a => new { a.Id, a.Name } )
-                        .ToList()
-                        .ForEach( a => _financialAccountNameLookup.Add( a.Id, a.Name ) );
-                }
-
-                return _financialAccountNameLookup;
-            }
-        }
 
         private int? PersonId { get; set; }
 
@@ -468,7 +450,7 @@ namespace RockWeb.Blocks.Finance
             }
 
             var lAccountsViewAccountName = e.Row.FindControl( "lAccountsViewAccountName" ) as Literal;
-            lAccountsViewAccountName.Text = FinancialAccountNameLookup.GetValueOrNull( financialTransactionDetail.AccountId );
+            lAccountsViewAccountName.Text = FinancialAccountCache.Get( financialTransactionDetail.AccountId )?.Name;
 
             var lAccountsViewAmountMinusFeeCoverageAmount = e.Row.FindControl( "lAccountsViewAmountMinusFeeCoverageAmount" ) as Literal;
             decimal amountMinusFeeCoverageAmount;
@@ -509,7 +491,7 @@ namespace RockWeb.Blocks.Finance
             }
 
             var lAccountsEditAccountName = e.Row.FindControl( "lAccountsEditAccountName" ) as Literal;
-            lAccountsEditAccountName.Text = FinancialAccountNameLookup.GetValueOrNull( financialTransactionDetail.AccountId );
+            lAccountsEditAccountName.Text = FinancialAccountCache.Get( financialTransactionDetail.AccountId )?.Name;
 
             var lAccountsEditAmountMinusFeeCoverageAmount = e.Row.FindControl( "lAccountsEditAmountMinusFeeCoverageAmount" ) as Literal;
             decimal amountMinusFeeCoverageAmount;

@@ -30,6 +30,7 @@ namespace RockWeb.Blocks.Bus
     [Category( "Bus" )]
     [Description( "Shows a list of all message bus consumers." )]
 
+    [Rock.SystemGuid.BlockTypeGuid( "7EFD5D30-2FF0-4C75-86A2-984A8F45D8A5" )]
     public partial class ConsumerList : RockBlock, ISecondaryBlock
     {
         #region Keys
@@ -93,7 +94,7 @@ namespace RockWeb.Blocks.Bus
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

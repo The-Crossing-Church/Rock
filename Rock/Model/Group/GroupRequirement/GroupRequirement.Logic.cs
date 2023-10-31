@@ -15,10 +15,10 @@
 // </copyright>
 //
 
+using Rock.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Rock.Data;
 
 namespace Rock.Model
 {
@@ -50,6 +50,20 @@ namespace Rock.Model
         }
 
         /// <summary>
+        /// Gets the parent security authority for this GroupRequirement.
+        /// </summary>
+        /// <value>
+        /// The parent security authority for this GroupRequirement.
+        /// </value>
+        public override Security.ISecured ParentAuthority
+        {
+            get
+            {
+                return this.GroupRequirementType != null ? this.GroupRequirementType : base.ParentAuthority;
+            }
+        }
+
+        /// <summary>
         /// Returns a list of each person and their GroupRequirement status for this group requirement
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
@@ -62,17 +76,72 @@ namespace Rock.Model
         {
             if ( ( this.GroupRoleId != null ) && ( groupRoleId != null ) && ( this.GroupRoleId != groupRoleId ) )
             {
-                // if this GroupRequirement is for a specific role, the groupRole we are checking for is something different
+                // If this GroupRequirement is for a specific group role, and the groupRole we are comparing is not the same role.
                 var result = personQry.Select( p => p.Id ).ToList().Select( a =>
                      new PersonGroupRequirementStatus
                      {
-                         PersonId = Id,
+                         PersonId = a,
                          GroupRequirement = this,
                          MeetsGroupRequirement = MeetsGroupRequirement.NotApplicable
                      } );
 
                 return result;
             }
+
+            // Create a list of statuses so that not applicable status results can be included.
+            List<PersonGroupRequirementStatus> statusResults = new List<PersonGroupRequirementStatus>();
+
+            // If this GroupRequirement is not for 'All' age classifications, then calculate those statuses.
+            if ( this.AppliesToAgeClassification != AppliesToAgeClassification.All )
+            {
+                // If the person's age classification we are comparing is not the one applied to this requirement,
+                // then mark that person's requirement status as 'Not Applicable'.
+                var notApplicablePersonQry = personQry.Where( p => ( int ) p.AgeClassification != ( int ) this.AppliesToAgeClassification );
+                var results = notApplicablePersonQry.Select( p => p.Id ).ToList().Select( a =>
+                new PersonGroupRequirementStatus
+                {
+                    PersonId = a,
+                    GroupRequirement = this,
+                    MeetsGroupRequirement = MeetsGroupRequirement.NotApplicable
+                } );
+
+                if ( results != null )
+                {
+                    statusResults.AddRange( results );
+                }
+
+                personQry = personQry.Where( p => ( int ) p.AgeClassification == ( int ) this.AppliesToAgeClassification );
+            }
+
+            if ( this.AppliesToDataViewId.HasValue )
+            {
+                // If the Group Requirement has a Data View it applies to, apply it here.
+                var appliesToDataViewPersonService = new PersonService( rockContext );
+                var appliesToDataViewParamExpression = appliesToDataViewPersonService.ParameterExpression;
+                var appliesToDataViewWhereExpression = this.AppliesToDataView.GetExpression( appliesToDataViewPersonService, appliesToDataViewParamExpression );
+                var appliesToDataViewPersonIds = appliesToDataViewPersonService.Get( appliesToDataViewParamExpression, appliesToDataViewWhereExpression ).Select( p => p.Id );
+
+                // If the dataview does not contain anyone in the person query, give the member a "not applicable" status.
+                var notApplicablePersonQry = personQry.Where( p => !appliesToDataViewPersonIds.Contains( p.Id ) );
+                {
+                    var results = notApplicablePersonQry.Select( p => p.Id ).ToList().Select( a =>
+                          new PersonGroupRequirementStatus
+                          {
+                              PersonId = a,
+                              GroupRequirement = this,
+                              MeetsGroupRequirement = MeetsGroupRequirement.NotApplicable
+                          } );
+
+                    if ( results != null )
+                    {
+                        statusResults.AddRange( results );
+                    }
+
+                    personQry = personQry.Where( p => appliesToDataViewPersonIds.Contains( p.Id ) );
+                }
+            }
+
+            var attributeValueService = new AttributeValueService( rockContext );
 
             if ( this.GroupRequirementType.RequirementCheckType == RequirementCheckType.Dataview )
             {
@@ -100,10 +169,15 @@ namespace Rock.Model
 
                         var result = personWithRequirementsList.Select( a =>
                         {
+                            GroupMemberRequirementService groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
+                            
+                            // Get the nullable group member requirement ID based on the PersonId, GroupRequirementId, GroupId, and GroupRoleId.
+                            int? groupMemberRequirementId = groupMemberRequirementService.GetIdByPersonIdRequirementIdGroupIdGroupRoleId( a.PersonId, this.Id, groupId, groupRoleId );
                             var personGroupRequirementStatus = new PersonGroupRequirementStatus
                             {
                                 PersonId = a.PersonId,
-                                GroupRequirement = this
+                                GroupRequirement = this,
+                                GroupMemberRequirementId = groupMemberRequirementId,
                             };
 
                             var hasWarning = warningDataViewPersonIdList?.Contains( a.PersonId ) == true;
@@ -117,34 +191,64 @@ namespace Rock.Model
                                 else
                                 {
                                     personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.Meets;
+                                    personGroupRequirementStatus.RequirementWarningDateTime = null;
                                 }
                             }
                             else
                             {
-                                personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.NotMet;
+                                var possibleDueDate = CalculateGroupMemberRequirementDueDate(
+                                    this.GroupRequirementType.DueDateType,
+                                    this.GroupRequirementType.DueDateOffsetInDays,
+                                    this.DueDateStaticDate,
+                                    this.DueDateAttributeId.HasValue ? new AttributeValueService( rockContext ).GetByAttributeIdAndEntityId( this.DueDateAttributeId.Value, this.GroupId )?.Value.AsDateTime() ?? null : null,
+                                    new GroupService( rockContext ).Get( groupId ).Members.Where( m => m.PersonId == a.PersonId && m.GroupRoleId == groupRoleId ).Select( m => m.DateTimeAdded ).DefaultIfEmpty( null ).FirstOrDefault() );
+
+                                bool isRequirementDue = possibleDueDate.HasValue ? possibleDueDate <= RockDateTime.Now : true;
+
+                                if ( !isRequirementDue )
+                                {
+                                    personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.MeetsWithWarning;
+                                }
+                                else
+                                {
+                                    personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.NotMet;
+                                }
                             }
 
                             return personGroupRequirementStatus;
-                        }
-                        );
+                        } );
 
-                        return result;
+                        if ( result != null )
+                        {
+                            statusResults.AddRange( result );
+                        }
+
+                        return statusResults;
                     }
                 }
                 else
                 {
                     var personWithIdRequirements = personQry.Select( p => p.Id );
-
+                    GroupMemberRequirementService groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
                     var result = personWithIdRequirements.ToList().Select( a =>
-                            new PersonGroupRequirementStatus
-                            {
-                                PersonId = a,
-                                GroupRequirement = this,
-                                MeetsGroupRequirement = warningDataViewPersonIdList.Contains( a ) == true ? MeetsGroupRequirement.MeetsWithWarning : MeetsGroupRequirement.Meets
-                            } );
+                    {
+                        var personGroupRequirementStatus = new PersonGroupRequirementStatus
+                        {
+                            PersonId = a,
+                            GroupRequirement = this,
+                            MeetsGroupRequirement = warningDataViewPersonIdList?.Contains( a ) == true ? MeetsGroupRequirement.MeetsWithWarning : MeetsGroupRequirement.Meets,
+                            GroupMemberRequirementId = groupMemberRequirementService.GetIdByPersonIdRequirementIdGroupIdGroupRoleId( a, this.Id, groupId, groupRoleId ),
+                        };
 
-                    return result;
+                        return personGroupRequirementStatus;
+                    } );
 
+                    if ( result != null )
+                    {
+                        statusResults.AddRange( result );
+                    }
+
+                    return statusResults;
                 }
             }
             else if ( this.GroupRequirementType.RequirementCheckType == RequirementCheckType.Sql )
@@ -179,19 +283,35 @@ namespace Rock.Model
                             }
                         }
 
-                        var result = personQryIdList.Select( a => new PersonGroupRequirementStatus
+                        var result = personQryIdList.Select( a =>
                         {
-                            PersonId = a,
-                            GroupRequirement = this,
-                            MeetsGroupRequirement = personIds.Contains( a )
-                                    ? ( ( warningPersonIds != null && warningPersonIds.Contains( a ) )
-                                        ? MeetsGroupRequirement.MeetsWithWarning
-                                        : MeetsGroupRequirement.Meets
-                                        )
-                                    : MeetsGroupRequirement.NotMet,
+                            var possibleDueDate = CalculateGroupMemberRequirementDueDate(
+                            this.GroupRequirementType.DueDateType,
+                            this.GroupRequirementType.DueDateOffsetInDays,
+                            this.DueDateStaticDate,
+                            this.DueDateAttributeId.HasValue ? new AttributeValueService( rockContext ).GetByAttributeIdAndEntityId( this.DueDateAttributeId.Value, this.GroupId )?.Value.AsDateTime() ?? null : null,
+                            new GroupService( rockContext ).Get( groupId ).Members.Where( m => m.PersonId == a && m.GroupRoleId == groupRoleId ).Select( m => m.DateTimeAdded ).DefaultIfEmpty( null ).FirstOrDefault() );
+                            bool isRequirementDue = possibleDueDate.HasValue ? possibleDueDate <= RockDateTime.Now : true;
+                            var personGroupRequirementStatus = new PersonGroupRequirementStatus
+                            {
+                                PersonId = a,
+                                GroupRequirement = this,
+                                MeetsGroupRequirement = personIds.Contains( a )
+                                      ? ( ( warningPersonIds != null && warningPersonIds.Contains( a ) )
+                                          ? MeetsGroupRequirement.MeetsWithWarning
+                                          : MeetsGroupRequirement.Meets
+                                          )
+                                      : isRequirementDue ? MeetsGroupRequirement.NotMet : MeetsGroupRequirement.MeetsWithWarning,
+                            };
+                            return personGroupRequirementStatus;
                         } );
 
-                        return result;
+                        if ( result != null )
+                        {
+                            statusResults.AddRange( result );
+                        }
+
+                        return statusResults;
                     }
                 }
                 catch ( Exception ex )
@@ -207,26 +327,51 @@ namespace Rock.Model
                         CalculationException = ex
                     } );
 
-                    return result;
+                    if ( result != null )
+                    {
+                        statusResults.AddRange( result );
+                    }
+
+                    return statusResults;
                 }
             }
             else
             {
                 // manual
-                var groupMemberRequirementQry = new GroupMemberRequirementService( rockContext ).Queryable().Where( a => a.GroupMember.GroupId == groupId && a.GroupRequirementId == this.Id && a.RequirementMetDateTime.HasValue );
+                GroupMemberRequirementService groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
+                var groupMemberRequirementQry = groupMemberRequirementService.Queryable()
+                    .Where( a => a.GroupMember.GroupId == groupId && a.GroupRequirementId == this.Id );
+                var groupMemberRequirementWithMetDateTimeQry = groupMemberRequirementQry.Where( a => a.RequirementMetDateTime.HasValue );
 
                 var result = personQry.ToList().Select( a =>
-                    new PersonGroupRequirementStatus
+                {
+                    var possibleDueDate = CalculateGroupMemberRequirementDueDate(
+                            this.GroupRequirementType.DueDateType,
+                            this.GroupRequirementType.DueDateOffsetInDays,
+                            this.DueDateStaticDate,
+                            this.DueDateAttributeId.HasValue ? new AttributeValueService( rockContext ).GetByAttributeIdAndEntityId( this.DueDateAttributeId.Value, this.GroupId )?.Value.AsDateTime() ?? null : null,
+                new GroupService( rockContext ).Get( groupId ).Members.Where( m => m.PersonId == a.Id && m.GroupRoleId == groupRoleId ).Select( m => m.DateTimeAdded ).DefaultIfEmpty( null ).FirstOrDefault() );
+
+                    return new PersonGroupRequirementStatus
                     {
                         PersonId = a.Id,
                         GroupRequirement = this,
-                        MeetsGroupRequirement = groupMemberRequirementQry.Any( r => r.GroupMember.PersonId == a.Id ) ? MeetsGroupRequirement.Meets : MeetsGroupRequirement.NotMet
-                    } );
+                        GroupMemberRequirementId = groupMemberRequirementService.GetIdByPersonIdRequirementIdGroupIdGroupRoleId( a.Id, this.Id, groupId, groupRoleId ),
+                        RequirementDueDate = possibleDueDate,
+                        MeetsGroupRequirement = groupMemberRequirementWithMetDateTimeQry.Any( r => r.GroupMember.PersonId == a.Id ) ? MeetsGroupRequirement.Meets
+                        : possibleDueDate.HasValue ? possibleDueDate > RockDateTime.Now ? MeetsGroupRequirement.MeetsWithWarning : MeetsGroupRequirement.NotMet : MeetsGroupRequirement.NotMet
+                    };
+                } );
 
-                return result;
+                if ( result != null )
+                {
+                    statusResults.AddRange( result );
+                }
+
+                return statusResults;
             }
 
-            // shouldn't happen
+            // This shouldn't happen, since a requirement must have a dataview, SQL or manual origin.
             return null;
         }
 
@@ -237,9 +382,28 @@ namespace Rock.Model
         /// <param name="groupId">The group identifier.</param>
         /// <param name="groupRoleId">The group role identifier.</param>
         /// <returns></returns>
+        [RockObsolete( "1.14" )]
+        [Obsolete( "Does not pass the RockContext into subsequent method calls.  Use PersonMeetsGroupRequirement( RockContext rockContext...) instead.", false )]
         public PersonGroupRequirementStatus PersonMeetsGroupRequirement( int personId, int groupId, int? groupRoleId )
         {
-            var rockContext = new RockContext();
+            return PersonMeetsGroupRequirement( null, personId, groupId, groupRoleId );
+        }
+
+        /// <summary>
+        /// Check if the Person meets the group requirement for the role.
+        /// </summary>
+        /// <param name="rockContext">The Rock context.</param>
+        /// <param name="personId">The person identifier.</param>
+        /// <param name="groupId">The group identifier.</param>
+        /// <param name="groupRoleId">The group role identifier.</param>
+        /// <returns></returns>
+        public PersonGroupRequirementStatus PersonMeetsGroupRequirement( RockContext rockContext, int personId, int groupId, int? groupRoleId )
+        {
+            if ( rockContext == null )
+            {
+                rockContext = new RockContext();
+            }
+
             var personQuery = new PersonService( rockContext ).Queryable().Where( a => a.Id == personId );
             var result = this.PersonQueryableMeetsGroupRequirement( rockContext, personQuery, groupId, groupRoleId ).FirstOrDefault();
             if ( result == null )
@@ -306,34 +470,71 @@ namespace Rock.Model
 
                 groupMemberRequirement.LastRequirementCheckDateTime = currentDateTime;
 
-                if ( ( meetsGroupRequirement == MeetsGroupRequirement.Meets ) || ( meetsGroupRequirement == MeetsGroupRequirement.MeetsWithWarning ) )
+                if ( meetsGroupRequirement == MeetsGroupRequirement.Meets )
                 {
-                    // they meet the requirement so update the Requirement Met Date/Time
+                    // They meet the requirement so update the Requirement Met Date/Time.
                     groupMemberRequirement.RequirementMetDateTime = currentDateTime;
                     groupMemberRequirement.RequirementFailDateTime = null;
                 }
-                else
-                {
-                    // they don't meet the requirement so set the Requirement Met Date/Time to null
-                    groupMemberRequirement.RequirementMetDateTime = null;
-                    groupMemberRequirement.RequirementFailDateTime = currentDateTime;
-                }
-
-                if ( meetsGroupRequirement == MeetsGroupRequirement.MeetsWithWarning )
+                else if ( meetsGroupRequirement == MeetsGroupRequirement.MeetsWithWarning )
                 {
                     if ( !groupMemberRequirement.RequirementWarningDateTime.HasValue )
                     {
-                        // they have a warning for the requirement, and didn't have a warning already
+                        // They have a warning for the requirement, and didn't have a warning already.
                         groupMemberRequirement.RequirementWarningDateTime = currentDateTime;
                     }
                 }
                 else
                 {
-                    // no warning, so set to null
+                    // They don't meet the requirement so set the Requirement Met and the Warning Date/Time to null.
+                    groupMemberRequirement.RequirementMetDateTime = null;
                     groupMemberRequirement.RequirementWarningDateTime = null;
+                    groupMemberRequirement.RequirementFailDateTime = currentDateTime;
                 }
             }
         }
+
+        /// <summary>
+        /// Calculates the due date if the properties allow it.
+        /// </summary>
+        /// <param name="dueDateType"></param>
+        /// <param name="dueDateOffsetInDays"></param>
+        /// <param name="dueDateStaticDate"></param>
+        /// <param name="dueDateFromGroupAttribute"></param>
+        /// <param name="dueDateGroupMemberAdded"></param>
+        /// <returns></returns>
+        public DateTime? CalculateGroupMemberRequirementDueDate( DueDateType dueDateType, int? dueDateOffsetInDays, DateTime? dueDateStaticDate, DateTime? dueDateFromGroupAttribute, DateTime? dueDateGroupMemberAdded )
+        {
+            switch ( dueDateType )
+            {
+                case DueDateType.ConfiguredDate:
+                    if ( dueDateStaticDate.HasValue )
+                    {
+                        return dueDateStaticDate.Value;
+                    }
+
+                    return null;
+                case DueDateType.GroupAttribute:
+                    if ( dueDateFromGroupAttribute.HasValue )
+                    {
+                        return dueDateFromGroupAttribute.Value.AddDays( dueDateOffsetInDays.HasValue ? dueDateOffsetInDays.Value : 0 );
+                    }
+
+                    return null;
+                case DueDateType.DaysAfterJoining:
+                    if ( dueDateGroupMemberAdded.HasValue )
+                    {
+                        return dueDateGroupMemberAdded.Value.AddDays( dueDateOffsetInDays.HasValue ? dueDateOffsetInDays.Value : 0 );
+                    }
+
+                    return null;
+
+                case DueDateType.Immediate:
+                default:
+                    return null;
+            }
+        }
+
         #endregion
     }
 }

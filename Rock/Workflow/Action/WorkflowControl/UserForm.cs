@@ -27,13 +27,13 @@ using Rock.Web.Cache;
 namespace Rock.Workflow.Action
 {
     /// <summary>
-    /// Prompts user for attribute values
     /// </summary>
     [ActionCategory( "Workflow Control" )]
     [Description( "Prompts user for attribute values" )]
     [Export( typeof( ActionComponent ) )]
     [ExportMetadata( "ComponentName", "Form" )]
 
+    [Rock.SystemGuid.EntityTypeGuid( "486DC4FA-FCBC-425F-90B0-E606DA8A9F68")]
     public class UserEntryForm : ActionComponent
     {
         /// <summary>
@@ -59,7 +59,7 @@ namespace Rock.Workflow.Action
             var sendNotification = !action.LastProcessedDateTime.HasValue &&
                 actionType != null &&
                 actionType.WorkflowForm != null &&
-                ( actionType.WorkflowForm.NotificationSystemCommunicationId.HasValue || actionType.WorkflowForm.NotificationSystemEmailId.HasValue );
+                ( actionType.WorkflowForm.NotificationSystemCommunicationId.HasValue );
 #pragma warning restore CS0618 // Type or member is obsolete
 
             if ( sendNotification )
@@ -117,17 +117,6 @@ namespace Rock.Workflow.Action
                                 emailMessage = new RockEmailMessage( systemCommunication );
                             }
                         }
-#pragma warning disable CS0618 // Type or member is obsolete
-                        else if ( action.ActionTypeCache.WorkflowForm.NotificationSystemEmailId.HasValue )
-                        {                            
-                            var systemEmail = new SystemEmailService( rockContext ).Get( action.ActionTypeCache.WorkflowForm.NotificationSystemEmailId.Value );
-
-                            if ( systemEmail != null )
-                            {
-                                emailMessage = new RockEmailMessage( systemEmail );
-                            }
-                        }
-#pragma warning restore CS0618 // Type or member is obsolete
 
                         if ( emailMessage != null )
                         {
@@ -153,6 +142,7 @@ namespace Rock.Workflow.Action
                 }
             }
 
+            // Always return false. Special logic for User Form will be handled in the WorkflowEntry block.
             return false;
         }
 

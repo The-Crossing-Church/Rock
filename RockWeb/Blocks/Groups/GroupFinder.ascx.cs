@@ -45,6 +45,7 @@ namespace RockWeb.Blocks.Groups
     [DisplayName( "Group Finder" )]
     [Category( "Groups" )]
     [Description( "Block for people to find a group that matches their search parameters." )]
+    [ContextAware( typeof( Campus ) )]
 
     #region Block Attributes
     // Linked Pages
@@ -256,6 +257,7 @@ namespace RockWeb.Blocks.Groups
         Category = AttributeCategory.CustomSetting )]
     #endregion
 
+    [Rock.SystemGuid.BlockTypeGuid( "9F8F2D68-DEEA-4686-810F-AB32923F855E" )]
     public partial class GroupFinder : RockBlockCustomSettings
     {
         private static class AttributeKey
@@ -1528,7 +1530,7 @@ namespace RockWeb.Blocks.Groups
 
                     if ( LavaService.RockLiquidIsEnabled )
                     {
-                        template = Template.Parse( GetAttributeValue( AttributeKey.MapInfo ) );
+                        template = LavaHelper.CreateDotLiquidTemplate( GetAttributeValue( AttributeKey.MapInfo ) );
 
                         LavaHelper.VerifyParseTemplateForCurrentEngine( GetAttributeValue( AttributeKey.MapInfo ) );
                     }

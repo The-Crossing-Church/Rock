@@ -18,9 +18,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
+#endif
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Reporting;
@@ -34,6 +36,7 @@ namespace Rock.Field.Types
     [FieldTypeUsage( FieldTypeUsage.Common )]
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><path d=""M1,5.18H2.67v6.67H3.78V5.18H5.44V4.07H1Z""/><path d=""M15,5.18V4.07H10.56v7.78h1.11V8.52h2.77V7.4H11.67V5.18Z""/><rect x=""7.44"" y=""3"" width=""1.11"" height=""10""/></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.BOOLEAN )]
     public class BooleanFieldType : FieldType
     {
         /// <summary>
@@ -56,6 +59,291 @@ namespace Rock.Field.Types
         }
 
         #region Configuration
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            bool? boolValue = privateValue.AsBooleanOrNull();
+
+            if ( !boolValue.HasValue )
+            {
+                return string.Empty;
+            }
+
+            if ( boolValue.Value )
+            {
+                var trueText = privateConfigurationValues.GetValueOrDefault( ConfigurationKey.TrueText, string.Empty );
+                if ( trueText.IsNullOrWhiteSpace() )
+                {
+                    return "Yes";
+
+                }
+                return trueText;
+            }
+            else
+            {
+                var falseText = privateConfigurationValues.GetValueOrDefault( ConfigurationKey.FalseText, string.Empty );
+                if ( falseText.IsNullOrWhiteSpace() )
+                {
+                    return "No";
+
+                }
+                return falseText;
+            }
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            bool? boolValue = privateValue.AsBooleanOrNull();
+
+            if ( !boolValue.HasValue )
+            {
+                return string.Empty;
+            }
+
+            // A condensed boolean value simply returns "Y" or "N" regardless
+            // of the other configuration values.
+            return boolValue.Value ? "Y" : "N";
+        }
+
+        /// <inheritdoc/>
+        public override string GetCondensedHtmlValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return GetCondensedTextValue( privateValue, privateConfigurationValues );
+        }
+
+        #endregion
+
+        #region Edit Control
+
+
+
+        /// <summary>
+        /// The type of the control (DropDown, CheckBox, Toggle, or Switch) to use to edit the value
+        /// </summary>
+        public enum BooleanControlType
+        {
+            /// <summary>
+            /// Use a RockDropDown with TrueText and FalseTest as the options
+            /// </summary>
+            DropDown,
+
+            /// <summary>
+            /// Use a RockCheckBox
+            /// </summary>
+            Checkbox,
+
+            /// <summary>
+            /// Use a Rock:Toggle with TrueText and FalseTest as the buttons text
+            /// </summary>
+            Toggle
+        }
+
+        /// <summary>
+        /// Tests the value to ensure that it is a valid value.  If not, message will indicate why
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="required">if set to <c>true</c> [required].</param>
+        /// <param name="message">The message.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified value is valid; otherwise, <c>false</c>.
+        /// </returns>
+        public override bool IsValid( string value, bool required, out string message )
+        {
+            bool? boolValue = value.AsBooleanOrNull();
+            if ( required && !boolValue.HasValue )
+            {
+                message = "Invalid boolean value";
+                return false;
+            }
+
+            return base.IsValid( value, required, out message );
+        }
+
+        #endregion
+
+        #region Filter Control
+
+
+
+        /// <summary>
+        /// Determines whether this filter has a filter control
+        /// </summary>
+        /// <returns></returns>
+        public override bool HasFilterControl()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Formats the filter value value.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public override string FormatFilterValueValue( Dictionary<string, ConfigurationValue> configurationValues, string value )
+        {
+            string formattedValue = FormatValue( null, value, configurationValues, false );
+            return AddQuotes( formattedValue );
+        }
+
+        /// <inheritdoc/>
+        public override ComparisonValue GetPublicFilterValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var values = privateValue.FromJsonOrNull<List<string>>();
+
+            if ( values?.Count == 1 )
+            {
+                // NOTE: this is for backwards compatibility for filters that
+                // were saved when Boolean DataFilters didn't have a Compare Option.
+                return new ComparisonValue
+                {
+                    ComparisonType = ComparisonType.EqualTo,
+                    Value = GetPublicEditValue( values[0], privateConfigurationValues )
+                };
+            }
+            else
+            {
+                return base.GetPublicFilterValue( privateValue, privateConfigurationValues );
+            }
+        }
+
+        /// <summary>
+        /// Gets a filter expression for an entity property value.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="filterValues">The filter values.</param>
+        /// <param name="parameterExpression">The parameter expression.</param>
+        /// <param name="propertyName">Name of the property.</param>
+        /// <param name="propertyType">Type of the property.</param>
+        /// <returns></returns>
+        public override Expression PropertyFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, List<string> filterValues, Expression parameterExpression, string propertyName, Type propertyType )
+        {
+            if ( filterValues.Count == 1 )
+            {
+                // NOTE: this is for backwards compatibility for filters that were saved when Boolean DataFilters didn't have a Compare Option
+                MemberExpression propertyExpression = Expression.Property( parameterExpression, propertyName );
+                ConstantExpression constantExpression = Expression.Constant( bool.Parse( filterValues[0] ) );
+                ComparisonType comparisonType = ComparisonType.EqualTo;
+                return ComparisonHelper.ComparisonExpression( comparisonType, propertyExpression, constantExpression );
+            }
+            else
+            {
+                return base.PropertyFilterExpression( configurationValues, filterValues, parameterExpression, propertyName, propertyType );
+            }
+        }
+
+        /// <summary>
+        /// Gets the type of the filter comparison.
+        /// </summary>
+        /// <value>
+        /// The type of the filter comparison.
+        /// </value>
+        public override ComparisonType FilterComparisonType
+        {
+            get
+            {
+                return ComparisonType.EqualTo | ComparisonType.NotEqualTo;
+            }
+        }
+
+        /// <summary>
+        /// Gets a filter expression for an attribute value.
+        /// </summary>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="filterValues">The filter values.</param>
+        /// <param name="parameterExpression">The parameter expression.</param>
+        /// <returns></returns>
+        public override Expression AttributeFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, List<string> filterValues, ParameterExpression parameterExpression )
+        {
+            if ( filterValues.Count == 1 )
+            {
+                // NOTE: this is for backwards compatibility for filters that were saved when Boolean DataFilters didn't have a Compare Option
+                MemberExpression propertyExpression = Expression.Property( parameterExpression, "Value" );
+                ConstantExpression constantExpression = Expression.Constant( filterValues[0] );
+                ComparisonType comparisonType = ComparisonType.EqualTo;
+                return ComparisonHelper.ComparisonExpression( comparisonType, propertyExpression, constantExpression );
+            }
+            else
+            {
+                return base.AttributeFilterExpression( configurationValues, filterValues, parameterExpression );
+            }
+
+        }
+
+        /// <summary>
+        /// Attributes the constant expression.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public override ConstantExpression AttributeConstantExpression( string value )
+        {
+            var booleanValue = value.AsBoolean();
+            return Expression.Constant( booleanValue, typeof( bool ) );
+        }
+
+        /// <summary>
+        /// Gets the name of the attribute value field that should be bound to (Value, ValueAsDateTime, ValueAsBoolean, or ValueAsNumeric)
+        /// </summary>
+        /// <value>
+        /// The name of the attribute value field.
+        /// </value>
+        public override string AttributeValueFieldName
+        {
+            get
+            {
+                return "ValueAsBoolean";
+            }
+        }
+
+        /// <summary>
+        /// Gets the type of the attribute value field.
+        /// </summary>
+        /// <value>
+        /// The type of the attribute value field.
+        /// </value>
+        public override Type AttributeValueFieldType
+        {
+            get
+            {
+                return typeof( bool? );
+            }
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <inheritdoc/>
+        public override bool IsPersistedValueInvalidated( Dictionary<string, string> oldPrivateConfigurationValues, Dictionary<string, string> newPrivateConfigurationValues )
+        {
+            var oldTrueText = oldPrivateConfigurationValues.GetValueOrNull( ConfigurationKey.TrueText ) ?? string.Empty;
+            var oldFalseText = oldPrivateConfigurationValues.GetValueOrNull( ConfigurationKey.FalseText ) ?? string.Empty;
+            var newTrueText = newPrivateConfigurationValues.GetValueOrNull( ConfigurationKey.TrueText ) ?? string.Empty;
+            var newFalseText = newPrivateConfigurationValues.GetValueOrNull( ConfigurationKey.FalseText ) ?? string.Empty;
+
+            if ( oldTrueText != newTrueText )
+            {
+                return true;
+            }
+
+            if ( oldFalseText != newFalseText )
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -163,59 +451,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Formatting
-
-        /// <inheritdoc/>
-        public override string GetTextValue( string value, Dictionary<string, string> configurationValues )
-        {
-            bool? boolValue = value.AsBooleanOrNull();
-
-            if ( !boolValue.HasValue )
-            {
-                return string.Empty;
-            }
-
-            if ( boolValue.Value )
-            {
-                if ( configurationValues.ContainsKey( ConfigurationKey.TrueText ) )
-                {
-                    return configurationValues[ConfigurationKey.TrueText];
-                }
-                else
-                {
-                    return "Yes";
-                }
-            }
-            else
-            {
-                if ( configurationValues.ContainsKey( ConfigurationKey.FalseText ) )
-                {
-                    return configurationValues[ConfigurationKey.FalseText];
-                }
-                else
-                {
-                    return "No";
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        public override string GetCondensedTextValue( string value, Dictionary<string, string> configurationValues )
-        {
-            bool? boolValue = value.AsBooleanOrNull();
-
-            if ( !boolValue.HasValue )
-            {
-                return string.Empty;
-            }
-
-            // A condensed boolean value simply returns "Y" or "N" regardless
-            // of the other configuration values.
-            return boolValue.Value ? "Y" : "N";
-        }
-
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -226,14 +461,9 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            if ( !condensed )
-            {
-                return GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
-            }
-            else
-            {
-                return GetCondensedTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
-            }
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
 
         /// <summary>
@@ -260,10 +490,6 @@ namespace Rock.Field.Types
             // return ValueAsFieldType which returns the value as a bool
             return this.ValueAsFieldType( parentControl, value, configurationValues );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Renders the controls necessary for prompting user for a new value and adds them to the parentControl
@@ -341,27 +567,6 @@ namespace Rock.Field.Types
         }
 
         /// <summary>
-        /// The type of the control (DropDown, CheckBox, Toggle, or Switch) to use to edit the value
-        /// </summary>
-        public enum BooleanControlType
-        {
-            /// <summary>
-            /// Use a RockDropDown with TrueText and FalseTest as the options
-            /// </summary>
-            DropDown,
-
-            /// <summary>
-            /// Use a RockCheckBox
-            /// </summary>
-            Checkbox,
-
-            /// <summary>
-            /// Use a Rock:Toggle with TrueText and FalseTest as the buttons text
-            /// </summary>
-            Toggle
-        }
-
-        /// <summary>
         /// Reads new values entered by the user for the field
         /// </summary>
         /// <param name="control">Parent control that controls were added to in the CreateEditControl() method</param>
@@ -416,31 +621,6 @@ namespace Rock.Field.Types
                 editControlAsToggle.Checked = value.AsBoolean();
             }
         }
-
-        /// <summary>
-        /// Tests the value to ensure that it is a valid value.  If not, message will indicate why
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="required">if set to <c>true</c> [required].</param>
-        /// <param name="message">The message.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified value is valid; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool IsValid( string value, bool required, out string message )
-        {
-            bool? boolValue = value.AsBooleanOrNull();
-            if ( required && !boolValue.HasValue )
-            {
-                message = "Invalid boolean value";
-                return false;
-            }
-
-            return base.IsValid( value, required, out message );
-        }
-
-        #endregion
-
-        #region Filter Control
 
         /// <summary>
         /// Gets the filter value control.
@@ -509,12 +689,18 @@ namespace Rock.Field.Types
         }
 
         /// <summary>
-        /// Determines whether this filter has a filter control
+        /// Sets the filter value value.
         /// </summary>
-        /// <returns></returns>
-        public override bool HasFilterControl()
+        /// <param name="control">The control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">The value.</param>
+        public override void SetFilterValueValue( Control control, Dictionary<string, ConfigurationValue> configurationValues, string value )
         {
-            return true;
+            var filterValueControl = control as ListControl;
+            if ( filterValueControl != null )
+            {
+                filterValueControl.SetValue( value );
+            }
         }
 
         /// <summary>
@@ -596,137 +782,7 @@ namespace Rock.Field.Types
             }
         }
 
-
-        /// <summary>
-        /// Sets the filter value value.
-        /// </summary>
-        /// <param name="control">The control.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="value">The value.</param>
-        public override void SetFilterValueValue( Control control, Dictionary<string, ConfigurationValue> configurationValues, string value )
-        {
-            var filterValueControl = control as ListControl;
-            if ( filterValueControl != null )
-            {
-                filterValueControl.SetValue( value );
-            }
-        }
-
-        /// <summary>
-        /// Formats the filter value value.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public override string FormatFilterValueValue( Dictionary<string, ConfigurationValue> configurationValues, string value )
-        {
-            string formattedValue = FormatValue( null, value, configurationValues, false );
-            return AddQuotes( formattedValue );
-        }
-
-        /// <summary>
-        /// Gets a filter expression for an entity property value.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="filterValues">The filter values.</param>
-        /// <param name="parameterExpression">The parameter expression.</param>
-        /// <param name="propertyName">Name of the property.</param>
-        /// <param name="propertyType">Type of the property.</param>
-        /// <returns></returns>
-        public override Expression PropertyFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, List<string> filterValues, Expression parameterExpression, string propertyName, Type propertyType )
-        {
-            if ( filterValues.Count == 1 )
-            {
-                // NOTE: this is for backwards compatibility for filters that were saved when Boolean DataFilters didn't have a Compare Option
-                MemberExpression propertyExpression = Expression.Property( parameterExpression, propertyName );
-                ConstantExpression constantExpression = Expression.Constant( bool.Parse( filterValues[0] ) );
-                ComparisonType comparisonType = ComparisonType.EqualTo;
-                return ComparisonHelper.ComparisonExpression( comparisonType, propertyExpression, constantExpression );
-            }
-            else
-            {
-                return base.PropertyFilterExpression( configurationValues, filterValues, parameterExpression, propertyName, propertyType );
-            }
-        }
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override ComparisonType FilterComparisonType
-        {
-            get
-            {
-                return ComparisonType.EqualTo | ComparisonType.NotEqualTo;
-            }
-        }
-
-        /// <summary>
-        /// Gets a filter expression for an attribute value.
-        /// </summary>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <param name="filterValues">The filter values.</param>
-        /// <param name="parameterExpression">The parameter expression.</param>
-        /// <returns></returns>
-        public override Expression AttributeFilterExpression( Dictionary<string, ConfigurationValue> configurationValues, List<string> filterValues, ParameterExpression parameterExpression )
-        {
-            if ( filterValues.Count == 1 )
-            {
-                // NOTE: this is for backwards compatibility for filters that were saved when Boolean DataFilters didn't have a Compare Option
-                MemberExpression propertyExpression = Expression.Property( parameterExpression, "Value" );
-                ConstantExpression constantExpression = Expression.Constant( filterValues[0] );
-                ComparisonType comparisonType = ComparisonType.EqualTo;
-                return ComparisonHelper.ComparisonExpression( comparisonType, propertyExpression, constantExpression );
-            }
-            else
-            {
-                return base.AttributeFilterExpression( configurationValues, filterValues, parameterExpression );
-            }
-
-        }
-
-        /// <summary>
-        /// Attributes the constant expression.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public override ConstantExpression AttributeConstantExpression( string value )
-        {
-            var booleanValue = value.AsBoolean();
-            return Expression.Constant( booleanValue, typeof( bool ) );
-        }
-
-        /// <summary>
-        /// Gets the name of the attribute value field that should be bound to (Value, ValueAsDateTime, ValueAsBoolean, or ValueAsNumeric)
-        /// </summary>
-        /// <value>
-        /// The name of the attribute value field.
-        /// </value>
-        public override string AttributeValueFieldName
-        {
-            get
-            {
-                return "ValueAsBoolean";
-            }
-        }
-
-        /// <summary>
-        /// Gets the type of the attribute value field.
-        /// </summary>
-        /// <value>
-        /// The type of the attribute value field.
-        /// </value>
-        public override Type AttributeValueFieldType
-        {
-            get
-            {
-                return typeof( bool? );
-            }
-        }
-
+#endif
         #endregion
-
     }
 }

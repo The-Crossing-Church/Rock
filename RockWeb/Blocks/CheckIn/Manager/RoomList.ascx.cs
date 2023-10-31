@@ -75,6 +75,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         Order = 5 )]
 
     #endregion Block Attributes
+    [Rock.SystemGuid.BlockTypeGuid( "2DEA7808-9AC1-4913-BF58-1CDC7922C901" )]
     public partial class RoomList : RockBlock
     {
         #region Attribute Keys
@@ -181,7 +182,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
@@ -394,7 +395,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var groupTypeIdsWithAllowCheckout = selectedGroupTypeIds
                 .Select( a => GroupTypeCache.Get( a ) )
                 .Where( a => a != null )
-                .Where( gt => gt.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() )
+                .Where( gt => gt.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT_MANAGER ).AsBoolean() )
                 .Select( a => a.Id )
                 .Distinct().ToList();
 

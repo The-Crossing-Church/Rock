@@ -37,6 +37,7 @@ namespace Rock.Reporting.DataFilter.Person
     [Description( "Select people according to their inclusion in a Group Member Data View." )]
     [Export( typeof( DataFilterComponent ) )]
     [ExportMetadata( "ComponentName", "Group Member Data View" )]
+    [Rock.SystemGuid.EntityTypeGuid( "256909FC-74F2-4C3E-94B5-7F82A195A910")]
     public class GroupMemberDataViewFilter : DataFilterComponent, IRelatedChildDataView
     {
         #region Settings
@@ -373,7 +374,7 @@ function ()
 
             var memberService = new GroupMemberService( context );
 
-            var memberQuery = memberService.Queryable();
+            var memberQuery = memberService.Queryable( true );
 
             if ( dataView != null )
             {

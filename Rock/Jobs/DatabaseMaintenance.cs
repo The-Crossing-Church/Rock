@@ -22,8 +22,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Web;
-using Quartz;
-
 using Rock.Attribute;
 using Rock.Communication;
 using Rock.Data;
@@ -40,19 +38,104 @@ namespace Rock.Jobs
     [DisplayName( "Database Maintenance" )]
     [Description( "Performs routine SQL Server database maintenance." )]
 
-    [BooleanField( "Run Integrity Check", "Determines if an integrity check should be performed.  (Integrity checks are never run on Azure SQL databases, because Azure manages its own data integrity.)", true, order: 0 )]
-    [BooleanField( "Run Index Rebuild", "Determines if indexes should be rebuilt.", true, order: 1 )]
-    [BooleanField( "Run Statistics Update", "Determines if the statistics should be updated.", true, order: 2 )]
-    [TextField( "Alert Email", "Email address to send alerts to errors occur (multiple address delimited with comma).", true, order: 3 )]
+    #region Job Attributes
 
-    [IntegerField( "Command Timeout", "Maximum amount of time (in seconds) to wait for each step to complete.", false, 900, "Advanced", 4, "CommandTimeout" )]
-    [IntegerField( "Minimum Index Page Count", "The minimum size in pages that an index must be before it's considered for being re-built. Default value is 100.", false, 100, category: "Advanced", order: 5 )]
-    [IntegerField( "Minimum Fragmentation Percentage", "The minimum fragmentation percentage for an index to be considered for re-indexing. If the fragmentation is below is amount nothing will be done. Default value is 10%.", false, 10, category: "Advanced", order: 6 )]
-    [IntegerField( "Rebuild Threshold Percentage", "The threshold percentage where a REBUILD will be completed instead of a REORGANIZE. Default value is 30%.", false, 30, category: "Advanced", order: 7 )]
-    [BooleanField( "Use ONLINE Index Rebuild", "Use the ONLINE option when rebuilding indexes. NOTE: This is only supported on SQL Enterprise and Azure SQL Database.", false, category: "Advanced", order: 8 )]
-    [DisallowConcurrentExecution]
-    public class DatabaseMaintenance : IJob
+    [BooleanField(
+        "Run Integrity Check",
+        Key = AttributeKey.RunIntegrityCheck,
+        Description ="Determines if an integrity check should be performed. (Integrity checks are never run on Azure SQL databases, because Azure manages its own data integrity.)",
+        DefaultBooleanValue = true,
+        Order = 0 )]
+
+    [BooleanField(
+        "Run Index Rebuild",
+        Key = AttributeKey.RunIndexRebuild,
+        Description = "Determines if indexes should be rebuilt.",
+        DefaultBooleanValue = true,
+        Order = 1 )]
+
+    [BooleanField(
+        "Run Statistics Update",
+        Key = AttributeKey.RunStatisticsUpdate,
+        Description = "Determines if the statistics should be updated.",
+        DefaultBooleanValue = true,
+        Order = 2 )]
+
+    [TextField(
+        "Alert Email",
+        Key = AttributeKey.AlertEmail,
+        Description = "Email address to send alerts to errors occur (multiple address delimited with comma).",
+        IsRequired = true,
+        Order = 3 )]
+
+    [IntegerField(
+        "Command Timeout",
+        Key = AttributeKey.CommandTimeout,
+        Description = "Maximum amount of time (in seconds) to wait for each step to complete.",
+        IsRequired = false,
+        DefaultIntegerValue = 900,
+        Category = "Advanced",
+        Order = 4 )]
+
+    [IntegerField(
+        "Minimum Index Page Count",
+        Key = AttributeKey.MinimumIndexPageCount,
+        Description = "The minimum size in pages that an index must be before it's considered for being re-built. Default value is 100.",
+        IsRequired = false,
+        DefaultIntegerValue = 100,
+        Category = "Advanced",
+        Order = 5 )]
+
+    [IntegerField(
+        "Minimum Fragmentation Percentage",
+        Key = AttributeKey.MinimumFragmentationPercentage,
+        Description = "The minimum fragmentation percentage for an index to be considered for re-indexing. If the fragmentation is below is amount nothing will be done. Default value is 10%.",
+        IsRequired = false,
+        DefaultIntegerValue = 10,
+        Category = "Advanced",
+        Order = 6 )]
+
+    [IntegerField(
+        "Rebuild Threshold Percentage",
+        Key = AttributeKey.RebuildThresholdPercentage,
+        Description = "The threshold percentage where a REBUILD will be completed instead of a REORGANIZE. Default value is 30%.",
+        IsRequired = false,
+        DefaultIntegerValue = 30,
+        Category = "Advanced",
+        Order = 7 )]
+
+    [BooleanField(
+        "Use ONLINE Index Rebuild",
+        Key = AttributeKey.UseOnlineIndexRebuild,
+        Description = "Use the ONLINE option when rebuilding indexes. NOTE: This is only supported on SQL Enterprise and Azure SQL Database.",
+        DefaultBooleanValue = false,
+        Category = "Advanced",
+        Order = 8 )]
+
+    #endregion
+
+    public class DatabaseMaintenance : RockJob
     {
+        #region Keys
+
+        /// <summary>
+        /// Keys to use for job Attributes.
+        /// </summary>
+        private static class AttributeKey
+        {
+            public const string RunIntegrityCheck = "RunIntegrityCheck";
+            public const string RunIndexRebuild = "RunIndexRebuild";
+            public const string RunStatisticsUpdate = "RunStatisticsUpdate";
+            public const string AlertEmail = "AlertEmail";
+            public const string CommandTimeout = "CommandTimeout";
+            public const string MinimumIndexPageCount = "MinimumIndexPageCount";
+            public const string MinimumFragmentationPercentage = "MinimumFragmentationPercentage";
+            public const string RebuildThresholdPercentage = "RebuildThresholdPercentage";
+            public const string UseOnlineIndexRebuild = "UseOnlineIndexRebuild";
+        }
+
+        #endregion
+
         /// <summary> 
         /// Empty constructor for job initialization
         /// <para>
@@ -66,23 +149,15 @@ namespace Rock.Jobs
 
         private List<DatabaseMaintenanceTaskResult> _databaseMaintenanceTaskResults = new List<DatabaseMaintenanceTaskResult>();
 
-        /// <summary>
-        /// Job that will run quick SQL queries on a schedule.
-        /// 
-        /// Called by the <see cref="IScheduler" /> when a
-        /// <see cref="ITrigger" /> fires that is associated with
-        /// the <see cref="IJob" />.
-        /// </summary>
-        public virtual void Execute( IJobExecutionContext jobContext )
+        /// <inheritdoc cref="RockJob.Execute()"/>
+        public override void Execute()
         {
-            JobDataMap dataMap = jobContext.JobDetail.JobDataMap;
-
             // get job parms
-            bool runIntegrityCheck = dataMap.GetBoolean( "RunIntegrityCheck" );
-            bool runIndexRebuild = dataMap.GetBoolean( "RunIndexRebuild" );
-            bool runStatisticsUpdate = dataMap.GetBoolean( "RunStatisticsUpdate" );
+            bool runIntegrityCheck = this.GetAttributeValue( "RunIntegrityCheck" ).AsBoolean();
+            bool runIndexRebuild = this.GetAttributeValue( "RunIndexRebuild" ).AsBoolean();
+            bool runStatisticsUpdate = this.GetAttributeValue( "RunStatisticsUpdate" ).AsBoolean();
 
-            int commandTimeout = dataMap.GetString( "CommandTimeout" ).AsInteger();
+            int commandTimeout = GetAttributeValue( "CommandTimeout" ).AsInteger();
             bool integrityCheckPassed = false;
             bool integrityCheckIgnored = false;
 
@@ -120,8 +195,8 @@ namespace Rock.Jobs
             {
                 try
                 {
-                    string alertEmail = dataMap.GetString( "AlertEmail" );
-                    jobContext.UpdateLastStatusMessage( $"Integrity Check..." );
+                    string alertEmail = GetAttributeValue( "AlertEmail" );
+                    this.UpdateLastStatusMessage( $"Integrity Check..." );
                     integrityCheckPassed = IntegrityCheck( commandTimeout, alertEmail );
                 }
                 catch ( Exception ex )
@@ -142,8 +217,8 @@ namespace Rock.Jobs
                 {
                     try
                     {
-                        jobContext.UpdateLastStatusMessage( $"Rebuild Indexes..." );
-                        RebuildFragmentedIndexes( jobContext, commandTimeout );
+                        this.UpdateLastStatusMessage( $"Rebuild Indexes..." );
+                        RebuildFragmentedIndexes( commandTimeout );
                     }
                     catch ( Exception ex )
                     {
@@ -157,7 +232,7 @@ namespace Rock.Jobs
                 {
                     try
                     {
-                        jobContext.UpdateLastStatusMessage( $"Update Statistics..." );
+                        this.UpdateLastStatusMessage( $"Update Statistics..." );
                         UpdateStatistics( commandTimeout );
                     }
                     catch ( Exception ex )
@@ -181,7 +256,7 @@ namespace Rock.Jobs
                 jobSummaryBuilder.AppendLine( "\n<i class='fa fa-circle text-warning'></i> Some jobs have errors. See exception log for details." );
             }
 
-            jobContext.Result = jobSummaryBuilder.ToString();
+            this.Result = jobSummaryBuilder.ToString();
 
             var databaseMaintenanceExceptions = _databaseMaintenanceTaskResults.Where( a => a.HasException ).Select( a => a.Exception ).ToList();
 
@@ -270,22 +345,20 @@ namespace Rock.Jobs
         /// <summary>
         /// Rebuilds the fragmented indexes.
         /// </summary>
-        /// <param name="jobContext">The job context.</param>
         /// <param name="commandTimeoutSeconds">The command timeout seconds.</param>
-        private void RebuildFragmentedIndexes( IJobExecutionContext jobContext, int commandTimeoutSeconds )
+        private void RebuildFragmentedIndexes( int commandTimeoutSeconds )
         {
-            JobDataMap dataMap = jobContext.JobDetail.JobDataMap;
-            int minimumIndexPageCount = dataMap.GetString( "MinimumIndexPageCount" ).AsInteger();
-            int minimumFragmentationPercentage = dataMap.GetString( "MinimumFragmentationPercentage" ).AsInteger();
-            int rebuildThresholdPercentage = dataMap.GetString( "RebuildThresholdPercentage" ).AsInteger();
-            bool useONLINEIndexRebuild = dataMap.GetString( "UseONLINEIndexRebuild" ).AsBoolean();
+            int minimumIndexPageCount = GetAttributeValue( "MinimumIndexPageCount" ).AsInteger();
+            int minimumFragmentationPercentage = GetAttributeValue( "MinimumFragmentationPercentage" ).AsInteger();
+            int rebuildThresholdPercentage = GetAttributeValue( "RebuildThresholdPercentage" ).AsInteger();
+            bool useONLINEIndexRebuild = GetAttributeValue( "UseONLINEIndexRebuild" ).AsBoolean();
 
             if ( useONLINEIndexRebuild
                  && !( RockInstanceConfig.Database.Platform == RockInstanceDatabaseConfiguration.PlatformSpecifier.AzureSql
                        || RockInstanceConfig.Database.Edition.Contains( "Enterprise" ) ) )
             {
                 // Online index rebuild is only available for Azure SQL or SQL Enterprise.
-                RockLogger.Log.Information( RockLogDomains.Jobs, "Database Maintenance - Online Index Rebuild option is selected but not available for the current database platform." );
+                Log( RockLogLevel.Info, "Online Index Rebuild option is selected but not available for the current database platform." );
 
                 useONLINEIndexRebuild = false;
             }
@@ -335,7 +408,7 @@ SELECT
 
             foreach ( var indexInfo in sortedIndexInfoList )
             {
-                jobContext.UpdateLastStatusMessage( $"Rebuilding Index [{indexInfo.TableName}].[{indexInfo.IndexName}]" );
+                this.UpdateLastStatusMessage( $"Rebuilding Index [{indexInfo.TableName}].[{indexInfo.IndexName}]" );
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 DatabaseMaintenanceTaskResult databaseMaintenanceTaskResult = new DatabaseMaintenanceTaskResult

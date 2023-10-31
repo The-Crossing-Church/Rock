@@ -42,6 +42,7 @@ namespace RockWeb.Blocks.Security.Oidc
         "Detail Page",
         Key = AttributeKey.DetailPage,
         Order = 1)]
+    [Rock.SystemGuid.BlockTypeGuid( Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST )]
     public partial class AuthScopeList : RockBlock, ICustomGridColumns
     {
         public class AttributeKey
@@ -180,7 +181,7 @@ namespace RockWeb.Blocks.Security.Oidc
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gUserLogins control.
+        /// Handles the GridRebind event of the gAuthScopes control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>

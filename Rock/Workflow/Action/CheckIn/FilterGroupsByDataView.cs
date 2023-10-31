@@ -36,6 +36,7 @@ namespace Rock.Workflow.Action.CheckIn
     [ExportMetadata( "ComponentName", "Filter Groups By Data View" )]
     [AttributeField( Rock.SystemGuid.EntityType.GROUP, "DataView Group Attribute", "Select the attribute used to filter by DataView.", true, false, defaultValue: "E8F8498F-5C51-4216-AC81-875349D6C2D0", order: 0 )]
     [BooleanField( "Remove", "Select 'Yes' if groups should be removed.  Select 'No' if they should just be marked as excluded.", true, order: 1 )]
+    [Rock.SystemGuid.EntityTypeGuid( "E6490F9B-21C6-4D0F-AD15-9729AC22C094")]
     public class FilterGroupsByDataView : CheckInActionComponent
     {
         /// <summary>
@@ -94,7 +95,7 @@ namespace Rock.Workflow.Action.CheckIn
                                     continue;
                                 }
 
-                                if ( dataview.PersistedScheduleIntervalMinutes.HasValue && dataview.PersistedLastRefreshDateTime.HasValue )
+                                if ( dataview.IsPersisted() && dataview.PersistedLastRefreshDateTime.HasValue )
                                 {
                                     //Get record from persisted.
                                     var persistedValuesQuery = rockContext.DataViewPersistedValues.Where( a => a.DataViewId == dataview.Id );

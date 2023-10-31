@@ -161,6 +161,8 @@ namespace Rock.Blocks.Types.Mobile.Groups
 
     #endregion
 
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.MOBILE_GROUPS_GROUP_EDIT_BLOCK_TYPE )]
+    [Rock.SystemGuid.BlockTypeGuid( "FEC66374-E38F-4651-BAA6-AC658409D9BD")]
     public class GroupEdit : RockMobileBlockType
     {
         /// <summary>
@@ -513,7 +515,7 @@ namespace Rock.Blocks.Types.Mobile.Groups
             {
                 if ( EnableGroupNameEdit )
                 {
-                    sb.AppendLine( MobileHelper.GetSingleFieldXaml( $"<Rock:TextBox x:Name=\"name\" Label=\"Name\" IsRequired=\"true\" Text=\"{group.Name.EncodeXml( true )}\" />" ) );
+                    sb.AppendLine( MobileHelper.GetSingleFieldXaml( $"<Rock:TextBox x:Name=\"name\" Label=\"Name\" IsRequired=\"true\" Text=\"{group.Name?.EncodeXml( true )}\" />" ) );
                     parameters.Add( "name", "Text" );
                 }
                 else
@@ -526,7 +528,7 @@ namespace Rock.Blocks.Types.Mobile.Groups
             {
                 if ( EnableDescriptionEdit )
                 {
-                    sb.AppendLine( MobileHelper.GetSingleFieldXaml( $"<Rock:TextBox x:Name=\"description\" Label=\"Description\" IsRequired=\"false\" Text=\"{group.Description.EncodeXml( true )}\" />" ) );
+                    sb.AppendLine( MobileHelper.GetSingleFieldXaml( $"<Rock:TextBox x:Name=\"description\" Label=\"Description\" IsRequired=\"false\" Text=\"{group.Description?.EncodeXml( true )}\" />" ) );
                     parameters.Add( "description", "Text" );
                 }
                 else

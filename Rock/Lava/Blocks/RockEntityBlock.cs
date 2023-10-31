@@ -25,13 +25,14 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.UI.WebControls;
-
+using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Reporting;
 using Rock.Reporting.DataFilter;
 using Rock.Security;
 using Rock.Utility;
+using Rock.Utility.Settings;
 using Rock.Web.Cache;
 
 namespace Rock.Lava.Blocks
@@ -149,7 +150,7 @@ namespace Rock.Lava.Blocks
 
                         List<string> selectionParms = new List<string>();
                         selectionParms.Add( PropertyComparisonConversion( "==" ).ToString() );
-                        selectionParms.Add( parms["id"].ToString() );
+                        selectionParms.Add( parms["id"].AsInteger().ToString() ); // Ensure this is an integer: https://github.com/SparkDevNetwork/Rock/issues/5230
                         selectionParms.Add( propertyName );
 
                         var entityProperty = entityType.GetProperty( propertyName );
@@ -219,7 +220,7 @@ namespace Rock.Lava.Blocks
                         }
                     }
 
-                    // Make the query from the expression.                    
+                    // Make the query from the expression.
                     /* [2020-10-08] DL
                      * "Get" is intentionally used here rather than "GetNoTracking" to allow lazy-loading of navigation properties from the Lava context.
                      * (Refer https://github.com/SparkDevNetwork/Rock/issues/4293)
@@ -305,35 +306,36 @@ namespace Rock.Lava.Blocks
                                 }
                                 else
                                 {
-                                    // sorting on an attribute
+                                    // Sort by Attribute.
+                                    // Get all of the Attributes for this EntityType that have a matching Key and apply the same sort for each of them.
+                                    // This situation may occur, for example, where the target entity is a DefinedValue and the same Attribute Key exists for multiple Defined Types.
+                                    var attributeIdListForAttributeKey = AttributeCache.GetByEntityType( entityTypeCache.Id )
+                                                                .Where( a => a != null && a.Key == propertyName )
+                                                                .Select( a => a.Id )
+                                                                .ToList();
 
-                                    // get attribute id
-                                    int? attributeId = null;
-                                    foreach ( var attribute in AttributeCache.GetByEntityType( entityTypeCache.Id ) )
-                                    {
-                                        if ( attribute.Key == propertyName )
-                                        {
-                                            attributeId = attribute.Id;
-                                            break;
-                                        }
-                                    }
-
-                                    if ( attributeId.HasValue )
+                                    if ( attributeIdListForAttributeKey.Any() )
                                     {
                                         // get AttributeValue queryable and parameter
-                                        if ( dbContext is RockContext )
+                                        var rockContext = dbContext as RockContext;
+                                        if ( rockContext == null  )
                                         {
-                                            var attributeValues = new AttributeValueService( dbContext as RockContext ).Queryable();
-                                            ParameterExpression attributeValueParameter = Expression.Parameter( typeof( AttributeValue ), "v" );
-                                            MemberExpression idExpression = Expression.Property( paramExpression, "Id" );
-                                            var attributeExpression = Attribute.Helper.GetAttributeValueExpression( attributeValues, attributeValueParameter, idExpression, attributeId.Value );
-
-                                            LambdaExpression sortSelector = Expression.Lambda( attributeExpression, paramExpression );
-                                            queryResultExpression = Expression.Call( typeof( Queryable ), methodName, new Type[] { queryResult.ElementType, sortSelector.ReturnType }, queryResultExpression, sortSelector );
+                                            throw new Exception( $"The database context for type {entityTypeCache.FriendlyName} does not support RockContext attribute value queries." );
                                         }
-                                        else
+
+                                        var attributeValues = new AttributeValueService( rockContext ).Queryable();
+                                        foreach ( var attributeId in attributeIdListForAttributeKey )
                                         {
-                                            throw new Exception( string.Format( "The database context for type {0} does not support RockContext attribute value queries.", entityTypeCache.FriendlyName ) );
+                                            methodName = ( direction == SortDirection.Descending ) ? orderByMethod + "Descending" : orderByMethod;
+
+                                            var attributeValueParameter = Expression.Parameter( typeof( AttributeValue ), "v" );
+                                            var idExpression = Expression.Property( paramExpression, "Id" );
+                                            var attributeExpression = Attribute.Helper.GetAttributeValueExpression( attributeValues, attributeValueParameter, idExpression, attributeId );
+
+                                            var sortSelector = Expression.Lambda( attributeExpression, paramExpression );
+                                            queryResultExpression = Expression.Call( typeof( Queryable ), methodName, new Type[] { queryResult.ElementType, sortSelector.ReturnType }, queryResultExpression, sortSelector );
+
+                                            orderByMethod = "ThenBy";
                                         }
                                     }
                                 }
@@ -500,6 +502,27 @@ namespace Rock.Lava.Blocks
                             else
                             {
                                 var results = queryResult.ToList();
+
+                                // Pre-load attributes
+                                var disableattributeprefetch = parms.GetValueOrDefault("disableattributeprefetch", "false").AsBoolean();
+                                var attributeKeys = parms.GetValueOrDefault("prefetchattributes", string.Empty)
+                                                        .Split( new string[] { "," }, StringSplitOptions.RemoveEmptyEntries )
+                                                        .ToList();
+
+                                // Determine if we should prefetch attributes. By default we will unless they specifically say not to.
+                                if ( !disableattributeprefetch )
+                                {
+                                    // If a filtered list of attributes keys are not provided load all attributes otherwise just load the ones for the keys provided.
+                                    if ( attributeKeys.Count() == 0 )
+                                    {
+                                        results.Select( r => r as IHasAttributes ).Where( r => r != null ).ToList().LoadAttributes();
+                                    }
+                                    else
+                                    {
+                                        results.Select( r => r as IHasAttributes ).Where( r => r != null ).ToList().LoadFilteredAttributes( (RockContext)dbContext, a => attributeKeys.Contains( a.Key ) );
+                                    }
+                                }
+                                
                                 returnValues = results;
                                 firstItem = results.FirstOrDefault();
                                 returnCount = results.Count();
@@ -587,10 +610,17 @@ namespace Rock.Lava.Blocks
         /// </summary>
         public static void RegisterEntityCommands( ILavaEngine engine )
         {
+            // If the database is not connected, we do not have access to entity definitions.
+            // This can occur when the Lava engine is started without an attached database.
+            if ( !RockInstanceConfig.DatabaseIsAvailable )
+            {
+                return;
+            }
+
             var entityTypes = EntityTypeCache.All();
 
             // register a business entity
-           engine.RegisterBlock( "business", ( name ) => { return new RockEntityBlock(); } );
+           engine.RegisterBlock( "business", ( name ) => CreateEntityBlockInstance( name ) );
 
             // Register the core models, replacing existing blocks of the same name if necessary.
             foreach ( var entityType in entityTypes
@@ -630,13 +660,19 @@ namespace Rock.Lava.Blocks
                     entityName = entityType.Name.Replace( '.', '_' );
                 }
 
-                engine.RegisterBlock( entityName,
-                    ( name ) =>
-                    {
-                        // Return a block having a tag name corresponding to the entity name.
-                        return new RockEntityBlock() { SourceElementName = entityName, EntityName = entityName };
-                    } );
+                engine.RegisterBlock( entityName, ( name ) => CreateEntityBlockInstance( name ) );
             }
+        }
+
+        /// <summary>
+        /// Factory method to return a new block for the specified Entity.
+        /// </summary>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        private static RockEntityBlock CreateEntityBlockInstance( string entityName )
+        {
+            // Return a block having a tag name corresponding to the entity name.
+            return new RockEntityBlock() { SourceElementName = entityName, EntityName = entityName };
         }
 
         /// <summary>
@@ -754,6 +790,8 @@ namespace Rock.Lava.Blocks
                             case "selectmany":
                             case "groupby":
                             case "securityenabled":
+                            case "prefetchattributes":
+                            case "disableattributeprefetch":
                                 {
                                     parms.AddOrReplace( dynamicParm, dynamicParmValue );
                                     break;
@@ -840,7 +878,7 @@ namespace Rock.Lava.Blocks
                 }
 
                 // parse the part to get the expression
-                string regexPattern = @"([a-zA-Z]+)|(==|<=|>=|<|!=|\^=|\*=|\*!|_=|_!|>|\$=|#=)|("".*""|\d+)";
+                var regexPattern = @"((?!_=|_!)[a-zA-Z_]+)|(==|<=|>=|<|!=|\^=|\*=|\*!|_=|_!|>|\$=|#=)|("".*""|\d+)";
                 var expressionParts = Regex.Matches( component, regexPattern )
                .Cast<Match>()
                .Select( m => m.Value )
@@ -851,6 +889,14 @@ namespace Rock.Lava.Blocks
                     var property = expressionParts[0];
                     var operatorType = expressionParts[1];
                     var value = expressionParts[2].Replace( "\"", "" );
+
+                    // Check if the property is Id, if so ensure that it's an integer to prevent
+                    // returning everything in the database.
+                    // https://github.com/SparkDevNetwork/Rock/issues/5236
+                    if ( property == "Id" )
+                    {
+                        value = value.AsInteger().ToString();
+                    }
 
                     List<string> selectionParms = new List<string>();
                     selectionParms.Add( PropertyComparisonConversion( operatorType ).ToString() );
@@ -886,13 +932,20 @@ namespace Rock.Lava.Blocks
                             filterAttribute = attribute;
                             var attributeEntityField = EntityHelper.GetEntityFieldForAttribute( filterAttribute );
 
+                            var filterExpression = ExpressionHelper.GetAttributeExpression( service, parmExpression, attributeEntityField, selectionParms );
+                            if ( filterExpression is NoAttributeFilterExpression )
+                            {
+                                // Ignore this filter because it would cause the Where expression to match everything.
+                                continue;
+                            }
+
                             if ( attributeWhereExpression == null )
                             {
-                                attributeWhereExpression = ExpressionHelper.GetAttributeExpression( service, parmExpression, attributeEntityField, selectionParms );
+                                attributeWhereExpression = filterExpression;
                             }
                             else
                             {
-                                attributeWhereExpression = Expression.OrElse( attributeWhereExpression, ExpressionHelper.GetAttributeExpression( service, parmExpression, attributeEntityField, selectionParms ) );
+                                attributeWhereExpression = Expression.OrElse( attributeWhereExpression, filterExpression );
                             }
                         }
 

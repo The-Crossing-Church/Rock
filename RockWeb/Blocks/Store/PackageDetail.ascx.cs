@@ -31,13 +31,11 @@ using Rock.VersionInfo;
 
 namespace RockWeb.Blocks.Store
 {
-    /// <summary>
-    /// Template block for developers to use to start a new block.
-    /// </summary>
     [DisplayName( "Package Detail" )]
     [Category( "Store" )]
     [Description( "Manages the details of a package." )]
     [LinkedPage( "Install Page", "Page reference to use for the install / update page.", false, "", "", 1 )]
+    [Rock.SystemGuid.BlockTypeGuid( "69A7D88E-5CD8-4993-A88A-4DA15BAD3CB3" )]
     public partial class PackageDetail : Rock.Web.UI.RockBlock
     {
         #region Fields
@@ -291,7 +289,7 @@ namespace RockWeb.Blocks.Store
                 lRequiredRockVersion.Text = string.Format( "v{0}.{1}",
                                                 latestVersion.RequiredRockSemanticVersion.Minor.ToString(),
                                                 latestVersion.RequiredRockSemanticVersion.Patch.ToString() );
-                lDocumenationLink.Text = string.Format( "<a href='{0}' target='_blank'>Documentation Link</a>", latestVersion.DocumentationUrl );
+                lDocumenationLink.Text = string.Format( "<a href='{0}' target='_blank' rel='noopener noreferrer'>Documentation Link</a>", latestVersion.DocumentationUrl );
 
                 lSupportLink.Text = string.Format( "<a href='{0}'>Support Link</a>", package.SupportUrl );
 

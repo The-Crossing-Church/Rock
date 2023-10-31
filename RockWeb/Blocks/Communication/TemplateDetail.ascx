@@ -63,17 +63,17 @@
                     <asp:Panel ID="pnlEmailSummaryAdditionalFields" runat="server" CssClass="js-additional-fields" Style="display: none">
                         <div class="row">
                             <div class="col-md-6">
-                                <Rock:RockTextBox ID="tbReplyToAddress" runat="server" Label="Reply To Address" />
+                                <Rock:RockTextBox ID="tbReplyToAddress" runat="server" Label="Reply To Address" Help="<small><span class='tip tip-lava'></span></small>" AllowLava="true" />
                             </div>
                             <div class="col-md-6">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <Rock:RockTextBox ID="tbCCList" runat="server" Label="CC List" AllowMultiple="true" />
+                                <Rock:RockTextBox ID="tbCCList" runat="server" Label="CC List" AllowMultiple="true" Help="<small><span class='tip tip-lava'></span></small>" AllowLava="true" />
                             </div>
                             <div class="col-md-6">
-                                <Rock:RockTextBox ID="tbBCCList" runat="server" Label="BCC List" AllowMultiple="true" />
+                                <Rock:RockTextBox ID="tbBCCList" runat="server" Label="BCC List" AllowMultiple="true" Help="<small><span class='tip tip-lava'></span></small>" AllowLava="true" />
                             </div>
                         </div>
                     </asp:Panel>
@@ -164,7 +164,7 @@
                 <Rock:PanelWidget ID="pnlSMSTemplate" Title="SMS" TitleIconCssClass="fa fa-comments" CssClass="js-sms-template" runat="server">
                     <div class="row">
                         <div class="col-md-6">
-                            <Rock:DefinedValuePicker ID="dvpSMSFrom" runat="server" Label="From" Help="The number to originate message from (configured under Admin Tools > Communications > SMS Phone Numbers)." />
+                            <Rock:SystemPhoneNumberPicker ID="spnpSMSFrom" runat="server" Label="From" Help="The number to originate message from (configured under Admin Tools > Communications > System Phone Numbers)." />
                         </div>
                     </div>
 

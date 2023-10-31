@@ -20,6 +20,7 @@ using System.Collections.Specialized;
 using System.Data.Entity;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Web;
 using ImageResizer;
@@ -244,21 +245,31 @@ namespace RockWeb
             context.Response.AddHeader( "Last-Modified", binaryFileMetaData.ModifiedDateTime.ToUniversalTime().ToString( "R" ) );
             context.Response.AddHeader( "ETag", binaryFileMetaData.ModifiedDateTime.ToString().XxHash() );
 
-            //// if the binaryFile's BinaryFileType requires view security, check security
-            //// note: we put a RequiresViewSecurity flag on BinaryFileType because checking security for every image would be slow (~40ms+ per image request)
-            if ( binaryFileMetaData.BinaryFileType_RequiresViewSecurity )
+            var currentUser = new UserLoginService( rockContext ).GetByUserName( UserLogin.GetCurrentUserName() );
+            Person currentPerson = currentUser != null ? currentUser.Person : null;
+            BinaryFile binaryFileAuth = new BinaryFileService( rockContext ).Queryable( "BinaryFileType" ).AsNoTracking().First( a => a.Id == binaryFileMetaData.Id );
+
+            var parentEntityAllowsView = binaryFileAuth.ParentEntityAllowsView( currentPerson );
+
+            // If no parent entity is specified then check if there is scecurity on the BinaryFileType
+            // Use BinaryFileType.RequiresViewSecurity because checking security for every file is slow (~40ms+ per request)
+            if ( parentEntityAllowsView == null && binaryFileMetaData.BinaryFileType_RequiresViewSecurity )
             {
-                var currentUser = new UserLoginService( rockContext ).GetByUserName( UserLogin.GetCurrentUserName() );
-                Person currentPerson = currentUser != null ? currentUser.Person : null;
-                BinaryFile binaryFileAuth = new BinaryFileService( rockContext ).Queryable( "BinaryFileType" ).AsNoTracking().First( a => a.Id == binaryFileMetaData.Id );
-                if ( !binaryFileAuth.IsAuthorized( Authorization.VIEW, currentPerson ) )
+                if ( !binaryFileAuth.IsAuthorized( Rock.Security.Authorization.VIEW, currentPerson ) )
                 {
                     SendNotAuthorized( context );
                     return;
                 }
             }
 
+            // Since this has a value use it
+            if ( parentEntityAllowsView == false )
+            {
+                SendNotAuthorized( context );
+                return;
+            }
 
+            // Security checks pass so send the file
             Stream fileContent = null;
             try
             {
@@ -285,7 +296,44 @@ namespace RockWeb
 
                     if ( binaryFile != null )
                     {
-                        fileContent = binaryFile.ContentStream;
+                        try
+                        {
+                            // put this in a try catch because the binaryFile content might be from a 3rd party dll that throws exceptions for http errors such as 4XX responses.
+                            fileContent = binaryFile.ContentStream;
+                        }
+                        catch (System.Net.WebException wex )
+                        {
+                            // If this is a 4XX error than pass that along to the client
+                            var response = ( HttpWebResponse ) wex.Response;
+                            if ( response != null )
+                            {
+                                context.Response.StatusCode = ( int ) response.StatusCode;
+                                context.Response.StatusDescription = response.StatusDescription;
+                                context.ApplicationInstance.CompleteRequest();
+                            }
+                            else
+                            {
+                                // Otherwise log the exception and use the not found message for the client.
+                                ExceptionLogService.LogException( wex );
+                                SendNotFound( context );
+                            }
+
+                            return;
+                        }
+                        catch ( System.Web.HttpException hex )
+                        {
+                            // If this is a 4XX error than pass that along to the client
+                            context.Response.StatusCode = hex.GetHttpCode();
+                            context.Response.StatusDescription = hex.Message;
+                            context.ApplicationInstance.CompleteRequest();
+                            return;
+                        }
+                        catch ( Exception ex )
+                        {
+                            ExceptionLogService.LogException( ex );
+                            SendNotFound( context );
+                            return;
+                        }
                     }
 
                     // If we got the image from the binaryFileService, it might need to be resized and cached

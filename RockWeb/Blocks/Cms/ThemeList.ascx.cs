@@ -49,6 +49,7 @@ namespace RockWeb.Blocks.Cms
         Order = 0 )]
 
     #endregion
+    [Rock.SystemGuid.BlockTypeGuid( "FD99E0AA-E1CB-4049-A6F6-9C5F2A34F694" )]
     public partial class ThemeList : Rock.Web.UI.RockBlock, ICustomGridColumns
     {
         #region Attribute Keys
@@ -164,7 +165,7 @@ namespace RockWeb.Blocks.Cms
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

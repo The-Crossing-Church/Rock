@@ -42,6 +42,7 @@ namespace RockWeb.Blocks.Bus
 
     #endregion Block Attributes
 
+    [Rock.SystemGuid.BlockTypeGuid( "F9872CD9-EF32-4791-B0A9-1D104250AB18" )]
     public partial class QueueList : RockBlock
     {
         #region Keys
@@ -114,7 +115,7 @@ namespace RockWeb.Blocks.Bus
         }
 
         /// <summary>
-        /// Handles the GridRebind event of the gPledges control.
+        /// Handles the GridRebind event of the gList control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

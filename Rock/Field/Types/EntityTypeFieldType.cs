@@ -17,7 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
+#endif
 
 using Rock.Attribute;
 using Rock.Data;
@@ -32,10 +34,79 @@ namespace Rock.Field.Types
     /// </summary>
     [Serializable]
     [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.ENTITYTYPE )]
     public class EntityTypeFieldType : FieldType, IEntityFieldType
     {
+        /*
+         * 8/5/2022 - DSH
+         * 
+         * Note: We don't track changes to EntityType because that almost never
+         * happens and when it does it is extremely early in the Rock startup
+         * process so there is concern this might cause sporadic startup
+         * failures. Since the nightly job will get these fixed up if they are
+         * out of sync I decided not to track changes. If testing is performed
+         * and proven safe then we could later start tracking changes.
+         */
 
         #region Configuration
+
+        #endregion
+
+        #region Formatting
+
+        /// <inheritdoc/>
+        public override string GetTextValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var guid = privateValue.AsGuidOrNull();
+
+            if ( !guid.HasValue )
+            {
+                return string.Empty;
+            }
+
+            return EntityTypeCache.Get( guid.Value )?.FriendlyName ?? string.Empty;
+        }
+
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Entity Methods
+
+        /// <summary>
+        /// Gets the entity.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <returns></returns>
+        public IEntity GetEntity( string value )
+        {
+            return GetEntity( value, null );
+        }
+
+        /// <summary>
+        /// Gets the entity.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns></returns>
+        public IEntity GetEntity( string value, RockContext rockContext )
+        {
+            Guid? guid = value.AsGuidOrNull();
+            if ( guid.HasValue )
+            {
+                rockContext = rockContext ?? new RockContext();
+                return new EntityTypeService( rockContext ).Get( guid.Value );
+            }
+
+            return null;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
 
         /// <summary>
         /// Returns a list of the configuration keys
@@ -80,7 +151,7 @@ namespace Rock.Field.Types
             if ( controls != null && controls.Count == 1 )
             {
                 if ( controls[0] != null && controls[0] is RockCheckBox )
-                    configurationValues["includeglobal"].Value = ( (RockCheckBox)controls[0] ).Checked.ToString();
+                    configurationValues["includeglobal"].Value = ( ( RockCheckBox ) controls[0] ).Checked.ToString();
 
             }
 
@@ -98,7 +169,7 @@ namespace Rock.Field.Types
             {
                 if ( controls[0] != null && controls[0] is RockCheckBox && configurationValues.ContainsKey( "includeglobal" ) )
                 {
-                    var cb = (RockCheckBox)controls[0];
+                    var cb = ( RockCheckBox ) controls[0];
                     cb.Checked = true;
 
                     bool includeGlobal = false;
@@ -112,10 +183,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Formatting
-
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -126,24 +193,10 @@ namespace Rock.Field.Types
         /// <returns></returns>
         public override string FormatValue( Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
-            string formattedValue = string.Empty;
-
-            Guid guid = Guid.Empty;
-            if ( Guid.TryParse( value, out guid ) )
-            {
-                var entityType = EntityTypeCache.Get( guid );
-                if ( entityType != null )
-                {
-                    formattedValue = entityType.FriendlyName;
-                }
-            }
-
-            return base.FormatValue( parentControl, formattedValue, null, condensed );
+            return !condensed
+                ? GetTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( cv => cv.Key, cv => cv.Value.Value ) );
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -162,8 +215,8 @@ namespace Rock.Field.Types
             {
                 bool includeGlobal = false;
                 if ( configurationValues.ContainsKey( "includeglobal" ) &&
-                    bool.TryParse(configurationValues["includeglobal"].Value, out includeGlobal) &&
-                    !includeGlobal)
+                    bool.TryParse( configurationValues["includeglobal"].Value, out includeGlobal ) &&
+                    !includeGlobal )
                 {
                     entityTypePicker.IncludeGlobalOption = false;
                 }
@@ -231,10 +284,6 @@ namespace Rock.Field.Types
             }
         }
 
-        #endregion
-
-        #region Entity Methods
-
         /// <summary>
         /// Gets the edit value as the IEntity.Id
         /// </summary>
@@ -245,7 +294,7 @@ namespace Rock.Field.Types
         {
             Guid guid = GetEditValue( control, configurationValues ).AsGuid();
             var item = new EntityTypeService( new RockContext() ).Get( guid );
-            return item != null ? item.Id : (int?)null;
+            return item != null ? item.Id : ( int? ) null;
         }
 
         /// <summary>
@@ -261,34 +310,7 @@ namespace Rock.Field.Types
             SetEditValue( control, configurationValues, guidValue );
         }
 
-        /// <summary>
-        /// Gets the entity.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns></returns>
-        public IEntity GetEntity( string value )
-        {
-            return GetEntity( value, null );
-        }
-
-        /// <summary>
-        /// Gets the entity.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="rockContext">The rock context.</param>
-        /// <returns></returns>
-        public IEntity GetEntity( string value, RockContext rockContext )
-        {
-            Guid? guid = value.AsGuidOrNull();
-            if ( guid.HasValue )
-            {
-                rockContext = rockContext ?? new RockContext();
-                return new EntityTypeService( rockContext ).Get( guid.Value );
-            }
-
-            return null;
-        }
-
+#endif
         #endregion
 
     }

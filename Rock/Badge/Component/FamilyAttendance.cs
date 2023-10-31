@@ -14,13 +14,13 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
-using System.ComponentModel;
-using System.ComponentModel.Composition;
-
 using Rock.Attribute;
+using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using System.ComponentModel;
+using System.ComponentModel.Composition;
+using System.IO;
 
 namespace Rock.Badge.Component
 {
@@ -31,9 +31,36 @@ namespace Rock.Badge.Component
     [Export( typeof( BadgeComponent ) )]
     [ExportMetadata( "ComponentName", "Family Attendance" )]
 
-    [IntegerField("Months To Display", "The number of months to show on the chart (default 24.)", false, 24)]
-    [IntegerField("Minimum Bar Height", "The minimum height of a bar (in pixels). Useful for showing hint of bar when attendance was 0. (default 2.)", false, 2)]
-    [BooleanField("Animate Bars", "Determine whether bars should animate when displayed.", true)]
+    [IntegerField( "Months To Display",
+        Description = "The number of months to show on the chart (default 24.)",
+        IsRequired = false,
+        DefaultIntegerValue = 24,
+        Key = AttributeKey.MonthsToDisplay,
+        Order = 0)]
+
+    [IntegerField( "Minimum Bar Height",
+        Description = "The minimum height of a bar (in pixels). Useful for showing hint of bar when attendance was 0. (default 2.)",
+        IsRequired = false,
+        DefaultIntegerValue = 2,
+        Key = AttributeKey.MinimumBarHeight,
+        Order = 1)]
+
+    [BooleanField( "Animate Bars",
+        Description = "Determine whether bars should animate when displayed.",
+        DefaultBooleanValue = true,
+        Key = AttributeKey.AnimateBars,
+        Order = 2)]
+
+    [BooleanField(
+        "Adult Attendance Type",
+        Description = "When viewing an adult profile with this badge, should the graph reflect the weekend attendance of anyone in the family, or just their own? Most churches don't have weekend attendance records for adults, in which case you should leave this set to \"Family\". Child profiles will always display only individual attendance in the graph.",
+        TrueText = "Individual",
+        FalseText = "Family",
+        IsRequired = false,
+        Key = AttributeKey.AdultAttendanceType,
+        Order = 3 )]
+
+    [Rock.SystemGuid.EntityTypeGuid( "78F5527E-0E90-4AC9-AAAB-F8F2F061BDFB" )]
     public class FamilyAttendance : BadgeComponent
     {
         /// <summary>
@@ -47,56 +74,63 @@ namespace Rock.Badge.Component
         }
 
         /// <summary>
-        /// Renders the specified writer.
+        /// The block setting attribute keys for the <see cref="FamilyAttendance"/> block.
         /// </summary>
-        /// <param name="badge">The badge.</param>
-        /// <param name="writer">The writer.</param>
-        public override void Render( BadgeCache badge, System.Web.UI.HtmlTextWriter writer )
+        private static class AttributeKey
         {
-            if ( Person == null )
+            public const string MonthsToDisplay = "Months To Display";
+            public const string MinimumBarHeight = "Minimum Bar Height";
+            public const string AnimateBars = "Animate Bars";
+            public const string AdultAttendanceType = "AdultAttendanceType";
+        }
+
+        /// <inheritdoc/>
+        public override void Render( BadgeCache badge, IEntity entity, TextWriter writer )
+        {
+            if ( !( entity is Person person ) )
             {
                 return;
             }
 
             string animateClass = string.Empty;
 
-            if (GetAttributeValue(badge, "AnimateBars") == null || GetAttributeValue(badge, "AnimateBars").AsBoolean())
+            if ( GetAttributeValue( badge, AttributeKey.AnimateBars ) == null || GetAttributeValue( badge, "AnimateBars" ).AsBoolean() )
             {
                 animateClass = " animate";
             }
 
             string tooltip;
-            var monthsToDisplay = GetAttributeValue( badge, "MonthsToDisplay" ).AsIntegerOrNull() ?? 24;
-            if ( Person.AgeClassification == AgeClassification.Child )
+            var monthsToDisplay = GetAttributeValue( badge, AttributeKey.MonthsToDisplay ).AsIntegerOrNull() ?? 24;
+            var showAsIndividual = GetAttributeValue( badge, AttributeKey.AdultAttendanceType ).AsBoolean();
+
+            if ( showAsIndividual || person.AgeClassification == AgeClassification.Child )
             {
-                tooltip = $"{Person.NickName.ToPossessive().EncodeHtml()} attendance for the last {monthsToDisplay} months. Each bar is a month.";
+                tooltip = $"{person.NickName.ToPossessive().EncodeHtml()} attendance for the last {monthsToDisplay} months. Each bar is a month.";
             }
             else
             {
                 tooltip = $"Family attendance for the last {monthsToDisplay} months. Each bar is a month.";
             }
 
-            writer.Write( string.Format( "<div class='badge badge-attendance{0} badge-id-{1}' data-toggle='tooltip' data-original-title='{2}'>", animateClass, badge.Id, tooltip ) );
+            writer.Write( string.Format( "<div class='rockbadge rockbadge-attendance{0} rockbadge-id-{1}' data-toggle='tooltip' data-original-title='{2}'>", animateClass, badge.Id, tooltip ) );
 
-            writer.Write("</div>");
+            writer.Write( "</div>" );
         }
 
-        /// <summary>
-        /// Gets the java script.
-        /// </summary>
-        /// <param name="badge"></param>
-        /// <returns></returns>
-        protected override string GetJavaScript( BadgeCache badge )
+        /// <inheritdoc/>
+        protected override string GetJavaScript( BadgeCache badge, IEntity entity )
         {
-            var minBarHeight = GetAttributeValue( badge, "MinimumBarHeight" ).AsIntegerOrNull() ?? 2;
-            var monthsToDisplay = GetAttributeValue( badge, "MonthsToDisplay" ).AsIntegerOrNull() ?? 24;
+            var minBarHeight = GetAttributeValue( badge, AttributeKey.MinimumBarHeight ).AsIntegerOrNull() ?? 2;
+            var monthsToDisplay = GetAttributeValue( badge, AttributeKey.MonthsToDisplay ).AsIntegerOrNull() ?? 24;
+            var showAsIndividual = GetAttributeValue( badge, AttributeKey.AdultAttendanceType ).AsBoolean();
+            var personId = ( entity as Person )?.Id ?? 0;
 
             return
 $@"var monthNames = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ];
 
 $.ajax({{
     type: 'GET',
-    url: Rock.settings.get('baseUrl') + 'api/Badges/FamilyAttendance/{Person.Id}/{monthsToDisplay}' ,
+    url: Rock.settings.get('baseUrl') + 'api/Badges/FamilyAttendance/{personId}/{monthsToDisplay}/{showAsIndividual}' ,
     statusCode: {{
         200: function (data, status, xhr) {{
             var chartHtml = '<ul class=\'attendance-chart trend-chart list-unstyled\'>';
@@ -110,7 +144,7 @@ $.ajax({{
             }});
             chartHtml += '</ul>';
 
-            $('.badge-attendance.badge-id-{badge.Id}').html(chartHtml);
+            $('.rockbadge-attendance.rockbadge-id-{badge.Id}').html(chartHtml);
         }}
     }},
 }});";

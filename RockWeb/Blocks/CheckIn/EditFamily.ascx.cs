@@ -41,6 +41,7 @@ namespace RockWeb.Blocks.CheckIn
     [DisplayName( "Edit Family" )]
     [Category( "Check-in" )]
     [Description( "Block to Add or Edit a Family during the Check-in Process." )]
+    [Rock.SystemGuid.BlockTypeGuid( "06DF448A-684E-4B64-8E1B-EA1727BA9233" )]
     public partial class EditFamily : CheckInEditFamilyBlock
     {
         #region private fields
@@ -122,6 +123,14 @@ namespace RockWeb.Blocks.CheckIn
         private List<AttributeCache> OptionalAttributesForFamilies { get; set; }
 
         /// <summary>
+        /// Gets or sets the display birthdate on adults.
+        /// </summary>
+        /// <value>
+        /// The display birthdate on adults.
+        /// </value>
+        private string DisplayBirthdateOnAdults { get; set; }
+
+        /// <summary>
         /// Gets or sets the display birthdate on children attribute.
         /// </summary>
         /// <value>
@@ -136,6 +145,38 @@ namespace RockWeb.Blocks.CheckIn
         /// The display grade on children setting.
         /// </value>
         private string DisplayGradeOnChildren { get; set; }
+
+        /// <summary>
+        /// Gets or sets the display race on children attribute.
+        /// </summary>
+        /// <value>
+        /// The display grade on children setting.
+        /// </value>
+        private string DisplayRaceOnChildren { get; set; }
+
+        /// <summary>
+        /// Gets or sets the display ethnicity on children attribute.
+        /// </summary>
+        /// <value>
+        /// The display grade on children setting.
+        /// </value>
+        private string DisplayEthnicityOnChildren { get; set; }
+
+        /// <summary>
+        /// Gets or sets the display race on adult attribute.
+        /// </summary>
+        /// <value>
+        /// The display grade on children setting.
+        /// </value>
+        private string DisplayRaceOnAdults { get; set; }
+
+        /// <summary>
+        /// Gets or sets the display ethnicity on adult attribute.
+        /// </summary>
+        /// <value>
+        /// The display grade on children setting.
+        /// </value>
+        private string DisplayEthnicityOnAdults { get; set; }
 
         /// <summary>
         /// The group type role adult identifier
@@ -173,7 +214,13 @@ namespace RockWeb.Blocks.CheckIn
             OptionalAttributesForFamilies = CurrentCheckInState.CheckInType.Registration.OptionalAttributesForFamilies.Where( a => a.IsAuthorized( Rock.Security.Authorization.EDIT, this.CurrentPerson ) ).ToList();
 
             DisplayBirthdateOnChildren = CurrentCheckInState.CheckInType.Registration.DisplayBirthdateOnChildren;
+            DisplayBirthdateOnAdults = CurrentCheckInState.CheckInType.Registration.DisplayBirthdateOnAdults;
             DisplayGradeOnChildren = CurrentCheckInState.CheckInType.Registration.DisplayGradeOnChildren;
+
+            DisplayRaceOnAdults = CurrentCheckInState.CheckInType.Registration.DisplayRaceOnAdults;
+            DisplayEthnicityOnAdults = CurrentCheckInState.CheckInType.Registration.DisplayEthnicityOnAdults;
+            DisplayRaceOnChildren = CurrentCheckInState.CheckInType.Registration.DisplayRaceOnChildren;
+            DisplayEthnicityOnChildren = CurrentCheckInState.CheckInType.Registration.DisplayEthnicityOnChildren;
         }
 
         /// <summary>
@@ -894,6 +941,9 @@ namespace RockWeb.Blocks.CheckIn
                 gpGradePicker.SelectedValue = null;
             }
 
+            rpRace.SetValue( familyPersonState.RaceValueId );
+            epEthnicity.SetValue( familyPersonState.EthnicityValueId );
+
             CreateDynamicPersonControls( familyPersonState );
 
             ShowPersonView( familyPersonState );
@@ -925,12 +975,43 @@ namespace RockWeb.Blocks.CheckIn
 
             tglAdultMaritalStatus.Visible = isAdult;
 
-            var displayBirthdate = !isAdult && !DisplayBirthdateOnChildren.Equals( ControlOptions.HIDE );
-            var birthdateRequired = displayBirthdate && DisplayBirthdateOnChildren.Equals( ControlOptions.REQUIRED );
+            if ( isAdult )
+            {
+                var displayBirthdate = !DisplayBirthdateOnAdults.Equals( ControlOptions.HIDE );
+                var birthdateRequired = displayBirthdate && DisplayBirthdateOnAdults.Equals( ControlOptions.REQUIRED );
+                dpBirthDate.Visible = displayBirthdate;
+                dpBirthDate.Required = birthdateRequired;
+
+                var displayRace = !DisplayRaceOnAdults.Equals( ControlOptions.HIDE );
+                var raceIsRequired = displayRace && DisplayRaceOnAdults.Equals( ControlOptions.REQUIRED );
+                rpRace.Visible = displayRace;
+                rpRace.Required = raceIsRequired;
+
+                var displayEthnicity = !DisplayEthnicityOnAdults.Equals( ControlOptions.HIDE );
+                var ethnicityIsRequired = displayEthnicity && DisplayEthnicityOnAdults.Equals( ControlOptions.REQUIRED );
+                epEthnicity.Visible = displayEthnicity;
+                epEthnicity.Required = ethnicityIsRequired;
+            }
+            else
+            {
+                var displayBirthdate = !DisplayBirthdateOnChildren.Equals( ControlOptions.HIDE );
+                var birthdateRequired = displayBirthdate && DisplayBirthdateOnChildren.Equals( ControlOptions.REQUIRED );
+                dpBirthDate.Visible = displayBirthdate;
+                dpBirthDate.Required = birthdateRequired;
+
+                var displayRace = !DisplayRaceOnChildren.Equals( ControlOptions.HIDE );
+                var raceIsRequired = displayRace && DisplayRaceOnChildren.Equals( ControlOptions.REQUIRED );
+                rpRace.Visible = displayRace;
+                rpRace.Required = raceIsRequired;
+
+                var displayEthnicity = !DisplayEthnicityOnChildren.Equals( ControlOptions.HIDE );
+                var ethnicityIsRequired = displayEthnicity && DisplayEthnicityOnChildren.Equals( ControlOptions.REQUIRED );
+                epEthnicity.Visible = displayEthnicity;
+                epEthnicity.Required = ethnicityIsRequired;
+            }
+
             var displayGrade = !isAdult && !DisplayGradeOnChildren.Equals( ControlOptions.HIDE );
             var gradeRequired = displayGrade && DisplayGradeOnChildren.Equals( ControlOptions.REQUIRED );
-            dpBirthDate.Visible = displayBirthdate;
-            dpBirthDate.Required = birthdateRequired;
             gpGradePicker.Visible = displayGrade;
             gpGradePicker.Required = gradeRequired;
 
@@ -1019,6 +1100,9 @@ namespace RockWeb.Blocks.CheckIn
             familyPersonState.MobilePhoneSmsEnabled = bgSMS.SelectedValue.AsBoolean();
             familyPersonState.BirthDate = dpBirthDate.SelectedDate;
             familyPersonState.Email = tbEmail.Text;
+
+            familyPersonState.RaceValueId = rpRace.SelectedValueAsId();
+            familyPersonState.EthnicityValueId = epEthnicity.SelectedValueAsId();
 
             if ( gpGradePicker.SelectedGradeValue != null )
             {

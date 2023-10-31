@@ -20,9 +20,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <Rock:DataTextBox ID="tbScheduleName" runat="server" SourceTypeName="Rock.Model.Schedule, Rock" PropertyName="Name" Required="true" />
+                            <Rock:DataTextBox ID="tbScheduleAbbreviatedName" runat="server" SourceTypeName="Rock.Model.Schedule, Rock" PropertyName="AbbreviatedName" Required="false" />
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <Rock:RockCheckBox ID="cbIsActive" runat="server" Label="Active" />
+                        </div>
+                        <div class="col-md-3">
+                            <Rock:RockCheckBox ID="cbShowPublicly" runat="server" Label="Public" Help="Determines if this schedule should be shown or hidden when viewed by individuals outside of the organization." />
                         </div>
 
                         <div class="col-md-12">
@@ -51,7 +55,7 @@
                                 <div class="col-md-8">
                                     <Rock:ScheduleBuilder ID="sbSchedule" runat="server" Label="Schedule" OnSaveSchedule="sbSchedule_SaveSchedule" />
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                     <asp:Literal ID="litPreviewFormat" runat="server" Visible="false">
                                         <a class="help" href="#" tabindex="-1" data-toggle="tooltip"
                                             data-placement="auto" data-container="body" data-html="true"

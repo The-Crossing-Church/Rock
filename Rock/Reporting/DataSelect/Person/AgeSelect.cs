@@ -31,6 +31,7 @@ namespace Rock.Reporting.DataSelect.Person
     [Description( "Select the Age of the Person" )]
     [Export( typeof( DataSelectComponent ) )]
     [ExportMetadata( "ComponentName", "Select Person's Age" )]
+    [Rock.SystemGuid.EntityTypeGuid( "E6048FE3-1EC4-4C7B-A606-70FEC56015F3")]
     public class AgeSelect : DataSelectComponent
     {
         #region Properties
@@ -143,15 +144,15 @@ namespace Rock.Reporting.DataSelect.Person
         /// <returns></returns>
         public override Expression GetExpression( RockContext context, MemberExpression entityIdProperty, string selection )
         {
+            var defaultYear = new DateTime().Year;
             DateTime currentDate = RockDateTime.Today;
             int currentDayOfYear = currentDate.DayOfYear;
-            
+
             //// have SQL Server do the following math (DateDiff only returns the integers):
+            //// If the person doesn't have a birth year, the value on the date of birth will be the default year value, in that case return a null age,
             //// If the person hasn't had their birthday this year, their age is the DateDiff in Years - 1, otherwise, it is DateDiff in Years (without adjustment)
             var personAgeQuery = new PersonService( context ).Queryable()
-                .Select( p => p.BirthDate > SqlFunctions.DateAdd( "year", -SqlFunctions.DateDiff( "year", p.BirthDate, currentDate ), currentDate )
-                    ? SqlFunctions.DateDiff( "year", p.BirthDate, currentDate ) - 1
-                    : SqlFunctions.DateDiff( "year", p.BirthDate, currentDate ));
+                .Select( p => p.Age );
 
             var selectAgeExpression = SelectExpressionExtractor.Extract( personAgeQuery, entityIdProperty, "p" );
 

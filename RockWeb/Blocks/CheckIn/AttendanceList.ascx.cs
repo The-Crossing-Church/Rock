@@ -35,8 +35,9 @@ namespace RockWeb.Blocks.Checkin
     /// Block for displaying the attendance list of a group with schedule on selected date.
     /// </summary>
     [DisplayName( "Attendance List" )]
-    [Category( "Checkin" )]
+    [Category( "Check-in" )]
     [Description( "Block for displaying the attendance history of a person or a group." )]
+    [Rock.SystemGuid.BlockTypeGuid( "678ED4B6-D76F-4D43-B069-659E352C9BD8" )]
     public partial class AttendanceList : RockBlock, ICustomGridColumns
     {
 
@@ -146,7 +147,7 @@ namespace RockWeb.Blocks.Checkin
         #region Edit Events
 
         /// <summary>
-        /// Handles the GridRebind event of the gHistory control.
+        /// Handles the GridRebind event of the gAttendees control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>

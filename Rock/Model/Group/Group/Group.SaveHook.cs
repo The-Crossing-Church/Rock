@@ -15,6 +15,7 @@
 // </copyright>
 //
 using System;
+using System.Data.Entity;
 using System.Data.Entity.SqlServer;
 using System.Linq;
 using Rock.Data;
@@ -71,7 +72,7 @@ namespace Rock.Model
                     case EntityContextState.Modified:
                         {
                             var originalIsActive = OriginalValues[nameof( Group.IsActive )].ToStringSafe().AsBoolean();
-                            DateTime? originalInactiveDateTime = OriginalValues["InactiveDateTime"].ToStringSafe().AsDateTime();
+                            DateTime? originalInactiveDateTime = OriginalValues[nameof( Entity.InactiveDateTime )].ToStringSafe().AsDateTime();
 
                             var originalIsArchived = OriginalValues[nameof( Group.IsArchived )].ToStringSafe().AsBoolean();
                             DateTime? originalArchivedDateTime = OriginalValues[nameof( Group.ArchivedDateTime )].ToStringSafe().AsDateTime();
@@ -130,7 +131,7 @@ namespace Rock.Model
                             var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
 
                             _FamilyCampusIsChanged = ( group.GroupTypeId == familyGroupTypeId
-                                                       && group.CampusId.GetValueOrDefault( 0 ) != OriginalValues["CampusId"].ToStringSafe().AsInteger() );
+                                                       && group.CampusId.GetValueOrDefault( 0 ) != OriginalValues[nameof( Entity.CampusId )].ToStringSafe().AsInteger() );
 
                             break;
                         }
@@ -164,6 +165,15 @@ namespace Rock.Model
                             if ( attendancesToDelete.Any() )
                             {
                                 rockContext.BulkDelete( attendancesToDelete );
+                            }
+
+                            // This should eventually be accomplished with a cascade delete within the GroupMemberAssignmentConfiguration, once the migration token moves back to the develop branch.
+                            var groupMemberAssignmentsToDelete = new GroupMemberAssignmentService( rockContext )
+                                .Queryable()
+                                .Where( a => a.GroupMember.GroupId == Entity.Id );
+                            if ( groupMemberAssignmentsToDelete.Any() )
+                            {
+                                rockContext.BulkDelete( groupMemberAssignmentsToDelete );
                             }
 
                             break;
@@ -231,6 +241,12 @@ namespace Rock.Model
                     {
                         groupMember.GroupMemberStatus = GroupMemberStatus.Active;
                         groupMember.InactiveDateTime = newInactiveDateTime;
+
+                        if ( !groupMember.IsValidGroupMember( rockContext ) )
+                        {
+                            // Don't fail the entire operation for a single invalid member's reactivation attempt.
+                            rockContext.Entry( groupMember ).State = EntityState.Detached;
+                        }
                     }
                 }
             }

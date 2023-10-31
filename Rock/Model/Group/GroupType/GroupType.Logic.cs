@@ -21,14 +21,47 @@ using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
 using System.Linq;
 using Rock.Data;
-using Rock.Security;
 using Rock.Tasks;
+using Rock.Transactions;
+using Rock.Utility;
 using Rock.Web.Cache;
 
 namespace Rock.Model
 {
     public partial class GroupType
     {
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets the attendance reminder followup days list.  This is the logical representation of <see cref="AttendanceReminderFollowupDays"/>.
+        /// </summary>
+        /// <value>The attendance reminder followup days list.</value>
+        [CodeGenExclude(CodeGenFeature.ViewModelFile)]
+        public List<int> AttendanceReminderFollowupDaysList
+        {
+            get
+            {
+                var intValues = new List<int>();
+
+                var values = this.AttendanceReminderFollowupDays.SplitDelimitedValues( "," );
+                foreach ( var value in values )
+                {
+                    if ( int.TryParse( value, out var intValue ) )
+                    {
+                        intValues.Add( intValue );
+                    }
+                }
+
+                return intValues;
+            }
+            set
+            {
+                this.AttendanceReminderFollowupDays = value.AsDelimited( "," );
+            }
+        }
+
+        #endregion Properties
+
         #region Methods
 
         /// <summary>
@@ -103,16 +136,20 @@ namespace Rock.Model
         /// <returns>A list of GroupType Ids, including our own Id, that identifies the inheritance tree.</returns>
         public List<int> GetInheritedGroupTypeIds( Rock.Data.RockContext rockContext )
         {
+            // Attempt to get an existing GroupTypeCache object from the cache
+            // manager without loading it from the database. If the cache system
+            // were to try and load from the database then it could cause a
+            // recursive loop since the cache object would load attributes which
+            // would in turn call us again.
+            if ( GroupTypeCache.TryGet( Id, out var groupTypeCache ) )
+            {
+                return groupTypeCache.GetInheritedGroupTypeIds();
+            }
+
             rockContext = rockContext ?? new RockContext();
 
-            //
-            // Can't use GroupTypeCache here since it loads attributes and could
-            // result in a recursive stack overflow situation when we are called
-            // from a GetInheritedAttributes() method.
-            //
             var groupTypeService = new GroupTypeService( rockContext );
             var groupTypeIds = new List<int>();
-
             var groupType = this;
 
             //
@@ -172,8 +209,8 @@ namespace Rock.Model
                                     .Where( t => t.InheritedGroupTypeId != null && childGroupTypeIds.Contains( t.InheritedGroupTypeId.Value ) )
                                     .Select( t => t.Id ).ToList();
                 }
-                groupTypeIds.AddRange( childGroupTypeIds );
 
+                groupTypeIds.AddRange( childGroupTypeIds );
             } while ( childGroupTypeIds.Count > 0 );
 
             return groupTypeIds;
@@ -236,26 +273,37 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// A dictionary of actions that this class supports and the description of each.
+        /// Get the group location picker mode for the provided location.
         /// </summary>
-        public override Dictionary<string, string> SupportedActions
+        /// <param name="location">The location whose group location picker mode should be determined.</param>
+        /// <returns>The group location picker mode for the provided location.</returns>
+        public static GroupLocationPickerMode GetGroupLocationPickerMode( Location location )
         {
-            get
+            if ( location != null )
             {
-                if ( _supportedActions == null )
+                if ( location.IsNamedLocation )
                 {
-                    _supportedActions = new Dictionary<string, string>();
-                    _supportedActions.Add( Authorization.VIEW, "The roles and/or users that have access to view." );
-                    _supportedActions.Add( Authorization.MANAGE_MEMBERS, "The roles and/or users that have access to manage the group members." );
-                    _supportedActions.Add( Authorization.EDIT, "The roles and/or users that have access to edit." );
-                    _supportedActions.Add( Authorization.ADMINISTRATE, "The roles and/or users that have access to administrate." );
-                    _supportedActions.Add( Authorization.SCHEDULE, "The roles and/or users that may perform scheduling." );
+                    return GroupLocationPickerMode.Named;
                 }
-                return _supportedActions;
-            }
-        }
 
-        private Dictionary<string, string> _supportedActions;
+                if ( !string.IsNullOrWhiteSpace( location.GetFullStreetAddress().Replace( ",", string.Empty ) ) )
+                {
+                    return GroupLocationPickerMode.Address;
+                }
+
+                if ( location.GeoPoint != null )
+                {
+                    return GroupLocationPickerMode.Point;
+                }
+
+                if ( location.GeoFence != null )
+                {
+                    return GroupLocationPickerMode.Polygon;
+                }
+            }
+
+            return GroupLocationPickerMode.None;
+        }
 
         #endregion
 
@@ -299,13 +347,8 @@ namespace Rock.Model
 
             foreach ( var groupId in groupIds )
             {
-                var processEntityTypeIndexMsg = new ProcessEntityTypeIndex.Message
-                {
-                    EntityTypeId = groupEntityTypeId,
-                    EntityId = groupId
-                };
-
-                processEntityTypeIndexMsg.Send();
+                var indexEntityTransaction = new IndexEntityTransaction( new EntityIndexInfo() { EntityTypeId = groupEntityTypeId, EntityId = groupId } );
+                indexEntityTransaction.Enqueue();
             }
         }
 

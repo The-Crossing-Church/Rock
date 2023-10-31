@@ -14,10 +14,12 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -373,7 +375,7 @@ namespace Rock.Web.UI.Controls
         /// Selects the values as int.
         /// </summary>
         /// <value>
-        /// The selected values as int.
+        /// The selected values as a list of integers.
         /// </value>
         public List<int> SelectedValuesAsInt
         {
@@ -384,6 +386,26 @@ namespace Rock.Web.UI.Controls
                 {
                     int numValue = int.MinValue;
                     if ( int.TryParse( stringValue, out numValue ) )
+                    {
+                        values.Add( numValue );
+                    }
+                }
+                return values;
+            }
+        }
+
+        /// <summary>
+        /// Gets the selected values as a list of Guids.
+        /// </summary>
+        /// <value>The selected values as unique identifier.</value>
+        public List<Guid> SelectedValuesAsGuid
+        {
+            get
+            {
+                var values = new List<Guid>();
+                foreach ( string stringValue in SelectedValues )
+                {
+                    if ( Guid.TryParse( stringValue, out Guid numValue ) )
                     {
                         values.Add( numValue );
                     }
@@ -453,5 +475,37 @@ namespace Rock.Web.UI.Controls
             return base.SaveViewState();
         }
 
+        /// <summary>
+        /// Initializes the list of available items.
+        /// </summary>
+        /// <param name="items"></param>
+        /// <param name="keyExpression"></param>
+        /// <param name="descriptionExpression"></param>
+        /// <param name="allowEmptySelection"></param>
+        public void InitializeListItems<TItem>( IEnumerable<TItem> items, Expression<Func<TItem, string>> keyExpression, Expression<Func<TItem, string>> descriptionExpression, bool allowEmptySelection = false )
+        {
+            var keyFunc = keyExpression?.Compile();
+            var descriptionFunc = descriptionExpression?.Compile();
+
+            if ( keyFunc == null || descriptionFunc == null )
+            {
+                return;
+            }
+
+            this.Items.Clear();
+
+            if ( allowEmptySelection )
+            {
+                this.Items.Add( new ListItem() );
+            }
+
+            foreach ( var item in items )
+            {
+                var key = keyFunc( item );
+                var description = descriptionFunc( item );
+
+                this.Items.Add( new ListItem( description, key ) );
+            }
+        }
     }
 }

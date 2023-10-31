@@ -22,6 +22,7 @@ using System.Linq;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Rock.Search.Person
 {
@@ -32,6 +33,7 @@ namespace Rock.Search.Person
     [Export(typeof(SearchComponent))]
     [ExportMetadata("ComponentName", "Person Name")]
     [BooleanField("Allow Search by Only First Name", "By default, when searching with only one name (without a space or comma), only people with a matching Last Names will be included.  Select this option to also include people with a matching First Name", false, "", 4, "FirstNameSearch")]
+    [Rock.SystemGuid.EntityTypeGuid( "3B1D679A-290F-4A53-8E11-159BF0517A19")]
     public class Name : SearchComponent
     {
 
@@ -92,13 +94,31 @@ namespace Rock.Search.Person
 
             IQueryable<string> resultQry;
 
+            var disableCampusLabel = CampusCache.All( false ).Count() == 1;
+
+            // Note: extra spaces intentional with the label span to keep the markup from showing in the search input on selection
             if ( reversed )
             {
-                resultQry = qry.Select( p => p.LastName + ", " + p.NickName).Distinct();
+                if ( disableCampusLabel )
+                {
+                    resultQry = qry.Select( p => p.LastName + ", " + p.NickName ).Distinct();
+                }
+                else
+                {
+                    resultQry = qry.Select( p => p.PrimaryCampus == null ? p.LastName + ", " + p.NickName : p.LastName + ", " + p.NickName + "                                             <span class='search-accessory label label-default pull-right'>" + (p.PrimaryCampus.ShortCode != "" ? p.PrimaryCampus.ShortCode : p.PrimaryCampus.Name) + "</span>" ).Distinct();
+                }
+                
             }
             else
             {
-                resultQry = qry.Select( p => p.NickName + " " + p.LastName ).Distinct();
+                if ( disableCampusLabel )
+                {
+                    resultQry = qry.Select( p => p.NickName + " " + p.LastName ).Distinct();
+                }
+                else
+                {
+                    resultQry = qry.Select( p => p.PrimaryCampus == null ? p.NickName + " " + p.LastName : p.NickName + " " + p.LastName + "                                               <span class='search-accessory label label-default pull-right'>" + (p.PrimaryCampus.ShortCode != "" ? p.PrimaryCampus.ShortCode : p.PrimaryCampus.Name) + "</span>" ).Distinct();
+                }  
             }
 
             return resultQry;

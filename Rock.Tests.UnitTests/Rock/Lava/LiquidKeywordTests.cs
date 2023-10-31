@@ -19,6 +19,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rock.Lava;
 using Rock.Data;
 using System.Collections.Generic;
+using Rock.Lava.Fluid;
+using Rock.Lava.RockLiquid;
 
 namespace Rock.Tests.UnitTests.Lava
 {
@@ -56,6 +58,37 @@ Color: {{ color }}
             var expectedOutput = @"
 Number: 2
 Color: green
+";
+
+            TestHelper.AssertTemplateOutput( expectedOutput, template, ignoreWhitespace: true );
+        }
+
+        /// <summary>
+        /// Verify the resolution of a specific issue in the Fluid framework where a {% case %} statement containing whitespace throws a parsing error.
+        /// </summary>
+        /// <remarks>
+        /// Verifies the resolution of Issue #5232.
+        /// https://github.com/SparkDevNetwork/Rock/issues/5232
+        /// </remarks>
+        [TestMethod]
+        public void LiquidCaseBlock_WithMultipleMatchedCases_RendersAllMatches()
+        {
+            var template = @"
+{% assign number = '1' %}
+{% case number %}
+    {% when '1' %}
+        First Case matched.
+    {% when '1' or '2' %}
+        Second Case matched.
+    {% when '3' %}
+        Third Case matched.
+    {% else %}
+        No Case matched.
+{% endcase %}
+";
+
+            var expectedOutput = @"
+First Case matched. Second Case matched.
 ";
 
             TestHelper.AssertTemplateOutput( expectedOutput, template, ignoreWhitespace: true );
@@ -317,9 +350,146 @@ Empty String
 True String
 ";
 
-            TestHelper.AssertTemplateOutput( expectedOutput, template, ignoreWhitespace:true );
+            TestHelper.AssertTemplateOutput( expectedOutput, template, ignoreWhitespace: true );
         }
 
         #endregion
+
+        #region {% liquid %} and {% lava %} tag
+
+        /// <summary>
+        /// Verify that the {% liquid %} tag can be parsed correctly by the Lava Fluid engine.
+        /// Our Lava Fluid parser has been modified to process open/close tokens in a non-standard way to implement shortcode syntax,
+        /// so we need to verify that this also works for open/close tag tokens implied by the {% liquid %} tag.
+        /// </summary>
+        [TestMethod]
+        public void LiquidTag_WithStandardSyntax_ShouldParseCorrectly()
+        {
+            var template = @"
+{% liquid 
+   echo 
+      'welcome ' | Upcase 
+   echo 'to the liquid tag' 
+    | Upcase 
+%}
+";
+
+            var expectedOutput = @"
+WELCOME TO THE LIQUID TAG
+";
+
+            TestHelper.AssertTemplateOutput( typeof( FluidEngine ), expectedOutput, template, ignoreWhitespace: true );
+        }
+
+        /// <summary>
+        /// Verify that the liquid tag correctly parses any block-type flow control constructs in its content.
+        /// </summary>
+        [TestMethod]
+        public void LiquidTag_WithInnerBlockConstruct_ShouldParseCorrectly()
+        {
+            var template = @"
+{% assign i = 3 %}
+
+{% liquid
+case i
+    when 3 
+        echo 'Match'
+    else
+        echo 'No Match'
+endcase  %}
+";
+
+            var expectedOutput = @"
+Match
+";
+            TestHelper.AssertTemplateOutput( typeof( FluidEngine ), expectedOutput, template, ignoreWhitespace: true );
+        }
+
+        /// <summary>
+        /// A shortcode that enables a specific command should not cause that command to be enabled outside the scope of the shortcode.
+        /// </summary>
+        [TestMethod]
+        public void LiquidTag_WithInnerShortcode_ShouldRenderShortcodeOutput()
+        {
+            var shortcodeTemplate = @"
+{% assign x = 42 %}
+The answer is {{ x }}.
+";
+
+            // Create a new test shortcode with the "execute" command permission.
+            var shortcodeDefinition = new DynamicShortcodeDefinition();
+
+            shortcodeDefinition.ElementType = LavaShortcodeTypeSpecifier.Inline;
+            shortcodeDefinition.TemplateMarkup = shortcodeTemplate;
+            shortcodeDefinition.Name = "shortcode_execute";
+
+            var input = @"
+{% liquid
+    shortcode_execute
+%}
+";
+
+            var expectedOutput = "The answer is 42.";
+
+            TestHelper.ExecuteForActiveEngines( ( engine ) =>
+            {
+                // The RockLiquid engine does not support this tag.
+                if ( engine.GetType() == typeof( RockLiquidEngine ) )
+                {
+                    return;
+                }
+
+                engine.RegisterShortcode( shortcodeDefinition.Name, ( shortcodeName ) => { return shortcodeDefinition; } );
+
+                //var result = engine.RenderTemplate( input );
+
+                TestHelper.AssertTemplateOutput( engine, expectedOutput, input, ignoreWhitespace: true );
+                //Assert.That.AreEqual(.a.AreEqual( expectedOutput, result.Text, );
+            } );
+        }
+
+        /// <summary>
+        /// Verify that the default {% liquid %} tag is correctly aliased to the {% lava %} tag.
+        /// </summary>
+        [TestMethod]
+        public void LiquidTag_UsingLavaTagAlias_IsProcessedAsLiquidTag()
+        {
+            var template = @"
+{% lava 
+   echo 
+      'welcome ' | Upcase 
+   echo 'to the lava tag' 
+    | Upcase 
+%}
+";
+
+            var expectedOutput = @"
+WELCOME TO THE LAVA TAG
+";
+
+            TestHelper.AssertTemplateOutput( typeof( FluidEngine ), expectedOutput, template, ignoreWhitespace: true );
+        }
+
+        #endregion
+
+        #region Raw Tag
+
+        /// <summary>
+        /// The raw tag should preserve all whitespace in its content.
+        /// </summary>
+        [TestMethod]
+        public void RawTag_ContainingWhitespace_PreservesWhitespace()
+        {
+            var template = @"{% raw %}{{- -}}{% endraw %}";
+
+            var expectedOutput = @"{{- -}}";
+
+            // This only works correctly in the Fluid engine.
+            TestHelper.AssertTemplateOutput( typeof(FluidEngine), expectedOutput, template, ignoreWhitespace: false );
+
+        }
+
+        #endregion
+
     }
 }

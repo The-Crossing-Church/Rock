@@ -28,6 +28,7 @@ namespace Rock.Security.Authentication
     [Description( "PIN Authentication Provider" )]
     [Export( typeof( AuthenticationComponent ) )]
     [ExportMetadata( "ComponentName", "PIN Authentication" )]
+    [Rock.SystemGuid.EntityTypeGuid( Rock.SystemGuid.EntityType.AUTHENTICATION_PIN )]
     public class PINAuthentication : AuthenticationComponent
     {
         /// <summary>
@@ -91,7 +92,7 @@ namespace Rock.Security.Authentication
         }
 
         /// <summary>
-        /// Generates the login URL.
+        /// Generates the log in URL.
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns></returns>
@@ -108,7 +109,6 @@ namespace Rock.Security.Authentication
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException"></exception>
         public override bool IsReturningFromAuthentication( System.Web.HttpRequest request )
         {
             return false;

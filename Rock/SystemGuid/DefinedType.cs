@@ -81,6 +81,8 @@ namespace Rock.SystemGuid
         /// <br />
         /// The DefinedValue.Description will just be any description, such as 'Rock Solid Church SMS Number'.
         /// </summary>
+        [Obsolete( "Use the new SystemPhoneNumber model." )]
+        [RockObsolete( "1.15" )]
         public const string COMMUNICATION_SMS_FROM = "611BDE1F-7405-4D16-8626-CCFEDB0E62BE";
 
         /// <summary>
@@ -447,6 +449,31 @@ namespace Rock.SystemGuid
         /// Languages
         /// </summary>
         public const string LANGUAGES = "6060ba8b-4085-4a29-bf19-a4862b95556a";
+
+        /// <summary>
+        /// The apple device models
+        /// </summary>
+        public const string APPLE_DEVICE_MODELS = "DAE31F78-7AB9-4ACE-9EE1-C1E6A734562C";
+
+        /// <summary>
+        /// A person's race
+        /// </summary>
+        public const string PERSON_RACE = "A6E2518F-8DBB-4C60-BA17-05768EC68EA5";
+
+        /// <summary>
+        /// A person's ethnicity
+        /// </summary>
+        public const string PERSON_ETHNICITY = "79C8AA9A-507C-454B-AFC8-7A9464298A6E";
+
+        /// <summary>
+        /// Guid for the types of Projects (such as In-Person, Project Due, etc.)
+        /// </summary>
+        public const string PROJECT_TYPE = "B7842AF3-6F04-495E-9A6C-F403D06C02F3";
+
+        /// <summary>
+        /// Lists checklist items to be completed by the administrator after installs and updates.
+        /// </summary>
+        public const string ADMINISTRATOR_CHECKLIST = "4BF34677-37E9-4E71-BD03-252B66C9373D";
 
         /// <summary>
         /// The statement generator lava template (Legacy)

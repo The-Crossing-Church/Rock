@@ -17,8 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
+#endif
 
 using Rock.Attribute;
 using Rock.Reporting;
@@ -32,9 +34,9 @@ namespace Rock.Field.Types
     /// </summary>
     [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [IconSvg( @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 16 16""><g><path d=""M12.81,2.75H11.5V1.44A.44.44,0,0,0,11.06,1h-.87a.44.44,0,0,0-.44.44V2.75H6.25V1.44A.44.44,0,0,0,5.81,1H4.94a.44.44,0,0,0-.44.44V2.75H3.19A1.31,1.31,0,0,0,1.88,4.06v9.63A1.31,1.31,0,0,0,3.19,15h9.62a1.31,1.31,0,0,0,1.31-1.31V4.06A1.31,1.31,0,0,0,12.81,2.75Zm0,10.77a.17.17,0,0,1-.16.17H3.35a.17.17,0,0,1-.16-.17V5.38h9.62Z""/><rect x=""4.04"" y=""5.85"" width=""1.87"" height=""7.33"" rx=""0.3""/></g></svg>" )]
+    [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.DAY_OF_WEEK )]
     public class DayOfWeekFieldType : FieldType
     {
-
         #region Formatting
 
         /// <inheritdoc/>
@@ -51,6 +53,36 @@ namespace Rock.Field.Types
             return dayOfWeek.ConvertToString();
         }
 
+        #endregion
+
+        #region Edit Control
+
+        #endregion
+
+        #region Filter Control
+
+        /// <summary>
+        /// Converts the type of the value to property.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="propertyType">Type of the property.</param>
+        /// <param name="isNullableType">if set to <c>true</c> [is nullable type].</param>
+        /// <returns></returns>
+        public override object ConvertValueToPropertyType( string value, Type propertyType, bool isNullableType )
+        {
+            int? intValue = value.AsIntegerOrNull();
+            if ( intValue.HasValue )
+            {
+                return ( System.DayOfWeek ) intValue.Value;
+            }
+            return null;
+        }
+
+        #endregion
+
+        #region WebForms
+#if WEBFORMS
+
         /// <summary>
         /// Returns the field's current value(s)
         /// </summary>
@@ -62,8 +94,8 @@ namespace Rock.Field.Types
         public override string FormatValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed )
         {
             return !condensed
-                ? GetTextValue( value, configurationValues.ToDictionary(k => k.Key, k => k.Value.Value ) )
-                : GetCondensedTextValue( value, configurationValues.ToDictionary(k => k.Key, k => k.Value.Value ) );
+                ? GetTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) )
+                : GetCondensedTextValue( value, configurationValues.ToDictionary( k => k.Key, k => k.Value.Value ) );
         }
 
         /// <summary>
@@ -78,16 +110,12 @@ namespace Rock.Field.Types
             int? intValue = value.AsIntegerOrNull();
             if ( intValue.HasValue )
             {
-                System.DayOfWeek dayOfWeek = (System.DayOfWeek)intValue.Value;
+                System.DayOfWeek dayOfWeek = ( System.DayOfWeek ) intValue.Value;
                 return dayOfWeek;
             }
 
-            return (System.DayOfWeek)0;
+            return ( System.DayOfWeek ) 0;
         }
-
-        #endregion
-
-        #region Edit Control
 
         /// <summary>
         /// Creates the control(s) necessary for prompting user for a new value
@@ -117,7 +145,7 @@ namespace Rock.Field.Types
             if ( dayOfWeekPicker != null )
             {
                 var selectedDay = dayOfWeekPicker.SelectedDayOfWeek;
-                if ( selectedDay != null)
+                if ( selectedDay != null )
                 {
                     return selectedDay.ConvertToInt().ToString();
                 }
@@ -140,18 +168,14 @@ namespace Rock.Field.Types
         {
             DayOfWeek? dayOfWeek = null;
 
-            if ( !string.IsNullOrWhiteSpace(value) )
+            if ( !string.IsNullOrWhiteSpace( value ) )
             {
-                dayOfWeek = (DayOfWeek)( value.AsInteger() );
+                dayOfWeek = ( DayOfWeek ) ( value.AsInteger() );
             }
 
             DayOfWeekPicker dayOfWeekPicker = control as DayOfWeekPicker;
             dayOfWeekPicker.SelectedDayOfWeek = dayOfWeek;
         }
-
-        #endregion
-
-        #region Filter Control
 
         /// <summary>
         /// Gets the filter compare control.
@@ -186,23 +210,7 @@ namespace Rock.Field.Types
             return GetEqualToCompareValue();
         }
 
-        /// <summary>
-        /// Converts the type of the value to property.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="propertyType">Type of the property.</param>
-        /// <param name="isNullableType">if set to <c>true</c> [is nullable type].</param>
-        /// <returns></returns>
-        public override object ConvertValueToPropertyType( string value, Type propertyType, bool isNullableType )
-        {
-            int? intValue = value.AsIntegerOrNull();
-            if ( intValue.HasValue )
-            {
-                return (System.DayOfWeek)intValue.Value;
-            }
-            return null;
-        }
-
+#endif
         #endregion
 
     }
