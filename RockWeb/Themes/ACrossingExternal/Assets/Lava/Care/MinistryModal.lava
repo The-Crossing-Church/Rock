@@ -2,7 +2,7 @@
     [[ title hasClose:'true' ]][[ endtitle ]]
     <div class='row'>
         <div class='col col-xs-12 justify-center text--centered'>
-            <img src="{{Item | Attribute:'CardImage'}}" style="width: 100%; height: auto; max-width: 350px;" />
+            <img src="{{Item | Attribute:'CardImage'}}" style="width: 100%; height: auto; max-width: 350px;" alt="{{Item.Title}}" />
         </div>
     </div>
     <br/>

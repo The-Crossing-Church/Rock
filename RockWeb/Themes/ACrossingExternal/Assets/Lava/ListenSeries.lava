@@ -35,7 +35,7 @@
         {% for i in Items[0].Items %}
             <div class='col col-xs-12 col-md-4 text--centered'>
                 <a href="/Resource/Listen/{{i.PrimarySlug}}">
-                    <img src="{{i | Attribute:'Image'}}" width="100%" />
+                    <img src="{{i | Attribute:'Image'}}" width="100%" alt="{{i.Title}}" />
                     <h4>{{i.Title}}</h4>
                     {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
                 </a>

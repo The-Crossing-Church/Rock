@@ -11,9 +11,9 @@
                 <div class='col col-xs-12 col-md-6'>
                   {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
                   {% if altImage != '' %}
-                    <img class="d-block w-100" src="{{ altImage }}" />
+                    <img class="d-block w-100" src="{{ altImage }}" alt="{{i.EventItem.Name}}" />
                   {% else %}
-                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" />
+                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" alt="{{i.EventItem.Name}}" />
                   {% endif %}
                 </div>
                 <div class='col col-xs-12 col-md-6'>

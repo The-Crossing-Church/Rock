@@ -7,7 +7,7 @@
                     {% if icon != '' %}
                         <i class="fab fa-{{ i | Attribute:'FontAwesomeIcon' }}"></i>
                     {% else %}
-                        <img src="{{ i | Attribute:'AlternativeIcon' }}" />
+                        <img src="{{ i | Attribute:'AlternativeIcon' }}" alt="{{i.Title}}" />
                     {% endif %}
                 </a>
             </li>

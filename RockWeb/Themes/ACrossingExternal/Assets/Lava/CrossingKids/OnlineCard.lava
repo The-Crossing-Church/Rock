@@ -4,7 +4,7 @@
         <div class='land-image-wrapper'>
             <div class='land-image-helper'></div>
             <div class='land-image align-center'>
-                <img src="{{Item | Attribute:'Image'}}" />
+                <img src="{{Item | Attribute:'Image'}}" alt="Join Us Online" />
             </div>
             <div class='overlay justify-center'>
                 <h1 class='text--white' style="text-shadow: 1px 1px 5px black;">Online</h1>
