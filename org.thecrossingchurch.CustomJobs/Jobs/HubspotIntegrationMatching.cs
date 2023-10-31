@@ -57,6 +57,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
     [TextField( "AttributeKey", "", true, "HubspotAPIKeyGlobal" )]
     [TextField( "Business Unit", "Hubspot Business Unit value", true, "0" )]
+    [TextField( "Potential Matches File Name", "Name of the file for this job to list potential matches for cleaning", true, "Potential_Matches" )]
     public class HubspotIntegrationMatching : IJob
     {
         private string key { get; set; }
@@ -273,7 +274,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
 
             byte[] sheetbytes = excel.GetAsByteArray();
-            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\Potential_Matches.xlsx";
+            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Content\\" + dataMap.GetString( "PotentialMatchesFileName" ) + ".xlsx";
             System.IO.File.WriteAllBytes( path, sheetbytes );
         }
 
