@@ -38,16 +38,18 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using Rock.Transactions;
-using com.SimpleDonation.Constants;
+using Amazon.Runtime.Internal.Transform;
+using Mono.CSharp;
+using Location = Rock.Model.Location;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 {
     /// <summary>
     /// Add a new one-time or scheduled transaction
     /// </summary>
-    [DisplayName( "Multi-Form Transaction Entry" )]
+    [DisplayName( "Transaction Entry" )]
     [Category( "com_thecrossingchurch > Finance" )]
-    [Description( "Creates a new financial transaction or scheduled transaction. Second version of the original Transaction Entry Block." )]
+    [Description( "Creates a new financial transaction or scheduled transaction." )]
 
     #region Block Attributes
 
@@ -194,6 +196,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         Description = "Should the option to give anonymously be displayed. Giving anonymously will display the transaction as 'Anonymous' in places where it is shown publicly, for example, on a list of fundraising contributors.",
         DefaultBooleanValue = false,
         Order = 18 )]
+
+    [WorkflowTypeField( "Transaction Workflow",
+        Key = AttributeKey.TransactionWorkflow,
+        Description = "An optional workflow type to launch when a new transaction is completed. Will provide Person, Amount, and TransactionTypeId Attributes.",
+        Order = 19,
+        IsRequired = false )]
 
     #endregion Default Category
 
@@ -437,44 +445,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 
     #endregion Advanced
 
-    #region CustomAttributes
-
-    [AttributeField( "Confirmation Screen Person Attributes",
-        AllowMultiple = true,
-        Category = "Custom Fields",
-        Key = AttributeKey.ConfirmationPersonAttributes,
-        EntityTypeGuid = Rock.SystemGuid.EntityType.PERSON,
-        IsRequired = false,
-        Order = 1 )]
-
-    [WorkflowTypeField( "Transaction Workflow",
-        Key = AttributeKey.TransactionWorkflow,
-        Category = "Custom Fields",
-        Description = "An optional workflow type to launch when a new transaction is completed. Will provide Person, Amount, and TransactionTypeId Attributes.",
-        Order = 2,
-        IsRequired = false )]
-
-    [DefinedValueField( "Allowed Frequencies",
-        AllowAddingNewValues = false,
-        AllowMultiple = true,
-        Key = AttributeKey.AllowedFrequencies,
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.FINANCIAL_FREQUENCY,
-        Category = "Custom Fields",
-        Description = "Limit the choices people will see for frequency of gift",
-        Order = 3,
-        IsRequired = false )]
-
-    [ValueListField( "Suggested Contributions",
-        Key = AttributeKey.SuggestedAmounts,
-        Category = "Custom Fields",
-        Order = 4,
-        IsRequired = false )]
-
-    #endregion
-
     #endregion Block Attributes
 
-    public partial class TransactionEntry : Rock.Web.UI.RockBlock
+    public partial class TransactionEntryOld : Rock.Web.UI.RockBlock
     {
         #region Block Keys
 
@@ -507,6 +480,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             public const string CommentEntryLabel = "CommentEntryLabel";
             public const string EnableBusinessGiving = "EnableBusinessGiving";
             public const string EnableAnonymousGiving = "EnableAnonymousGiving";
+            public const string TransactionWorkflow = "TransactionWorkflow";
 
             // Email Templates Category
             public const string ConfirmAccountTemplate = "ConfirmAccountTemplate";
@@ -542,12 +516,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             public const string EntityIdParam = "EntityIdParam";
             public const string TransactionHeader = "TransactionHeader";
             public const string EnableInitialBackbutton = "EnableInitialBackbutton";
-
-            //Custom Fields
-            public const string ConfirmationPersonAttributes = "ConfirmationPersonAttributes";
-            public const string TransactionWorkflow = "TransactionWorkflow";
-            public const string AllowedFrequencies = "AllowedFrequencies";
-            public const string SuggestedAmounts = "SuggestedAmounts";
         }
 
         private static class AttributeString
@@ -627,6 +595,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         private bool _onlyPublicAccountsInUrl = true;
         private int _accountCampusContextFilter = -1;
         private int _currentCampusContextId = -1;
+        private Guid? _transactionWorkflow = null;
 
         /// <summary>
         /// The scheduled transaction to be transferred.  This will get set if the
@@ -747,6 +716,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 
             _allowAccountsInUrl = GetAttributeValue( AttributeKey.AllowAccountsInURL ).AsBoolean( false );
             _onlyPublicAccountsInUrl = GetAttributeValue( AttributeKey.OnlyPublicAccountsInURL ).AsBoolean( true );
+            _transactionWorkflow = GetAttributeValue( AttributeKey.TransactionWorkflow ).AsGuid();
 
             // Add handler for page navigation
             RockPage page = Page as RockPage;
@@ -1105,16 +1075,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             SetPage( 1 );
         }
 
-        protected void btnSuggestedContribution_SelectionChanged( object sender, EventArgs e )
-        {
-            int? amount = btnSuggestedContribution.SelectedValueAsInt();
-            foreach (RepeaterItem account in rptAccountList.Items)
-            {
-                CurrencyBox txtAccountAmount = account.FindControl( "txtAccountAmount" ) as CurrencyBox;
-                txtAccountAmount.Value = amount;
-            }
-        }
-
         /// <summary>
         /// Handles the CheckedChanged event of the tglGiveAsOption control.
         /// </summary>
@@ -1179,7 +1139,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                             hfStep2AutoSubmit.Value = "true";
                         }
 
-                        SetPage( 4 );
+                        SetPage( 2 );
                         lbStep2Return.Focus();
                     }
                     else
@@ -1194,7 +1154,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                         this.AddHistory( "GivingDetail", "1", null );
                     }
 
-                    SetPage( 5 );
+                    SetPage( 3 );
                     pnlConfirmation.Focus();
                 }
             }
@@ -1232,31 +1192,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             tdAccountNumberConfirm.Description = paymentInfo.MaskedNumber;
             tdAccountNumberConfirm.Visible = !string.IsNullOrWhiteSpace( paymentInfo.MaskedNumber );
 
-            SetPage( 5 );
-            pnlConfirmation.Focus();
-        }
-
-        protected void btnContributionInfoNext_Click( object sender, EventArgs e )
-        {
-            SetPage( 2 );
-            pnlSelection.Focus();
-        }
-
-        protected void btnPersonalInfoPrev_Click( object sender, EventArgs e )
-        {
-            SetPage( 1 );
-            pnlSelection.Focus();
-        }
-        protected void btnPersonalInfoNext_Click( object sender, EventArgs e )
-        {
             SetPage( 3 );
-            pnlSelection.Focus();
-        }
-
-        protected void btnPaymentInfoPrev_Click( object sender, EventArgs e )
-        {
-            SetPage( 2 );
-            pnlSelection.Focus();
+            pnlConfirmation.Focus();
         }
 
         /// <summary>
@@ -1288,7 +1225,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                         this.AddHistory( "GivingDetail", "3", null );
                     }
 
-                    SetPage( 6 );
+                    SetPage( 4 );
                     pnlSuccess.Focus();
                 }
                 else
@@ -1305,7 +1242,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                         this.AddHistory( "GivingDetail", "2", null );
                     }
 
-                    SetPage( 6 );
+                    SetPage( 4 );
                     pnlSuccess.Focus();
                 }
                 else
@@ -1329,7 +1266,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             string errorMessage = string.Empty;
             if (ProcessConfirmation( out errorMessage ))
             {
-                SetPage( 6 );
+                SetPage( 4 );
                 pnlSuccess.Focus();
             }
             else
@@ -1642,13 +1579,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                         .ToList();
                 }
 
-                //Limit based on configuration selection
-                List<Guid> frequencies = GetAttributeValues( AttributeKey.AllowedFrequencies ).AsGuidList();
-                if (frequencies.Count() > 0)
-                {
-                    supportedFrequencies = supportedFrequencies.Where( freq => frequencies.Contains( freq.Guid ) ).ToList();
-                }
-
                 if (supportedFrequencies.Any())
                 {
                     btnFrequency.DataSource = supportedFrequencies;
@@ -1660,9 +1590,19 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                     {
                         btnFrequency.Items.Insert( 0, new ListItem( oneTimeFrequency.Value, oneTimeFrequency.Id.ToString() ) );
                     }
+                    //CUSTOM CODE: Default Frequency to Monthly
+                    var monthlyFrequency = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.TRANSACTION_FREQUENCY_MONTHLY );
+                    if (supportedFrequencies.Where( f => f.Id == monthlyFrequency.Id ).Any())
+                    {
+                        btnFrequency.SelectedValue = monthlyFrequency.Id.ToString();
+                        dtpStartDate.SelectedDate = RockDateTime.Today.AddDays( 1 );
+                    }
+                    else
+                    {
+                        btnFrequency.SelectedValue = oneTimeFrequency.Id.ToString();
+                        dtpStartDate.SelectedDate = RockDateTime.Today;
+                    }
 
-                    btnFrequency.SelectedValue = oneTimeFrequency.Id.ToString();
-                    dtpStartDate.SelectedDate = RockDateTime.Today;
 
                     if (!string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.StartDate ) ))
                     {
@@ -1689,23 +1629,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                     }
                 }
             }
-
-            //Suggested Contribution Amounts
-            var amounts = GetAttributeValues( AttributeKey.SuggestedAmounts ).Select( a =>
-            {
-                int amount;
-                if (Int32.TryParse( a, out amount ))
-                {
-                    return new ListItem { Value = amount.ToString(), Text = amount.FormatAsCurrency() };
-                }
-                return new ListItem { Value = "", Text = "" };
-            } ).Where( a => !String.IsNullOrEmpty( a.Value ) ).ToList();
-            if (amounts.Count() > 0)
-            {
-                btnSuggestedContribution.DataSource = amounts;
-                btnSuggestedContribution.DataBind();
-            }
-            var x = 7;
         }
 
         private string GetSavedAcccountFreqSupported( GatewayComponent component )
@@ -2629,118 +2552,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             }
         }
 
-        private bool ProcessContributionInfo( out string errorMessage )
-        {
-            errorMessage = string.Empty;
-
-            var errorMessages = new List<string>();
-            // Validate that an amount was entered
-            if (SelectedAccounts.Sum( a => a.Amount ) <= 0)
-            {
-                errorMessages.Add( "Make sure you've entered an amount for at least one account" );
-            }
-
-            var amountLimit = this.PageParameter( PageParameterKey.AmountLimit ).AsDecimalOrNull();
-            if (amountLimit.HasValue && SelectedAccounts.Sum( a => a.Amount ) > amountLimit.Value)
-            {
-                errorMessages.Add( string.Format( "The maximum amount it limited to {0}", amountLimit.FormatAsCurrency() ) );
-            }
-
-            // Validate that no negative amounts were entered
-            if (SelectedAccounts.Any( a => a.Amount < 0 ))
-            {
-                errorMessages.Add( "Make sure the amount you've entered for each account is a positive amount" );
-            }
-
-            // Get the payment schedule
-            PaymentSchedule schedule = GetSchedule();
-
-            if (schedule != null)
-            {
-                // Make sure a repeating payment starts in the future
-                if (schedule.StartDate <= RockDateTime.Today)
-                {
-                    errorMessages.Add( "When scheduling a repeating payment, make sure the First Gift date is in the future (after today)" );
-                }
-            }
-            else
-            {
-                if (dtpStartDate.SelectedDate < RockDateTime.Today)
-                {
-                    errorMessages.Add( "Make sure the date is not in the past" );
-                }
-            }
-            if (errorMessages.Any())
-            {
-                errorMessage = errorMessages.AsDelimited( "<br/>" );
-                return false;
-            }
-
-            return true;
-        }
-        private bool ProcessPersonalInfo( out string errorMessage )
-        {
-            errorMessage = string.Empty;
-            var errorMessages = new List<string>();
-            bool givingAsBusiness = GetAttributeValue( AttributeKey.EnableBusinessGiving ).AsBoolean() && !tglGiveAsOption.Checked;
-
-            if (txtFirstName.Visible == true)
-            {
-                if (string.IsNullOrWhiteSpace( txtFirstName.Text ) || string.IsNullOrWhiteSpace( txtLastName.Text ))
-                {
-                    errorMessages.Add( "Make sure to enter both a first and last name" );
-                }
-            }
-
-            if (givingAsBusiness && string.IsNullOrWhiteSpace( txtBusinessName.Text ))
-            {
-                errorMessages.Add( "Make sure to enter a Business Name" );
-            }
-
-            var location = new Location();
-            acAddress.GetValues( location );
-            if (string.IsNullOrWhiteSpace( location.Street1 ))
-            {
-                errorMessages.Add( "Make sure to enter a valid address.  An address is required for us to process this transaction" );
-            }
-
-            if (DisplayPhone && string.IsNullOrWhiteSpace( pnbPhone.Number ))
-            {
-                errorMessages.Add( "Make sure to enter a valid phone number.  A phone number is required for us to process this transaction" );
-            }
-
-            bool displayEmail = GetAttributeValue( AttributeKey.DisplayEmail ).AsBoolean();
-            if (displayEmail && string.IsNullOrWhiteSpace( txtEmail.Text ))
-            {
-                errorMessages.Add( "Make sure to enter a valid email address.  An email address is required for us to send you a payment confirmation" );
-            }
-
-            if (givingAsBusiness && phBusinessContact.Visible)
-            {
-                if (string.IsNullOrWhiteSpace( txtBusinessContactFirstName.Text ) || string.IsNullOrWhiteSpace( txtBusinessContactLastName.Text ))
-                {
-                    errorMessages.Add( "Make sure to enter both a first and last name for Business Contact" );
-                }
-                if (DisplayPhone && string.IsNullOrWhiteSpace( pnbBusinessContactPhone.Number ))
-                {
-                    errorMessages.Add( "Make sure to enter a valid Business Contact phone number." );
-                }
-
-                if (displayEmail && string.IsNullOrWhiteSpace( txtBusinessContactEmail.Text ))
-                {
-                    errorMessages.Add( "Make sure to enter a valid Business Contact email address." );
-                }
-            }
-
-            if (errorMessages.Any())
-            {
-                errorMessage = errorMessages.AsDelimited( "<br/>" );
-                return false;
-            }
-
-            return true;
-        }
-
         /// <summary>
         /// Processes the payment information.
         /// </summary>
@@ -2914,11 +2725,14 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 
             if (!givingAsBusiness)
             {
-                Person person = GetPerson( false );
-                if (person != null)
+                if (txtCurrentName.Visible)
                 {
-                    paymentInfo.FirstName = person.FirstName;
-                    paymentInfo.LastName = person.LastName;
+                    Person person = GetPerson( false );
+                    if (person != null)
+                    {
+                        paymentInfo.FirstName = person.FirstName;
+                        paymentInfo.LastName = person.LastName;
+                    }
                 }
                 else
                 {
@@ -3482,6 +3296,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             TransactionCode = scheduledTransaction.TransactionCode;
 
             Task.Run( () => ScheduledGiftWasModifiedMessage.PublishScheduledTransactionEvent( scheduledTransaction.Id, ScheduledGiftEventTypes.ScheduledGiftCreated ) );
+
+            if (_transactionWorkflow.HasValue)
+            {
+                Dictionary<string, string> workflowParams = new Dictionary<string, string>
+                {
+                    { "Person", person.PrimaryAlias.Guid.ToString() },
+                    { "Amount", scheduledTransaction.TotalAmount.ToString() },
+                    { "TransactionTypeId", scheduledTransaction.TypeId.ToString() }
+                };
+                scheduledTransaction.LaunchWorkflow( _transactionWorkflow.Value, "Transaction Entry", workflowParams, person.PrimaryAliasId );
+            }
         }
 
         private void DeleteOldTransaction( int scheduledTransactionId )
@@ -3615,6 +3440,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 
             SendReceipt( transaction.Id );
 
+            if (_transactionWorkflow.HasValue)
+            {
+                Dictionary<string, string> workflowParams = new Dictionary<string, string>
+                {
+                    { "Person", person.PrimaryAlias.Guid.ToString() },
+                    { "Amount", transaction.TotalAmount.ToString() },
+                    { "TransactionTypeId", transaction.TypeId.ToString() }
+                };
+                transaction.LaunchWorkflow( _transactionWorkflow.Value, "Transaction Entry", workflowParams, person.PrimaryAliasId );
+            }
+
             TransactionCode = transaction.TransactionCode;
         }
 
@@ -3706,45 +3542,28 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         private void SetPage( int page )
         {
             // Page 0 = Only message box is displayed
-            // Page 1 = Selection (Contribution)
-            // Page 2 = Selection (Contact)
-            // Page 3 = Selection (Payment)
-            // Page 4 = Step 2 (of three-step charge)
-            // Page 5 = Confirmation
-            // Page 6 = Success
+            // Page 1 = Selection
+            // Page 2 = Step 2 (of three-step charge)
+            // Page 3 = Confirmation
+            // Page 4 = Success
 
-            string errorMessage;
-            if ((page == 2 && !ProcessContributionInfo( out errorMessage )) || (page == 3 && !ProcessPersonalInfo( out errorMessage )))
-            {
-                ShowMessage( NotificationBoxType.Validation, "Before you can continue...", errorMessage );
-                return;
-            }
-
-            pnlSelection.Visible = page >= 1 && page < 5;
-            pnlContributionInfo.Visible = page == 1 || page == 2;
-            slideContributionInfo.Visible = page == 1;
-            btnContributionInfoNext.Visible = page == 1;
-            slidePersonalInfo.Visible = page == 2;
-            btnPersonalInfoNext.Visible = page == 2;
-            btnPersonalInfoPrev.Visible = page == 2;
-            slidePaymentInfo.Visible = page == 3;
-            btnPaymentInfoNext.Visible = page == 3;
-            btnPaymentInfoPrev.Visible = page == 3;
+            pnlSelection.Visible = page == 1 || page == 2;
+            pnlContributionInfo.Visible = page == 1;
 
             pnlPayment.Visible = true;
-            rblSavedAccount.Visible = page == 3 && rblSavedAccount.Items.Count > 0;
+            rblSavedAccount.Visible = page == 1 && rblSavedAccount.Items.Count > 0;
             bool usingSavedAccount = rblSavedAccount.Items.Count > 0 && (rblSavedAccount.SelectedValueAsId() ?? 0) > 0;
-            divNewPayment.Visible = (page == 3 && !_using3StepGateway) || (page == 4 && !usingSavedAccount);
+            divNewPayment.Visible = (page == 1 && !_using3StepGateway) || (page == 2 && !usingSavedAccount);
             pnlPayment.Visible = rblSavedAccount.Visible || divNewPayment.Visible;
 
             // only show the History back button if the previous URL was able to be determined and they have the EnableInitialBackbutton enabled;
             lHistoryBackButton.Visible = GetAttributeValue( AttributeKey.EnableInitialBackbutton ).AsBoolean() && lHistoryBackButton.HRef != "#" && page == 1;
-            btnPaymentInfoNext.Visible = page == 3;
-            btnStep2PaymentPrev.Visible = page == 4 && !usingSavedAccount;
-            aStep2Submit.Visible = page == 4 && !usingSavedAccount;
+            btnPaymentInfoNext.Visible = page == 1;
+            btnStep2PaymentPrev.Visible = page == 2 && !usingSavedAccount;
+            aStep2Submit.Visible = page == 2 && !usingSavedAccount;
 
-            pnlConfirmation.Visible = page == 5;
-            pnlSuccess.Visible = page == 6;
+            pnlConfirmation.Visible = page == 3;
+            pnlSuccess.Visible = page == 4;
 
             hfCurrentPage.Value = page.ToString();
         }
@@ -3762,14 +3581,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                 NotificationBox nb = nbMessage;
                 switch (hfCurrentPage.Value.AsInteger())
                 {
-                    case 5:
+                    case 1:
+                        nb = nbSelectionMessage;
+                        break;
+                    case 2:
+                        nb = nbSelectionMessage;
+                        break;
+                    case 3:
                         nb = nbConfirmationMessage;
                         break;
-                    case 6:
+                    case 4:
                         nb = nbSuccessMessage;
-                        break;
-                    default:
-                        nb = nbSelectionMessage;
                         break;
                 }
 

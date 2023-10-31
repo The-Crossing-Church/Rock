@@ -75,6 +75,7 @@
     <Reference Include="System.Web.Cors, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.Cors.5.2.3\lib\net45\System.Web.Cors.dll</HintPath>
     </Reference>
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Http, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
@@ -97,6 +98,7 @@
     <Compile Include="Reporting\DataTransform\Person\AllowCheckInByTransform.cs" />
     <Compile Include="Reporting\DataTransform\Person\CanCheckInTransform.cs" />
     <Compile Include="Rest\Controllers\EventFormCalendarController.cs" />
+    <Compile Include="Web\UI\Controls\ButtonDropDownList.cs" />
     <Compile Include="Web\UI\Controls\PageTitle.cs" />
     <Compile Include="Workflow\Action\Groups\AddPersonToGroupFromAttribute.cs" />
     <Compile Include="Workflow\Action\Checkin\FilterGroupsForMultiAge.cs" />
