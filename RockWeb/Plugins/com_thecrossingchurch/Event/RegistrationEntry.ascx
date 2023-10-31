@@ -170,7 +170,7 @@
         </asp:Panel>
 
         <asp:Panel ID="pnlRegistrarInfoUseLoggedInPerson" runat="server" CssClass="well" Visible="false">
-            <h4>This <asp:Literal id="lRegistrationTermLoggedInPerson" runat="server" /> Was Completed By</h4>
+            <h4>This <asp:Literal id="lRegistrationTermLoggedInPerson" runat="server" /> Is Being Submitted By</h4>
             <div class="row">
                 <div class="col-md-6">
                     <Rock:RockLiteral ID="lUseLoggedInPersonFirstName" runat="server" Label="First Name"/>
