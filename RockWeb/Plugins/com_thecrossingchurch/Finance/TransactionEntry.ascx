@@ -264,6 +264,8 @@
                             <Rock:TermDescription ID="tdAccountNumberConfirm" runat="server" Term="Account Number" />
                             <Rock:TermDescription ID="tdWhenConfirm" runat="server" Term="When" />
                         </dl>
+                        
+                        <Rock:AttributeValuesContainer ID="avcPerson" runat="server" />
 
                         <asp:Literal ID="lConfirmationFooter" runat="server" />
                         <asp:Panel ID="pnlDupWarning" runat="server" CssClass="alert alert-block">

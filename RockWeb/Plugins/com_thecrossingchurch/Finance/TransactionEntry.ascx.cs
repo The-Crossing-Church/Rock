@@ -627,6 +627,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         private bool _onlyPublicAccountsInUrl = true;
         private int _accountCampusContextFilter = -1;
         private int _currentCampusContextId = -1;
+        private Guid? _transactionWorkflow = null;
 
         /// <summary>
         /// The scheduled transaction to be transferred.  This will get set if the
@@ -747,6 +748,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 
             _allowAccountsInUrl = GetAttributeValue( AttributeKey.AllowAccountsInURL ).AsBoolean( false );
             _onlyPublicAccountsInUrl = GetAttributeValue( AttributeKey.OnlyPublicAccountsInURL ).AsBoolean( true );
+            _transactionWorkflow = GetAttributeValue( AttributeKey.TransactionWorkflow ).AsGuid();
 
             // Add handler for page navigation
             RockPage page = Page as RockPage;
@@ -1278,6 +1280,10 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         protected void btnConfirmationNext_Click( object sender, EventArgs e )
         {
             string errorMessage = string.Empty;
+            var person = GetPerson(false);
+            avcPerson.GetEditValues( person );
+            person.SaveAttributeValues();
+            //Check Attr Values
             if (_using3StepGateway)
             {
                 string resultQueryString = hfStep2ReturnQueryString.Value;
@@ -1982,6 +1988,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             // Determine if billing address should be displayed
             cbBillingAddress.Visible = _ccGatewayComponent != null && _ccGatewayComponent.PromptForBillingAddress( _ccGateway );
             divBillingAddress.Visible = _ccGatewayComponent != null && _ccGatewayComponent.PromptForBillingAddress( _ccGateway );
+
+            avcPerson.IncludedAttributes = GetAttributeValues( AttributeKey.ConfirmationPersonAttributes ).AsGuidList().Select( guid => AttributeCache.Get( guid ) ).ToArray();
+            avcPerson.AddEditControls( person );
         }
 
         #endregion
@@ -3482,6 +3491,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             TransactionCode = scheduledTransaction.TransactionCode;
 
             Task.Run( () => ScheduledGiftWasModifiedMessage.PublishScheduledTransactionEvent( scheduledTransaction.Id, ScheduledGiftEventTypes.ScheduledGiftCreated ) );
+
+            if (_transactionWorkflow.HasValue)
+            {
+                Dictionary<string, string> workflowParams = new Dictionary<string, string>
+                {
+                    { "Person", person.PrimaryAlias.Guid.ToString() },
+                    { "Amount", scheduledTransaction.TotalAmount.ToString() },
+                    { "TransactionTypeId", scheduledTransaction.TypeId.ToString() }
+                };
+                scheduledTransaction.LaunchWorkflow( _transactionWorkflow.Value, "Transaction Entry", workflowParams, person.PrimaryAliasId );
+            }
         }
 
         private void DeleteOldTransaction( int scheduledTransactionId )
@@ -3614,6 +3634,17 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             );
 
             SendReceipt( transaction.Id );
+
+            if (_transactionWorkflow.HasValue)
+            {
+                Dictionary<string, string> workflowParams = new Dictionary<string, string>
+                {
+                    { "Person", person.PrimaryAlias.Guid.ToString() },
+                    { "Amount", transaction.TotalAmount.ToString() },
+                    { "TransactionTypeId", transaction.TypeId.ToString() }
+                };
+                transaction.LaunchWorkflow( _transactionWorkflow.Value, "Transaction Entry", workflowParams, person.PrimaryAliasId );
+            }
 
             TransactionCode = transaction.TransactionCode;
         }
