@@ -1,11 +1,13 @@
-import { DefinedValue, ContentChannelItem, Attribute } from "../../../ViewModels"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
 
 export type CalendarBlockViewModel = {
-    events: ContentChannelItem[];
-    locations: DefinedValue[];
-    ministries: DefinedValue[];
-    requestStatus: Attribute;
-    requestType: Attribute;
+    events: ContentChannelItemBag[];
+    locations: DefinedValueBag[];
+    ministries: DefinedValueBag[];
+    requestStatus: AttributeBag;
+    requestType: AttributeBag;
     formUrl: String;
     dashboardUrl: String;
     isEventAdmin: boolean;

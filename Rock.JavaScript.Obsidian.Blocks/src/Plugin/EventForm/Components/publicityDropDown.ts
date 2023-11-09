@@ -1,9 +1,9 @@
 import { defineComponent, PropType } from "vue"
 import { Input, Menu, Dropdown } from "ant-design-vue"
-import TextBox from "../../../../Elements/textBox"
-import RockLabel from "../../../../Elements/rockLabel"
-import RockDDL from "../../../../Elements/dropDownList"
-// import { ListItem } from "../../../../ViewModels"
+import TextBox from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockDDL from "@Obsidian/Controls/dropDownList"
+// import { ListItem } from "@Obsidian/ViewModels"
 
 const { MenuItem } = Menu;
 

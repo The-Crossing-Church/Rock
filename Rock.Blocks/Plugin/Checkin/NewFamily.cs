@@ -7,7 +7,8 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Reporting.DataSelect.GroupMember;
-using Rock.ViewModel;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 using static Rock.Model.StepProgram;
 
@@ -449,7 +450,7 @@ namespace Rock.Blocks.Plugin.Checkin
                 viewModel.GraduationYear++;
             }
             Guid? ckDeskStopGroupGuid = GetAttributeValue( AttributeKey.CKDeskStopGroup ).AsGuidOrNull();
-            Group ckDeskStopGroup = null;
+            Model.Group ckDeskStopGroup = null;
             if (ckDeskStopGroupGuid != null)
             {
                 ckDeskStopGroup = new GroupService( context ).Get( ckDeskStopGroupGuid.Value );
@@ -537,22 +538,22 @@ namespace Rock.Blocks.Plugin.Checkin
 
         #region Block Actions
         [BlockAction]
-        public BlockActionResult ProcessFamily( List<PersonViewModel> parents, List<PersonViewModel> children, List<PhoneNumberViewModel> phonenumbers, List<GroupPlacement> placements )
+        public BlockActionResult ProcessFamily( List<PersonBag> parents, List<PersonBag> children, List<PhoneNumberBag> phonenumbers, List<GroupPlacement> placements )
         {
             try
             {
                 SetProperties();
-                Group family = null;
+                Model.Group family = null;
                 var groupType = GroupTypeCache.GetFamilyGroupType();
                 GroupService grp_svc = new GroupService( context );
                 DefinedValueService dv_svc = new DefinedValueService( context );
                 PhoneNumberService phn_svc = new PhoneNumberService( context );
-                Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
-                Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
-                Group multiAge = grp_svc.Get( GetAttributeValue( AttributeKey.MultiAge ).AsGuid() );
+                Model.Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
+                Model.Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
+                Model.Group multiAge = grp_svc.Get( GetAttributeValue( AttributeKey.MultiAge ).AsGuid() );
                 List<Person> people = new List<Person>();
                 List<GroupMember> members = new List<GroupMember>();
-                List<GroupViewModel> groups = new List<GroupViewModel>();
+                List<GroupBag> groups = new List<GroupBag>();
                 DateTime? gradeTransition = GlobalAttributesCache.Get().GetValue( "GradeTransitionDate" ).MonthDayStringAsDateTime();
                 int GraduationYear = RockDateTime.Now.Year;
                 if (RockDateTime.Now >= gradeTransition)
@@ -578,7 +579,7 @@ namespace Rock.Blocks.Plugin.Checkin
                         }
                         if (family == null)
                         {
-                            family = new Group() { GroupTypeId = groupType.Id, Name = p.LastName };
+                            family = new Model.Group() { GroupTypeId = groupType.Id, Name = p.LastName };
                             context.Groups.Add( family );
                             context.SaveChanges();
                         }
@@ -596,7 +597,7 @@ namespace Rock.Blocks.Plugin.Checkin
                 childAttributes.Add( abilityAttribute );
                 for (int i = 0; i < children.Count(); i++)
                 {
-                    Group selected = grp_svc.Get( placements[i].SelectedGroup );
+                    Model.Group selected = grp_svc.Get( placements[i].SelectedGroup );
                     selected.LoadAttributes();
                     Person p = FromViewModel( children[i] );
                     var selectedGradeValue = selected.AttributeValues[groupGradeAttribute.Key];
@@ -671,7 +672,7 @@ namespace Rock.Blocks.Plugin.Checkin
         }
 
         [BlockAction]
-        public BlockActionResult CheckForExisting( PersonViewModel viewModel, string mobileNumber )
+        public BlockActionResult CheckForExisting( PersonBag viewModel, string mobileNumber )
         {
             try
             {
@@ -697,7 +698,7 @@ namespace Rock.Blocks.Plugin.Checkin
 
         #region Helpers
 
-        private Person FromViewModel( PersonViewModel viewModel )
+        private Person FromViewModel( PersonBag viewModel )
         {
             Person p = new Person()
             {
@@ -715,20 +716,20 @@ namespace Rock.Blocks.Plugin.Checkin
                 ConnectionStatusValueId = viewModel.ConnectionStatusValueId,
                 MaritalStatusValueId = viewModel.MaritalStatusValueId
             };
-            if (viewModel.Id > 0)
-            {
-                p = new PersonService( context ).Get( viewModel.Id );
-            }
-            p.LoadAttributes();
-            foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
-            {
-                p.SetPublicAttributeValue( av.Key, av.Value, p, false );
-            }
+            //if (viewModel.Id > 0)
+            //{
+            //    p = new PersonService( context ).Get( viewModel.Id );
+            //}
+            //p.LoadAttributes();
+            //foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
+            //{
+            //    p.SetPublicAttributeValue( av.Key, av.Value, p, false );
+            //}
 
             return p;
         }
 
-        private PhoneNumber PhoneFromViewModel( PhoneNumberViewModel viewModel )
+        private PhoneNumber PhoneFromViewModel( PhoneNumberBag viewModel )
         {
             PhoneNumber phoneNumber = new PhoneNumber()
             {
@@ -760,7 +761,7 @@ namespace Rock.Blocks.Plugin.Checkin
             groupGradeAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrGrade ).AsGuid() );
         }
 
-        private void AddFamilyMember( Group family, Person person, GroupTypeRoleCache role )
+        private void AddFamilyMember( Model.Group family, Person person, GroupTypeRoleCache role )
         {
             GroupMember gm = new GroupMember()
             {
@@ -804,21 +805,21 @@ namespace Rock.Blocks.Plugin.Checkin
             public List<Guid> AdultAttributeCategories { get; set; }
             public List<Rock.Model.Attribute> AdultAttributes { get; set; }
             public List<Guid> ChildAttributeCategories { get; set; }
-            public List<AttributeViewModel> ChildAttributes { get; set; }
+            public List<AttributeBag> ChildAttributes { get; set; }
             public DefinedType AbilityLevelDefinedType { get; set; }
             public Rock.Model.Attribute AbilityLevelAttribute { get; set; }
             public int GraduationYear { get; set; }
             public DefinedType GradeDefinedType { get; set; }
-            public PersonViewModel ExistingPerson { get; set; }
-            public PhoneNumberViewModel ExistingPersonPhoneNumber { get; set; }
+            public PersonBag ExistingPerson { get; set; }
+            public PhoneNumberBag ExistingPersonPhoneNumber { get; set; }
             public bool ExistingPersonPhoneCantBeMessaged { get; set; }
-            public PersonViewModel EmptyPerson { get; set; }
-            public PhoneNumberViewModel EmptyPersonPhoneNumber { get; set; }
-            public List<GroupViewModel> Groups { get; set; }
-            public AttributeViewModel GroupStartDOBAttribute { get; set; }
-            public AttributeViewModel GroupEndDOBAttribute { get; set; }
-            public AttributeViewModel GroupAbilityAttribute { get; set; }
-            public AttributeViewModel GroupGradeAttribute { get; set; }
+            public PersonBag EmptyPerson { get; set; }
+            public PhoneNumberBag EmptyPersonPhoneNumber { get; set; }
+            public List<GroupBag> Groups { get; set; }
+            public AttributeBag GroupStartDOBAttribute { get; set; }
+            public AttributeBag GroupEndDOBAttribute { get; set; }
+            public AttributeBag GroupAbilityAttribute { get; set; }
+            public AttributeBag GroupGradeAttribute { get; set; }
         }
 
         public class GroupPlacement

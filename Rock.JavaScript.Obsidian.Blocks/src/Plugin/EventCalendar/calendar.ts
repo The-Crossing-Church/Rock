@@ -1,8 +1,10 @@
 import { defineComponent, provide } from "vue"
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
-import { Person, ContentChannelItem, DefinedValue } from "../../../ViewModels"
+import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
 import { CalendarBlockViewModel } from "./calendarBlockViewModel"
-import { useStore } from "../../../Store/index"
+import { useStore } from "@Obsidian/PageState"
 import { DateTime, Interval } from "luxon"
 import MonthView from "./Components/month"
 import WeekView from "./Components/week"
@@ -11,8 +13,8 @@ import DatePicker from "../EventForm/Components/calendar"
 import { Button, Dropdown, Modal, Menu } from "ant-design-vue"
 import RoomPicker from "../EventForm/Components/roomPicker"
 import DropDownList from "../EventDashboard/Components/dropDownList"
-import RockLabel from  "../../../Elements/rockLabel"
-import RockTextBox from "../../../Elements/textBox"
+import RockLabel from  "@Obsidian/Controls/rockLabel"
+import RockTextBox from "@Obsidian/Controls/textBox"
 
 const store = useStore()
 
@@ -64,7 +66,7 @@ export default defineComponent({
   },
   data() {
       return {
-        selected: {} as ContentChannelItem,
+        selected: {} as ContentChannelItemBag,
         loading: false,
         dateMenu: false,
         view: 'day',
@@ -97,7 +99,7 @@ export default defineComponent({
   },
   computed: {
     /** The person currently authenticated */
-    currentPerson(): Person | null {
+    currentPerson(): PersonBag | null {
       return store.state.currentPerson
     },
     displayDate(): string {
@@ -193,7 +195,7 @@ export default defineComponent({
     },
     ministries() {
       let arr = this.viewModel?.ministries as any[]
-      arr = arr?.map((m: DefinedValue) => { return m.value })
+      arr = arr?.map((m: DefinedValueBag) => { return m.value })
       if(arr && arr.length > 0) {
         return arr.sort()
       }

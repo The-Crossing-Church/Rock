@@ -1,12 +1,13 @@
 import { defineComponent, PropType } from "vue"
-import { DefinedValue, DefinedType, Person } from "../../../../ViewModels"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import { DateTime } from "luxon"
-import RockText from "../../../../Elements/textBox"
-import RockDDL from "../../../../Elements/dropDownList"
-import RockLabel from "../../../../Elements/rockLabel"
-import RockField from "../../../../Controls/rockField"
-import GenderDDL from "../../../../Elements/genderDropDownList"
-import DatePicker from "../../../../Elements/datePicker"
+import RockText from "@Obsidian/Controls/textBox"
+import RockDDL from "@Obsidian/Controls/dropDownList"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import GenderDDL from "@Obsidian/Controls/genderDropDownList"
+import DatePicker from "@Obsidian/Controls/datePicker.obs"
 import rules from "../Rules/rules"
 
 export default defineComponent({
@@ -25,7 +26,7 @@ export default defineComponent({
       showMiddleName: Boolean,
       showSuffix: Boolean,
       defaultConnectionStatus: {
-        type: Object as PropType<DefinedValue>,
+        type: Object as PropType<DefinedValueBag>,
         required: false
       },
       connectionStatusDefinedType: Object,
@@ -34,7 +35,7 @@ export default defineComponent({
       titleDefinedType: Object,
       suffixDefinedType: Object,
       defaultMaritalStatus: {
-        type: Object as PropType<DefinedValue>,
+        type: Object as PropType<DefinedValueBag>,
         required: false
       },
       maritalStatusDefinedType: Object,
@@ -50,7 +51,7 @@ export default defineComponent({
       gradeDefinedType: Object,
       graduationYear: Number,
       person: {
-        type: Object as PropType<Person>,
+        type: Object as PropType<PersonBag>,
         required: false
       }
     },

@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue";
-import { ContentChannelItem } from "../../../../ViewModels"
-import RockForm from "../../../../Controls/rockForm"
-import RockField from "../../../../Controls/rockField"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import RockForm from "@Obsidian/Controls/rockForm"
+import RockField from "@Obsidian/Controls/rockField"
 import Validator from "./validator"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
@@ -20,7 +20,7 @@ export default defineComponent({
     },
     props: {
       e: {
-          type: Object as PropType<ContentChannelItem>,
+          type: Object as PropType<ContentChannelItemBag>,
           required: false
       },
       showValidation: Boolean,

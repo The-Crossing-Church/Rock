@@ -1,11 +1,12 @@
 import { defineComponent, PropType } from "vue"
-import { DefinedValue, Person } from "../../../../ViewModels"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import { DateTime } from "luxon"
 import BasicInfo from "./basicInfo"
 import ContactInfo from "./contactInfo"
 import AdditionalAttributes from "./additionalAttributes"
 import Placement from "./placement"
-import RockForm from "../../../../Controls/rockForm"
+import RockForm from "@Obsidian/Controls/rockForm"
 
 export default defineComponent({
     name: "Checkin.Components.Member",
@@ -36,7 +37,7 @@ export default defineComponent({
       showMiddleName: Boolean,
       showSuffix: Boolean,
       defaultConnectionStatus: {
-        type: Object as PropType<DefinedValue>,
+        type: Object as PropType<DefinedValueBag>,
         required: false
       },
       connectionStatusDefinedType: Object,
@@ -45,7 +46,7 @@ export default defineComponent({
       titleDefinedType: Object,
       suffixDefinedType: Object,
       defaultMaritalStatus: {
-        type: Object as PropType<DefinedValue>,
+        type: Object as PropType<DefinedValueBag>,
         required: false
       },
       maritalStatusDefinedType: Object,
@@ -54,7 +55,7 @@ export default defineComponent({
       showCell: Boolean,
       showSMS: Boolean,
       phoneType: {
-        type: Object as PropType<DefinedValue>,
+        type: Object as PropType<DefinedValueBag>,
         required: false
       },
       showMaritalStatus: Boolean,
@@ -79,7 +80,7 @@ export default defineComponent({
       groupAbilityAttribute: Object,
       groupGradeAttribute: Object,
       person: {
-        type: Object as PropType<Person>,
+        type: Object as PropType<PersonBag>,
         required: false
       },
       showValidation: Boolean,
@@ -99,7 +100,7 @@ export default defineComponent({
         } else if(this.person?.ageClassification == 2) {
           return "Child"
         }
-        return "Person"
+        return "PersonBag"
       }
     },
     methods: {
@@ -107,30 +108,30 @@ export default defineComponent({
         this.$emit('remove-person', this.person)
       },
       checkForDuplicates() {
-        if(this.person && !(this.person.id && this.person.id > 0) && this.findExisting) {
-          let p = this.person as any
-          let number = ""
-          if(p.phoneNumbers && p.phoneNumbers[0].numberFormatted) {
-            number = p.phoneNumbers[0].numberFormatted.replaceAll("(", "").replaceAll(")", "").replaceAll("-", "").replaceAll("+", "").replaceAll(" ", "")
-          }
-          if(this.person.firstName && this.person.lastName && ((this.person.birthDay && this.person.birthMonth && this.person.birthYear && this.person.gender) || number)) {
-            this.findExisting(this.person, number)
-            .then((res: any) => {
-              if(res.isSuccess) {
-                if(res.data.hasMatch && res.data.person) {
-                  this.potentialMatch = res.data.person
-                } else {
-                  this.potentialMatch = null
-                }
-              } else {
-                this.potentialMatch = null
-              }
-            }).catch((err: any) => {
-              console.log(err)
-              this.potentialMatch = null
-            })
-          }
-        }
+        // if(this.person && !(this.person.id && this.person.id > 0) && this.findExisting) {
+        //   let p = this.person as any
+        //   let number = ""
+        //   if(p.phoneNumbers && p.phoneNumbers[0].numberFormatted) {
+        //     number = p.phoneNumbers[0].numberFormatted.replaceAll("(", "").replaceAll(")", "").replaceAll("-", "").replaceAll("+", "").replaceAll(" ", "")
+        //   }
+        //   if(this.person.firstName && this.person.lastName && ((this.person.birthDay && this.person.birthMonth && this.person.birthYear && this.person.gender) || number)) {
+        //     this.findExisting(this.person, number)
+        //     .then((res: any) => {
+        //       if(res.isSuccess) {
+        //         if(res.data.hasMatch && res.data.person) {
+        //           this.potentialMatch = res.data.person
+        //         } else {
+        //           this.potentialMatch = null
+        //         }
+        //       } else {
+        //         this.potentialMatch = null
+        //       }
+        //     }).catch((err: any) => {
+        //       console.log(err)
+        //       this.potentialMatch = null
+        //     })
+        //   }
+        // }
       },
       formatDate(date: string) {
         let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
@@ -152,12 +153,12 @@ export default defineComponent({
     },
     mounted() {
       if(this.person) {
-        if(!this.person?.maritalStatusValueId && this.defaultMaritalStatus && this.showMaritalStatus) {
-          this.person.maritalStatusValueId = this.defaultMaritalStatus.id
-        }
-        if(!this.person.connectionStatusValueId && this.defaultConnectionStatus) {
-          this.person.connectionStatusValueId = this.defaultConnectionStatus.id
-        }
+        // if(!this.person?.maritalStatusValueId && this.defaultMaritalStatus && this.showMaritalStatus) {
+        //   this.person.maritalStatusValueId = this.defaultMaritalStatus.id
+        // }
+        // if(!this.person.connectionStatusValueId && this.defaultConnectionStatus) {
+        //   this.person.connectionStatusValueId = this.defaultConnectionStatus.id
+        // }
       }
     },
     template: `

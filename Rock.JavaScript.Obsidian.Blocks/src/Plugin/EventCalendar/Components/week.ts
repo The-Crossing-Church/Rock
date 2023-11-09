@@ -25,37 +25,37 @@ export default defineComponent({
   computed: {
     calData() {
       if(this.currentDate) {
-        if(this.currentDate.weekday == 7) {
-          let week = [
-            {date: this.currentDate.startOf('week').plus({weeks: 1}).minus({days: 1}) },
-            {date: this.currentDate.startOf('week').plus({weeks: 1}) },
-            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 1}) },
-            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 2}) },
-            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 3}) },
-            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 4}) },
-            {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 5}) }
-          ]
-          return week
-        } else {
-          let week = [
-            {date: this.currentDate.startOf('week').minus({days: 1}) },
-            {date: this.currentDate.startOf('week') },
-            {date: this.currentDate.startOf('week').plus({days: 1}) },
-            {date: this.currentDate.startOf('week').plus({days: 2}) },
-            {date: this.currentDate.startOf('week').plus({days: 3}) },
-            {date: this.currentDate.startOf('week').plus({days: 4}) },
-            {date: this.currentDate.startOf('week').plus({days: 5}) }
-          ]
-          return week
-        }
+        // if(this.currentDate.weekday == 7) {
+        //   let week = [
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}).minus({days: 1}) },
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}) },
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 1}) },
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 2}) },
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 3}) },
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 4}) },
+        //     {date: this.currentDate.startOf('week').plus({weeks: 1}).plus({days: 5}) }
+        //   ]
+        //   return week
+        // } else {
+        //   let week = [
+        //     {date: this.currentDate.startOf('week').minus({days: 1}) },
+        //     {date: this.currentDate.startOf('week') },
+        //     {date: this.currentDate.startOf('week').plus({days: 1}) },
+        //     {date: this.currentDate.startOf('week').plus({days: 2}) },
+        //     {date: this.currentDate.startOf('week').plus({days: 3}) },
+        //     {date: this.currentDate.startOf('week').plus({days: 4}) },
+        //     {date: this.currentDate.startOf('week').plus({days: 5}) }
+        //   ]
+        //   return week
+        // }
       }
     },
   },
   methods: {
     getTime(hour: number) {
       if(this.currentDate) {
-        let dt = DateTime.fromObject({year: this.currentDate.year, month: this.currentDate.month, day: this.currentDate.day, hour: hour - 1, minute: 0, second: 0})
-        return dt.toFormat('h') + ' ' + ((hour - 1) > 11 ? 'PM' : 'AM')
+        // let dt = DateTime.fromObject({year: this.currentDate.year, month: this.currentDate.month, day: this.currentDate.day, hour: hour - 1, minute: 0, second: 0})
+        // return dt.toFormat('h') + ' ' + ((hour - 1) > 11 ? 'PM' : 'AM')
       }
     },
     getDayId(day: DateTime) {

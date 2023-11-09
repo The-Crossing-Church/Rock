@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue";
 import { Input, Menu, Dropdown } from "ant-design-vue";
-import TextBox from "../../../../Elements/textBox";
-import RockLabel from "../../../../Elements/rockLabel";
+import TextBox from "@Obsidian/Controls/textBox";
+import RockLabel from "@Obsidian/Controls/rockLabel";
 
 const { MenuItem } = Menu;
 

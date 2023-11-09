@@ -9,6 +9,11 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "target": "ES2016",
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "lib": [
+      "DOM",
+      "ES2016",
+      "ES2020.Symbol.WellKnown" /* Fixes compile issue in Vue declaration files, not actually in use. */
+    ],
   }
 }

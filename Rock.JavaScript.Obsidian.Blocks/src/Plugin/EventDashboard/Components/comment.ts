@@ -1,7 +1,7 @@
 import { defineComponent } from "vue";
-import { Person } from "../../../../ViewModels";
-import { useStore } from "../../../../Store/index";
-import RockField from "../../../../Controls/rockField"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag";
+import { useStore } from "@Obsidian/PageState";
+import RockField from "@Obsidian/Controls/rockField"
 import { DateTime } from "luxon"
 
 const store = useStore();
@@ -26,7 +26,7 @@ export default defineComponent({
     },
     computed: {
       /** The person currently authenticated */
-      currentPerson(): Person | null {
+      currentPerson(): PersonBag | null {
           return store.state.currentPerson
       },
       className() {

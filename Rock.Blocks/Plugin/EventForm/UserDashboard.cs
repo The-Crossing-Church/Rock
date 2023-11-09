@@ -10,9 +10,8 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
 using Rock.Tasks;
-using Rock.ViewModel;
-using Rock.ViewModel.Controls;
-using Rock.ViewModel.NonEntities;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugin.EventDashboard
@@ -985,7 +984,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             return hasRole;
         }
 
-        private ContentChannelItem FromViewModel( ContentChannelItemViewModel viewModel )
+        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel )
         {
             RockContext context = new RockContext();
             Rock.Model.Person p = GetCurrentPerson();
@@ -994,10 +993,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 ContentChannelId = viewModel.ContentChannelId,
                 ContentChannelTypeId = viewModel.ContentChannelTypeId
             };
-            if ( viewModel.Id > 0 )
-            {
-                item = new ContentChannelItemService( context ).Get( viewModel.Id );
-            }
+            //if ( viewModel.Id > 0 )
+            //{
+            //    item = new ContentChannelItemService( context ).Get( viewModel.Id );
+            //}
             item.LoadAttributes();
             item.Title = viewModel.Title;
             foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
@@ -1126,17 +1125,17 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
         public class DashboardViewModel
         {
-            public List<ContentChannelItemViewModel> events { get; set; }
+            public List<ContentChannelItemBag> events { get; set; }
             public List<ContentChannelItemAssociation> eventDetails { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
-            public List<DefinedValueViewModel> locations { get; set; }
+            public List<DefinedValueBag> locations { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public List<Rock.Model.DefinedValue> drinks { get; set; }
             public List<Rock.Model.DefinedValue> inventory { get; set; }
-            public AttributeViewModel requestStatus { get; set; }
-            public AttributeViewModel requestType { get; set; }
+            public AttributeBag requestStatus { get; set; }
+            public AttributeBag requestType { get; set; }
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
             public int eventDetailsCCId { get; set; }
@@ -1145,24 +1144,24 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
         public class GetRequestResponse
         {
-            public ContentChannelItemViewModel request { get; set; }
-            public ContentChannelItemViewModel requestPendingChanges { get; set; }
+            public ContentChannelItemBag request { get; set; }
+            public ContentChannelItemBag requestPendingChanges { get; set; }
             public List<Comment> comments { get; set; }
             public List<Details> details { get; set; }
-            public PersonViewModel createdBy { get; set; }
-            public PersonViewModel modifiedBy { get; set; }
+            public PersonBag createdBy { get; set; }
+            public PersonBag modifiedBy { get; set; }
         }
 
         public class Comment
         {
-            public ContentChannelItemViewModel comment { get; set; }
+            public ContentChannelItemBag comment { get; set; }
             public string createdBy { get; set; }
         }
 
         public class Details
         {
-            public ContentChannelItemViewModel detail { get; set; }
-            public ContentChannelItemViewModel detailPendingChanges { get; set; }
+            public ContentChannelItemBag detail { get; set; }
+            public ContentChannelItemBag detailPendingChanges { get; set; }
         }
 
         public class Filters

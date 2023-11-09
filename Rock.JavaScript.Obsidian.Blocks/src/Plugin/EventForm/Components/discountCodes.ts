@@ -1,9 +1,10 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem, Attribute } from "../../../../ViewModels"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
 import { DateTime, Duration, Interval } from "luxon"
-import RockField from "../../../../Controls/rockField"
-import RockForm from "../../../../Controls/rockForm"
-import RockLabel from "../../../../Elements/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 import { Button, Modal, Select } from "ant-design-vue"
 import Toggle from "./toggle"
 import DiscountCodePicker from "./discountCodePicker"
@@ -31,10 +32,10 @@ export default defineComponent({
   },
   props: {
     e: {
-      type: Object as PropType<ContentChannelItem>,
+      type: Object as PropType<ContentChannelItemBag>,
       required: false
     },
-    attrs: Array as PropType<Attribute[]>
+    attrs: Array as PropType<AttributeBag[]>
   },
   setup() {
 

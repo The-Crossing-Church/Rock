@@ -1,7 +1,10 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem, DefinedValue, ListItem, Attribute } from "../../../../ViewModels"
-import RockField from "../../../../Controls/rockField"
-import RockForm from "../../../../Controls/rockForm"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag"
+import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
 import Validator from "./validator"
 import TimePicker from "./timePicker"
 import Toggle from "./toggle"
@@ -24,19 +27,19 @@ export default defineComponent({
     },
     props: {
       e: {
-          type: Object as PropType<ContentChannelItem>,
+          type: Object as PropType<ContentChannelItemBag>,
           required: false
       },
       request: {
-          type: Object as PropType<ContentChannelItem>,
+          type: Object as PropType<ContentChannelItemBag>,
           required: false
       },
       original: {
-        type: Object as PropType<ContentChannelItem>,
+        type: Object as PropType<ContentChannelItemBag>,
         required: false
       },
-      ministries: Array as PropType<DefinedValue[]>,
-      discountAttrs: Array as PropType<Attribute[]>,
+      ministries: Array as PropType<DefinedValueBag[]>,
+      discountAttrs: Array as PropType<AttributeBag[]>,
       showValidation: Boolean,
       refName: String,
       readonly: Boolean
@@ -67,9 +70,9 @@ export default defineComponent({
         if(this.request?.attributeValues) {
           let isFuneralRequest = false
           let val = this.request.attributeValues.Ministry
-          let ministry = {} as DefinedValue | undefined
+          let ministry = {} as DefinedValueBag | undefined
           if(val != '') {
-            let min = JSON.parse(val) as ListItem
+            let min = JSON.parse(val) as ListItemBag
             ministry = this.ministries?.filter((dv: any) => {
               return dv.guid == min.value
             })[0]
@@ -82,9 +85,9 @@ export default defineComponent({
             return submissionDate.toFormat("yyyy-MM-dd")
           }
           //New request, must be min two weeks from today
-          if(this.request.id == 0 || this.request.attributeValues.RequestStatus == 'Draft') {
-            return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
-          }
+          // if(this.request.id == 0 || this.request.attributeValues.RequestStatus == 'Draft') {
+          //   return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
+          // }
           //if newly requesting registration, two weeks from today, else two weeks from submission date
           //Existing request, no pending changes
           if(this.original?.attributeValues?.NeedsRegistration == 'True') {

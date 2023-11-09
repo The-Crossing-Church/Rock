@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue"
 import { DateTime, Interval } from "luxon"
-import { useStore } from "../../../../Store/index"
-import { Person } from "../../../../ViewModels"
+import { useStore } from "@Obsidian/PageState"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import Event from "./event"
 
 const store = useStore()
@@ -53,7 +53,7 @@ export default defineComponent({
   },
   computed: {
     /** The person currently authenticated */
-    currentPerson(): Person | null {
+    currentPerson(): PersonBag | null {
       return store.state.currentPerson
     },
     daysCalendar(): Array<any> {
@@ -62,7 +62,7 @@ export default defineComponent({
         //Filter to current events
         data.forEach((c: any) => {
           c.events = c.events.filter((e: any) => {
-            return e.eventDate == this.currentDate?.toFormat('yyyy-MM-dd')
+            // return e.eventDate == this.currentDate?.toFormat('yyyy-MM-dd')
           })
           c.events.forEach((e: any) => {
             // let start = DateTime.fromISO(e.start)
@@ -165,7 +165,7 @@ export default defineComponent({
   methods: {
     getHourId(hour: number) {
       if(this.currentDate) {
-        return 'day_' + this.currentDate.toFormat('dd') + '_hour_' + (hour - 1)
+        // return 'day_' + this.currentDate.toFormat('dd') + '_hour_' + (hour - 1)
       }
     },
     openEvent(e: any) {

@@ -1,6 +1,6 @@
 import { defineComponent, PropType } from "vue"
-import { Attribute, Person } from "../../../../ViewModels"
-import RockField from "../../../../Controls/rockField"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import RockField from "@Obsidian/Controls/rockField"
 
 export default defineComponent({
     name: "Checkin.Components.AdditionalAttributes",
@@ -13,7 +13,7 @@ export default defineComponent({
         required: false
       },
       person: {
-        type: Object as PropType<Person>,
+        type: Object as PropType<PersonBag>,
         required: false
       }
     },

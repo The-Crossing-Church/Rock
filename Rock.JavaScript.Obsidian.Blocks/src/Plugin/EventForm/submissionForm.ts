@@ -1,10 +1,11 @@
 import { defineComponent, provide } from "vue"
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
-import { Person } from "../../../ViewModels"
+import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import { SubmissionFormBlockViewModel } from "./submissionFormBlockViewModel"
-import { useStore } from "../../../Store/index"
+import { useStore } from "@Obsidian/PageState"
 import { Steps, Button, Modal, Select } from "ant-design-vue"
-import { ListItem, DefinedValue, ContentChannelItem } from "../../../ViewModels"
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
 import ResourceSwitches from "./Components/resourceSwitches"
 import Space from "./Components/space"
 import Online from "./Components/online"
@@ -21,8 +22,8 @@ import EventTime from "./Components/eventTime"
 import DatePicker from "./Components/datePicker"
 import EventBuffer from "./Components/eventBuffer"
 import { DateTime, Duration } from "luxon"
-import RockLabel from "../../../Elements/rockLabel"
-import RockField from "../../../Controls/rockField"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
 import rules from "./Rules/rules"
 
 const store = useStore()
@@ -152,7 +153,7 @@ export default defineComponent({
   },
   computed: {
       /** The person currently authenticated */
-      currentPerson(): Person | null {
+      currentPerson(): PersonBag | null {
           return store.state.currentPerson;
       },
       selectedDates(): any {
@@ -332,7 +333,7 @@ export default defineComponent({
             this.isSave = true
             this.modal = true
             if(this.viewModel?.request) {
-              this.viewModel.request.id = res.data.id
+              // this.viewModel.request.id = res.data.id
             }
           } else if (res.isError) {
 
@@ -356,7 +357,7 @@ export default defineComponent({
               this.isSave = false
               this.modal = true
               if(this.viewModel?.request) {
-                this.viewModel.request.id = res?.data?.id
+                // this.viewModel.request.id = res?.data?.id
               }
             } else if (res.isError || res.Message) {
               this.toastIsError = true
@@ -432,9 +433,9 @@ export default defineComponent({
       if(this.viewModel?.request?.attributes && this.viewModel?.request?.attributeValues) {
         for(let key in this.viewModel.request.attributes) {
           let attr = this.viewModel.request.attributes[key]
-          if(attr.categories.map((c: any) => { return c.name }).includes(category)) {
-            this.viewModel.request.attributeValues[key] = ""
-          }
+          // if(attr.categories.map((c: any) => { return c.name }).includes(category)) {
+          //   this.viewModel.request.attributeValues[key] = ""
+          // }
         }
       }
     },
@@ -654,9 +655,9 @@ export default defineComponent({
               let opsAttrs = [] 
               let attrs = this.viewModel.events[i].attributes
               for(let attr in attrs) {
-                if(attrs[attr].categories.map((c: any) => c.name).includes('Event Ops Requests')) {
-                  opsAttrs.push(attr)
-                }
+                // if(attrs[attr].categories.map((c: any) => c.name).includes('Event Ops Requests')) {
+                //   opsAttrs.push(attr)
+                // }
               }
               let opsIsValid = false
               for(let attr in opsAttrs) {
@@ -818,10 +819,10 @@ export default defineComponent({
         for(let attr in target?.attributes) {
           if(attr != 'EventDate') {
             if(this.preFillModalOption != '') {
-              let categories = target.attributes[attr].categories.map((c: any) => c.name)
-              if(categories.includes(this.preFillModalOption)) {
-                target.attributeValues[attr] = source.attributeValues[attr]
-              }
+              // let categories = target.attributes[attr].categories.map((c: any) => c.name)
+              // if(categories.includes(this.preFillModalOption)) {
+              //   target.attributeValues[attr] = source.attributeValues[attr]
+              // }
             } else {
               target.attributeValues[attr] = source.attributeValues[attr]
             }
@@ -846,9 +847,9 @@ export default defineComponent({
             }
             let isFuneralRequest = false
             let val = this.viewModel.request.attributeValues.Ministry
-            let ministry = {} as DefinedValue
+            let ministry = {} as DefinedValueBag
             if(val != '') {
-              let min = JSON.parse(val) as ListItem
+              let min = JSON.parse(val) as ListItemBag
               ministry = this.viewModel.ministries.filter((dv: any) => {
                 return dv.guid == min.value
               })[0]
@@ -903,7 +904,8 @@ export default defineComponent({
       if(el) {
         el.style.display = 'block'
       }
-      let id = this.viewModel?.request?.id as number
+      let id = 0
+      // let id = this.viewModel?.request?.id as number
       this.addComment(id, comment).then((res: any) => {
         if (res.isError) {
           this.toastMessage = res.errorMessage
@@ -1130,37 +1132,37 @@ export default defineComponent({
     },
     modal: {
       handler (val) {
-        if(!val) {
-          if(this.viewModel?.request && this.viewModel.request.id > 0) {
-            let el = document.getElementById('updateProgress')
-            if(el) {
-              el.style.display = 'block'
-            }
-            this.reload(this.viewModel.request.id).then((res) => {
-              if(this.viewModel?.request && res.data.request ) {
-                this.viewModel.request = res.data.request
-                this.viewModel.events = res.data.events
-              } else if (res.isError || res.Message) {
-                this.toastIsError = true
-                this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
-                let el = document.getElementById('toast')
-                el?.classList.add("show")
-              }
-            }).catch((err) => {
-              console.log(err)
-              if(err.Message) {
-                this.toastIsError = true
-                this.toastMessage = err.Message
-                let el = document.getElementById('toast')
-                el?.classList.add("show")
-              }
-            }).finally(() => {
-              if(el) {
-                el.style.display = 'none'
-              }
-            })
-          }
-        }
+        // if(!val) {
+        //   if(this.viewModel?.request && this.viewModel.request.id > 0) {
+        //     let el = document.getElementById('updateProgress')
+        //     if(el) {
+        //       el.style.display = 'block'
+        //     }
+        //     this.reload(this.viewModel.request.id).then((res) => {
+        //       if(this.viewModel?.request && res.data.request ) {
+        //         this.viewModel.request = res.data.request
+        //         this.viewModel.events = res.data.events
+        //       } else if (res.isError || res.Message) {
+        //         this.toastIsError = true
+        //         this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
+        //         let el = document.getElementById('toast')
+        //         el?.classList.add("show")
+        //       }
+        //     }).catch((err) => {
+        //       console.log(err)
+        //       if(err.Message) {
+        //         this.toastIsError = true
+        //         this.toastMessage = err.Message
+        //         let el = document.getElementById('toast')
+        //         el?.classList.add("show")
+        //       }
+        //     }).finally(() => {
+        //       if(el) {
+        //         el.style.display = 'none'
+        //       }
+        //     })
+        //   }
+        // }
       },
       deep: true
     }
@@ -1172,22 +1174,22 @@ export default defineComponent({
         this.viewModel.request.attributeValues.NeedsSpace = 'True'
       }
     }
-    if(this.viewModel?.request.id == 0) {
-      //New Request set some defaults
-      if(this.viewModel?.request?.attributeValues) {
-        this.viewModel.request.attributeValues.Contact = `${this.currentPerson?.nickName} ${this.currentPerson?.lastName}`
-        this.viewModel.request.attributeValues.RequestStatus = "Draft"
-      }
-    } else {
-      if(this.viewModel?.request.attributeValues) {
-        this.resources = this.viewModel.request.attributeValues.RequestType.split(",").map((t: string) => t.trim())
-      }
-      //Show Validation
-      for(let i=0; i<= this.lastStep; i++) {
-        this.pagesViewed.push(i)
-      }
-      this.validate()
-    }
+    // if(this.viewModel?.request.id == 0) {
+    //   //New Request set some defaults
+    //   if(this.viewModel?.request?.attributeValues) {
+    //     this.viewModel.request.attributeValues.Contact = `${this.currentPerson?.nickName} ${this.currentPerson?.lastName}`
+    //     this.viewModel.request.attributeValues.RequestStatus = "Draft"
+    //   }
+    // } else {
+    //   if(this.viewModel?.request.attributeValues) {
+    //     this.resources = this.viewModel.request.attributeValues.RequestType.split(",").map((t: string) => t.trim())
+    //   }
+    //   //Show Validation
+    //   for(let i=0; i<= this.lastStep; i++) {
+    //     this.pagesViewed.push(i)
+    //   }
+    //   this.validate()
+    // }
   },
   template: `
 <div class="card">

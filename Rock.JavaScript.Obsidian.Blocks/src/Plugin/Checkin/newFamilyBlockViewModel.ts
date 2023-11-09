@@ -1,41 +1,46 @@
-import { DefinedValue, DefinedType, Attribute, Person, PhoneNumber, Group } from "../../../ViewModels"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { DefinedTypeBag } from "@Obsidian/ViewModels/Entities/definedTypeBag"
+import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { PhoneNumberBag } from "@Obsidian/ViewModels/Entities/phoneNumberBag"
+import { GroupBag } from "@Obsidian/ViewModels/Entities/groupBag"
 export type NewFamilyBlockViewModel = {
   showTitle: string;
-  titleDefinedType: DefinedType;
+  titleDefinedType: DefinedTypeBag;
   showNickName: string;
   showMiddleName: string;
   showSuffix: string;
-  suffixDefinedType: DefinedType;
-  connectionStatusDefinedType: DefinedType;
-  defaultConnectionStatus: DefinedValue;
+  suffixDefinedType: DefinedTypeBag;
+  connectionStatusDefinedType: DefinedTypeBag;
+  defaultConnectionStatus: DefinedValueBag;
   requireConnectionStatus: String;
   requireGender: string;
   requireBirthDate: string;
   requireGradeOrAbility: string;
   showMaritalStatus: string;
-  maritalStatusDefinedType: DefinedType;
-  defaultAdultMaritalStatus: DefinedValue;
-  defaultChildMaritalStatus: DefinedValue;
+  maritalStatusDefinedType: DefinedTypeBag;
+  defaultAdultMaritalStatus: DefinedValueBag;
+  defaultChildMaritalStatus: DefinedValueBag;
   showEmail: boolean;
   showEmailOptOut: boolean;
   showCell: boolean;
   showSMSEnabled: boolean;
-  phoneType: DefinedValue;
+  phoneType: DefinedValueBag;
   showAddress: boolean;
   existingPersonPhoneCantBeMessaged: boolean;
-  adultAttributes: Attribute[];
-  childAttributes: Attribute[];
-  abilityLevelDefinedType: DefinedType;
-  abilityLevelAttribute: Attribute;
-  gradeDefinedType: DefinedType;
+  adultAttributes: AttributeBag[];
+  childAttributes: AttributeBag[];
+  abilityLevelDefinedType: DefinedTypeBag;
+  abilityLevelAttribute: AttributeBag;
+  gradeDefinedType: DefinedTypeBag;
   graduationYear: number;
-  existingPerson: Person;
-  emptyPerson: Person;
-  existingPersonPhoneNumber: PhoneNumber;
-  emptyPersonPhoneNumber: PhoneNumber;
-  Groups: Group[];
-  GroupStartDOBAttribute: Attribute;
-  GroupEndDOBAttribute: Attribute;
-  GroupAbilityAttribute: Attribute;
-  GroupGradeAttribute: Attribute;
+  existingPerson: PersonBag;
+  emptyPerson: PersonBag;
+  existingPersonPhoneNumber: PhoneNumberBag;
+  emptyPersonPhoneNumber: PhoneNumberBag;
+  Groups: GroupBag[];
+  GroupStartDOBAttribute: AttributeBag;
+  GroupEndDOBAttribute: AttributeBag;
+  GroupAbilityAttribute: AttributeBag;
+  GroupGradeAttribute: AttributeBag;
 }

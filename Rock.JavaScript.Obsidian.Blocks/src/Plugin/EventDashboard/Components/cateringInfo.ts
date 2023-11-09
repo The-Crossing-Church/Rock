@@ -1,6 +1,6 @@
 import { defineComponent, PropType } from "vue"
-import RockField from "../../../../Controls/rockField"
-import RockLabel from "../../../../Elements/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 
 type ListItem = {
   text: string,

@@ -386,16 +386,16 @@ namespace org.crossingchurch.PiiAlert.Jobs
             var mail = new RockEmailMessage();
             mail.Message = message;
             mail.Subject = "PII Alert";
-            mail.SetRecipients(emails.Split(',').ToList());
-            try
-            {
-                var output = new List<string>();
-                mail.Send(out output);
-                Console.WriteLine(output);
-            } catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            //mail.SetRecipients(emails.Split(',').ToList());
+            //try
+            //{
+            //    var output = new List<string>();
+            //    mail.Send(out output);
+            //    Console.WriteLine(output);
+            //} catch (Exception e)
+            //{
+            //    Console.WriteLine(e.Message);
+            //}
         }
     }
 }

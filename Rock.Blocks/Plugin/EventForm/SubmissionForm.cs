@@ -9,9 +9,8 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
 using Rock.Tasks;
-using Rock.ViewModel;
-using Rock.ViewModel.Controls;
-using Rock.ViewModel.NonEntities;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 using Rock.SystemGuid;
 using Rock.Communication;
@@ -128,7 +127,7 @@ namespace Rock.Blocks.Plugin.EventForm
             viewModel.isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
             viewModel.isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
             viewModel.permissions = SetPermissions( viewModel.request, viewModel.isEventAdmin );
-            viewModel.existing = LoadExisting( viewModel.request.Id );
+            //viewModel.existing = LoadExisting( viewModel.request.Id );
             viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
 
             //Lists
@@ -143,7 +142,7 @@ namespace Rock.Blocks.Plugin.EventForm
             {
                 Rock.Model.DefinedType locationDT = dt_svc.Get( locationGuid );
                 var locs = dv_svc.Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
-                viewModel.locations = locs.Select( l => l.ToViewModel( p, true ) ).ToList();
+                //viewModel.locations = locs.Select( l => l.ToViewModel( p, true ) ).ToList();
                 string templateIdVal;
                 int templateid;
                 var setUpAttr = locs.First().Attributes["StandardSetUp"];
@@ -244,7 +243,7 @@ namespace Rock.Blocks.Plugin.EventForm
         }
 
         [BlockAction]
-        public BlockActionResult Save( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
+        public BlockActionResult Save( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events )
         {
             try
             {
@@ -259,7 +258,7 @@ namespace Rock.Blocks.Plugin.EventForm
             }
         }
         [BlockAction]
-        public BlockActionResult Submit( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
+        public BlockActionResult Submit( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events )
         {
             try
             {
@@ -405,7 +404,7 @@ namespace Rock.Blocks.Plugin.EventForm
                 item.ContentChannelTypeId = EventContentChannelTypeId;
                 var details = new ContentChannelItem() { ContentChannelId = EventDetailsContentChannelId, ContentChannelTypeId = EventDetailsContentChannelTypeId };
                 viewModel.request = item.ToViewModel( p, true );
-                viewModel.events = new List<ContentChannelItemViewModel>() { details.ToViewModel( p, true ) };
+                viewModel.events = new List<ContentChannelItemBag>() { details.ToViewModel( p, true ) };
                 return viewModel;
             }
         }
@@ -582,7 +581,7 @@ namespace Rock.Blocks.Plugin.EventForm
             return items;
         }
 
-        private FormResponse SaveRequest( ContentChannelItemViewModel viewModel, List<ContentChannelItemViewModel> events )
+        private FormResponse SaveRequest( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events )
         {
             SetProperties();
             ContentChannelItem item = FromViewModel( viewModel );
@@ -758,7 +757,7 @@ namespace Rock.Blocks.Plugin.EventForm
             return res;
         }
 
-        private List<string> PreApprovalCheck( ContentChannelItem item, List<ContentChannelItemViewModel> events )
+        private List<string> PreApprovalCheck( ContentChannelItem item, List<ContentChannelItemBag> events )
         {
             var cciSvc = new ContentChannelItemService( context );
             var avSvc = new AttributeValueService( context );
@@ -1080,7 +1079,7 @@ namespace Rock.Blocks.Plugin.EventForm
             return hasRole;
         }
 
-        private List<string> SetPermissions( ContentChannelItemViewModel item, bool isAdmin )
+        private List<string> SetPermissions( ContentChannelItemBag item, bool isAdmin )
         {
             List<string> permissions = new List<string>();
             Rock.Model.Person p = GetCurrentPerson();
@@ -1094,35 +1093,35 @@ namespace Rock.Blocks.Plugin.EventForm
 
             //User Permissions
             //TODO Cooksey: Finish Permissions for View vs Edit access
-            if (item.Id > 0)
-            {
-                Rock.Model.PersonAlias createdBy = null;
-                if (item.CreatedByPersonAliasId.HasValue)
-                {
-                    createdBy = new PersonAliasService( new RockContext() ).Get( item.CreatedByPersonAliasId.Value );
-                }
-                Rock.Model.PersonAlias modifiedBy = null;
-                if (item.ModifiedByPersonAliasId.HasValue)
-                {
-                    modifiedBy = new PersonAliasService( new RockContext() ).Get( item.ModifiedByPersonAliasId.Value );
-                }
-                if ((createdBy != null && createdBy.PersonId == p.Id) || (modifiedBy != null && modifiedBy.PersonId == p.Id))
-                {
-                    permissions.Add( "Edit" );
-                }
-                else
-                {
-                    permissions.Add( "View" );
-                }
-            }
-            else
-            {
-                permissions.Add( "Edit" );
-            }
+            //if (item.Id > 0)
+            //{
+            //    Rock.Model.PersonAlias createdBy = null;
+            //    if (item.CreatedByPersonAliasId.HasValue)
+            //    {
+            //        createdBy = new PersonAliasService( new RockContext() ).Get( item.CreatedByPersonAliasId.Value );
+            //    }
+            //    Rock.Model.PersonAlias modifiedBy = null;
+            //    if (item.ModifiedByPersonAliasId.HasValue)
+            //    {
+            //        modifiedBy = new PersonAliasService( new RockContext() ).Get( item.ModifiedByPersonAliasId.Value );
+            //    }
+            //    if ((createdBy != null && createdBy.PersonId == p.Id) || (modifiedBy != null && modifiedBy.PersonId == p.Id))
+            //    {
+            //        permissions.Add( "Edit" );
+            //    }
+            //    else
+            //    {
+            //        permissions.Add( "View" );
+            //    }
+            //}
+            //else
+            //{
+            //    permissions.Add( "Edit" );
+            //}
             return permissions;
         }
 
-        private ContentChannelItem FromViewModel( ContentChannelItemViewModel viewModel )
+        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel )
         {
             Rock.Model.Person p = GetCurrentPerson();
             ContentChannelItem item = new ContentChannelItem()
@@ -1130,17 +1129,17 @@ namespace Rock.Blocks.Plugin.EventForm
                 ContentChannelId = viewModel.ContentChannelId,
                 ContentChannelTypeId = viewModel.ContentChannelTypeId
             };
-            if (viewModel.Id > 0)
-            {
-                if (viewModel.AttributeValues.ContainsKey( "RequestStatus" ) && (viewModel.AttributeValues["RequestStatus"] == "Submitted" || viewModel.AttributeValues["RequestStatus"] == "In Progress" || viewModel.AttributeValues["RequestStatus"] == "Draft"))
-                {
-                    item = new ContentChannelItemService( context ).Get( viewModel.Id );
-                }
-                else
-                {
-                    item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
-                }
-            }
+            //if (viewModel.Id > 0)
+            //{
+            //    if (viewModel.AttributeValues.ContainsKey( "RequestStatus" ) && (viewModel.AttributeValues["RequestStatus"] == "Submitted" || viewModel.AttributeValues["RequestStatus"] == "In Progress" || viewModel.AttributeValues["RequestStatus"] == "Draft"))
+            //    {
+            //        item = new ContentChannelItemService( context ).Get( viewModel.Id );
+            //    }
+            //    else
+            //    {
+            //        item = new ContentChannelItemService( new RockContext() ).Get( viewModel.Id );
+            //    }
+            //}
             item.LoadAttributes();
             item.Title = viewModel.Title;
             foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
@@ -1787,24 +1786,24 @@ namespace Rock.Blocks.Plugin.EventForm
 
         public class SubmissionFormViewModel
         {
-            public ContentChannelItemViewModel request { get; set; }
-            public ContentChannelItemViewModel originalRequest { get; set; }
-            public List<ContentChannelItemViewModel> events { get; set; }
+            public ContentChannelItemBag request { get; set; }
+            public ContentChannelItemBag originalRequest { get; set; }
+            public List<ContentChannelItemBag> events { get; set; }
             public List<ContentChannelItem> existing { get; set; }
             public List<ContentChannelItemAssociation> existingDetails { get; set; }
             public bool isSuperUser { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
             public List<string> permissions { get; set; }
-            public List<DefinedValueViewModel> locations { get; set; }
-            public List<AttributeMatrixViewModel> locationSetupMatrix { get; set; }
-            public List<AttributeMatrixItemViewModel> locationSetupMatrixItem { get; set; }
+            public List<DefinedValueBag> locations { get; set; }
+            public List<AttributeMatrixBag> locationSetupMatrix { get; set; }
+            public List<AttributeMatrixItemBag> locationSetupMatrixItem { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public List<Rock.Model.DefinedValue> inventoryList { get; set; }
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
-            public List<AttributeViewModel> discountCodeAttrs { get; set; }
+            public List<AttributeBag> discountCodeAttrs { get; set; }
         }
 
         public class PreApprovalData

@@ -1,11 +1,12 @@
 import { defineComponent, PropType } from "vue"
-import { DefinedValue, DefinedType, Person } from "../../../../ViewModels"
-import RockText from "../../../../Elements/textBox"
-import RockDDL from "../../../../Elements/dropDownList"
-import RockLabel from "../../../../Elements/rockLabel"
-import RockField from "../../../../Controls/rockField"
-import RockCheckbox from "../../../../Elements/checkBox"
-import PhoneNumberBox from "../../../../Elements/phoneNumberBox"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import RockText from "@Obsidian/Controls/textBox"
+import RockDDL from "@Obsidian/Controls/dropDownList"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import RockCheckbox from "@Obsidian/Controls/checkBox"
+import PhoneNumberBox from "@Obsidian/Controls/phoneNumberBox.obs"
 
 export default defineComponent({
     name: "Checkin.Components.ContactInfo",
@@ -23,11 +24,11 @@ export default defineComponent({
       showCell: Boolean,
       showSMS: Boolean,
       phoneType: {
-        type: Object as PropType<DefinedValue>,
+        type: Object as PropType<DefinedValueBag>,
         required: false
       },
       person: {
-        type: Object as PropType<Person>,
+        type: Object as PropType<PersonBag>,
         required: false
       }
     },

@@ -1,8 +1,8 @@
 import { defineComponent, PropType } from "vue"
 import { DateTime, Interval } from "luxon"
 import { Modal, Button } from "ant-design-vue"
-import { useStore } from "../../../../Store/index"
-import { Person } from "../../../../ViewModels"
+import { useStore } from "@Obsidian/PageState"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import Chip from "../../EventForm/Components/chip"
 
 const store = useStore()
@@ -32,7 +32,7 @@ export default defineComponent({
   },
   computed: {
     /** The person currently authenticated */
-    currentPerson(): Person | null {
+    currentPerson(): PersonBag | null {
       return store.state.currentPerson
     },
     selectedTimeFrame() {

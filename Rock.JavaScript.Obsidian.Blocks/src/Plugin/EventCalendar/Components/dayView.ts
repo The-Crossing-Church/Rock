@@ -1,5 +1,5 @@
 import { defineComponent, provide } from "vue"
-import { useStore } from "../../../../Store/index"
+import { useStore } from "@Obsidian/PageState"
 import { DateTime } from "luxon"
 import Day from "./day"
 
@@ -32,8 +32,8 @@ export default defineComponent({
   methods: {
     getTime(hour: number) {
       if(this.currentDate) {
-        let dt = DateTime.fromObject({year: this.currentDate.year, month: this.currentDate.month, day: this.currentDate.day, hour: hour - 1, minute: 0, second: 0})
-        return dt.toFormat('h') + ' ' + ((hour - 1) > 11 ? 'PM' : 'AM')
+        // let dt = DateTime.fromObject({year: this.currentDate.year, month: this.currentDate.month, day: this.currentDate.day, hour: hour - 1, minute: 0, second: 0})
+        // return dt.toFormat('h') + ' ' + ((hour - 1) > 11 ? 'PM' : 'AM')
       }
     },
     filterToEvent(parent: number) {

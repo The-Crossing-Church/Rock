@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue";
-import { ContentChannelItem } from "../../../../ViewModels"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
 import { Popover, Button, Badge } from "ant-design-vue"
 
 
@@ -11,7 +11,7 @@ export default defineComponent({
       "a-badge": Badge
     },
     props: {
-      request: Object as PropType<ContentChannelItem>,
+      request: Object as PropType<ContentChannelItemBag>,
       url: String
     },
     setup() {

@@ -1,17 +1,20 @@
-import { DefinedValue, ContentChannelItem, ContentChannelItemAssociation, Attribute } from "../../../ViewModels"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { ContentChannelItemAssociationBag } from "@Obsidian/ViewModels/Entities/contentChannelItemAssociationBag"
+import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
 
 export type UserDashboardBlockViewModel = {
-    events: ContentChannelItem[];
-    eventDetails: ContentChannelItemAssociation[];
-    comments: ContentChannelItem[];
+    events: ContentChannelItemBag[];
+    eventDetails: ContentChannelItemAssociationBag[];
+    comments: ContentChannelItemBag[];
     isEventAdmin: boolean;
     isRoomAdmin: boolean;
-    locations: DefinedValue[];
-    ministries: DefinedValue[];
-    budgetLines: DefinedValue[];
-    drinks: DefinedValue[];
-    requestStatus: Attribute;
-    requestType: Attribute;
+    locations: DefinedValueBag[];
+    ministries: DefinedValueBag[];
+    budgetLines: DefinedValueBag[];
+    drinks: DefinedValueBag[];
+    requestStatus: AttributeBag;
+    requestType: AttributeBag;
     workflowURL: string;
     defaultStatuses: string[];
     eventDetailsCCId: number;
@@ -19,6 +22,6 @@ export type UserDashboardBlockViewModel = {
 };
 
 export type DuplicateRequestViewModel = {
-    request: ContentChannelItem;
-    events: ContentChannelItem[];
+    request: ContentChannelItemBag;
+    events: ContentChannelItemBag[];
 }

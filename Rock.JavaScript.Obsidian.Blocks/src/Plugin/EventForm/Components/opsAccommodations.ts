@@ -1,9 +1,10 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
 import { DateTime, Duration, Interval } from "luxon"
-import RockField from "../../../../Controls/rockField"
-import RockForm from "../../../../Controls/rockForm"
-import RockLabel from "../../../../Elements/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 import { Button, Modal, Select } from "ant-design-vue"
 import Validator from "./validator"
 import Toggle from "./toggle"
@@ -50,15 +51,15 @@ export default defineComponent({
     },
     props: {
       e: {
-          type: Object as PropType<ContentChannelItem>,
+          type: Object as PropType<ContentChannelItemBag>,
           required: false
       },
-      locations: Array as PropType<DefinedValue[]>,
+      locations: Array as PropType<DefinedValueBag[]>,
       locationSetUp: Array as PropType<any[]>,
       showValidation: Boolean,
       refName: String,
-      request: Object as PropType<ContentChannelItem>,
-      originalRequest: Object as PropType<ContentChannelItem>,
+      request: Object as PropType<ContentChannelItemBag>,
+      originalRequest: Object as PropType<ContentChannelItemBag>,
       inventoryList: Array as PropType<any[]>,
       existing: Array as PropType<any[]>,
       readonly: Boolean

@@ -1,14 +1,15 @@
 import { defineComponent, PropType} from "vue"
-import { Person } from "../../../../ViewModels"
-import { ContentChannelItem, DefinedValue } from "../../../../ViewModels"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
 import { DateTime, Duration, Interval } from "luxon"
-import { useStore } from "../../../../Store/index"
+import { useStore } from "@Obsidian/PageState"
 import { Switch, Button } from "ant-design-vue"
-import RockField from "../../../../Controls/rockField"
-import RockForm from "../../../../Controls/rockForm"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
 import Validator from "./validator"
-import TextBox from "../../../../Elements/textBox"
-import RockLabel from "../../../../Elements/rockLabel"
+import TextBox from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 import RoomPicker from "./roomPicker"
 import RoomSetUp from "./roomSetUp"
 import Toggle from "./toggle"
@@ -47,12 +48,12 @@ export default defineComponent({
   },
   props: {
     e: {
-      type: Object as PropType<ContentChannelItem>,
+      type: Object as PropType<ContentChannelItemBag>,
       required: false
     },
-    locations: Array as PropType<DefinedValue[]>,
-    request: Object as PropType<ContentChannelItem>,
-    originalRequest: Object as PropType<ContentChannelItem>,
+    locations: Array as PropType<DefinedValueBag[]>,
+    request: Object as PropType<ContentChannelItemBag>,
+    originalRequest: Object as PropType<ContentChannelItemBag>,
     existing: Array as PropType<any[]>,
     showValidation: Boolean,
     refName: String
@@ -68,7 +69,7 @@ export default defineComponent({
   },
   computed: {
     /** The person currently authenticated */
-    currentPerson(): Person | null {
+    currentPerson(): PersonBag | null {
       return store.state.currentPerson;
     },
     rooms() {
@@ -76,7 +77,7 @@ export default defineComponent({
         return l.attributeValues?.IsDoor == "False"
       }).map(l => {
         let x = {} as ListItem
-        x.value = l.guid
+        // x.value = l.guid
         if(l.value) {
           x.text = l.value
           if(l.attributeValues?.Capacity) {
@@ -118,9 +119,9 @@ export default defineComponent({
         dates.push(this.e?.attributeValues?.EventDate)
       }
       let existingOnDate = this.existing?.filter(e => {
-        if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
-          return false
-        }
+        // if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
+        //   return false
+        // }
         let intersect = e.attributeValues?.EventDates.value.split(",").map((d: string) => d.trim()).filter((date: string) => dates.includes(date))
         if(intersect && intersect.length > 0) {
           //Filter to events object for the matching dates

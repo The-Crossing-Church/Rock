@@ -110,6 +110,10 @@
       <Project>{13568622-324e-4493-b605-c9896e725d30}</Project>
       <Name>Rock.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Rock.Enums\Rock.Enums.csproj">
+      <Project>{61dece2b-0434-435e-8d65-49a4fdf98365}</Project>
+      <Name>Rock.Enums</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Rock.Lava.Shared\Rock.Lava.Shared.csproj">
       <Project>{8820CD93-70EE-496D-B17B-0C4C68DD4957}</Project>
       <Name>Rock.Lava.Shared</Name>
@@ -118,9 +122,9 @@
       <Project>{add1edd0-a4cb-4e82-b6ad-6ad1d556deae}</Project>
       <Name>Rock.Rest</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Rock.ViewModel\Rock.ViewModel.csproj">
+    <ProjectReference Include="..\Rock.ViewModels\Rock.ViewModels.csproj">
       <Project>{05baaf85-9c53-4ccd-a535-036427b0df72}</Project>
-      <Name>Rock.ViewModel</Name>
+      <Name>Rock.ViewModels</Name>
     </ProjectReference>
     <ProjectReference Include="..\Rock\Rock.csproj">
       <Project>{185a31d7-3037-4dae-8797-0459849a84bd}</Project>

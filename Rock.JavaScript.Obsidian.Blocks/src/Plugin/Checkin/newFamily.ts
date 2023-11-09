@@ -1,14 +1,13 @@
 import { defineComponent, provide, PropType } from "vue"
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
-import { Person, PhoneNumber } from "../../../ViewModels"
+import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
+import { PhoneNumberBag } from "@Obsidian/ViewModels/Entities/phoneNumberBag"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import { NewFamilyBlockViewModel } from "./newFamilyBlockViewModel"
-import { useStore } from "../../../Store/index"
 import { Button } from "ant-design-vue"
-import Panel from "../../../Controls/panel"
-import Modal from "../../../Controls/modal"
-import PersonPicker from "../../../Controls/personPicker"
+import Panel from "@Obsidian/Controls/panel"
+import Modal from "@Obsidian/Controls/modal"
+import PersonPicker from "@Obsidian/Controls/personPicker"
 import Member from "./Components/member"
-const store = useStore()
 
 export default defineComponent({
   name: "Checkin.NewFamily",
@@ -24,7 +23,7 @@ export default defineComponent({
     const invokeBlockAction = useInvokeBlockAction();
     
     /** A method to process new family members */
-    const save: (parents: Person[], children: Person[], phonenumbers: PhoneNumber[], placements: any[]) => Promise<any> = async (parents, children, phonenumbers, placements) => {
+    const save: (parents: PersonBag[], children: PersonBag[], phonenumbers: PhoneNumberBag[], placements: any[]) => Promise<any> = async (parents, children, phonenumbers, placements) => {
         const response = await invokeBlockAction<{ expirationDateTime: string }>("ProcessFamily", {
             parents: parents, children: children, phonenumbers: phonenumbers, placements: placements
         });
@@ -35,7 +34,7 @@ export default defineComponent({
     provide("save", save);
       
     /** A method to check for existing person */
-    const findExisting: (person: Person, phonenumber:String) => Promise<any> = async (person, phonenumber) => {
+    const findExisting: (person: PersonBag, phonenumber:String) => Promise<any> = async (person, phonenumber) => {
         const response = await invokeBlockAction<{ expirationDateTime: string }>("CheckForExisting", {
           viewModel: person, mobileNumber: phonenumber
         });
@@ -53,8 +52,8 @@ export default defineComponent({
   },
   data() {
     return {
-      parents: [] as Person[],
-      children: [] as Person[],
+      parents: [] as PersonBag[],
+      children: [] as PersonBag[],
       existingAdult: {} as any,
       modal: false,
       matchesFoundAlert: false,
@@ -69,7 +68,7 @@ export default defineComponent({
 
   },
   methods: {
-    addPerson(list: Person[], ageClassification: number) {
+    addPerson(list: PersonBag[], ageClassification: number) {
       let newPerson = JSON.parse(JSON.stringify(this.viewModel?.emptyPerson))
       if(this.viewModel?.emptyPerson && this.viewModel.emptyPerson.attributes) {
         newPerson.attributes = JSON.parse(JSON.stringify(this.viewModel.emptyPerson.attributes))
@@ -83,13 +82,13 @@ export default defineComponent({
       let url = window.location.origin + window.location.pathname + "?Guid=" + this.existingAdult?.value
       window.location.assign(url)
     },
-    removeParent(person: Person) {
+    removeParent(person: PersonBag) {
       if(this.parents.length > 1) {
         let idx = this.parents.indexOf(person)
         this.parents.splice(idx, 1)
       }
     },
-    removeChild(person: Person) {
+    removeChild(person: PersonBag) {
       if(this.children.length > 1) {
         let idx = this.children.indexOf(person)
         this.children.splice(idx, 1)
@@ -143,7 +142,7 @@ export default defineComponent({
                 this.message += "<br/>"
               }
             }
-            this.message += `<a href="/Person/${res.data.people[0].id}" class="btn btn-primary my-2">View Profile<a/>`
+            this.message += `<a href="/PersonBag/${res.data.people[0].id}" class="btn btn-primary my-2">View Profile<a/>`
             this.alertClass = "alert alert-success"
             this.showResults = true
           } else {
@@ -174,18 +173,18 @@ export default defineComponent({
   },
   mounted() {
     let p = JSON.parse(JSON.stringify(this.viewModel?.emptyPerson))
-    if(this.viewModel?.existingPerson && this.viewModel.existingPerson.id > 0) {
-      p = this.viewModel.existingPerson
-      if(this.viewModel.existingPersonPhoneNumber) {
-        p.phoneNumbers = [ this.viewModel.existingPersonPhoneNumber ]
-      } else {
-        p.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
-      }
-      p.phoneNumberCantBeMessaged = this.viewModel.existingPersonPhoneCantBeMessaged
-    } else {
-      p.ageClassification = 1
-      p.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
-    }
+    // if(this.viewModel?.existingPerson && this.viewModel.existingPerson.id > 0) {
+    //   p = this.viewModel.existingPerson
+    //   if(this.viewModel.existingPersonPhoneNumber) {
+    //     p.phoneNumbers = [ this.viewModel.existingPersonPhoneNumber ]
+    //   } else {
+    //     p.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
+    //   }
+    //   p.phoneNumberCantBeMessaged = this.viewModel.existingPersonPhoneCantBeMessaged
+    // } else {
+    //   p.ageClassification = 1
+    //   p.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
+    // }
     this.parents.push(p)
 
     let c = JSON.parse(JSON.stringify(this.viewModel?.emptyPerson))

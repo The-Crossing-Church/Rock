@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue"
-import TextBox from "../../../../Elements/textBox"
-import RockLabel from "../../../../Elements/rockLabel"
-import DDL from "../../../../Elements/dropDownList"
+import TextBox from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import DDL from "@Obsidian/Controls/dropDownList"
 import { Button } from "ant-design-vue"
 
 type RoomSetUp = {

@@ -11,9 +11,8 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
 using Rock.Tasks;
-using Rock.ViewModel;
-using Rock.ViewModel.Controls;
-using Rock.ViewModel.NonEntities;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugin.EventDashboard
@@ -819,29 +818,29 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 }
             }
             viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
-            viewModel.events = viewModel.events.Select( e =>
-            {
-                var i = itemList.FirstOrDefault( il => il.Id == e.Id );
-                var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
-                int ct = 0;
-                for ( var k = 0; k < comments.Count(); k++ )
-                {
-                    if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
-                    {
-                        ct++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
-                return e;
-            } ).ToList();
+            //viewModel.events = viewModel.events.Select( e =>
+            //{
+            //    var i = itemList.FirstOrDefault( il => il.Id == e.Id );
+            //    var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
+            //    int ct = 0;
+            //    for ( var k = 0; k < comments.Count(); k++ )
+            //    {
+            //        if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
+            //        {
+            //            ct++;
+            //        }
+            //        else
+            //        {
+            //            break;
+            //        }
+            //    }
+            //    e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
+            //    return e;
+            //} ).ToList();
             return viewModel;
         }
 
-        private List<ContentChannelItemViewModel> LoadByStatus( Filters filters )
+        private List<ContentChannelItemBag> LoadByStatus( Filters filters )
         {
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
             ContentChannelItem item = new ContentChannelItem();
@@ -980,21 +979,21 @@ namespace Rock.Blocks.Plugin.EventDashboard
             var results = filtered_items.OrderByDescending( i => i.ModifiedDateTime ).Select( i => i.ToViewModel( p, true ) ).ToList();
             results = results.Select( e =>
             {
-                var i = filtered_items.FirstOrDefault( il => il.Id == e.Id );
-                var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
-                int ct = 0;
-                for ( var k = 0; k < comments.Count(); k++ )
-                {
-                    if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
-                    {
-                        ct++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
+                //var i = filtered_items.FirstOrDefault( il => il.Id == e.Id );
+                //var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
+                //int ct = 0;
+                //for ( var k = 0; k < comments.Count(); k++ )
+                //{
+                //    if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
+                //    {
+                //        ct++;
+                //    }
+                //    else
+                //    {
+                //        break;
+                //    }
+                //}
+                //e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
                 return e;
             } ).ToList();
             return results;
@@ -1021,7 +1020,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             return hasRole;
         }
 
-        private ContentChannelItem FromViewModel( ContentChannelItemViewModel viewModel )
+        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel )
         {
             RockContext context = new RockContext();
             Rock.Model.Person p = GetCurrentPerson();
@@ -1030,10 +1029,10 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 ContentChannelId = viewModel.ContentChannelId,
                 ContentChannelTypeId = viewModel.ContentChannelTypeId
             };
-            if ( viewModel.Id > 0 )
-            {
-                item = new ContentChannelItemService( context ).Get( viewModel.Id );
-            }
+            //if ( viewModel.Id > 0 )
+            //{
+            //    item = new ContentChannelItemService( context ).Get( viewModel.Id );
+            //}
             item.LoadAttributes();
             item.Title = viewModel.Title;
             foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
@@ -1152,7 +1151,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
             return users;
         }
 
-        private List<ContentChannelItemViewModel> GetConflicts( ContentChannelItem item, List<ContentChannelItem> events, int originalId = 0 )
+        private List<ContentChannelItemBag> GetConflicts( ContentChannelItem item, List<ContentChannelItem> events, int originalId = 0 )
         {
             item.LoadAttributes();
             events.LoadAttributes();
@@ -1498,19 +1497,19 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
         public class DashboardViewModel
         {
-            public List<ContentChannelItemViewModel> events { get; set; }
-            public List<ContentChannelItemViewModel> submittedEvents { get; set; }
-            public List<ContentChannelItemViewModel> changedEvents { get; set; }
-            public List<ContentChannelItemViewModel> inprogressEvents { get; set; }
+            public List<ContentChannelItemBag> events { get; set; }
+            public List<ContentChannelItemBag> submittedEvents { get; set; }
+            public List<ContentChannelItemBag> changedEvents { get; set; }
+            public List<ContentChannelItemBag> inprogressEvents { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
-            public List<DefinedValueViewModel> locations { get; set; }
+            public List<DefinedValueBag> locations { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public List<Rock.Model.DefinedValue> drinks { get; set; }
             public List<Rock.Model.DefinedValue> inventory { get; set; }
-            public AttributeViewModel requestStatus { get; set; }
-            public AttributeViewModel requestType { get; set; }
+            public AttributeBag requestStatus { get; set; }
+            public AttributeBag requestType { get; set; }
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
             public List<Person> users { get; set; }
@@ -1520,26 +1519,26 @@ namespace Rock.Blocks.Plugin.EventDashboard
 
         public class GetRequestResponse
         {
-            public ContentChannelItemViewModel request { get; set; }
-            public ContentChannelItemViewModel requestPendingChanges { get; set; }
+            public ContentChannelItemBag request { get; set; }
+            public ContentChannelItemBag requestPendingChanges { get; set; }
             public List<Comment> comments { get; set; }
             public List<Details> details { get; set; }
-            public PersonViewModel createdBy { get; set; }
-            public PersonViewModel modifiedBy { get; set; }
-            public List<ContentChannelItemViewModel> conflicts { get; set; }
-            public List<ContentChannelItemViewModel> changesConflicts { get; set; }
+            public PersonBag createdBy { get; set; }
+            public PersonBag modifiedBy { get; set; }
+            public List<ContentChannelItemBag> conflicts { get; set; }
+            public List<ContentChannelItemBag> changesConflicts { get; set; }
         }
 
         public class Comment
         {
-            public ContentChannelItemViewModel comment { get; set; }
+            public ContentChannelItemBag comment { get; set; }
             public string createdBy { get; set; }
         }
 
         public class Details
         {
-            public ContentChannelItemViewModel detail { get; set; }
-            public ContentChannelItemViewModel detailPendingChanges { get; set; }
+            public ContentChannelItemBag detail { get; set; }
+            public ContentChannelItemBag detailPendingChanges { get; set; }
         }
 
         public class Filters

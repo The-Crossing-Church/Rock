@@ -1,9 +1,9 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem } from "../../../../ViewModels"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
 import { Menu, Dropdown } from "ant-design-vue"
 const { MenuItem } = Menu
-import RockField from "../../../../Controls/rockField"
-import RockForm from "../../../../Controls/rockForm"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
 import Validator from "./validator"
@@ -25,11 +25,11 @@ export default defineComponent({
     },
     props: {
       e: {
-        type: Object as PropType<ContentChannelItem>,
+        type: Object as PropType<ContentChannelItemBag>,
         required: false
       },
       request: {
-        type: Object as PropType<ContentChannelItem>,
+        type: Object as PropType<ContentChannelItemBag>,
         required: false
       },
       showValidation: Boolean,

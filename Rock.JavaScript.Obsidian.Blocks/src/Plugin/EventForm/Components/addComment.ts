@@ -1,9 +1,9 @@
 import { defineComponent, PropType } from "vue"
 import { DateTime, Duration } from "luxon"
 import { Button, Modal} from "ant-design-vue"
-import { ContentChannelItem } from "../../../../ViewModels"
-import RockText from "../../../../Elements/textBox"
-import RockLabel from "../../../../Elements/rockLabel"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import RockText from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 
 
 export default defineComponent({
@@ -16,7 +16,7 @@ export default defineComponent({
     },
     props: {
       request: {
-        type: Object as PropType<ContentChannelItem>,
+        type: Object as PropType<ContentChannelItemBag>,
         required: false
       },
     },

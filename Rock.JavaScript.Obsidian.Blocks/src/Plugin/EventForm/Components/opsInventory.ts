@@ -1,9 +1,9 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItem } from "../../../../ViewModels"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
 import { DateTime, Duration, Interval } from "luxon"
-import RockField from "../../../../Controls/rockField"
-import RockForm from "../../../../Controls/rockForm"
-import RockLabel from "../../../../Elements/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 import { Button, Modal, Select } from "ant-design-vue"
 import OpsInventory from "./opsInventoryEntry"
 
@@ -34,11 +34,11 @@ export default defineComponent({
   },
   props: {
     e: {
-        type: Object as PropType<ContentChannelItem>,
+        type: Object as PropType<ContentChannelItemBag>,
         required: false
     },
-    request: Object as PropType<ContentChannelItem>,
-    originalRequest: Object as PropType<ContentChannelItem>,
+    request: Object as PropType<ContentChannelItemBag>,
+    originalRequest: Object as PropType<ContentChannelItemBag>,
     inventoryList: Array as PropType<any[]>,
     existing: Array as PropType<any[]>,
     readonly: Boolean
@@ -91,9 +91,9 @@ export default defineComponent({
         dates.push(this.e?.attributeValues?.EventDate)
       }
       let existingOnDate = this.existing?.filter(e => {
-        if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
-          return false
-        }
+        // if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
+        //   return false
+        // }
         let intersect = e.attributeValues?.EventDates.value.split(",").map((d: string) => d.trim()).filter((date: string) => dates.includes(date))
         if(intersect && intersect.length > 0) {
           //Filter to events object for the matching dates

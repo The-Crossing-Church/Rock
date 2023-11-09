@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
-import RockField from "../../../../Controls/rockField"
-import RockLabel from "../../../../Elements/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 import { DateTime } from "luxon"
 
 export default defineComponent({

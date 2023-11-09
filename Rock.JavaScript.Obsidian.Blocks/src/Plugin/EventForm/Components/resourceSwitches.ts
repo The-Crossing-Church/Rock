@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue";
-import { DefinedValue } from "../../../../ViewModels";
+import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag";
 import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel";
 import Toggle from "./toggle";
 import { DateTime, Duration } from "luxon";
@@ -83,8 +83,8 @@ export default defineComponent({
                 if(av != '') {
                   let val = JSON.parse(av)
                   var min = this.viewModel.ministries.filter(m => {
-                      return m.guid == val.value
-                  })[0] as DefinedValue
+                      // return m.guid == val.value
+                  })[0] as DefinedValueBag
                   if (min?.value?.toLowerCase().includes("funeral")) {
                       return true
                   }
@@ -114,11 +114,11 @@ export default defineComponent({
             let eDate = DateTime.now()
             if (this.viewModel && this.viewModel.request?.attributeValues) {
                 let av = (this.viewModel.request.attributeValues['Status'])
-                if (this.viewModel.request?.id > 0 && av != 'Draft') {
-                    if (this.viewModel.request.startDateTime) {
-                        eDate = DateTime.fromFormat(this.viewModel.request.startDateTime, 'yyyy-MM-DD')
-                    }
-                }
+                // if (this.viewModel.request?.id > 0 && av != 'Draft') {
+                //     if (this.viewModel.request.startDateTime) {
+                //         eDate = DateTime.fromFormat(this.viewModel.request.startDateTime, 'yyyy-MM-DD')
+                //     }
+                // }
                 let span = Duration.fromObject({ days: 21 })
                 eDate = eDate.plus(span)
                 //Override for Funerals

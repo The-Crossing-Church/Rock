@@ -1,14 +1,14 @@
 import { defineComponent, PropType } from "vue"
-import { Person } from "../../../../ViewModels"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
 import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel"
-import { useStore } from "../../../../Store/index"
+import { useStore } from "@Obsidian/PageState"
 import { Switch } from "ant-design-vue"
 import { DateTime } from "luxon"
-import RockForm from "../../../../Controls/rockForm"
-import RockField from "../../../../Controls/rockField"
-import RockFormField from "../../../../Elements/rockFormField"
-import TextBox from "../../../../Elements/textBox"
-import RockLabel from "../../../../Elements/rockLabel"
+import RockForm from "@Obsidian/Controls/rockForm"
+import RockField from "@Obsidian/Controls/rockField"
+import RockFormField from "@Obsidian/Controls/rockFormField"
+import TextBox from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
 import Validator from "./validator"
 import DatePicker from "./calendar"
 import AutoComplete from "./roomPicker"
@@ -59,7 +59,7 @@ export default defineComponent({
     },
     computed: {
         /** The person currently authenticated */
-        currentPerson(): Person | null {
+        currentPerson(): PersonBag | null {
             return store.state.currentPerson;
         },
         eventDates() {
@@ -71,9 +71,9 @@ export default defineComponent({
         ministries(): Array<any> | null {
             let list = null
             if (this.viewModel) {
-                list = this.viewModel.ministries.map(m => {
-                    return { value: m.id.toString(), text: m.value }
-                })
+                // list = this.viewModel.ministries.map(m => {
+                //     return { value: m.id.toString(), text: m.value }
+                // })
             }
             return list
         },
@@ -174,16 +174,16 @@ export default defineComponent({
       if(this.showValidation) {
         this.validate()
       }
-      if(!this.viewModel?.request.id) {
-        let params = new URLSearchParams(window.location.search)
-        let prefill = params.get('PreFill')
-        if(prefill && this.viewModel?.request?.attributeValues) {
-          let dt = DateTime.fromFormat(prefill, "yyyy-MM-dd")
-          if(dt >= DateTime.now().startOf('day')) {
-            this.viewModel.request.attributeValues.EventDates = prefill
-          }
-        }
-      }
+      // if(!this.viewModel?.request.id) {
+      //   let params = new URLSearchParams(window.location.search)
+      //   let prefill = params.get('PreFill')
+      //   if(prefill && this.viewModel?.request?.attributeValues) {
+      //     let dt = DateTime.fromFormat(prefill, "yyyy-MM-dd")
+      //     if(dt >= DateTime.now().startOf('day')) {
+      //       this.viewModel.request.attributeValues.EventDates = prefill
+      //     }
+      //   }
+      // }
     },
     template: `
 <h3>Basic Information</h3>

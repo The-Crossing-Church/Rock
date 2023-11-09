@@ -1,14 +1,15 @@
 import { defineComponent, PropType } from "vue"
-import { PublicAttribute, ContentChannelItem } from "../../../../ViewModels"
+import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
 import { DateTime } from "luxon"
 import { Table, Button, Popover } from "ant-design-vue"
-import RockField from "../../../../Controls/rockField"
+import RockField from "@Obsidian/Controls/rockField"
 import TCCDropDownList from "../Components/dropDownList"
 import GridAction from "../Components/adminGridAction"
-import RockText from "../../../../Elements/textBox"
-import RockLabel from "../../../../Elements/rockLabel"
-import DateRangePicker from "../../../../Elements/dateRangePicker"
-import PersonPicker from "../../../../Controls/personPicker"
+import RockText from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import DateRangePicker from "@Obsidian/Controls/dateRangePicker"
+import PersonPicker from "@Obsidian/Controls/personPicker"
 
 export default defineComponent({
     name: "EventDashboard.Components.RequestTable",
@@ -25,7 +26,7 @@ export default defineComponent({
       "tcc-grid": GridAction,
     },
     props: {
-      events: Array as PropType<ContentChannelItem[]>,
+      events: Array as PropType<ContentChannelItemBag[]>,
       workflowURL: String,
       defaultFilters: Object as any,
       option: String,
@@ -99,7 +100,7 @@ export default defineComponent({
         };
     },
     computed: {
-      ministryAttr(): PublicAttribute | undefined {
+      ministryAttr(): PublicAttributeBag | undefined {
         if(this.events && this.events[0]) {
           return this.events[0]?.attributes?.Ministry
         }

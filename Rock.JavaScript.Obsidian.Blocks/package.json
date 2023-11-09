@@ -47,5 +47,9 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
+  },
+  "dependencies": {
+    "ant-design-vue": "^4.0.6",
+    "luxon": "^3.4.3"
   }
 }

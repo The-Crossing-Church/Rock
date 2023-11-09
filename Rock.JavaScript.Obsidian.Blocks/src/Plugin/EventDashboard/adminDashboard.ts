@@ -1,19 +1,21 @@
 import { defineComponent, provide } from "vue"
-import { useConfigurationValues, useInvokeBlockAction } from "../../../Util/block"
-import { Person, ContentChannelItem, PublicAttribute } from "../../../ViewModels"
+import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
+import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
 import { AdminDashboardBlockViewModel } from "./adminDashboardBlockViewModel"
-import { useStore } from "../../../Store/index"
+import { useStore } from "@Obsidian/PageState"
 import { DateTime, Duration } from "luxon"
 import { Table, Modal, Button, Popover } from "ant-design-vue"
 import GridAction from "./Components/adminGridAction"
 import TCCModal from "./Components/dashboardModal"
 import Details from "./Components/dashboardModal"
 import TCCDropDownList from "./Components/dropDownList"
-import RockText from "../../../Elements/textBox"
-import RockLabel from "../../../Elements/rockLabel"
-import RockField from "../../../Controls/rockField"
-import DateRangePicker from "../../../Elements/dateRangePicker"
-import PersonPicker from "../../../Controls/personPicker"
+import RockText from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockField from "@Obsidian/Controls/rockField"
+import DateRangePicker from "@Obsidian/Controls/dateRangePicker"
+import PersonPicker from "@Obsidian/Controls/personPicker"
 import Comment from "./Components/comment"
 import TCCTable from "./Components/requestTable"
 import PartialApproval from "./Components/partialApproval"
@@ -157,7 +159,7 @@ export default defineComponent({
             slots: { customRender: 'action' },
           },
         ],
-        selected: {} as ContentChannelItem,
+        selected: {} as ContentChannelItemBag,
         createdBy: {},
         modifiedBy: {},
         modal: false,
@@ -202,7 +204,7 @@ export default defineComponent({
   },
   computed: {
       /** The person currently authenticated */
-      currentPerson(): Person | null {
+      currentPerson(): PersonBag | null {
           return store.state.currentPerson
       },
       selectedStatus(): string {
@@ -211,7 +213,7 @@ export default defineComponent({
         }
         return ""
       },
-      ministryAttr(): PublicAttribute | undefined {
+      ministryAttr(): PublicAttributeBag | undefined {
         if(this.viewModel?.events[0]) {
           return this.viewModel.events[0].attributes?.Ministry
         }
@@ -323,7 +325,7 @@ export default defineComponent({
       }
     },
     updateFromGridAction(id: number, status: string) {
-      this.selected.id = id
+      // this.selected.id = id
       this.updateStatus(status)
     },
     addBufferFromGridAction(id: number) {
@@ -366,37 +368,37 @@ export default defineComponent({
       } else if (status == "Cancelled") {
         this.btnLoading.cancelled = true
       }
-      this.changeStatus(this.selected.id, status, withComment).then((res) => {
-        if(res.isSuccess) {
-          if(res.data.url) {
-            window.location.href = res.data.url
-          }
-          if(res.data.status) {
-            if(this.selected?.attributeValues) {
-              this.selected.attributeValues.RequestStatus = res.data.status
-            }
-            this.filterTables("Submitted", null)
-            this.filterTables("PendingChanges", null)
-            this.filterTables("InProgress", null)
-            this.filter("All")
-          }
-        } else if(res.isError) {
-          this.toastMessage = res.errorMessage
-          let el = document.getElementById('toast')
-          el?.classList.add("show")
-        }
-      }).catch((err) => {
-        console.log(err)
-        this.toastMessage = err
-        let el = document.getElementById('toast')
-        el?.classList.add("show")
-      }).finally(() => {
-        this.btnLoading.inprogress = false
-        this.btnLoading.cancelled = false
-        if(el) {
-          el.style.display = 'none'
-        }
-      })
+      // this.changeStatus(this.selected.id, status, withComment).then((res) => {
+      //   if(res.isSuccess) {
+      //     if(res.data.url) {
+      //       window.location.href = res.data.url
+      //     }
+      //     if(res.data.status) {
+      //       if(this.selected?.attributeValues) {
+      //         this.selected.attributeValues.RequestStatus = res.data.status
+      //       }
+      //       this.filterTables("Submitted", null)
+      //       this.filterTables("PendingChanges", null)
+      //       this.filterTables("InProgress", null)
+      //       this.filter("All")
+      //     }
+      //   } else if(res.isError) {
+      //     this.toastMessage = res.errorMessage
+      //     let el = document.getElementById('toast')
+      //     el?.classList.add("show")
+      //   }
+      // }).catch((err) => {
+      //   console.log(err)
+      //   this.toastMessage = err
+      //   let el = document.getElementById('toast')
+      //   el?.classList.add("show")
+      // }).finally(() => {
+      //   this.btnLoading.inprogress = false
+      //   this.btnLoading.cancelled = false
+      //   if(el) {
+      //     el.style.display = 'none'
+      //   }
+      // })
     },
     getNextComment(idx: number) {
       let req = this.selected as any
@@ -414,24 +416,24 @@ export default defineComponent({
       if(el) {
         el.style.display = 'block'
       }
-      this.addComment(this.selected.id, this.comment).then((res: any) => {
-        if(res.isSuccess) {
-          if(res.data?.comment) {
-            let req = this.selected as any
-            req.comments.push(res.data)
-          }
-        } else if (res.isError) {
-          this.toastMessage = res.errorMessage
-          let el = document.getElementById('toast')
-          el?.classList.add("show")
-        }
-        this.commentModal = false
-        this.comment = ""
-      }).finally(() => {
-        if(el) {
-          el.style.display = 'none'
-        }
-      })
+      // this.addComment(this.selected.id, this.comment).then((res: any) => {
+      //   if(res.isSuccess) {
+      //     if(res.data?.comment) {
+      //       let req = this.selected as any
+      //       req.comments.push(res.data)
+      //     }
+      //   } else if (res.isError) {
+      //     this.toastMessage = res.errorMessage
+      //     let el = document.getElementById('toast')
+      //     el?.classList.add("show")
+      //   }
+      //   this.commentModal = false
+      //   this.comment = ""
+      // }).finally(() => {
+      //   if(el) {
+      //     el.style.display = 'none'
+      //   }
+      // })
     },
     partialApproval() {
       let ref = this.$refs.partialApprovalInfo as any
@@ -442,24 +444,24 @@ export default defineComponent({
       if(el) {
         el.style.display = 'block'
       }
-      this.completePartialApproval(this.selected.id, approved, denied, events).then((res) => {
-        this.partialApprovalModal = false
-        if(res.isSuccess) {
-          if(res.data?.id) {
-            this.selectItem(res.data)
-            this.filterTables("PendingChanges", null)
-            this.filter("All")
-          }
-        } else if (res.isError) {
-          this.toastMessage = res.errorMessage
-          let el = document.getElementById('toast')
-          el?.classList.add("show")
-        }
-      }).finally(() => {
-        if(el) {
-          el.style.display = 'none'
-        }
-      })
+      // this.completePartialApproval(this.selected.id, approved, denied, events).then((res) => {
+      //   this.partialApprovalModal = false
+      //   if(res.isSuccess) {
+      //     if(res.data?.id) {
+      //       this.selectItem(res.data)
+      //       this.filterTables("PendingChanges", null)
+      //       this.filter("All")
+      //     }
+      //   } else if (res.isError) {
+      //     this.toastMessage = res.errorMessage
+      //     let el = document.getElementById('toast')
+      //     el?.classList.add("show")
+      //   }
+      // }).finally(() => {
+      //   if(el) {
+      //     el.style.display = 'none'
+      //   }
+      // })
     },
     hideToast() {
       let el = document.getElementById('toast')

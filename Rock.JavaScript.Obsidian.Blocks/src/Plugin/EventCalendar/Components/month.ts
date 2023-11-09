@@ -42,15 +42,15 @@ export default defineComponent({
             let numDays = date.weekday
             for (let k = numDays; k > 0; k--) {
               let negSpan = Duration.fromObject({ days: k })
-              week.push(date.minus(negSpan))
+              // week.push(date.minus(negSpan))
             }
           }
           if (dow == 'Sun' && i > 0) {
             //start a new week
-            weeks.push(week)
+            // weeks.push(week)
             week = []
           }
-          week.push(date)
+          // week.push(date)
         }
         let remainingDays = 7 - week.length
         for (let i = 0; i < remainingDays; i++) {
@@ -58,9 +58,9 @@ export default defineComponent({
           let days = i + this.displayMonth.daysInMonth
           let span = Duration.fromObject({ days: days })
           let date = this.displayMonth.plus(span)
-          week.push(date)
+          // week.push(date)
         }
-        weeks.push(week)
+        // weeks.push(week)
       }
       return weeks
     },
@@ -112,8 +112,8 @@ export default defineComponent({
   },
   mounted() {
     if(this.currentDate) {
-      this.currentMonth = this.currentDate.month
-      this.currentYear = this.currentDate.year
+      // this.currentMonth = this.currentDate.month
+      // this.currentYear = this.currentDate.year
     }
   },
   template: `

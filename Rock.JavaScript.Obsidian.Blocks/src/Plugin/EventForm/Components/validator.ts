@@ -1,6 +1,6 @@
 import { defineComponent, ref, onBeforeUnmount } from "vue";
-import { useFormState } from "../../../../Util/form";
-import { newGuid } from "../../../../Util/guid";
+import { useFormState } from "@Obsidian/Utility/form";
+import { newGuid } from "@Obsidian/Utility/guid";
 
 export default defineComponent({
     name: "EventForm.Components.Validator",

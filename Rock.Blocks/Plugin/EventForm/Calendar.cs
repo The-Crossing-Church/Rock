@@ -13,9 +13,8 @@ using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
 using Rock.Tasks;
-using Rock.ViewModel;
-using Rock.ViewModel.Controls;
-using Rock.ViewModel.NonEntities;
+using Rock.ViewModels;
+using Rock.ViewModels.Entities;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugin.EventCalendar
@@ -239,7 +238,7 @@ namespace Rock.Blocks.Plugin.EventCalendar
 
         #region Helpers
 
-        private ContentChannelItem FromViewModel( ContentChannelItemViewModel viewModel )
+        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel )
         {
             RockContext context = new RockContext();
             Rock.Model.Person p = GetCurrentPerson();
@@ -248,10 +247,10 @@ namespace Rock.Blocks.Plugin.EventCalendar
                 ContentChannelId = viewModel.ContentChannelId,
                 ContentChannelTypeId = viewModel.ContentChannelTypeId
             };
-            if (viewModel.Id > 0)
-            {
-                item = new ContentChannelItemService( context ).Get( viewModel.Id );
-            }
+            //if (viewModel.Id > 0)
+            //{
+            //    item = new ContentChannelItemService( context ).Get( viewModel.Id );
+            //}
             item.LoadAttributes();
             item.Title = viewModel.Title;
             foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
@@ -896,11 +895,11 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
 
         private class CalendarBlockViewModel
         {
-            public List<ContentChannelItemViewModel> events { get; set; }
-            public List<DefinedValueViewModel> locations { get; set; }
-            public List<DefinedValueViewModel> ministries { get; set; }
-            public AttributeViewModel requestStatus { get; set; }
-            public AttributeViewModel requestType { get; set; }
+            public List<ContentChannelItemBag> events { get; set; }
+            public List<DefinedValueBag> locations { get; set; }
+            public List<DefinedValueBag> ministries { get; set; }
+            public AttributeBag requestStatus { get; set; }
+            public AttributeBag requestType { get; set; }
             public string formUrl { get; set; }
             public string dashboardUrl { get; set; }
             public bool isEventAdmin { get; set; }
