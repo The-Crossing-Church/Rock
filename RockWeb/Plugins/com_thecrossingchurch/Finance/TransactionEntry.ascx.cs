@@ -38,7 +38,6 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using Rock.Transactions;
-using com.SimpleDonation.Constants;
 
 namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 {

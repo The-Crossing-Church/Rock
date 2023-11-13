@@ -209,9 +209,9 @@
 
                     <div class="actions clearfix">
                         <a id="lHistoryBackButton" runat="server" class="btn btn-link" href="javascript: window.history.back();">Previous</a>
-                        <asp:LinkButton ID="btnContributionInfoNext" runat="server" Text="Next" CssClass="btn btn-primary pull-right" OnClick="btnContributionInfoNext_Click" />
+                        <asp:Button ID="btnContributionInfoNext" runat="server" Text="Next" CssClass="btn btn-primary pull-right" OnClick="btnContributionInfoNext_Click" />
                         <asp:LinkButton ID="btnPersonalInfoPrev" runat="server" Text="Previous" CssClass="btn btn-primary" OnClick="btnPersonalInfoPrev_Click" />
-                        <asp:LinkButton ID="btnPersonalInfoNext" runat="server" Text="Next" CssClass="btn btn-primary pull-right" OnClick="btnPersonalInfoNext_Click" />
+                        <asp:Button ID="btnPersonalInfoNext" runat="server" Text="Next" CssClass="btn btn-primary pull-right" OnClick="btnPersonalInfoNext_Click" />
                         <asp:LinkButton ID="btnPaymentInfoPrev" runat="server" Text="Previous" CssClass="btn btn-primary" OnClick="btnPaymentInfoPrev_Click" />
                         <asp:LinkButton ID="btnPaymentInfoNext" runat="server" Text="Next" CssClass="btn btn-primary pull-right" OnClick="btnPaymentInfoNext_Click" />
                         <asp:LinkButton ID="btnStep2PaymentPrev" runat="server" Text="Previous" CssClass="btn btn-link" OnClick="btnStep2PaymentPrev_Click" />
