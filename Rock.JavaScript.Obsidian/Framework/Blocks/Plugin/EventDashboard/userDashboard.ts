@@ -499,20 +499,22 @@ export default defineComponent({
               }
             } else if(res.isError) {
               this.toastMessage = res.errorMessage
-              let el = document.getElementById('toast')
-              el?.classList.add("show")
+              let toast = document.getElementById('toast')
+              toast?.classList.add("show")
+              if(el) {
+                el.style.display = 'none'
+              }
             }
           } else {
             this.toastMessage = "Unable to resubmit event"
-            let el = document.getElementById('toast')
-            el?.classList.add("show")
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
+            if(el) {
+              el.style.display = 'none'
+            }
           }
         }).catch((err) => {
           console.log(err)
-        }).finally(() => {
-          if(el) {
-            el.style.display = 'none'
-          }
         })
       }
     },

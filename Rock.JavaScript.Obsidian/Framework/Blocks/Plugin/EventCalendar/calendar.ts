@@ -220,9 +220,9 @@ export default defineComponent({
         cals.forEach((c: any) => {
           c.events = c.events.filter((e: any) => {
             let isMatch = false
-            if(e.submitter) {
+            if(e.contact || e.createdByPersonName || e.modifiedByPersonName) {
               for(let i = 0; i < creators.length; i++) {
-                if(e.submitter.toLowerCase().includes(creators[i].toLowerCase())) {
+                if(e.contact.toLowerCase().includes(creators[i].toLowerCase()) || e.createdByPersonName.toLowerCase().includes(creators[i].toLowerCase()) || e.modifiedByPersonName.toLowerCase().includes(creators[i].toLowerCase())) {
                   isMatch = true
                 }
               }
@@ -247,8 +247,32 @@ export default defineComponent({
       if(this.filters.resources && this.filters.resources.length > 0) {
         cals.forEach((c: any) => {
           c.events = c.events.filter((e: any) => {
-            let intersection = e.resources.filter((value: string) => this.filters.resources.includes(value))
-            return intersection.length == this.filters.resources.length
+            let inFilter = true
+            if(this.filters.resources.includes('Online Event')) {
+              inFilter = e.needsOnline == true
+            }
+            if(this.filters.resources.includes('Catering')) {
+              inFilter = e.needsCatering == true
+            }
+            if(this.filters.resources.includes('Childcare Catering')) {
+              inFilter = e.needsChildcareCatering == true
+            }
+            if(this.filters.resources.includes('Extra Resources')) {
+              inFilter = e.needsOpsAccommodations == true
+            }
+            if(this.filters.resources.includes('Registration')) {
+              inFilter = e.needsRegistration == true
+            }
+            if(this.filters.resources.includes('Web Calendar')) {
+              inFilter = e.needsWebCalendar == true
+            }
+            if(this.filters.resources.includes('Production')) {
+              inFilter = e.needsProductionAccommodations == true
+            }
+            if(this.filters.resources.includes('Publicity')) {
+              inFilter = e.needsPublicity == true
+            }
+            return inFilter
           })
         })
       }
