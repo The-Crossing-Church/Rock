@@ -1,0 +1,305 @@
+{% comment %}
+    Created By: Cooksey
+    Created On: 04/2023
+    Description: Jim requested this data so we can see a summary of what is happening with giving week by week. We did not introduce the check source attribute until 2021 so some of the older check data is just called check where the newer data will say if the check was mailed in or given during service. Text Giving takes about 4 days to make it into our database, we only want complete weeks with all data so we will look for the last full week that occurred 4 days ago.
+{% endcomment %}
+{% sql %}
+    DECLARE @accountId int = 12;
+    DECLARE @today DATETIME = GETDATE();
+    DECLARE @currentWeek int = CEILING(CAST(DATEPART(DY, @today) AS double precision) / 7);
+    DECLARE @lastDayPrevFullWeek int = (@currentWeek - 1) * 7;
+    DECLARE @startOfCurrentYear DATETIME = DATEADD(YY, DATEDIFF(YY, 0, @today), 0);
+    DECLARE @endOfLastFullWeek DATETIME = DATEADD(DAY, (@lastDayPrevFullWeek - 1), @startOfCurrentYear);
+    DECLARE @daysSinceLastFullWeek int = DATEDIFF(DAY, @endOfLastFullWeek, @today);
+    IF @daysSinceLastFullWeek < 4
+        SET @currentWeek = (CEILING(CAST(DATEPART(DY, @today) AS double precision) / 7) - 1);
+    IF @daysSinceLastFullWeek < 4
+        SET @lastDayPrevFullWeek = (@currentWeek - 1) * 7;
+    IF @daysSinceLastFullWeek < 4
+        SET @startOfCurrentYear = DATEADD(YY, DATEDIFF(YY, 0, @today), 0);
+    IF @daysSinceLastFullWeek < 4
+        SET @endOfLastFullWeek = DATEADD(DAY, (@lastDayPrevFullWeek - 1), @startOfCurrentYear);
+    DECLARE @transactionCheckDate DATETIME = DATEADD(DAY, 1, @endOfLastFullWeek);
+    SELECT Year,
+           WOY,
+           SUM([Check])          AS 'Check',
+           SUM(Mail)             AS 'Mail',
+           SUM(Service)          AS 'Service',
+           SUM(ACH)              AS 'ACH',
+           SUM(Cash)             AS 'Cash',
+           SUM([Credit Card])    AS 'Credit Card',
+           SUM([Non-Cash Asset]) AS 'Non-Cash Asset',
+           SUM([Text Giving])    AS 'Text Giving',
+           SUM(Other)            AS 'Other',
+           SUM([Unknown])        AS 'Unknown',
+           SUM(Amount)           AS 'Total Amount',
+           SUM(IsScheduled)      AS 'IsScheduled',
+           COUNT(*)              AS Transactions
+    FROM (
+             SELECT TransactionDateTime,
+                    DATEPART(YEAR, TransactionDateTime)                                                  AS 'Year',
+                    CEILING(CAST(DATEPART(DY, TransactionDateTime) AS double precision) / 7)             AS 'WOY',
+                    Amount,
+                    (CASE WHEN [Payment Method] = 'ACH' THEN 1 ELSE 0 END)                               AS 'ACH',
+                    (CASE WHEN [Payment Method] = 'Cash' THEN 1 ELSE 0 END)                              AS 'Cash',
+                    (CASE WHEN [Payment Method] = 'Check' AND CheckSource IS NULL THEN 1 ELSE 0 END)     AS 'Check',
+                    (CASE WHEN [Payment Method] = 'Check' AND CheckSource = 'Mail' THEN 1 ELSE 0 END)    AS 'Mail',
+                    (CASE WHEN [Payment Method] = 'Check' AND CheckSource = 'Service' THEN 1 ELSE 0 END) AS 'Service',
+                    (CASE WHEN [Payment Method] = 'Credit Card' THEN 1 ELSE 0 END)                       AS 'Credit Card',
+                    (CASE WHEN [Payment Method] = 'Non-Cash Asset' THEN 1 ELSE 0 END)                    AS 'Non-Cash Asset',
+                    (CASE WHEN [Payment Method] = 'Other' THEN 1 ELSE 0 END)                             AS 'Other',
+                    (CASE WHEN [Payment Method] = 'Text Giving' THEN 1 ELSE 0 END)                       AS 'Text Giving',
+                    (CASE WHEN [Payment Method] = 'Unknown' THEN 1 ELSE 0 END)                           AS 'Unknown',
+                    (CASE WHEN ScheduledTransactionId IS NOT NULL THEN 1 ELSE 0 END)                     AS 'IsScheduled'
+             FROM FinancialPaymentDetail
+                      INNER JOIN (
+                 SELECT TransactionId,
+                        Amount,
+                        BatchId,
+                        ScheduledTransactionId,
+                        FinancialPaymentDetailId,
+                        ftd.Id AS 'FinancialTransactionDetailId',
+                        TransactionDateTime
+                 FROM FinancialTransaction
+                          INNER JOIN (
+                     SELECT Id, TransactionId, Amount FROM FinancialTransactionDetail WHERE AccountId = @accountId
+                 ) AS ftd ON TransactionId = FinancialTransaction.Id
+                 WHERE TransactionDateTime < @transactionCheckDate
+             ) AS ft ON FinancialPaymentDetailId = Id
+                      OUTER APPLY (
+                 SELECT Value AS 'Payment Method'
+                 FROM DefinedValue
+                 WHERE DefinedTypeId = 10
+                   AND DefinedValue.Id = CurrencyTypeValueId
+             ) AS pymt
+                      OUTER APPLY (
+                 SELECT Value AS 'CheckSource'
+                 FROM AttributeValue
+                 WHERE AttributeId = 19468
+                   AND AttributeValue.EntityId = BatchId
+             ) AS chkSrc
+         ) AS data
+    GROUP BY Year, WOY
+    ORDER BY Year, WOY
+{% endsql %}
+
+{% assign data = results | GroupBy:'Year' %}
+
+<div class="card p-4" style="overflow-x: scroll;">
+    <table>
+        <tbody>
+        {% for year in data %}
+            {% assign item = year | PropertyToKeyValue %}
+            <tr class="rw-weeks">
+                <td>
+                    <h5>{{item.Key}}</h5>
+                </td>
+                {% for val in (1..53) %}
+                    <td><strong>{{val}}</strong></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-check">
+                <td>
+                    <strong>Check</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_check"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-mail">
+                <td>
+                    <strong>Mail</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_mail"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-svc">
+                <td>
+                    <strong>Service</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_service"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-ach">
+                <td>
+                    <strong>ACH</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_ach"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-cash">
+                <td>
+                    <strong>Cash</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_cash"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-cc">
+                <td>
+                    <strong>Credit Card</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_cc"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-asset">
+                <td>
+                    <strong>Non-Cash Asset</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_asset"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-text">
+                <td>
+                    <strong>Text Giving</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_text"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-other">
+                <td>
+                    <strong>Other</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_other"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-unknown">
+                <td>
+                    <strong>Unknown</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_unknown"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-total">
+                <td>
+                    <strong>Total</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_total"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-schedule">
+                <td>
+                    <strong>Scheduled</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_scheduled"></td>
+                {% endfor %}
+            </tr>
+            <tr class="rw-amount">
+                <td>
+                    <strong>Amount</strong>
+                </td>
+                {% for val in (1..53) %}
+                    <td id="{{item.Key}}_{{val}}_amount"></td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+$(document).ready(() => {
+    let data = [
+        {% for year in data %}
+            {% assign item = year | PropertyToKeyValue %}
+            {
+                year: {{item.Key}},
+                rows: [
+                    {% for week in item.Value %}
+                        {
+                            week: {{week.WOY}},
+                            Check: {{week.Check}},
+                            Mail: {{week.Mail}},
+                            Service: {{week.Service}},
+                            ACH: {{week.ACH}},
+                            Cash: {{week.Cash}},
+                            CC: {{week["Credit Card"]}},
+                            Asset: {{week["Non-Cash Asset"]}},
+                            Text: {{week["Text Giving"]}},
+                            Other: {{week.Other}},
+                            Unknown: {{week.Unknown}},
+                            Total: {{week.Transactions}},
+                            Scheduled: {{week.IsScheduled}},
+                            Amount: "{{week.["Total Amount"] | FormatAsCurrency}}",
+                        },
+                    {% endfor %}
+                ]
+            },
+        {% endfor %}
+    ]
+    for(let i=0; i<data.length; i++) {
+        for(let k=0; k<data[i].rows.length; k++) {
+            $(`#${data[i].year}_${data[i].rows[k].week}_check`).html(data[i].rows[k].Check)
+            $(`#${data[i].year}_${data[i].rows[k].week}_mail`).html(data[i].rows[k].Mail)
+            $(`#${data[i].year}_${data[i].rows[k].week}_service`).html(data[i].rows[k].Service)
+            $(`#${data[i].year}_${data[i].rows[k].week}_ach`).html(data[i].rows[k].ACH)
+            $(`#${data[i].year}_${data[i].rows[k].week}_cash`).html(data[i].rows[k].Cash)
+            $(`#${data[i].year}_${data[i].rows[k].week}_cc`).html(data[i].rows[k].CC)
+            $(`#${data[i].year}_${data[i].rows[k].week}_asset`).html(data[i].rows[k].Asset)
+            $(`#${data[i].year}_${data[i].rows[k].week}_text`).html(data[i].rows[k].Text)
+            $(`#${data[i].year}_${data[i].rows[k].week}_other`).html(data[i].rows[k].Other)
+            $(`#${data[i].year}_${data[i].rows[k].week}_unknown`).html(data[i].rows[k].Unknown)
+            $(`#${data[i].year}_${data[i].rows[k].week}_total`).html(data[i].rows[k].Total)
+            $(`#${data[i].year}_${data[i].rows[k].week}_scheduled`).html(data[i].rows[k].Scheduled)
+            $(`#${data[i].year}_${data[i].rows[k].week}_amount`).html(data[i].rows[k].Amount)
+        }
+    }
+})
+</script>
+<style>
+    td {
+        padding: 4px;
+    }
+    .rw-weeks {
+        background-color: black;
+        color: #fff;
+    }
+    .rw-check {
+        background-color: #9D8CD4;
+    }
+    .rw-mail {
+        background-color: #E5BEED;
+    }
+    .rw-svc {
+        background-color: #2B9EB3;
+    }
+    .rw-ach {
+        background-color: #44AF69;
+    }
+    .rw-cash {
+        background-color: #ECFEAA;
+    }
+    .rw-cc {
+        background-color: #fff;
+    }
+    .rw-asset {
+        background-color: #9C9C9C;
+    }
+    .rw-text {
+        background-color: #dd3308;
+    }
+    .rw-other {
+        background-color: #ffc07f;
+    }
+    .rw-unknown {
+        background-color: #dcab6b;
+    }
+    .rw-total {
+        background-color: #F2542D;
+    }
+    .rw-schedule {
+        background-color: #d1ffc6;
+    }
+    .rw-amount {
+        background-color: #FCAB10;
+    }
+</style>

@@ -1,0 +1,11 @@
+﻿{% assign svcs = 'Global' | Attribute:'ServiceTimes' | Split:',' %}
+{% assign secondSvc = svcs[1] %}
+{[ tabgroup tabname:'agapetabs' ]}
+    {% for i in Items %}
+        [[ tab title:'{{i.Title}}' ]] 
+            <div class='text-center py-2'>
+                {{i.Content| Replace:'##SECOND_SERVICE##',secondSvc}}
+            </div>
+        [[ endtab ]]
+    {% endfor %}
+{[ endtabgroup ]}

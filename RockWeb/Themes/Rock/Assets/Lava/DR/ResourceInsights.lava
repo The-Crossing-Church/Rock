@@ -1,0 +1,27 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha384-GNFwBvfVxBkLMJpYMOABq3c+d3KnQxudP/mGPkzpZSTYykLBNsZEnG2D9G/X/+7D" crossorigin="anonymous" async></script>
+{% assign option = 'Global' | PageParameter:'Filter' %}
+{% if option == '' %}
+    {% assign option = 'all' %}
+{% endif %}
+<ul class="nav nav-pills mb-4" style="display: flex; justify-content: center;">
+    <li class="{% if option == 'all' %}active{% endif %}">
+        <a href="/reports/dr/resource-insights?Filter=all">All</a>
+    </li>
+    <li class="{% if option == 'watch' %}active{% endif %}">
+        <a href="/reports/dr/resource-insights?Filter=watch">Watch</a>
+    </li>
+    <li class="{% if option == 'listen' %}active{% endif %}">
+        <a href="/reports/dr/resource-insights?Filter=listen">Listen</a>
+    </li>
+</ul>
+{% if option == 'all' %}
+    {% include '~~/Assets/Lava/DR/AnonymousVsKnown.lava' %}
+{% elseif option == 'watch' %}
+    {% include '~~/Assets/Lava/DR/CurrentSermonStats.lava' %}
+    {% include '~~/Assets/Lava/DR/SermonsWatchedToday.lava' %}
+    {% include '~~/Assets/Lava/DR/SermonViewsGrids.lava' %}
+    {% include '~~/Assets/Lava/DR/SermonBehavior.lava' %}
+{% else %}
+    {% include '~~/Assets/Lava/DR/CurrentPodcastStats.lava' %}
+{% endif %}

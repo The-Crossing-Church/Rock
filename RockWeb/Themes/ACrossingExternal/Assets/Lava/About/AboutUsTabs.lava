@@ -1,0 +1,9 @@
+﻿{[ tabgroup tabname:'about-us-tabs' tabwidth:'auto' ]}
+    {% for i in Items %}
+        [[ tab title:'{{i.Title}}' ]] 
+            <div class='py-4'>
+                {{i.Content }}
+            </div>
+        [[ endtab ]]
+    {% endfor %}
+{[ endtabgroup ]}

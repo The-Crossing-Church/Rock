@@ -1,0 +1,15 @@
+﻿<h2 class="text--centered">Additional Information</h2>
+<a class='hidden-anchor' id="additional"></a>
+<br/>
+{[ tabgroup tabname:'add-info' ]}
+    {% for i in Items %}
+        {% assign title = i | Attribute:'Series' %}
+        [[ tab title:'{{title}}' ]] 
+            <div class='text--centered'>
+                <br/>
+                {{i.Content}}
+                <br/>
+            </div>
+        [[ endtab ]]
+    {% endfor %}
+{[ endtabgroup ]}

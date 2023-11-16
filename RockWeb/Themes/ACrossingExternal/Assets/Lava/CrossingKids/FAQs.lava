@@ -1,0 +1,9 @@
+﻿{% assign svcTimes = 'Global' | Attribute:'ServiceTimes' %}
+{[ tccaccordion accname:'ckfaq' ]}
+    {% for item in Items %}
+        {% assign title = item | Attribute:'Question' %}
+        [[ item title:'{{title}}' ]]
+            {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes}}
+        [[ enditem ]]
+    {% endfor %}
+{[ endtccaccordion ]}

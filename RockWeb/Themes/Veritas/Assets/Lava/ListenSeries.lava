@@ -1,0 +1,382 @@
+{% for s in Items %}
+    {% assign classname = '' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey full-width' %}
+    {% endif %}
+    <div class='{{classname}}'>
+        <div {% if classname != '' %}class='container'{% endif %}>
+            <br/>
+            <h2>{{s.Series}}</h2>
+            <div class='carousel-wrapper'>
+                <div id="listen-{{forloop.index0}}-slider" class="slider">
+                    <div class="wrapper">
+                        <div id="listen-{{forloop.index0}}-slides" class="slides">
+                            {% for i in s.Items %}
+                                <div class="slide">
+                                    <a href="/Resource/Listen/{{i.PrimarySlug}}">
+                                        <div style="padding: 8px">
+                                            <div class='img-wrapper'>
+                                                <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                                            </div>
+                                            <h4>{{i.Title | Split:':' | First}}</h4>
+                                            <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <a id="listen-{{forloop.index0}}-prev" class="control prev ctrl-{{forloop.index0}}"><i class='fa fa-chevron-left'></i></a>
+                        <a id="listen-{{forloop.index0}}-next" class="control next ctrl-{{forloop.index0}}"><i class='fa fa-chevron-right'></i></a>
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <div style='text-align: center;'>
+                <a class='btn btn-primary' href="/Resources/Listen/Series?Series={{s.Series}}">Explore All</a>
+            </div>
+            <br/>
+        </div>
+    </div>
+{% endfor %}
+
+{% stylesheet compile:'less' %}
+@media (max-width: 374px) {
+  .slider, .wrapper {
+    width: 300px;
+  }
+  .slide:not(.carousel) {
+    width: 300px;
+  }
+  .slides {
+    left: -300px;
+  }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct == 1 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important;
+      }
+    {% endif %}
+  {% endfor %}
+}
+@media (min-width: 375px) {
+  .slider, .wrapper {
+    width: 350px;
+  }
+  .slide:not(.carousel) {
+    width: 350px;
+  }
+  .slides {
+    left: -350px;
+  }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct == 1 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important;
+      }
+    {% endif %}
+  {% endfor %}
+}
+@media (min-width: 768px) {
+  .slider, .wrapper {
+    width: 720px;
+  }
+  .slide:not(.carousel) {
+    width: 360px;
+  }
+  .slides {
+    left: -720px;
+  }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct < 2 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important;
+      }
+    {% endif %}
+  {% endfor %}
+}
+@media (min-width: 992px) {
+  .slider, .wrapper {
+    width: 940px;
+  }
+  .slide:not(.carousel) {
+    width: 313.3px;
+  }
+  .slides {
+    left: -626.6px;
+  }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct < 3 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important;
+      }
+    {% endif %}
+  {% endfor %}
+}
+@media (min-width: 1200px) {
+  .slider, .wrapper {
+    width: 1140px;
+  }
+  .slide:not(.carousel) {
+    width: 380px;
+  }
+  .slides {
+    left: -760px;
+  }
+  {% for s in Items %}
+    {% assign ct = s.Items | Size %}
+    {% if ct < 3 %}
+      .ctrl-{{forloop.index0}} {
+        display: none !important;
+      }
+    {% endif %}
+  {% endfor %}
+}
+
+.carousel-wrapper {
+  position: relative;
+  min-height: 300px;
+}
+
+.slider {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 300px;
+  /*box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);*/
+}
+
+.wrapper {
+  overflow: hidden;
+  position: relative;
+  height: 300px;
+  z-index: 1;
+}
+
+.slides {
+  display: flex;
+  position: relative;
+  top: 0;
+  width: 10000px;
+}
+
+.slides.shifting {
+  transition: left 0.2s ease-out;
+}
+
+.slide:not(.carousel) {
+  height: 300px;
+  cursor: pointer;
+  display: block;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 1s;
+  position: relative;
+  padding: 8px;
+}
+
+.slide:not(.carousel) a {
+  vertical-align: top;
+}
+
+.control {
+  position: absolute;
+  top: 116px;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-radius: 40px;
+  margin-top: -20px;
+  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  border: 2px solid #1B3142;
+}
+.prev {
+  left: 0;
+}
+.next {
+  right: 0;
+}
+.prev,
+.next {
+  background-size: 22px;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.prev:active,
+.next:active {
+  transform: scale(0.8);
+}
+
+.img-wrapper {
+  height:200px;
+  overflow-y: hidden;
+  position: relative;
+}
+.img-wrapper img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+  transform: translate(-50%,-50%);
+}
+{% endstylesheet %}
+<script>
+$(document).ready(function () {
+  {% for s in Items %}
+    var slider{{forloop.index0}} = document.getElementById("listen-{{forloop.index0}}-slider"),
+      sliderItems{{forloop.index0}} = document.getElementById("listen-{{forloop.index0}}-slides"),
+      prev{{forloop.index0}} = document.getElementById("listen-{{forloop.index0}}-prev"),
+      next{{forloop.index0}} = document.getElementById("listen-{{forloop.index0}}-next");
+  {% endfor %}
+
+  function slide(wrapper, items, prev, next) {
+    var posX1 = 0,
+      posX2 = 0,
+      posInitial,
+      posFinal,
+      threshold = 100,
+      slides = items.getElementsByClassName("slide"),
+      slidesLength = slides.length,
+      slideSize = items.getElementsByClassName("slide")[0].offsetWidth,
+      firstSlide = slides[0],
+      secondSlide = slides[1],
+      seclastSlide = slides[slidesLength - 2],
+      lastSlide = slides[slidesLength - 1],
+      cloneFirst = firstSlide.cloneNode(true),
+      cloneSecond = secondSlide != null ? secondSlide.cloneNode(true) : null,
+      cloneSecLast = seclastSlide != null ? seclastSlide.cloneNode(true) : null,
+      cloneLast = lastSlide.cloneNode(true),
+      index = 0,
+      allowShift = true;
+
+    // Clone first and last slide
+    items.appendChild(cloneFirst);
+    if(cloneSecond) {
+      items.appendChild(cloneSecond);
+    }
+    if(cloneSecLast) {
+      items.insertBefore(cloneSecLast, firstSlide);
+    }
+    items.insertBefore(cloneLast, firstSlide);
+    wrapper.classList.add("loaded");
+
+    // Mouse events
+    items.onmousedown = dragStart;
+
+    // Touch events
+    items.addEventListener("touchstart", dragStart);
+    items.addEventListener("touchend", dragEnd);
+    items.addEventListener("touchmove", dragAction);
+
+    // Click events
+    prev.addEventListener("click", function () {
+      shiftSlide(-1);
+    });
+    next.addEventListener("click", function () {
+      shiftSlide(1);
+    });
+
+    // Transition events
+    items.addEventListener("transitionend", checkIndex);
+
+    function dragStart(e) {
+      e = e || window.event;
+      e.preventDefault();
+      posInitial = items.offsetLeft;
+
+      if (e.type == "touchstart") {
+        posX1 = e.touches[0].clientX;
+      } else {
+        posX1 = e.clientX;
+        document.onmouseup = dragEnd;
+        document.onmousemove = dragAction;
+      }
+    }
+
+    function dragAction(e) {
+      e = e || window.event;
+
+      if (e.type == "touchmove") {
+        posX2 = posX1 - e.touches[0].clientX;
+        posX1 = e.touches[0].clientX;
+      } else {
+        posX2 = posX1 - e.clientX;
+        posX1 = e.clientX;
+      }
+      items.style.left = items.offsetLeft - posX2 + "px";
+    }
+
+    function dragEnd(e) {
+      posFinal = items.offsetLeft;
+      if (posFinal - posInitial < -threshold) {
+        shiftSlide(1, "drag");
+      } else if (posFinal - posInitial > threshold) {
+        shiftSlide(-1, "drag");
+      } else if (posFinal == posInitial) {
+        e.target.click()
+      } else {
+        items.style.left = posInitial + "px";
+      }
+
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+
+    function shiftSlide(dir, action) {
+      items.classList.add("shifting");
+
+      if (allowShift) {
+        if (!action) {
+          posInitial = items.offsetLeft;
+        }
+
+        if (dir == 1) {
+          items.style.left = posInitial - slideSize + "px";
+          index++;
+        } else if (dir == -1) {
+          items.style.left = posInitial + slideSize + "px";
+          index--;
+        }
+      }
+
+      allowShift = false;
+    }
+
+    function checkIndex() {
+      items.classList.remove("shifting");
+
+      if (index == -1) {
+        items.style.left = -(slidesLength * slideSize) + "px";
+        index = slidesLength - 1;
+      }
+
+      if (index == slidesLength) {
+        if(window.screen.width >= 1200 && items.length > 1) {
+          items.style.left = -(2 * slideSize) + "px";
+        } else {
+          items.style.left = -(1 * slideSize) + "px";
+        }
+        index = 0;
+      }
+
+      allowShift = true;
+    }
+  }
+
+  {% for s in Items %}
+    slide(slider{{forloop.index0}}, sliderItems{{forloop.index0}}, prev{{forloop.index0}}, next{{forloop.index0}});
+  {% endfor %}
+});
+</script>

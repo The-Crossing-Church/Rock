@@ -1,0 +1,20 @@
+﻿{% assign svcTimes = 'Global' | Attribute:'ServiceTimes' | ReplaceLast:',',' and' %}
+<div class='full-width background--grey py-custom-2x'>
+    <div class='container py-3'>
+        {[ tabgroup tabname:'im-new-tabs' tabwidth:'auto' ]}
+            {% for i in Items %}
+                [[ tab title:'{{i.Title}}' ]] 
+                    <div class='py-4 text-center'>
+                        {{i.Content | Replace:'##SERVICE_TIMES##',svcTimes }}
+                    </div>
+                [[ endtab ]]
+            {% endfor %}
+        {[ endtabgroup ]}
+    </div>
+</div>
+
+<style>
+.accordion .panel {
+    background-color: transparent;
+}
+</style>

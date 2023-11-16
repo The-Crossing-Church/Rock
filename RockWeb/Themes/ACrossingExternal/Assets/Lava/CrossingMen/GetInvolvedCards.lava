@@ -1,0 +1,19 @@
+﻿<h2 class="text-center py-custom-2x">Get Involved</h2>
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-md-4'>
+            <div class='card--custom card-with-button'>
+                <img src="{{i | Attribute:'Image'}}" />
+                <div style='padding: 8px;' class='text--centered'>
+                    <strong>{{i | Attribute:'Name'}}</strong><br/>
+                    <div class='card-body'>
+                        {{i.Content}}
+                    </div>
+                </div>
+            </div>
+            <div class='link-wrapper text--centered'>
+                <a class='btn btn-primary' href="/Ministry/Adults/Men?Slug={{i.Id}}#form">Get Connected</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>

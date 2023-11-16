@@ -1,0 +1,465 @@
+﻿<div class='row row-equal-height justify-center pt-custom-2x'>
+    <div class='col col-xs-6 justify-center'>
+        <a onclick="showContent('EC')" id="EarlyChildhoodBtn" class="card--custom card-with-button text--centered hover" style="width: 100%;">
+            <img class='d-none d-md-block' alt="Early Childhood" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Early_Childhood_Wide.png"/>
+            <img class='d-block d-md-none' alt="Early Childhood" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Early_Childhood_Tall.png"/>
+        </a>
+    </div>
+    <div class='col col-xs-6 justify-center'>
+        <a onclick="showContent('E')" id="ElementaryBtn" class="card--custom card-with-button text--centered hover" style="width: 100%;">
+            <img class='d-none d-md-block' alt="Elementary" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Elementary_Wide.png"/>
+            <img class='d-block d-md-none' alt="Elementary" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Elementary_Tall.png"/>
+        </a>
+    </div>
+</div>
+<br/>
+<div class="collapse" id="EarlyChildhood">
+    <div class="card--custom">
+        <ul class="nav nav-tabs center-mobile">
+            <li class="nav-item active" role="presentation">
+                <a class="nav-link active btn btn-accent" href="#ToddlerBlue" aria-controls="ToddlerBlue" role="tab" data-toggle="tab" aria-expanded="true">Toddler Blue</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#ToddlerGreenPSPurple" aria-controls="ToddlerGreenPSPurple" role="tab" data-toggle="tab">Toddler Green/Preschool Purple</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#PSOrangePSRed" aria-controls="PSOrangePSRed" role="tab" data-toggle="tab">Preschool Orange/Preschool Red</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="ToddlerBlue">
+                <div class='py-custom-2x'>
+                    <div class='justify-center'>
+                        <img src="{{ crossingkidssundaycurriculumtoddlerblueItem | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+                    </div>
+                    <strong>Date:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMM, yyyy' }} <br/>
+                    {% assign tbEss = crossingkidssundaycurriculumtoddlerblueItem | Attribute:'Essential' %}
+                    {% if tbEss != '' %}
+                        <strong>Early Childhood Essential:</strong> {{ crossingkidssundaycurriculumtoddlerblueItem | Attribute:'Essential' }} <br/>
+                    {% endif %}
+                    {% assign tbMV = crossingkidssundaycurriculumtoddlerblueItem | Attribute:'MemoryVerse' %}
+                    {% if tbMV != '' %}
+                        <strong>Memory Verse:</strong> {{ crossingkidssundaycurriculumtoddlerblueItem | Attribute:'MemoryVerse' }} <br/>
+                    {% endif %}
+                    {% assign tbUnit = crossingkidssundaycurriculumtoddlerblueItem | Attribute:'Unit' %}
+                    {% if tbUnit != '' %}
+                        <strong>Bible Story Focus:</strong> {{ crossingkidssundaycurriculumtoddlerblueItem | Attribute:'Unit' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumtoddlerblueItem.Content != '' %}
+                        <strong>Lesson Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumtoddlerblueItem.Content }}
+                        </blockquote>
+                    {% endif %}
+                    {% assign music = crossingkidssundaycurriculumtoddlerblueItem | Attribute:'SpotifyPlaylist' %}
+                    {% if music != '' %}
+                        <br/>
+                        <iframe src="{{ crossingkidssundaycurriculumtoddlerblueItem | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="ToddlerGreenPSPurple">
+                <div class='py-custom-2x'>
+                    <div class='justify-center'>
+                        <img src="{{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+                    </div>
+                    <strong>Date:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMM d, yyyy' }} <br/>
+                    {% assign tgEss = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'Essential' %}
+                    {% if tgEss != '' %}
+                        <strong>Early Childhood Essential:</strong> {{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'Essential' }} <br/>
+                    {% endif %}
+                    {% assign tgMV = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'MemoryVerse' %}
+                    {% if tgMV != '' %}
+                        <strong>Memory Verse:</strong> {{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'MemoryVerse' }} <br/>
+                    {% endif %}
+                    {% assign tgUnit = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'Unit' %}
+                    {% if tgUnit != '' %}
+                        <strong>Monthly Topic:</strong> {{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'Unit' }} <br/>
+                    {% endif %}
+                    {% assign tgBS = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+                    {% if tgBS != '' %}
+                        <strong>Bible Story Focus:</strong> {{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem.Content != '' %}
+                        <strong>Lesson Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem.Content }}
+                        </blockquote>
+                    {% endif %}
+                    {% assign ppCT = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'CircleTimeQuestions' %}
+                    {% if ppCT != '' %}
+                        <strong>Circle Time Questions:</strong> (Preschool Purple Only)
+                        <ul>
+                            <li>
+                                {{crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'CircleTimeQuestions' }}
+                            </li>
+                        </ul>
+                    {% endif %}
+                    {% assign ppA = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activities','RawValue' %}
+                    {% if ppA != '' %}
+                        <strong>Activities:</strong>
+                        {% assign activities = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activities','RawValue' | Split:'|' %}
+                        <ul>
+                            {% for a in activities %}
+                                <li>
+                                    {% assign ageGroup = {a | Split:'^' | First | Replace:'%2C',',' %}
+                                    {{a | Split:'^' | Last | Replace:'%2C',','}} {% if ageGroup != 'All' %}({{ageGroup}}){% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% assign music = crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'SpotifyPlaylist' %}
+                    {% if music != '' %}
+                        <br/>
+                        <iframe src="{{ crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="PSOrangePSRed">
+                <div class='py-custom-2x'>
+                    <div class='justify-center'>
+                        <img src="{{ crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+                    </div>
+                    <strong>Date:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMM d, yyyy' }} <br/>
+                    {% assign poEss = crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'Essential' %}
+                    {% if poEss != '' %}
+                        <strong>Early Childhood Essential:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'Essential' }} <br/>
+                    {% endif %}
+                    {% assign poMV = crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'MemoryVerse' %}
+                    {% if poMV != '' %}
+                        <strong>Memory Verse:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'MemoryVerse' }} <br/>
+                    {% endif %}
+                    {% assign poUnit = crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'Unit' %}
+                    {% if poUnit != '' %}
+                        <strong>Monthly Topic:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'Unit' }} <br/>
+                    {% endif %}
+                    {% assign poTitle = crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+                    {% if poTitle != '' %}
+                        <strong>Bible Story Focus:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.Content != '' %}
+                        <strong>Lesson Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.Content }}
+                        </blockquote>
+                    {% endif %}
+                    {% assign poCT = crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'CircleTimeQuestions' %}
+                    {% if poCT != '' %}
+                        <strong>Circle Time Questions:</strong>
+                        <ul>
+                            <li>
+                                {{crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'CircleTimeQuestions' }}
+                            </li>
+                        </ul>
+                    {% endif %}
+                    {% assign poIW = crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'IWonderQuestions','RawValue' %}
+                    {% if poIW != '' %}
+                        <strong>I Wonder Questions (Snack Time Discussion):</strong>
+                        {% assign wonder = crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'IWonderQuestions','RawValue' | Split:'|' %}
+                        <ul>
+                            {% for w in wonder %}
+                                <li>
+                                    {{w | Split:'^' | First | Replace:'%2C',','}}
+                                    <ul>
+                                        <li>
+                                            {{w | Split:'^' | Last | Replace:'%2C',','}}
+                                        </li>
+                                    </ul>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% assign poAct = crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activities','RawValue' %}
+                    {% if poAct != '' %}
+                        <strong>Activities:</strong>
+                        {% assign activities = crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activities','RawValue' | Split:'|' %}
+                        <ul>
+                            {% for a in activities %}
+                                <li>
+                                    <strong>{{a | Split:'^' | First | Replace:'%2C',','}}:</strong> {{a | Split:'^' | Last | Replace:'%2C',','}}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% assign music = crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'SpotifyPlaylist' %}
+                    {% if music != '' %}
+                        <br/>
+                        <iframe src="{{ crossingkidssundaycurriculumpreschoolorangeredmonthItem | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="collapse" id="Elementary">
+    <div class="card--custom">
+        <ul class="nav nav-tabs center-mobile">
+            <li class="nav-item active" role="presentation">
+                <a class="nav-link active btn btn-accent" href="#KFirst" aria-controls="KFirst" role="tab" data-toggle="tab" aria-expanded="true">Kindergarten/1st Grade</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#SecThird" aria-controls="SecThird" role="tab" data-toggle="tab">2nd Grade/3rd Grade</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#FourFive" aria-controls="FourFive" role="tab" data-toggle="tab">4th Grade/5th Grade</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="KFirst">
+                <div class='py-custom-2x'>
+                    <div class='justify-center'>
+                        <img src="{{ crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+                    </div>
+                    <strong>Date:</strong> {{ crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMM d, yyyy' }} <br/>
+                    {% assign kUnit =  crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'Unit' %}
+                    {% if kUnit != '' %}
+                        <strong>Unit:</strong> {{ crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'Unit' }} <br/>
+                    {% endif %}
+                    {% assign kEE = crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'Essential' %}
+                    {% if kEE != '' %}
+                        <strong>Elementary Essential:</strong> {{ crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'Essential' }} <br/>
+                    {% endif %}
+                    {% assign kMV = crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'MemoryVerse' %}
+                    {% if kMV != '' %}
+                        <strong>Memory Verse:</strong> {{ crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'MemoryVerse' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumelementarykfirstunitItem.Content != '' %}
+                        <strong>Unit Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumelementarykfirstunitItem.Content }}
+                        </blockquote>
+                        <br/>
+                    {% endif %}
+                    {% assign kTitle = crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+                    {% if kTitle != '' %}
+                        <strong>Lesson Title:</strong> {{ crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem.Content != '' %}
+                        <strong>Lesson Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem.Content }}
+                        </blockquote>
+                    {% endif %}
+                    {% assign kScript = crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture'  %}
+                    {% if kScript != '' %}
+                        <strong>Lesson Scripture:</strong> {{crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' }} <br/>
+                    {% endif %}
+                    {% assign kObj = crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective'  %}
+                    {% if kObj != '' %}
+                        <strong>Lesson Objective:</strong> {{crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' }} <br/>
+                    {% endif %}
+                    {% assign kApp = crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' %}
+                    {% if kApp != '' %}
+                        <strong>Lesson Application:</strong> {{crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' }}
+                    {% endif %}
+                    {% assign kAct = crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' %}
+                    {% if kAct != '' %}
+                        <strong>Activity:</strong> {{crossingkidssundaycurriculumelementarykfirstunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' }}
+                    {% endif %}
+                    {% assign music = crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'SpotifyPlaylist' %}
+                    {% if music != '' %}
+                        <br/><br/>
+                        <iframe src="{{ crossingkidssundaycurriculumelementarykfirstunitItem | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="SecThird">
+                <div class='py-custom-2x'>
+                    <div class='justify-center'>
+                        <img src="{{ crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+                    </div>
+                    <strong>Date:</strong> {{ crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMM d, yyyy' }} <br/>
+                    {% assign secUnit = crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'Unit' %}
+                    {% if secUnit != '' %}
+                        <strong>Unit:</strong> {{ crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'Unit' }} <br/>
+                    {% endif %}
+                    {% assign secEss = crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'Essential' %}
+                    {% if secEss != '' %}
+                        <strong>Elementary Essential:</strong> {{ crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'Essential' }} <br/>
+                    {% endif %}
+                    {% assign secMV = crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'MemoryVerse' %}
+                    {% if secMV != '' %}
+                        <strong>Memory Verse:</strong> {{ crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'MemoryVerse' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumelementarysecondthirdunitItem.Content != '' %}
+                        <strong>Unit Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumelementarysecondthirdunitItem.Content }}
+                        </blockquote>
+                        <br/>
+                    {% endif %}
+                    {% assign secTitle = crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+                    {% if secTitle != '' %}
+                        <strong>Lesson Title:</strong> {{ crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem.Content != '' %}
+                        <strong>Lesson Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem.Content }}
+                        </blockquote>
+                    {% endif %}
+                    {% assign secScript = crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' %}
+                    {% if secScript != '' %}
+                        <strong>Lesson Scripture:</strong> {{crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' }} <br/>
+                    {% endif %}
+                    {% assign secObj = crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' %}
+                    {% if secObj != '' %}
+                        <strong>Lesson Objective:</strong> {{crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' }} <br/>
+                    {% endif %}
+                    {% assign secApp = crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' %}
+                    {% if secApp != '' %}
+                        <strong>Lesson Application:</strong> {{crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' }} <br/>
+                    {% endif %}
+                    {% assign secAct = crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' %}
+                    {% if secAct != '' %}
+                        <strong>Activity:</strong> {{crossingkidssundaycurriculumelementarysecondthirdunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' }} <br/>
+                    {% endif %}
+                    {% assign music = crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'SpotifyPlaylist' %}
+                    {% if music != '' %}
+                        <br/><br/>
+                        <iframe src="{{ crossingkidssundaycurriculumelementarysecondthirdunitItem | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="FourFive">
+                <div class='py-custom-2x'>
+                    <div class='justify-center'>
+                        <img src="{{ crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+                    </div>
+                    <strong>Date:</strong> {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMM d, yyyy' }} <br/>
+                    {% assign ffUnit = crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'Unit' %}
+                    {% if ffUnit != '' %}
+                        <strong>Unit:</strong> {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'Unit' }} <br/>
+                    {% endif %}
+                    {% assign ffEss = crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'Essential' %}
+                    {% if ffEss != '' %}
+                        <strong>Elementary Essential:</strong> {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'Essential' }} <br/>
+                    {% endif %}
+                    {% assign ffMV = crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'MemoryVerse' %}
+                    {% if ffMV != '' %}
+                        <strong>Memory Verse:</strong> {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'MemoryVerse' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumelementaryfourthfifthunitItem.Content != '' %}
+                        <strong>Unit Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem.Content }}
+                        </blockquote>
+                        <br/>
+                    {% endif %}
+                    {% assign lt = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' %}
+                    {% if lt != '' %}
+                        <strong>Lesson Title:</strong> {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'LessonTitle' }} <br/>
+                    {% endif %}
+                    {% if crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem.Content != '' %}
+                        <strong>Lesson Overview:</strong>
+                        <blockquote>
+                            {{ crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem.Content }}
+                        </blockquote>
+                    {% endif %}
+                    {% assign ffScript = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' %}
+                    {% if ffScript != '' %}
+                        <strong>Lesson Scripture:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Scripture' }} <br/>
+                    {% endif %}
+                    {% assign ffObj = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' %}
+                    {% if ffObj != '' %}
+                        <strong>Lesson Objective:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Objective' }} <br/>
+                    {% endif %}
+                    {% assign ffApp = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' %}
+                    {% if ffApp != '' %}
+                        <strong>Lesson Application:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Application' }} <br/>
+                    {% endif %}
+                    {% assign ffAct = crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' %}
+                    {% if ffAct != '' %}
+                        <strong>Activity:</strong> {{crossingkidssundaycurriculumelementaryfourthfifthunitItem.ChildItems[0].ChildContentChannelItem | Attribute:'Activity' }} <br/>
+                    {% endif %}
+                    {% assign music = crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'SpotifyPlaylist' %}
+                    {% if music != '' %}
+                        <br/><br/>
+                        <iframe src="{{ crossingkidssundaycurriculumelementaryfourthfifthunitItem | Attribute:'SpotifyPlaylist','RawValue' | Replace:'playlist','embed/playlist' }}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br/><br/>
+
+<script>
+    function showContent(content) {
+        if(content == 'EC') {
+            $('#Elementary').slideUp()
+            $('#EarlyChildhood').slideDown()
+        } else {
+            $('#EarlyChildhood').slideUp()
+            $('#Elementary').slideDown()
+        }
+    }
+</script>
+
+<style>
+    #accordion div .expand-header a {
+      min-height: 40px;
+      padding: 8px;
+    }
+    .nav-tabs li a {
+        display: flex !important;
+        align-items: center;
+        border: none;
+        width: 100%;
+        height: 100%;
+    }
+    .nav-tabs li {
+        margin: 4px;
+        overflow: hidden;
+    }
+    .nav-tabs li.active, #accordion div .expand-header a[aria-expanded="true"]{
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        border: none !important;
+    }
+    .expand-header a {
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+    }
+    .nav-tabs li, .nav-tabs li a, #accordion div .expand-header a {
+      border-radius: 30px;
+    }
+    .nav-tabs {
+      border: none !important;
+    }
+    {% comment %}
+    .nav-tabs, .nav-tabs li a.active, .nav-tabs li a:hover, .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+      border: none !important;
+    }
+    {% endcomment %}
+    .nav-tabs li:not(.active) a img, #accordion div .expand-header a[aria-expanded="false"] img{
+      filter: grayscale(100%);
+    }
+    @media only screen and (max-width: 768px) {
+        .center-mobile {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .center-mobile li {
+            width: 100%;
+            display: flex;
+            text-align: center;
+            justify-content: center;
+        }
+        .center-mobile li a {
+            justify-content: center;
+        }
+        .card--custom:not(.card-with-button) {
+            padding: 45px 16px;
+        }
+    }
+</style>
+{% stylesheet compile:'less' import:'_variables.less' %}
+    .nav-item.active .nav-link {
+        border: 2px solid @color-dark-blue !important;
+        background-color: @color-dark-blue !important;
+        color: @color-light-blue !important;
+    }
+{% endstylesheet %}

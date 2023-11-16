@@ -1,0 +1,468 @@
+﻿// Load Master Styles
+// -------------------------
+@import "../../../Styles/Bootstrap/variables.less";
+@import "../../../Styles/_rock-core.less";
+@import "../../../Styles/_store.less";
+@import "../../../Styles/_rock-variables.less";
+@import "_variables.less";
+@import "_variable-overrides.less";
+@import "_print.less";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+
+
+/*
+    Rock Theme Styles
+
+    1. HTML Overrides
+    2. Bootstrap Overides
+    3. Theme Styling
+    4. Helper Classes
+    5. Responsive Overrides
+*/
+
+
+// 1. HTML Overrides
+// -------------------------
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+main:not(.container-fluid) {
+  display: block;
+}
+
+body {
+  overflow-x: hidden;
+  background-image: linear-gradient(to right, rgba(255, 166, 33, 1), rgba(255, 76, 0, 1)) !important;
+  font-family: 'Roboto', sans-serif
+}
+
+// 2. Bootstrap Overrides
+// -------------------------
+
+.navbar {
+  position: static; // default is relative which causes the dropdowns to go under the other navbars dispite having a higher z-index - JME 9/9/2013
+  // using fontawesome nav toggle button instead of the BS default
+  background: transparent;
+  .navbar-toggle {
+    padding: 6px 10px;
+
+    i.fa-bars {
+      color: @navbar-inverse-toggle-icon-bar-bg;
+    }
+  }
+}
+.nav>li>a:hover, .nav>li>a:focus, .dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus, .nav .open>a, .nav .open>a:hover, .nav .open>a:focus {
+  background-color: @color-dark-grey;
+}
+.nav>li>a:focus, .dropdown-menu>li>a:focus, .nav .open>a:focus {
+  color: @color-light-orange;
+}
+
+.nav-pills > li.active > a, .nav-pills > li.active > a:focus {
+  color: @color-dark-orange;
+}
+
+a:hover i.fs, a, a:hover, .btn-link {
+  text-decoration: none !important;
+  font-weight: 600;
+}
+
+a:hover, .nav-pills > li.active > a:hover {
+  color: @color-light-orange !important;
+}
+
+.btn:not(.btn-default) {
+  border: 0px solid @color-dark-grey;
+  padding: 10px 20px;
+  background: @color-dark-grey;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 5px;
+  color: @color-dark-orange;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 16px !important;
+}
+.btn-toggle .btn, .btn-toggle .js-toggle-off:hover, .btn-toggle .js-toggle-on:hover, .btn-toggle .js-toggle-off:hover, .input-group-btn .btn {
+  background-color: @theme-1;
+  border: 0px solid @color-dark-orange !important;
+}
+.btn-toggle .btn.active, .btn-toggle .js-toggle-on:hover, .btn-toggle .js-toggle-off:hover, .input-group-btn .btn {
+  color: @color-dark-orange !important;
+}
+.btn:focus {
+  outline: none !important;
+}
+
+.btn-accent {
+  background-color: @color-light-yellow !important;
+  color: @color-dark-orange !important;
+  border-color: @color-light-yellow !important;
+}
+
+.btn:active,
+.btn.active {
+  -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+}
+
+.btn:hover {
+  background-color: #fff;
+  color: @color-light-orange;
+  border-color: @color-light-orange;
+}
+
+.btn-accent:hover {
+  background-color: @color-dark-orange !important;
+  color: @color-light-yellow !important;
+  border-color: @color-light-yellow !important;
+}
+
+.grid-actions {
+  background-color: #a2c3cc;
+
+  .btn {
+    padding: 4px;
+    width: 25px;
+    height: 25px;
+    border-radius: 30px;
+    text-align: center;
+    background-color: @color-dark-grey;
+    color: @color-dark-orange;
+    border-color: @color-dark-grey;
+    position: relative;
+
+    i {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%) translateX(-50%);
+      left: 50%;
+    }
+  }
+
+  .btn:hover {
+    background-color: #fff;
+    color: @color-light-orange;
+    border-color: @color-light-orange;
+  }
+}
+
+.btn-sm {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+}
+
+.btn-toggle {
+  .js-toggle-off:not(.active), .js-toggle-on:not(.active) {
+    background-color: rgb(233, 232, 232);
+    border-color: rgb(233, 232, 232);
+  }
+
+  .btn, .js-toggle-off:hover, .js-toggle-on:hover {
+    padding: 1px 5px;
+    font-size: 12px;
+    font-weight: normal;
+    min-width: 30px;
+  }
+}
+
+.input-group-btn {
+  .btn {
+    min-width: 1px;
+    line-height: 1em;
+    padding: 0.625em 1.125em;
+    display: inline-block;
+    border-radius: 30px;
+    border: 2px solid #1b3142;
+    background-color: #1b3142;
+    color: #fff;
+    text-align: center;
+    transition: all 0.16s ease-in;
+    font-family: Roboto, sans-serif;
+    font-size: 1.125em;
+    font-weight: 600;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+  }
+
+  .btn.dropdown-toggle {
+    width: 45px;
+    height: 34px;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+  }
+}
+
+.well {
+  background-color: @color-light-yellow;
+}
+.panel-default:not(.no-border),
+.well {
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.24);
+  margin: 16px 0px;
+  padding: 16px;
+  border-radius: 2px;
+}
+.panel-default.no-border {
+  box-shadow: none !important;
+}
+.panel {
+  background-color: rgba(0,0,0,0);
+  box-shadow: none !important;
+}
+.panel-default:not(.no-border) .panel-heading, .well .panel-heading, .panel-default:not(.no-border) {
+  background-color: @color-light-yellow;
+}
+.panel-title {
+  color: @color-dark-orange;
+}
+.panel-block {
+  border: none !important;
+}
+.panel-hidden {
+  .panel-block > .panel-heading {
+    display: none !important;
+  }
+}
+.panel-hidden {
+  .panel-block > .panel-body {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+.alert.alert-info {
+  color: black;
+  background-color: @color-light-orange;
+  border-color: @color-light-orange;
+}
+
+.progress, .progress-bar {
+  height: 10px;
+  border-radius: 10px;
+}
+
+.rock-check-box .control-wrapper {
+  float: left;
+}
+.rockcheckboxlist .checkbox-inline .label-text {
+  margin-top: 2px;
+  padding-left: 6px;
+}
+
+body {
+  font-size: 16px;
+}
+
+.carousel-indicators .active {
+  background-color: @color-light-yellow;
+}
+
+.carousel-indicators li {
+  border: 1px solid @color-light-yellow;
+}
+
+@media (min-width: 1200px) {
+  .container {
+    width: 1000px;
+  }
+}
+
+// 3. Theme Styling
+// -------------------------
+//Header
+header {
+  .header-wrapper {
+    max-width: 1000px;
+    margin: auto;
+    padding: 33px 0px 0px 0px;
+
+    .logo {
+      width: 100%;
+      padding: 0px 20px;
+    }
+  }
+}
+// Header on Dasktop
+@media only screen and (min-width: 576px) {
+  header {
+    .header-wrapper {
+      .logo {
+        width: 333px !important;
+        padding: 0px;
+      }
+    }
+  }
+}
+// Header on Small/Medium Devices
+@media only screen and (min-width: 576px) and (max-width: 1010px) {
+  header {
+    .header-wrapper {
+      padding-left: 12px;
+    }
+  }
+}
+
+//Footer
+footer {
+  background-color: @color-dark-grey !important;
+  padding-top: 82px !important;
+  padding-bottom: 82px !important;
+
+  .social-links {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .social-links__icon-wrapper {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: @color-light-yellow;
+  }
+  .social-links__icon-wrapper svg {
+    color: @color-light-yellow;
+    fill: @color-light-yellow;
+    height: 21px;
+  }
+
+  .button {
+    background-color: @color-light-yellow;
+    color: @theme-1-text;
+    font-size: 16px;
+    text-transform: uppercase;
+    width: fit-content;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    margin: auto;
+  }
+  .button span svg {
+    height: 20px;
+    padding-right: 8px;
+  }
+}
+
+// Footer on Mobile
+@media only screen and (max-width: 768px) {
+  footer {
+    
+  }
+}
+//Footer on Desktop
+@media only screen and (min-width: 769px) {
+  footer {
+    
+  }
+}
+
+//Hubspot Override
+#hubspot-messages-iframe-container {
+    z-index: 1000 !important;
+}
+
+// 4. Helper Classes
+// -------------------------
+
+.background--light-yellow, .background--accent {
+  background-color: @color-light-yellow !important;
+}
+
+.background--light-orange {
+  background-color: @color-light-orange !important;
+}
+
+.background--dark-orange, .background--primary {
+  background-color: @color-dark-orange !important;
+}
+
+.background--grey {
+  background-color: #F5F5F5;
+}
+
+.text--white {
+  color: #fff !important;
+}
+
+.text--light-yellow, .text--accent {
+  color: @color-light-yellow !important;
+}
+
+.text--light-orange {
+  color: @color-light-orange !important;
+}
+
+.text--dark-orange, .text--primary {
+  color: @color-dark-orange !important;
+}
+
+.text--dark-orange {
+  color: @color-dark-orange !important;
+}
+
+.full-width {
+  width: 100vw;
+  margin-left: -50vw;
+  left: 50%;
+  position: relative;
+}
+.justify-left {
+    display: flex;
+    justify-content: flex-start;
+}
+.justify-center {
+  display: flex;
+  justify-content: center;
+}
+.justify-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.align-center {
+  display: flex;
+  align-items: center;
+}
+
+.hover {
+    cursor: pointer;
+}
+
+// 5. Responsive Overrides
+// -------------------------
+
+// default styling should be for phones 767px or less
+
+//Mobile
+
+@media only screen and (max-width: 768px) {
+  .updateprogress-status .spinner .rect5 {
+    display: none !important;
+  }
+  main:not(.container-fluid) {
+    display: block;
+  }
+  .col {
+    padding: 8px 15px;
+  }
+}
+
+// Small devices (tablets, 768px and up)
+@media (min-width: @screen-sm-min) {
+  #announcement-rotator {
+    margin: @spacing-lg-px 0;
+  }
+}
+
+// Medium devices (desktops, 992px and up)
+@media (min-width: @screen-md-min) {
+}
+
+// Large devices (large desktops, 1200px and up)
+@media (min-width: @screen-lg-min) {
+}
+
+@import "_css-overrides.less";

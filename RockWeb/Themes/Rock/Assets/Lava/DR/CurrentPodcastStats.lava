@@ -1,0 +1,285 @@
+{% comment %} Current Podcasts and Funnel {% endcomment %}
+{% assign now = 'Now' | Date:'dddd' %}
+{% if now == 'Sunday' %}
+    {% assign sunday = 'Now' | Date:'yyyy-MM-dd' %}
+{% else %}
+    {% assign sunday = 'Now' | SundayDate | DateAdd:-7 | Date:'yyyy-MM-dd' %}
+{% endif %}
+{% sql %}
+    DECLARE @ChannelId int = 21;
+    DECLARE @ContentChannelId int = 55;
+    DECLARE @SundayDate varchar(30) = '{{sunday}}'
+    SELECT Date, Podcast, COUNT(*) AS 'Unique', SUM([Total Listens]) AS 'Total'
+    FROM (
+            SELECT DATEPART(WEEKDAY, Date) AS 'Date', Identifier, Podcast, SUM([Total Listens]) AS 'Total Listens'
+            FROM (
+                    SELECT Date, Identifier, Podcast, [Total Listens]
+                    FROM InteractionDeviceType
+                            INNER JOIN (
+                        SELECT CAST(InteractionDateTime AS DATE) AS 'Date',
+                                (CASE
+                                    WHEN PersonAliasId IS NOT NULL THEN CAST(PersonAliasId AS VARCHAR)
+                                    ELSE IpAddress END)          AS 'Identifier',
+                                1                                 AS 'Total Listens',
+                               Podcast,
+                                DeviceTypeId
+                        FROM InteractionSession
+                                INNER JOIN (
+                            SELECT Id, InteractionDateTime, PersonAliasId, InteractionSessionId, Podcast
+                            FROM Interaction
+                                    INNER JOIN (
+                                SELECT InteractionComponent.Id AS 'ComponentId', Name AS 'Podcast'
+                                FROM InteractionComponent
+                                        INNER JOIN (
+                                    SELECT Id
+                                    FROM ContentChannelItem
+                                    WHERE ContentChannelId = @ContentChannelId
+                                        AND CAST(StartDateTime AS DATE) >= @SundayDate
+                                ) AS cci ON EntityId = cci.Id
+                                WHERE InteractionChannelId = @ChannelId
+                            ) AS ic ON ComponentId = InteractionComponentId
+                        ) AS i ON InteractionSessionId = InteractionSession.Id
+                    ) AS session ON DeviceTypeId = InteractionDeviceType.Id
+                    WHERE Application NOT LIKE '%bot%'
+                ) AS interactionSession
+            GROUP BY Date, Identifier, Podcast
+        ) AS listens
+    GROUP BY Date, Podcast
+    ORDER BY Podcast, Date
+{% endsql %}
+{% sql return:'listeners' %}
+    DECLARE @ChannelId int = 21;
+    DECLARE @ContentChannelId int = 55;
+    DECLARE @SundayDate varchar(30) = '{{sunday}}'
+
+    SELECT Range, COUNT(*) AS 'ListenersInRange'
+    FROM (
+            SELECT DISTINCT IpAddress
+            FROM InteractionSession
+                    INNER JOIN (
+                SELECT Id, PersonAliasId, InteractionSessionId
+                FROM Interaction
+                        INNER JOIN (
+                    SELECT InteractionComponent.Id AS 'ComponentId', Name
+                    FROM InteractionComponent
+                            INNER JOIN (
+                        SELECT Id
+                        FROM ContentChannelItem
+                        WHERE ContentChannelId = @ContentChannelId
+                        AND CAST(StartDateTime AS DATE) >= @SundayDate
+                    ) AS cci ON EntityId = cci.Id
+                    WHERE InteractionChannelId = @ChannelId
+                ) AS ic ON ComponentId = InteractionComponentId
+            ) AS i ON InteractionSessionId = InteractionSession.Id
+        ) AS currentPodcastListeners
+            INNER JOIN (
+        SELECT IpAddress,
+            (CASE
+                    WHEN FirstInteraction > DATEADD(DAY, -14, GETDATE()) THEN 0
+                    WHEN Listens < 4 THEN 1
+                    WHEN Listens < 9 THEN 2
+                    WHEN Listens < 13 THEN 3
+                    ELSE 4
+                END) AS 'Range'
+        FROM (
+                SELECT channelInteractions.IpAddress, Listens, FirstInteraction
+                FROM (SELECT IpAddress, MIN(CreatedDateTime) AS 'FirstInteraction'
+                    FROM InteractionSession
+                    GROUP BY IpAddress) AS firstTime
+                        INNER JOIN (
+                    SELECT IpAddress, COUNT(*) AS 'Listens'
+                    FROM InteractionDeviceType
+                            INNER JOIN (
+                        SELECT IpAddress, DeviceTypeId, InteractionDateTime
+                        FROM InteractionSession
+                                INNER JOIN (
+                            SELECT InteractionSessionId, Interaction.Id, InteractionDateTime
+                            FROM Interaction
+                                    INNER JOIN (
+                                SELECT Id FROM InteractionComponent WHERE InteractionChannelId = @ChannelId
+                            ) AS ic ON InteractionComponentId = ic.Id
+                        ) AS i ON InteractionSessionId = InteractionSession.Id
+                    ) AS session ON DeviceTypeId = InteractionDeviceType.Id
+                    WHERE Application NOT LIKE '%bot%'
+                    GROUP BY IpAddress
+                ) AS channelInteractions ON channelInteractions.IpAddress = firstTime.IpAddress
+            ) AS interactionSession
+    ) AS allPodcastListeners ON allPodcastListeners.IpAddress = currentPodcastListeners.IpAddress
+    GROUP BY Range
+{% endsql %}
+{% sql return:'podcast' %}
+    DECLARE @ContentChannelId int = 55;
+    DECLARE @SundayDate varchar(30) = '{{sunday}}'
+    SELECT Title FROM ContentChannelItem
+    WHERE ContentChannelId = @ContentChannelId AND CAST(StartDateTime AS DATE) >= @SundayDate AND CAST(StartDateTime AS DATE) <= GETDATE()
+{% endsql %}
+<script>
+    $(document).ready(() => {
+        buildCurrentPodcastListens()
+        buildFunnel()
+    })
+    function buildCurrentPodcastListens() {
+        let data = {
+            labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            datasets: []
+        }
+        let rawData = []
+        {% for r in results %}
+            rawData.push({ label: '{{r.Podcast}}', date: {{r.Date}}, total: {{r.Total}}, unique: {{r.Unique}} })
+        {% endfor %}
+        for(let i = 0; i < rawData.length; i++) {
+            let idx = -1
+            data.datasets.forEach((d, index) => {
+                if(d.label == `${rawData[i].label} Total Views`) {
+                    idx = index
+                }
+            })
+            if(idx < 0) {
+                {% assign dow = sunday | DateDiff:'Now','d' %}
+                let defaultData = {
+                    label: rawData[i].label + ' Total Views',
+                    data: []
+                }
+                let dow = {{dow}}
+                for(let k = 0; k <= dow; k ++) {
+                    defaultData.data.push(0)
+                }
+                data.datasets.push(defaultData)
+                idx = data.datasets.length - 1
+                defaultData = {
+                    label: rawData[i].label + ' Unique Views',
+                    data: []
+                }
+                for(let k = 0; k <= dow; k ++) {
+                    defaultData.data.push(0)
+                }
+                data.datasets.push(defaultData)
+            }
+            data.datasets[idx].data[rawData[i].date-1] = rawData[i].total
+            data.datasets[idx + 1].data[rawData[i].date-1] = rawData[i].unique
+        }
+        let config = {
+            type: 'line',
+            data: data,
+            options: {
+                maintainAspectRatio: false,
+            }
+        }
+        let ctx = document.getElementById('current-podcast-listens').getContext('2d')
+        let chart = new Chart(ctx, config)
+    }
+    function buildFunnel() {
+        let data = [0,0,0,0,0]
+        {% for r in listeners %}
+            data[({{r.Range}})] = {{r.ListenersInRange}}
+        {% endfor %}
+        $('#funnel-cookie div.metric').text(data[0])
+        $('#funnel-tofu div div.metric').text(data[1])
+        $('#funnel-mofu div div.metric').text(data[2])
+        $('#funnel-bofu div div.metric').text(data[3])
+        $('#funnel-superfan div div.metric').text(data[4])
+    }
+</script>
+<div class="card pb-4 px-2">
+    <h2>{{ podcast | Select:'Title' | Join:', '}}</h2>
+    <div class="row">
+        <div class="col col-xs-8">
+            <i class="floating-fa fas fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Interactions are recorded every time a user goes to the WLR page for this podcast. Unique listens are calculated by IP Address"></i>
+        </div>
+        <div class="col col-xs-4">
+            <i class="floating-fa fas fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Data is calculated by grouping interactions by the IP Address and seeing the watch history associated with that IP Address"></i>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col col-xs-8">
+            <canvas id="current-podcast-listens" style="min-height: 300px;"></canvas>
+        </div>
+        <div class="col col-xs-4">
+            <div style="width: 90%; text-align: center; margin: auto;">
+                <div class="funnel" id="funnel-cookie">
+                    <div class="metric" style="top: 10px;"></div>
+                    <i class="fas fa-cookie-bite" style="margin-left: 40px;"></i>
+                </div>
+                <div class="funnel" id="funnel-tofu">
+                    <div>
+                        <div class="metric"></div>
+                        <div>ToFu</div>
+                    </div>
+                </div>
+                <div class="funnel" id="funnel-mofu">
+                    <div>
+                        <div class="metric"></div>
+                        <div>MoFu</div>
+                    </div>
+                </div>
+                <div class="funnel" id="funnel-bofu">
+                    <div>
+                        <div class="metric"></div>
+                        <div>BoFu</div>
+                    </div>
+                </div>
+                <div class="funnel" id="funnel-superfan">
+                    <div>
+                        <div class="metric"></div>
+                        <div>Superfan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .floating-fa {
+        float: right;
+    }
+    #funnel-cookie {
+        height: 50px;
+    }
+    .funnel {
+        border-left: 25px solid transparent;
+        border-right: 25px solid transparent;
+        height: 0;
+        margin: auto;
+    }
+    .funnel > div {
+        position: absolute;
+        width: 50%;
+        left: 25%;
+        text-align: center;
+    }
+    .funnel div div {
+        font-variant: small-caps;
+    }
+    .metric {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    #funnel-tofu {
+        border-top: 50px solid #51E5FF;
+        width: 300px;
+    }
+    #funnel-tofu div {
+        top: 50px;
+    }
+    #funnel-mofu {
+        border-top: 50px solid #1FDDFF;
+        width: 250px;
+    }
+    #funnel-mofu div {
+        top: 100px;
+    }
+    #funnel-bofu {
+        border-top: 50px solid #00D0F5;
+        width: 200px;
+    }
+    #funnel-bofu div {
+        top: 150px;
+    }
+    #funnel-superfan {
+        border-top: 50px solid #00BFE0;
+        width: 150px;
+    }
+    #funnel-superfan div {
+        top: 200px;
+    }
+</style>

@@ -1,0 +1,58 @@
+{% sql return:'series' %}
+    DECLARE @ChannelId int = 20;
+    DECLARE @SeriesAttrId int = 18646;
+    SELECT Value AS 'Series', Name, COUNT(*) AS Views
+    FROM AttributeValue
+             INNER JOIN (
+        SELECT EntityId, session.Name
+        FROM InteractionDeviceType
+                 INNER JOIN (
+            SELECT EntityId, Name, DeviceTypeId
+            FROM InteractionSession
+                     INNER JOIN (
+                SELECT ic.EntityId, Name, InteractionSessionId
+                FROM Interaction
+                         INNER JOIN (
+                    SELECT Id, Name, EntityId
+                    FROM InteractionComponent
+                    WHERE InteractionChannelId = @ChannelId
+                ) AS ic ON InteractionComponentId = ic.Id
+                WHERE CAST(InteractionDateTime AS DATE) = CAST(GETDATE() AS Date)
+            ) AS i ON InteractionSessionId = InteractionSession.Id
+        ) AS session ON DeviceTypeId = InteractionDeviceType.Id
+        WHERE Application NOT LIKE '%bot%'
+    ) AS idt ON idt.EntityId = AttributeValue.EntityId
+    WHERE AttributeId = @SeriesAttrId
+    GROUP BY Value, Name
+    ORDER BY Views DESC
+{% endsql %}
+{% assign groupedBySeries = series | GroupBy:'Series' %}
+<script></script>
+<div class="card my-4 px-2 pb-2">
+    <div class="row">
+        <div class="col col-xs-12">
+            <h3>What's On Today</h3>
+            <div class="row" data-masonry='{"percentPosition": true }'>
+                {% for s in groupedBySeries %}
+                    {% assign pair = s |  PropertyToKeyValue %}
+                    <div class="col-xs-3">
+                        <a href="/reports/dr/watch-series-views?Series={{pair.Key}}" class="hover">
+                            <div class="well">
+                                <b>{{pair.Key}}</b><br/>
+                                {% for v in pair.Value %}
+                                    {{v.Name}} ({{v.Views}})<br/>
+                                {% endfor %}
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+                {% assign ct = groupedBySeries | Size %}
+                {% if ct == 0 %}
+                    <div class="col-xs-12">
+                        <i>No sermons have been watched yet today.</i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,153 @@
+﻿{% assign svcTimes = 'Global' | Attribute:'ServiceTimes' | ReplaceLast:',',' and' %}
+{% assign section = 'Global' | PageParameter:'Section' %}
+<div>
+  <div class='d-none d-md-block'>
+    <ul class="nav nav-tabs justify-center" role="tablist">
+        {% for i in Items %}
+            {% assign isActive = false %}
+            {% if section != '' %}
+                {% assign ser = i.Series | Replace:' ','' %}
+                {% if section == ser %}
+                    {% assign isActive = true %}
+                {% endif %}
+            {% else %}
+                {% if forloop.index0 == 0 %}
+                    {% assign isActive = true %}
+                {% endif %}
+            {% endif %}
+            <li role="presentation" class="{% if isActive == true %}active{% endif %}">
+                <a class='btn btn-accent' href="#{{i.Series | Replace:' ',''}}" aria-controls="{{i.Series | Replace:' ',''}}" role="tab" data-toggle="tab">
+                    <span style="font-weight: bold; font-size: 16px;"> {{i.Series}}</span>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="tab-content">
+        {% for i in Items %}
+            {% assign isActive = false %}
+            {% if section != '' %}
+                {% assign ser = i.Series | Replace:' ','' %}
+                {% if section == ser %}
+                    {% assign isActive = true %}
+                {% endif %}
+            {% else %}
+                {% if forloop.index0 == 0 %}
+                    {% assign isActive = true %}
+                {% endif %}
+            {% endif %}
+            <div role="tabpanel" class="tab-pane {% if isActive == true %}active{% endif %}" id="{{i.Series | Replace:' ',''}}">
+                <div class='container py-4'>
+                    {[ tccaccordion accname:'faq-{{forloop.index0}}' ]}
+                        {% for item in i.Items %}
+                            {% assign title = item | Attribute:'Question' %}
+                            [[ item title:'{{title}}' ]]
+                                {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes }}
+                            [[ enditem ]]
+                        {% endfor %}
+                    {[ endtccaccordion ]}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+  </div>
+  <div class='d-block d-md-none'>
+    <div id="accordion" class="accordion">
+        {% for i in Items %}
+            {% assign isActive = false %}
+            <div class='panel'>
+                <div class='expand-header'>
+                    <a id="{{i.Series | Replace:' ', ''}}" class='btn btn-accent justify-center align-center' role="button" href="#collapse{{forloop.index0}}" data-parent="#accordion" data-toggle="collapse" aria-expanded="{% if isActive == true %}true{% else %}false{% endif %}" aria-controls="collapse{{forloop.index0}}">
+                        <span style="font-weight: bold; font-size: 16px;"> {{i.Series}}</span>
+                    </a>
+                </div>
+                <div class="faq-collapse collapse {% if isActive == true %}in{% endif %}" id="collapse{{forloop.index0}}" aria-expanded="{% if isActive == true %}true{% else %}false{% endif %}">
+                    <div style="display: block;" class="py-4">
+                        {[ tccaccordion accname:'faq-{{forloop.index0}}-mobile' ]}
+                            {% for item in i.Items %}
+                                {% assign title = item | Attribute:'Question' %}
+                                [[ item title:'{{title}}' ]]
+                                    {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes }}
+                                [[ enditem ]]
+                            {% endfor %}
+                        {[ endtccaccordion ]}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+  </div>
+</div>
+<br/><br/>
+<script>
+$('.{{accname}}-collapse').unbind('shown.bs.collapse')
+$('.{{accname}}-collapse').on('shown.bs.collapse', function(e) {
+    console.log('scrolling')
+    var $panel = $(this).closest('.panel')
+    if ($(this).is(e.target)) {
+        $('html,body').animate({
+            scrollTop: $panel.offset().top - 140
+        }, 500);
+    }
+});
+</script>
+<style>
+    .faq-collapse {
+      padding: 12px;
+    }
+    #accordion div .expand-header a {
+      min-height: 40px;
+      padding: 8px;
+    }
+    .nav-tabs li a {
+        display: flex !important;
+        align-items: center;
+        border: none;
+        width: 100%;
+        height: 100%;
+    }
+    .nav-tabs li {
+        margin: 4px;
+        overflow: hidden;
+    }
+    .nav-tabs li.active, #accordion div .expand-header a[aria-expanded="true"]{
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        border: none !important;
+    }
+    .expand-header a {
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+    }
+    .nav-tabs li, .nav-tabs li a, #accordion div .expand-header a {
+      border-radius: 30px;
+    }
+    .nav-tabs {
+      border: none !important;
+    }
+    {% comment %}
+    .nav-tabs, .nav-tabs li a.active, .nav-tabs li a:hover, .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+      border: none !important;
+    }
+    {% endcomment %}
+    .nav-tabs li:not(.active) a img, #accordion div .expand-header a[aria-expanded="false"] img{
+      filter: grayscale(100%);
+    }
+    .accordion .panel {
+      box-shadow: none;
+    }
+    .accordion .panel.has-border {
+      border-bottom: 1px solid black;
+      border-radius: 0px;
+    }
+    .faq-header {
+        padding: 8px 0px;
+        margin-top: 0px;
+    }
+    .faq-body {
+        padding: 16px 0px;
+    }
+    .faq-accord .panel {
+        margin-bottom: 0px;
+        padding: 10px 0;
+    }
+</style>

@@ -1,0 +1,236 @@
+﻿<div class="row pt-5">
+  <div class="col col-xs-12 col-md-5 justify-center">
+    {% if Event.Photo.Guid %}
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" style=" height: 100%; width: 100%; object-fit: cover;" />
+      {% capture metaimg %}https://thecrossingchurch.com/GetImage.ashx?Guid={{ Event.Photo.Guid }}{% endcapture %}
+      {{ metaimg | AddMetaTagToHead:'property','og:image' }}
+    {% endif %}
+  </div>
+  <div class="col col-xs-12 col-md-7">
+    {% comment %}<span class="floating-event-title">Event</span> <br />{% endcomment %}
+    <h1>{{ Event.Name }}</h1> <br/>
+    {% assign scheduledDates = EventItemOccurrence.Schedule.iCalendarContent | DatesFromICal:'all' %}
+    {% assign numDates = scheduledDates | Size %}
+    {% if numDates > 0 %}
+      {% assign dateTimeFormat = EventItemOccurrence | Attribute:'DateTimeDisplayFormat' %}
+      {% assign duration = EventItemOccurrence.Schedule.DurationInMinutes %}
+      {% assign endTime = scheduledDates | Last | DateAdd:EventItemOccurrence.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
+      {% comment %}<span class="floating-event-title">Date/Time</span> <br />{% endcomment %}
+      {% if isGrouped == 'No' %}
+        {% if numDates > 1 %}
+            <a data-toggle="collapse" href="#dateList" role="button" aria-expanded="false" aria-controls="dateList">
+                <div>
+                    {% if dateTimeFormat == 'No Time' %}
+                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy' }}
+                    {% elseif dateTimeFormat == 'All Day' %}
+                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy' }} (All Day)
+                    {% else %}
+                        {{scheduledDates | First | Date:'ddd, MMM d'}} - {{ scheduledDates | Last | Date:'ddd, MMM d, yyyy h:mm tt' }}{% if duration > 0 %} - {{endTime}}{% endif %}
+                    {% endif %}
+                    <i class='fa expand-icon pull-right'></i>
+                </div>
+            </a>
+            <div class='collapse' id="dateList">
+                <ul class="list-unstyled">
+                    {% for scheduledDate in scheduledDates %}
+                      <li>
+                        {% if dateTimeFormat == 'No Time' %}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy' }}
+                        {% elseif dateTimeFormat == 'All Day' %}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy' }} (All Day)
+                        {% else %}
+                            {{ scheduledDate | Date:'dddd, MMMM d, yyyy h:mm tt' }}{% if duration > 0 %} - {{endTime}}{% endif %}
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br/>
+        {% else %}
+            {% if dateTimeFormat == 'No Time' %}
+                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy' }} <br/><br/>
+            {% elseif dateTimeFormat == 'All Day' %}
+                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy' }} (All Day) <br/><br/>
+            {% else %}
+                {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy h:mm tt' }}{% if duration > 0 %} - {{endTime}}{% endif %} <br/><br/>
+            {% endif %}
+        {% endif %}
+      {% else %}
+        {% assign displayDates = scheduledDates %}
+        {% assign endTimes = scheduledDates | First | DateAdd:EventItemOccurrence.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
+        {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
+            {% for i in eventitemoccurrenceItems %}
+                {% if i.Id != EventItemOccurrence.Id %}
+                    {% assign sdates = i.Schedule.iCalendarContent | DatesFromICal:'all'  %}
+                    {% assign ct = sdates | Size %}
+                    {% if ct == 1 %}
+                        {% assign nextDate = sdates | First %}
+                        {% assign diff = 'Now' DateDiff:nextDate %}
+                        {% if diff > 0 %}
+                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %}
+                            {% capture endTimes %}{{endTimes}},{{nextDate | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt'}}{% endcapture %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endeventitemoccurrence %}
+        {% assign ddSize = displayDates | Size %}
+        {% if ddSize > 1 %}
+            {% assign displayDates = displayDates | Split:',' %}
+            {% comment %} {% assign displayDates = displayDates | Sort %} {% endcomment %}
+        {% endif %}
+        {% assign endTimes = endTimes | Split:',' %}
+        <ul class="list-unstyled">
+            {% for d in displayDates %}
+                <li>
+                    {% if dateTimeFormat == 'No Time' %}
+                        {{d | Date:'dddd, MMMM d, yyyy'}}
+                    {% elseif dateTimeFormat == 'All Day' %}
+                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day)
+                    {% else %}
+                        {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTimes[forloop.index0]}}{% endif %}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+      {% endif %}
+    {% endif %}
+    {% assign ledBy = EventItemOccurrence | Attribute:'LedBy' %}
+    {% if ledBy != '' %}
+        Led By: {{ ledBy }} <br/><br/>
+    {% endif %}
+    {% if EventItemOccurrence.Location != '' %}
+    {% comment %}<span class="floating-event-title">Location</span> <br />{% endcomment %}
+        {{ EventItemOccurrence.Location }} <br/><br/>
+    {% endif %}
+    {% comment %}<span class="floating-event-title">Description</span> <br />{% endcomment %}
+    {{ Event.Description }}
+    <div class="row">
+      {% assign eventItemOccurrenceLinkages = EventItemOccurrence.Linkages %}
+      {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+      {% if eventItemOccurrenceLinkagesCount > 0 %}
+        {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+          <div class="col col-xs-12" style="min-height: 40px;">
+          {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
+          {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+          {% assign showRegistration = true %}
+          {% assign registrationMessage = '' %}
+
+          {% if daysTillStartDate and daysTillStartDate > 0 %}
+            {% assign showRegistration = false %}
+            {% if eventItemOccurrenceLinkagesCount == 1 %}
+              {% capture registrationMessage %}<p>Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+            {% else %}
+              {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+            {% endif %}
+          {% endif %}
+
+          {% if daysTillEndDate and daysTillEndDate < 0 %}
+            {% assign showRegistration = false %}
+              {% if eventItemOccurrenceLinkagesCount == 1 %}
+                {% capture registrationMessage %}<p>Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+              {% else %}
+                {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+              {% endif %}
+          {% endif %}
+
+          {% if showRegistration == true %}
+            {% assign statusLabel = RegistrationStatusLabels[eventItemOccurrenceLinkage.RegistrationInstanceId] %}
+            {% if eventItemOccurrenceLinkagesCount == 1 %}
+              {% assign registrationButtonText = statusLabel %}
+            {% else %}
+              {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
+            {% endif %}
+
+            {% if statusLabel == 'Full' %}
+              {% if eventItemOccurrenceLinkagesCount == 1 %}
+                {% assign registrationButtonText = 'Registration Full' %}
+              {% else %}
+                {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
+              {% endif %}
+              <div class='margin-t-sm' style='font-weight: bold;'>{{ registrationButtonText }}</div>
+            {% else %}
+              {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
+                <a href='{{ RegistrationPage }}/{{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-sm'>{{ registrationButtonText }}</a>
+              {% else %}
+                <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn margin-t-sm">{{ registrationButtonText }}</a>
+              {% endif %}
+            {% endif %}
+          {% else %}
+            {{registrationMessage}}
+          {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+      {% if calendars contains 1 %}
+          {% assign eventCalItem = Event.EventCalendarItems | Where:'EventCalendarId',1 | First %}
+          {% assign r = eventCalItem | Attribute:'ExternalLink','RawValue' %}
+          {% if r != '' %}
+            {% assign externalLinks = eventCalItem | Attribute:'ExternalLink','RawValue' | Split:'|' %}
+          {% endif %}
+          {% assign r = EventItemOccurrence | Attribute:'ExternalLink','RawValue' %}
+          {% if r != '' %}
+            {% assign externalReg = EventItemOccurrence | Attribute:'ExternalLink','RawValue' | Split:'|' %}
+          {% endif %}
+      {% else %}
+          {% assign eventCalItem = Event.EventCalendarItems | Where:'EventCalendarId',2 | First %}
+          {% assign r = eventCalItem | Attribute:'ExternalLinkInternal','RawValue' %}
+          {% if r != '' %}
+            {% assign externalLinks = eventCalItem | Attribute:'ExternalLinkInternal','RawValue' | Split:'|' %}
+          {% endif %}
+      {% endif %}
+      {% for el in externalLinks %}
+        <div class="col col-xs-12" style="min-height: 40px;">
+            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
+        </div>
+      {% endfor %}
+      {% for el in externalReg %}
+        <div class="col col-xs-12" style="min-height: 40px;">
+            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
+        </div>
+      {% endfor %}
+    </div>
+    <br/>
+    <div class="row">
+      <div class="col col-xs-12">
+        <script>function fbs_click() { u = location.href; t = document.title; window.open('http://www.facebook.com/sharer.php?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(t), 'sharer', 'toolbar=0,status=0,width=626,height=436'); return false; }</script>
+        <script>function ics_click() { text = `{{ EventItemOccurrence.Schedule.iCalendarContent }}`.replace('END:VEVENT', 'SUMMARY: {{ Event.Name }}\r\nLOCATION: {{ EventItemOccurrence.Location }}\r\nEND:VEVENT'); var element = document.createElement('a'); element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text)); element.setAttribute('download', '{{ Event.Name }}.ics'); element.style.display = 'none'; document.body.appendChild(element); element.click(); document.body.removeChild(element); }</script>
+        <div class='social-media'>
+            <ul class="links">
+              <li style="margin-left: 0px;">
+                <a href="https://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
+                  <i class='fab fa-facebook-f'></i>
+                </a>
+              </li>
+              <li>
+                <a href="https://twitter.com/intent/tweet?text={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
+                  <i class='fab fa-twitter'></i>
+                </a>
+              </li>
+              <li>
+                <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
+                  <i class='fa fa-share-alt'></i>
+                </a>
+              </li>
+              <li>
+                <a href="" onclick="return ics_click()" title="" data-original-title="Download Event">
+                  <i class='fa fa-calendar'></i>
+                </a>
+              </li>
+            </ul>
+        </div>
+      </div>
+    </div>
+    {% if EventItemOccurrence.ContactEmail != '' %}
+        <div class="row">
+          <div class="col col-xs-12 pt-3 hover">
+            {% if EventItemOccurrence.ContactPersonAlias != null %}
+              If you have any questions, please contact <a onclick="toggleForm()" class="">{{EventItemOccurrence.ContactPersonAlias.Person.FullName}}.</a>
+            {% else %}
+              If you have any questions, please <a onclick="toggleForm()" class="">contact us.</a>
+            {% endif %}
+          </div>
+        </div>
+    {% endif %}
+  </div>
+</div>

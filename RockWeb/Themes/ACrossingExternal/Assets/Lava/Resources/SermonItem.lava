@@ -1,0 +1,191 @@
+﻿{% comment %}Custom Breadcrumbs{% endcomment %}
+<ol class='breadcrumb'>
+    <li class='breadcrumb-item'>
+        <a href="/">Home</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources">Resources</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources/Watch">Watch</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources/Watch/{{ 'Global' | PageParameter:'ResourceCategory'}}">{{ 'Global' | PageParameter:'ResourceCategory'}}</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources/Watch/{{ 'Global' | PageParameter:'ResourceCategory'}}/{{ 'Global' | PageParameter:'Series' }}">{{ 'Global' | PageParameter:'Series'}}</a>
+    </li>
+    <li class='breadcrumb-item'>
+        {{ Item.Title }}
+    </li>
+</ol>
+
+{{ Item | Attribute:'MetaDescription' | AddMetaTagToHead:'name','description' }}
+{% assign cat = Item | Attribute:'Cateogry' %}
+{% assign currentVideo = 'Globals' | PageParameter:'T' %}
+{% if currentVideo == '' %}
+    {% assign currentVideo = 'Service' %}
+{% endif %}
+<div class='row'>
+    <div class='col col-xs-12 col-md-7'>
+        {% assign videoSrc = Item | Attribute:'Link' %}
+        {% if cat == 'Sermon' %}
+            {% if currentVideo == 'Service' %}
+                {% assign videoSrc = Item | Attribute:'FullServiceVideo' %}
+                {% if videoSrc == '' %}
+                    {% assign videoSrc = Item | Attribute:'SermonVideo' %}
+                    {% assign currentVideo = 'Sermon' %}
+                {% endif %}
+            {% else %}
+                {% assign videoSrc = Item | Attribute:'SermonVideo' %}
+            {% endif %}
+        {% endif %}
+        <div class='video-wrapper'>
+            <iframe title="player" src="{{videoSrc | Replace:'vimeo.com','player.vimeo.com/video'}}" alt="{{Item | Attribute:'ContentAltText'}}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+    <div class='col col-xs-12 col-md-5'>
+        <h1 class="h2">{{Item.Title}}</h1>
+        <br/>
+        {% if cat == 'Sermon' %}
+            {% assign pastor = Item | Attribute:'Author','FullName' %}
+            {% if pastor != '' %}
+                <a href="/Resources/Search?q={{Item | Attribute:'Author','FullName'}}"><h4>{{Item | Attribute:'Author','FullName'}}</h4></a>
+            {% else %}
+                <h4>{{Item | Attribute:'GuestSpeaker'}}</h4>
+            {% endif %}
+        {% else %}
+            <h4>{{Item | Attribute:'Author','FullName'}}</h4>
+        {% endif %}
+        <br/>
+        <p>{{Item.Content}}</p>
+        <br/>
+        {% if cat == 'Sermon' %}
+            <div>
+                <audio controls>
+                    <source src="{{Item | Attribute:'SermonAudio'}}" type="audio/mpeg" />
+                </audio>
+            </div>
+            <br/>
+            {% assign notes = Item | Attribute:'DiscussionNotes' %}
+            {% assign sermon = Item | Attribute:'SermonVideo' %}
+            {% assign service = Item | Attribute:'FullServiceVideo' %}
+            {% assign hasBothVideos = false %}
+            {% if currentVideo == 'Service' %}
+                {% if sermon != '' %}
+                    {% assign hasBothVideos = true %}
+                {% endif %}
+            {% elseif currentVideo == 'Sermon' %}
+                {% if service != '' %}
+                    {% assign hasBothVideos = true %}
+                {% endif %}
+            {% endif %}
+            {% if notes != '' or hasBothVideos %}
+                <div>
+                    {% if notes != '' %}
+                        {% if cat == 'Sermon' %}
+                            <a class='btn btn-primary mb-1' target="_blank" href="{{notes}}">Download Discussion Guide</a>
+                        {% else %}
+                            <a class='btn btn-primary mb-1' target="_blank" href="{{notes}}">View Notes</a>
+                        {% endif %}
+                    {% endif %}
+                    {% if currentVideo == 'Service' %}
+                        {% if sermon != '' %}
+                            <a class='btn btn-primary mb-1' href="{{ 'Global' | Page:'Path' }}?T=Sermon">Watch Sermon Video</a>
+                        {% endif %}
+                    {% else %}
+                        {% if service != '' %}
+                            <a class='btn btn-primary mb-1'  href="{{ 'Global' | Page:'Path' }}?T=Service">Watch Full Service</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <br/>
+            {% endif %}
+        {% endif %}
+        <div class="row">
+          <div class="col col-xs-12">
+            <div class='social-media'>
+                <script>function fbs_click() { u = location.href; t = document.title; window.open('http://www.facebook.com/sharer.php?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(t), 'sharer', 'toolbar=0,status=0,width=626,height=436'); return false; }</script>
+                <ul class="links">
+                  <li style="margin-left: 0px;">
+                    <a href="https://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
+                      <i class='fa fa-facebook-f'></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://twitter.com/intent/tweet?text={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
+                      <i class='fa fa-twitter'></i>
+                    </a>
+                  </li>
+                  <li>
+                    <a onClick="copyToClip()"  title="" data-original-title="Copy Link">
+                      <i class='fa fa-share-alt'></i>
+                    </a>
+                  </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>
+<script>
+    function copyToClip() {
+        navigator.clipboard.writeText("{{ 'Global' | Page:'Url' }}")
+        .then(() => {
+            alert('Copied to Clipboard')
+        })
+    }
+</script>
+<style>
+    .floating--title {
+        display: inline-block;
+        padding: 0 0 4px;
+        border-bottom: 2px solid #5F9BAC;
+        text-transform: uppercase;
+        font-size: .75em;
+        line-height: 1em;
+        color: #5F9BAC;
+    }
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 56.25%;
+    }
+    .video-wrapper>iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .social-media .links {
+        display: block;
+        padding: 0;
+        list-style: none;
+    }
+    .social-media .links li {
+        display: inline-block;
+        margin: 0 15px;
+    }
+    .social-media .links li a {
+        display: block;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #1b3142;
+        color: #fff;
+        text-decoration: none;
+        position: relative;
+        font-size: 30px;
+        text-align: center;
+    }
+    .social-media .links li a i {
+        font-size: 25px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -ms-transform: translate(-50%,-50%);
+        transform: translate(-50%,-50%);
+    }
+</style>

@@ -1,0 +1,4 @@
+﻿<div class='text--centered'>
+    <img style="width:100%; max-width:300px; margin-bottom: 16px;" src="https://rock.thecrossingchurch.com/Content/Crossing%20Students/MS_Black_Horizontal.png"/>
+    <img style="width:100%; max-width:300px; margin-bottom: 16px;" class="card--custom card-with-button" src="{{ Item | Attribute:'Image' }}" />
+</div>

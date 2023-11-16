@@ -1,0 +1,255 @@
+{% comment %} Current Sermon and Funnel {% endcomment %}
+{% assign now = 'Now' | Date:'dddd' %}
+{% if now == 'Sunday' %}
+    {% assign sunday = 'Now' | Date:'yyyy-MM-ddTHH:mm:ss' | ToMidnight %}
+{% else %}
+    {% assign sunday = 'Now' | SundayDate | DateAdd:-7 | Date:'yyyy-MM-ddTHH:mm:ss' | ToMidnight %}
+{% endif %}
+{% sql %}
+    DECLARE @ChannelId int = 20;
+    DECLARE @ContentChannelId int = 56;
+    DECLARE @SundayDate varchar(30) = '{{sunday}}'
+    SELECT Date, COUNT(*) AS 'Unique', SUM([Total Views]) AS 'Total'
+    FROM (
+            SELECT Date, Identifier, SUM([Total Views]) AS 'Total Views'
+            FROM (
+                    SELECT Date, Identifier, [Total Views]
+                    FROM InteractionDeviceType
+                            INNER JOIN (
+                        SELECT CAST(InteractionDateTime AS DATE) AS 'Date',
+                                (CASE
+                                    WHEN PersonAliasId IS NOT NULL THEN CAST(PersonAliasId AS VARCHAR)
+                                    ELSE IpAddress END)          AS 'Identifier',
+                                1                                 AS 'Total Views',
+                                DeviceTypeId
+                        FROM InteractionSession
+                                INNER JOIN (
+                            SELECT Id, InteractionDateTime, PersonAliasId, InteractionSessionId
+                            FROM Interaction
+                                    INNER JOIN (
+                                SELECT InteractionComponent.Id AS 'ComponentId', Name
+                                FROM InteractionComponent
+                                        INNER JOIN (
+                                    SELECT Id
+                                    FROM ContentChannelItem
+                                    WHERE ContentChannelId = @ContentChannelId
+                                        AND CAST(StartDateTime AS DATE) = @SundayDate
+                                ) AS cci ON EntityId = cci.Id
+                                WHERE InteractionChannelId = @ChannelId
+                            ) AS ic ON ComponentId = InteractionComponentId
+                        ) AS i ON InteractionSessionId = InteractionSession.Id
+                    ) AS session ON DeviceTypeId = InteractionDeviceType.Id
+                    WHERE Application NOT LIKE '%bot%'
+                ) AS interactionSession
+            GROUP BY Date, Identifier
+        ) AS views
+    GROUP BY Date
+{% endsql %}
+{% sql return:'viewers' %}
+    DECLARE @ChannelId int = 20;
+    DECLARE @ContentChannelId int = 56;
+    DECLARE @SundayDate varchar(30) = '{{sunday}}'
+
+    SELECT Range, COUNT(*) AS 'ViewersInRange'
+    FROM (
+            SELECT DISTINCT IpAddress
+            FROM InteractionSession
+                    INNER JOIN (
+                SELECT Id, PersonAliasId, InteractionSessionId
+                FROM Interaction
+                        INNER JOIN (
+                    SELECT InteractionComponent.Id AS 'ComponentId', Name
+                    FROM InteractionComponent
+                            INNER JOIN (
+                        SELECT Id
+                        FROM ContentChannelItem
+                        WHERE ContentChannelId = @ContentChannelId
+                        AND CAST(StartDateTime AS DATE) = @SundayDate
+                    ) AS cci ON EntityId = cci.Id
+                    WHERE InteractionChannelId = @ChannelId
+                ) AS ic ON ComponentId = InteractionComponentId
+            ) AS i ON InteractionSessionId = InteractionSession.Id
+        ) AS currentSermonViewers
+            INNER JOIN (
+        SELECT IpAddress,
+            (CASE
+                    WHEN FirstInteraction > DATEADD(DAY, -14, GETDATE()) THEN 0
+                    WHEN Views < 4 THEN 1
+                    WHEN Views < 9 THEN 2
+                    WHEN Views < 13 THEN 3
+                    ELSE 4
+                END) AS 'Range'
+        FROM (
+                SELECT channelInteractions.IpAddress, Views, FirstInteraction
+                FROM (SELECT IpAddress, MIN(CreatedDateTime) AS 'FirstInteraction'
+                    FROM InteractionSession
+                    GROUP BY IpAddress) AS firstTime
+                        INNER JOIN (
+                    SELECT IpAddress, COUNT(*) AS 'Views'
+                    FROM InteractionDeviceType
+                            INNER JOIN (
+                        SELECT IpAddress, DeviceTypeId, InteractionDateTime
+                        FROM InteractionSession
+                                INNER JOIN (
+                            SELECT InteractionSessionId, Interaction.Id, InteractionDateTime
+                            FROM Interaction
+                                    INNER JOIN (
+                                SELECT Id FROM InteractionComponent WHERE InteractionChannelId = @ChannelId
+                            ) AS ic ON InteractionComponentId = ic.Id
+                        ) AS i ON InteractionSessionId = InteractionSession.Id
+                    ) AS session ON DeviceTypeId = InteractionDeviceType.Id
+                    WHERE Application NOT LIKE '%bot%'
+                    GROUP BY IpAddress
+                ) AS channelInteractions ON channelInteractions.IpAddress = firstTime.IpAddress
+            ) AS interactionSession
+    ) AS allSermonViewers ON allSermonViewers.IpAddress = currentSermonViewers.IpAddress
+    GROUP BY Range
+{% endsql %}
+{% sql return:'sermon' %}
+    DECLARE @ContentChannelId int = 56;
+    DECLARE @SundayDate varchar(30) = '{{sunday}}'
+    SELECT Title FROM ContentChannelItem
+    WHERE ContentChannelId = @ContentChannelId AND CAST(StartDateTime AS DATE) = @SundayDate
+{% endsql %}
+<script>
+    $(document).ready(() => {
+        buildCurrentSermonViews()
+        buildFunnel()
+    })
+    function buildCurrentSermonViews() {
+        let data = {
+            labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            datasets: [
+                {label: 'Total Views', data: []},
+                {label: 'Unique Views', data: []}
+            ]
+        }
+        {% for r in results %}
+            data.datasets[0].data.push({{r.Total}})
+            data.datasets[1].data.push({{r.Unique}})
+        {% endfor %}
+        let config = {
+            type: 'line',
+            data: data,
+            options: {
+                maintainAspectRatio: false,
+            }
+        };
+        let ctx = document.getElementById('current-sermon-views').getContext('2d')
+        let chart = new Chart(ctx, config)
+    }
+    function buildFunnel() {
+        let data = [0,0,0,0,0]
+        {% for r in viewers %}
+            data[({{r.Range}})] = {{r.ViewersInRange}}
+        {% endfor %}
+        $('#funnel-cookie div.metric').text(data[0])
+        $('#funnel-tofu div div.metric').text(data[1])
+        $('#funnel-mofu div div.metric').text(data[2])
+        $('#funnel-bofu div div.metric').text(data[3])
+        $('#funnel-superfan div div.metric').text(data[4])
+    }
+</script>
+<div class="card pb-4 px-2">
+    <h2>{{ sunday | Date:'dddd, MMMM d' }} - {% for s in sermon %}{{s.Title}}{% endfor %}</h2>
+    <div class="row">
+        <div class="col col-xs-8">
+            <i class="floating-fa fas fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Interactions are recorded every time a user goes to the WLR page for this sermon. Unique views are calculated by IP Address"></i>
+        </div>
+        <div class="col col-xs-4">
+            <i class="floating-fa fas fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Data is calculated by grouping interactions by the IP Address and seeing the watch history associated with that IP Address"></i>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col col-xs-8">
+            <canvas id="current-sermon-views" style="min-height: 300px;"></canvas>
+        </div>
+        <div class="col col-xs-4">
+            <div style="width: 90%; text-align: center; margin: auto;">
+                <div class="funnel" id="funnel-cookie">
+                    <div class="metric" style="top: 10px;"></div>
+                    <i class="fas fa-cookie-bite" style="margin-left: 40px;"></i>
+                </div>
+                <div class="funnel" id="funnel-tofu">
+                    <div>
+                        <div class="metric"></div>
+                        <div>ToFu</div>
+                    </div>
+                </div>
+                <div class="funnel" id="funnel-mofu">
+                    <div>
+                        <div class="metric"></div>
+                        <div>MoFu</div>
+                    </div>
+                </div>
+                <div class="funnel" id="funnel-bofu">
+                    <div>
+                        <div class="metric"></div>
+                        <div>BoFu</div>
+                    </div>
+                </div>
+                <div class="funnel" id="funnel-superfan">
+                    <div>
+                        <div class="metric"></div>
+                        <div>Superfan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .floating-fa {
+        float: right;
+    }
+    #funnel-cookie {
+        height: 50px;
+    }
+    .funnel {
+        border-left: 25px solid transparent;
+        border-right: 25px solid transparent;
+        height: 0;
+        margin: auto;
+    }
+    .funnel > div {
+        position: absolute;
+        width: 50%;
+        left: 25%;
+        text-align: center;
+    }
+    .funnel div div {
+        font-variant: small-caps;
+    }
+    .metric {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    #funnel-tofu {
+        border-top: 50px solid #51E5FF;
+        width: 300px;
+    }
+    #funnel-tofu div {
+        top: 50px;
+    }
+    #funnel-mofu {
+        border-top: 50px solid #1FDDFF;
+        width: 250px;
+    }
+    #funnel-mofu div {
+        top: 100px;
+    }
+    #funnel-bofu {
+        border-top: 50px solid #00D0F5;
+        width: 200px;
+    }
+    #funnel-bofu div {
+        top: 150px;
+    }
+    #funnel-superfan {
+        border-top: 50px solid #00BFE0;
+        width: 150px;
+    }
+    #funnel-superfan div {
+        top: 200px;
+    }
+</style>

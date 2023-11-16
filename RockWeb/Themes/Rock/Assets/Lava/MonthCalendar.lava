@@ -1,0 +1,51 @@
+<div class="container-fluid">
+  <h4 class="month text-center">{{ StartDate | Date:'MMMM yyyy'}}</h4>
+
+  <div class="row days">
+    <h5>Sunday</h5>
+    <h5>Monday</h5>
+    <h5>Tuesday</h5>
+    <h5>Wednesday</h5>
+    <h5>Thursday</h5>
+    <h5>Friday</h5>
+    <h5>Saturday</h5>
+  </div>
+
+  {% for day in DayEvents%}
+      {% cycle '<div class="row">', '', '', '', '', '', '' %}
+      {% if day.FocusMonth == false %}
+        {% assign month = "out-month" %}
+      {% else%}
+        {% assign month = "in-month" %}
+      {% endif %}
+
+      <a href="{{ day.DayLink }}" class="col-xs-12 calendar-day {{ month }}">
+        <time datetime="{{ day.Date }}">{{ day.Date | Date:'d'}}</time>
+        {% assign eventNum = day.EventItemOccurrenceSummaries | Size %}
+        <span class="container martop15">
+        {% for event in day.EventItemOccurrenceSummaries limit:3 %}
+            <div class="event-month" style="background-color: {{ event.Color }}; color: white;">
+			  {% if event.Location <> '' %}<strong>{{ event.Location }}</strong><br/>{% endif %}
+			  {{ event.Time }}
+              {% if event.Blocked %}Blocked:{% endif %}
+              {{ event.Name | Truncate:22,'...' }}
+              <span class="tooltiptext">
+                {{ event.Campus }}  
+                {% if event.Location && event.Location != '' %}<br/>{{ event.Location }}{% endif %}
+                {% if event.Ministry && event.Ministry != '' %}<br/>{{ event.Ministry }}{% endif %}
+              </span>
+            </div>
+        {% endfor %}
+        {% assign eventsLeft = eventNum | Minus:3 %}
+        {% if eventsLeft > 0 %}
+            <div class="event-month">
+              {{ eventsLeft }} more...
+            </div>
+        {% endif %}
+        </span>
+      </a>
+
+      {% cycle '', '', '', '', '', '', '</div>' %}
+  {% endfor %}
+  
+</div>

@@ -1,0 +1,248 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" Inherits="Rock.Web.UI.RockMasterPage" %>
+
+<%@ Import Namespace="System.Web.Optimization" %>
+<!DOCTYPE html>
+
+<script runat="server">
+
+    // keep code below to call base class init method
+
+    /// <summary>
+    /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
+    /// </summary>
+    /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
+    protected override void OnInit( EventArgs e )
+    {
+        base.OnInit( e );
+    }
+
+</script>
+
+<html class="no-js">
+<head runat="server">
+
+    <meta charset="utf-8">
+    <title></title>
+
+    <script src="<%# ResolveRockUrl("~/Scripts/jquery-1.12.4.min.js" ) %>"></script>
+
+    <!-- Set the viewport width to device width for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <asp:ContentPlaceHolder ID="css" runat="server" />
+
+    <!-- Included CSS Files -->
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>" />
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>" />
+
+    <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>"></script>
+
+    <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
+    <script>
+        function toggleSearch() {
+            let search = $('#icoSearch')
+            let input = $('#txtSearch')
+            if (search.hasClass('active')) {
+                search.removeClass('active')
+                input.removeClass('active')
+            } else {
+                search.addClass('active')
+                input.addClass('active')
+                setTimeout(function () { input.focus() }, 500)
+            }
+        }
+        $(document).ready(function () {
+            $('#txtSearch').bind("enterKey", function (e) {
+                console.log('The Search content is: ' + $('#txtSearch').val())
+                window.location.href = "/Veritas/Search?q=" + $('#txtSearch').val()
+            });
+            $('#txtSearch').keyup(function (e) {
+                if (e.keyCode == 13) {
+                    e.preventDefault()
+                    var search = document.getElementById('txtSearch');
+                    if (document.activeElement === search) {
+                        console.log('The Search content is: ' + $('#txtSearch').val())
+                        window.location.href = "/Veritas/Search?q=" + $('#txtSearch').val()
+                    }
+                }
+            });
+            $('#form1').submit(function (e) {
+                var search = document.getElementById('txtSearch');
+                if (document.activeElement === search) {
+                    e.preventDefault();
+                    console.log('The Search content is: ' + $('#txtSearch').val())
+                    window.location.href = "/Veritas/Search?q=" + $('#txtSearch').val()
+                }
+            })
+            $('#mobile-menu-toggle').click(function () {
+                let menu = $('#menu-mobile-menu')
+                let toggle = $('#mobile-menu-toggle')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    toggle.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                } else {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                        toggle.addClass('active')
+                    }, 20)
+                }
+            })
+        })
+    </script>
+    <!-- Start of HubSpot Embed Code -->
+    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>
+    <!-- End of HubSpot Embed Code -->
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VF4Z1LYJTM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-VF4Z1LYJTM');
+    </script>
+    <!-- End Google Analytics -->
+
+</head>
+<body runat="server" id="body">
+
+    <form id="form1" runat="server">
+
+        <!-- Page Header -->
+        <header>
+            <div class="header-inset">
+                <div class="nav-menu left">
+                    <div class="header-search">
+                        <div class="search-icon-wrap" id="icoSearch" onclick="toggleSearch()">
+                            <i class="fa fa-search fa-xl"></i>
+                        </div>
+                        <div class="input-wrap">
+                            <input class="search-input" type="text" placeholder="Search Veritas..." id="txtSearch" />
+                        </div>
+                    </div>
+                    <ul id="menu-left" class="main-navigation desktop-menu">
+                        <%--<li class="menu-item main-nav-item">
+                            <a href="/Veritas/what-we-do">What We Do</a>
+                        </li>--%>
+                        <li class="menu-item main-nav-item">
+                            <a href="/Veritas/Staff">Get to Know Us</a>
+                        </li>
+                        <li class="menu-item main-nav-item">
+                            <a href="/Veritas/Resources">Watch</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="website-logo">
+                    <a href="/Veritas">
+                        <img src="/Themes/Veritas/Assets/Logos/logo.png" class="header-image img-responsive" />
+                    </a>
+                </div>
+                <div class="nav-menu right">
+                    <div class="desktop-menu">
+                        <ul id="menu-right" class="main-navigation">
+                            <li class="menu-item main-nav-item">
+                                <a href="/Veritas/Serving">Serve With Us</a>
+                            </li>
+                            <li class="menu-item main-nav-item">
+                                <a href="/Registration/veritas-rides">I Need a Ride</a>
+                            </li>
+                            <li class="menu-item main-nav-item">
+                                <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="mobile-menu">
+                        <div id="mobile-menu-toggle">
+                            <i class="fa fa-bars"></i>
+                            <i class="fa fa-times"></i>
+                        </div>
+                        <ul class="main-navigation" id="menu-mobile-menu">
+                            <%--<li class="menu-item">
+                                <a class="text-white" href="/Veritas/what-we-do">What We Do</a>
+                            </li>--%>
+                            <li class="menu-item">
+                                <a class="text-white" href="/Veritas/Staff">Get to Know Us</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Veritas/Resources" class="text-white">Watch</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Veritas/Serving" class="text-white">Serve With Us</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Registration/veritas-rides" class="text-white">I Need a Ride</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Veritas/Events?aud=College" class="text-white">Events</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Give/Veritas" class="text-white">Support Veritas Staff</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="https://thecrossingchurch.com" class="text-white">Learn More About The Crossing</a>
+                            </li>
+                            <%--<li class="menu-item">
+                                <a href="https://thecrossingchurch.com" class="text-white">
+                                    <div class="text--centered">
+                                        Go Back to
+                                        <img style="width:90%;" src="/Themes/TheCrossing/Assets/Logos/logo.png" />
+                                    </div>
+                                </a>
+                            </li>--%>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Brand Bar -->
+            <nav class="navbar navbar-inverse navbar-static-top">
+                <div class="container">
+                    <div class="pull-right">
+                        <Rock:Zone Name="Login" runat="server" />
+                    </div>
+                    <Rock:Zone Name="Navigation" runat="server" />
+                </div>
+            </nav>
+
+        </header>
+
+        <asp:ContentPlaceHolder ID="feature" runat="server"></asp:ContentPlaceHolder>
+
+        <asp:ContentPlaceHolder ID="main" runat="server"></asp:ContentPlaceHolder>
+
+        <footer class="background--primary">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <Rock:Zone Name="Footer" runat="server" />
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+
+        <%-- controls for scriptmanager and update panel --%>
+        <asp:ScriptManager ID="sManager" runat="server" />
+        <asp:UpdateProgress ID="updateProgress" runat="server" DisplayAfter="800">
+            <ProgressTemplate>
+                <div class="updateprogress-status">
+                    <div class="spinner">
+                        <div class="rect1"></div>
+                        <div class="rect2"></div>
+                        <div class="rect3"></div>
+                        <div class="rect4"></div>
+                        <div class="rect5"></div>
+                    </div>
+                </div>
+                <div class="updateprogress-bg modal-backdrop"></div>
+            </ProgressTemplate>
+        </asp:UpdateProgress>
+
+    </form>
+
+</body>
+
+</html>

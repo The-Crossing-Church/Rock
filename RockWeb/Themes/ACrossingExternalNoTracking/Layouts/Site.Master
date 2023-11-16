@@ -1,0 +1,433 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" Inherits="Rock.Web.UI.RockMasterPage" %>
+
+<%@ Import Namespace="System.Web.Optimization" %>
+<!DOCTYPE html>
+
+<script runat="server">
+
+    // keep code below to call base class init method
+
+    /// <summary>
+    /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
+    /// </summary>
+    /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
+    protected override void OnInit( EventArgs e )
+    {
+        base.OnInit( e );
+    }
+
+</script>
+
+<html class="no-js">
+<head runat="server">
+
+    <meta charset="utf-8">
+    <title></title>
+
+    <script src="<%# ResolveRockUrl("~/Scripts/jquery-1.12.4.min.js" ) %>"></script>
+
+    <!-- Set the viewport width to device width for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <asp:ContentPlaceHolder ID="css" runat="server" />
+
+    <!-- Included CSS Files -->
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>" />
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>" />
+
+    <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>"></script>
+
+    <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
+    <script>
+        function toggleSearch() {
+            let search = $('#icoSearch')
+            let input = $('#txtSearch')
+            if (search.hasClass('active')) {
+                search.removeClass('active')
+                input.removeClass('active')
+            } else {
+                search.addClass('active')
+                input.addClass('active')
+                setTimeout(function () { input.focus() }, 500)
+            }
+        }
+        $(document).ready(function () {
+            $('#txtSearch').bind("enterKey", function (e) {
+                console.log('The Search content is: ' + $('#txtSearch').val())
+                window.location.href = "/Search?q=" + $('#txtSearch').val()
+            });
+            $('#txtSearch').keyup(function (e) {
+                if (e.keyCode == 13) {
+                    e.preventDefault()
+                    var search = document.getElementById('txtSearch');
+                    if (document.activeElement === search) {
+                        console.log('The Search content is: ' + $('#txtSearch').val())
+                        window.location.href = "/Search?q=" + $('#txtSearch').val()
+                    }
+                }
+            });
+            $('#form1').submit(function (e) {
+                var search = document.getElementById('txtSearch');
+                if (document.activeElement === search) {
+                    e.preventDefault();
+                    console.log('The Search content is: ' + $('#txtSearch').val())
+                    window.location.href = "/Search?q=" + $('#txtSearch').val()
+                }
+            })
+            $('#mobile-menu-toggle').click(function () {
+                let menu = $('#menu-mobile-menu')
+                let toggle = $('#mobile-menu-toggle')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    toggle.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                } else {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                        toggle.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#about-menu-open').click(function () {
+                let menu = $('.about-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#about-menu-return').click(function () {
+                let menu = $('.about-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                }
+            })
+            $('#ministry-menu-open').click(function () {
+                let menu = $('.ministry-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#ministry-menu-return').click(function () {
+                let menu = $('.ministry-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                }
+            })
+            $('#adult-menu-open').click(function () {
+                let menu = $('.adult-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#adult-menu-return').click(function () {
+                let menu = $('.adult-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                }
+            })
+            $('#care-menu-open').click(function () {
+                let menu = $('.care-menu-mobile')
+                if (!menu.hasClass('active')) {
+                    menu.addClass('visible')
+                    setTimeout(() => {
+                        menu.addClass('active')
+                    }, 20)
+                }
+            })
+            $('#care-menu-return').click(function () {
+                let menu = $('.care-menu-mobile')
+                if (menu.hasClass('active')) {
+                    menu.removeClass('active')
+                    setTimeout(() => {
+                        menu.removeClass('visible')
+                    }, 20)
+                }
+            })
+        })
+    </script>
+
+</head>
+<body runat="server" id="body">
+
+    <form id="form1" runat="server">
+
+        <!-- Page Header -->
+        <header>
+            <div class="header-inset">
+                <div class="nav-menu left">
+                    <div class="header-search">
+                        <div class="search-icon-wrap" id="icoSearch" onclick="toggleSearch()">
+                            <i class="fa fa-search fa-xl"></i>
+                        </div>
+                        <div class="input-wrap">
+                            <input class="search-input" type="text" placeholder="Search The Crossing..." id="txtSearch" />
+                        </div>
+                    </div>
+                    <ul id="menu-left" class="main-navigation desktop-menu">
+                        <li class="menu-item main-nav-item">
+                            <a href="/im-new">I'm New</a>
+                        </li>
+                        <li class="menu-item main-nav-item">
+                            <a href="/Events">Events</a>
+                        </li>
+                        <li class="menu-item main-nav-item">
+                            <a href="/Resources">Watch, Listen, Read</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="website-logo">
+                    <a href="/Home">
+                        <img src="/Themes/TheCrossing/Assets/Logos/logo.png" class="header-image img-responsive" />
+                    </a>
+                </div>
+                <div class="nav-menu right">
+                    <div class="desktop-menu">
+                        <ul id="menu-right" class="main-navigation">
+                            <li class="menu-item main-nav-item about-nav dropdown">
+                                <a href="/About" id="desktop-about" class="about-nav dropdown-toggle" data-toggle="dropdown">About</a>
+                                <div class="about-menu dropdown-menu">
+                                    <div>
+                                        <a href="/About" class="text-white">About Us</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Serving" class="text-white">Serving</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Missions" class="text-white">Missions & Partners</a>
+                                    </div>
+                                    <div>
+                                        <a href="/FAQs" class="text-white">FAQs</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Staff" class="text-white">Staff</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="menu-item main-nav-item ministry-nav dropdown">
+                                <a class="ministry-nav dropdown-toggle" data-toggle="dropdown">Ministries</a>
+                                <div class="ministry-menu dropdown-menu">
+                                    <div>
+                                        <a href="/Ministry/Children" class="text-white">Kids</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Students" class="text-white">Students</a>
+                                    </div>
+                                    <div>
+                                        <a href="https://veritascomo.com/Veritas" class="text-white" target="_blank">College</a>
+                                    </div>
+                                    <div>
+                                        <a data-toggle="collapse" href="#adultsCollapse" role="button" aria-expanded="false" aria-controls="adultsCollapse" class="text-white">Adults</a>
+                                    </div>
+                                    <div class="collapse" id="adultsCollapse">
+                                        <div>
+                                            <a href="/Ministry/Adults/Women" class="text--accent">Women</a>
+                                        </div>
+                                        <div>
+                                            <a href="/Ministry/Adults/Men" class="text--accent">Men</a>
+                                        </div>
+                                        <div>
+                                            <a href="/Ministry/Adults/Twenties" class="text--accent">Twenties</a>
+                                        </div>
+                                        <div>
+                                            <a href="/Ministry/Adults/Small-Groups" class="text--accent">Small Groups</a>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Care" class="text-white">Care & Support</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Counseling" class="text-white">Counseling</a>
+                                    </div>
+                                    <div>
+                                        <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="menu-item main-nav-item">
+                                <a href="/Online-Giving">Give</a>
+                            </li>
+                            <li class="menu-item main-nav-item">
+                                <a href="/Livestream" class="btn btn-accent">Livestream</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="mobile-menu">
+                        <div id="mobile-menu-toggle">
+                            <i class="fa fa-bars"></i>
+                            <i class="fa fa-times"></i>
+                        </div>
+                        <ul class="main-navigation" id="menu-mobile-menu">
+                            <li class="menu-item">
+                                <a href="/im-new" class="text-white">I'm New</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Events" class="text-white">Events</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Resources" class="text-white">Watch, Listen, Read</a>
+                            </li>
+                            <li class="menu-item">
+                                <a class="text-white" id="about-menu-open">About
+                                    <i class="fa fa-chevron-right pull-right"></i>
+                                </a>
+                                <div class="about-menu-mobile">
+                                    <div>
+                                        <a class="text-white" id="about-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Menu</a>
+                                    </div>
+                                    <div>
+                                        <a href="/About">About Us</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Serving" class="text-white">Serving</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Missions" class="text-white">Missions & Partners</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/FAQs" class="text-white">FAQs</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Staff" class="text-white">Staff</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Contact-Us" class="text-white">Contact Us</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="menu-item">
+                                <a class="text-white" id="ministry-menu-open">Ministries
+                                    <i class="fa fa-chevron-right pull-right"></i>
+                                </a>
+                                <div class="ministry-menu-mobile">
+                                    <div>
+                                        <a class="text-white" id="ministry-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Menu</a>
+                                    </div>
+                                    <div>
+                                        <a>Ministries</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Children" class="text-white">Kids</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Students" class="text-white">Students</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="https://veritascomo.com/Veritas" class="text-white" target="_blank">College</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a id="adult-menu-open" class="text-white">Adults
+                                            <i class="fa fa-chevron-right pull-right"></i>
+                                        </a>
+                                        <div class="adult-menu-mobile">
+                                            <div>
+                                                <a class="text-white text--upper" id="adult-menu-return"><i class="fa fa-chevron-left" style="margin-right: 12px;"></i>Ministries</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Women" class="text-white">Women</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Men" class="text-white">Men</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Twenties" class="text-white">Twenties</a>
+                                            </div>
+                                            <div class="sub-menu-item">
+                                                <a href="/Ministry/Adults/Small-Groups" class="text-white">Small Groups</a>
+                                            </div>
+                                            <div style="height: 150px;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Care" class="text-white">Care & Support</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Counseling" class="text-white">Counseling</a>
+                                    </div>
+                                    <div class="sub-menu-item">
+                                        <a href="/Ministry/Agape" class="text-white">Disability & Inclusion</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Online-Giving" class="text-white">Give Now</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="/Livestream" class="text-white">Watch Livestream</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Brand Bar -->
+            <nav class="navbar navbar-inverse navbar-static-top">
+                <div class="container">
+                    <div class="pull-right">
+                        <Rock:Zone Name="Login" runat="server" />
+                    </div>
+                    <Rock:Zone Name="Navigation" runat="server" />
+                </div>
+            </nav>
+
+        </header>
+
+        <asp:ContentPlaceHolder ID="feature" runat="server"></asp:ContentPlaceHolder>
+
+        <asp:ContentPlaceHolder ID="main" runat="server"></asp:ContentPlaceHolder>
+
+        <footer class="background--primary">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <Rock:Zone Name="Footer" runat="server" />
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+
+        <%-- controls for scriptmanager and update panel --%>
+        <asp:ScriptManager ID="sManager" runat="server" />
+        <asp:UpdateProgress ID="updateProgress" runat="server" DisplayAfter="800">
+            <ProgressTemplate>
+                <div class="updateprogress-status">
+                    <div class="spinner">
+                        <div class="rect1"></div>
+                        <div class="rect2"></div>
+                        <div class="rect3"></div>
+                        <div class="rect4"></div>
+                        <div class="rect5"></div>
+                    </div>
+                </div>
+                <div class="updateprogress-bg modal-backdrop"></div>
+            </ProgressTemplate>
+        </asp:UpdateProgress>
+
+    </form>
+
+</body>
+
+</html>

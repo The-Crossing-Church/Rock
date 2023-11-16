@@ -1,0 +1,5 @@
+﻿<div class="row" style="min-height: 500px;">
+    {% for staff in Items %}
+        {[ counselingstaff item:staff ]}
+    {% endfor %}
+</div>

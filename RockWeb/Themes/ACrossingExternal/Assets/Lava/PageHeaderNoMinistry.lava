@@ -1,0 +1,19 @@
+﻿{% assign logo = Item | Attribute:'Logo' %}
+{% assign subtitle = Item | Attribute:'Subtitle' %}
+{% assign ministry = Item.ContentChannel | Attribute:'Ministry' %}
+<div class='row py-custom-2x'>
+  <div class='col col-xs-12' style='text-align: center;'>
+    {% if logo != '' %}
+      <img style='max-width:80px;' src="{{logo}}" alt="{{'Global' | Page:'Title'}} Logo" />
+    {% endif %}
+    <h1>{{'Global' | Page:'Title'}}</h1>
+    <h2 class='text--upper subtitle'>{{subtitle}}</h2>
+  </div>
+</div>
+{% include '~~/Assets/Lava/PageHeaderCarousel.lava' %}
+<style>
+h2.subtitle {
+  font-size: 1.5em;
+  line-height: 1.20833em;
+}
+</style>

@@ -1,0 +1,31 @@
+﻿{% assign ct = 0 %}
+{% for s in Items %}
+    {% if s.Series != '' %}
+        {% assign ct = ct | Plus:1 %}
+        {% assign classname = '' %}
+        {% assign mod = ct | Modulo:2 %}
+        {% if mod > 0 %}
+            {% assign classname = 'background--grey full-width' %}
+        {% endif %}
+        {[ carousel containerclass:'{{classname}}' carouselid:'watch{{forloop.index0}}' itemheight:'315' ]}
+            [[ title ]]
+                {{s.Series}}
+            [[ endtitle ]]
+            {% for i in s.Items %}
+                [[ item ]]
+                    <a href="/Resources/Watch/{{'Global' | PageParameter:'ResourceCategory'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}">
+                        <div style="padding: 8px">
+                            <div class='img-wrapper'>
+                                <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                            </div>
+                            <h4>{{i.Title}}</h4>
+                            <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                        </div>
+                    </a>
+                [[ enditem ]]
+            {% endfor %}
+            {% capture url %}/Resources/Watch/{{'Global' | PageParameter:'ResourceCategory'}}/{{s.Series}}{% endcapture %}
+            [[ button url:'{{url}}' text:'Explore All' ]][[endbutton ]]
+        {[ endcarousel ]}
+    {% endif %}
+{% endfor %}

@@ -1,0 +1,57 @@
+﻿{% if Item != null %}
+{% assign btnJson = Item | Attribute:'Buttons' %}
+{% assign btns = btnJson | FromJSON %}
+{% assign sz = btns | Size %}
+{% if sz > 0 %}
+<div class="sticky-nav bottom background--accent" id="divStickyNavBar">
+    {% for b in btns limit:3 %}
+        {% if b.Text != '' %}
+            <div class="item">
+                {% if b.Link != '' %}
+                    <a class="btn btn-primary" target="{% if b.Target == 'New Tab' %}_blank{% endif %}" href="{{b.Link}}">{{b.Text}}</a>
+                {% else %}
+                    <span>{{b.Text}}</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+<style>
+    .sticky-nav {
+        min-height: 40px;
+        position: fixed;
+        width: 100%;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        padding: 8px 16px;
+        display: flex;
+        justify-content: center;
+    }
+    .sticky-nav.bottom {
+        bottom: 0; 
+    }
+    .sticky-nav.top {
+        top: 145px;
+    }
+    @media only screen and (max-width: 768px) {
+    .sticky-nav.top {
+            top: 132px;;
+        }
+    }
+    .sticky-nav .item {
+        display: flex;
+        align-items: center;
+        padding: 0px 4px;
+    }
+</style>
+<script>
+    $(document).ready(() => {
+        let e = document.getElementsByClassName('top')
+        if (e.length > 0) {
+            $('main.container').attr('style', 'padding-top: 200px !important;')
+        }
+    })
+</script>
+{% endif %}

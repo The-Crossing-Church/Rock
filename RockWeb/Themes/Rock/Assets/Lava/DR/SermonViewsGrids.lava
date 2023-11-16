@@ -1,0 +1,293 @@
+<div class="card mt-4 pb-4 px-2" style="overflow: hidden;">
+    <div class="row">
+        <div class="col col-xs-6">
+            <h3>Views By Sermon Series</h3>
+            <div class="grid" id="views_by_series">
+                <div class="grid-row row grid-header">
+                    <div class="col col-xs-8">
+                        Series
+                        <div class="pull-right">
+                            <div onclick="sortSeriesResults('Series', true)">
+                                <i class="fa fa-sort-up"></i>
+                            </div>
+                            <div onclick="sortSeriesResults('Series', false)" style="display: flex; height: 10px;">
+                                <i class="fa fa-sort-down" style="margin-top: -10px;"></i>
+                            </div>
+                        </div>
+                        <div class="d-flex" style="align-items: baseline;">
+                            <input id="series_filter" class="search-input" />
+                            <i class="fa fa-search" onclick="filterResultsBySeries()"></i>
+                        </div>
+                    </div>
+                    <div class="col col-xs-2 text-center d-flex" style="align-items: center;">
+                        Unique Views
+                        <div class="pull-right">
+                            <div onclick="sortSeriesResults('UniqueViews', true)">
+                                <i class="fa fa-sort-up"></i>
+                            </div>
+                            <div onclick="sortSeriesResults('UniqueViews', false)" style="display: flex; height: 10px;">
+                                <i class="fa fa-sort-down" style="margin-top: -10px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-xs-2 text-center d-flex" style="align-items: center;">
+                        Total Views
+                        <div class="pull-right">
+                            <div onclick="sortSeriesResults('TotalViews', true)">
+                                <i class="fa fa-sort-up"></i>
+                            </div>
+                            <div onclick="sortSeriesResults('TotalViews', false)" style="display: flex; height: 10px;">
+                                <i class="fa fa-sort-down" style="margin-top: -10px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid-body"></div>
+                <div id="series_grid_pagination" class="mt-2"></div>
+                <div class="text-center" id="series_grid_rows_returned"></div>
+            </div>
+        </div>
+        <div class="col col-xs-6">
+            <h3>Views By Topics</h3>
+            <div class="grid" id="views_by_tag">
+                <div class="grid-row row grid-header">
+                    <div class="col col-xs-3">
+                        Tag/Topic
+                        <div class="pull-right">
+                            <div onclick="sortTagResults('Tag', true)">
+                                <i class="fa fa-sort-up"></i>
+                            </div>
+                            <div onclick="sortTagResults('Tag', false)" style="display: flex; height: 10px;">
+                                <i class="fa fa-sort-down" style="margin-top: -10px;"></i>
+                            </div>
+                        </div>
+                        <div class="d-flex" style="align-items: baseline;">
+                            <input id="tag_filter" class="search-input" />
+                            <i class="fa fa-search" onclick="filterResultsByTag()"></i>
+                        </div>
+                    </div>
+                    <div class="col col-xs-6">
+                        Most Watched Sermon in Topic
+                        <div class="pull-right">
+                            <div onclick="sortTagResults('Sermon', true)">
+                                <i class="fa fa-sort-up"></i>
+                            </div>
+                            <div onclick="sortTagResults('Sermon', false)" style="display: flex; height: 10px;">
+                                <i class="fa fa-sort-down" style="margin-top: -10px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-xs-3 text-center">
+                        Total Views
+                        <div class="pull-right">
+                            <div onclick="sortTagResults('TotalViews', true)">
+                                <i class="fa fa-sort-up"></i>
+                            </div>
+                            <div onclick="sortTagResults('TotalViews', false)" style="display: flex; height: 10px;">
+                                <i class="fa fa-sort-down" style="margin-top: -10px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid-body"></div>
+                <div id="tag_grid_pagination" class="mt-2"></div>
+                <div class="text-center" id="tag_grid_rows_returned"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% assign sermonSeries = 'SermonViewsBySeries' |  PersistedDataset %}
+{% assign sermonTopics = 'SermonViewsByTopics' |  PersistedDataset %}
+<script>
+    let seriesResults = []
+    let topicResults = []
+    $(document).ready(() => {
+        seriesResults = JSON.parse(`{{sermonSeries | ToJSON}}`)
+        topicResults = JSON.parse(`{{sermonTopics | ToJSON}}`)
+        buildGrid(seriesResults, 'views_by_series', 'series_grid_pagination', 'series_grid_rows_returned')
+        buildGrid(topicResults, 'views_by_tag', 'tag_grid_pagination', 'tag_grid_rows_returned')
+    })
+    function filterResultsBySeries() {
+        let q = $('#series_filter').val().toLowerCase()
+        let filtered = seriesResults.filter((r) => {
+            return r.Series.toLowerCase().includes(q)
+        })
+        buildGrid(filtered, 'views_by_series', 'series_grid_pagination', 'series_grid_rows_returned')
+    }
+    function filterResultsByTag() {
+        let q = $('#tag_filter').val().toLowerCase()
+        let filtered = topicResults.filter((r) => {
+            return r.Tag.toLowerCase().includes(q)
+        })
+        buildGrid(filtered, 'views_by_tag', 'tag_grid_pagination', 'tag_grid_rows_returned')
+    }
+    function sortSeriesResults(col, isAcs) {
+        seriesResults.sort((a, b) => {
+            if(isAcs) {
+                if(a[col] < b[col]) {
+                    return -1
+                } else if(a[col] > b[col]) {
+                    return 1
+                }
+                return 0
+            } else {
+                if(a[col] > b[col]) {
+                    return -1
+                } else if(a[col] < b[col]) {
+                    return 1
+                }
+                return 0
+            }
+        })
+        buildGrid(seriesResults, 'views_by_series', 'series_grid_pagination', 'series_grid_rows_returned')
+    }
+    function sortTagResults(col, isAcs) {
+        topicResults.sort((a, b) => {
+            if(isAcs) {
+                if(a[col] < b[col]) {
+                    return -1
+                } else if(a[col] > b[col]) {
+                    return 1
+                }
+                return 0
+            } else {
+                if(a[col] > b[col]) {
+                    return -1
+                } else if(a[col] < b[col]) {
+                    return 1
+                }
+                return 0
+            }
+        })
+        buildGrid(topicResults, 'views_by_tag', 'tag_grid_pagination', 'tag_grid_rows_returned')
+    }
+    function buildGrid(results, gridId, paginationId, rowsReturnedId) {
+        $(`#${gridId} .grid-body`).empty()
+        $(`#${paginationId}`).empty()
+        let pageIdx = 0
+        let page
+        for(let i=0; i<results.length; i++) {
+            let isStart = i%20
+            let isEnd = (i+1)%20
+            let isOdd = i%2
+            if(isStart == 0) {
+                pageIdx++
+                page = document.createElement("div")
+                page.id = gridId + "_page_" + pageIdx
+                page.classList.add("grid-page")
+            }
+
+            let row = document.createElement("div")
+            row.classList.add("grid-row")
+            row.classList.add("row")
+            if(isOdd > 0) {
+                row.classList.add("grid-row-alt")
+            }
+            if(gridId == 'views_by_series') {
+                let seriesCol = document.createElement("div")
+                seriesCol.classList.add("col")
+                seriesCol.classList.add("col-xs-8")
+                let link = document.createElement("a")
+                link.href= "/reports/dr/watch-series-views?Series=" + results[i].Series
+                link.innerText = results[i].Series
+                seriesCol.append(link)
+                row.append(seriesCol)
+                let uniqueCol = document.createElement("div")
+                uniqueCol.classList.add("col")
+                uniqueCol.classList.add("col-xs-2")
+                uniqueCol.classList.add("text-center")
+                uniqueCol.innerText = results[i].UniqueViews
+                row.append(uniqueCol)
+                let viewsCol = document.createElement("div")
+                viewsCol.classList.add("col")
+                viewsCol.classList.add("col-xs-2")
+                viewsCol.classList.add("text-center")
+                viewsCol.innerText = results[i].TotalViews
+                row.append(viewsCol)
+            } else {
+                let tagCol = document.createElement("div")
+                tagCol.classList.add("col")
+                tagCol.classList.add("col-xs-3")
+                tagCol.innerText = results[i].Tag
+                row.append(tagCol)
+                let sermonCol = document.createElement("div")
+                sermonCol.classList.add("col")
+                sermonCol.classList.add("col-xs-6")
+                sermonCol.innerText = results[i].Sermon
+                row.append(sermonCol)
+                let viewsCol = document.createElement("div")
+                viewsCol.classList.add("col")
+                viewsCol.classList.add("col-xs-3")
+                viewsCol.classList.add("text-center")
+                viewsCol.innerText = results[i].TotalViews
+                row.append(viewsCol)
+            }
+            page.append(row)
+
+            if(isEnd == 0 || i == (results.length - 1)) {
+                $(`#${gridId} .grid-body`).append(page)
+            }
+        }
+        for(let i = 1; i <= pageIdx; i++) {
+            let page_idx = document.createElement("div")
+            page_idx.classList.add("pagination-idx")
+            page_idx.id = paginationId + "_idx_" + i
+            page_idx.innerText = i
+            page_idx.onclick = function() { goTo(i, gridId, paginationId) }
+            $(`#${paginationId}`).append(page_idx)
+        }
+        $(`#${rowsReturnedId}`).text(results.length + " rows returned")
+        $(`#${gridId} .grid-body .grid-page`).hide()
+        $(`#${gridId} .grid-body .grid-page`).first().show()
+        $(`#${gridId} .grid-body .grid-page`).first().addClass('active')
+        $(`#${paginationId} .pagination-idx`).first().addClass('active')
+    }
+
+    function goTo(page, gridId, paginationId) {
+        let current_page = $(`#${gridId} .grid-body .grid-page.active`).first()
+        current_page.removeClass("active")
+        $(`#${paginationId} .pagination-idx.active`).removeClass("active")
+        let target_page = $(`#${gridId}_page_${page}`)
+        target_page.addClass("active")
+        $(`#${paginationId}_idx_${page}`).addClass("active")
+        let current_idx = parseInt(current_page[0].id.split("_")[2])
+        if(page == current_idx) {
+            return
+        } else {
+            current_page.hide()
+            target_page.show()
+        }
+    }
+</script>
+<style>
+    .search-input, .search-input:focus, .search-input:focus-visible, .search-input:active {
+        border: none;
+        border-bottom: 1px solid grey;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+        width: 100%;
+    }
+    .grid-header {
+        font-weight: bold;
+    }
+    .grid-row {
+        padding: 6px 0px;
+        border-bottom: 1px solid lightgrey;
+    }
+    .grid-row-alt {
+        background-color: #f5f5f5;
+    }
+    #tag_grid_pagination, #series_grid_pagination {
+        display: flex;
+        justify-content: center;
+    }
+    .pagination-idx {
+        padding: 4px;
+        text-align: center;
+        cursor: pointer;
+    }
+    .pagination-idx.active {
+        font-weight: bold;
+    }
+</style>

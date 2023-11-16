@@ -1,0 +1,30 @@
+﻿{% assign Items = Items | GroupByAttribute:'AgeGroup' %}
+{% for s in Items %}
+    {% assign item = s | PropertyToKeyValue  %}
+    {% assign classname = '' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey full-width' %}
+    {% endif %}
+    {[ carousel carouselid:'watch-{{forloop.index}}' itemheight:'300' containerclass:'{{classname}}' ]}
+        [[ title ]]
+            {{item.Key}}
+        [[ endtitle ]]
+        {% assign videos = item.Value | Sort:'StartDateTime','Desc' %}
+        {% for i in videos limit:9 %}
+            [[ item ]]
+                <a href="/Ministry/Children/Lessons/{{i | Attribute:'AgeGroup'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}">
+                    <div style="padding: 8px">
+                        <div class='img-wrapper'>
+                            <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                        </div>
+                        <h4>{{i.Title}}</h4>
+                        <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                    </div>
+                </a>
+            [[ enditem ]]
+        {% endfor %}
+        {% capture url %}/Ministry/Children/Lessons/{{item.Key}}{% endcapture %}
+        [[ button url:'{{url}}' text:'Explore All']][[ endbutton ]]
+    {[ endcarousel ]}
+{% endfor %}

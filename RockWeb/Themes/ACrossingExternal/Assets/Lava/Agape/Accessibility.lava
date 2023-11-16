@@ -1,0 +1,23 @@
+﻿{% assign lastSvc = 'Global' | Attribute:'ServiceTimes' | Split:',' | Last %}
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-md-4'>
+            <div class='card--custom card-with-button' style="height:100%;">
+                <img src="{{ i | Attribute:'Image' }}" alt="{{i.Title}}" />
+                <div style="padding: 8px;" class='text--centered'>
+                    <strong>{{i | Attribute:'TileTitle' }}</strong>
+                    <br/>
+                    <p>
+                        {{i.Content | Replace:'##LAST_SERVICE##',lastSvc}}
+                    </p>
+                    {% assign mapMB = i | Attribute:'MainBuildMapURL' %}
+                    {% assign mapSC = i | Attribute:'StudentCenterMapURL' %}
+                    {% if mapMB != '' and mapSC != '' %}
+                        <a class='btn btn-accent' href="{{mapMB}}" target="_blank">Main Building</a>
+                        <a class='btn btn-accent' href="{{mapSC}}" target="_blank">Student Center</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>

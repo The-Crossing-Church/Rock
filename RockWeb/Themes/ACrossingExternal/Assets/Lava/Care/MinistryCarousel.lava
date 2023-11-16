@@ -1,0 +1,33 @@
+﻿{[ carousel carouselid:'care-ministries-cards' itemheight:'375' imgheight:'175' ]}
+    [[ title ]]
+        Further Care and Support
+    [[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+            <div style="padding: 8px">
+                <div class='card--custom card-with-button'>
+                    <div class='img-wrapper'>
+                        <img class="d-block w-100" src="{{i | Attribute:'CardImage'}}" alt="{{i.Title}}" />
+                    </div>
+                    <div class='card-body' style='padding: 8px;'>
+                        <strong>{{i | Attribute:'DisplayTitle'}}</strong><br/>
+                        {{i | Attribute:'ShortDescription'}}
+                    </div>
+                </div>
+                <div class='link-wrapper text--centered'>
+                    {% assign link = i | Attribute:'AlternateLink' %}
+                    {% if link != '' %}
+                        <a href="{{link}}" target="_blank" class='btn btn-primary'>Learn More</a>
+                    {% else %}
+                        <div onclick="$('#modal_{{i.Id}}').modal('show')" class='btn btn-primary'>Learn More</div>
+                    {% endif %}
+                </div>
+            </div>
+        [[ enditem ]]
+    {% endfor %}
+{[ endcarousel ]}
+<style>
+.slide div .card--custom {
+    min-height: 315px;
+}
+</style>

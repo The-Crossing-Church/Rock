@@ -1,0 +1,62 @@
+<div class="d-block d-md-none mb-custom-2x">
+    {% if Page.DisplayChildPages == 'true' and Page.Pages != empty %}
+        <div class="dropdown giving-dd">
+            <button class="dropdown-toggle" type="button" id="givingDropDown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {% for childPage in Page.Pages %}
+                    {% if childPage.Current == 'true' %}
+                        <div style="width: 90%;">{{ childPage.Title }}</div>
+                        <i class="fa fa-chevron-down pull-right"></i>
+                    {% endif %}
+                {% endfor %}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="givingDropDown">
+                {% for childPage in Page.Pages %}
+                    <li class="dropdown-item {% if childPage.Current == 'true' %}active{% endif %}">
+                        <a href="{{ childPage.Url }}">{{ childPage.Title }}</a>
+                    </li>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+<div class="d-none d-md-block">
+  <section class="nav-sub">
+
+    {% if Page.DisplayChildPages == 'true' and Page.Pages != empty %}
+    <ul class="nav nav-pills nav-stacked nav-categories">
+      {% for childPage in Page.Pages %}
+      <li{% if childPage.Current == 'true' %} class="active"{% endif %}>
+        <a href="{{ childPage.Url }}">{{ childPage.Title }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+  </section>
+</div>
+<script>
+    function openMenu() {
+        $('#giving-ddl').addClass('active')
+    }
+</script>
+<style>
+    .giving-dd {
+        padding: 8px;
+        border: 1px solid #1B3142;
+        border-radius: 25px;
+        box-shadow: 0 5px 15px rgb(0 0 0 / 24%);
+    }
+    .giving-dd button {
+        width: 100%;
+        border: none;
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+    }
+    .giving-dd .dropdown-menu, .giving-dd .dropdown-menu .dropdown-item a {
+        width: 100%;
+    }
+    .giving-dd .dropdown-menu .dropdown-item a {
+        font-size: 18px;
+    }
+</style>

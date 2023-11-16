@@ -1,0 +1,441 @@
+﻿{% capture searchText %}{{Item | Attribute:'Year'}} {{Item | Attribute:'Semester'}}{% endcapture %}
+{% sql %}
+SELECT STRING_AGG(CAST(EventItemOccurrenceId AS varchar(50)), ',') AS Ids
+FROM (
+        SELECT EventItemOccurrenceId, ei.EventItemId, EventCalendarId
+        FROM EventCalendarItem
+                INNER JOIN (
+            SELECT EventItemOccurrenceId, EventItemId
+            FROM EventItemOccurrence
+                    INNER JOIN (
+                SELECT DISTINCT EventItemOccurrenceId
+                FROM EventItemOccurrenceGroupMap
+                        INNER JOIN (
+                    SELECT Id
+                    FROM RegistrationInstance
+                    WHERE Name LIKE 'Crossing Women%{{searchText}}%'
+                ) AS ri ON ri.Id = RegistrationInstanceId
+            ) AS eio ON EventItemOccurrenceId = EventItemOccurrence.Id
+        ) AS ei ON ei.EventItemId = EventCalendarItem.EventItemId
+        WHERE EventCalendarId = 1
+    ) AS events GROUP BY EventCalendarId
+{% endsql %}
+
+{% assign ct = results | Size %}
+{% if ct > 0 %}
+{% assign ids = results[0].Ids %}
+{% else %}
+{% assign ids = '' %}
+{% endif %}
+
+{% if ids != '' and ids != null %}
+{% comment %} Filter Button {% endcomment %}
+<div class="filter-wrapper">
+    <div class="btn btn-accent pull-right btn-circle" onclick="openModal()">
+        <i class="fa fa-sliders-h"></i>
+    </div>
+</div>
+
+<div id="studiesTabs">
+    {% comment %} DOW Tabs {% endcomment %}
+    {% eventitemoccurrence ids:'{{ids}}' %}
+        {% assign dowArr = '[{desktop: "All Studies", mobile: "All", dow: "0"}]' | FromJSON %}
+        {% assign days = '[]' | FromJSON %}
+        {% for e in eventitemoccurrenceItems %}
+            {% assign day = e.Schedule.EffectiveStartDate | Date:'dddd' %}
+            {% assign days = days | AddToArray:day %}
+        {% endfor %}
+        {% assign days = days | Distinct %}
+        {% capture daysOfWeek %}[ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ]{% endcapture %}
+        {% assign daysOfWeek = daysOfWeek | FromJSON %}
+        {% for d in days %}
+            {% assign num = -1 %}
+            {% assign truncated = d | Truncate:3,'' %}
+            {% for i in daysOfWeek %}
+                {% if i == truncated %}
+                    {% assign num = forloop.index %}
+                {% endif %}
+            {% endfor %}
+            {% capture dow %}{ desktop:"{{d}}", mobile: "{{truncated}}", dow: "{{num}}" }{% endcapture %}
+            {% assign dow = dow | FromJSON %}
+            {% assign dowArr = dowArr | AddToArray:dow %}
+        {% endfor %}
+        {% assign dowArr = dowArr | OrderBy:'dow' %}
+    {% endeventitemoccurrence %}
+    {% assign filterLedBy = 'Global' | PageParameter:'LedBy' | Downcase %}
+    {% assign filterReg = 'Global' | PageParameter:'RegistrationStatus' %}
+    {% if filterReg == '' or filterReg == null %}
+        {% assign filterReg = 'All' %}
+    {% endif %}
+    {% assign filterName = 'Global' | PageParameter:'StudyName' | Downcase %}
+    <div class="d-none d-md-block mb-custom-2x">
+        {% for i in dowArr %}
+            <div
+                class="btn btn-primary"
+                data-toggle="collapse"
+                data-parent="#studiesTabs"
+                data-target="#collapse_{{i.mobile}}"
+                {% if forloop.index0 == 0 %}
+                    aria-expanded="true"
+                {% else %}
+                    aria-expanded="false"
+                {% endif %}
+                aria-controls="collapse_{{i.mobile}}"
+            >{{i.desktop}}</div>
+        {% endfor %}
+    </div>
+    <div class="d-block d-md-none mb-custom-2x text-center">
+        {% for i in dowArr %}
+            <div
+                class="btn btn-primary"
+                data-toggle="collapse"
+                data-parent="#studiesTabs"
+                data-target="#collapse_{{i.mobile}}"
+                {% if forloop.index0 == 0 %}
+                    aria-expanded="true"
+                {% else %}
+                    aria-expanded="false"
+                {% endif %}
+                aria-controls="collapse_{{i.mobile}}"
+            >{{i.mobile}}</div>
+        {% endfor %}
+    </div>
+
+    {% comment %} Studies {% endcomment %}
+    {% assign allStudies = '[]' | FromJSON %}
+    {% assign monStudies = '[]' | FromJSON %}
+    {% assign tueStudies = '[]' | FromJSON %}
+    {% assign wedStudies = '[]' | FromJSON %}
+    {% assign thrStudies = '[]' | FromJSON %}
+    {% assign friStudies = '[]' | FromJSON %}
+    {% eventitemoccurrence ids:'{{ids}}' %}
+        {% assign eventitemoccurrenceItems = eventitemoccurrenceItems | SortByAttribute:'Priority','asc' %}
+        {% for e in eventitemoccurrenceItems %}
+            {% assign eventItemOccurrenceLinkages = e.Linkages %}
+            {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+            {% assign registrationIsOpen = false %}
+            {% assign registrationIsFull = true %}
+            {% if eventItemOccurrenceLinkagesCount > 0 %}
+                {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                    {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+                    {% if daysTillEndDate and daysTillEndDate > 0 %}
+                        {% assign registrationIsOpen = true %}
+                    {% endif %}
+                    {% assign maxAtt = eventItemOccurrenceLinkage.RegistrationInstance.MaxAttendees %}
+                    {% sql return:'attendees' %}
+                        SELECT COUNT(*) AS 'ct' FROM RegistrationRegistrant
+                        WHERE RegistrationId IN (
+                            SELECT Id FROM Registration WHERE RegistrationInstanceId = {{eventItemOccurrenceLinkage.RegistrationInstanceId}}
+                        )
+                    {% endsql %}
+                    {% for a in attendees %}
+                        {% assign numAtt = a.ct %}
+                    {% endfor %}
+                    {% if maxAtt == null or maxAtt == '' %}
+                        {% assign maxAtt = 0 %}
+                    {% endif %}
+                    {% if numAtt < maxAtt or maxAtt == 0 %}
+                        {% assign registrationIsFull = false %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            {% comment %} Determine if Event Meets Filters {% endcomment %}
+            {% assign meetsRequirements = true %}
+            {% if filterReg != '' and filterReg != null %}
+                {% if filterReg != 'All' %}
+                    {% if registrationIsOpen == false %}
+                        {% assign meetsRequirements = false %}
+                    {% endif %}
+                    {% if filterReg == 'Not Full Only' %}
+                        {% if registrationIsFull == true %}
+                            {% assign meetsRequirements = false %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            {% if filterLedBy != '' and filterLedBy != null %}
+                {% assign ledBy = e | Attribute:'LedBy' | Downcase %}
+                {% if ledBy contains filterLedBy and meetsRequirements == true %}
+                    {% assign meetsRequirements = true %}
+                {% else %}
+                    {% assign meetsRequirements = false %}
+                {% endif %}
+            {% endif %}
+            {% if filterName != '' and filterName != null %}
+                {% assign name = e.EventItem.Name | Split:' - ' | Last | Downcase %}
+                {% if name contains filterName and meetsRequirements == true %}
+                    {% assign meetsRequirements = true %}
+                {% else %}
+                    {% assign meetsRequirements = false %}
+                {% endif %}
+            {% endif %}
+
+            {% if meetsRequirements == true %}
+                {% assign allStudies = allStudies | AddToArray:e %}
+                {% assign dow = e.Schedule.EffectiveStartDate | Date:'ddd' %}
+                {% if dow == 'Mon' %}
+                    {% assign monStudies = monStudies | AddToArray:e %}
+                {% elseif dow == 'Tue' %}
+                    {% assign tueStudies = tueStudies | AddToArray:e %}
+                {% elseif dow == 'Wed' %}
+                    {% assign wedStudies = wedStudies | AddToArray:e %}
+                {% elseif dow == 'Thu' %}
+                    {% assign thrStudies = thrStudies | AddToArray:e %}
+                {% elseif dow == 'Fri' %}
+                    {% assign friStudies = friStudies | AddToArray:e %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% for t in dowArr %}
+            <div class="collapse {% if forloop.index0 == 0 %}in{% endif %}" id="collapse_{{t.mobile}}">
+                <div class='row row-equal-height'>
+                    {% if t.mobile == 'Mon' %}
+                        {% assign items = monStudies %}
+                    {% elseif t.mobile == 'Tue' %}
+                        {% assign items = tueStudies %}
+                    {% elseif t.mobile == 'Wed' %}
+                        {% assign items = wedStudies %}
+                    {% elseif t.mobile == 'Thu' %}
+                        {% assign items = thrStudies %}
+                    {% elseif t.mobile == 'Fri' %}
+                        {% assign items = friStudies %}
+                    {% else %}
+                        {% assign items = allStudies %}
+                    {% endif %}
+                    {% for e in items %}
+                        {% assign eventItemOccurrenceLinkages = e.Linkages %}
+                        {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+                        {% if eventItemOccurrenceLinkagesCount > 0 %}
+                            {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                                {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+                                {% assign registrationIsOpen = false %}
+                                {% if daysTillEndDate and daysTillEndDate > 0 %}
+                                    {% assign registrationIsOpen = true %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        <div class='col col-xs-12 col-sm-6 col-md-3 mb-2'>
+                            <div class='hover womens-card'>
+                                <a href="/Events/Detail?EventOccurrenceId={{e.Id}}" class='text-center study-link {% if registrationIsOpen == false %}reg-closed{% endif %}'>
+                                    <div>
+                                        {% if registrationIsOpen == false %}
+                                            <div class="wrapper banner-wrapper">
+                                                <div class="reg-closed-banner">Registration Closed</div>
+                                            </div>
+                                        {% endif %}
+                                        <div class='wrapper' >
+                                            <img src="/GetImage.ashx?Guid={{e.EventItem.Photo.Guid}}" />
+                                        </div>
+                                    </div>
+                                    <br/>
+                                    <div style='font-size: .9375em; min-height: 65px;'>
+                                        {{e.EventItem.Name | Split:' - ' | Last}}
+                                    </div>
+                                    {% assign scheduledDates = e.Schedule.iCalendarContent | DatesFromICal:'all' %}
+                                    {% assign numDates = scheduledDates | Size %}
+                                    {% if numDates > 0 %}
+                                        <div class='text--upper' style='font-size: .75em; font-weight: 700;'>
+                                            {% if numDates > 1 %}
+                                                {{ scheduledDates | First | Date:'dddd' | Pluralize }}, {{scheduledDates | First | Date:'MMM d'}} - {{ scheduledDates | Last | Date:'MMM d @ h:mm tt' }}
+                                            {% else %}
+                                                {{ scheduledDates | First | Date:'dddd, MMM d, yyyy @ h:mm tt' }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    {% assign ledBy = e | Attribute:'LedBy' %}
+                                    {% if ledBy != "" %}
+                                        <div class='text--upper pt-1' style='font-size: .75em; font-weight: 700;'>
+                                            <b>Led By: </b>{{ e | Attribute:'LedBy' }}
+                                        </div>
+                                    {% endif %}
+                                    {% if e.Location != '' %}
+                                        <div class='text--upper pt-1' style='font-size: .75em; font-weight: 700;'>
+                                            {{e.Location}}
+                                        </div>
+                                    {% endif %}
+                                    {% assign eventItemOccurrenceLinkages = e.Linkages %}
+                                    {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+                                    {% if eventItemOccurrenceLinkagesCount > 0 %}
+                                        {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                                            {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
+                                            {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+                                            {% assign showRegistration = true %}
+                                            {% assign registrationMessage = '' %}
+
+                                            {% if daysTillStartDate and daysTillStartDate > 0 %}
+                                                {% assign showRegistration = false %}
+                                                {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                                    {% capture registrationMessage %}Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                                {% else %}
+                                                    {% capture registrationMessage %}Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                                {% endif %}
+                                            {% endif %}
+
+                                            {% if daysTillEndDate and daysTillEndDate < 0 %}
+                                                {% assign showRegistration = false %}
+                                                {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                                    {% capture registrationMessage %}Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                                {% else %}
+                                                    {% capture registrationMessage %}Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                                {% endif %}
+                                            {% endif %}
+
+                                            {% if showRegistration == true %}
+                                                {% assign maxAtt = eventItemOccurrenceLinkage.RegistrationInstance.MaxAttendees %}
+                                                {% sql return:'attendees' %}
+                                                    SELECT COUNT(*) AS 'ct' FROM RegistrationRegistrant
+                                                    WHERE RegistrationId IN (
+                                                        SELECT Id FROM Registration WHERE RegistrationInstanceId = {{eventItemOccurrenceLinkage.RegistrationInstanceId}}
+                                                    )
+                                                {% endsql %}
+                                                {% for a in attendees %}
+                                                    {% assign numAtt = a.ct %}
+                                                {% endfor %}
+                                                {% if maxAtt == null or maxAtt == '' %}
+                                                    {% assign maxAtt = 0 %}
+                                                {% endif %}
+                                                {% if numAtt < maxAtt or maxAtt == 0 %}
+                                                    {% assign statusLabel = 'Register' %}
+                                                {% else %}
+                                                    {% if eventItemOccurrenceLinkage.RegistrationInstance.RegistrationTemplate.WaitListEnabled == true %}
+                                                        {% assign statusLabel = 'Join Wait List' %}
+                                                    {% else %}
+                                                        {% assign statusLabel = 'Full' %}
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                                    {% assign registrationButtonText = statusLabel %}
+                                                {% else %}
+                                                    {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
+                                                {% endif %}
+                                                {% if statusLabel == 'Full' %}
+                                                    {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                                        {% assign registrationButtonText = 'Registration Full' %}
+                                                    {% else %}
+                                                        {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
+                                                    {% endif %}
+                                                    <div class='text--upper' style='font-size: .75em; font-weight: 700;'>{{ registrationButtonText }}</div>
+                                                {% else %}
+                                                    <div class='womens-card-button justify-center'>
+                                                        {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
+                                                            <a href='/page/413?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn btn-primary'>{{registrationButtonText}}</a>
+                                                        {% else %}
+                                                            <a href="/page/413?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn btn-primary ">{{registrationButtonText}}</a>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}
+                                                <div style="height: 18px;"></div>
+                                                <div class='text--upper' style='font-size: .75em; font-weight: 700; width: 100%; position: absolute; bottom: 0;'>
+                                                    {{registrationMessage}}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endeventitemoccurrence %}
+</div>
+{% endif %}
+
+<div class="text-center py-custom-2x" style="width: 100%;">
+    <b>Don’t see an open class? Be the first to know when new classes open.</b> <br/>
+    <a class='btn btn-primary mt-2' data-toggle="collapse" href="#contactCollapse" role="button" aria-expanded="false" aria-controls="contactCollapse">Stay in the Loop</a>
+</div>
+
+<style>
+    .reg-closed-banner {
+        background-color: rgba(0,0,0,.4);
+        padding: 8px;
+        width: 100%;
+        font-size: 30px;
+        color: #fff;
+    }
+    .banner-wrapper {
+        position: absolute;
+        z-index: 10;
+        top: 20%;
+    }
+    .study-link {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+    }
+    .wrapper img {
+        width: 100%;
+    }
+    .reg-closed .wrapper img {
+        filter: grayscale(.8);
+    }
+    .wrapper {
+        padding: 0px 32px;
+    }
+    .womens-card {
+        height: 100%;
+        padding-bottom: 40px;
+    }
+    .womens-card-button {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    @media (max-width:599px) {
+        .reg-closed-banner {
+            font-size: 3em;
+        }
+        .filter-wrapper {
+            height: 45px;
+        }
+    }
+    @media (min-width:600px) {
+        .mb-2 {
+            margin-bottom: 1.5rem !important;
+        }
+    }
+    .btn-circle {
+        height: 40px;
+        width: 40px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-primary.active, .btn[aria-expanded="true"] {
+        background-color: #a2c3cc;
+        color: #1b3142;
+        border-color: #1b3142;
+    }
+</style>
+<script>
+    $(document).ready(function() {
+        $('[data-toggle="popover"]').popover()
+        var tabs = $('#studiesTabs');
+        tabs.on('show.bs.collapse','.collapse', function() {
+            tabs.find('.collapse.in').collapse('hide');
+        });
+    })
+    function openModal() {
+        var modal = document.getElementById("filterModal");
+        modal.style.display = "block";
+        var span = document.getElementsByClassName("close")[0];
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+    }
+</script>

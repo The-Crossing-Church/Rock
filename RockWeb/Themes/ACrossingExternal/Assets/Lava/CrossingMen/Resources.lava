@@ -1,0 +1,25 @@
+﻿{% assign ct = Items | Size %}
+{% if ct > 0 %}
+    <br/><br/>
+    <h2 class='text-center py-custom-2x'>Resources</h2>
+    {[ slider sliderid:'resources' containerclass:'full-width background--grey' ]}
+        {% for i in Items %}
+            [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]
+            [[ slide]]
+              <div class='row'>
+                {% assign img = i | Attribute:'Image' %}
+                {% if img != '' %}
+                    <div class='col col-xs-12 col-md-6'>
+                        <img class="d-block w-100" src="{{ img }}" />
+                    </div>
+                {% endif %}
+                <div class='col col-xs-12 {% if img != '' %}col-md-6{% endif %}'>
+                  <br/>
+                    <h2>{{i.Title}}</h2>
+                    {{i.Content}}
+                </div>
+              </div>
+            [[ endslide ]]
+        {% endfor %}
+    {[ endslider ]}
+{% endif %}

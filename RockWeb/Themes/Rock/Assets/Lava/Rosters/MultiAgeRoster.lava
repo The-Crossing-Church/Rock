@@ -1,0 +1,227 @@
+{% assign date = 'Global' | PageParameter:'Date' | SanitizeSql %}
+{% assign serviceTimes = 'Global' | PageParameter:'ServiceTimes' | AsString | SanitizeSql %}
+
+<html>
+    <head>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 20px;
+                padding: 0in .4in 0in .4in;
+            }
+            table {
+                border-style: none;
+            }
+            table>tbody>tr>td {
+                padding: 5px 8px !important;
+                font-size:16px;
+                border-style: none;
+            }
+            table>thead>tr>th {
+                padding: 12px 8px !important;
+                font-size:20px;
+                border-style: none;
+            }
+        </style>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="container">
+
+{% sql return:'occurrences' date:'{{date}}' %}
+    --Created By: Cooksey
+    --Created On: 5/4/2023
+    --Description: Find all Multi-Age attendance occurrences for the given date and schedules
+    --so we can loop through each occurrence and find attendance to print roster
+    --Notes: Location Name LIKE 'Multi-Age' is hard coded, if the location names change, will need to update
+    SELECT DISTINCT AO.Id,
+                    AO.ScheduleId,
+                    Schedule.Name                                                AS 'Schedule',
+                    LocationId,
+                    Location.Name                                                AS 'Location',
+                    GroupId,
+                    [Group].Name                                                 AS 'Group',
+                    CONVERT(DATETIME, CONCAT(@date, ' ', Schedule.Name), 102) AS 'Order'
+    FROM Attendance A
+            INNER JOIN AttendanceOccurrence AO ON A.OccurrenceId = AO.Id
+            INNER JOIN Schedule ON ScheduleId = Schedule.Id
+            INNER JOIN Location ON LocationId = Location.Id
+            INNER JOIN [Group] ON AO.GroupId = [Group].Id
+    WHERE OccurrenceDate = @date
+    AND DidAttend = 1
+    AND AO.ScheduleId IN ({{serviceTimes}})
+    AND LocationId IN (
+        SELECT ID
+        FROM Location
+        WHERE Name LIKE '%Multi-Age%'
+    )
+    ORDER BY [Order]
+{% endsql %}
+
+{% for occurrence in occurrences %}
+    {% sql return:'rows' date:'{{date}}' %}
+        --Created By: Cooksey
+        --Created On: 5/4/2023
+        --Description: Find attendance for given occurrence. To make the process of picking up kids from their previous classroom
+        --for multi-age easier we need to find where they were previously checked in. To do that we will find other occurrences for
+        --the given date and order them by the schedule start time for each person. We will find the row that matches the current schedule
+        --and mark row-1 as our target and then join the query with itself so we can get the appropriate row.
+        --Notes: If you are looking at historical data and the ics information has changed for a schedule the pick up location could
+        --be inaccurate
+        SELECT Attendance.PersonAliasId,
+            PersonId,
+            Code,
+            NickName,
+            LastName,
+            BirthDate,
+            ALLERGY.Value                              AS 'Allergy',
+            MedInfo.Value                              AS 'MedInfo',
+            MEDICAL.Value                              AS 'MedCode',
+            Location                                   AS 'PickUpLocation',
+            CAST(LocSort.Value AS int)                 AS 'LocationSortOrder',
+            dbo.Cust_Bema_GetParentNickNames(PersonId) AS [ParentNames],
+            LocationId,
+            ScheduleId,
+            GroupId,
+            OccurrenceDate
+        FROM Attendance
+                INNER JOIN AttendanceOccurrence ON Attendance.OccurrenceId = AttendanceOccurrence.Id
+                INNER JOIN AttendanceCode ON Attendance.AttendanceCodeId = AttendanceCode.Id
+                INNER JOIN PersonAlias ON PersonAliasId = PersonAlias.Id
+                INNER JOIN Person ON PersonId = Person.Id
+                LEFT OUTER JOIN AttributeValue ALLERGY ON ALLERGY.EntityId = PersonId AND ALLERGY.AttributeId = 676
+                LEFT OUTER JOIN AttributeValue MedInfo ON MedInfo.EntityId = PersonId AND MedInfo.AttributeId = 4141
+                LEFT OUTER JOIN AttributeValue MEDICAL ON MEDICAL.EntityId = PersonId AND MEDICAL.AttributeId = 2855
+                INNER JOIN (
+            SELECT AttendanceData.PersonAliasId, Location, LocationId AS 'PickUpLocationId'
+            FROM (
+                    SELECT Attendance.PersonAliasId,
+                            ROW_NUMBER() OVER (PARTITION BY Attendance.PersonAliasId ORDER BY Start) AS 'Row',
+                            Attendance.Id                                                            AS 'AttendanceId',
+                            OccurrenceDate,
+                            LocationId,
+                            L.Name                                                                   AS 'Location',
+                            ScheduleId,
+                            Schedule.Name                                                            AS 'Schedule',
+                            Start
+                    FROM Attendance
+                            INNER JOIN AttendanceOccurrence ON Attendance.OccurrenceId = AttendanceOccurrence.Id
+                            INNER JOIN Schedule ON AttendanceOccurrence.ScheduleId = Schedule.Id
+                            INNER JOIN Location L ON AttendanceOccurrence.LocationId = L.Id
+                            INNER JOIN (
+                        SELECT Id,
+                                Name,
+                                TRY_CAST(CONCAT(@date, ' ', SUBSTRING(ScheduleStart, 10, 2), ':',
+                                                SUBSTRING(ScheduleStart, 12, 2)) AS DATETIME) AS 'Start'
+                        FROM (
+                                SELECT Id,
+                                        Name,
+                                        SUBSTRING(iCalendarContent, CHARINDEX('DTSTART:', iCalendarContent) + 8,
+                                                15) AS 'ScheduleStart'
+                                FROM Schedule
+                            ) AS S
+                        WHERE ScheduleStart IS NOT NULL
+                        AND ScheduleStart != ''
+                    ) AS StartTimes ON ScheduleId = StartTimes.Id
+                    WHERE OccurrenceDate = @date
+                    AND Start IS NOT NULL
+                ) AS AttendanceData
+                    INNER JOIN (
+                SELECT PersonAliasId,
+                    (CASE WHEN ScheduleId = {{occurrence.ScheduleId}} THEN Row - 1 ELSE 0 END) AS 'TargetRow'
+                FROM (
+                        SELECT PersonAliasId,
+                                ROW_NUMBER() OVER (PARTITION BY PersonAliasId ORDER BY Start) AS 'Row',
+                                Attendance.Id                                                 AS 'AttendanceId',
+                                OccurrenceDate,
+                                LocationId,
+                                L.Name                                                        AS 'Location',
+                                ScheduleId,
+                                Schedule.Name                                                 AS 'Schedule',
+                                Start
+                        FROM Attendance
+                                INNER JOIN AttendanceOccurrence ON Attendance.OccurrenceId = AttendanceOccurrence.Id
+                                INNER JOIN Schedule ON AttendanceOccurrence.ScheduleId = Schedule.Id
+                                INNER JOIN Location L ON AttendanceOccurrence.LocationId = L.Id
+                                INNER JOIN (
+                            SELECT Id,
+                                    Name,
+                                    TRY_CAST(CONCAT(@date, ' ', SUBSTRING(ScheduleStart, 10, 2), ':',
+                                                    SUBSTRING(ScheduleStart, 12, 2)) AS DATETIME) AS 'Start'
+                            FROM (
+                                    SELECT Id,
+                                            Name,
+                                            SUBSTRING(iCalendarContent, CHARINDEX('DTSTART:', iCalendarContent) + 8,
+                                                    15) AS 'ScheduleStart'
+                                    FROM Schedule
+                                ) AS S
+                            WHERE ScheduleStart IS NOT NULL
+                            AND ScheduleStart != ''
+                        ) AS StartTimes ON ScheduleId = StartTimes.Id
+                        WHERE OccurrenceDate = @date
+                        AND Start IS NOT NULL
+                    ) AS OrderedAttendance
+            ) AS TargetData ON TargetData.PersonAliasId = AttendanceData.PersonAliasId AND TargetRow = Row
+            WHERE TargetRow > 0
+        ) AS PrevAtt ON PrevAtt.PersonAliasId = Attendance.PersonAliasId
+            LEFT OUTER JOIN AttributeValue LocSort
+                            ON LocSort.EntityId = PrevAtt.PickUpLocationId AND LocSort.AttributeId = {{sortAttrId}}
+        WHERE OccurrenceId = {{occurrence.Id}}
+        ORDER BY LocationSortOrder, PickUpLocation, NickName
+    {% endsql %}
+
+    {% assign ct = rows | Size %}
+    {% if ct > 0 %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th colspan="6">
+                        <h3>{{ occurrence.Location }} ({{rows | Size}} Kids)</h3>
+                    </th>
+                    <th style="text-align: right;">
+                        <small>
+                            <i>
+                                {{ date | Date:'MM-dd-yyyy' }} <br/>
+                                {{ occurrence.Schedule }}
+                            </i>
+                        </small>
+                    </th>
+                </tr>
+                <tr>
+                    <th>Security</th>
+                    <th>Name</th>
+                    <th>Birth Date</th>
+                    <th>Pick-up Location</th>
+                    <th>Parent Names</th>
+                    <th>Medical Situation Code</th>
+                    <th>Food Allergies &#124; Medical Information</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <!--Test for row color-->
+                    {% assign rowTest = forloop.index | Modulo:2 %}
+                    {% if rowTest == 1 %}
+                        <tr style="background:#f9f9f9">
+                    {% else %}
+                        <tr style="background:#f1f1f1">
+                    {% endif %}
+                            <td>{{ row.Code }}</td>
+                            <td>{{ row.NickName }} {{row.LastName}}</td>
+                            <td>{{ row.BirthDate | Date:'MM/dd/yyyy' }}</td>
+                            <td>{{ row.PickUpLocation }}</td>
+                            <td>{{ row.ParentNames }}</td>
+                            <td>{{ row.MedCode }}</td>
+                            <td>{{ row.Allergy }} {% if row.Allergy and row.Allergy != '' and row.MedInfo and row.MedInfo != '' %} &#124; {% endif %}{{ row.MedInfo }}</td>
+                        </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if forloop.rindex > 1 %}
+            <p style="page-break-after: always;">&nbsp;</p>
+        {% endif %}
+    {% endif %}
+{% endfor %}
+        </div>
+    </body>
+</html>

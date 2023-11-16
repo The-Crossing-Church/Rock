@@ -1,0 +1,26 @@
+﻿{% assign kTitle = Item | Attribute:'LessonTitle' %}
+{% if kTitle != '' %}
+    <strong>Lesson Title:</strong> {{ Item | Attribute:'LessonTitle' }} <br/>
+{% endif %}
+{% if Item.Content != '' %}
+    <strong>Lesson Overview:</strong> 
+    <blockquote>
+        {{ Item.Content }}
+    </blockquote>
+{% endif %}
+{% assign kScript = Item | Attribute:'Scripture'  %}
+{% if kScript != '' %}
+    <strong>Lesson Scripture:</strong> {{Item | Attribute:'Scripture' }} <br/>
+{% endif %}
+{% assign kObj = Item | Attribute:'Objective'  %}
+{% if kObj != '' %}
+    <strong>Lesson Objective:</strong> {{Item | Attribute:'Objective' }} <br/>
+{% endif %}
+{% assign kApp = Item | Attribute:'Application' %}
+{% if kApp != '' %}
+    <strong>Lesson Application:</strong> {{Item | Attribute:'Application' }}
+{% endif %}
+{% assign kAct = Item | Attribute:'Activity' %}
+{% if kAct != '' %}
+    <strong>Activity:</strong> {{Item | Attribute:'Activity' }}
+{% endif %}

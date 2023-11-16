@@ -1,0 +1,68 @@
+﻿{[ slider containerclass:'full-width background--grey' sliderid:'featured-items' ]}
+    {% assign ct = 0 %}
+    {% for i in Items %}
+        {% assign featuredRange = i | Attribute:'FeaturedDates' %}
+        {% assign featuredStart = i | Attribute:'FeaturedDates' | Split:' to ' | First %}
+        {% assign featuredEnd = i | Attribute:'FeaturedDates' | Split:' to ' | Last %}
+        {% assign today = 'Now' | Date:'MM/dd/yyyy' %}
+        {% if featuredRange != '' %}
+            {% assign isFeatured = today | DateIsBetween:featuredStart,featuredEnd %}
+            {% if isFeatured == true %}
+                {% assign ct = ct | Plus:1 %}
+                [[ indicator target:'{{ct | Minus:1}}']][[ endindicator ]]
+                [[ slide ]]
+                    <div class='row row-equal-height'>
+                        <div class='col col-xs-12 col-md-6 align-center'>
+                            <img src="{{i | Attribute:'CardImage'}}" style="width: 100%; border-radius: 16px;" alt="{{i.Title}}"/>
+                        </div>
+                        <div class='col col-xs-12 col-md-6'>
+                            <div class='d-none d-md-block'>
+                                <h3>{{i | Attribute:'DisplayTitle'}}</h3>
+                                <div>
+                                    {{i.Content}}
+                                </div>
+                                <div class='justify-left'>
+                                    {% assign regGuid = i | Attribute:'RegistrationTemplate','RawValue' %}
+                                    {% registrationtemplate where:'Guid == "{{regGuid}}"' %}
+                                        {% for rt in registrationtemplateItems %}
+                                            {% assign instances = rt.Instances | Where:'IsActive',1 %}
+                                            {% for i in instances %}
+                                                {% assign startDiff = 'Now' | DateDiff:i.StartDateTime,'m' %}
+                                                {% assign endDiff = 'Now' | DateDiff:i.EndDateTime,'m' %}
+                                                {% if startDiff <= 0 and endDiff >= 0 %}
+                                                    <a class='btn btn-primary mt-3' href="/page/413?RegistrationInstanceId={{i.Id}}">Register</a>
+                                                {% else %}
+                                                    {% if startDiff > 0 %}
+                                                        Registration beings {{i.StartDateTime | Date:'dddd, MMM d, yyyy'}}
+                                                    {% else %}
+                                                        Registration closed on {{i.EndDateTime | Date:'dddd, MMM d, yyyy'}}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endfor %}
+                                    {% endregistrationtemplate %}
+                                    <a class="px-4 align-center hover" href="/Ministry/Care?Slug={{i.Id}}#form">
+                                        <h4>
+                                            Contact
+                                        </h4>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class='d-block d-md-none text--centered' style="min-height: 175px;">
+                                <h3>{{i | Attribute:'DisplayTitle'}}</h3>
+                                <div>
+                                    {{i | Attribute:'ShortDescription'}}
+                                </div>
+                                <br/>
+                                <div class='justify-center'>
+                                    <div onclick="$('#modal_{{i.Id}}').modal('show')" class='btn btn-primary'>Learn More</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                [[ endslide ]]
+            {% endif %}
+        {% endif %}
+
+    {% endfor %}
+{[ endslider ]}

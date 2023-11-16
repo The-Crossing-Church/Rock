@@ -1,0 +1,149 @@
+﻿<div class="py-custom-2x">
+    <div class='d-none d-md-block'>
+        <ul class="nav nav-tabs justify-center" role="tablist">
+            {% for i in Items %}
+                {% assign isOpen = i | Attribute:'OpenByDefault' %}
+                <li role="presentation" class="tab--counseling {% if isOpen == true %}active{% endif %}">
+                    <a class='justify-center btn btn-accent' href="#{{i | Attribute:'TabTitle' | Replace:' ','' | Replace:'&',''}}" aria-controls="{{i | Attribute:'TabTitle' | Replace:' ','' | Replace:'&',''}}" role="tab" data-toggle="tab">
+                        <span style="font-weight: bold; font-size: 16px;">{{i | Attribute:'TabTitle'}}</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="tab-content">
+            {% for i in Items %}
+                {% assign isOpen = i | Attribute:'OpenByDefault' %}
+                <div role="tabpanel" class="tab-pane {% if isOpen == true %}active{% endif %}" id="{{i | Attribute:'TabTitle' | Replace:' ','' | Replace:'&',''}}">
+                    <div>
+                        <br/>
+                        {% if i.Content != '' %}
+                            <div>
+                                {{i.Content}}
+                            </div>
+                        {% endif %}
+                        {% assign shortCode = i.ChildItems[0].ChildContentChannelItem.ContentChannel | Attribute:'LavaTemplate' %}
+                        {% assign items = i.ChildItems | OrderBy:'Order asc' | Map:'ChildContentChannelItem' %}
+                        {% if shortCode == 'counselingsvc' %}
+                            {[ counselingsvc items:items carouselid:'servicesdsktp' ]}
+                        {% elseif shortCode == 'counselingstaff' %}
+                            <div class="row" style="min-height: 500px;">
+                                {% for staff in items %}
+                                    {[ counselingstaff item:staff ]}
+                                {% endfor %}
+                            </div>
+                        {% elseif shortCode == 'counselingfaq' %}
+                            {[ tccaccordion accname:'cfaqsLg' ]}
+                                {% for i in items %}
+                                    {% assign title = i | Attribute:'Question' %}
+                                    [[ item title:'{{title}}' ]]
+                                        {{i.Content}}
+                                    [[ enditem ]]
+                                {% endfor %}
+                            {[ endtccaccordion ]}
+                        {% elseif shortCode == 'cardrow' %}
+                            <div class="get-started-cards">
+                                {[ cardrow items:items titleattr:'CardTitle' cardcss:'border--bottom pad-16 text--centered' ]}
+                            </div>
+                        {% endif %}
+                        <br/>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class='d-block d-md-none'>
+        <div id="counselingaccordion" class="accordion">
+            {% for i in Items %}
+                {% assign isOpen = i | Attribute:'OpenByDefault' %}
+                <div class='panel'>
+                    <div class='expand-header'>
+                        <a style='width: 100%;' class='justify-center text--centered btn btn-accent' role="button" href="#counselingcollapse{{forloop.index0}}" data-parent="#counselingaccordion" data-toggle="collapse" aria-expanded="{% if isOpen == true %}true{% else %}false{% endif %}" aria-controls="counselingcollapse{{forloop.index0}}">
+                            <span style="font-weight: bold; font-size: 16px;">{{i | Attribute:'TabTitle'}}</span>
+                        </a>
+                    </div>
+                    <div class="counseling-collapse collapse {% if isOpen == true %}in{% endif %}" id="counselingcollapse{{forloop.index0}}" aria-expanded="{% if isOpen == true %}true{% else %}false{% endif %}">
+                        <div style="display: block;" class='text--centered'>
+                            <br/>
+                            {% if i.Content != '' %}
+                                <div>
+                                    {{i.Content}}
+                                </div>
+                            {% endif %}
+                            {% assign shortCode = i.ChildItems[0].ChildContentChannelItem.ContentChannel | Attribute:'LavaTemplate' %}
+                            {% assign items = i.ChildItems | OrderBy:'Order asc' | Map:'ChildContentChannelItem' %}
+                            {% if shortCode == 'counselingsvc' %}
+                                {[ counselingsvc items:items ]}
+                            {% elseif shortCode == 'counselingstaff' %}
+                                <div style="min-height: 500px;">
+                                    {% for staff in items %}
+                                        {[ counselingstaff item:staff ]}
+                                    {% endfor %}
+                                </div>
+                            {% elseif shortCode == 'counselingfaq' %}
+                                {[ tccaccordion accname:'cfaqs' ]}
+                                    {% for i in items %}
+                                        {% assign title = i | Attribute:'Question' %}
+                                        [[ item title:'{{title}}' ]]
+                                            {{i.Content}}
+                                        [[ enditem ]]
+                                    {% endfor %}
+                                {[ endtccaccordion ]}
+                            {% elseif shortCode == 'cardrow' %}
+                                <div class="get-started-cards">
+                                    {[ cardrow items:items titleattr:'CardTitle' cardcss:'border--bottom' ]}
+                                </div>
+                            {% endif %}
+                            <br/>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    #counselingaccordion div .expand-header a {
+      min-height: 40px;
+      padding: 8px;
+    }
+    .nav-tabs li a {
+        display: flex !important;
+        align-items: center;
+        border: none;
+        width: 100%;
+        height: 100%;
+    }
+    .tab--counseling {
+        {% assign size = Items | Size %}
+        width: {{ 100 | DividedBy:size }}%;
+    }
+    .nav-tabs li {
+        margin: 4px;
+        overflow: hidden;
+    }
+    .nav-tabs li.active, #counselingaccordion div .expand-header a[aria-expanded="true"]{
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        border: none !important;
+    }
+    .expand-header a {
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+    }
+    .nav-tabs li, .nav-tabs li a, #counselingaccordion div .expand-header a {
+      border-radius: 30px;
+    }
+    .nav-tabs {
+      border: none !important;
+    }
+    .accordion .panel {
+      box-shadow: none;
+    }
+    .pad-16 {
+        padding: 16px !important;
+    }
+    .get-started-cards .card-body {
+        padding: 0px !important;
+    }
+</style>

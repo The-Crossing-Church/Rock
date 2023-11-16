@@ -1,0 +1,54 @@
+{% assign data = 'wlrdata' | PersistedDataset %}
+{% assign knownWatch = data | Where:'ContentChannelId',56 | Where:'PersonAliasId',0,'notequal' %}
+{% assign unknownWatch = data | Where:'ContentChannelId',56 | Where:'PersonAliasId',0 %}
+{% assign knownAll = data | Where:'PersonAliasId',0,'notequal' %}
+{% assign unknownAll = data | Where:'PersonAliasId',0 %}
+{% assign knownListen = data | Where:'ContentChannelId',55 | Where:'PersonAliasId',0,'notequal' %}
+{% assign unknownListen = data | Where:'ContentChannelId',55 | Where:'PersonAliasId',0 %}
+<div class="card pb-4 px-2">
+    <h3>Anonymous vs Known Interactions</h3>
+    <div class="row">
+        <div class="col col-xs-12 col-md-6">
+            <canvas id="cnv_knownVsUnknown"></canvas>
+        </div>
+        <div class="col col-xs-12 col-md-3">
+
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(() => {
+        buildKnownBar()
+    })
+    function buildKnownBar() {
+        let data = {
+            labels: [
+              'Known',
+              'Anonymous'
+            ],
+            datasets: [
+                {
+                    label: 'All',
+                    data: [{{ knownAll  | Select:'Identifier' | Distinct | Size }}, {{ unknownAll | Select:'Identifier' | Distinct | Size }}],
+                },
+                {
+                    label: 'Watch',
+                    data: [{{ knownWatch  | Select:'PersonAliasId' | Distinct | Size }}, {{ unknownWatch | Select:'IpAddress' | Distinct | Size }}],
+                },
+                {
+                    label: 'Listen',
+                    data: [{{ knownListen  | Select:'PersonAliasId' | Distinct | Size }}, {{ unknownListen | Select:'IpAddress' | Distinct | Size }}],
+                }
+            ]
+        }
+        let config = {
+            type: 'bar',
+            data: data,
+            options: {
+                indexAxis: 'y',
+            }
+        }
+        let ctx = document.getElementById('cnv_knownVsUnknown').getContext('2d')
+        new Chart(ctx, config)
+    }
+</script>

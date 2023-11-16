@@ -1,0 +1,7 @@
+﻿<div class='row pb-custom-2x'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-md-4 text--centered'>
+            <a class='btn btn-primary' href="{{i | Attribute:'Link'}}">{{i.Title}}</a>
+        </div>
+    {% endfor %}
+</div>

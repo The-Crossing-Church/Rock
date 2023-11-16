@@ -1,0 +1,16 @@
+﻿<div class="social-media text--centered">
+    <ul class="links">
+        {% for i in Items %}
+            <li>
+                <a class="social-links" href="{{i | Attribute:'Link'}}" target="_blank">
+                    {% assign icon = i | Attribute:'FontAwesomeIcon' %}
+                    {% if icon != '' %}
+                        <i class="fab fa-{{ i | Attribute:'FontAwesomeIcon' }}"></i>
+                    {% else %}
+                        <img src="{{ i | Attribute:'AlternativeIcon' }}" alt="{{i.Title}}" />
+                    {% endif %}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

@@ -1,0 +1,32 @@
+﻿{% for s in Items %}
+    {% assign classname = '' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey full-width' %}
+    {% endif %}
+    {[ rescarousel carouselid:'resource{{forloop.index0}}-carousel' containerclass:'{{classname}}' ]}
+        [[ title ]]
+            {{s.Series | Pluralize}}
+        [[ endtitle ]]
+        {% for i in s.Items %}
+            [[ item ]]
+                <div class='hover' data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description'  | Escape }}</div>">
+                    <a href="/Ministry/Children/Resources/{{i.PrimarySlug}}">
+                        <div class='img-wrapper' >
+                            <img src="{{ i | Attribute:'Image' }}" />
+                        </div>
+                        <div style='font-size: .9375em; font-weight: light;'>
+                            {{i.Title | Split:':' | First}}
+                        </div>
+                        <div class='text--upper' style='font-size: .75em; font-weight: 700;'>
+                            {{i | Attribute:'Author' }}
+                        </div>
+                    </a>
+                </div>
+            [[ enditem ]]
+        {% endfor %}
+    {[ endrescarousel ]}
+{% endfor %}
+<script>
+  $('[data-toggle="popover"]').popover()
+</script>

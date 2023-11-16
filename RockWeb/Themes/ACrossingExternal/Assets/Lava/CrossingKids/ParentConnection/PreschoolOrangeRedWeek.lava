@@ -1,0 +1,72 @@
+﻿{% assign poTitle = Item | Attribute:'LessonTitle' %}
+{% if poTitle != '' %}
+    <strong>Bible Story Focus:</strong> {{ Item | Attribute:'LessonTitle' }} <br/>
+{% endif %}
+{% if Item.Content != '' %}
+    <strong>Lesson Overview:</strong> 
+    <blockquote>
+        {{ Item.Content }}
+    </blockquote>
+{% endif %}
+{% assign poCT = Item | Attribute:'CircleTimeQuestions' %}
+{% if poCT != '' %}
+    <strong>Circle Time Questions:</strong>
+    <ul>
+        <li>
+            {{Item | Attribute:'CircleTimeQuestions' }}
+        </li>
+    </ul>
+{% endif %}
+{% assign poIW = Item | Attribute:'IWonderQuestions','RawValue' %}
+{% if poIW != '' %}
+    <strong>I Wonder Questions (Snack Time Discussion):</strong>
+    {% assign wonder = Item | Attribute:'IWonderQuestions','RawValue' | Split:'|' %}
+    <ul>
+        {% for w in wonder %}
+            <li>
+                {{w | Split:'^' | First | Replace:'%2C',','}}
+                <ul>
+                    <li>
+                        {{w | Split:'^' | Last | Replace:'%2C',','}}
+                    </li>
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% assign poAct = Item | Attribute:'Activities','RawValue' %}
+{% if poAct != '' %}
+    <strong>Activities:</strong>
+    {% assign activities = Item | Attribute:'Activities','RawValue' | Split:'|' %}
+    <ul>
+        {% for a in activities %}
+            <li>
+                <strong>{{a | Split:'^' | First | Replace:'%2C',','}}:</strong> {{a | Split:'^' | Last | Replace:'%2C',','}}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% assign video = Item | Attribute:'Video' %}
+{% if video != '' %}
+    <strong>Lesson Review:</strong>
+    <div class='video-wrapper'>
+        <iframe title="player" src="{{video | Replace:'vimeo.com','player.vimeo.com/video'}}" alt="{{Item.Title}} Review" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+    </div>
+    <style>
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .video-wrapper>iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+{% endif %}

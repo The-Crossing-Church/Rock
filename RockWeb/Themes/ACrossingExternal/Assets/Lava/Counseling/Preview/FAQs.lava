@@ -1,0 +1,8 @@
+﻿{[ tccaccordion accname:'cfaqsLg' ]}
+    {% for i in Items %}
+        {% assign title = i | Attribute:'Question' %}
+        [[ item title:'{{title}}' ]]
+            {{i.Content}}
+        [[ enditem ]]
+    {% endfor %}
+{[ endtccaccordion ]}

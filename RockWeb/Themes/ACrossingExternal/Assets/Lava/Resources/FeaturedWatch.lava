@@ -1,0 +1,23 @@
+﻿{[ carousel carouselid:'watch' itemheight:'315' ]}
+    [[ title ]]
+        Watch
+    [[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+          {% capture url %}/Resources/Watch/{{i.ContentChannel | Attribute:'ResourceCategory'}}/{{i | Attribute:'Series'}}/{% endcapture %}
+          {% if i.ContentChannelId == 87 %}
+            {% assign url = '/Music/Watch/' %}
+          {% endif %}
+          <a href="{{url}}{{i.PrimarySlug}}">
+            <div style="padding: 8px">
+              <div class='img-wrapper'>
+                <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+              </div>
+              <h4>{{i.Title}}</h4>
+              <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+            </div>
+          </a>
+        [[ enditem ]]
+    {% endfor %}
+    [[ button url:'/Resources/Watch' text:'Explore All' ]][[ endbutton ]]
+{[ endcarousel ]}

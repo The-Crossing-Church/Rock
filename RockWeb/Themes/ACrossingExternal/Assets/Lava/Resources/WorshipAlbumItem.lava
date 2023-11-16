@@ -1,0 +1,40 @@
+﻿<div class='row'>
+    <div class='col col-xs-12 col-md-4'>
+        <div class='card--custom card-with-media'>
+            <img src="{{Item | Attribute:'Image'}}" style="width:100%;"/>
+        </div>
+    </div>
+    <div class='col col-xs-12 col-md-8'>
+        <h1 class="h2">{{Item.Title}}</h1>
+        <br/>
+        {{Item.Content}}
+        <br/>
+        <label>
+            <span class='floating--title'>Released</span>
+            <h5>{{Item.StartDateTime | Date:'MMMM d, yyyy'}}</h5>
+        </label>
+    </div>
+</div>
+<br/>
+<div class='row'>
+    <div class='col col-xs-12'>
+        <iframe src="{{ Item | Attribute:'Link' | Replace:'album','embed/album'}}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 16px;"></iframe>
+    </div>
+</div>
+
+<style>
+    .card-with-media {
+        padding: 0px;
+        height: 100%;
+        overflow: hidden;
+    }
+    .floating--title {
+        display: inline-block;
+        padding: 0 0 4px;
+        border-bottom: 2px solid #5F9BAC;
+        text-transform: uppercase;
+        font-size: .75em;
+        line-height: 1em;
+        color: #5F9BAC;
+    }
+</style>

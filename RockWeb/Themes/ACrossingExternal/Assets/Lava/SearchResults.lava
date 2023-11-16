@@ -1,0 +1,297 @@
+{% assign watchCt = Watch | Size %}
+{% assign listenCt = Listen | Size %}
+{% assign staffCt = Staff | Size %}
+{% assign eventCt = Events | Size %}
+{% assign pageCt = Pages | Size %}
+{% assign query = 'Global' | PageParameter:'q' %}
+{% assign title = 'Global' | PageParameter:'Title' %}
+{% assign author = 'Global' | PageParameter:'Author' %}
+{% assign series = 'Global' | PageParameter:'Series' %}
+{% assign tags = 'Global' | PageParameter:'Tags' %}
+
+<script>
+    function search() {
+        window.location.href = "/Search?q=" + $('#txtSearchBox').val()
+    }
+    function removeFilter(filter, value) {
+        let params = new URLSearchParams(window.location.search)
+        let searchVal = params.get(filter)
+        if(searchVal) {
+            if (searchVal == value ) {
+                params.delete(filter)
+            } else if (searchVal.includes(value)) {
+                let vals = searchVal.split(',')
+                vals = vals.filter(v => { return v != value })
+                params.set(filter, vals.join(','))
+            }
+        }
+        window.location.href = "/Search?" + params.toString()
+    }
+    function openModal() {
+        var modal = document.getElementById("filterModal");
+        modal.style.display = "block";
+        var span = document.getElementsByClassName("close")[0];
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+    }
+    $(document).ready(function(){
+        $('#txtSearchBox').on('keypress',function(e) {
+            if(e.which == 13) {
+                search()
+            }
+        })
+        $('#txtSearchBox').focus();
+    })
+</script>
+
+{% if watchCt == 0 and listenCt == 0 and staffCt == 0 and eventCt == 0 and pageCt == 0 %}
+    {% if query == '' and title == '' and author == '' and tags == '' and series == '' %}
+        <div class='justify-center text-center' style="padding-top: 2rem !important;">
+            <h2>Search</h2>
+        </div>
+    {% else %}
+        <div class='justify-center text-center' style="padding-top: 2rem !important;">
+            <h2>Oops! We are unable to find anything matching "{{ 'Global' | PageParameter:'q' }}".</h2>
+        </div>
+        <br/>
+        <div class='justify-center text-center pt-3'>
+            <h4>Please check your spelling or try a new search!</h4>
+        </div>
+    {% endif %}
+    <div class='justify-center pt-3'>
+        <div class='search-input'>
+            <input id="txtSearchBox" type="text" placeholder="What are you looking for?" />
+            <i class='fa fa-search' onclick="search()"></i>
+            <i class="fa fa-sliders-h" onclick="openModal()"></i>
+        </div>
+    </div>
+{% else %}
+    <div class='justify-center text-center' style="padding-top: 2rem !important;">
+        {% if query != '' %}
+            <h2>Search Results for: "{{'Global' | PageParameter:'q'}}"</h2>
+        {% else %}
+            <h2>Search Results</h2>
+        {% endif %}
+    </div>
+    {% if title != '' or author != '' or series != '' or tags != '' %}
+        <div class='justify-center pt-3'>
+            {% if title != '' %}
+                <div class="badge badge-pill background--medium-blue">
+                  Title: {{title}} <i class="fa fa-sm fa-times" onclick="removeFilter('Title', '{{title}}')"></i>
+                </div>
+            {% endif %}
+            {% if author != '' %}
+                <div class="badge badge-pill background--medium-blue">
+                  Author: {{author}} <i class="fa fa-sm fa-times" onclick="removeFilter('Author', '{{author}}')"></i>
+                </div>
+            {% endif %}
+            {% if series != '' %}
+                {% assign series = series | Split:',' %}
+                {% for s in series %}
+                    <div class="badge badge-pill background--medium-blue">
+                      Series: {{s}} <i class="fa fa-sm fa-times" onclick="removeFilter('Series', '{{s}}')"></i>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            {% if tags != '' %}
+                {% assign tags = tags | Split:',' %}
+                {% for t in tags %}
+                    <div class="badge badge-pill background--medium-blue">
+                      Tag: {{t}} <i class="fa fa-sm fa-times" onclick="removeFilter('Tags', '{{t}}')"></i>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% endif %}
+    <div class='justify-center pt-3'>
+        <div class='search-input'>
+            <input id="txtSearchBox" type="text" placeholder="Find Something Else..." />
+            <i class='fa fa-search' onclick="search()"></i>
+            <i class="fa fa-sliders-h" onclick="openModal()"></i>
+        </div>
+    </div>
+{% endif %}
+
+{% include "~/Themes/ACrossingExternal/Assets/Lava/Resources/WatchSearchResult.lava" %}
+{% include "~/Themes/ACrossingExternal/Assets/Lava/Resources/ListenSearchResult.lava" %}
+{% include "~/Themes/ACrossingExternal/Assets/Lava/Resources/ReadSearchResult.lava" %}
+
+{% if staffCt > 0 %}
+    <a href="/Staff"><h2 class='text-center py-custom-2x'>Staff</h2></a>
+    <div class="row row-equal-height">
+        {% for i in Staff %}
+            <div class='col col-xs-12 col-md-4 text--centered staff-result'>
+                <img src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'Person','FullName'}}" style="width: 100%;"/>
+                <br/><br/>
+                <h3>{{i | Attribute:'Person','FullName' }}</h3>
+                <h4>{{i | Attribute:'Person','Object' | Attribute:'Position'}}</h4>
+                <span class='hover text--accent' data-toggle="modal" data-target="#modal_{{i.Id}}">Learn More <i class='fa fa-chevron-circle-right'></i></span>
+            </div>
+            <div class='modal fade' id='modal_{{i.Id}}' tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class='row'>
+                                <div class='col col-xs-12 col-md-5 justify-center'>
+                                    <img src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'Person','FullName'}}" style="width: 100%;"/>
+                                </div>
+                                <div class='col col-xs-12 col-md-7'>
+                                    <h1>{{i | Attribute:'Person','FullName' }}</h1>
+                                    <span class='floating--title text--accent text--upper'>Title</span>
+                                    <p>{{i | Attribute:'Person','Object' | Attribute:'Position'}}</p>
+                                    <span class='floating--title text--accent text--upper'>Contact Info</span>
+                                    <p><a href="mailto:{{i | Attribute:'Person','Email' }}">{{i | Attribute:'Person','Email' }}</a></p>
+                                    <span class='floating--title text--accent text--upper'>Bio</span>
+                                    <p>{{i.Content}}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <script>
+        $(document).ready(() => {
+            $('.staff-result').each((idx, el) => {
+                $(el).delay(100*idx).fadeIn(350)
+            })
+        })
+    </script>
+{% endif %}
+
+{% if eventCt > 0 %}
+    <a href="/Events"><h2 class='text-center py-custom-2x'>Events</h2></a>
+    <div class="d-none d-md-flex row row-equal-height event-results">
+        {% for e in Events %}
+            <div class="col col-xs-2 col-md-4 text-center event-result">
+                <a href="/Events/Detail?EventOccurrenceId={{e.EventItemOccurrences[0].Id}}" target="_blank">
+                    {% assign img = e | Attribute:'AlternateEventCardImage' %}
+                    <img src="{% if img != '' %}{{img}}{% else %}{{e.Photo.Url}}{% endif %}" class="w-100" alt="{{e.Name}}"/>
+                    <h3>{{e.Name}}</h3>
+
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="d-block d-md-none event-results">
+        {% for e in Events %}
+            <a href="/Events/Detail?EventOccurrenceId={{e.EventItemOccurrences[0].Id}}" target="_blank" class="event-result">
+                <div class="row d-flex" style="align-items: center;">
+                    <div class="pr-0 col-xs-3">
+                        {% assign img = e | Attribute:'AlternateEventCardImage' %}
+                        <img src="{% if img != '' %}{{img}}{% else %}{{e.Photo.Url}}{% endif %}" class="w-100" alt="{{e.Name}}"/>
+                    </div>
+                    <div class="col-xs-9">
+                        <h3>{{e.Name}}</h3>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    <script>
+        $(document).ready(() => {
+            $('.event-results').each((index, parent) => {
+                $(parent.children).each((idx, el) => {
+                    $(el).delay(100*idx).fadeIn(350)
+                })
+            })
+        })
+    </script>
+{% endif %}
+{% if pageCt > 0 %}
+    <h2 class='text-center py-custom-2x'>Pages</h2>
+    <div class="row row-equal-height">
+        {% for p in Pages %}
+            <div class="col col-xs-12 col-md-4">
+                <a href="{{p.PageRoutes[0].Route}}" target="_blank">
+                    <h3>{{p.PageTitle}}</h3>
+                    <hr/>
+                    {{p.Description}}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<style>
+    .event-result, .staff-result {
+        display: none;
+    }
+    @media screen and (min-width: 1024px) {
+        .modal {
+            width: 80% !important;
+            margin-left: -40% !important;
+        }
+    }
+    .modal-content {
+        border-bottom: 23px solid #5F9BAC;
+    }
+    .modal {
+        border-radius: 4px 4px 6px 6px;
+    }
+    .floating--title {
+        font-weight: bold;
+    }
+    .img-wrapper img {
+        width: 100%;
+    }
+    .img-wrapper {
+        position: relative;
+        max-height: 194px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+    .type-icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: #222;
+        color: #fff;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 25px;
+        border-radius: 50%;
+        margin: 6px;
+        box-shadow: 2px 6px 8px rgb(0, 0, 0, 0.2);
+    }
+    .search-input {
+        width: 100%;
+        max-width: 300px;
+        margin: 35px auto 0;
+        border-radius: 30px;
+        border: 2px solid #1B3142;
+        padding: 6px;
+    }
+    .fa {
+        cursor: pointer;
+    }
+    .search-input input, .search-input input:focus {
+        border: none;
+        width: 85%;
+        outline:0px !important;
+        -webkit-appearance:none;
+        box-shadow: none !important;
+    }
+    .badge-pill {
+        margin: 4px;
+        font-size: 14px;
+    }
+</style>

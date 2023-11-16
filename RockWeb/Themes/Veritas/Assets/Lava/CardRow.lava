@@ -1,0 +1,22 @@
+<div class="py-custom-2x">
+    <div class="row row-equal-height">
+        {% for Item in Items %}
+            <div class="col col-xs-12 col-md-4">
+                <div class='card--custom card-with-button'>
+                    <img src="{{Item | Attribute:'Image'}}" style="width: 100%;"/>
+                    <div class='card-body'>
+                        <h3>{{Item | Attribute:'Heading'}}</h3>
+                        {{Item.Content}}
+                    </div>
+                    <br/>
+                </div>
+                <div class='link-wrapper text--centered'>
+                    {% assign btns = Item | Attribute:'Buttons' | FromJSON %}
+                    {% for btn in btns %}
+                        <a class='btn btn-primary' {% if btn.Target != 'Same Tab' %}target="_blank"{% endif %} href="{{btn.Link}}">{{btn.Text}}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

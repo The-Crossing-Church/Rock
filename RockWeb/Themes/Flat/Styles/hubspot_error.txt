@@ -1,0 +1,96 @@
+___________________________
+Curennt Id: 22079
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 37611
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 26350
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 40415
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 26550
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 16946
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 22079
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 37611
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 26350
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 40415
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 26550
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)
+___________________________
+Curennt Id: 16946
+Message: Object reference not set to an instance of an object.
+Stack:    at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.<>c__DisplayClass1_2.<Execute>b__5(GroupMember m)
+   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
+   at System.Collections.Generic.List`1..ctor(IEnumerable`1 collection)
+   at System.Linq.Enumerable.ToList[TSource](IEnumerable`1 source)
+   at org.crossingchurch.HubspotIntegration.Jobs.HubspotIntegration.Execute(IJobExecutionContext context)

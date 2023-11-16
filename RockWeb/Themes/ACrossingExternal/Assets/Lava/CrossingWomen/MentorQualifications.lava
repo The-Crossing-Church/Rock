@@ -1,0 +1,22 @@
+﻿<div class='d-none d-md-block pb-custom-2x'>
+    <div class='row'>
+        {% assign ct = Items | Size %}
+        {% assign colSize = 12 | DividedBy:ct %}
+        {% for item in Items %}
+            <div class='col col-xs-{{colSize}}'>
+                <b>{{item | Attribute:'Question'}}</b> <br/>
+                {{item.Content}}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+<div class='d-block d-md-none'>
+    {[ tccaccordion accname:'mentor-faq' ]}
+        {% for item in Items %}
+            {% assign title = item | Attribute:'Question' %}
+            [[ item title:'{{title}}' ]]
+                {{item.Content}}
+            [[ enditem ]]
+        {% endfor %}
+    {[ endtccaccordion ]}
+</div>

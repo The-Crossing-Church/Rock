@@ -1,0 +1,458 @@
+{% comment %} Add Vue and Vuetify CDN {% endcomment %}
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<link
+  href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css"
+  rel="stylesheet"
+/>
+<link
+  href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css"
+  rel="stylesheet"
+/>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+  integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+  crossorigin="anonymous"
+></script>
+
+
+<div id="app" style="width: 100%">
+  <v-app>
+    <div>
+      <v-row>
+        <v-col cols="12" class="justfy-center">
+          <div class='search-input'>
+            <v-input dense append-icon="mdi-magnify" @click:append="loadDates(date)" >
+              <input id="txtSearchCal" type="text" v-model="search" placeholder="Search Events..." />
+            </v-input>
+          </div>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" class="text--centered">
+          <v-dialog
+            ref="audMenu"
+            v-model="audMenu"
+            transition="scale-transition"
+            offset-y
+            attach
+            max-width="290px"
+            min-width="auto"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <div v-on="on" v-bind="attrs" style="font-size: 1.5rem;">
+                <template v-if="audience == ''">
+                  {% raw %}<strong>Filter Events by Ministry</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
+                </template>
+                <template v-else>
+                  <strong>{% raw %}{{formatList(audience)}}{% endraw %} Events</strong><v-icon>mdi-menu-down</v-icon>
+                </template>
+              </div>
+            </template>
+            <v-list>
+              <v-list-item>
+                <v-btn icon small color="secondary" @click="audMenu = false;" absolute right><v-icon>mdi-close</v-icon></v-btn>
+              </v-list-item>
+              <v-list-item v-for="a in audiences" class='hover' :key="a.Id" @click="toggleAudience(a.Value)">
+                <v-list-item-icon>
+                    <v-icon v-if="audience.includes(a.Value)">mdi-check</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  {% raw %}{{a.Value}}{% endraw %}
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item>
+                <v-btn color="secondary" v-if="audience.length > 0" @click="audience = []; audMenu = false;">Clear All</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn color="accent" @click="audMenu = false;">Filter</v-btn>
+              </v-list-item>
+            </v-list>
+          </v-dialog>
+        </v-col>
+      </v-row>
+      <v-row style="margin-bottom: 2px;">
+        <v-col>
+          <v-btn color="secondary" small class="pull-left" fab @click="prevMonth">
+            <v-icon>mdi-chevron-left</v-icon>
+          </v-btn>
+        </v-col>
+        <v-col class='text--centered' style="min-width: 175px;">
+          <v-dialog
+            ref="menu"
+            v-model="menu"
+            :close-on-content-click="false"
+            transition="scale-transition"
+            offset-y
+            attach
+            max-width="290px"
+            min-width="auto"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <div v-on="on" v-bind="attrs" style="font-size: 1.5rem;">
+                {% raw %}<strong>{{date | month}}</strong><v-icon>mdi-menu-down</v-icon>{% endraw %}
+              </div>
+            </template>
+            <v-date-picker
+              v-model="date"
+              no-title
+              type="month"
+              @input="menu = false"
+            >
+            </v-date-picker>
+          </v-dialog>
+        </v-col>
+        <v-col>
+          <v-btn color="secondary" small class="pull-right" fab @click="nextMonth">
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-btn>
+        </v-col>
+      </v-row>
+      <v-calendar
+        ref="calendar"
+        v-model="focus"
+        color="primary"
+        :events="events"
+        type="month"
+        @click:event="openEvent"
+        width="100%"
+      >
+        <template v-slot:event="{event}">
+          {% raw %}<div data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" :title="event.name" data-trigger="hover" :data-content="summary(event.description)" @click="openEvent(event)"><strong>{{event.name}}</strong></div>{% endraw %}
+        </template> 
+      </v-calendar>
+      <div class='d-none d-md-block' style="position: relative;">
+        <v-dialog
+          max-width="350px"
+          v-model="popover"
+        >
+          <v-card
+            color="grey lighten-4"
+            min-width="350px"
+            absolute
+            top
+          >
+            <v-card-text>
+              <span style="font-size: 14px; font-weight: bold;" v-html="selectedEvent.name"></span><br/>
+              <span v-html="selectedEvent.time"></span>
+              <v-row>
+                <v-col cols="6">
+                    <v-img max-width="150px" :src="selectedEvent.photo"/>
+                </v-col>
+                <v-col cols="6">
+                    <div id="summary" v-html="summary(selectedEvent.description)"></div>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+      </div>
+      <div class='d-block d-md-none' v-if="focus">
+        <h4 v-if="focusEvents.length > 0">Events for {% raw %}{{ focus | longDate }}{% endraw %}</h4>
+        <h5 v-else style='text-align: center;'>There are no events on {% raw %}{{ focus | longDate }}{% endraw %}</h5>
+        <v-row v-for="(e, idx) in focusEvents" :key="idx">
+          <v-col>
+            <v-card>
+              <v-card-text>
+                {% raw %}
+                  <strong>{{e.name}}</strong>
+                  <v-row>
+                    <v-col cols="6">
+                      <v-img :src="e.photo" />
+                    </v-col>
+                    <v-col cols="6" v-html="e.time">
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col id="mobile-summary" v-html="summary(e.description)">
+                    </v-col>
+                  </v-row>
+                  <a :href="e.link">More Details</a>
+                {% endraw %}
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+    </div>
+  </v-app>
+</div>
+
+<script>
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        new Vue({
+            el: "#app",
+            vuetify: new Vuetify({
+                theme: {
+                    themes: {
+                        light: {
+                            primary: "#347689",
+                            secondary: "#3D3D3D",
+                            accent: "#8ED2C9",
+                        },
+                    },
+                },
+                iconfont: "mdi",
+            }),
+            config: {
+                devtools: true,
+            },
+            data: {
+                events: [],
+                focus: '',
+                menu: false,
+                selectedEvent: {},
+                selectedElement: null,
+                date: '',
+                search: '',
+                popover: false,
+                audience: [],
+                audiences: {{Audiences | Sort:'Value' | ToJSON }},
+                audMenu: false
+            },
+            created() {
+                const self = this
+                this.loadEvents()
+                this.date = moment().format('YYYY-MM')
+                let query = new URLSearchParams(window.location.search)
+                let sd = query.get("Start")
+                let s = query.get("Search")
+                let a = query.get("aud")
+                if(sd) {
+                  this.focus = sd
+                  this.date = moment(sd).format('YYYY-MM')
+                }
+                if(s) {
+                  this.search = s
+                }
+                if(a) {
+                  if(a.includes(",")) {
+                    this.audience = a.split(",")
+                  } else {
+                    this.audience.push(a)
+                  }
+                }
+                window.addEventListener('keyup', function (e) {
+                    if (e.keyCode == 13) {
+                        e.preventDefault()
+                        var search = document.getElementById('txtSearchCal');
+                        if (document.activeElement === search) {
+                            self.loadDates(self.date)
+                        }
+                    }
+                });
+            },
+            mounted() {
+            },
+            computed: {
+                focusEvents() {
+                  return this.events.filter(e => {
+                    return moment(e.start).format('YYYY-MM-DD') == this.focus
+                  })
+                },
+                keymap() {
+                  return {
+                    'enter': this.searchKey(this.date)
+                  }
+                }
+            },
+            methods: {
+                loadEvents(){
+                    let events = []
+                    {% for eventItemOccurrence in EventItemOccurrences %}
+                    events.push({
+                        name: `{{ eventItemOccurrence.Name }}`,
+                        start: moment("{{ eventItemOccurrence.Date | Date: 'yyyy-MM-dd' }} {{ eventItemOccurrence.Time }}", 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
+                        end: moment("{{ eventItemOccurrence.Date | Date: 'yyyy-MM-dd' }} {{ eventItemOccurrence.EndTime }}", 'YYYY-MM-DD hh:mm a').format('YYYY-MM-DDTHH:mm'),
+                        link: '{{ DetailsPage }}?EventOccurrenceId={{ eventItemOccurrence.EventItemOccurrence.Id }}',
+                        photo: '{{ eventItemOccurrence.PhotoPath }}',
+                        description: `{{ eventItemOccurrence.Description }}`,
+                        time: "{{ eventItemOccurrence.Date | Date: 'MMMM d' }} {{ eventItemOccurrence.Time }} - {{ eventItemOccurrence.EndTime }}",
+                    })
+                    {% endfor %}
+                    this.events = events
+                },
+                showEvent(e){
+                  this.selectedEvent= e
+                  this.popover = true
+                },
+                hideEvent(){
+                  this.popover = false
+                  this.selectedEvent = {}
+                },
+                openEvent(event){
+                  window.open(event.link,"_self")
+                },
+                summary(str){
+                    if(str) {
+                        return str.substring(0, 200) + '...'
+                    }
+                    return ''
+                },
+                loadDates(dt) {
+                  $('#updateProgress').show();
+                  if(dt.length < 10) {
+                    dt += '-01'
+                  }
+                  let params = "Start=" + dt
+                  if(this.search) {
+                    params += "&Search=" + this.search
+                  }
+                  if(this.audience && this.audience.length > 0) {
+                    params += "&aud=" + this.audience
+                  }
+                  document.location.search = params
+                },
+                nextMonth() {
+                    let dt = moment()
+                    if(this.focus) {
+                        dt = this.focus
+                    }
+                    this.focus = moment(dt).add(1, 'month').format('yyyy-MM-01')
+                },
+                prevMonth() {
+                    let dt = moment()
+                    if(this.focus) {
+                        dt = this.focus
+                    }
+                    this.focus = moment(dt).subtract(1, 'month').format('yyyy-MM-01')
+                },
+                searchKey(val) {
+                  let query = new URLSearchParams(window.location.search);
+                  let sd = query.get("Start");
+                  if(!sd || sd.substring(0,7) != val.substring(0,7)){
+                    this.loadDates(val)
+                  }
+                },
+                toggleAudience(val) {
+                  if(this.audience.includes(val)) {
+                    let idx = this.audience.indexOf(val)
+                    this.audience.splice(idx, 1)
+                  } else {
+                    this.audience.push(val)
+                  }
+                },
+                formatList(val) {
+                  if(val.length > 1 && val.length < 3) {
+                    return val.join(" and ")
+                  } else if(val.length > 2) {
+                    let str = val.join(", ")
+                    let idx = str.lastIndexOf(",")
+                    return str.substring(0, idx + 1) + " and" + str.substring(idx + 1, str.length)
+                  }
+                  return val[0]
+                }
+            },
+            filters: {
+              longDate(val) {
+                return moment(val).format('MMMM D')
+              },
+              month(val) {
+                return moment(val).format('MMMM')
+              }
+            },
+            watch: {
+                focus(val) {
+                  let query = new URLSearchParams(window.location.search);
+                  let sd = query.get("Start");
+                  if(!sd || sd.substring(0,7) != val.substring(0,7)){
+                    this.loadDates(val)
+                  }
+                },
+                date(val) {
+                  let query = new URLSearchParams(window.location.search);
+                  let sd = query.get("Start");
+                  if(!sd || sd.substring(0,7) != val.substring(0,7)){
+                    this.loadDates(val)
+                  }
+                },
+                audMenu(val) {
+                  //On menu close
+                  if(!val) {
+                    let query = new URLSearchParams(window.location.search);
+                    let sd = query.get("aud");
+                    if(!sd || sd != this.audience.join()){
+                      this.loadDates(this.date)
+                    }
+                  }
+                }
+            }
+        });
+        $('[data-toggle="popover"]').popover();
+    });
+</script>
+<style>
+#summary p, #mobile-summary p {
+  font-size: 12px !important;
+}
+.v-application--wrap {
+  height: fit-content;
+  min-height: 500px !important;
+}
+.container {
+    padding: 0px 15px;
+}
+.search-input, .audience-input>.v-input>.v-input__control>.v-input__slot {
+    width: 100%;
+    border-radius: 30px;
+    border: 2px solid #1B3142;
+    padding: 6px;
+    margin: auto;
+}
+.audience-input {
+    margin: auto; 
+}
+.search-input input, .search-input input:focus {
+    border: none; 
+    width: 90%;
+    outline:0px !important;
+    -webkit-appearance:none;
+    box-shadow: none !important;
+}
+.search-input .v-input {
+    align-items: center;
+}
+.search-input .v-input .v-input__control .v-input__slot {
+    margin: 0px;
+}
+.search-input .v-input .v-input__control .v-messages {
+    display: none;
+}
+.audience-input>.v-input>.v-input__control>.v-input__slot:before,
+.audience-input>.v-input>.v-input__control>.v-input__slot:after {
+    border-style: none;
+}
+.audience-input>.v-input>.v-input__control>.v-input__slot>.v-select__slot>.v-label.v-label--active {
+    display: none;
+}
+{% comment %}
+.audience-input>.v-input>.v-input__control>.v-input__slot label {
+    right: 25px !important;
+    left: auto !important;
+}
+{% endcomment %}
+@media (min-width: 1201px) {
+    .search-input, .audience-input {
+        max-width: 300px;
+    }
+    .pull-md-left {
+        float: left;
+    }
+}
+@media (min-width: 576px) {
+    .pull-md-right {
+        float: right;
+    }
+}
+.v-application, .popover {
+    font-family: "museo-sans";
+}
+.theme--light.v-label {
+    color: rgba(0,0,0,.4);
+    font-weight: normal;
+}
+.v-dialog__content--active {
+  z-index: 2000 !important; 
+}
+</style>

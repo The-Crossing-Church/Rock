@@ -1,0 +1,31 @@
+﻿{% assign ct = Items | Size %}
+{% if ct > 0 %}
+    {[ rescarousel carouselid:'resources' ]}
+        [[ title ]]
+            Recommended Resources
+        [[ endtitle ]]
+            {% for i in Items %}
+                {% assign featuredRange = i | Attribute:'FeatureDates' %}
+                {% assign featuredStart = i | Attribute:'FeatureDates' | Split:' to ' | First %}
+                {% assign featuredEnd = i | Attribute:'FeatureDates' | Split:' to ' | Last %}
+                {% assign today = 'Now' | Date:'MM/dd/yyyy' %}
+                {% if featuredRange != '' %}
+                    {% assign isFeatured = today | DateIsBetween:featuredStart,featuredEnd %}
+                    {% if isFeatured == true %}
+                        [[ item ]]
+                            <a href="/Ministry/Counseling/Resources/{{i.PrimarySlug}}">
+                                <div style="padding: 8px">
+                                  <div class='img-wrapper'>
+                                    <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                                  </div>
+                                  <h4>{{i.Title}}</h4>
+                                </div>
+                            </a>
+                        [[ enditem ]]
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        [[ button text:'Explore All' url:'/Ministry/Counseling/Resources' color:'primary' ]]
+        [[ endbutton ]]
+    {[ endrescarousel ]}
+{% endif %}

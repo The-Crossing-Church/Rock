@@ -1,0 +1,56 @@
+﻿{% assign firstSvc = 'Global' | Attribute:'ServiceTimes' | Split:',' | First %}
+{% if modalid == '' or modalid == null %}
+    {% assign modalid = 'modal' %}
+{% endif %}
+{% if accname == '' or accname == null %}
+    {% assign accname = 'acc' %}
+{% endif %}
+<br/>
+<div class='text--centered'>
+    <a class='btn btn-primary'data-toggle="modal" data-target="#{{modalid}}">What Can I Expect?</a>
+</div>
+{[ modal modalid:'{{modalid}}' ]}
+    [[ title hasClose:'true' ]]
+        What Can I Expect?
+    [[ endtitle ]]
+    {[ tccaccordion accname:'{{accname}}' disablescroll:'true' ]}
+        {% for item in Items %}
+            {% assign title = item | Attribute:'AccordionHeader' %}
+            [[ item title:'{{title}}' ]]
+                {{item.Content | Replace:'##FIRST_SERVICE##',firstSvc}}
+            [[ enditem ]]
+        {% endfor %}
+            [[ item title:'Staff' ]]
+                Get to know our staff team, and contact us if we can help connect you to what God is doing in Crossing Students!
+                {% contentchannelitem where:'ContentChannelId == 22' %}
+                    {% assign staff = contentchannelitemItems | OrderBy:'Order' %}
+                    <div class='row row-equal-height'>
+                        {% for i in staff %}
+                            {% assign ministry = i | Attribute:'Ministry' %}
+                            {% if i.ExpireDateTime == null %}
+                                {% assign isActive = true %}
+                            {% else %}
+                                {% assign isActive = 'Now' | Date | DateIsBetween:i.StartDateTime,i.ExpireDateTime %}
+                            {% endif %}
+                            {% if ministry contains 'Crossing Students' and isActive %}
+                                <div class='col col-xs-6 col-md-3 text--centered'>
+                                    <a href="/Staff/Crossing%20Students?Person={{i.Id}}">
+                                        <img src="{{i | Attribute:'Image'}}" style="width: 100%;" /> <br/>
+                                        <b>{{i | Attribute:'Person','FullName'}}</b><br/>
+                                        {{i | Attribute:'Person','Object' | Attribute:'Position' }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endcontentchannelitem %}
+            [[ enditem ]]
+    {[ endtccaccordion ]}
+{[ endmodal ]}
+
+<style>
+    .tcc-modal.modal-lg {
+        width: 900px;
+        margin-left: -450px;
+    }
+</style>

@@ -1,0 +1,28 @@
+﻿<h2 class="text--centered py-custom-2x">MENTOR FRIENDSHIPS</h2>
+<div class='justify-center mentor-slider'>
+    {[ imgslider sliderid:'mentor-friendship-slider' containerclass:'wbs-slider-wrapper']}
+        {% for i in Items %}
+            [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]
+            [[ slide ]]
+                <div class='img-wrapper'>
+                    <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'ImageAltText'}}"/>
+                </div>
+            [[ endslide ]]
+        {% endfor %}
+    {[ endimgslider ]}
+</div>
+<style>
+    .mentor-slider .wbs-slider-wrapper {
+        max-width: 60%;
+    }
+    @media only screen and (max-width: 991px) {
+        .mentor-slider .wbs-slider-wrapper {
+            max-width: 80%;
+        }
+    }
+    @media only screen and (max-width: 576px) {
+        .mentor-slider .wbs-slider-wrapper {
+            max-width: 100%;
+        }
+    }
+</style>

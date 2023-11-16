@@ -1,0 +1,42 @@
+﻿{% assign SortedItems = '[]' | FromJSON %}
+{% assign rhythm = Items | Where:'Series','Rhythm' | First %}
+{% assign SortedItems = SortedItems | AddToArray:rhythm %}
+{% assign tmbt = Items | Where:'Series','Ten Minute Bible Talks' | First %}
+{% assign SortedItems = SortedItems | AddToArray:tmbt %}
+{% assign weeds = Items | Where:'Series','With You in the Weeds' | First %}
+{% assign SortedItems = SortedItems | AddToArray:weeds %}
+{% assign placed = Items | Where:'Series','Placed For A Purpose' | First %}
+{% assign SortedItems = SortedItems | AddToArray:placed %}
+{% assign abl = Items | Where:'Series','Christian Meditation for A Bigger Life' | First %}
+{% assign SortedItems = SortedItems | AddToArray:abl %}
+{% assign goingThere = Items | Where:'Series','Going There' | First %}
+{% assign SortedItems = SortedItems | AddToArray:goingThere %}
+{% assign Items = SortedItems %}
+{% for s in Items %}
+    {% assign classname = '' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey full-width' %}
+    {% endif %}
+    {[ carousel containerclass:'{{classname}}' carouselid:'watch{{forloop.index0}}' itemheight:'315' ]}
+        [[ title ]]
+            {{s.Series}}
+        [[ endtitle ]]
+        {% for i in s.Items %}
+            [[ item ]]
+                {% assign sub = i | Attribute:'Subseries' %}
+                <a href="/Resources/Listen/{{ i | Attribute:'Series'}}/{% if sub != '' %}{{ sub }}/{% endif %}{{i.PrimarySlug}}">
+                    <div style="padding: 8px">
+                        <div class='img-wrapper'>
+                            <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                        </div>
+                        <h4>{{i.Title}}</h4>
+                        <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                    </div>
+                </a>
+            [[ enditem ]]
+        {% endfor %}
+        {% capture url %}/Resources/Listen/{{s.Series}}{% endcapture %}
+        [[ button url:'{{url}}' text:'Explore All' ]][[endbutton ]]
+    {[ endcarousel ]}
+{% endfor %}

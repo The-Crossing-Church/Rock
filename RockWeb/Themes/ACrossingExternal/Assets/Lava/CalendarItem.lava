@@ -1,0 +1,138 @@
+<div class="row">
+  <div class="col col-xs-12 col-md-7">
+    {% if Event.Photo.Guid %}
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
+    {% endif %}
+  </div>
+  <div class="col col-xs-12 col-md-5">
+    <span class="floating-event-title">Event</span> <br />
+    <h1>{{ Event.Name }}</h1>
+    {% assign scheduledDates = EventItemOccurrence.Schedule.iCalendarContent | DatesFromICal:'all' %}
+    {% assign numDates = scheduledDates | Size %}
+    {% if numDates > 0 %}
+    <span class="floating-event-title">Date/Time</span> <br />
+    <ul class="list-unstyled">
+      {% if numDates > 1 %}
+        {{scheduledDates | First | Date:'dddd, MMMM d, yyyy'}} - {{ scheduledDates | Last | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
+      {% else %}
+        {{ scheduledDates | First | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
+      {% endif %}
+      {% comment %} {% for scheduledDate in scheduledDates %}
+      <li>
+        {{ scheduledDate | Date:'dddd, MMMM d, yyyy @ h:mm tt' }}
+      </li>
+      {% endfor %} {% endcomment %}
+    </ul>
+    {% endif %}
+    {% if EventItemOccurrence.Location != '' %}
+    <span class="floating-event-title">Location</span> <br />
+      {{ EventItemOccurrence.Location }}
+    {% endif %}
+    <span class="floating-event-title">Description</span> <br />
+    {{ Event.Description }}
+    <div class="row">
+      <div class="col col-xs-12" style="min-height: 50px; display: flex; align-items: center;">
+      {% if EventItemOccurrence.ContactEmail != '' %}
+        {% if EventItemOccurrence.ContactEmail != '' %}
+          <a href="mailto:{{ EventItemOccurrence.ContactEmail }}" class="btn btn-primary margin-t-md">Contact</a>
+        {% endif %}
+      {% endif %}
+      {% assign eventItemOccurrenceLinkages = EventItemOccurrence.Linkages %}
+      {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+      {% if eventItemOccurrenceLinkagesCount > 0 %}
+        {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+          {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
+          {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+          {% assign showRegistration = true %}
+          {% assign registrationMessage = '' %}
+
+          {% if daysTillStartDate and daysTillStartDate > 0 %}
+            {% assign showRegistration = false %}
+            {% if eventItemOccurrenceLinkagesCount == 1 %}
+              {% capture registrationMessage %}<p>Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+            {% else %}
+              {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+            {% endif %}
+          {% endif %}
+
+          {% if daysTillEndDate and daysTillEndDate < 0 %}
+            {% assign showRegistration = false %}
+              {% if eventItemOccurrenceLinkagesCount == 1 %}
+                {% capture registrationMessage %}<p>Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+              {% else %}
+                {% capture registrationMessage %}<p>Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'dddd, MMMM d, yyyy' }}</p>{% endcapture %}
+              {% endif %}
+          {% endif %}
+
+          {% if showRegistration == true %}
+            {% assign statusLabel = RegistrationStatusLabels[eventItemOccurrenceLinkage.RegistrationInstanceId] %}
+            {% if eventItemOccurrenceLinkagesCount == 1 %}
+              {% assign registrationButtonText = statusLabel %}
+            {% else %}
+              {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
+            {% endif %}
+
+            {% if statusLabel == 'Full' %}
+              {% if eventItemOccurrenceLinkagesCount == 1 %}
+                {% assign registrationButtonText = 'Registration Full' %}
+              {% else %}
+                {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
+              {% endif %}
+              <div class='label label-default text-center margin-t-md' style='display: block; padding: 8px;'>{{ registrationButtonText }}</div>
+            {% else %}
+              {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
+                <a href='{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-md'>{{ registrationButtonText }}</a>
+              {% else %}
+                <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn margin-t-md">{{ registrationButtonText }}</a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12">
+        <script>function fbs_click() { u = location.href; t = document.title; window.open('http://www.facebook.com/sharer.php?u=' + encodeURIComponent(u) + '&t=' + encodeURIComponent(t), 'sharer', 'toolbar=0,status=0,width=626,height=436'); return false; }</script>
+        <script>function ics_click() { text = `{{ EventItemOccurrence.Schedule.iCalendarContent }}`.replace('END:VEVENT', 'SUMMARY: {{ Event.Name }}\r\nLOCATION: {{ EventItemOccurrence.Location }}\r\nEND:VEVENT'); var element = document.createElement('a'); element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text)); element.setAttribute('download', '{{ Event.Name }}.ics'); element.style.display = 'none'; document.body.appendChild(element); element.click(); document.body.removeChild(element); }</script>
+        <ul class="socialsharing">
+          <li>
+            <a href="http://www.facebook.com/share.php?u={{ 'Global' | Page:'Url' | Escape }}" onclick="return fbs_click()" target="_blank" title="" data-original-title="Share via Facebook">
+              <img src="/Content/ExternalSite/Icons/default_facebook.png" style="width: 40px;"/>
+            </a>
+          </li>
+          <li>
+            <a href="http://twitter.com/home?status={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Twitter">
+              <img src="/Content/ExternalSite/Icons/default_twitter.png" style="width: 40px;"/>
+            </a>
+          </li>
+          <li>
+            <a href="mailto:?Subject={{ Event.Name | Escape }}&Body={{ 'Global' | Page:'Url' }}"  title="" data-original-title="Share via Email">
+              <img src="/Content/ExternalSite/Icons/default_email.png" style="width: 40px;"/>
+            </a>
+          </li>
+          <!--<li>
+            <a href="http://twitter.com/home?status={{ 'Global' | Page:'Url' | Escape }}" title="" data-original-title="Share via Instagram">
+              <img src="/Content/ExternalSite/Icons/default_instagram.png" style="width: 40px;"/>
+            </a>
+          </li> -->
+          <li>
+            <a href="" onclick="return ics_click()" title="" data-original-title="Download Event">
+              <img src="/Content/ExternalSite/Icons/default_calendar.png" style="width: 40px;"/>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <style>
+    .floating-event-title {
+    font-size: .75em;
+    color: #054557;
+    text-transform: uppercase;
+    padding: 0 0 3px;
+    border-bottom: 1px solid #1B3142;
+    letter-spacing: 1px;
+    }
+  </style>
+</div>

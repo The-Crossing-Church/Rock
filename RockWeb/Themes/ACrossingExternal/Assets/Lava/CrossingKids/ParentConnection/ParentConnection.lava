@@ -1,0 +1,154 @@
+<div class='row row-equal-height justify-center pt-custom-2x'>
+    <div class='col col-xs-6 justify-center'>
+        <a onclick="showContent('EC')" id="EarlyChildhoodBtn" class="card--custom card-with-button text--centered hover" style="width: 100%;">
+            <img class='d-none d-md-block' alt="Early Childhood" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Early_Childhood_Wide.png"/>
+            <img class='d-block d-md-none' alt="Early Childhood" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Early_Childhood_Tall.png"/>
+        </a>
+    </div>
+    <div class='col col-xs-6 justify-center'>
+        <a onclick="showContent('E')" id="ElementaryBtn" class="card--custom card-with-button text--centered hover" style="width: 100%;">
+            <img class='d-none d-md-block' alt="Elementary" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Elementary_Wide.png"/>
+            <img class='d-block d-md-none' alt="Elementary" src="https://rock.thecrossingchurch.com/Content/Crossing%20Kids/Parent%20Connection/CK-Elementary_Tall.png"/>
+        </a>
+    </div>
+</div>
+<br/>
+<div class="collapse" id="EarlyChildhood">
+    <div class="card--custom">
+        <ul class="nav nav-tabs justify-center center-mobile">
+            <li class="nav-item active" role="presentation">
+                <a class="nav-link active btn btn-accent" href="#ToddlerBlue" aria-controls="ToddlerBlue" role="tab" data-toggle="tab" aria-expanded="true">Toddler Blue</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#ToddlerGreenPSPurple" aria-controls="ToddlerGreenPSPurple" role="tab" data-toggle="tab">Toddler Green/Preschool Purple</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#PSOrangePSRed" aria-controls="PSOrangePSRed" role="tab" data-toggle="tab">Preschool Orange/Preschool Red</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="ToddlerBlue">
+                <div class='py-custom-2x'>
+                    {% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/ToddlerBlue.lava' Item:crossingkidssundaycurriculumtoddlerblueItem %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="ToddlerGreenPSPurple">
+                <div class='py-custom-2x'>
+                    {% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/ToddlerGreenPsPurpleMonth.lava' Item:crossingkidssundaycurriculumtoddlergreenpreschoolpurplemonthItem %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="PSOrangePSRed">
+                <div class='py-custom-2x'>
+                    {% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/PreschoolOrangeRedMonth.lava' Item:crossingkidssundaycurriculumpreschoolorangeredmonthItem %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="collapse" id="Elementary">
+    <div class="card--custom">
+        <ul class="nav nav-tabs justify-center center-mobile">
+            <li class="nav-item active" role="presentation">
+                <a class="nav-link active btn btn-accent" href="#KFirst" aria-controls="KFirst" role="tab" data-toggle="tab" aria-expanded="true">Kindergarten/1st Grade</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#SecThird" aria-controls="SecThird" role="tab" data-toggle="tab">2nd Grade/3rd Grade</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link btn btn-accent" href="#FourFive" aria-controls="FourFive" role="tab" data-toggle="tab">4th Grade/5th Grade</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="KFirst">
+                <div class='py-custom-2x'>
+                    {% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/KFirstUnit.lava' Item:crossingkidssundaycurriculumelementarykfirstunitItem %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="SecThird">
+                <div class='py-custom-2x'>
+                    {% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/SecondThirdUnit.lava' Item:crossingkidssundaycurriculumelementarysecondthirdunitItem %}
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="FourFive">
+                <div class='py-custom-2x'>
+                    {% include '~/Themes/ACrossingExternal/Assets/Lava/CrossingKids/ParentConnection/FourthFifthUnit.lava' Item:crossingkidssundaycurriculumelementaryfourthfifthunitItem %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br/><br/>
+
+<script>
+    function showContent(content) {
+        if(content == 'EC') {
+            $('#Elementary').slideUp()
+            $('#EarlyChildhood').slideDown()
+        } else {
+            $('#EarlyChildhood').slideUp()
+            $('#Elementary').slideDown()
+        }
+    }
+</script>
+
+<style>
+    #accordion div .expand-header a {
+      min-height: 40px;
+      padding: 8px;
+    }
+    .nav-tabs li a {
+        display: flex !important;
+        align-items: center;
+        border: none;
+        width: 100%;
+        height: 100%;
+    }
+    .nav-tabs li {
+        margin: 4px;
+        overflow: hidden;
+    }
+    .nav-tabs li.active, #accordion div .expand-header a[aria-expanded="true"]{
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        border: none !important;
+    }
+    .expand-header a {
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+    }
+    .nav-tabs li, .nav-tabs li a, #accordion div .expand-header a {
+      border-radius: 30px;
+    }
+    .nav-tabs {
+      border: none !important;
+    }
+    .nav-tabs li:not(.active) a img, #accordion div .expand-header a[aria-expanded="false"] img{
+      filter: grayscale(100%);
+    }
+    @media only screen and (max-width: 768px) {
+        .center-mobile {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .center-mobile li {
+            width: 100%;
+            display: flex;
+            text-align: center;
+            justify-content: center;
+        }
+        .center-mobile li a {
+            justify-content: center;
+        }
+        .card--custom:not(.card-with-button) {
+            padding: 45px 16px;
+        }
+    }
+</style>
+{% stylesheet compile:'less' import:'_variables.less' %}
+    .nav-item.active .nav-link {
+        border: 2px solid @color-dark-blue !important;
+        background-color: @color-dark-blue !important;
+        color: @color-light-blue !important;
+    }
+{% endstylesheet %}

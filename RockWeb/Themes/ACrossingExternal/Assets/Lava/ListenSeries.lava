@@ -1,0 +1,49 @@
+{{ 'Global' | PageParameter:'Series' | SetPageTitle}}
+{% assign pageSer = 'Global' | PageParameter:'Series' %}
+{% assign ct = Items | Size %}
+{% if ct > 1 %}
+    {% for s in Items %}
+        {% assign classname = '' %}
+        {% assign mod = ct | Modulo:2 %}
+        {% if mod > 0 %}
+            {% assign classname = 'background--grey full-width' %}
+        {% endif %}
+        {% assign carouselid = s.Items[0] | Attribute:'Subseries' | Replace:' ','' %}
+        {[ carousel carouselid:'{{carouselid}}' containerclass:'{{classname}}' itemheight:'315' ]}
+            [[ title ]]
+                {{s.Items[0] | Attribute:'Subseries'}}
+            [[ endtitle ]]
+            {% for i in s.Items %}
+                [[ item ]]
+                  <a href="/Resources/Listen/{{pageSer}}/{{i | Attribute:'Subseries'}}/{{i.PrimarySlug}}">
+                    <div style="padding: 8px">
+                        <div class='img-wrapper'>
+                            <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                        </div>
+                        <h4>{{i.Title | Split:':' | First}}</h4>
+                        <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                    </div>
+                  </a>
+                [[ enditem ]]
+            {% endfor %}
+            [[ button url:'/Resources/Listen/Series/{{pageSer}}/{{s.Series}}' text:'Explore All' ]][[ endbutton ]]
+        {[ endcarousel ]}
+    {% endfor %}
+{% else %}
+    <h1 class="text--centered py-custom-2x">{{pageSer}}</h1>
+    <div class='row row-equal-height'>
+        {% for i in Items[0].Items %}
+            <div class='col col-xs-12 col-md-4 text--centered'>
+                <a href="/Resource/Listen/{{i.PrimarySlug}}">
+                    <img src="{{i | Attribute:'Image'}}" width="100%" alt="{{i.Title}}" />
+                    <h4>{{i.Title}}</h4>
+                    {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+    <br/>
+    <div class='text--centered'>
+        <a class='btn btn-primary' href="/Resources/Listen/Series/{{pageSer}}/{{Items[0].Series}}">Explore All</a>
+    </div>
+{% endif %}

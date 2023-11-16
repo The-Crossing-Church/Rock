@@ -1,0 +1,19 @@
+{[ carousel carouselid:'read' ]}
+    [[ title ]]
+        Read
+    [[ endtitle ]]
+    {% for post in Posts %}
+        [[ item ]]
+          <div style="padding: 8px;">
+            <a href="{{ post.url }}">
+              <div class='img-wrapper'>
+                <img class="d-block w-100" src="{{ post.featured_image }}" alt="{{ post.name }}" />
+              </div>
+              <h4>{{ post.name }}</h4>
+              <span>{{ post.authorName }}, {{ post.publishDate | Date:'MMMM dd, yyyy' }}</span>
+            </a>
+          </div>
+        [[ enditem ]]
+    {% endfor %}
+    [[ button url:'/Resources/Read' text:'Explore All' ]][[ endbutton ]]
+{[ endcarousel ]}
