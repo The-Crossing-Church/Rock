@@ -78,15 +78,17 @@
 
                         <div class="panel panel-default contribution-personal">
                             <div class="panel-heading">
-                                <h3 class="panel-title">
-                                    <asp:Literal ID="lPersonalInfoTitle" runat="server" />
+                                <div class="panel-title">
                                     <div class="panel-labels">
                                         <asp:PlaceHolder ID="phGiveAsOption" runat="server">
                                             <span class="panel-text">Give As &nbsp;</span>
                                             <Rock:Toggle ID="tglGiveAsOption" runat="server" CssClass="pull-right" OnText="Person" OffText="Business" ButtonSizeCssClass="btn-xs" OnCheckedChanged="tglGiveAsOption_CheckedChanged" />
                                         </asp:PlaceHolder>
                                     </div>
-                                </h3>
+                                    <h3 class="pt-4">
+                                        <asp:Literal ID="lPersonalInfoTitle" runat="server" />
+                                    </h3>
+                                </div>
                             </div>
                             <div class="panel-body">
                                 <fieldset>
@@ -95,8 +97,22 @@
 
                                     <asp:PlaceHolder ID="phGiveAsPerson" runat="server">
                                         <Rock:RockLiteral ID="txtCurrentName" runat="server" Label="Name" Visible="false" />
-                                        <Rock:RockTextBox ID="txtFirstName" runat="server" Label="First Name" />
-                                        <Rock:RockTextBox ID="txtLastName" runat="server" Label="Last Name" />
+                                        <div class="row">
+                                            <div class="col col-xs-12 col-md-6">
+                                                <Rock:RockTextBox ID="txtFirstName" runat="server" Label="First Name" />
+                                            </div>
+                                            <div class="col col-xs-12 col-md-6">
+                                                <Rock:RockTextBox ID="txtLastName" runat="server" Label="Last Name" />
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col col-xs-12 col-md-6">
+                                                <Rock:BirthdayPicker ID="pkrBirthDay" runat="server" Label="Date of Birth" Required="true" />
+                                            </div>
+                                            <div class="col col-xs-12 col-md-6">
+                                                <Rock:RockDropDownList ID="ddlGender" runat="server" Label="Gender" />
+                                            </div>
+                                        </div>
                                     </asp:PlaceHolder>
                                     <asp:PlaceHolder ID="phGiveAsBusiness" runat="server" Visible="false">
                                         <asp:HiddenField ID="hfBusinessesLoaded" runat="server" />

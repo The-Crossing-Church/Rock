@@ -1279,7 +1279,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         protected void btnConfirmationNext_Click( object sender, EventArgs e )
         {
             string errorMessage = string.Empty;
-            var person = GetPerson(false);
+            var person = GetPerson( false );
             avcPerson.GetEditValues( person );
             person.SaveAttributeValues();
             //Check Attr Values
@@ -1577,6 +1577,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         {
             var allowImpersonation = GetAttributeValue( AttributeKey.Impersonation ).AsBooleanOrNull() ?? false;
             string personActionId = PageParameter( PageParameterKey.PersonActionIdentifier );
+
+            ddlGender.Required = true;
+            ddlGender.BindToEnum<Gender>( true, new Gender[] { Gender.Unknown } );
 
             if (personActionId.IsNotNullOrWhiteSpace())
             {
@@ -2187,6 +2190,9 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                 var rockContext = new RockContext();
                 var personService = new PersonService( rockContext );
 
+                ddlGender.SelectedValue = ((int) person.Gender).ToString();
+                pkrBirthDay.SelectedDate = person.BirthDate;
+
                 if (DisplayPhone)
                 {
                     var phoneNumber = personService.GetPhoneNumber( person, DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME ) ) );
@@ -2238,6 +2244,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             {
                 txtLastName.Text = string.Empty;
                 txtFirstName.Text = string.Empty;
+                ddlGender.SelectedValue = string.Empty;
+                pkrBirthDay.SelectedDate = null;
                 txtEmail.Text = string.Empty;
                 pnbPhone.CountryCode = PhoneNumber.DefaultCountryCode();
                 pnbPhone.Number = string.Empty;
