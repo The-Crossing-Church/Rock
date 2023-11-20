@@ -107,7 +107,7 @@
                                         </div>
                                         <div class="row">
                                             <div class="col col-xs-12 col-md-6">
-                                                <Rock:BirthdayPicker ID="pkrBirthDay" runat="server" Label="Date of Birth" Required="true" />
+                                                <Rock:BirthdayPicker ID="pkrBirthDay" runat="server" Label="Date of Birth" />
                                             </div>
                                             <div class="col col-xs-12 col-md-6">
                                                 <Rock:RockDropDownList ID="ddlGender" runat="server" Label="Gender" />

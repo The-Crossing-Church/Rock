@@ -604,6 +604,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         #region Fields
 
         private Person _targetPerson = null;
+        private Person _fakePerson = null;
         private FinancialGateway _ccGateway;
         private GatewayComponent _ccGatewayComponent = null;
         private FinancialGateway _achGateway;
@@ -1280,8 +1281,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
         {
             string errorMessage = string.Empty;
             var person = GetPerson( false );
-            avcPerson.GetEditValues( person );
-            person.SaveAttributeValues();
+
             //Check Attr Values
             if (_using3StepGateway)
             {
@@ -1578,7 +1578,6 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             var allowImpersonation = GetAttributeValue( AttributeKey.Impersonation ).AsBooleanOrNull() ?? false;
             string personActionId = PageParameter( PageParameterKey.PersonActionIdentifier );
 
-            ddlGender.Required = true;
             ddlGender.BindToEnum<Gender>( true, new Gender[] { Gender.Unknown } );
 
             if (personActionId.IsNotNullOrWhiteSpace())
@@ -1992,7 +1991,15 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             divBillingAddress.Visible = _ccGatewayComponent != null && _ccGatewayComponent.PromptForBillingAddress( _ccGateway );
 
             avcPerson.IncludedAttributes = GetAttributeValues( AttributeKey.ConfirmationPersonAttributes ).AsGuidList().Select( guid => AttributeCache.Get( guid ) ).ToArray();
-            avcPerson.AddEditControls( person );
+            if (person != null)
+            {
+                avcPerson.AddEditControls( person );
+            }
+            else
+            {
+                _fakePerson = new Person();
+                avcPerson.AddEditControls( _fakePerson );
+            }
         }
 
         #endregion
@@ -2340,7 +2347,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                         !string.IsNullOrWhiteSpace( txtLastName.Text ))
                     {
                         // Same logic as PledgeEntry.ascx.cs
-                        var personQuery = new PersonService.PersonMatchQuery( txtFirstName.Text, txtLastName.Text, txtEmail.Text, pnbPhone.Text.Trim() );
+                        var personQuery = new PersonService.PersonMatchQuery( txtFirstName.Text, txtLastName.Text, txtEmail.Text, pnbPhone.Text.Trim(), ddlGender.SelectedValueAsEnum<Gender>(), pkrBirthDay.SelectedDate );
                         person = personService.FindPerson( personQuery, true );
                     }
 
@@ -2353,6 +2360,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                         person = new Person();
                         person.FirstName = txtFirstName.Text;
                         person.LastName = txtLastName.Text;
+                        person.SetBirthDate( pkrBirthDay.SelectedDate );
+                        person.Gender = ddlGender.SelectedValue.ConvertToEnum<Gender>();
                         person.IsEmailActive = true;
                         person.EmailPreference = EmailPreference.EmailAllowed;
                         person.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
@@ -2377,6 +2386,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             if (create && person != null) // person should never be null at this point
             {
                 person.Email = txtEmail.Text;
+                person.SetBirthDate( pkrBirthDay.SelectedDate );
+                person.Gender = ddlGender.SelectedValueAsEnum<Gender>();
 
                 if (DisplayPhone)
                 {
@@ -2706,6 +2717,16 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                 {
                     errorMessages.Add( "Make sure to enter both a first and last name" );
                 }
+            }
+
+            if (!pkrBirthDay.SelectedDate.HasValue)
+            {
+                errorMessages.Add( "Make sure to enter your birthdate" );
+            }
+
+            if (string.IsNullOrWhiteSpace( ddlGender.SelectedValue ))
+            {
+                errorMessages.Add( "Make sure to enter your gender" );
             }
 
             if (givingAsBusiness && string.IsNullOrWhiteSpace( txtBusinessName.Text ))
@@ -3206,6 +3227,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
 
                 // only create/update the person if they are giving as a person. If they are giving as a Business, the person shouldn't be created this way
                 Person person = GetPerson( !givingAsBusiness );
+                avcPerson.GetEditValues( person );
+                person.SaveAttributeValues();
 
                 // Add contact person if giving as a business and current person is unknown
                 if (person == null && givingAsBusiness)
@@ -3314,6 +3337,8 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
             // only create/update the person if they are giving as a person. If they are giving as a Business, the person record already exists
             bool givingAsBusiness = GetAttributeValue( AttributeKey.EnableBusinessGiving ).AsBoolean() && !tglGiveAsOption.Checked;
             Person person = GetPerson( !givingAsBusiness );
+            avcPerson.GetEditValues( person );
+            person.SaveAttributeValues();
 
             // Add contact person if giving as a business and current person is unknown
             if (person == null && givingAsBusiness)
