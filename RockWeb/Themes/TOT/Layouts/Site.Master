@@ -1,0 +1,119 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" Inherits="Rock.Web.UI.RockMasterPage" %>
+
+<%@ Import Namespace="System.Web.Optimization" %>
+<!DOCTYPE html>
+
+<script runat="server">
+
+    // keep code below to call base class init method
+
+    /// <summary>
+    /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
+    /// </summary>
+    /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
+    protected override void OnInit( EventArgs e )
+    {
+        base.OnInit( e );
+    }
+
+</script>
+
+<html class="no-js">
+    <head runat="server">
+        <meta charset="utf-8">
+        <title></title>
+
+        <script src="<%# ResolveRockUrl("~/Scripts/jquery-1.12.4.min.js" ) %>"></script>
+
+        <!-- Set the viewport width to device width for mobile -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+        <asp:ContentPlaceHolder ID="css" runat="server" />
+
+        <!-- Included CSS Files -->
+        <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>" />
+        <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>" />
+        <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>"></script>
+
+        <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
+
+        <!-- Start of HubSpot Embed Code -->
+        <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js?businessUnitId=137869"></script>
+        <!-- End of HubSpot Embed Code -->
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-XFRBYKLXX6"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag("config", "G-XFRBYKLXX6");
+        </script>
+        <!-- End Google Analytics -->
+    </head>
+    <body runat="server" id="body">
+        <form id="form1" runat="server">
+            <!-- Page Header -->
+            <header>
+                <nav class="navbar navbar-static-top">
+                    <div class="container header-wrapper">
+                        <div class="row w-100">
+                            <div class="col col-xs-12 col-sm-9 col-md-3 d-flex align-center">
+                                <a href="https://choosetruthovertribe.com" target="_blank" style="display: block;">
+                                    <img class="logo" src="/Themes/TOT/Assets/Logos/TOT_Logo_Horizontal_Dark.svg" alt="truth-over-tribe"/>
+                                </a>
+                            </div>
+                            <!-- Main Navigation -->
+                            <div class="col col-xs-12 col-sm-3 col-md-9 justify-right d-flex align-center">
+                                <!--
+                                    <a class="nav-link" href="https://podcast.choosetruthovertribe.com/im-podcast-listing">Podcast</a>
+                                    <a class="nav-link" href="https://choosetruthovertribe.com/book">Book</a>
+                                    <a class="nav-link" href="https://blog.choosetruthovertribe.com/">Blog</a>
+                                    <a class="nav-link" href="https://choosetruthovertribe.com/about">About</a>
+                                -->
+                                <Rock:Zone Name="Navigation" runat="server" />
+                                <Rock:Zone Name="Login" runat="server" />
+                                <!--
+                                    <a class="nav-search">
+                                        <i class="fa fa-search"></i>
+                                    </a>
+                                    <a class="btn btn-primary btn-narrow">Subscribe</a>
+                                    <div class="pull-right">
+                                    </div>
+                                -->
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+            <asp:ContentPlaceHolder ID="feature" runat="server"></asp:ContentPlaceHolder>
+
+            <asp:ContentPlaceHolder ID="main" runat="server"></asp:ContentPlaceHolder>
+            <footer>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <Rock:Zone Name="Footer" runat="server" />
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            <%-- controls for scriptmanager and update panel --%>
+            <asp:ScriptManager ID="sManager" runat="server" />
+            <asp:UpdateProgress ID="updateProgress" runat="server" DisplayAfter="800">
+                <ProgressTemplate>
+                    <div class="updateprogress-status">
+                        <div class="spinner">
+                            <div class="rect1"></div>
+                            <div class="rect2"></div>
+                            <div class="rect3"></div>
+                            <div class="rect4"></div>
+                            <div class="rect5"></div>
+                        </div>
+                    </div>
+                    <div class="updateprogress-bg modal-backdrop"></div>
+                </ProgressTemplate>
+            </asp:UpdateProgress>
+        </form>
+    </body>
+</html>
