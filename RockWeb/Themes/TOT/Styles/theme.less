@@ -1,0 +1,307 @@
+﻿// Load Master Styles
+// -------------------------
+@import "../../../Styles/Bootstrap/variables.less";
+@import "../../../Styles/_rock-core.less";
+@import "../../../Styles/_store.less";
+@import "../../../Styles/_rock-variables.less";
+@import "_variables.less";
+@import "_variable-overrides.less";
+@import "_print.less";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+
+
+/*
+    Rock Theme Styles
+
+    1. HTML Overrides
+    2. Bootstrap Overides
+    3. Theme Styling
+    4. Helper Classes
+    5. Responsive Overrides
+*/
+
+
+// 1. HTML Overrides
+// -------------------------
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+main:not(.container-fluid) {
+  display: block;
+}
+
+body {
+  overflow-x: hidden;
+  font-family: Space Grotesk,sans-serif;
+}
+
+// 2. Bootstrap Overrides
+// -------------------------
+.btn, .btn-primary, .btn-link {
+  border-radius: 7px;
+  border-style: solid !important;
+  font-weight: 700;
+  line-height: 1em;
+  text-align: center !important;
+  text-decoration: none;
+  padding: 23px 25px;
+  border: 0px !important;
+}
+.btn-default:not(.dropdown-toggle) {
+  border: 1px solid @color-primary !important;
+}
+.btn-default:not(.dropdown-toggle):hover {
+  border: 1px solid @color-primary !important;
+}
+.btn-default:not(.dropdown-toggle):active, .btn-default:not(.dropdown-toggle).active, .btn-default:not(.dropdown-toggle).active:hover {
+  background-color: @color-secondary;
+  color: @theme-8-text;
+}
+.btn-accent {
+    background-color: @color-secondary;
+    color: @theme-8-text;
+}
+.btn-accent:hover {
+  background-color: @color-primary !important;
+  color: @theme-8-text;
+}
+.btn-narrow, .btn-default {
+  padding: 10px 15px;
+}
+.btn:hover {
+  background-color: @color-secondary;
+}
+.btn-xs {
+  padding: 4px 7px;
+}
+a:hover, a:active {
+  color: @color-accent;
+  cursor: pointer;
+  text-decoration: none;
+}
+h1, h2, h3, h4, h5, h6, p, ol, ul, .h1, .h2, .h3, .h4, .h5, .h6, .p {
+  color: @color-primary;
+  margin-bottom: 25px;
+  margin-top: 25px;
+}
+.h1, .h2, h1, h2 {
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.h1, h1 {
+  font-size: 45px;
+  line-height: 1.2222222222222223em;
+}
+.p, li, p {
+  color: @color-text-primary;
+  font-family: Space Grotesk,sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+// 3. Theme Styling
+// -------------------------
+//Header
+header {
+  .header-wrapper {
+    height: 111px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid @color-primary;
+
+    .logo {
+      /*width: 100%;*/
+      padding: 10px 0;
+      height: 45px;
+    }
+
+    .nav-link, .nav-search {
+      padding: 8px 4px;
+      margin: 37px 13px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .nav-link:hover, .nav-link:active {
+      border-bottom: 2px solid;
+      margin-bottom: 35px;
+    }
+    .nav-search {
+      margin-right: 20px;
+    }
+  }
+}
+
+//Footer
+footer {
+  background-color: @color-primary !important;
+  padding-top: 42px !important;
+  padding-bottom: 42px !important;
+  color: @theme-8-text !important;
+
+  .footer-body {
+    color: @theme-8-text !important;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  ul {
+    display: block;
+    text-align: left;
+    width: 100%;
+    color: @theme-8-text !important;
+    margin: 0px;
+    padding: 0px;
+
+    li a {
+      color: @theme-8-text !important;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.3333333333333333em;
+      display: flex;
+      align-items: center;
+    }
+
+    .footer--links--icon--holder {
+      width: 30px;
+      display: flex;
+      align-items: center;
+
+      svg {
+        fill: #fff;
+      }
+    }
+  }
+
+  ul.no--bullets {
+    list-style: none !important;
+  }
+}
+
+.panel.no-border, .panel {
+  border: none;
+  border-radius: 0px;
+  box-shadow: none;
+}
+.panel-default {
+    border-radius: 0px;
+    border-bottom: 1px solid @color-primary;
+}
+.panel-heading, .panel-default > .panel-heading {
+  background: none !important;
+  border: none;
+
+  .panel-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.4545454545454546em;
+  }
+}
+.form-group.rock-check-box {
+  .control-wrapper {
+      float: left;
+  }
+}
+
+// Footer on Mobile
+@media only screen and (max-width: 768px) {
+  footer {
+  }
+}
+//Footer on Desktop
+@media only screen and (min-width: 769px) {
+  footer {
+    
+  }
+}
+
+//Hubspot Override
+#hubspot-messages-iframe-container {
+    z-index: 1000 !important;
+}
+
+// 4. Helper Classes
+// -------------------------
+.background--primary {
+  background-color: @color-primary;
+  color: #fff;
+}
+.background--secondary {
+  background-color: @color-secondary;
+}
+.background--accent {
+  background-color: @color-accent;
+  color: #fff;
+}
+
+.text--white {
+  color: #fff !important;
+}
+.text--primary {
+  color: @color-primary !important;
+}
+.text--secondary {
+  color: @color-secondary !important;
+}
+.text--accent {
+  color: @color-accent !important;
+}
+
+.justify-left {
+    display: flex;
+    justify-content: flex-start;
+}
+.justify-center {
+  display: flex;
+  justify-content: center;
+}
+.justify-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.align-center {
+  display: flex;
+  align-items: center;
+}
+
+.hover {
+  cursor: pointer;
+}
+
+// 5. Responsive Overrides
+// -------------------------
+
+// default styling should be for phones 767px or less
+
+//Mobile
+
+@media only screen and (max-width: 768px) {
+  .updateprogress-status .spinner .rect5 {
+    display: none !important;
+  }
+
+}
+
+// Small devices (tablets, 768px and up)
+@media (min-width: @screen-sm-min) {
+
+}
+
+// Medium devices (desktops, 992px and up)
+@media (min-width: @screen-md-min) {
+}
+
+// Large devices (large desktops, 1200px and up)
+@media (min-width: 1600px) {
+  .container {
+    width: 1400px;
+    padding-right: 50px;
+    padding-left: 50px;
+  }
+}
+
+@import "_css-overrides.less";

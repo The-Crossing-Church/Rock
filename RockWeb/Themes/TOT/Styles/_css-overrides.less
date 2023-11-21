@@ -1,0 +1,146 @@
+.navbar-nav>li>a[id$='lbLogin'] {
+    font-size: 1.5em;
+    color: #fff !important;
+}
+
+.photo img {
+    max-width: 150px;
+}
+
+.header-image {
+    width: 300px;
+    padding: 20px;
+    margin: 0 auto;
+}
+
+footer {
+    margin-top: 2em;
+    margin-bottom: 0px;
+    padding-bottom: 50px;
+    padding-top: 20px;
+}
+
+.registrationentry-registrant .text-muted {
+    color: #aaa;
+}
+
+.rock-check-box .control-label {
+    margin-top: 2px;
+}
+
+.checkbox-inline:first-child,
+.radio-inline:first-child {
+    padding-left: 20px;
+}
+
+.radio,
+.checkbox {
+  min-height: 20px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.checkbox .label-text {
+  padding-left: 4px;
+}
+
+.radio .label-text::before,
+.checkbox .label-text::before,
+.radio-inline .label-text::before,
+.checkbox-inline .label-text::before {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  content: "";
+  user-select: none;
+  background-color: #fff;
+  border: 2px solid #d8d8d8;
+  border-radius: 0.25rem;
+}
+
+.radio .label-text::before,
+.radio-inline .label-text::before {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.radio .label-text::after,
+.checkbox .label-text::after,
+.radio-inline .label-text::after,
+.checkbox-inline .label-text::after {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  content: "";
+  background: no-repeat center;
+  background-size: 50%;
+}
+
+.radio input,
+.checkbox input,
+.radio-inline input,
+.checkbox-inline input {
+  position: absolute;
+  z-index: -1;
+  opacity: 0;
+}
+
+.radio input:checked ~ .label-text::before,
+.checkbox input:checked ~ .label-text::before,
+.radio-inline input:checked ~ .label-text::before,
+.checkbox-inline input:checked ~ .label-text::before {
+  background-color: @color-primary;
+  border-color: @color-primary;
+}
+
+.radio input:focus ~ .label-text::before,
+.checkbox input:focus ~ .label-text::before,
+.radio-inline input:focus ~ .label-text::before,
+.checkbox-inline input:focus ~ .label-text::before {
+  box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgba(52, 118, 137, 0.2);
+}
+
+.radio input:active ~ .label-text::before,
+.checkbox input:active ~ .label-text::before,
+.radio-inline input:active ~ .label-text::before,
+.checkbox-inline input:active ~ .label-text::before {
+  color: #fff;
+  background-color: @color-secondary;
+}
+
+.radio input:disabled ~ .label-text,
+.checkbox input:disabled ~ .label-text,
+.radio-inline input:disabled ~ .label-text,
+.checkbox-inline input:disabled ~ .label-text {
+  color: #6c757d;
+}
+
+.radio input:disabled ~ .label-text::before,
+.checkbox input:disabled ~ .label-text::before,
+.radio-inline input:disabled ~ .label-text::before,
+.checkbox-inline input:disabled ~ .label-text::before {
+  background-color: #e9ecef;
+}
+
+.radio-inline + .radio-inline,
+.checkbox-inline + .checkbox-inline {
+  margin-left: 0;
+}
+
+.checkbox input:checked ~ .label-text::after,
+.checkbox-inline input:checked ~ .label-text::after {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23ffffff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E");
+}
+
+
+#cms-admin-footer .button-bar {
+  margin-top: -18px;
+}
