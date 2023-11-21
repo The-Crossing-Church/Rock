@@ -111,18 +111,21 @@ export default defineComponent({
       //Reference the values so the computed re-generates on change
       let startBuffer = this.e?.attributeValues?.StartBuffer ? parseInt(this.e?.attributeValues?.StartBuffer) : 0
       let endBuffer = this.e?.attributeValues?.EndBuffer ? parseInt(this.e?.attributeValues?.EndBuffer) : 0
+      let existingRequests = JSON.parse(JSON.stringify(this.existing))
 
       if(this.request?.attributeValues?.IsSame == "True") {
         dates = this.request.attributeValues.EventDates.split(",").map(d => d.trim())
       } else {
         dates.push(this.e?.attributeValues?.EventDate)
       }
-      let existingOnDate = this.existing?.filter(e => {
+      let existingOnDate = existingRequests?.filter((e: any) => {
         if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
           return false
         }
         let intersect = e.attributeValues?.EventDates.value.split(",").map((d: string) => d.trim()).filter((date: string) => dates.includes(date))
         if(intersect && intersect.length > 0) {
+          // console.log("Intersecting Dates: " + e.title)
+          // console.log(intersect)
           //Filter to events object for the matching dates
           let events = [] as any[]
           if(e.attributeValues?.IsSame.value == "True") {
@@ -134,62 +137,79 @@ export default defineComponent({
           let overlaps = false
           if(e.attributeValues?.IsSame.value == 'True') {
             intersect.forEach((date: string) => {
-              let cdStart = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (events[0].childContentChannelItem.attributeValues?.StartBuffer && events[0].childContentChannelItem.attributeValues?.StartBuffer.value ) {
-                cdStart = cdStart.minus({ minutes: parseInt(events[0].childContentChannelItem.attributeValues.StartBuffer.value) })
-              }
-              let cdEnd = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (events[0].childContentChannelItem.attributeValues?.EndBuffer && events[0].childContentChannelItem.attributeValues?.EndBuffer.value ) {
-                cdEnd = cdEnd.plus({ minutes: parseInt(events[0].childContentChannelItem.attributeValues.EndBuffer.value) })
-              }
+              let cdStartBuffer = events[0].childContentChannelItem.attributeValues?.StartBuffer && events[0].childContentChannelItem.attributeValues?.StartBuffer.value ? parseInt(events[0].childContentChannelItem.attributeValues?.StartBuffer.value) : 0
+              let cdStart = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })
+              let cdEndBuffer = events[0].childContentChannelItem.attributeValues?.EndBuffer && events[0].childContentChannelItem.attributeValues?.EndBuffer.value ? parseInt(events[0].childContentChannelItem.attributeValues?.EndBuffer.value) : 0
+              let cdEnd = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: cdEndBuffer }).minus({ minutes: 1 })
               let cRange = Interval.fromDateTimes(cdStart, cdEnd)
-              for(let i=0; i<dates.length; i++) {
-                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: startBuffer })
-                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: endBuffer })
-                let current = Interval.fromDateTimes(
-                  eStart,
-                  eEnd
-                )
-                if (cRange.overlaps(current)) {
-                  overlaps = true
-                }
+
+              let eStart = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: startBuffer })
+              let eEnd = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: endBuffer }).minus({ minutes: 1 })
+              let current = Interval.fromDateTimes(
+                eStart,
+                eEnd
+              )
+              if (cRange.overlaps(current)) {
+                overlaps = true
               }
             })
           } else {
-            events.forEach((event: any) => {
+            events = events.filter((event: any) => {
               let date = event.childContentChannelItem.attributeValues?.EventDate?.value.trim()
-              let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (event.childContentChannelItem.attributeValues?.StartBuffer && event.childContentChannelItem.attributeValues?.StartBuffer.value) {
-                cdStart = cdStart.minus({ minutes: parseInt(event.childContentChannelItem.attributeValues.StartBuffer.value) })
-              }
-              let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (event.childContentChannelItem.attributeValues?.EndBuffer && event.childContentChannelItem.attributeValues?.EndBuffer.value) {
-                cdEnd = cdEnd.plus({ minutes: parseInt(event.childContentChannelItem.attributeValues.EndBuffer.value) })
-              }
-              let cRange = Interval.fromDateTimes(cdStart, cdEnd)
-              for(let i=0; i<dates.length; i++) {
-                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: startBuffer })
-                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: endBuffer })
+              if(intersect.includes(date)) {
+                let cdStartBuffer = event.childContentChannelItem.attributeValues?.StartBuffer && event.childContentChannelItem.attributeValues?.StartBuffer.value ? parseInt(event.childContentChannelItem.attributeValues?.StartBuffer.value) : 0
+                let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })
+                let cdEndBuffer = event.childContentChannelItem.attributeValues?.EndBuffer && event.childContentChannelItem.attributeValues?.EndBuffer.value ? parseInt(event.childContentChannelItem.attributeValues?.EndBuffer.value) : 0
+                let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: cdEndBuffer }).minus({ minutes: 1 })
+                let cRange = Interval.fromDateTimes(cdStart, cdEnd)
+           
+                let eStart = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: startBuffer })
+                let eEnd = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: endBuffer }).minus({ minutes: 1 })
                 let current = Interval.fromDateTimes(
                   eStart,
                   eEnd
                 )
                 if (cRange.overlaps(current)) {
-                  overlaps = true
+                  return true
                 }
               }
+              return false
             })
+            if(events && events.length > 0) {
+              e.childItems = events
+              overlaps = true
+            }
           }
           return overlaps
         }
         return false
       })
       let existingRooms = [] as any[]
-      existingOnDate?.forEach(e => {
+      existingOnDate?.forEach((e: any) => {
         e.childItems.forEach((ev: any) => {
           existingRooms.push(...ev.childContentChannelItem.attributeValues?.Rooms?.value.split(","))
         })
       })
+      // console.log('Room Conflicts')
+      // console.log(existingOnDate?.map((e: any) => { 
+      //   return {
+      //     title: e.title, 
+      //     dates: e.attributeValues.EventDates.value, 
+      //     childItems: e.childItems.map((ci: any) => { 
+      //       return { 
+      //         rooms: ci.childContentChannelItem.attributeValues.Rooms.valueFormatted, 
+      //         date: ci.childContentChannelItem.attributeValues.EventDate?.value,
+      //         start: ci.childContentChannelItem.attributeValues.StartTime.valueFormatted, 
+      //         end: ci.childContentChannelItem.attributeValues.EndTime.valueFormatted, 
+      //         startBuffer: ci.childContentChannelItem.attributeValues.StartBuffer.valueFormatted, 
+      //         endBuffer: ci.childContentChannelItem.attributeValues.EndBuffer.valueFormatted 
+      //       }
+      //     })
+      //   } 
+      // }))
+      // console.log(existingRooms.filter((value, index, array) => {
+      //   return array.indexOf(value) === index;
+      // }))
       this.rooms?.forEach(l => {
           let idx = -1
           loc.forEach((i, x) => {
