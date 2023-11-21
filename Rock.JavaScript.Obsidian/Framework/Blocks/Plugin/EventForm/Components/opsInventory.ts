@@ -85,12 +85,13 @@ export default defineComponent({
     groupedInventory() {       
       let inv = [] as any[]
       let dates = [] as any[]
+      let existingRequests = JSON.parse(JSON.stringify(this.existing))
       if(this.request?.attributeValues?.IsSame == "True") {
         dates = this.request.attributeValues.EventDates.split(",").map(d => d.trim())
       } else {
         dates.push(this.e?.attributeValues?.EventDate)
       }
-      let existingOnDate = this.existing?.filter(e => {
+      let existingOnDate = existingRequests?.filter((e: any) => {
         if(e.id == this.request?.id || e.id == this.originalRequest?.id) {
           return false
         }
@@ -107,74 +108,67 @@ export default defineComponent({
           let overlaps = false
           if(e.attributeValues?.IsSame.value == 'True') {
             intersect.forEach((date: string) => {
-              let cdStart = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (events[0].childContentChannelItem.attributeValues?.StartBuffer) {
-                let span = Duration.fromObject({ minutes: parseInt(events[0].childContentChannelItem.attributeValues.StartBuffer.value) })
-                cdStart = cdStart.minus(span)
-              }
-              let cdEnd = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (events[0].childContentChannelItem.attributeValues?.EndBuffer) {
-                let span = Duration.fromObject({ minutes: parseInt(events[0].childContentChannelItem.attributeValues.EndBuffer.value) })
-                cdEnd = cdEnd.plus(span)
-              }
+              let cdStartBuffer = events[0].childContentChannelItem.attributeValues?.StartBuffer && events[0].childContentChannelItem.attributeValues?.StartBuffer.value ? parseInt(events[0].childContentChannelItem.attributeValues?.StartBuffer.value) : 0
+              let cdStart = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })
+              let cdEndBuffer = events[0].childContentChannelItem.attributeValues?.EndBuffer && events[0].childContentChannelItem.attributeValues?.EndBuffer.value ? parseInt(events[0].childContentChannelItem.attributeValues?.EndBuffer.value) : 0
+              let cdEnd = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: cdEndBuffer }).minus({ minutes: 1})
               let cRange = Interval.fromDateTimes(cdStart, cdEnd)
-              for(let i=0; i<dates.length; i++) {
-                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
-                if(this.e?.attributeValues?.StartBuffer) {
-                  eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
-                }
-                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
-                if(this.e?.attributeValues?.EndBuffer) {
-                  eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
-                }
-                let current = Interval.fromDateTimes(
-                  eStart,
-                  eEnd
-                )
-                if (cRange.overlaps(current)) {
-                  overlaps = true
-                }
+
+              let eStart = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
+              if(this.e?.attributeValues?.StartBuffer) {
+                eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
+              }
+              let eEnd = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+              if(this.e?.attributeValues?.EndBuffer) {
+                eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
+              }
+              let current = Interval.fromDateTimes(
+                eStart,
+                eEnd
+              )
+              if (cRange.overlaps(current)) {
+                overlaps = true
               }
             })
           } else {
-            events.forEach((event: any) => {
+            events = events.filter((event: any) => {
               let date = event.childContentChannelItem.attributeValues?.EventDate?.value.trim()
-              let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (event.childContentChannelItem.attributeValues?.StartBuffer) {
-                let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.StartBuffer.value) })
-                cdStart = cdStart.minus(span)
-              }
-              let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`)
-              if (event.childContentChannelItem.attributeValues?.EndBuffer) {
-                let span = Duration.fromObject({ minutes: parseInt(event.childContentChannelItem.attributeValues.EndBuffer.value) })
-                cdEnd = cdEnd.plus(span)
-              }
-              let cRange = Interval.fromDateTimes(cdStart, cdEnd)
-              for(let i=0; i<dates.length; i++) {
-                let eStart = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
+              if(intersect.includes(date)) {
+                let cdStartBuffer = event.childContentChannelItem.attributeValues?.StartBuffer && event.childContentChannelItem.attributeValues?.StartBuffer.value ? parseInt(event.childContentChannelItem.attributeValues?.StartBuffer.value) : 0
+                let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })
+                let cdEndBuffer = event.childContentChannelItem.attributeValues?.EndBuffer && event.childContentChannelItem.attributeValues?.EndBuffer.value ? parseInt(event.childContentChannelItem.attributeValues?.EndBuffer.value) : 0
+                let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: cdEndBuffer }).minus({ minutes: 1 })        
+                let cRange = Interval.fromDateTimes(cdStart, cdEnd)
+  
+                let eStart = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.StartTime}`, `yyyy-MM-dd HH:mm:ss`)
                 if(this.e?.attributeValues?.StartBuffer) {
                   eStart = eStart.minus({ minutes: parseInt(this.e?.attributeValues.StartBuffer) })
                 }
-                let eEnd = DateTime.fromFormat(`${dates[i]} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
+                let eEnd = DateTime.fromFormat(`${date} ${this.e?.attributeValues?.EndTime}`, `yyyy-MM-dd HH:mm:ss`)
                 if(this.e?.attributeValues?.EndBuffer) {
-                  eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) })
+                  eEnd = eEnd.plus({ minutes: parseInt(this.e?.attributeValues.EndBuffer) }).minus({ minutes: 1 })
                 }
                 let current = Interval.fromDateTimes(
                   eStart,
                   eEnd
                 )
                 if (cRange.overlaps(current)) {
-                  overlaps = true
+                  return true
                 }
               }
+              return false
             })
+            if(events && events.length > 0) {
+              e.childItems = events
+              overlaps = true
+            }
           }
           return overlaps
         }
         return false
       })
       let existingInv = [] as any[]
-      existingOnDate?.forEach(e => {
+      existingOnDate?.forEach((e: any) => {
         e.childItems.forEach((ev: any) => {
           if(ev.childContentChannelItem?.attributeValues?.OpsInventory?.value) {
             let i = JSON.parse(ev.childContentChannelItem.attributeValues.OpsInventory.value)
