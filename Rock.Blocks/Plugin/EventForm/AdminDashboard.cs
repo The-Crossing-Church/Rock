@@ -1265,7 +1265,7 @@ namespace Rock.Blocks.Plugin.EventDashboard
                 {
                     DateRange r = new DateRange();
                     r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
-                    r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" );
+                    r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" ).AddMinutes(-1);
                     var startBuffer = itm.GetAttributeValue( startBufferKey );
                     var endBuffer = itm.GetAttributeValue( endBufferKey );
                     if ( !String.IsNullOrEmpty( startBuffer ) )

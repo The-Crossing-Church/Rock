@@ -966,7 +966,7 @@ namespace Rock.Blocks.Plugin.EventForm
                                     {
                                         DateRange r = new DateRange();
                                         r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
-                                        r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" );
+                                        r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" ).AddMinutes( -1 );
                                         var startBuffer = itm.GetAttributeValue( startBufferAttr.Key );
                                         var endBuffer = itm.GetAttributeValue( endBufferAttr.Key );
                                         if (!String.IsNullOrEmpty( startBuffer ))
@@ -977,7 +977,7 @@ namespace Rock.Blocks.Plugin.EventForm
                                         if (!String.IsNullOrEmpty( endBuffer ))
                                         {
                                             int buffer = Int32.Parse( endBuffer );
-                                            r.End.Value.AddMinutes( buffer );
+                                            r.End.Value.AddMinutes( buffer ).AddMinutes( -1 );
                                         }
                                         if (r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ))
                                         {

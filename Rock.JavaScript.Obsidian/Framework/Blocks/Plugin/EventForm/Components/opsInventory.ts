@@ -108,9 +108,9 @@ export default defineComponent({
           let overlaps = false
           if(e.attributeValues?.IsSame.value == 'True') {
             intersect.forEach((date: string) => {
-              let cdStartBuffer = events[0].childContentChannelItem.attributeValues?.StartBuffer && events[0].childContentChannelItem.attributeValues?.StartBuffer.value ? parseInt(events[0].childContentChannelItem.attributeValues?.StartBuffer.value) : 0
+              let cdStartBuffer = events[0].childContentChannelItem.attributeValues?.StartBuffer && events[0].childContentChannelItem.attributeValues?.StartBuffer?.value ? parseInt(events[0].childContentChannelItem.attributeValues?.StartBuffer.value) : 0
               let cdStart = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })
-              let cdEndBuffer = events[0].childContentChannelItem.attributeValues?.EndBuffer && events[0].childContentChannelItem.attributeValues?.EndBuffer.value ? parseInt(events[0].childContentChannelItem.attributeValues?.EndBuffer.value) : 0
+              let cdEndBuffer = events[0].childContentChannelItem.attributeValues?.EndBuffer && events[0].childContentChannelItem.attributeValues?.EndBuffer?.value ? parseInt(events[0].childContentChannelItem.attributeValues?.EndBuffer.value) : 0
               let cdEnd = DateTime.fromFormat(`${date} ${events[0].childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: cdEndBuffer }).minus({ minutes: 1})
               let cRange = Interval.fromDateTimes(cdStart, cdEnd)
 
@@ -134,9 +134,9 @@ export default defineComponent({
             events = events.filter((event: any) => {
               let date = event.childContentChannelItem.attributeValues?.EventDate?.value.trim()
               if(intersect.includes(date)) {
-                let cdStartBuffer = event.childContentChannelItem.attributeValues?.StartBuffer && event.childContentChannelItem.attributeValues?.StartBuffer.value ? parseInt(event.childContentChannelItem.attributeValues?.StartBuffer.value) : 0
+                let cdStartBuffer = event.childContentChannelItem.attributeValues?.StartBuffer && event.childContentChannelItem.attributeValues?.StartBuffer?.value ? parseInt(event.childContentChannelItem.attributeValues?.StartBuffer.value) : 0
                 let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })
-                let cdEndBuffer = event.childContentChannelItem.attributeValues?.EndBuffer && event.childContentChannelItem.attributeValues?.EndBuffer.value ? parseInt(event.childContentChannelItem.attributeValues?.EndBuffer.value) : 0
+                let cdEndBuffer = event.childContentChannelItem.attributeValues?.EndBuffer && event.childContentChannelItem.attributeValues?.EndBuffer?.value ? parseInt(event.childContentChannelItem.attributeValues?.EndBuffer.value) : 0
                 let cdEnd = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.EndTime.value}`, `yyyy-MM-dd HH:mm:ss`).plus({ minutes: cdEndBuffer }).minus({ minutes: 1 })        
                 let cRange = Interval.fromDateTimes(cdStart, cdEnd)
   
