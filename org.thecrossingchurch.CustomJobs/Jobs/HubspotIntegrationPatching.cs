@@ -447,6 +447,16 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 properties.Add( new HubspotPropertyUpdate() { property = last_contribution_fund_prop.name, value = validTransactions.First().TransactionDetails.First().Account.Name } );
                             }
 
+                            //ZipCode
+                            var homeAddress = person.GetHomeLocation();
+                            if(homeAddress != null )
+                            {
+                                var zipcode_prop = props.FirstOrDefault( p => p.label == "Rock Custom ZipCode" );
+                                if(zipcode_prop != null )
+                                {
+                                    properties.Add( new HubspotPropertyUpdate() { property = zipcode_prop.name, value = homeAddress.PostalCode } );
+                                }
+                            }
 
                             var includeTMBT = dataMap.GetString( "IncludeTMBT" ).AsBoolean();
                             if (includeTMBT)
