@@ -61,11 +61,21 @@
         <p>{{Item.Content}}</p>
         <br/>
         {% if cat == 'Sermon' %}
-            <div>
-                <audio controls>
-                    <source src="{{Item | Attribute:'SermonAudio'}}" type="audio/mpeg" />
-                </audio>
-            </div>
+            {% assign audioUrl = Item | Attribute:'SermonAudio' %}
+            {% if audioUrl contains 'megaphone' %}
+                {% assign urlParts = audioUrl | Split:'.fm/' %}
+                {% assign urlParts = urlParts[1] | Split:'.mp3' %}
+                {% capture audioUrl %}https://playlist.megaphone.fm/?e={{urlParts[0]}}&artwork=false&light=true{% endcapture %}
+                <div>
+                    <iframe frameborder="0" height="200" scrolling="no" src="{{audioUrl}}" width="100%"></iframe>
+                </div>
+            {% else %}
+                <div>
+                    <audio controls>
+                        <source src="{{Item | Attribute:'SermonAudio'}}" type="audio/mpeg" />
+                    </audio>
+                </div>
+            {% endif %}
             <br/>
             {% assign notes = Item | Attribute:'DiscussionNotes' %}
             {% assign sermon = Item | Attribute:'SermonVideo' %}
