@@ -110,6 +110,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
         private SelectionState _selectionState;
 
+        private RockLiteralField _cellPhoneField = null;
+
         #endregion
 
         #region Properties
@@ -462,6 +464,8 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
         private void ShowPreview()
         {
+            _cellPhoneField = gPreview.ColumnsOfType<RockLiteralField>().Where( a => a.ID == "lCellPhone" ).FirstOrDefault();
+
             gPreview.SetLinqDataSource( GetCommunicationQry().OrderBy( p => p.FirstName ).ThenBy( p => p.LastName ) );
             gPreview.DataBind();
             mdPreview.Show();
@@ -896,5 +900,32 @@ namespace RockWeb.Plugins.com_9embers.Communication
 
 
 
+
+        protected void gPreview_RowDataBound( object sender, GridViewRowEventArgs e )
+        {
+            if ( e.Row.RowType != DataControlRowType.DataRow )
+            {
+                return;
+            }
+
+            Person person = e.Row.DataItem as Person;
+            if ( person == null )
+            {
+                return;
+            }
+
+            var lCellPhone = e.Row.FindControl( _cellPhoneField.ID ) as Literal;
+            if ( lCellPhone == null )
+            {
+                return;
+            }
+
+            var pn = person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
+            if ( pn != null )
+            {
+                lCellPhone.Text = pn.NumberFormatted;
+            }
+            
+        }
     }
 }

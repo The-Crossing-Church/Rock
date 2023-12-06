@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="CommunicationListSegments.ascx.cs" Inherits="RockWeb.Plugins.com_9embers.Communication.CommunicationListSegments" %>
+﻿gPreview<%@ Control Language="C#" AutoEventWireup="true" CodeFile="CommunicationListSegments.ascx.cs" Inherits="RockWeb.Plugins.com_9embers.Communication.CommunicationListSegments" %>
 <style>
     .cust-label {
         margin-top: 30px;
@@ -9,10 +9,13 @@
 
         <Rock:ModalDialog runat="server" ID="mdPreview" Title="Preview">
             <Content>
-                <Rock:Grid runat="server" ID="gPreview">
+                <Rock:Grid runat="server" ID="gPreview" ExportSource="ColumnOutput" OnRowDataBound="gPreview_RowDataBound">
                     <Columns>
                         <Rock:RockBoundField HeaderText="Person" DataField="FullName" />
+                        <Rock:RockBoundField HeaderText="Nick Name" DataField="NickName" Visible="false" ExcelExportBehavior="AlwaysInclude" />
+                        <Rock:RockBoundField HeaderText="Last Name" DataField="LastName" Visible="false" ExcelExportBehavior="AlwaysInclude" />
                         <Rock:RockBoundField HeaderText="Email" DataField="Email" />
+                        <Rock:RockLiteralField ID="lCellPhone" HeaderText="Cell Phone"  />
                     </Columns>
                 </Rock:Grid>
             </Content>
