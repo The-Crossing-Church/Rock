@@ -226,7 +226,7 @@ FROM (
                                             </div>
                                         {% endif %}
                                         <div class='wrapper' >
-                                            <img src="/GetImage.ashx?Guid={{e.EventItem.Photo.Guid}}" />
+                                            <img src="/GetImage.ashx?Guid={{e.EventItem.Photo.Guid}}" alt="{{e.EventItem.Name | Split:' - ' | Last}}" />
                                         </div>
                                     </div>
                                     <br/>

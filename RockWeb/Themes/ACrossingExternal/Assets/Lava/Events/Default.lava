@@ -1,7 +1,7 @@
 ﻿<div class="row pt-5">
   <div class="col col-xs-12 col-md-5 justify-center">
     {% if Event.Photo.Guid %}
-      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" style=" height: 100%; width: 100%; object-fit: cover;" />
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" style=" height: 100%; width: 100%; object-fit: cover;" alt="{{Event.Name}}" />
       {% capture metaimg %}https://thecrossingchurch.com/GetImage.ashx?Guid={{ Event.Photo.Guid }}{% endcapture %}
       {{ metaimg | AddMetaTagToHead:'property','og:image' }}
     {% endif %}

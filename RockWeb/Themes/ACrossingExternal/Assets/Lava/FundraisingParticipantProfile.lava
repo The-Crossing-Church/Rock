@@ -6,13 +6,13 @@
 {% endif %}
 
 <div class='row'>
-    <img src='{{ GroupMember.Person.PhotoUrl }}' class='img-circle pull-left margin-r-md' width=100 class='pull-left margin-all-md' />
+    <img src='{{ GroupMember.Person.PhotoUrl }}' class='img-circle pull-left margin-r-md' width=100 class='pull-left margin-all-md' alt="{{ GroupMember.Person.FullName }}" />
     <h2>{{ GroupMember.Person.FullName | Possessive }} {{ Group | Attribute:'OpportunityType' }}</h2>
     {% assign dateRangeParts = Group | Attribute:'OpportunityDateRange','RawValue' | Split:',' %}
     {% assign dateRangePartsSize = dateRangeParts | Size %}
     {% if dateRangePartsSize == 2 %}
       {{ dateRangeParts[0] | Date:'MMMM dd, yyyy' }} to {{ dateRangeParts[1] | Date:'MMMM dd, yyyy' }}<br/>
-    {% elsif dateRangePartsSize == 1  %}      
+    {% elsif dateRangePartsSize == 1  %}
       {{ dateRangeParts[0] | Date:'MMMM dd, yyyy' }}
     {% endif %}
     {{ Group | Attribute:'OpportunityLocation' }}
