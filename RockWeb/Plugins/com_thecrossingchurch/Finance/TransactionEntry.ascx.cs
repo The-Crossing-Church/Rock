@@ -2719,12 +2719,12 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Finance
                 }
             }
 
-            if (!pkrBirthDay.SelectedDate.HasValue)
+            if (!givingAsBusiness && !pkrBirthDay.SelectedDate.HasValue)
             {
                 errorMessages.Add( "Make sure to enter your birthdate" );
             }
 
-            if (string.IsNullOrWhiteSpace( ddlGender.SelectedValue ))
+            if (!givingAsBusiness && string.IsNullOrWhiteSpace( ddlGender.SelectedValue ))
             {
                 errorMessages.Add( "Make sure to enter your gender" );
             }
