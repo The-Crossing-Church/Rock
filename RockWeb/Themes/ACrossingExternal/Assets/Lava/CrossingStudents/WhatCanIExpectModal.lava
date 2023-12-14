@@ -35,7 +35,7 @@
                             {% if ministry contains 'Crossing Students' and isActive %}
                                 <div class='col col-xs-6 col-md-3 text--centered'>
                                     <a href="/Staff/Crossing%20Students?Person={{i.Id}}">
-                                        <img src="{{i | Attribute:'Image'}}" style="width: 100%;" /> <br/>
+                                        <img src="{{i | Attribute:'Image'}}" style="width: 100%;" alt="{{i | Attribute:'Person','FullName'}}" /> <br/>
                                         <b>{{i | Attribute:'Person','FullName'}}</b><br/>
                                         {{i | Attribute:'Person','Object' | Attribute:'Position' }}
                                     </a>

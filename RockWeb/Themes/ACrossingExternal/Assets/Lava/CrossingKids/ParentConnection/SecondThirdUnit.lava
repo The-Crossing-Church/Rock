@@ -1,5 +1,5 @@
 ﻿<div class='justify-center'>
-    <img src="{{ Item | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+    <img src="{{ Item | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" alt="{{ Item | Attribute:'Unit' }}" />
 </div>
 <strong>Date:</strong> {{ Item.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMMM d, yyyy' }} <br/>
 {% assign secUnit = Item | Attribute:'Unit' %}

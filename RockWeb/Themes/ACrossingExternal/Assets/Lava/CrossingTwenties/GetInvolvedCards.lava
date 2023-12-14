@@ -3,7 +3,7 @@
     {% for i in Items %}
         <div class='col col-xs-12 col-md-4'>
             <div class='card--custom card-with-button' style="height:100%;">
-                <img src="{{ i | Attribute:'Image' }}" />
+                <img src="{{ i | Attribute:'Image' }}" alt="{{i | Attribute:'Heading' }}" />
                 <div style="padding: 8px;" class='text--centered'>
                     <strong>{{i | Attribute:'Heading' }}</strong>
                     <br/>

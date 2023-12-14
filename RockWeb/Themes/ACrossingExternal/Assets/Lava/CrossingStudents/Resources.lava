@@ -7,7 +7,7 @@
             <div class='hover' data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description' }}</div>">
                 <a href="/crossing-students-resources/{{i.PrimarySlug}}">
                     <div class='img-wrapper' >
-                        <img src="{{ i | Attribute:'Image' }}" />
+                        <img src="{{ i | Attribute:'Image' }}" alt="{{i.Title}}" />
                     </div>
                     <div style='font-size: .9375em; font-weight: light; padding-top: 8px;'>
                         {{i.Title}}

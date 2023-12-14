@@ -1,5 +1,5 @@
 ﻿<div class='justify-center'>
-    <img src="{{ Item | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" />
+    <img src="{{ Item | Attribute:'UnitImage','RawValue' }}" style="max-width: 300px;" class="pb-custom-2x" alt="{{ Item | Attribute:'Unit' }}" />
 </div>
 <strong>Date:</strong> {{ crossingkidssundaycurriculumpreschoolorangeredmonthItem.ChildItems[0].ChildContentChannelItem.StartDateTime | NextDayOfTheWeek:'Sunday' | Date:'MMMM, yyyy' }} <br/>
 {% assign tbEss = Item | Attribute:'Essential' %}
@@ -15,7 +15,7 @@
     <strong>Bible Story Focus:</strong> {{ Item | Attribute:'Unit' }} <br/>
 {% endif %}
 {% if Item.Content != '' %}
-    <strong>Lesson Overview:</strong> 
+    <strong>Lesson Overview:</strong>
     <blockquote>
         {{ Item.Content }}
     </blockquote>

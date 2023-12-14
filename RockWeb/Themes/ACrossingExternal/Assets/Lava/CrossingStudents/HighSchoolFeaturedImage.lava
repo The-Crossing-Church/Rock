@@ -1,4 +1,4 @@
 ﻿<div class='text--centered'>
-    <img style="width:100%; max-width:300px; margin-bottom: 16px;" src="https://rock.thecrossingchurch.com/Content/Crossing%20Students/HS_Black_Horizontal.png"/>
-    <img style="width:100%; max-width:300px; margin-bottom: 16px;" class="card--custom card-with-button" src="{{ Item | Attribute:'Image' }}" />
+    <img style="width:100%; max-width:300px; margin-bottom: 16px;" src="https://rock.thecrossingchurch.com/Content/Crossing%20Students/HS_Black_Horizontal.png" alt="Crossing High School"/>
+    <img style="width:100%; max-width:300px; margin-bottom: 16px;" class="card--custom card-with-button" src="{{ Item | Attribute:'Image' }}" alt="{{Item.Title}}" />
 </div>
