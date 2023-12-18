@@ -45,6 +45,10 @@
     "vue-eslint-parser": "^9.1.0",
     "watch": "^1.0.2"
   },
+  "dependencies": {
+    "ant-design-vue": "3.2.1",
+    "luxon": "2.0.2"
+  },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
   }
