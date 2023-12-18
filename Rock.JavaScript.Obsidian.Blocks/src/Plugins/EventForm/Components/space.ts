@@ -10,7 +10,6 @@ import Validator from "./validator"
 import TextBox from "@Obsidian/Controls/textBox"
 import RockLabel from "@Obsidian/Controls/rockLabel"
 import RoomPicker from "./roomPicker"
-import roomPickerv2 from "./roomPickerv2"
 import RoomSetUp from "./roomSetUp"
 import Toggle from "./toggle"
 import rules from "../Rules/rules"
@@ -44,8 +43,7 @@ export default defineComponent({
     "tcc-validator": Validator,
     "tcc-room": RoomPicker,
     "tcc-setup": RoomSetUp,
-    "tcc-switch": Toggle,
-    "tcc-room-pkr": roomPickerv2
+    "tcc-switch": Toggle
   },
   props: {
     e: {
@@ -338,12 +336,6 @@ export default defineComponent({
           :multiple="true"
         ></tcc-room>
       </tcc-validator>
-      <tcc-room-pkr
-        v-model="e.attributeValues.Rooms"
-        :label="e.attributes.Rooms.name"
-        :items="groupedRooms"
-        :multiple="true"
-      ></tcc-room-pkr>
     </div>
   </div>
   <div class="row" v-if="ministry == 'Infrastructure'">
