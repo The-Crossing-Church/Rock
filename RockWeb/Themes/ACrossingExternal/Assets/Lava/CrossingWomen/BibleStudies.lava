@@ -108,6 +108,8 @@ FROM (
     {% assign wedStudies = '[]' | FromJSON %}
     {% assign thrStudies = '[]' | FromJSON %}
     {% assign friStudies = '[]' | FromJSON %}
+    {% assign satStudies = '[]' | FromJSON %}
+    {% assign sunStudies = '[]' | FromJSON %}
     {% eventitemoccurrence ids:'{{ids}}' %}
         {% assign eventitemoccurrenceItems = eventitemoccurrenceItems | SortByAttribute:'Priority','asc' %}
         {% for e in eventitemoccurrenceItems %}
@@ -184,6 +186,10 @@ FROM (
                     {% assign thrStudies = thrStudies | AddToArray:e %}
                 {% elseif dow == 'Fri' %}
                     {% assign friStudies = friStudies | AddToArray:e %}
+                {% elseif dow == 'Sat' %}
+                    {% assign satStudies = satStudies | AddToArray:e %}
+                {% elseif dow == 'Sun' %}
+                    {% assign sunStudies = sunStudies | AddToArray:e %}
                 {% endif %}
             {% endif %}
         {% endfor %}
@@ -201,6 +207,10 @@ FROM (
                         {% assign items = thrStudies %}
                     {% elseif t.mobile == 'Fri' %}
                         {% assign items = friStudies %}
+                    {% elseif t.mobile == 'Sat' %}
+                        {% assign items = satStudies %}
+                    {% elseif t.mobile == 'Sun' %}
+                        {% assign items = sunStudies %}
                     {% else %}
                         {% assign items = allStudies %}
                     {% endif %}
