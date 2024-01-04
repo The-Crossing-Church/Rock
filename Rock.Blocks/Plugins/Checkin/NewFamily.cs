@@ -401,6 +401,7 @@ namespace Rock.Blocks.Plugins.Checkin
             DefinedTypeService dt_svc = new DefinedTypeService( context );
             AttributeService attr_svc = new AttributeService( context );
             PersonService per_svc = new PersonService( context );
+            PersonAliasService alias_svc = new PersonAliasService( context );
             GroupService grp_svc = new GroupService( context );
             GroupTypeService gt_svc = new GroupTypeService( context );
 
@@ -486,18 +487,22 @@ namespace Rock.Blocks.Plugins.Checkin
                 Guid? existingPersonGuid = PageParameter( PageParameterKey.ExistingPersonAlias ).AsGuidOrNull();
                 if (existingPersonGuid.HasValue)
                 {
-                    Person p = per_svc.Get( existingPersonGuid.Value );
-                    viewModel.ExistingPerson = p.ToViewModel( null, true );
-                    if (mobileNumber != null)
+                    PersonAlias pa = alias_svc.Get( existingPersonGuid.Value );
+                    if(pa != null)
                     {
-                        viewModel.ExistingPersonPhoneNumber = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id ).ToViewModel( null, true );
-                    }
-                    if (ckDeskStopGroup != null)
-                    {
-                        var exists = ckDeskStopGroup.Members.FirstOrDefault( gm => gm.PersonId == p.Id );
-                        if (exists != null)
+                        Person p = pa.Person; // per_svc.Get( pa.PersonId );
+                        viewModel.ExistingPerson = p.ToViewModel( null, true );
+                        if (mobileNumber != null)
                         {
-                            viewModel.ExistingPersonPhoneCantBeMessaged = true;
+                            viewModel.ExistingPersonPhoneNumber = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id ).ToViewModel( null, true );
+                        }
+                        if (ckDeskStopGroup != null)
+                        {
+                            var exists = ckDeskStopGroup.Members.FirstOrDefault( gm => gm.PersonId == p.Id );
+                            if (exists != null)
+                            {
+                                viewModel.ExistingPersonPhoneCantBeMessaged = true;
+                            }
                         }
                     }
                 }
