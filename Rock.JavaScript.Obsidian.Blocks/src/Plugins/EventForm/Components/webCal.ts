@@ -118,6 +118,7 @@ export default defineComponent({
           v-model="request.attributeValues.WebCalendarGoLive"
           :min="earliestDate"
           :max="lastDate"
+          id="dateWebCalendarGoLive"
         ></tcc-date-pkr>
       </tcc-validator>
       <rck-field
@@ -126,6 +127,7 @@ export default defineComponent({
         :attribute="request.attributes.WebCalendarGoLive"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="dateWebCalendarGoLive"
       ></rck-field>
     </div>
   </div>
@@ -137,6 +139,7 @@ export default defineComponent({
           :attribute="request.attributes.WebCalendarDescription"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtWebCalendarDescription"
         ></rck-field>
       </tcc-validator>
     </div>

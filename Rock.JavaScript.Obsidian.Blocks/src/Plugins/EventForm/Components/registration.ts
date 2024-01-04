@@ -176,6 +176,7 @@ export default defineComponent({
           :label="e.attributes.RegistrationStartDate.name"
           v-model="e.attributeValues.RegistrationStartDate"
           :min="earliestDate"
+          id="dateRegistrationStartDate"
         ></tcc-date-pkr>
       </tcc-validator>
       <rck-field
@@ -184,6 +185,7 @@ export default defineComponent({
         :attribute="e.attributes.RegistrationStartDate"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="dateRegistrationStartDate"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -193,6 +195,7 @@ export default defineComponent({
           :attribute="e.attributes.RegistrationFeeType"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlRegistrationFeeType"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -205,6 +208,7 @@ export default defineComponent({
           :attribute="e.attributes.RegistrationFeeBudgetMinistry"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlRegistrationFeeBudgetMinistry"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -215,6 +219,7 @@ export default defineComponent({
           :attribute="e.attributes.RegistrationFeeBudgetLine"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlRegistrationFeeBudgetLine"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -227,6 +232,7 @@ export default defineComponent({
           :attribute="e.attributes.IndividualRegistrationFee"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtIndividualRegistrationFee"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -237,6 +243,7 @@ export default defineComponent({
           :attribute="e.attributes.CoupleRegistrationFee"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtCoupleRegistrationFee"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -247,6 +254,7 @@ export default defineComponent({
           :attribute="e.attributes.OnlineRegistrationFee"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="OnlineRegistrationFee"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -259,6 +267,7 @@ export default defineComponent({
           :label="e.attributes.RegistrationEndDate.name"
           v-model="e.attributeValues.RegistrationEndDate"
           :min="earliestDate"
+          id="dateRegistrationEndDate"
         ></tcc-date-pkr>
       </tcc-validator>
       <rck-field
@@ -267,6 +276,7 @@ export default defineComponent({
         :attribute="e.attributes.RegistrationEndDate"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="dateRegistrationEndDate"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -274,6 +284,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.RegistrationEndTime.name"
           v-model="e.attributeValues.RegistrationEndTime"
+          id="TimeRegistrationEndTime"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -282,6 +293,7 @@ export default defineComponent({
         :attribute="e.attributes.RegistrationEndTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeRegistrationEndTime"
       ></rck-field>
     </div>
   </div>
@@ -291,6 +303,7 @@ export default defineComponent({
         v-model="e.attributeValues.NeedsCheckin"
         :label="e.attributes.NeedsCheckin.name"
         v-if="!readonly"
+        id="boolNeedsCheckin"
       ></tcc-switch>
       <rck-field
         v-else
@@ -298,6 +311,7 @@ export default defineComponent({
         :attribute="e.attributes.NeedsCheckin"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolNeedsCheckin"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
@@ -305,6 +319,7 @@ export default defineComponent({
         v-model="e.attributeValues.NeedsDatabaseSupportTeam"
         :label="e.attributes.NeedsDatabaseSupportTeam.name"
         v-if="!readonly"
+        id="boolNeedsDatabaseSupportTeam"
       ></tcc-switch>
       <rck-field
         v-else
@@ -312,6 +327,7 @@ export default defineComponent({
         :attribute="e.attributes.NeedsDatabaseSupportTeam"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolNeedsDatabaseSupportTeam"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -319,6 +335,7 @@ export default defineComponent({
         v-model="e.attributeValues.EventNeedsSeparateLink"
         :label="e.attributes.EventNeedsSeparateLink.name"
         v-if="!readonly"
+        id="boolEventNeedsSeparateLink"
       ></tcc-switch>
       <rck-field
         v-else
@@ -326,6 +343,7 @@ export default defineComponent({
         :attribute="e.attributes.EventNeedsSeparateLink"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolEventNeedsSeparateLink"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -334,6 +352,7 @@ export default defineComponent({
         :attribute="e.attributes.MaxRegistrants"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="txtMaxRegistrants"
       ></rck-field>
     </div>
   </div>
@@ -347,6 +366,7 @@ export default defineComponent({
           :attribute="e.attributes.RegistrationConfirmationEmailSender"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtRegistrationConfirmationEmailSender"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -359,6 +379,7 @@ export default defineComponent({
           :attribute="e.attributes.RegistrationConfirmationEmailFromAddress"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtRegistrationConfirmationEmailFromAddress"
         ></rck-field>
         <div class="input-hint rock-hint">If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here</div>
       </tcc-validator>
@@ -372,6 +393,7 @@ export default defineComponent({
           :attribute="e.attributes.RegistrationConfirmationEmailAdditionalDetails"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtRegistrationConfirmationEmailAdditionalDetails"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -382,6 +404,7 @@ export default defineComponent({
         v-model="e.attributeValues.NeedsReminderEmail"
         :label="e.attributes.NeedsReminderEmail.name"
         v-if="!readonly"
+        id="boolNeedsReminderEmail"
       ></tcc-switch>
       <rck-field
         v-else
@@ -389,6 +412,7 @@ export default defineComponent({
         :attribute="e.attributes.NeedsReminderEmail"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolNeedsReminderEmail"
       ></rck-field>
     </div>
   </div>
@@ -401,6 +425,7 @@ export default defineComponent({
             :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
             :is-edit-mode="!readonly"
             :showEmptyValue="true"
+            id="txtRegistrationReminderEmailAdditionalDetails"
           ></rck-field>
         </tcc-validator>
       </div>
@@ -412,6 +437,7 @@ export default defineComponent({
           :attribute="e.attributes.ReminderEmailSendDate"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="dateReminderEmailSendDate"
         ></rck-field>
       </div>
     </div>

@@ -67,7 +67,8 @@ export default defineComponent({
         checkBoxes: {
             type: Boolean,
             required: false
-        }
+        },
+        id: String
     },
     setup() {
     },
@@ -245,7 +246,7 @@ export default defineComponent({
     },
     template: `
 <div style="display: flex; align-items: end;">
-  <a-btn shape="circle" type="accent" @click="map = true" class="mr-1">
+  <a-btn shape="circle" type="accent" @click="map = true" class="mr-1" :id="'btn' + id">
     <i class="fas fa-map-marked-alt"></i>
   </a-btn>
   <div style="width: -webkit-fill-available;">
@@ -255,6 +256,7 @@ export default defineComponent({
         <rck-text
           v-model="selectedValue.text"
           inputClasses="tcc-text-display"
+          :id="'txt' + id"
         ></rck-text>
       </div>
       <template #overlay>
@@ -264,6 +266,7 @@ export default defineComponent({
               <rck-text
                 v-model="search"
                 placeholder="Type to filter..."
+                :id="'search' + id"
               ></rck-text>
               <i class="fa fa-search"></i>
             </div>

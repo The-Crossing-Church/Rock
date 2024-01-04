@@ -155,6 +155,7 @@ export default defineComponent({
           :attribute="request.attributes.WhyAttend"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtWhyAttend"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -166,6 +167,7 @@ export default defineComponent({
           v-model="request.attributeValues.TargetAudience"
           :label="request.attributes.TargetAudience.name"
           :items="JSON.parse(request.attributes.TargetAudience.configurationValues.values)"
+          id="ddlTargetAudience"
         ></tcc-pub-ddl>
       </tcc-validator>
       <rck-field
@@ -174,6 +176,7 @@ export default defineComponent({
         :attribute="request.attributes.TargetAudience"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="ddlTargetAudience"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -181,6 +184,7 @@ export default defineComponent({
         v-model="request.attributeValues.EventisSticky"
         :label="request.attributes.EventisSticky.name"
         v-if="!readonly"
+        id="boolEventisSticky"
       ></tcc-switch>
       <rck-field
         v-else
@@ -188,6 +192,7 @@ export default defineComponent({
         :attribute="request.attributes.EventisSticky"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolEventisSticky"
       ></rck-field>
     </div>
   </div>
@@ -199,6 +204,7 @@ export default defineComponent({
           :label="request.attributes.PublicityStartDate.name"
           :min="minPubStartDate"
           :max="maxPubStartDate"
+          id="datePublicityStartDate"
         ></tcc-date-pkr>
       </tcc-validator>
       <rck-field
@@ -207,6 +213,7 @@ export default defineComponent({
         :attribute="request.attributes.PublicityStartDate"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="datePublicityStartDate"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -216,6 +223,7 @@ export default defineComponent({
           :label="request.attributes.PublicityEndDate.name"
           :min="minPubEndDate"
           :max="maxPubEndDate"
+          id="datePublicityEndDate"
         ></tcc-date-pkr>
       </tcc-validator>
       <rck-field
@@ -224,6 +232,7 @@ export default defineComponent({
         :attribute="request.attributes.PublicityEndDate"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="datePublicityEndDate"
       ></rck-field>
     </div>
   </div>
@@ -237,6 +246,7 @@ export default defineComponent({
             :attribute="pubStrategiesNotSticky"
             :is-edit-mode="!readonly"
             :showEmptyValue="true"
+            id="ddlPublicityStrategies"
           ></rck-field>
           <rck-field
             v-else
@@ -244,6 +254,7 @@ export default defineComponent({
             :attribute="request.attributes.PublicityStrategies"
             :is-edit-mode="!readonly"
             :showEmptyValue="true"
+            id="ddlPublicityStrategies"
           ></rck-field>
         </tcc-validator>
       </div>

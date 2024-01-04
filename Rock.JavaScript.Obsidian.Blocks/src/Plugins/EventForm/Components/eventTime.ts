@@ -80,6 +80,7 @@ export default defineComponent({
             {"mine": "09:35 AM", "theirs": "10:40 AM", "title": "2nd Service"},
             {"mine": "10:50 AM", "theirs": "11:55 AM", "title": "3rd Service"}
           ]'
+          id="TimeStartTime"
         ></tcc-time>
       </tcc-validator>
     </div>
@@ -95,6 +96,7 @@ export default defineComponent({
             {"theirs": "09:35 AM", "mine": "10:40 AM", "title": "2nd Service"},
             {"theirs": "10:50 AM", "mine": "11:55 AM", "title": "3rd Service"}
           ]'
+          id="TimeEndTime"
         ></tcc-time>
       </tcc-validator>
     </div>

@@ -41,7 +41,8 @@ export default defineComponent({
         disabledDates: {
             type: Array as PropType<String[]>,
             required: false
-        }
+        },
+        id: String
     },
     setup() {
 
@@ -267,7 +268,7 @@ export default defineComponent({
   <div class="tcc-cal-pkr-header">
     <i v-if="canClickPre" class="fa fa-chevron-left hover" @click="prevMonth"></i>
     <i v-else class="fa fa-chevron-left fa-disabled"></i>
-    <div style="display: flex;">
+    <div style="display: flex;" :id="id">
       <a-dropdown :trigger="['click']" v-model:visible="monthMenu">
         <div style="padding-right: 8px;">
           {{displayMonth.toFormat('MMMM')}}

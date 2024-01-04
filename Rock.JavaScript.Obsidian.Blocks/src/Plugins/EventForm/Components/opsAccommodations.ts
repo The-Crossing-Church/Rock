@@ -314,6 +314,7 @@ export default defineComponent({
         :attribute="e.attributes.RoomTech"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="ddlRoomTech"
       ></rck-field>
     </div>
   </div>
@@ -324,6 +325,7 @@ export default defineComponent({
         :attribute="e.attributes.TechNeeds"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="txtTechNeeds"
       ></rck-field>
     </div>
   </div>
@@ -349,7 +351,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly">
+            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly" :id="'btnEditSetUp_' + gsu.guid">
               <i class="fa fa-pencil-alt"></i>
             </a-btn>
           </div>
@@ -367,7 +369,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly">
+            <a-btn shape="circle" type="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly" :id="'btnEditSetUp_' + gsu.guid">
               <i class="fa fa-pencil-alt"></i>
             </a-btn>
           </div>
@@ -381,6 +383,7 @@ export default defineComponent({
         v-model="e.attributeValues.Tablecloths"
         :label="e.attributes.Tablecloths.name"
         v-if="!readonly"
+        id="boolTablecloths"
       ></tcc-switch>
       <rck-field
         v-else
@@ -388,6 +391,7 @@ export default defineComponent({
         :attribute="e.attributes.Tablecloths"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolTablecloths"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -395,6 +399,7 @@ export default defineComponent({
         v-model="e.attributeValues.NeedsDoorsUnlocked"
         :label="e.attributes.NeedsDoorsUnlocked.name"
         v-if="!readonly"
+        id="boolNeedsDoorsUnlocked"
       ></tcc-switch>
       <rck-field
         v-else
@@ -402,6 +407,7 @@ export default defineComponent({
         :attribute="e.attributes.NeedsDoorsUnlocked"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolNeedsDoorsUnlocked"
       ></rck-field>
     </div>
     <div class="col col-xs-12 mb-2" v-if="e.attributeValues.NeedsDoorsUnlocked == 'True'">
@@ -411,6 +417,7 @@ export default defineComponent({
         :attribute="doorsAttr"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="ddlDoors"
       ></rck-field>
     </div>
   </div>
@@ -419,6 +426,7 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.NeedsSecurity"
         :label="e.attributes.NeedsSecurity.name"
+        id="boolNeedsSecurity"
         v-if="!readonly"
       ></tcc-switch>
       <rck-field
@@ -427,6 +435,7 @@ export default defineComponent({
         :attribute="e.attributes.NeedsSecurity"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolNeedsSecurity"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -434,6 +443,7 @@ export default defineComponent({
         v-model="e.attributeValues.HasDangerousActivity"
         :label="e.attributes.HasDangerousActivity.name"
         v-if="!readonly"
+        id="boolHasDangerousActivity"
       ></tcc-switch>
       <rck-field
         v-else
@@ -441,6 +451,7 @@ export default defineComponent({
         :attribute="e.attributes.HasDangerousActivity"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolHasDangerousActivity"
       ></rck-field>
     </div>
   </div>
@@ -451,6 +462,7 @@ export default defineComponent({
         :attribute="e.attributes.DangerousActivityInfo"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="txtDangerousActivityInfo"
       ></rck-field>
     </div>
   </div>
@@ -461,6 +473,7 @@ export default defineComponent({
         :attribute="e.attributes.Setup"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="txtSetup"
       ></rck-field>
     </div>
   </div>
@@ -471,6 +484,7 @@ export default defineComponent({
         :attribute="e.attributes.SetupImage"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="imgSetupImage"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.HasDangerousActivity == 'True'">
@@ -479,6 +493,7 @@ export default defineComponent({
         :attribute="e.attributes.InsuranceCertificate"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="fileInsuranceCertificate"
       ></rck-field>
     </div>
   </div>
@@ -491,6 +506,7 @@ export default defineComponent({
           :attribute="e.attributes.Drinks"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlDrinks"
         ></rck-field>
       </div>
       <div class="col col-xs-12 col-md-6">
@@ -498,6 +514,7 @@ export default defineComponent({
           <tcc-time 
             :label="e.attributes.DrinkTime.name"
             v-model="e.attributeValues.DrinkTime"
+            id="TimeDrinkTime"
           ></tcc-time>
         </tcc-validator>
         <rck-field
@@ -506,6 +523,7 @@ export default defineComponent({
           :attribute="e.attributes.DrinkTime"
           :is-edit-mode="false"
           :showEmptyValue="true"
+          id="timeDrinkTime"
         ></rck-field>
       </div>
     </div>
@@ -516,6 +534,7 @@ export default defineComponent({
           :attribute="e.attributes.DrinkSetupLocation"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtDrinkSetupLocation"
         ></rck-field>
       </div>
     </div>
@@ -533,10 +552,10 @@ export default defineComponent({
   </div>
   <template #footer>
     <div style="display: flex;">
-      <a-btn type="secondary" @click="useStandardSetUp">Use Standard Set-up</a-btn>
+      <a-btn type="secondary" @click="useStandardSetUp" id="btnUseStandard">Use Standard Set-up</a-btn>
       <div class="spacer"></div>
-      <a-btn type="accent" @click="addSetUpConfiguration">Add Row</a-btn>
-      <a-btn type="primary" @click="saveSetUpConfiguration">Save</a-btn>
+      <a-btn type="accent" @click="addSetUpConfiguration" id="btnAddRowToSetup">Add Row</a-btn>
+      <a-btn type="primary" @click="saveSetUpConfiguration" id="btnSaveSetup">Save</a-btn>
     </div>
   </template>
 </a-modal>

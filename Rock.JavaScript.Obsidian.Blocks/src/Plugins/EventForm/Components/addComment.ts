@@ -56,7 +56,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 pt-4">
-      <a-btn type="primary" @click="newComment">
+      <a-btn type="primary" @click="newComment" id="btnContact">
         <i class="fas fa-comment-alt pr-2"></i>
         Contact
       </a-btn>
@@ -68,13 +68,14 @@ export default defineComponent({
   <rck-text
     v-model="comment"
     textMode="multiline"
+    id="txtComment"
   ></rck-text>
   <template #footer>
-    <a-btn type="accent" @click="createComment">
+    <a-btn type="accent" @click="createComment" id="btnAddComment">
       <i class="mr-1 fa fa-comment-alt"></i>
       Add Comment
     </a-btn>
-    <a-btn type="grey" @click="modal = false;">
+    <a-btn type="grey" @click="modal = false;" id="btnCancel">
       <i class="mr-1 fa fa-ban"></i>
       Cancel
     </a-btn>

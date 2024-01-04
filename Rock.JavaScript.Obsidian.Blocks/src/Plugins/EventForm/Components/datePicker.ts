@@ -39,7 +39,8 @@ export default defineComponent({
       disabledDates: {
         type: String,
         required: false
-      }
+      },
+      id: String
     },
     setup() {
 
@@ -95,6 +96,7 @@ export default defineComponent({
     v-model="displayDate"
     inputClasses="tcc-text-display"
     @click="menu = true"
+    :id="'txt' + id"
   ></rck-text>
   <a-modal v-model:visible="menu" @ok="menu = false">
     <br/>
@@ -106,6 +108,7 @@ export default defineComponent({
       :max="max"
       v-on:closemenu="menu = false"
       :disabledDates="unavailableDates"
+      :id="'cal' + id"
     ></tcc-calendar>
   </a-modal>
 </div>

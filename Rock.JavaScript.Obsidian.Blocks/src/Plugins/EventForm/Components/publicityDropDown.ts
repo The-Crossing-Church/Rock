@@ -35,6 +35,7 @@ export default defineComponent({
             type: Array as PropType<ListItem[]>,
             required: true
         },
+        id: String
     },
     setup() {
 
@@ -102,6 +103,7 @@ export default defineComponent({
       <rck-text
         v-model="selectedValue.text"
         inputClasses="tcc-text-display"
+        :id="'txt' + id"
       ></rck-text>
     </div>
     <template #overlay>

@@ -81,6 +81,7 @@ export default defineComponent({
       :attribute="e.attributes.StartBuffer"
       :is-edit-mode="true"
       v-on:change="startChanged"
+      id="txtStartBuffer"
     ></rck-field>
   </div>
   <div class="col col-xs-12 col-md-6">
@@ -89,6 +90,7 @@ export default defineComponent({
       :attribute="e.attributes.EndBuffer"
       :is-edit-mode="true"
       v-on:change="endChanged"
+      id="txtEndBuffer"
     ></rck-field>
   </div>
 </div>

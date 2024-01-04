@@ -115,7 +115,7 @@ export default defineComponent({
     template: `
 <rck-form ref="form" @validationChanged="validationChange" class="catering-form">
   <a-dropdown :trigger="['click']" v-model:visible="vendorMenu" v-if="!readonly">
-    <div class="hover font-weight-bold">For a list of our preferred vendors - <span class="text-accent">please click here.</span></div>
+    <div class="hover font-weight-bold" id="ddlPreferredVendor">For a list of our preferred vendors - <span class="text-accent">please click here.</span></div>
     <template #overlay>
       <a-menu class="tcc-dropdown">
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Arris’'; vendorMenu = false;">
@@ -133,15 +133,6 @@ export default defineComponent({
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'D-Rowe’s'; vendorMenu = false;">
           D-Rowe’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Freddy’s'; vendorMenu = false;">
-          Freddy’s
-        </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Honey Baked Ham'; vendorMenu = false;">
-          Honey Baked Ham
-        </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hoss’'; vendorMenu = false;">
-          Hoss’
-        </a-menu-item>
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Hy-Vee Catering'; vendorMenu = false;">
           Hy-Vee Catering
         </a-menu-item>
@@ -151,14 +142,14 @@ export default defineComponent({
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Jimmy John’s'; vendorMenu = false;">
           Jimmy John’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Lee’s'; vendorMenu = false;">
-          Lee’s
-        </a-menu-item>
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Mrs. Tammie'; vendorMenu = false;">
           Mrs. Tammie
         </a-menu-item>
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Panera'; vendorMenu = false;">
           Panera
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Pancheros'; vendorMenu = false;">
+          Pancheros
         </a-menu-item>
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Papa John’s'; vendorMenu = false;">
           Papa John’s
@@ -169,9 +160,6 @@ export default defineComponent({
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Pizza Tree'; vendorMenu = false;">
           Pizza Tree
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Popeye’s'; vendorMenu = false;">
-          Popeye’s
-        </a-menu-item>
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Shakespeare’s'; vendorMenu = false;">
           Shakespeare’s
         </a-menu-item>
@@ -180,6 +168,9 @@ export default defineComponent({
         </a-menu-item>
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Tropical Smoothie Cafe'; vendorMenu = false;">
           Tropical Smoothie Cafe
+        </a-menu-item>
+        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Your Pie'; vendorMenu = false;">
+          Your Pie
         </a-menu-item>
       </a-menu>
     </template>
@@ -192,6 +183,7 @@ export default defineComponent({
           :attribute="e.attributes.PreferredVendor"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtPreferredVendor"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -202,6 +194,7 @@ export default defineComponent({
           :attribute="e.attributes.ExpectedAttendance"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          :id="txtAttendance"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -214,6 +207,7 @@ export default defineComponent({
           :attribute="e.attributes.FoodBudgetMinistry"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlFoodBudgetMinistry"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -224,6 +218,7 @@ export default defineComponent({
           :attribute="e.attributes.FoodBudgetLine"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlFoodBudgetLine"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -236,6 +231,7 @@ export default defineComponent({
           :attribute="e.attributes.PreferredMenu"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtMenu"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -246,6 +242,7 @@ export default defineComponent({
         v-model="e.attributeValues.NeedsDelivery"
         :label="e.attributes.NeedsDelivery.name"
         v-if="!readonly"
+        id="boolNeedsDelivery"
       ></tcc-switch>
       <rck-field
         v-else
@@ -253,6 +250,7 @@ export default defineComponent({
         :attribute="e.attributes.NeedsDelivery"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="boolNeedsDelivery"
       ></rck-field>
     </div>
   </div>
@@ -262,6 +260,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.FoodTime.name"
           v-model="e.attributeValues.FoodTime"
+          id="TimeFoodTime"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -270,6 +269,7 @@ export default defineComponent({
         :attribute="e.attributes.FoodTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeFoodTime"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -279,6 +279,7 @@ export default defineComponent({
           :attribute="e.attributes.FoodSetupLocation"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtFoodSetupLocation"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -289,6 +290,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.FoodTime.name"
           v-model="e.attributeValues.FoodTime"
+          id="TimeFoodTime"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -297,6 +299,7 @@ export default defineComponent({
         :attribute="e.attributes.FoodTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeFoodTime"
       ></rck-field>
     </div>
   </div>
@@ -307,6 +310,7 @@ export default defineComponent({
         :attribute="e.attributes.Drinks"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="ddlDrinks"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -314,6 +318,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.DrinkTime.name"
           v-model="e.attributeValues.DrinkTime"
+          id="TimeDrinkTime"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -322,6 +327,7 @@ export default defineComponent({
         :attribute="e.attributes.DrinkTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeDrinkTime"
       ></rck-field>
     </div>
   </div>
@@ -332,6 +338,7 @@ export default defineComponent({
         :attribute="e.attributes.SetupFoodandDrinkTogether"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="boolSetupFoodandDrinkTogether"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -340,6 +347,7 @@ export default defineComponent({
         :attribute="e.attributes.DrinkSetupLocation"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="txtDrinkSetupLocation"
       ></rck-field>
     </div>
   </div>

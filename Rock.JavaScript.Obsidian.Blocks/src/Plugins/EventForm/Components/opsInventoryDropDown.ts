@@ -50,6 +50,7 @@ export default defineComponent({
       type: String,
       required: false
     },
+    id: String
   },
   setup() {
   },
@@ -157,10 +158,11 @@ export default defineComponent({
       <rck-text
         v-model="selectedDisplayText"
         inputClasses="tcc-text-display"
+        :id="'txt' + id"
       ></rck-text>
     </div>
     <template #overlay v-model:visible="menuOpen">
-      <a-menu class="tcc-dropdown">
+      <a-menu class="tcc-dropdown" :id="'menu' + id">
         <div class="tcc-menu-header">
           <div class="tcc-menu-search">
             <rck-text

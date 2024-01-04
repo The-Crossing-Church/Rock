@@ -79,6 +79,7 @@ export default defineComponent({
           :attribute="request.attributes.ProductionTech"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlProductionTech"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -91,6 +92,7 @@ export default defineComponent({
           :attribute="request.attributes.ProductionSetup"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtProductionSetup"
         ></rck-field>
       </tcc-validator>
     </div>

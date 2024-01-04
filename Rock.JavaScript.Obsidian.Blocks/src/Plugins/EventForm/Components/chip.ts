@@ -11,7 +11,8 @@ export default defineComponent({
             type: Boolean,
             required: false
         },
-        class: String
+        class: String,
+        id: String
     },
     setup() {
 
@@ -38,7 +39,7 @@ export default defineComponent({
       
     },
     template: `
-<div :class="className" @click="$emit('click')">
+<div :class="className" @click="$emit('click')" :id="id">
   <slot></slot>
   <i v-if="!disabled" class="fa fa-times-circle" style="padding-left: 6px; color: #676666;" @click="emitCloseClick"></i>
 </div>

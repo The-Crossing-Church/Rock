@@ -22,7 +22,8 @@ export default defineComponent({
         rules: Array,
         dates: Array,
         label: String,
-        quickSetItems: Array
+        quickSetItems: Array,
+        id: String
     },
     setup() {
 
@@ -212,9 +213,10 @@ export default defineComponent({
       v-model="displayTime"
       inputClasses="tcc-text-display"
       @click="menu = true"
+      :id="'txt' + id"
     ></rck-text>
   </tcc-validator>
-  <a-modal v-model:visible="menu" @ok="menu = false">
+  <a-modal v-model:visible="menu" @ok="menu = false" :ok-button-props="{ id: 'btnSaveTime' }">
     <div class="time-menu">
       <div class="row">
         <strong>ENTER TIME</strong>
@@ -240,6 +242,7 @@ export default defineComponent({
               class="txt-round txt-hour"
               type="number"
               @blur="validateHour(hour)"
+              :id="'txtHour' + id"
             ></rck-text>
           </tcc-validator>
         </div>
@@ -254,6 +257,7 @@ export default defineComponent({
               class="txt-round"
               type="number"
               @blur="validateMinute(minute)"
+              :id="'txtMinute' + id"
             ></rck-text>
           </tcc-validator>
         </div>

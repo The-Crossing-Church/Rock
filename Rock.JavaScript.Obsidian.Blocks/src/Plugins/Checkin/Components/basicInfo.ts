@@ -219,7 +219,7 @@ export default defineComponent({
   <div :class="'col col-xs-12 col-md-' + nameRowColumnWidths.small" v-if="showTitle">
     <rck-ddl
       v-model="person.titleValueId"
-      :options="titleOptions"
+      :items="titleOptions"
       :class="(person.id && person.id > 0) ? 'readonly' : ''"
       :label="titleDefinedType.name"
     ></rck-ddl>
@@ -264,7 +264,7 @@ export default defineComponent({
     <rck-ddl
       v-model="person.suffixValueId"
       :class="(person.id && person.id > 0) ? 'readonly' : ''"
-      :options="suffixOptions"
+      :items="suffixOptions"
       :label="suffixDefinedType.name"
     ></rck-ddl>
   </div>
@@ -274,7 +274,7 @@ export default defineComponent({
     <rck-ddl
       v-model="person.gender"
       :class="(person.id && person.id > 0) ? 'readonly' : ''"
-      :options="genderOptions"
+      :items="genderOptions"
       label="Gender"
       :rules="['required']"
       v-on:change="checkForDuplicates"
@@ -306,7 +306,7 @@ export default defineComponent({
     <rck-ddl
       v-model="abilityLevel"
       :class="(person.id && person.id > 0) ? 'readonly' : ''"
-      :options="gradeAbilityOptions"
+      :items="gradeAbilityOptions"
       label="Ability Level/Grade"
       :rules="['required']"
     ></rck-ddl>
@@ -317,7 +317,7 @@ export default defineComponent({
     <rck-ddl
       v-model="person.connectionStatusValueId"
       :class="(person.id && person.id > 0) ? 'readonly' : ''"
-      :options="connectionStatusOptions"
+      :items="connectionStatusOptions"
       :label="connectionStatusDefinedType.name"
       :rules="['required']"
     ></rck-ddl>
@@ -326,7 +326,7 @@ export default defineComponent({
     <rck-ddl
       v-model="person.maritalStatusValueId"
       :class="(person.id && person.id > 0) ? 'readonly' : ''"
-      :options="maritalStatusOptions"
+      :items="maritalStatusOptions"
       :label="maritalStatusDefinedType.name"
       :rules="['required']"
     ></rck-ddl>

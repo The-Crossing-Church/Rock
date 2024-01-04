@@ -210,7 +210,7 @@ export default defineComponent({
               <template v-if="dc.AutoApply == 'True'">
                 <i class="fas fa-check-square"></i> Auto-Apply 
               </template>
-              <a-btn @click="edit(idx)" shape="circle" type="accent" class="pull-right">
+              <a-btn @click="edit(idx)" shape="circle" type="accent" class="pull-right" :id="'btnEditDiscount' + idx">
                 <i class="fa fa-pencil-alt"></i>
               </a-btn>
             </div>
@@ -222,7 +222,7 @@ export default defineComponent({
       </template>
     </div>
     <div class="col col-xs-1">
-      <a-btn class="pull-right" type="accent" shape="circle" @click="newCode = { AutoApply: 'False', CodeType: '%', Amount: '', MaxUses: '', EffectiveDateRange: '', Code: '' }; modal = true;">
+      <a-btn class="pull-right" type="accent" shape="circle" @click="newCode = { AutoApply: 'False', CodeType: '%', Amount: '', MaxUses: '', EffectiveDateRange: '', Code: '' }; modal = true;" id="btnNewCode">
         <i class="fa fa-plus"></i>
       </a-btn>
     </div>
@@ -241,6 +241,7 @@ export default defineComponent({
         :items="codeTypeOptions"
         v-on:updateCodeType="updateCodeType"
         v-on:updateAmount="updateAmount"
+        id="DiscountCode"
       ></tcc-code>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -248,6 +249,7 @@ export default defineComponent({
         v-model="newCode.Code"
         :attribute="codeAttr"
         :is-edit-mode="true"
+        id="txtCode"
       ></rck-field>
     </div>
   </div>
@@ -257,6 +259,7 @@ export default defineComponent({
         v-model="newCode.MaxUses"
         :attribute="maxUsesAttr"
         :is-edit-mode="true"
+        id="txtMaxUses"
       ></rck-field>
     </div>
   </div>
@@ -266,6 +269,7 @@ export default defineComponent({
         v-model="newCode.EffectiveDateRange"
         :attribute="effectiveDateRangeAttr"
         :is-edit-mode="true"
+        id="dateEffectiveDateRange"
       ></rck-field>
     </div>
   </div>
@@ -274,12 +278,13 @@ export default defineComponent({
       <tcc-switch
         v-model="newCode.AutoApply"
         :label="autoApplyAttr.name"
+        id="boolAutoApply"
       ></tcc-switch>
     </div>
   </div>
   <template #footer>
-    <a-btn type="red" @click="removeCode" v-if="selectedIdx >= 0">Delete</a-btn>
-    <a-btn type="primary" @click="save">Save</a-btn>
+    <a-btn type="red" @click="removeCode" v-if="selectedIdx >= 0" id="btnDeleteCode">Delete</a-btn>
+    <a-btn type="primary" @click="save" id="btnSaveCode">Save</a-btn>
   </template>
 </a-modal>
 <v-style>

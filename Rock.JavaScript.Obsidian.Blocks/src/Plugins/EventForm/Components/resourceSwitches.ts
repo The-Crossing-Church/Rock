@@ -160,6 +160,7 @@ export default defineComponent({
       :label="viewModel.request.attributes.NeedsSpace.name"
       hint="If you need any doors unlocked for this event, please be sure to include Operations accommodations below. Selecting a physical space does not assume unlocked doors."
       :persistent-hint="viewModel.request.attributeValues.NeedsSpace == 'True'"
+      id="switchNeedsSpace"
     ></tcc-switch>
   </div>
 </div>
@@ -171,6 +172,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsCatering')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsCatering == 'True'"
+      id="switchNeedsCatering"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsCatering == 'False'">
       The last possible date to request catering {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
@@ -185,6 +187,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsOpsAccommodations')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'"
+      id="switchNeedsOps"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsOpsAccommodations == 'False'">
       The last possible date to request ops accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
@@ -199,6 +202,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(thirtyDaysTense,'NeedsChildCare')"
       hint="Requests involving childcare must be made at least 30 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsChildCare == 'True'"
+      id="switchNeedsChildCare"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsChildCare == 'False'">
       The last possible date to request childcare {{thirtyDaysTense}} {{thirtyDaysBeforeEventStart}}
@@ -211,6 +215,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsChildCareCatering')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'"
+      id="switchNeedsChildCareCatering"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsChildCareCatering == 'False'">
       The last possible date to request catering for childcare {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
@@ -225,6 +230,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsRegistration')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsRegistration == 'True'"
+      id="switchNeedsRegistration"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsRegistration == 'False'">
       The last possible date to request registration {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
@@ -239,6 +245,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsWebCalendar')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsWebCalendar == 'True'"
+      id="switchNeedsWebCal"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsWebCalendar == 'False'">
       The last possible date to request web calendar {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
@@ -253,6 +260,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(sixWeeksTense,'NeedsPublicity')"
       hint="Requests involving publicity must be made at least 6 weeks in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsPublicity == 'True'"
+      id="switchNeedsPublicity"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsPublicity == 'False'">
       The last possible date to request publicity {{sixWeeksTense}} {{sixWeeksBeforeEventStart}}
@@ -267,6 +275,7 @@ export default defineComponent({
       :disabled="switchIsDisabled(twoWeeksTense,'NeedsProductionAccommodations')"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'"
+      id="switchNeedsProduction"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsProductionAccommodations == 'False'">
       The last possible date to request production accommodations {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
@@ -281,6 +290,7 @@ export default defineComponent({
       :label="viewModel.request.attributes.NeedsOnline.name"
       hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
       :persistent-hint="viewModel.request.attributeValues.NeedsOnline == 'True'"
+      id="switchNeedsOnline"
     ></tcc-switch>
     <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsOnline == 'False'">
       The last possible date to request zoom {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}

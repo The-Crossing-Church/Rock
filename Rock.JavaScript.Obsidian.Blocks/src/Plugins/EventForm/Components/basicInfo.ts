@@ -194,6 +194,7 @@ export default defineComponent({
         <rck-lbl>Name of {{requestType}} on calendar</rck-lbl>
         <rck-text
           v-model="viewModel.request.title"
+          id="txtTitle"
         ></rck-text>
       </tcc-validator>
     </div>
@@ -205,6 +206,7 @@ export default defineComponent({
           v-model="viewModel.request.attributeValues.Ministry"
           :attribute="viewModel.request.attributes.Ministry"
           :is-edit-mode="true"
+          id="ddlMinistry"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -214,6 +216,7 @@ export default defineComponent({
           v-model="viewModel.request.attributeValues.Contact"
           :attribute="viewModel.request.attributes.Contact"
           :is-edit-mode="true"
+          id="txtContact"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -238,6 +241,7 @@ export default defineComponent({
         v-model="viewModel.request.attributeValues.IsSame"
         :label="viewModel.request.attributes.IsSame.name"
         :disabled="!(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')"
+        id="switchSame"
       ></tcc-switch>
     </div>
   </div>
@@ -254,6 +258,7 @@ export default defineComponent({
             {"mine": "09:35 AM", "theirs": "10:40 AM", "title": "2nd Service"},
             {"mine": "10:50 AM", "theirs": "11:55 AM", "title": "3rd Service"}
           ]'
+          id="TimeStart"
         ></tcc-time>
       </tcc-validator>
     </div>
@@ -269,6 +274,7 @@ export default defineComponent({
             {"theirs": "09:35 AM", "mine": "10:40 AM", "title": "2nd Service"},
             {"theirs": "10:50 AM", "mine": "11:55 AM", "title": "3rd Service"}
           ]'
+          id="TimeEnd"
         ></tcc-time>
       </tcc-validator>
     </div>

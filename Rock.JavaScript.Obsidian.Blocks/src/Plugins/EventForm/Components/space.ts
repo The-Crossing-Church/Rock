@@ -324,6 +324,7 @@ export default defineComponent({
           v-model="e.attributeValues.ExpectedAttendance"
           :attribute="e.attributes.ExpectedAttendance"
           :is-edit-mode="true"
+          id="txtAttendance"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -334,6 +335,7 @@ export default defineComponent({
           :label="e.attributes.Rooms.name"
           :items="groupedRooms"
           :multiple="true"
+          id="PkrRoom"
         ></tcc-room>
       </tcc-validator>
     </div>
@@ -345,6 +347,7 @@ export default defineComponent({
           v-model="e.attributeValues.InfrastructureSpace"
           :attribute="e.attributes.InfrastructureSpace"
           :is-edit-mode="true"
+          id="txtInfrastructureSpace"
         ></rck-field>
       </tcc-validator>
     </div>

@@ -102,6 +102,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.ChildcareStartTime.name"
           v-model="e.attributeValues.ChildcareStartTime"
+          id="TimeChildcareStart"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -110,6 +111,7 @@ export default defineComponent({
         :attribute="e.attributes.ChildcareStartTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeChildcareStart"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -117,6 +119,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.ChildcareEndTime.name"
           v-model="e.attributeValues.ChildcareEndTime"
+          id="TimeChildcareEnd"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -125,6 +128,7 @@ export default defineComponent({
         :attribute="e.attributes.ChildcareEndTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeChildcareEnd"
       ></rck-field>
     </div>
   </div>
@@ -136,6 +140,7 @@ export default defineComponent({
           :attribute="e.attributes.ChildcareBudgetMinistry"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlChildcareBudgetMinistry"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -146,6 +151,7 @@ export default defineComponent({
           :attribute="e.attributes.ChildcareBudgetLine"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlChildcareBudgetLine"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -158,6 +164,7 @@ export default defineComponent({
           :attribute="childcareOptsAttr"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlChildcareOptions"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -168,6 +175,7 @@ export default defineComponent({
           :attribute="e.attributes.EstimatedNumberofKids"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtEstimatedNumberofKids"
         ></rck-field>
       </tcc-validator>
     </div>

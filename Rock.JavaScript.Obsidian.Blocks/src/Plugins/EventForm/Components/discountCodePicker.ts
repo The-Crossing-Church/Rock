@@ -28,6 +28,7 @@ export default defineComponent({
     },
     label: String,
     items: Array,
+    id: String
   },
   data() {
     return {
@@ -65,6 +66,7 @@ export default defineComponent({
   <div style="display: flex;">
     <a-select
       v-model:value="internalCodeType"
+      :id="'ddl' + id"
     >
       <a-select-option v-for="i in items" :value="i" :key="i">{{i}}</a-select-option>
     </a-select>
@@ -72,6 +74,7 @@ export default defineComponent({
       <rck-txt
         v-model="internalAmount"
         type="number"
+        :id="'txt' + id"
       ></rck-txt>
     </div>
   </div>

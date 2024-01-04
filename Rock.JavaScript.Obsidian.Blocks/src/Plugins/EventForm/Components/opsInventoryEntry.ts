@@ -34,6 +34,7 @@ export default defineComponent({
       type: Boolean,
       required: false
     },
+    id: String
   },
   setup() {
 
@@ -70,6 +71,7 @@ export default defineComponent({
     <tcc-inv-ddl
       v-model="inventoryRes.InventoryItem"
       :items="inventory"
+      :id="'ddlItem' + id"
     ></tcc-inv-ddl>
   </div>
   <div class="col col-xs-5">
@@ -77,10 +79,11 @@ export default defineComponent({
     <rck-text
       v-model="inventoryRes.QuantityNeeded"
       type="number"
+      :id="'txtQuantityNeeded' + id"
     ></rck-text>
   </div>
   <div class="col col-xs-2">
-    <a-btn type="red" @click="removeConfiguration">
+    <a-btn type="red" @click="removeConfiguration" :id="'btnRemove' + id">
       <i class="fas fa-trash"></i>
     </a-btn>
   </div>

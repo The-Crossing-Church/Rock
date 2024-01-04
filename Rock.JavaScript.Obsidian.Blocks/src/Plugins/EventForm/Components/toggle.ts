@@ -25,6 +25,7 @@ export default defineComponent({
             type: Boolean,
             required: false
         },
+        id: String
     },
     setup() {
 
@@ -73,6 +74,7 @@ export default defineComponent({
     <a-switch
         v-model:checked="valueAsBool"
         :disabled="disabled"
+        :id="id"
     ></a-switch>
     <label class="switch-label" @click="toggleValue">{{label}}</label>
   </div>

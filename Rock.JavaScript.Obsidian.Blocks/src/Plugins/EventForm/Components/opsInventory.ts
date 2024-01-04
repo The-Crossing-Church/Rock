@@ -355,17 +355,17 @@ export default defineComponent({
       </template>
     </div>
     <div class="col col-xs-1">
-      <a-btn class="pull-right" type="accent" shape="circle" @click="openInventoryEditor" v-if="!readonly">
+      <a-btn class="pull-right" type="accent" shape="circle" @click="openInventoryEditor" v-if="!readonly" id="btnOpenInventory">
         <i class="fa fa-plus"></i>
       </a-btn>
     </div>
   </div>
 </div>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
-  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
+  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :id="'InventoryItem' + idx" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
   <template #footer>
-    <a-btn type="accent" @click="addOpsInvConfiguration">Add Row</a-btn>
-    <a-btn type="primary" @click="saveOpsInvConfiguration">Save</a-btn>
+    <a-btn type="accent" @click="addOpsInvConfiguration" id="btnAddRowToOps">Add Row</a-btn>
+    <a-btn type="primary" @click="saveOpsInvConfiguration" id="btnSaveOps">Save</a-btn>
   </template>
 </a-modal>
 <v-style>

@@ -70,6 +70,7 @@ export default defineComponent({
           :attribute="e.attributes.EventURL"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtEventURL"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -81,6 +82,7 @@ export default defineComponent({
         :attribute="e.attributes.Password"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
+        id="txtPassword"
       ></rck-field>
     </div>
   </div>

@@ -86,6 +86,7 @@ export default defineComponent({
           :attribute="e.attributes.ChildcareVendor"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtChildcareVendor"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -94,6 +95,7 @@ export default defineComponent({
         <tcc-time 
           :label="e.attributes.ChildcareFoodTime.name"
           v-model="e.attributeValues.ChildcareFoodTime"
+          id="TimeChildcareFoodTime"
         ></tcc-time>
       </tcc-validator>
       <rck-field
@@ -102,6 +104,7 @@ export default defineComponent({
         :attribute="e.attributes.ChildcareFoodTime"
         :is-edit-mode="false"
         :showEmptyValue="true"
+        id="timeChildcareFoodTime"
       ></rck-field>
     </div>
   </div>
@@ -113,6 +116,7 @@ export default defineComponent({
           :attribute="e.attributes.ChildcareCateringBudgetMinistry"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlChildcareCateringBudgetMinistry"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -123,6 +127,7 @@ export default defineComponent({
           :attribute="e.attributes.ChildcareCateringBudgetLine"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="ddlChildcareCateringBudgetLine"
         ></rck-field>
       </tcc-validator>
     </div>
@@ -135,6 +140,7 @@ export default defineComponent({
           :attribute="e.attributes.ChildcarePreferredMenu"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
+          id="txtChildcarePreferredMenu"
         ></rck-field>
       </tcc-validator>
     </div>
