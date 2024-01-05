@@ -71,7 +71,7 @@ export default defineComponent({
                     let offset = g.attributeValues[this.gradeAttribute?.key]
                     let diff = (this.person?.graduationYear ? this.person.graduationYear : 0) - (this.graduationYear ? this.graduationYear : 0)
                     return offset == diff.toString()
-                  }).map((g: any) => { return { text: g.name, value: g.guid, attributeValues: g.attributeValues } })
+                  }).map((g: any) => { return { text: g.name, value: g.idKey, attributeValues: g.attributeValues } })
                 } else {
                   //LO/PS
                   correctGroup = this.groups.filter((g: any) => {
@@ -100,14 +100,17 @@ export default defineComponent({
                     }
                     let ability = JSON.parse(g.attributeValues[this.abilityAttribute?.key]).value
                     return ability == abilityLevel
-                  }).map((g: any) => { return { text: g.name, value: g.guid, attributeValues: g.attributeValues } })
+                  }).map((g: any) => { return { text: g.name, value: g.idKey, attributeValues: g.attributeValues } })
                 } 
                 if(correctGroup && correctGroup.length > 0) {
                   this.placementGroup = correctGroup[0].value
                   this.defaultGroup = correctGroup[0]
                   return this.groups.filter((g: any) => {
+                    if(this.defaultGroup.text == 'Infants' || this.defaultGroup.text == 'Crawlers') {
+                      return g.idKey == this.defaultGroup.value
+                    }
                     return g.name.substring(0, g.name.length -1) == this.defaultGroup.text.substring(0, this.defaultGroup.text.length -1)
-                  }).map((g: any) => { return { text: g.name, value: g.guid, attributeValues: g.attributeValues } })
+                  }).map((g: any) => { return { text: g.name, value: g.idKey, attributeValues: g.attributeValues } })
                 }
               }
             }
@@ -158,7 +161,7 @@ export default defineComponent({
 <div class="row mt-4" v-if="isValid == true">
   <div class="col col-xs-12 col-md-6">
     <rck-ddl
-      :options="groupOptions"
+      :items="groupOptions"
       v-model="placementGroup"
       :showBlankItem="false"
       :rules="['required']"

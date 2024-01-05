@@ -488,7 +488,7 @@ namespace Rock.Blocks.Plugins.Checkin
                 if (existingPersonGuid.HasValue)
                 {
                     PersonAlias pa = alias_svc.Get( existingPersonGuid.Value );
-                    if(pa != null)
+                    if (pa != null)
                     {
                         Person p = pa.Person; // per_svc.Get( pa.PersonId );
                         viewModel.ExistingPerson = p.ToViewModel( null, true );
@@ -554,7 +554,7 @@ namespace Rock.Blocks.Plugins.Checkin
                 Rock.Model.Group multiAge = grp_svc.Get( GetAttributeValue( AttributeKey.MultiAge ).AsGuid() );
                 List<Person> people = new List<Person>();
                 List<GroupMember> members = new List<GroupMember>();
-                List<GroupBag> groups = new List<GroupBag>();
+                List<Rock.Model.Group> groups = new List<Rock.Model.Group>();
                 DateTime? gradeTransition = GlobalAttributesCache.Get().GetValue( "GradeTransitionDate" ).MonthDayStringAsDateTime();
                 int GraduationYear = RockDateTime.Now.Year;
                 if (RockDateTime.Now >= gradeTransition)
@@ -618,7 +618,7 @@ namespace Rock.Blocks.Plugins.Checkin
                     //Group Placement
                     GroupMember checkinGroup = new GroupMember { PersonId = p.Id, GroupId = selected.Id, GroupRoleId = selected.GroupType.DefaultGroupRole.Id };
                     context.GroupMembers.Add( checkinGroup );
-                    groups.Add( selected.ToViewModel() );
+                    groups.Add( selected );
                     members.Add( checkinGroup );
                     if (placements[i].SelectedGroup != placements[i].CorrectGroup)
                     {
@@ -633,7 +633,7 @@ namespace Rock.Blocks.Plugins.Checkin
                             };
                             context.GroupMembers.Add( overrideGroup );
                             members.Add( overrideGroup );
-                            groups.Add( overrideA.ToViewModel() );
+                            groups.Add( overrideA );
                         }
                         else
                         {
@@ -645,7 +645,7 @@ namespace Rock.Blocks.Plugins.Checkin
                             };
                             context.GroupMembers.Add( overrideGroup );
                             members.Add( overrideGroup );
-                            groups.Add( overrideB.ToViewModel() );
+                            groups.Add( overrideB );
                         }
                     }
                     if (multiAge != null && !String.IsNullOrEmpty( selectedGradeValue.Value ) && selectedGradeValue.Value.AsInteger() < 13)
@@ -659,11 +659,12 @@ namespace Rock.Blocks.Plugins.Checkin
                         };
                         context.GroupMembers.Add( multiAgeGroup );
                         members.Add( multiAgeGroup );
-                        groups.Add( multiAge.ToViewModel() );
+                        groups.Add( multiAge );
                     }
                 }
                 context.SaveChanges();
-                return ActionOk( new { people, members, groups } );
+                Response r = new Response() { people = people, members = members, groups = groups.Select(g => new Rock.Model.Group() { Id = g.Id, Name = g.Name } ).ToList() };
+                return ActionOk( r );
             }
             catch (Exception e)
             {
@@ -825,8 +826,15 @@ namespace Rock.Blocks.Plugins.Checkin
 
         public class GroupPlacement
         {
-            public Guid CorrectGroup { get; set; }
-            public Guid SelectedGroup { get; set; }
+            public string CorrectGroup { get; set; }
+            public string SelectedGroup { get; set; }
+        }
+
+        private class Response
+        {
+            public List<Person> people { get; set; }
+            public List<GroupMember> members { get; set; }
+            public List<Rock.Model.Group> groups { get; set; }
         }
     }
 }

@@ -126,7 +126,6 @@ export default defineComponent({
         this.save(this.parents, this.children, numbers, placements)
         .then((res) => {
           this.showValidation = false
-          console.log(res)
           if(res.isSuccess) {
             //Family Processed
             this.message = ""
@@ -144,10 +143,11 @@ export default defineComponent({
                 this.message += "<br/>"
               }
             }
-            this.message += `<a href="/PersonBag/${res.data.people[0].id}" class="btn btn-primary my-2">View Profile<a/>`
+            this.message += `<a href="/Person/${res.data.people[0].id}" class="btn btn-primary my-2">View Profile<a/>`
             this.alertClass = "alert alert-success"
             this.showResults = true
           } else {
+            console.log('[Error Proccessing]')
             console.log(res.errorMessage)
             this.message = res.errorMessage
             this.alertClass = "alert alert-danger"
@@ -155,6 +155,11 @@ export default defineComponent({
           }
           window.scrollTo(0, 0)
         }).catch((err) => {
+          console.log('[Error Proccessing]')
+          console.log(err)
+          this.message = err
+          this.alertClass = "alert alert-danger"
+          this.showResults = true
           this.showValidation = false
         }).finally(() => {
           this.loading = false

@@ -146,7 +146,7 @@ export default defineComponent({
           } 
           diff = today.diff(bday,'months').toObject()
           if(diff.months && diff.months >= 1) {
-            return Math.floor(diff.months) + (Math.floor(diff.months) == 1 ? " Month Old" : " Months Old")
+            return Math.round(diff.months) + (Math.round(diff.months) == 1 ? " Month Old" : " Months Old")
           }
           diff = today.diff(bday,'days').toObject()
           if(diff.days && diff.days >= 1) {
