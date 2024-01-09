@@ -173,7 +173,7 @@ export default defineComponent({
         ref.validate()
       },
       quickSet(start: string, end: string) {
-        let time = DateTime.fromFormat(start, "hh:mm a")
+        let time = DateTime.fromFormat(start, "HH:mm:ss")
         this.hour = time.toFormat("hh")
         this.minute = time.toFormat("mm")
         this.meridiem = time.toFormat("a")

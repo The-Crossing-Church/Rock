@@ -76,9 +76,9 @@ export default defineComponent({
           :dates="request.attributeValues.EventDates" 
           @quicksettime="setEndTime"
           :quick-set-items='[
-            {"mine": "08:20 AM", "theirs": "09:25 AM", "title": "1st Service"},
-            {"mine": "09:35 AM", "theirs": "10:40 AM", "title": "2nd Service"},
-            {"mine": "10:50 AM", "theirs": "11:55 AM", "title": "3rd Service"}
+            {"mine": "08:20:00", "theirs": "09:25:00", "title": "1st Service"},
+            {"mine": "09:35:00", "theirs": "10:40:00", "title": "2nd Service"},
+            {"mine": "10:50:00", "theirs": "11:55:00", "title": "3rd Service"}
           ]'
           id="TimeStartTime"
         ></tcc-time>
@@ -92,9 +92,9 @@ export default defineComponent({
           :dates="request.attributeValues.EventDates" 
           @quicksettime="setStartTime"
           :quick-set-items='[
-            {"theirs": "08:20 AM", "mine": "09:25 AM", "title": "1st Service"},
-            {"theirs": "09:35 AM", "mine": "10:40 AM", "title": "2nd Service"},
-            {"theirs": "10:50 AM", "mine": "11:55 AM", "title": "3rd Service"}
+            {"theirs": "08:20:00", "mine": "09:25:00", "title": "1st Service"},
+            {"theirs": "09:35:00", "mine": "10:40:00", "title": "2nd Service"},
+            {"theirs": "10:50:00", "mine": "11:55:00", "title": "3rd Service"}
           ]'
           id="TimeEndTime"
         ></tcc-time>
