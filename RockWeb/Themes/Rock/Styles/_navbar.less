@@ -167,6 +167,10 @@ body.navbar-side-open {
         background-color: var(--nav-childpages-bg);
         box-shadow: inset 3px 0 0 0 @brand-primary;
       }
+       
+      &.current {
+        box-shadow: inset 3px 0 0 0 @brand-primary;
+      }
 
       
       // TODO: This is split into a separate selector because it feels buggy when toggled open
@@ -233,6 +237,7 @@ body.navbar-side-open {
         padding: 0;
         line-height: 2.5;
         color: @navbarside-color;
+        font-size: 14px;
 
         &::before {
           display: inline-block;
@@ -303,7 +308,7 @@ body.navbar-side-open {
         font-size: @font-size-xs;
         font-weight: 600;
         line-height: 1;
-        color: rgba(167,174,181,.6);
+        color: #aadddd;
         text-transform: uppercase;
         letter-spacing: 2px;
         border-top: 1px solid rgba(167,174,181,.6);

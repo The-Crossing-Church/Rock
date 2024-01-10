@@ -10,7 +10,7 @@
         {%- endif -%}
         </li>
 		{%- for childPage in Page.Pages -%}
-				<li class="nav-item nav-item-top{% if childPage.DisplayChildPages and childPage.Pages != empty %} has-children{% endif %}{% if childPage.IsParentOfCurrent %} current{% endif %}">
+            <li class="nav-item nav-item-top{% if childPage.DisplayChildPages and childPage.Pages != empty %} has-children{% endif %}{% if childPage.IsParentOfCurrent %} current{% endif %}">
 				<i class="{{ childPage.IconCssClass }}"></i>
                 <span class="item-title">{{ childPage.Title }}</span>
 				{%- if childPage.DisplayChildPages and childPage.Pages != empty -%}
