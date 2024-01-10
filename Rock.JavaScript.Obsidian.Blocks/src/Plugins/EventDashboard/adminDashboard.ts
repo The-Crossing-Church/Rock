@@ -497,7 +497,7 @@ export default defineComponent({
       let item = this.selected as any
       let items = item.childItems.map((i: any) => {
         if(i.attributeValues) {
-          return {id: i.idKey, start: i.attributeValues.StartBuffer, end: i.attributeValues.EndBuffer}
+          return { idKey: i.idKey, start: i.attributeValues.StartBuffer, end: i.attributeValues.EndBuffer }
         }
       })
       this.addBuffer(items).then((res) => {

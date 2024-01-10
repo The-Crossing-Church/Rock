@@ -579,7 +579,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 ContentChannelItemService cci_svc = new ContentChannelItemService( new RockContext() );
                 for (int i = 0; i < data.Count(); i++)
                 {
-                    ContentChannelItem item = cci_svc.Get( data[i].id );
+                    ContentChannelItem item = cci_svc.Get( data[i].idKey );
                     item.LoadAttributes();
                     item.SetAttributeValue( "StartBuffer", data[i].start );
                     item.SetAttributeValue( "EndBuffer", data[i].end );
@@ -1570,7 +1570,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
         public class BufferData
         {
-            public int id { get; set; }
+            public string idKey { get; set; }
             public string start { get; set; }
             public string end { get; set; }
         }
