@@ -18,6 +18,7 @@ import { computed, defineComponent, inject, PropType, ref, watch } from "vue";
 import CheckBox from "@Obsidian/Controls/checkBox";
 import CheckBoxList from "@Obsidian/Controls/checkBoxList";
 import DropDownList from "@Obsidian/Controls/dropDownList";
+import ListBox from "@Obsidian/Controls/listBox";
 import NumberBox from "@Obsidian/Controls/numberBox";
 import { asBoolean, asTrueFalseOrNull } from "@Obsidian/Utility/booleanUtils";
 import { toNumber, toNumberOrNull } from "@Obsidian/Utility/numberUtils";
@@ -61,6 +62,7 @@ export const EditComponent = defineComponent({
     name: "DefinedValueField.Edit",
 
     components: {
+        ListBox,
         DropDownList,
         CheckBoxList
     },
@@ -141,10 +143,12 @@ export const EditComponent = defineComponent({
     },
 
     template: `
-<DropDownList v-if="!isMultiple || configAttributes.enhanceForLongLists" v-model="internalValue" v-bind="configAttributes" :items="options" />
+<ListBox v-if="isMultiple && configAttributes.enhanceForLongLists" v-model="internalValue" v-bind="configAttributes" :items="options" />
+<DropDownList v-else-if="configAttributes.enhanceForLongLists" v-model="internalValue" v-bind="configAttributes" :items="options" />
 <CheckBoxList v-else v-model="internalValues" :items="options" horizontal :repeatColumns="repeatColumns" />
 `
 });
+
 
 export const FilterComponent = defineComponent({
     name: "DefinedValueField.Filter",
