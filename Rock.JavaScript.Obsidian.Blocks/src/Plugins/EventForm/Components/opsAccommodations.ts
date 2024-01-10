@@ -79,7 +79,7 @@ export default defineComponent({
       rooms() {
         if(this.locations) {
           return this.locations.filter((r: any) => {
-            return r.attributeValues?.IsDoor == "False"
+            return r.attributeValues?.IsDoor.value == "False"
           })
         }
         return []
@@ -89,7 +89,7 @@ export default defineComponent({
           let attr = this.e?.attributes?.Doors
           if(attr.configurationValues && this.locations) {
             let doors = this.locations.filter((l: any) => { 
-              return l.attributeValues.IsDoor == 'True' 
+              return l.attributeValues.IsDoor.value == 'True' 
             }).map((l: any) => { 
               return { value: l.guid, text: l.value, description: ""}  
             })
@@ -574,6 +574,9 @@ export default defineComponent({
   }
   .spacer {
     flex-grow: 1!important;
+  }
+  #ddlDoors label.checkbox-inline, #ddlDrinks label.checkbox-inline {
+    line-height: 24px;
   }
 </v-style>
 `

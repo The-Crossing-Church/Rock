@@ -71,7 +71,7 @@ export default defineComponent({
     codeTypeOptions() {
       if(this.codeTypeAttr?.qualifierValues?.values) {
         let vals = this.codeTypeAttr.qualifierValues.values as any
-        return vals.value.split(",")
+        return vals.split(",")
       }
     },
     amountAttr() {

@@ -311,6 +311,7 @@ export default defineComponent({
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
         id="ddlDrinks"
+        multiple
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -352,5 +353,10 @@ export default defineComponent({
     </div>
   </div>
 </rck-form>
+<v-style>
+  #ddlDrinks label.checkbox-inline {
+    line-height: 24px;
+  }
+</v-style>
 `
 });
