@@ -61,12 +61,15 @@
         <p>{{Item.Content}}</p>
         <br/>
         {% if cat == 'Sermon' %}
-            <div>
-                <audio controls>
-                    <source src="{{Item | Attribute:'SermonAudio'}}" type="audio/mpeg" />
-                </audio>
-            </div>
-            <br/>
+            {% assign audioUrl = Item | Attribute:'SermonAudio' %}
+            {% if audioUrl != '' %}
+                <div>
+                    <audio controls>
+                        <source src="{{Item | Attribute:'SermonAudio'}}" type="audio/mpeg" />
+                    </audio>
+                </div>
+                <br/>
+            {% endif %}
             {% assign notes = Item | Attribute:'DiscussionNotes' %}
             {% assign sermon = Item | Attribute:'SermonVideo' %}
             {% assign service = Item | Attribute:'FullServiceVideo' %}

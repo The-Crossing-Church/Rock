@@ -795,8 +795,10 @@ namespace Rock.Blocks.Plugin.EventForm
                 }
                 else
                 {
-                    DateTime start = DateTime.Parse( $"{detail.GetAttributeValue( "EventDate" )} {detail.GetAttributeValue( "StartTime" )}" );
-                    DateTime end = DateTime.Parse( $"{detail.GetAttributeValue( "EventDate" )} {detail.GetAttributeValue( "EndTime" )}" );
+                    DateTime? eventDate = detail.GetAttributeValue( "EventDate" ).AsDateTime();
+                    string dateString = eventDate.Value.ToString( "yyyy-MM-dd" );
+                    DateTime start = DateTime.Parse( $"{dateString} {detail.GetAttributeValue( "StartTime" )}" );
+                    DateTime end = DateTime.Parse( $"{dateString} {detail.GetAttributeValue( "EndTime" )}" );
                     DateRange r = new DateRange() { Start = start, End = end };
                     PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
                     eventDates.Add( d );

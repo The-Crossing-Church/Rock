@@ -13,14 +13,18 @@
                     {% assign isFeatured = today | DateIsBetween:featuredStart,featuredEnd %}
                     {% if isFeatured == true %}
                         [[ item ]]
-                            <a href="/Ministry/Counseling/Resources/{{i.PrimarySlug}}">
-                                <div style="padding: 8px">
-                                  <div class='img-wrapper'>
-                                    <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
-                                  </div>
-                                  <h4>{{i.Title}}</h4>
-                                </div>
-                            </a>
+                            <div class="p-2 h-100 hover" data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description'  | Escape }}</div>">
+                                <a href="/Ministry/Counseling/Resources/{{i.PrimarySlug}}" class="h-100">
+                                    <div class="h-100">
+                                        <div class="slide-content text-center">
+                                            <img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />
+                                            <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
+                                                {{i.Title}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
                         [[ enditem ]]
                     {% endif %}
                 {% endif %}

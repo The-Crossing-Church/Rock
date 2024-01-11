@@ -1,0 +1,30 @@
+{% assign groups = Items | GroupByAttribute:'Topic' %}
+{% for g in groups %}
+    {% assign group = g | PropertyToKeyValue %}
+    {% assign classname = 'py-custom-2x' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey py-custom-2x' %}
+    {% endif %}
+    {[ rescarousel carouselid:'resources{{forloop.index0}}' containerclass:classname ]}
+        [[ title class:'title mb-4' ]]
+            {{group.Key}}
+        [[ endtitle ]]
+            {% for i in group.Value %}
+                [[ item ]]
+                    <div class="p-2 h-100 hover" data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description'  | Escape }}</div>">
+                        <a href="/Ministry/Counseling/Resources/{{i.PrimarySlug}}" class="h-100">
+                            <div class="h-100">
+                                <div class="slide-content text-center">
+                                    <img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />
+                                    <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
+                                        {{i.Title}}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                [[ enditem ]]
+            {% endfor %}
+    {[ endrescarousel ]}
+{% endfor %}
