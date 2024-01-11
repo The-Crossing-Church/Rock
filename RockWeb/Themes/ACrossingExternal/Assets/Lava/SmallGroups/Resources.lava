@@ -1,6 +1,4 @@
-﻿{% assign groups = Items | GroupByAttribute:'Series' %}
-{% for g in groups %}
-    {% assign group = g | PropertyToKeyValue %}
+﻿{% for series in Items %}
     {% assign classname = 'py-custom-2x' %}
     {% assign mod = forloop.index0 | Modulo:2 %}
     {% if mod > 0 %}
@@ -8,9 +6,9 @@
     {% endif %}
     {[ rescarousel carouselid:'resource{{forloop.index0}}' containerclass:classname ]}
         [[ title class:'title mb-4' ]]
-            {{group.Key}}
+            {{series.Series}}
         [[ endtitle ]]
-        {% for i in group.Value %}
+        {% for i in series.Items %}
             [[ item ]]
                 <div class="p-2 h-100 hover" data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{i.Title}}" data-trigger="hover" data-content="<div>{{ i | Attribute:'Description'  | Escape }}</div>">
                     <a href="/small-group-resources/{{i.PrimarySlug}}" class="h-100">
