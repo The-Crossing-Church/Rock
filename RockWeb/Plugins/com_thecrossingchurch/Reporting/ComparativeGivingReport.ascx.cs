@@ -124,230 +124,239 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
 
         protected List<DonorData> GenerateData()
         {
-            //Current Date Range Transactions
-            //For People
-            var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
-            //For Businesses
-            var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
-            //Previous Year Transactions
-            //For People
-            var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
-            //For Businesses
-            var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
-
-            //Join the Person Data
-            var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).OrderBy( e => e.Key ).ToList();
-            var groupedLyTransactions = lytransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).ToList();
-            var leftJoin =
-                            from gt in groupedTransactions
-                            join glyt in groupedLyTransactions on gt.Key equals glyt.Key into temp
-                            from glyt in temp.DefaultIfEmpty()
-                            select new JoinDataObj() { KeyId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
-            var rightJoin =
-                            from glyt in groupedLyTransactions
-                            join gt in groupedTransactions on glyt.Key equals gt.Key into temp
-                            from gt in temp.DefaultIfEmpty()
-                            select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
-            var perJoinedData = leftJoin.Union( rightJoin ).DistinctBy( e => e.KeyId ).ToList();
-            //Join the Business Data
-            var busGroupedTransactions = busTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
-            var busGroupedLyTransactions = busLyTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
-            var busLeftJoin =
-                            from gt in busGroupedTransactions
-                            join glyt in busGroupedLyTransactions on gt.Key equals glyt.Key into temp
-                            from glyt in temp.DefaultIfEmpty()
-                            select new JoinDataObj() { KeyId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Business" };
-            var busRightJoin =
-                            from glyt in busGroupedLyTransactions
-                            join gt in busGroupedTransactions on glyt.Key equals gt.Key into temp
-                            from gt in temp.DefaultIfEmpty()
-                            select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Business" };
-            var busJoinedData = busLeftJoin.Union( busRightJoin ).DistinctBy( e => e.KeyId ).ToList();
-            //Combine Datasets
-            var joinedData = perJoinedData.Union( busJoinedData ).ToList();
-            List<DonorData> donorData = new List<DonorData>();
-            for ( var i = 0; i < joinedData.Count(); i++ )
+            try
             {
-                //Create DonorData
-                string householdName = "";
-                Rock.Model.Group household = null;
-                Person p = null;
-                List<int> adults = new List<int>(); //Just family now since there are kids who give
-                //For Family
-                if ( joinedData[i].Type == "Family" )
-                {
-                    household = groupSvc.Get( joinedData[i].KeyId.Value );
-                    adults = household.Members.Select( gm => gm.PersonId ).ToList();
-                    p = personSvc.Get( adults.First() );
-                    householdName = household.Name.Replace( " Family", "" );
-                    householdName += " (" + String.Join( " & ", household.Members.Where( gm => adults.Contains( gm.PersonId ) ).Select( a => a.Person.NickName ).ToList() ) + ")";
-                }
-                //For business
-                else
-                {
-                    p = personSvc.Get( joinedData[i].KeyId.Value );
-                    adults.Add( p.Id );
-                    householdName = p.LastName;
-                }
-                //Remove leading space that is somehow being added to certain records because reasons 
-                if ( householdName.Substring( 0, 1 ) == " " )
-                {
-                    householdName = householdName.Substring( 1 );
-                }
-                //p.LoadAttributes();
-                DonorData d = new DonorData()
-                {
-                    FamilyId = joinedData[i].KeyId.Value,
-                    Donor = p,
-                    Household = household,
-                    HouseholdName = householdName
-                };
+                //Current Date Range Transactions
+                //For People
+                var transactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
+                //For Businesses
+                var busTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
+                //Previous Year Transactions
+                //For People
+                var lytransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 1 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
+                //For Businesses
+                var busLyTransactions = ftSvc.Queryable().Where( ft => DateTime.Compare( lystart.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( lyend.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionTypeValueId == 53 && ft.AuthorizedPersonAlias.Person.RecordTypeValueId == 2 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).Select( ft => new FinancialTransactionLight { Id = ft.Id, AuthorizedPersonAlias = ft.AuthorizedPersonAlias, TransactionDetails = ft.TransactionDetails, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue } ).ToList();
 
-                d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
-                d.NumberOfGifts = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Count() : 0;
-                d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round( ( d.AmountGiven / d.NumberOfGifts ), 2 ) : 0;
-                d.PreviousAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
-                d.PreviousNumberOfGifts = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Count() : 0;
-                d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( ( d.PreviousAmountGiven / d.PreviousNumberOfGifts.Value ), 2 ) : 0;
-                d.AmountChange = d.AmountGiven - d.PreviousAmountGiven;
-                d.Source = joinedData[i].CurrentTransactions != null ? string.Join( ",", joinedData[i].CurrentTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : "";
-                var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) && ft.TransactionTypeValueId == 53 ).Select( ft => new { Id = ft.Id, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue, TransactionDetails = ft.TransactionDetails } ).OrderBy( ft => ft.TransactionDateTime ).ToList();
-                // Calculate Giving Zone Based on previous year or current year
-                var startOfYear = new DateTime( lystart.Value.Year, 1, 1, 0, 0, 0 );
-                var endOfYear = new DateTime( lystart.Value.Year, 12, 31, 23, 59, 59 );
-                var givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
-                if ( givingZoneTransactions.Count() == 0 )
+                //Join the Person Data
+                var groupedTransactions = transactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).OrderBy( e => e.Key ).ToList();
+                var groupedLyTransactions = lytransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.PrimaryFamilyId.Value ).ToList();
+                var leftJoin =
+                                from gt in groupedTransactions
+                                join glyt in groupedLyTransactions on gt.Key equals glyt.Key into temp
+                                from glyt in temp.DefaultIfEmpty()
+                                select new JoinDataObj() { KeyId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
+                var rightJoin =
+                                from glyt in groupedLyTransactions
+                                join gt in groupedTransactions on glyt.Key equals gt.Key into temp
+                                from gt in temp.DefaultIfEmpty()
+                                select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Family" };
+                var perJoinedData = leftJoin.Union( rightJoin ).DistinctBy( e => e.KeyId ).ToList();
+                //Join the Business Data
+                var busGroupedTransactions = busTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
+                var busGroupedLyTransactions = busLyTransactions.GroupBy( t => t.AuthorizedPersonAlias.Person.Id ).ToList();
+                var busLeftJoin =
+                                from gt in busGroupedTransactions
+                                join glyt in busGroupedLyTransactions on gt.Key equals glyt.Key into temp
+                                from glyt in temp.DefaultIfEmpty()
+                                select new JoinDataObj() { KeyId = gt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Business" };
+                var busRightJoin =
+                                from glyt in busGroupedLyTransactions
+                                join gt in busGroupedTransactions on glyt.Key equals gt.Key into temp
+                                from gt in temp.DefaultIfEmpty()
+                                select new JoinDataObj() { KeyId = glyt.Key, CurrentTransactions = gt, PreviousTransactions = glyt, Type = "Business" };
+                var busJoinedData = busLeftJoin.Union( busRightJoin ).DistinctBy( e => e.KeyId ).ToList();
+                //Combine Datasets
+                var joinedData = perJoinedData.Union( busJoinedData ).ToList();
+                List<DonorData> donorData = new List<DonorData>();
+                for (var i = 0; i < joinedData.Count(); i++)
                 {
-                    startOfYear = new DateTime( start.Value.Year, 1, 1, 0, 0, 0 );
-                    endOfYear = new DateTime( start.Value.Year, 12, 31, 23, 59, 59 );
-                    givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
-                }
-                decimal givingZoneAmt = 0;
-                if ( givingZoneTransactions.Count() > 0 )
-                {
-                    givingZoneAmt = givingZoneTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) );
-
-                }
-                //var givingZoneAmt = prevAmountGiven > 0 ? prevAmountGiven : d.AmountGiven;
-                if ( givingZoneAmt < 1 )
-                {
-                    d.GivingZone = "Unknown";
-                }
-                else if ( givingZoneAmt < 600 )
-                {
-                    d.GivingZone = "Zone 1";
-                }
-                else if ( givingZoneAmt < 1200 )
-                {
-                    d.GivingZone = "Zone 2";
-                }
-                else if ( givingZoneAmt < 2400 )
-                {
-                    d.GivingZone = "Zone 3";
-                }
-                else if ( givingZoneAmt < 6000 )
-                {
-                    d.GivingZone = "Zone 4";
-                }
-                else if ( givingZoneAmt < 12000 )
-                {
-                    d.GivingZone = "Zone 5";
-                }
-                else if ( givingZoneAmt < 20000 )
-                {
-                    d.GivingZone = "Zone 6";
-                }
-                else if ( givingZoneAmt < 50000 )
-                {
-                    d.GivingZone = "Zone 7";
-                }
-                else if ( givingZoneAmt < 100000 )
-                {
-                    d.GivingZone = "Zone 8";
-                }
-                else if ( givingZoneAmt < 1000000 )
-                {
-                    d.GivingZone = "Zone 9";
-                }
-                else
-                {
-                    d.GivingZone = "Zone 10";
-                }
-
-                //d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
-                //d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
-                //d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
-                var personEntity = EntityTypeCache.Get( "Rock.Model.Person" );
-                var vals = avSvc.Queryable().Where( av => av.Attribute.EntityTypeId == personEntity.Id && av.EntityId == p.Id ).ToList();
-                if ( vals.FirstOrDefault( av => av.Attribute.Key == "AvgDaysBetweenGifts" ) != null )
-                {
-                    d.Average = vals.FirstOrDefault( av => av.Attribute.Key == "AvgDaysBetweenGifts" ).ValueFormatted;
-                }
-                if ( vals.FirstOrDefault( av => av.Attribute.Key == "StdDevFromAvg" ) != null )
-                {
-                    d.StdDev = vals.FirstOrDefault( av => av.Attribute.Key == "StdDevFromAvg" ).ValueFormatted;
-                }
-                //If Source is empty for Current Transactions, Try Previous Transactions
-                if ( String.IsNullOrEmpty( d.Source ) )
-                {
-                    d.Source = joinedData[i].PreviousTransactions != null ? string.Join( ",", joinedData[i].PreviousTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : string.Join( ",", allTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() );
-                }
-                d.FirstGiftEver = allTransactions.First().TransactionDateTime;
-                var firstFundGift = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).OrderBy( ft => ft.TransactionDateTime ).First().TransactionDateTime;
-                var giftsBeforeStart = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) && DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
-                DateTime? mostRecentFundGiftBeforeStart = null;
-                if ( giftsBeforeStart.Count() > 0 )
-                {
-                    mostRecentFundGiftBeforeStart = giftsBeforeStart.First().TransactionDateTime;
-                }
-                d.MostRecentGift = mostRecentFundGiftBeforeStart;
-                //Determine Type of Donor
-                if ( DateTime.Compare( firstFundGift.Value, start.Value ) < 0 && mostRecentFundGiftBeforeStart.HasValue && mostRecentFundGiftBeforeStart.Value.Year >= ( start.Value.Year - 8 ) )
-                {
-                    //They have donated before this timeframe
-                    if ( mostRecentFundGiftBeforeStart.Value.Year > ( start.Value.Year - 3 ) )
+                    //Create DonorData
+                    string householdName = "";
+                    Rock.Model.Group household = null;
+                    Person p = null;
+                    List<int> adults = new List<int>(); //Just family now since there are kids who give
+                                                        //For Family
+                    if (joinedData[i].Type == "Family")
                     {
-                        d.DonorType = "Existing";
+                        household = groupSvc.Get( joinedData[i].KeyId.Value );
+                        adults = household.Members.Select( gm => gm.PersonId ).ToList();
+                        p = personSvc.Get( adults.First() );
+                        householdName = household.Name.Replace( " Family", "" );
+                        householdName += " (" + String.Join( " & ", household.Members.Where( gm => adults.Contains( gm.PersonId ) ).Select( a => a.Person.NickName ).ToList() ) + ")";
+                    }
+                    //For business
+                    else
+                    {
+                        p = personSvc.Get( joinedData[i].KeyId.Value );
+                        adults.Add( p.Id );
+                        householdName = p.LastName;
+                    }
+                    //Remove leading space that is somehow being added to certain records because reasons 
+                    if (householdName.Substring( 0, 1 ) == " ")
+                    {
+                        householdName = householdName.Substring( 1 );
+                    }
+                    //p.LoadAttributes();
+                    Location home = p.GetHomeLocation();
+                    DonorData d = new DonorData()
+                    {
+                        FamilyId = joinedData[i].KeyId.Value,
+                        Donor = p,
+                        Household = household,
+                        HouseholdName = householdName,
+                        Address = home != null ? home.Street1 + ", " + home.City + ", " + home.State : ""
+                    };
+
+                    d.AmountGiven = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
+                    d.NumberOfGifts = joinedData[i].CurrentTransactions != null ? joinedData[i].CurrentTransactions.Count() : 0;
+                    d.AverageGiftAmount = d.NumberOfGifts != 0 ? Math.Round( (d.AmountGiven / d.NumberOfGifts), 2 ) : 0;
+                    d.PreviousAmountGiven = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) ) : 0;
+                    d.PreviousNumberOfGifts = joinedData[i].PreviousTransactions != null ? joinedData[i].PreviousTransactions.Count() : 0;
+                    d.PreviousAverageGiftAmount = d.PreviousNumberOfGifts.Value != 0 ? Math.Round( (d.PreviousAmountGiven / d.PreviousNumberOfGifts.Value), 2 ) : 0;
+                    d.AmountChange = d.AmountGiven - d.PreviousAmountGiven;
+                    d.Source = joinedData[i].CurrentTransactions != null ? string.Join( ",", joinedData[i].CurrentTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : "";
+                    var allTransactions = ftSvc.Queryable().Where( ft => adults.Contains( ft.AuthorizedPersonAlias.PersonId ) && ft.TransactionTypeValueId == 53 ).Select( ft => new { Id = ft.Id, TransactionDateTime = ft.TransactionDateTime, SourceTypeValue = ft.SourceTypeValue, TransactionDetails = ft.TransactionDetails } ).OrderBy( ft => ft.TransactionDateTime ).ToList();
+                    // Calculate Giving Zone Based on previous year or current year
+                    var startOfYear = new DateTime( lystart.Value.Year, 1, 1, 0, 0, 0 );
+                    var endOfYear = new DateTime( lystart.Value.Year, 12, 31, 23, 59, 59 );
+                    var givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
+                    if (givingZoneTransactions.Count() == 0)
+                    {
+                        startOfYear = new DateTime( start.Value.Year, 1, 1, 0, 0, 0 );
+                        endOfYear = new DateTime( start.Value.Year, 12, 31, 23, 59, 59 );
+                        givingZoneTransactions = allTransactions.Where( ft => DateTime.Compare( startOfYear, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( endOfYear, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
+                    }
+                    decimal givingZoneAmt = 0;
+                    if (givingZoneTransactions.Count() > 0)
+                    {
+                        givingZoneAmt = givingZoneTransactions.Sum( ft => ft.TransactionDetails.Where( ftd => ftd.AccountId == fund.Id ).Sum( ftd => ftd.Amount ) );
+
+                    }
+                    //var givingZoneAmt = prevAmountGiven > 0 ? prevAmountGiven : d.AmountGiven;
+                    if (givingZoneAmt < 1)
+                    {
+                        d.GivingZone = "Unknown";
+                    }
+                    else if (givingZoneAmt < 600)
+                    {
+                        d.GivingZone = "Zone 1";
+                    }
+                    else if (givingZoneAmt < 1200)
+                    {
+                        d.GivingZone = "Zone 2";
+                    }
+                    else if (givingZoneAmt < 2400)
+                    {
+                        d.GivingZone = "Zone 3";
+                    }
+                    else if (givingZoneAmt < 6000)
+                    {
+                        d.GivingZone = "Zone 4";
+                    }
+                    else if (givingZoneAmt < 12000)
+                    {
+                        d.GivingZone = "Zone 5";
+                    }
+                    else if (givingZoneAmt < 20000)
+                    {
+                        d.GivingZone = "Zone 6";
+                    }
+                    else if (givingZoneAmt < 50000)
+                    {
+                        d.GivingZone = "Zone 7";
+                    }
+                    else if (givingZoneAmt < 100000)
+                    {
+                        d.GivingZone = "Zone 8";
+                    }
+                    else if (givingZoneAmt < 1000000)
+                    {
+                        d.GivingZone = "Zone 9";
                     }
                     else
                     {
-                        d.DonorType = "Re-Engaged";
+                        d.GivingZone = "Zone 10";
                     }
-                    var currentTransactions = allTransactions.Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
-                    if ( currentTransactions.Count() == 0 )
+
+                    //d.GivingZone = p.AttributeValues["GivingZone"].ValueFormatted;
+                    //d.Average = p.AttributeValues["AvgDaysBetweenGifts"].ValueFormatted;
+                    //d.StdDev = p.AttributeValues["StdDevFromAvg"].ValueFormatted;
+                    var personEntity = EntityTypeCache.Get( "Rock.Model.Person" );
+                    var vals = avSvc.Queryable().Where( av => av.Attribute.EntityTypeId == personEntity.Id && av.EntityId == p.Id ).ToList();
+                    if (vals.FirstOrDefault( av => av.Attribute.Key == "AvgDaysBetweenGifts" ) != null)
                     {
-                        //They have donated previously but not in this time frame 
-                        d.DonorType = "Lapse";
+                        d.Average = vals.FirstOrDefault( av => av.Attribute.Key == "AvgDaysBetweenGifts" ).ValueFormatted;
                     }
-                }
-                else
-                {
-                    //This timeframe is the first time they have donated, or it has been more than 8 years since their last gift
-                    d.DonorType = "New";
-                }
-                //Figure out what most recent gift was if it was not to the Selected Fund
-                if ( mostRecentFundGiftBeforeStart == null )
-                {
-                    var mostRecent = allTransactions.Where( ft => DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
-                    if ( mostRecent.Count() > 0 )
+                    if (vals.FirstOrDefault( av => av.Attribute.Key == "StdDevFromAvg" ) != null)
                     {
-                        d.MostRecentGiftAnyFund = mostRecent.First().TransactionDateTime;
-                        d.MostRecentFund = String.Join( ",", mostRecent.First().TransactionDetails.Select( td => td.Account.Name ) );
-                        d.MostRecentFundAmount = mostRecent.First().TransactionDetails.Sum( td => td.Amount );
+                        d.StdDev = vals.FirstOrDefault( av => av.Attribute.Key == "StdDevFromAvg" ).ValueFormatted;
+                    }
+                    //If Source is empty for Current Transactions, Try Previous Transactions
+                    if (String.IsNullOrEmpty( d.Source ))
+                    {
+                        d.Source = joinedData[i].PreviousTransactions != null ? string.Join( ",", joinedData[i].PreviousTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() ) : string.Join( ",", allTransactions.Select( ft => ft.SourceTypeValue.Value ).Distinct() );
+                    }
+                    d.FirstGiftEver = allTransactions.First().TransactionDateTime;
+                    var firstFundGift = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).OrderBy( ft => ft.TransactionDateTime ).First().TransactionDateTime;
+                    var giftsBeforeStart = allTransactions.Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) && DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
+                    DateTime? mostRecentFundGiftBeforeStart = null;
+                    if (giftsBeforeStart.Count() > 0)
+                    {
+                        mostRecentFundGiftBeforeStart = giftsBeforeStart.First().TransactionDateTime;
+                    }
+                    d.MostRecentGift = mostRecentFundGiftBeforeStart;
+                    //Determine Type of Donor
+                    if (DateTime.Compare( firstFundGift.Value, start.Value ) < 0 && mostRecentFundGiftBeforeStart.HasValue && mostRecentFundGiftBeforeStart.Value.Year >= (start.Value.Year - 8))
+                    {
+                        //They have donated before this timeframe
+                        if (mostRecentFundGiftBeforeStart.Value.Year > (start.Value.Year - 3))
+                        {
+                            d.DonorType = "Existing";
+                        }
+                        else
+                        {
+                            d.DonorType = "Re-Engaged";
+                        }
+                        var currentTransactions = allTransactions.Where( ft => DateTime.Compare( start.Value, ft.TransactionDateTime.Value ) <= 0 && DateTime.Compare( end.Value, ft.TransactionDateTime.Value ) >= 0 && ft.TransactionDetails.Any( ftd => ftd.AccountId == fund.Id ) ).ToList();
+                        if (currentTransactions.Count() == 0)
+                        {
+                            //They have donated previously but not in this time frame 
+                            d.DonorType = "Lapse";
+                        }
+                    }
+                    else
+                    {
+                        //This timeframe is the first time they have donated, or it has been more than 8 years since their last gift
+                        d.DonorType = "New";
+                    }
+                    //Figure out what most recent gift was if it was not to the Selected Fund
+                    if (mostRecentFundGiftBeforeStart == null)
+                    {
+                        var mostRecent = allTransactions.Where( ft => DateTime.Compare( ft.TransactionDateTime.Value, start.Value ) < 0 ).OrderByDescending( ft => ft.TransactionDateTime );
+                        if (mostRecent.Count() > 0)
+                        {
+                            d.MostRecentGiftAnyFund = mostRecent.First().TransactionDateTime;
+                            d.MostRecentFund = String.Join( ",", mostRecent.First().TransactionDetails.Select( td => td.Account.Name ) );
+                            d.MostRecentFundAmount = mostRecent.First().TransactionDetails.Sum( td => td.Amount );
+                        }
+                    }
+                    else
+                    {
+                        d.MostRecentGiftAnyFund = mostRecentFundGiftBeforeStart;
+                        d.MostRecentFund = fund.Name;
+                        d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount );
+                    }
+                    if (d.PreviousAmountGiven > 0 || d.AmountGiven > 0)
+                    {
+                        donorData.Add( d );
                     }
                 }
-                else
-                {
-                    d.MostRecentGiftAnyFund = mostRecentFundGiftBeforeStart;
-                    d.MostRecentFund = fund.Name;
-                    d.MostRecentFundAmount = giftsBeforeStart.First().TransactionDetails.Where( td => td.AccountId == fund.Id ).Sum( td => td.Amount );
-                }
-                if ( d.PreviousAmountGiven > 0 || d.AmountGiven > 0 )
-                {
-                    donorData.Add( d );
-                }
+                return donorData;
+            } catch(Exception ex)
+            {
+                var x = 7;
+                return new List<DonorData>();
             }
-            return donorData;
         }
 
         private void BindGrid()
@@ -374,6 +383,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
             public Person Donor { get; set; }
             public Rock.Model.Group Household { get; set; }
             public string HouseholdName { get; set; }
+            public string Address { get; set; }
             public decimal AmountGiven { get; set; }
             public int NumberOfGifts { get; set; }
             public decimal AverageGiftAmount { get; set; }
@@ -442,7 +452,7 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     worksheet.PrinterSettings.TopMargin = .5m;
                     worksheet.PrinterSettings.BottomMargin = .5m;
 
-                    var headers = new List<string> { "Household", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Amount Given", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
+                    var headers = new List<string> { "Household", "Address", "Amount Given", "Number of Gifts", "Average Gift Amount", "Previous Amount Given", "Previous Number of Gifts", "Previous Average Gift Amount", "Change", "First Gift", "Most Recent Gift", "Most Recent Fund", "Most Recent Fund Gift Amount", "Giving Zone", "Type of Donor", "Average Days Between Gifts", "Standard Deviation From Average", "Source" };
                     var h = 1;
                     var row = 2;
                     foreach ( var header in headers )
@@ -456,22 +466,23 @@ namespace RockWeb.Plugins.com_thecrossingchurch.Reporting
                     for ( var i = 0; i < data.Count(); i++ )
                     {
                         worksheet.Cells[row, 1].Value = data[i].HouseholdName;
-                        worksheet.Cells[row, 2].Value = data[i].AmountGiven;
-                        worksheet.Cells[row, 3].Value = data[i].NumberOfGifts;
-                        worksheet.Cells[row, 4].Value = data[i].AverageGiftAmount;
-                        worksheet.Cells[row, 5].Value = data[i].PreviousAmountGiven;
-                        worksheet.Cells[row, 6].Value = data[i].PreviousNumberOfGifts;
-                        worksheet.Cells[row, 7].Value = data[i].PreviousAverageGiftAmount;
-                        worksheet.Cells[row, 8].Value = data[i].AmountChange;
-                        worksheet.Cells[row, 9].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
-                        worksheet.Cells[row, 10].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
-                        worksheet.Cells[row, 11].Value = data[i].MostRecentFund;
-                        worksheet.Cells[row, 12].Value = data[i].MostRecentFundAmount;
-                        worksheet.Cells[row, 13].Value = data[i].GivingZone;
-                        worksheet.Cells[row, 14].Value = data[i].DonorType;
-                        worksheet.Cells[row, 15].Value = data[i].Average;
-                        worksheet.Cells[row, 16].Value = data[i].StdDev;
-                        worksheet.Cells[row, 17].Value = data[i].Source;
+                        worksheet.Cells[row, 2].Value = data[i].Address;
+                        worksheet.Cells[row, 3].Value = data[i].AmountGiven;
+                        worksheet.Cells[row, 4].Value = data[i].NumberOfGifts;
+                        worksheet.Cells[row, 5].Value = data[i].AverageGiftAmount;
+                        worksheet.Cells[row, 6].Value = data[i].PreviousAmountGiven;
+                        worksheet.Cells[row, 7].Value = data[i].PreviousNumberOfGifts;
+                        worksheet.Cells[row, 8].Value = data[i].PreviousAverageGiftAmount;
+                        worksheet.Cells[row, 9].Value = data[i].AmountChange;
+                        worksheet.Cells[row, 10].Value = data[i].FirstGiftEver.Value.ToString( "MM/dd/yyyy" );
+                        worksheet.Cells[row, 11].Value = data[i].MostRecentGift.HasValue ? data[i].MostRecentGift.Value.ToString( "MM/dd/yyyy" ) : "";
+                        worksheet.Cells[row, 12].Value = data[i].MostRecentFund;
+                        worksheet.Cells[row, 13].Value = data[i].MostRecentFundAmount;
+                        worksheet.Cells[row, 14].Value = data[i].GivingZone;
+                        worksheet.Cells[row, 15].Value = data[i].DonorType;
+                        worksheet.Cells[row, 16].Value = data[i].Average;
+                        worksheet.Cells[row, 17].Value = data[i].StdDev;
+                        worksheet.Cells[row, 18].Value = data[i].Source;
                         row++;
                     }
                     byte[] sheetbytes = excel.GetAsByteArray();
