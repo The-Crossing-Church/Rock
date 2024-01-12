@@ -140,7 +140,7 @@ a:hover {
   color: @color-medium-blue !important;
 }
 
-.btn:not(.btn-default) {
+.btn:not(.btn-default):not(.btn-filter-toggle) {
   text-decoration: none !important;
   cursor: pointer;
   /*min-width: 100px;*/
@@ -736,6 +736,21 @@ header:not(.panel-heading) {
   .main-nav-item:hover .dropdown-menu {
     opacity: 1;
     display: block;
+  }
+}
+
+.grid-filter header {
+  position: absolute;
+
+  .btn-filter-toggle {
+    top: 1px;
+    left: 18px;
+    padding: 4px;
+    margin: 0;
+  
+    &.is-open {
+      background: @grid-filter-bg;
+    }
   }
 }
 
