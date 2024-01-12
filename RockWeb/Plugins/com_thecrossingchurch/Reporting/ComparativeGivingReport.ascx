@@ -28,6 +28,7 @@
             <Columns>
                 <Rock:RockBoundField HeaderText="Household" DataField="HouseholdName" SortExpression="HouseholdName" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockBoundField HeaderText="Address" DataField="Address" SortExpression="Address" ExcelExportBehavior="AlwaysInclude" />
+                <Rock:RockBoundField HeaderText="Connection Status" DataField="ConnectionStatus" SortExpression="ConnectionStatus" ExcelExportBehavior="AlwaysInclude" />
                 <Rock:RockTemplateField HeaderText="Amount Given" SortExpression="AmountGiven" ExcelExportBehavior="NeverInclude">
                     <ItemTemplate>
                         $<asp:Label ID="lblAmtGiven" runat="server"
