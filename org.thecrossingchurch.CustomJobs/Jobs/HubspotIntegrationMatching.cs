@@ -45,6 +45,7 @@ using static Quartz.Plugin.Xml.XMLSchedulingDataProcessorPlugin;
 using RestSharp.Extensions;
 using Rock.Workflow.Action;
 using System.ComponentModel;
+using System.Threading;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -223,7 +224,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //}
                 //else
                 //{
-                //    person = personService.Get( 11835 );
+                //    person = personService.Get( 1 );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
@@ -294,6 +295,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 request.AddHeader( "Authorization", $"Bearer {key}" );
                 request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
                 IRestResponse response = client.Execute( request );
+                if((int)response.StatusCode == 429)
+                {
+                    if(attempt < 3)
+                    {
+                        Thread.Sleep( 9000 );
+                        MakeRequest(current_id, url, properties, attempt + 1 );
+                    }
+                }
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
                     throw new Exception( response.Content );
@@ -348,19 +357,19 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     new SqlParameter( "@mobile_number", contact.properties.phone.HasValue() ? contact.properties.phone : "" ),
                 };
                 var query = context.Database.SqlQuery<int>( $@"
-DECLARE @matches int = (SELECT COUNT(*) FROM Person WHERE Email LIKE @email);
+DECLARE @matches int = (SELECT COUNT(*) FROM Person WHERE Email = @email);
 
 SELECT DISTINCT Person.Id
 FROM Person
          LEFT OUTER JOIN PhoneNumber ON Person.Id = PhoneNumber.PersonId
 WHERE ((@email IS NOT NULL AND @email != '') AND
-       (Email LIKE @email AND
+       (Email = @email AND
         (((@first_name IS NULL OR @first_name = '') AND (@last_name IS NULL OR @last_name = '') AND @matches = 1) OR
          ((@first_name IS NOT NULL AND @first_name != '' AND
-           (FirstName LIKE @first_name OR NickName LIKE @first_name)) OR
-          (@last_name IS NOT NULL AND @last_name != '' AND LastName LIKE @last_name) OR
+           (FirstName = @first_name OR NickName = @first_name)) OR
+          (@last_name IS NOT NULL AND @last_name != '' AND LastName = @last_name) OR
           (@mobile_number IS NOT NULL AND @mobile_number != '' AND
-           (@mobile_number LIKE Number OR @mobile_number LIKE PhoneNumber.NumberFormatted))))))
+           (Number = @mobile_number OR PhoneNumber.NumberFormatted = @mobile_number))))))
 ", sqlParams ).ToList();
                 return query;
             }
@@ -509,6 +518,8 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
         public string rock_id { get; set; }
         public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
     }
+
+    [DebuggerDisplay( "Id: {id}, Email: {properties.email}" )]
     public class HSContactResult
     {
         public string id { get; set; }
