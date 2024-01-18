@@ -1,7 +1,7 @@
 ﻿<div class='row'>
     <div class='col col-xs-12 col-md-4'>
         <div class='card--custom card-with-media'>
-            <img src="{{Item | Attribute:'Image'}}" style="width:100%;"/>
+            <img src="{{Item | Attribute:'Image'}}" style="width:100%;" alt="{{Item.Title}}" />
         </div>
     </div>
     <div class='col col-xs-12 col-md-8'>

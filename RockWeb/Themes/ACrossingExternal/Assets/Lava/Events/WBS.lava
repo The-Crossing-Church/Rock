@@ -195,7 +195,7 @@
   </div>
   <div class="col col-xs-4 d-none d-md-block">
     {% if Event.Photo.Guid %}
-      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" />
+      <img src="/GetImage.ashx?Guid={{ Event.Photo.Guid }}" class="title-image img-responsive" alt="{{ Event.Name | Split:' - ' | Last }}" />
       {% capture metaimg %}https://thecrossingchurch.com/GetImage.ashx?Guid={{ Event.Photo.Guid }}{% endcapture %}
       {{ metaimg | AddMetaTagToHead:'property','og:image' }}
     {% endif %}
