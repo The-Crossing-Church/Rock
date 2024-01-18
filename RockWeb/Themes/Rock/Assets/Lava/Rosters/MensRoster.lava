@@ -1,0 +1,149 @@
+{% assign groupId = 'Global' | PageParameter:'GroupId' | AsInteger %}
+
+<html>
+    <head>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 20px;
+                padding: 0in .4in 0in .4in;
+            }
+            
+            table {
+                border-style: none;
+            }
+
+            table>tbody>tr>td {
+            padding: 14px 8px !important;
+            font-size:16px;
+            font-weight:600;
+            border-style: none;
+            }
+            
+            table>thead>tr>th {
+            padding: 12px 8px !important;
+            font-size:18px;
+            border-style: none;
+            
+            }
+
+        </style>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="container">
+        {% sql return:'groups' %}
+            WITH CTE AS (
+            
+            	SELECT [Id], [ParentGroupId]
+            	FROM [Group]
+            	WHERE [Id] = {{ groupId }}
+            
+            	UNION ALL
+            
+            	SELECT G.[Id], G.[ParentGroupId]
+            	FROM [Group] G
+            	INNER JOIN CTE ON CTE.[Id] = G.[ParentGroupId]
+            
+            )
+            
+            SELECT 
+                G.[Id] AS [GroupId],
+                G.[Name] AS [Title],
+				CASE WHEN [AvgAge] IS NOT NULL AND [AvgAge] <= 18 THEN 'Child' ELSE 'Adult' END AS [GroupAge]
+            FROM CTE
+            INNER JOIN [Group] G ON G.[Id] = CTE.[Id]
+            INNER JOIN [GroupType] T ON T.[Id] = G.[GroupTypeId]
+            CROSS APPLY (
+            	SELECT 
+					COUNT(*) AS [MemberCount],
+					AVG([Age]) AS [AvgAge]
+				FROM (
+					SELECT 
+					       (CASE
+					           WHEN TRY_CONVERT(datetime, MP.[BirthDate]) IS NOT NULL THEN dbo.[ufnCrm_GetAge](MP.[BirthDate])
+					           ELSE NULL
+					       END) AS [Age]
+            		FROM [GroupMember] MM
+					INNER JOIN [Person] MP ON MP.[Id] = MM.[PersonId]
+            		WHERE MM.[GroupId] = G.[Id]
+            		AND MM.[GroupMemberStatus]  = 1
+            		AND MM.[IsArchived] = 0
+				) MS
+            ) M
+            WHERE G.[IsActive] = 1
+            AND G.[IsArchived] = 0
+            AND M.[MemberCount] > 0
+            ORDER BY G.[Name]
+
+        {% endsql %}
+        
+        {% for group in groups %}
+            <h3>{{ group.Title }}</h3>
+         
+            {% sql return:'rows' %}
+                SELECT 
+                	  P.[Id]
+                	, P.[NickName]
+                	, P.[LastName]
+					, P.[Email]
+					
+                FROM [GroupMember] M
+                INNER JOIN [Person] P ON P.[Id] = M.[PersonId]
+				INNER JOIN [DefinedValue] V ON V.[Id] = P.[ConnectionStatusValueId]
+                INNER JOIN [GroupTypeRole] R ON R.[Id] = M.[GroupRoleId]
+                OUTER APPLY (
+                	SELECT SV.[Value]
+                	FROM [AttributeValue] S 
+                	INNER JOIN [DefinedValue] SV ON CAST(SV.[Guid] as varchar(36)) = S.[Value]
+                	WHERE S.[AttributeId] = 739 AND S.[EntityId] = P.[Id]
+                ) S
+				OUTER APPLY (
+					SELECT *
+					FROM [PhoneNumber]
+					WHERE [PersonId] = P.[Id]
+					AND [NumberTypeValueId] = 12 -- Mobile
+				) MP
+                WHERE M.[GroupId] = {{ group.GroupId }}
+                AND M.[GroupMemberStatus]  = 1
+                AND M.[IsArchived] = 0
+                ORDER BY P.[LastName], P.[NickName]
+            {% endsql %}
+            <span style="float:right;">{{ 'Now' | Date:'MM/dd/yyyy'}}</span><br/>
+            <span style="float:right;">{{rows | Size}} Members</span>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nick Name</th>
+                        <th>LastName</th>
+                        <th>Email</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    
+                        <!--Test for row color-->
+                        {% assign rowTest = forloop.index | Modulo:2 %}
+                
+                        {% if rowTest == 1 %}
+                            <tr style="background:#f9f9f9">
+                        {% else %}
+                            <tr style="background:#f1f1f1">
+                        {% endif %}
+                            <td>{{ row.NickName }}</td>
+                            <td>{{ row.LastName }}</td>
+                            <td>{{ row.Email }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <p style="page-break-after: always;">&nbsp;</p>
+        
+        {% endfor %}
+
+        </div>
+    </body>
+</html>
