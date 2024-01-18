@@ -45,6 +45,7 @@ using static Quartz.Plugin.Xml.XMLSchedulingDataProcessorPlugin;
 using RestSharp.Extensions;
 using Rock.Workflow.Action;
 using System.ComponentModel;
+using System.Threading;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -156,7 +157,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //}
                 //else
                 //{
-                //    person = personService.Get( 31376 );
+                //    person = personService.Get( 1 );
                 //}
 
                 //Schedule HubSpot update if 1:1 match
@@ -543,6 +544,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 request.AddHeader( "Authorization", $"Bearer {key}" );
                 request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
                 IRestResponse response = client.Execute( request );
+                if ((int) response.StatusCode == 429)
+                {
+                    if (attempt < 3)
+                    {
+                        Thread.Sleep( 9000 );
+                        MakeRequest( current_id, url, properties, attempt + 1 );
+                    }
+                }
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
                     throw new Exception( response.Content );
