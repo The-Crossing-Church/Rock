@@ -1,0 +1,45 @@
+{% sql statement:'command' personalias:'{{ CurrentPerson.PrimaryAlias.Id }}' %}
+IF @personalias IS NOT NULL AND @personalias != ''
+BEGIN
+    -- Create a new communication
+    INSERT INTO
+    Communication ([Status], [Guid], CreatedDateTime, [CreatedByPersonAliasId], ForeignKey, IsBulkCommunication, CommunicationType, [SegmentCriteria], [ExcludeDuplicateRecipientAddress] )
+    VALUES (0, NEWID(), GETDATE(), @personalias, 'NewWinterComm', 1, 0, 0, 0 )
+END
+{% endsql %}
+{% sql return:'comm' %}
+	SELECT TOP 1 Id
+    FROM Communication --Recipient
+    WHERE Foreignkey = 'NewWinterComm'
+    ORDER BY Id DESC
+{% endsql %}
+{% assign commId = comm[0].Id %}
+{% sql statement:'command' personalias:'{{ CurrentPerson.PrimaryAlias.Id }}' commid:'{{ commId }}' %}
+IF @personalias IS NOT NULL AND @personalias != ''
+BEGIN
+    DECLARE @GroupId INT = 122647 -- All Employees
+    -- Insert a comm recipient for each staff member
+    INSERT INTO CommunicationRecipient (CommunicationId, [Status], [Guid], CreatedDateTime, [CreatedByPersonAliasId], ForeignKey, [PersonAliasId] )
+    SELECT @commid AS CommunicationId
+    		, 0 AS [Status]
+    		, NEWID() AS [Guid]
+    		, GETDATE() AS CreatedDateTime
+    		, @personalias AS CreatedByPersonAliasId
+    		, 'NewWinterComm' AS ForeignKey
+    		, PA.Id AS PersonAliasId
+    	FROM [Group] G
+    	INNER JOIN GroupMember GM ON GM.GroupId = G.Id
+    	INNER JOIN Person P ON P.Id = GM.PersonId
+    	INNER JOIN PersonAlias PA ON PA.PersonId = P.Id
+    	WHERE PA.AliasPersonId = PA.PersonId
+    	AND G.Id = @GroupId
+    	AND GM.GroupMemberStatus = 1
+    	AND GM.ArchivedDateTime IS NULL
+END	
+{% endsql %}
+{% assign redirectURL = '/page/1092?CommunicationId=' | Append:commId %}
+{% if CurrentPersonCanEdit %}
+    <p class="alert alert-warning">If you could not edit you would be redirected to: <a href="{{ redirectURL }}">{{ redirectURL }}</a>.</p>
+{% else %}
+    {{ redirectURL | PageRedirect }}
+{% endif %}

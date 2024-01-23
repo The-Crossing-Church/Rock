@@ -1,0 +1,80 @@
+{% assign groupId = 'Global' | PageParameter:'GroupId' %}
+{% assign canView =   groupId | HasRightsTo:'View','Rock.Model.Group'  %}
+
+{% if canView == true %}
+
+    {% assign rockAdmin = CurrentPerson | Group: '2','All' | Size %}
+    {% assign womensSecurityGroup = CurrentPerson | Group: '110733','All' | Size %}
+    {% assign CKSecurityGroup = CurrentPerson  Person| Group: '110498','All' | Size %}
+    {% assign SGSecurityGroup = CurrentPerson | Group: '110732','All' | Size %}
+    {% assign CareSecurityGroup = CurrentPerson | Group: '109193','All' | Size %}
+    {% assign CareAdminSecurityGroup = CurrentPerson | Group: '213512','All' | Size %}
+    {% assign mensSecurityGroup = CurrentPerson | Group: '214472','All' | Size %}
+    
+    {% assign useDefaultRoster = true %}
+    
+    <div style="display:flex; justify-content:flex-end">
+        {% if mensSecurityGroup > 0 or rockAdmin > 0 %}
+        
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/1541?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CM)</a>
+            </div>
+        
+            {% assign useDefaultRoster = false %}
+        
+        {% endif %}
+    
+        {% if womensSecurityGroup > 0 or rockAdmin > 0 %}
+        
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/896?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CW)</a>
+            </div>
+        
+            {% assign useDefaultRoster = false %}
+        
+        {% endif %}
+    
+        {% if CKSecurityGroup > 0 or rockAdmin > 0 %}
+        
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/905?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CK Volunteers)</a>
+            </div>
+        
+            {% assign useDefaultRoster = false %}
+    
+        {% endif %}
+        
+        {% if SGSecurityGroup > 0 or rockAdmin > 0 %}
+        
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/1055?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Small Group Leaders)</a>
+            </div>
+            
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/1077?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Small Group Staff/Coaches)</a>
+            </div>
+        
+            {% assign useDefaultRoster = false %}
+    
+        {% endif %}
+        
+        {% if CareSecurityGroup > 0 or CareAdminSecurityGroup > 0 or rockAdmin > 0 %}
+            
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/1056?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Care)</a>
+            </div>
+        
+            {% assign useDefaultRoster = false %}
+        {% endif %}
+        
+        {% if useDefaultRoster == 'true' or rockAdmin > 0  %}
+        
+            <div class='margin-b-md margin-l-md' style="display:inline-block;">
+                <a href='https://rock.thecrossingchurch.com/page/854?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters</a>
+            </div>
+            
+        {% endif %}
+    
+    </div>
+    
+{% endif %}
