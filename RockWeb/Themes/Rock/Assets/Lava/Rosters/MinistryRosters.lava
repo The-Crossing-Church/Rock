@@ -12,8 +12,8 @@
     {% assign mensSecurityGroup = CurrentPerson | Group: '214472','All' | Size %}
     
     {% assign useDefaultRoster = true %}
-    
-    <div style="display:flex; justify-content:flex-end">
+
+    <div style="display: flex;flex-wrap: wrap;justify-content: flex-start;">
         {% if mensSecurityGroup > 0 or rockAdmin > 0 %}
         
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
