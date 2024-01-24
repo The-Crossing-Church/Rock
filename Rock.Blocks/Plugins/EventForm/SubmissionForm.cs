@@ -152,8 +152,9 @@ namespace Rock.Blocks.Plugins.EventForm
                         AttributeMatrixService am_svc = new AttributeMatrixService( context );
                         var ams = am_svc.Queryable().Where( am => am.AttributeMatrixTemplateId == templateid && guids.Contains( am.Guid.ToString() ) );
                         var amis = ams.SelectMany( am => am.AttributeMatrixItems ).ToList();
-                        viewModel.locationSetupMatrix = ams.ToList().Select( am => am.ToViewModel( null, false ) ).ToList();
-                        viewModel.locationSetupMatrixItem = amis.ToList().Select( ami => ami.ToViewModel( null, true ) ).ToList();
+                        amis.LoadAttributes();
+                        viewModel.locationSetupMatrix = ams.ToList();
+                        viewModel.locationSetupMatrixItem = amis.ToList();
                     }
                 }
             }
@@ -1795,8 +1796,8 @@ namespace Rock.Blocks.Plugins.EventForm
             public bool isRoomAdmin { get; set; }
             public List<string> permissions { get; set; }
             public List<Rock.Model.DefinedValue> locations { get; set; }
-            public List<AttributeMatrixBag> locationSetupMatrix { get; set; }
-            public List<AttributeMatrixItemBag> locationSetupMatrixItem { get; set; }
+            public List<AttributeMatrix> locationSetupMatrix { get; set; }
+            public List<AttributeMatrixItem> locationSetupMatrixItem { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public List<Rock.Model.DefinedValue> inventoryList { get; set; }

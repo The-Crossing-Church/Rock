@@ -69,7 +69,7 @@ export default defineComponent({
     <rck-lbl>Type of Table</rck-lbl>
     <rck-ddl
       v-model="roomSetUp.TypeofTable"
-      :options="[{value: 'Round', text: 'Round'}, {value: 'Rectangular', text: 'Rectangular'}]"
+      :items="[{value: 'Round', text: 'Round'}, {value: 'Rectangular', text: 'Rectangular'}]"
     ></rck-ddl>
   </div>
   <div class="col col-xs-4">

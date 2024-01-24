@@ -53,7 +53,7 @@ export default defineComponent({
           type: Object as PropType<ContentChannelItemBag>,
           required: false
       },
-      locations: Array as PropType<DefinedValueBag[]>,
+      locations: Array,
       locationSetUp: Array as PropType<any[]>,
       showValidation: Boolean,
       refName: String,
@@ -123,12 +123,13 @@ export default defineComponent({
         })
       },
       getSetUpDesc(guid: string) {
+        console.log('get set up')
         if(this.rooms) {
           let room = this.rooms?.filter((r: any) => {
             return r.guid == guid
-          })
+          }) as any[]
           if(room) {
-            let setUpGuid = room[0]?.attributeValues?.StandardSetUp
+            let setUpGuid = room[0]?.attributeValues?.StandardSetUp.value
             let setUp = this.locationSetUp?.filter((r: any) => {
               return r.guid == setUpGuid
             })
@@ -162,7 +163,7 @@ export default defineComponent({
           } else {
             setup = []
             def.forEach((s: any) => {
-              setup.push({ Room: guid, TypeofTable: s.attributeValues.TypeofTable, NumberofTables: s.attributeValues.NumberofTables, NumberofChairs: s.attributeValues.NumberofChairs})
+              setup.push({ Room: guid, TypeofTable: s.attributeValues.TypeofTable.value, NumberofTables: s.attributeValues.NumberofTables.value, NumberofChairs: s.attributeValues.NumberofChairs.value })
             })
           }
         }
@@ -195,7 +196,7 @@ export default defineComponent({
           if(s.guid == room) {
             if(s.standard.length > 0) {
               s.standard.forEach((su: any) => {
-                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable, NumberofTables: su.attributeValues.NumberofTables, NumberofChairs: su.attributeValues.NumberofChairs })
+                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable.value, NumberofTables: su.attributeValues.NumberofTables.value, NumberofChairs: su.attributeValues.NumberofChairs.value })
               })
             }
           }
@@ -342,11 +343,11 @@ export default defineComponent({
           <div class="col col-xs-11">
             <rck-lbl>Standard Set-Up will be used for {{gsu.room}}</rck-lbl> <br/>
             <div v-for="(su, idx) in gsu.standard" :key="idx">
-              <template v-if="su.attributeValues.NumberofTables > 1">
-                {{su.attributeValues.NumberofTables}} {{su.attributeValues.TypeofTable}} tables with {{su.attributeValues.NumberofChairs}} chairs each.
+              <template v-if="su.attributeValues.NumberofTables.value > 1">
+                {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} tables with {{su.attributeValues.NumberofChairs.value}} chairs each.
               </template>
               <template v-else>
-                {{su.attributeValues.NumberofTables}} {{su.attributeValues.TypeofTable}} table with {{su.attributeValues.NumberofChairs}} charis.
+                {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} table with {{su.attributeValues.NumberofChairs.value}} charis.
               </template>
             </div>
           </div>

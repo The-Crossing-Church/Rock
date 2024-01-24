@@ -455,6 +455,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
                     new SqlParameter( "@infrastructureSpaceAttrId", InfrastructureSpaceAttr.Id ),
                     new SqlParameter( "@ministryDTId", MinistryDT.Id ),
                     new SqlParameter( "@locationDTId", LocationDT.Id ) };
+
                 var query = context.Database.SqlQuery<EventData>( $@"
 SELECT ParentId AS 'parentId',
        ChildId AS 'id',
