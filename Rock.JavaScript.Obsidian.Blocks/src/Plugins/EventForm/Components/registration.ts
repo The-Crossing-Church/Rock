@@ -40,6 +40,7 @@ export default defineComponent({
       },
       ministries: Array as PropType<DefinedValueBag[]>,
       discountAttrs: Array as PropType<AttributeBag[]>,
+      locations: Array,
       showValidation: Boolean,
       refName: String,
       readonly: Boolean
@@ -130,6 +131,32 @@ export default defineComponent({
           if(this.e?.attributeValues?.RegistrationFeeType) {
             let items = val.split(",").filter((i: string) => { return i != "No Fees" })
             this.e.attributeValues.RegistrationFeeType = items.join(",")
+          }
+        }
+      },
+      'e.attributeValues.ExpectedAttendance'(val, original) {
+        if(this.e?.attributeValues) {
+          if(val && val >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
+            this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
+          }
+        }
+      },
+      'e.attributeValues.NeedsCheckin'(val, original) {
+        if(this.e?.attributeValues) {
+          let att = parseInt(this.e.attributeValues.ExpectedAttendance)
+          if(this.e.attributeValues.ExpectedAttendance && att >= 180 && val == 'True') {
+            this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
+          }
+          if(val == 'False') {
+            this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
+          }
+        }
+      },
+      'e.attributeValues.NeedsDatabaseSupportTeam'(val, original) {
+        if(this.e?.attributeValues) {
+          let att = parseInt(this.e.attributeValues.ExpectedAttendance)
+          if(val == 'False' && att >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
+            this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
           }
         }
       },
@@ -347,13 +374,15 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="e.attributeValues.MaxRegistrants"
-        :attribute="e.attributes.MaxRegistrants"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="txtMaxRegistrants"
-      ></rck-field>
+      <tcc-validator :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
+        <rck-field
+          v-model="e.attributeValues.MaxRegistrants"
+          :attribute="e.attributes.MaxRegistrants"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtMaxRegistrants"
+        ></rck-field>
+      </tcc-validator>
     </div>
   </div>
   <br/>

@@ -49,6 +49,29 @@ const rules = {
     }
     return true
   },
+  maxRegistration: (value: number, rooms: string, locs: Array<any>, key: string, hasOnline: boolean) => {
+    if(rooms) {
+      let selectedRooms = JSON.parse(rooms)
+      if(selectedRooms && selectedRooms.value) {
+          let roomGuids = selectedRooms.value.split(',')
+          let locations = locs?.filter((l: any) => {
+              return roomGuids.includes(l.guid)
+          })
+          if(locations && locations.length > 0 && !hasOnline) {
+              let capacity = locations.map((l: any) => {
+                  if(l.attributeValues?.Capacity.value) {
+                      return parseInt(l.attributeValues.Capacity.value)
+                  }
+                  return 0
+              }).reduce((partialSum: any, a: any) => partialSum + a, 0)
+              return value <= capacity || `${key} cannot exceed ${capacity}`
+          } else {
+              return true
+          }
+      }
+    }
+    return true
+  },
   drinkTimeRequired: (value: string, drinkStr: string, key: string) => {
     if(drinkStr != '') {
       let drinks = JSON.parse(drinkStr)

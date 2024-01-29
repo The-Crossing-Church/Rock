@@ -28,10 +28,10 @@ export default defineComponent({
       }
     },
     methods: {
-      updateStatus(id: number, status: string) {
+      updateStatus(id: string, status: string) {
         this.$emit("updatestatus", id, status)
       },
-      addBuffer(id: number) {
+      addBuffer(id: string) {
         this.$emit("addbuffer", id)
         this.visible = false
       }
@@ -46,13 +46,13 @@ export default defineComponent({
 <a-badge :count="request.attributeValues.CommentNotifications">
   <a-pop v-model:visible="visible" trigger="click" placement="right">
     <template #content>
-      <a-btn class="mr-1" shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.id, 'In Progress')">
+      <a-btn class="mr-1" shape="circle" type="yellow" v-if="request.attributeValues.RequestStatus != 'In Progress'" @click="updateStatus(request.idKey, 'In Progress')">
         <i class="fas fa-tasks"></i>
       </a-btn>
-      <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="updateStatus(request.id, 'Approved')">
+      <a-btn class="mr-1" shape="circle" type="accent" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="updateStatus(request.idKey, 'Approved')">
         <i class="fas fa-check-circle"></i>
       </a-btn>
-      <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="addBuffer(request.id)">
+      <a-btn shape="circle" type="primary" v-if="request.attributeValues.RequestStatus != 'Approved'" @click="addBuffer(request.idKey)">
         <i class="far fa-clock"></i>
       </a-btn>
     </template>

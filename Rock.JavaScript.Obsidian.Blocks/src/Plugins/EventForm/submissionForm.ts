@@ -719,6 +719,7 @@ export default defineComponent({
         }
         let registrationTense = this.findTense(14, registrationFirstGoLive)
         let webCalTense = this.findTense(14, this.viewModel.request.attributeValues.WebCalendarGoLive)
+        console.log(twoWeeksTense, thirtyDaysTense, registrationTense, webCalTense)
         //Drafts, cut anything that is past-deadline
         if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
           if(twoWeeksTense == 'was') {
@@ -845,6 +846,9 @@ export default defineComponent({
               return DateTime.fromFormat(i, 'yyyy-MM-dd')
             })?.sort().shift()?.minus({ days: numDays })
             if(specificDate) {
+              if(specificDate.includes('T')) {
+                specificDate = specificDate.split('T')[0]
+              }
               first = DateTime.fromFormat(specificDate, 'yyyy-MM-dd').minus({ days: numDays })
             }
             let isFuneralRequest = false
@@ -1267,7 +1271,7 @@ export default defineComponent({
             Registration Information
             <a-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" type="accent-outlined" shape="round" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</a-btn>
           </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
+          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">

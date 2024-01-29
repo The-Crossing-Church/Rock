@@ -361,7 +361,7 @@ namespace Rock.Blocks.Plugins.EventForm
         {
             RockContext context = new RockContext();
             string id = PageParameter( PageParameterKey.RequestId );
-            if (!String.IsNullOrEmpty(altId))
+            if (!String.IsNullOrEmpty( altId ))
             {
                 id = altId;
             }
@@ -373,7 +373,7 @@ namespace Rock.Blocks.Plugins.EventForm
             viewModel.adminDashboardURL = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
             viewModel.userDashboardURL = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
 
-            if (!String.IsNullOrEmpty(id))
+            if (!String.IsNullOrEmpty( id ))
             {
                 item = new ContentChannelItemService( context ).Get( id );
                 viewModel.request = item.ToViewModel( p, true );
@@ -426,10 +426,10 @@ namespace Rock.Blocks.Plugins.EventForm
                     ( i, av ) => i
                 );
                 var qryEventAttrs = new List<AttributeValue>();
-                if (!String.IsNullOrEmpty(id))
+                if (!String.IsNullOrEmpty( id ))
                 {
                     int entityId = 0;
-                    Int32.TryParse(id, out entityId );
+                    Int32.TryParse( id, out entityId );
                     //Filter to Requests that intersect dates or are in future
                     DateTime today = new DateTime( RockDateTime.Now.Year, RockDateTime.Now.Month, RockDateTime.Now.Day, 0, 0, 0 );
                     var itemEventDates = av_svc.Queryable().FirstOrDefault( av => av.AttributeId == eventAttr.Id && av.EntityId == entityId );
@@ -1466,7 +1466,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     eventChanges = eventChangesAssoc.ChildContentChannelItem;
                     eventChanges.LoadAttributes();
                 }
-                message += "<div style='font-size: 18px;'><strong style='color: #6485b3;'>Date Information</strong><br/>";
+                message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>Date Information</strong><br/>";
                 if (events.Count() == 1)
                 {
                     message += RenderValue( "Event Dates", String.Join( ", ", item.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ), itemChanges != null ? String.Join( ", ", itemChanges.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ) : "" );
@@ -1529,8 +1529,8 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 if (!String.IsNullOrEmpty( item.AttributeValues["WebCalendarDescription"].Value ) || !String.IsNullOrEmpty( item.AttributeValues["WebCalendarGoLive"].Value ))
                 {
-                    message += "<div style='font-size: 18px;'><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
-                    message += RenderValue( item.Attributes["WebCalendarGoLive"].Name, item.AttributeValues["WebCalendarGoLive"].Value, itemChanges != null ? itemChanges.AttributeValues["WebCalendarGoLive"].Value : "" );
+                    message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
+                    message += RenderValue( item.Attributes["WebCalendarGoLive"].Name, item.AttributeValues["WebCalendarGoLive"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["WebCalendarGoLive"].ValueFormatted : "" );
                     message += RenderValue( item.Attributes["WebCalendarDescription"].Name, item.AttributeValues["WebCalendarDescription"].Value, itemChanges != null ? itemChanges.AttributeValues["WebCalendarDescription"].Value : "" );
                     message += "</div>";
                 }
@@ -1558,7 +1558,7 @@ namespace Rock.Blocks.Plugins.EventForm
             var attrs = item.Attributes.Where( a => a.Value.Categories.Select( c => c.Name ).Contains( category ) ).OrderBy( a => a.Value.Order ).Select( a => a.Key ).ToList();
             if (attrs.Count() > 0)
             {
-                message += "<div style='font-size: 18px;'><strong style='color: #6485b3;'>" + sectionTitle + " Information</strong><br/>";
+                message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>" + sectionTitle + " Information</strong><br/>";
             }
             for (int k = 0; k < attrs.Count(); k++)
             {
@@ -1626,7 +1626,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             if (!String.IsNullOrEmpty( originalSetUp[i].InventoryItem ))
                             {
                                 var item = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
-                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {(originalSetUp[i].QuantityNeeded > 1 ? "s" : "")}</li>";
+                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {(originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "")}</li>";
                             }
                         }
                     }
@@ -1642,7 +1642,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             if (!String.IsNullOrEmpty( currentSetUp[i].InventoryItem ))
                             {
                                 var item = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].InventoryItem ) );
-                                message += $"<li>{currentSetUp[i].QuantityNeeded} {item.Value} {(currentSetUp[i].QuantityNeeded > 1 ? "s" : "")}</li>";
+                                message += $"<li>{currentSetUp[i].QuantityNeeded} {item.Value} {(currentSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "")}</li>";
                             }
                         }
                     }
@@ -1743,7 +1743,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             if (!String.IsNullOrEmpty( originalSetUp[i].InventoryItem ))
                             {
                                 var item = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
-                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {(originalSetUp[i].QuantityNeeded > 1 ? "s" : "")}</li>";
+                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {(originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "")}</li>";
                             }
                         }
                     }
