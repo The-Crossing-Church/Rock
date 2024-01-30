@@ -2,7 +2,7 @@
 {% assign canView =   groupId | HasRightsTo:'View','Rock.Model.Group'  %}
 
 {% if canView == true %}
-
+    {% assign root = 'Global' | Attribute:'InternalApplicationRoot' %}
     {% assign rockAdmin = CurrentPerson | Group: '2','All' | Size %}
     {% assign womensSecurityGroup = CurrentPerson | Group: '110733','All' | Size %}
     {% assign CKSecurityGroup = CurrentPerson  Person| Group: '110498','All' | Size %}
@@ -17,7 +17,7 @@
         {% if mensSecurityGroup > 0 or rockAdmin > 0 %}
         
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/1541?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CM)</a>
+                <a href='{{ root }}page/1541?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CM)</a>
             </div>
         
             {% assign useDefaultRoster = false %}
@@ -27,7 +27,7 @@
         {% if womensSecurityGroup > 0 or rockAdmin > 0 %}
         
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/896?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CW)</a>
+                <a href='{{ root }}page/896?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CW)</a>
             </div>
         
             {% assign useDefaultRoster = false %}
@@ -37,7 +37,7 @@
         {% if CKSecurityGroup > 0 or rockAdmin > 0 %}
         
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/905?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CK Volunteers)</a>
+                <a href='{{ root }}page/905?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (CK Volunteers)</a>
             </div>
         
             {% assign useDefaultRoster = false %}
@@ -47,11 +47,11 @@
         {% if SGSecurityGroup > 0 or rockAdmin > 0 %}
         
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/1055?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Small Group Leaders)</a>
+                <a href='{{ root }}page/1055?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Small Group Leaders)</a>
             </div>
             
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/1077?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Small Group Staff/Coaches)</a>
+                <a href='{{ root }}page/1077?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Small Group Staff/Coaches)</a>
             </div>
         
             {% assign useDefaultRoster = false %}
@@ -61,7 +61,7 @@
         {% if CareSecurityGroup > 0 or CareAdminSecurityGroup > 0 or rockAdmin > 0 %}
             
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/1056?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Care)</a>
+                <a href='{{ root }}page/1056?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters (Care)</a>
             </div>
         
             {% assign useDefaultRoster = false %}
@@ -70,7 +70,7 @@
         {% if useDefaultRoster == 'true' or rockAdmin > 0  %}
         
             <div class='margin-b-md margin-l-md' style="display:inline-block;">
-                <a href='https://rock.thecrossingchurch.com/page/854?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters</a>
+                <a href='{{ root }}page/854?GroupId={{ 'Global' | PageParameter:'GroupId' }}&ViewDocument=true' class='btn btn-sm btn-default pull-right'>View Rosters</a>
             </div>
             
         {% endif %}
