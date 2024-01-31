@@ -1,0 +1,221 @@
+{% assign groups = 'Global' | PageParameter:'GroupIds' | AsString | SanitizeSql %}
+{% assign stDate = 'Global' | PageParameter:'StartDate' | SanitizeSql %}
+
+<html>
+    <head>
+        <style>
+			body {
+                font-family: Arial, Helvetica, sans-serif !important;
+                font-size: 12px;
+                padding-right: .25in;
+                padding-left: .25in;
+            }
+
+            td {
+                max-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            td.alert {
+                color: #fff;
+                background-color: #666;
+            }
+
+            th {
+                font-size:9px;
+                padding: 1px 1px !important;
+                border: 1px solid black !important;
+            }
+
+            table {
+                width: 100%;
+            }
+
+            .table-responsive {
+                padding-right: 10px;
+            }
+
+            .table-striped>tbody>tr:nth-of-type(odd) {
+                background-color: #e0e0e0 !important;
+            }
+
+            .table>tbody>tr>td {
+                padding: 1px 1px !important;
+                font-size: 12px;
+                border: 1px solid black !important;
+            }
+
+            .avoid {
+                page-break-inside: avoid !important;
+                margin: 4px 0 4px 0;  /* to keep the page break from cutting too close to the text in the div */
+             }
+		</style>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+    </head>
+    <body>
+
+		{% if groups != null and groups != empty %}
+			{% sql return:'parentgroups' %}
+				Select Distinct
+					g2.id, 'Power Failure: ' + g2.name as [title]
+				From GroupMember as gm
+				Inner join person as p on gm.PersonId = p.id
+				Inner join [Group] as g on gm.GroupID = g.id
+				inner join [Group] as g2 on g.ParentGroupId = g2.id
+				Where gm.GroupId IN ({{ groups }})
+				    and p.RecordStatusValueId = 3 -- active
+					and p.ConnectionStatusValueId <> 66 -- not a visitor
+				    and p.id In (
+					--And attendance within the last 8 weeks
+					Select
+						pa.personid
+					From [dbo].[Attendance] as a
+					INNER JOIN AttendanceOccurrence as ao on a.OccurrenceId = ao.Id
+					Inner join [Group] G on G.Id = ao.GroupId
+					Inner join PersonAlias as pa on a.PersonAliasId = pa.Id
+					Where [StartDateTime] >= '{{stDate}}'
+					    AND G.GroupTypeId = 186 -- CK Sipmlified Check-In
+				)
+			{% endsql %}
+
+			{% for page in parentgroups %}
+				{% sql return:'rows' %}
+					Select Distinct
+					    p.Id,
+						p.NickName + ' ' + p.LastName as [Name],
+						Cast(BirthMonth as nvarchar(2)) + '/' + Cast(Birthday as nvarchar(2)) +'/' + Cast(BirthYear as nvarchar(4)) as [Birthdate],
+						Case when p.Gender = 1 Then 'Male' else 'Female' end as [Gender],
+						TRIM(avAllergy.[Value]) AS [FoodAllergies],
+                    	TRIM(avMedical.[Value]) AS [MedicalSituationCode],
+                    	TRIM(avMedicalInfo.[Value]) AS [MedicalInformation],
+						--Replace(dbo.Cust_Bema_GetParentNickNames(p.Id),', ',' and ') + ' ' + p.LastName as [ParentNames],
+						[dbo].[ufnCrm_GetParentPhones]( p.id, 'Mobile' ) as [ParentMobile]
+					From GroupMember as gm
+					Inner join person as p on gm.PersonId = p.id
+					left outer join AttributeValue as avAllergy on p.id = avAllergy.EntityId and avAllergy.AttributeId = 676
+					left outer join AttributeValue as avMedical on p.id = avMedical.EntityId and avMedical.AttributeId = 2855
+					left outer join AttributeValue as avMedicalInfo on p.id = avMedicalInfo.EntityId and avMedicalInfo.AttributeId = 4141
+					Inner join [Group] as g on gm.GroupID = g.id
+					Inner join [Group] as g2 on g.ParentGroupId = g2.id
+					WHERE g2.Id = '{{ page.id }}'
+					    and gm.GroupId IN ({{ groups }})
+					    and p.RecordStatusValueId = 3 -- active
+					    and p.ConnectionStatusValueId <> 66 -- not a visitor
+					    and p.id In (
+    					--And attendance within the last 8 weeks
+    					Select
+    						pa.personid
+    					From [dbo].[Attendance] as a
+    					INNER JOIN AttendanceOccurrence as ao on a.OccurrenceId = ao.Id
+    					Inner join [Group] G on G.Id = ao.GroupId
+    					Inner join PersonAlias as pa on a.PersonAliasId = pa.Id
+    					Where [StartDateTime] >= '{{stDate}}'
+    					    AND G.GroupTypeId = 186 -- CK Sipmlified Check-In
+    				   )
+					   ORDER BY p.NickName + ' ' + p.LastName
+				{% endsql %}
+
+				{% assign lineNumber = 1 %}
+
+				<div class="row">
+					<div class="col-md-12">
+						<div class=" table-responsive">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th colspan="6"><h4 style="margin: 2px;">{{ page.title }}&nbsp;&nbsp;{{stDate}}&nbsp;&ndash;&nbsp;{{ 'Now' | Date:'M/d/yyyy' }}</h4></th>
+									</tr>
+									<tr>
+										<th style="width: 120px;">Name</th>
+										<th style="width: 75px;">Birthdate</th>
+										<th style="width: 60px;">Gender</th>
+										<th>Allergy/Medical Info</th>
+										<th style="width: 200px;">Parent's Names(s)</th>
+										<th style="width: 200px;">Parent's Mobile(s)</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for row in rows %}
+									    {% assign lineNumber = lineNumber | Plus:1 %}
+										{% if lineNumber > 47 %}
+								</tbody>
+							</table>
+        				</div>
+    				</div>
+				</div>
+				<p style="page-break-after: always;">&nbsp;</p>
+				{% assign lineNumber = 1 %}
+				<div class="row">
+					<div class="col-md-12">
+						<div class=" table-responsive">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th colspan="6"><h4 style="margin: 2px;">{{ page.title }}&nbsp;&nbsp;{{stDate}}&nbsp;&ndash;&nbsp;{{ 'Now' | Date:'M/d/yyyy' }}</h4></th>
+									</tr>
+									<tr>
+										<th style="width: 120px;">Name</th>
+										<th style="width: 75px;">Birthdate</th>
+										<th style="width: 60px;">Gender</th>
+										<th>Allergy/Medical Info</th>
+										<th style="width: 200px;">Parent's Names(s)</th>
+										<th style="width: 200px;">Parent's Mobile(s)</th>
+									</tr>
+								</thead>
+								<tbody>
+										{% endif %}
+
+										<tr class="avoid">
+											<td>{{ row.Name }}</td>
+											<td>{{ row.Birthdate }}</td>
+											<td>{{ row.Gender }}</td>
+											<td {% if (row.FoodAllergies != null and row.FoodAllergies != '') or (row.MedicalSituationCode != null and row.MedicalSituationCode != '') or (row.MedicalInformation != null and row.MedicalInformation != '') %}class='alert'{% endif %}>
+											        {% if row.FoodAllergies != null and row.FoodAllergies != '' %}
+    											        <div>{{ row.FoodAllergies }}</div>
+    											        {% assign lineNumber = lineNumber | Plus:1 %}
+    											    {% endif %}
+												    {% if row.MedicalSituationCode != null and row.MedicalSituationCode != '' %}
+    												    <div>{{ row.MedicalSituationCode }}</div>
+    												    {% assign lineNumber = lineNumber | Plus:1 %}
+												    {% endif %}
+												    {% if row.MedicalInformation != null and row.MedicalInformation != '' %}
+    												    <div>{{ row.MedicalInformation }}</div>
+    												    {% assign lineNumber = lineNumber | Plus:1 %}
+												    {% endif %}
+											</td>
+											<td>
+												{% assign groupMembers = row.Id | PersonById | Groups: '10','All' %}
+												{% capture nameFinal %}
+												{% for groupMember in groupMembers %}
+														{% groupmember where:'GroupId == {{ groupMember.Group.Id }}' %}
+															{% assign names = '' %}
+															{% for gm in groupmemberItems %}
+																{% if gm.GroupRoleId == 3 %}
+																	{% capture names %}{{ names }} {{ gm.Person.NickName }} &{% endcapture %}
+																{% endif %}
+															{% endfor %}
+															{{ names | ReplaceLast:' &','' }} {{ groupMember.Person.LastName }},
+														{% endgroupmember %}
+												{% endfor %}
+												{% endcapture %}
+												{{ nameFinal | ReplaceLast:',','' }}
+											</td>
+											<td>
+												{{ row.ParentMobile }}
+											</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+        				</div>
+    				</div>
+				</div>
+				{% unless forloop.last %}
+				<p style="page-break-after: always;">&nbsp;</p>
+				{% endunless %}
+			{% endfor %}
+		{% endif %}
+    </body>
+</html>
