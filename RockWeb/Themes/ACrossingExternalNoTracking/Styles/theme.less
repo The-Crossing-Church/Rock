@@ -188,7 +188,7 @@ a:hover {
 }
 
 .grid-actions {
-  background-color: #a2c3cc;
+  background-color: rgba(@color-light-blue, .8);
 
   .btn {
     padding: 4px;
@@ -257,12 +257,21 @@ a:hover {
   }
 
   .btn.dropdown-toggle {
-    width: 45px;
+    min-width: 45px;
     height: 34px;
     border-radius: 4px;
     color: #fff;
     font-size: 12px;
   }
+}
+
+.control-wrapper .btn-group .btn-primary:not(.btn-lg) {
+  height: 34px;
+  padding: 6px 12px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 0px;
 }
 
 .panel-default:not(.no-border),
@@ -338,7 +347,7 @@ body {
 
 // 3. Theme Styling
 // -------------------------
-h1.pagetitle:empty {
+h1:empty {
   // hides the page title h1 tag if the page has the title hidden
   display: none;
 }
@@ -347,12 +356,15 @@ h1.pagetitle:empty {
   display: none;
 }
 
+header.tcc-site-header {
+  z-index: 1000;
+}
+
 header:not(.panel-heading) {
   background-color: @color-dark-blue;
   position: fixed;
   left: 0;
   right: 0;
-  z-index: 1000;
 
   .page-menu,
   .login-status {
@@ -582,24 +594,10 @@ header:not(.panel-heading) {
               a {
                 text-transform: capitalize;
                 position: relative;
-                /*display: flex;*/
                 height: 100%;
                 align-items: center;
                 width: 100%;
-                /*padding-left: 50px;*/
               }
-              /*a:before {
-                content: '';
-                position: absolute;
-                top: 24px;
-                left: 0;
-                display: block;
-                width: 35px;
-                height: 2px;
-                background: #fff;
-                vertical-align: middle;
-                margin-right: 12px;
-              }*/
             }
           }
 
@@ -747,10 +745,8 @@ header:not(.panel-heading) {
     left: 18px;
     padding: 4px;
     margin: 0;
-  
-    &.is-open {
-      background: @grid-filter-bg;
-    }
+    background: @grid-filter-bg;
+    border: none;
   }
 }
 
@@ -758,7 +754,7 @@ header:not(.panel-heading) {
   text-align: center;
 }
 
-.py-custom-2x {
+.py-custom-2x, .pt-custom-2x {
   padding-top: 2rem !important;
 }
 
@@ -768,6 +764,10 @@ header:not(.panel-heading) {
 
 .mb-custom-2x, .my-custom-2x {
   margin-bottom: 2rem !important;
+}
+
+.mt-custom-2x, .my-custom-2x {
+  margin-top: 2rem !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -782,7 +782,7 @@ h1 {
   margin: 0 auto;
 }
 
-h2 {
+h2, .h2 {
   font-size: 2.25em;
   line-height: 1.1875em;
   font-weight: 800;
@@ -819,7 +819,7 @@ h5 {
     font-size: 1.875em;
   }
 
-  h2 {
+  h2, .h2 {
     font-size: 1.5em;
   }
 
@@ -827,12 +827,16 @@ h5 {
     font-size: 1.25em;
   }
 
-  .py-custom-2x {
+  .py-custom-2x, pt-custom-2x {
     padding-top: 1rem !important;
   }
 
   .pb-custom-2x, .py-custom-2x {
     padding-bottom: 1rem !important;
+  }
+
+  .mt-custom-2x, .my-custom-2x {
+    margin-top: 1rem !important;
   }
 
   .mb-custom-2x, .my-custom-2x {
