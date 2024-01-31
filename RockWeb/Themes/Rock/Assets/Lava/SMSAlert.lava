@@ -1,0 +1,43 @@
+{% capture commId %}{% execute import:'System.Linq,System.Collections.Generic'  %}
+    
+    // Create communication
+    var rockContext = new RockContext();
+    var communicationService = new Rock.Model.CommunicationService( rockContext );
+    var communication = new Rock.Model.Communication();
+    communication.IsBulkCommunication = true;
+    communication.Status = Rock.Model.CommunicationStatus.Transient;
+    communication.SenderPersonAliasId = {{ CurrentPerson.PrimaryAliasId }};
+    communication.UrlReferrer= "{{ 'Global' | Attribute:'InternalApplicationRoot' }}Page/3959";
+    communicationService.Add( communication );
+    rockContext.SaveChanges();
+    
+    // Create recipients
+    var dataView = new DataViewService( rockContext ).Get(1507);
+    if ( dataView != null )
+    {
+        var errorMessages = new List<string>();
+        var personIds = dataView
+            .GetQuery( null, rockContext, null, out errorMessages )
+            .Select( i => i.Id );
+            
+        foreach ( var personId in personIds )
+        {
+            var person = new PersonService( rockContext ).Get( personId );
+            if ( person != null )
+            {
+                var communicationRecipient = new CommunicationRecipient();
+                communicationRecipient.PersonAlias = person.PrimaryAlias;
+                communication.Recipients.Add( communicationRecipient );
+            }
+        }
+    }
+    rockContext.SaveChanges();
+    return communication.Id.ToString();
+    
+{% endexecute %}{% endcapture %}
+{% capture redirectURL %}/page/1092?CommunicationId={{ commId }}{% endcapture %}
+{% if CurrentPersonCanEdit %}
+    <p class="alert alert-warning">If you could not edit you would be redirected to: <a href="{{ redirectURL }}">{{ redirectURL }}</a>.</p>
+{% else %}
+    {{ redirectURL | PageRedirect }}
+{% endif %}
