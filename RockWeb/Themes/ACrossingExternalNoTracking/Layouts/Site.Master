@@ -172,7 +172,7 @@
     <form id="form1" runat="server">
 
         <!-- Page Header -->
-        <header>
+        <header class="tcc-site-header">
             <div class="header-inset">
                 <div class="nav-menu left">
                     <div class="header-search">
