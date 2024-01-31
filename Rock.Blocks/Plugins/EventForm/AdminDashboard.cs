@@ -1293,7 +1293,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     {
                         parent.ContentChannelItem.LoadAttributes();
                         x.AttributeValues.Add( eventDatesKey, parent.ContentChannelItem.GetAttributeValue( eventDatesKey ) );
-                        x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.Id.ToString() );
+                        x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.IdKey );
                     }
                 }
                 return x;

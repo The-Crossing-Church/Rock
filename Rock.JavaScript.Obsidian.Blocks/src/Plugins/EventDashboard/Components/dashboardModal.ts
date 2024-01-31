@@ -221,7 +221,7 @@ export default defineComponent({
       },
       openRelated(request: any) {
         if(request.attributeValues.ParentId && request.attributeValues.ParentId != "") {
-          request.id = request.attributeValues.ParentId
+          request.idKey = request.attributeValues.ParentId
         }
         this.$emit("openrequest", request)
       },
