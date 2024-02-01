@@ -267,7 +267,7 @@
                                 </div>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Online-Giving">Give</a>
+                                <a href="/Give">Give</a>
                             </li>
                             <li class="menu-item main-nav-item">
                                 <a href="/Livestream" class="btn btn-accent">Livestream</a>
@@ -372,7 +372,7 @@
                                 </div>
                             </li>
                             <li class="menu-item">
-                                <a href="/Online-Giving" class="text-white">Give Now</a>
+                                <a href="/Give" class="text-white">Give Now</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Livestream" class="text-white">Watch Livestream</a>
