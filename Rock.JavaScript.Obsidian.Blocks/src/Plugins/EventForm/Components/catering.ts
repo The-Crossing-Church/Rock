@@ -166,12 +166,6 @@ export default defineComponent({
         <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Sophia’s'; vendorMenu = false;">
           Sophia’s
         </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Tropical Smoothie Cafe'; vendorMenu = false;">
-          Tropical Smoothie Cafe
-        </a-menu-item>
-        <a-menu-item class="hover" @click="e.attributeValues.PreferredVendor = 'Your Pie'; vendorMenu = false;">
-          Your Pie
-        </a-menu-item>
       </a-menu>
     </template>
   </a-dropdown>

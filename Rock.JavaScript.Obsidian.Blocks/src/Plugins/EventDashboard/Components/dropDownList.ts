@@ -119,7 +119,7 @@ export default defineComponent({
             <i class="fa fa-search"></i>
           </div>
         </div>
-        <a-menu-item :class="getClassName(i)" v-for="i in filteredItems" @click="select(i)">
+        <a-menu-item :class="getClassName(i)" v-for="i in filteredItems" @click="select(i)" :key="i">
             <div class="tcc-dropdown-item-content">
               {{i}}
             </div>

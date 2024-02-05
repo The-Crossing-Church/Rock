@@ -323,6 +323,17 @@ export default defineComponent({
       }
       return dt.toFormat("MM/dd/yyyy")
     },
+    getEventStepTitle(idx: number) {
+      if(this.viewModel?.events) {
+        if(this.viewModel.events.length == 1) {
+          return "Event Info"
+        } else {
+          let dt = this.viewModel.events[idx].attributeValues?.EventDate as string
+          return this.formatDate(dt)
+        }
+      }
+      return ""
+    },
     saveDraft() {
       if(this.viewModel) {
         this.validate()
@@ -1202,14 +1213,7 @@ export default defineComponent({
   <a-steps :current="step">
     <a-step class="hover" :key="0" @click="jumpTo(0)" title="Resources" />
     <a-step class="hover" :key="1" @click="jumpTo(1)" title="Basic Info" />
-    <template v-if="hasEventData">
-      <template v-if="viewModel.request.attributeValues.IsSame == 'True'">
-        <a-step class="hover" :key="2" @click="jumpTo(2)" title="Event Info" />
-      </template>
-      <template v-else>
-          <a-step class="hover" v-for="(e, idx) in viewModel.events" :key="(idx + 2)" @click="jumpTo((idx + 2))" :title="formatDate(e.attributeValues.EventDate)" />
-      </template>
-    </template>
+    <a-step class="hover" v-for="(e, idx) in viewModel.events" @click="jumpTo((2 + idx))" :key="(2 + idx)" :title="getEventStepTitle(idx)" />
     <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True' || viewModel.request.attributeValues.NeedsWebCalendar == 'True' || viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'" :key="publicityStep" @click="jumpTo(publicityStep)" title="Additional Requests" />
   </a-steps>
   <div class="steps-content">

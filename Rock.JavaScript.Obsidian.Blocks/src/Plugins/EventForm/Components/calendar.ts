@@ -216,8 +216,10 @@ export default defineComponent({
                 let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")
                 //Our original minimum date is in the past
                 if(firstDate.startOf('day') < today.startOf('day')) {
-                    //Looking at historical event
-                    this.startDate = firstDate
+                    if(!this.min || firstDate.startOf('day') < this.startDate) {
+                        //Looking at historical event
+                        this.startDate = firstDate
+                    }
                 } else {
                     if(!this.min) {
                         this.startDate = today
