@@ -442,7 +442,7 @@ export default defineComponent({
         this.partialApprovalModal = false
         if(res.isSuccess) {
           if(res.data?.id) {
-            this.selectItem(res.data)
+            this.selectItem({ idKey: res.data.id })
             this.filterTables("PendingChanges", null)
             this.filter("All")
           }

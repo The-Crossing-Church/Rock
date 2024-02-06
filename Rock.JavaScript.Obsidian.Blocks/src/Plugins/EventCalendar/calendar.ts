@@ -125,21 +125,21 @@ export default defineComponent({
     rooms() {
       let arr = this.viewModel?.locations as any[]
       return arr?.filter((l: any) => {
-        return l.attributeValues?.IsDoor == "False"
+        return l.attributeValues?.IsDoor.value == "False"
       }).map(l => {
         let x = {} as ListItem
         x.value = l.guid
         if(l.value) {
           x.text = l.value
           if(l.attributeValues?.Capacity) {
-            x.text += " (" + l.attributeValues?.Capacity + ")"
+            x.text += " (" + l.attributeValues?.Capacity.value + ")"
           }
         }
         if(l.attributeValues?.Type) {
-          x.type = l.attributeValues.Type
+          x.type = l.attributeValues.Type.value
         }
         if(l.attributeValues?.StandardSetUpDescription) {
-          x.description = l.attributeValues.StandardSetUpDescription
+          x.description = l.attributeValues.StandardSetUpDescription.value
         }
         if(!l.isActive) {
           x.isDisabled = true
@@ -610,6 +610,7 @@ export default defineComponent({
             label="Calendars/Spaces"
             :items="groupedRooms"
             :multiple="true"
+            id="PkrRoom"
           ></tcc-room>
         </div>
         <div class="col col-xs-12 col-md-4">

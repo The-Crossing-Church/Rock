@@ -100,10 +100,15 @@ export default defineComponent({
           for(let i=0; i < inv.length; i++) {
             this.inventory?.forEach((item: any) => {
               if(item.guid == inv[i].InventoryItem) {
+                inv[i].ItemName = item.value
                 if(inv[i].QuantityNeeded > 1) {
-                  inv[i].ItemName = item.value + "s"
+                  if(inv[i].ItemName[item.value.length - 1] != "s") {
+                    inv[i].ItemName = item.value + "s"
+                  } 
                 } else {
-                  inv[i].ItemName = item.value
+                  if(inv[i].ItemName[item.value.length - 1] == "s") {
+                    inv[i].ItemName = item.value.substring(0, item.value.length - 1)
+                  }
                 }
               }
             })
@@ -125,7 +130,7 @@ export default defineComponent({
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in opsAttrs">
       <template v-if="av.attr.key =='RoomSetUp'">
-        <template v-if="av.changeValue != ''">
+        <template v-if="av.changeValue != av.value">
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
@@ -179,7 +184,7 @@ export default defineComponent({
         </template>
       </template>
       <template v-else-if="av.attr.key == 'Drinks'">
-        <template v-if="av.changeValue != ''">
+        <template v-if="av.changeValue != av.value">
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
@@ -198,16 +203,27 @@ export default defineComponent({
         </template>
       </template>
       <template v-else-if="av.attr.key == 'OpsInventory'">
-        <template v-if="av.changeValue != ''">
+        <template v-if="av.changeValue != av.value">
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
               <div class="text-red">
-                {{getOpsInventory(av.value)}}
+                <ul v-if="av.value">
+                  <li v-for="(val, idx) in getOpsInventory(av.value)" :key="val.InventoryItem">
+                    {{val.QuantityNeeded}} {{val.ItemName}}
+                  </li>
+                </ul>
+                <div v-else>Empty</div>
               </div>
             </div>
             <div class="col col-xs-6">
               <div class="text-primary" style="padding-top: 18px;">
+                <ul v-if="av.changeValue">
+                  <li v-for="(val, idx) in getOpsInventory(av.changeValue)" :key="val.InventoryItem">
+                    {{val.QuantityNeeded}} {{val.ItemName}}
+                  </li>
+                </ul>
+                <div v-else>Empty</div>
               </div>
             </div>
           </div>
@@ -215,8 +231,12 @@ export default defineComponent({
         <template v-else>
           <div class="mb-2">
             <rck-lbl>{{av.attr.name}}</rck-lbl>
-            <div v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
-              {{i.QuantityNeeded}} {{i.ItemName}}
+            <div>
+              <ul>
+                <li v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
+                  {{i.QuantityNeeded}} {{i.ItemName}}
+                </li>
+              </ul>
             </div>
           </div>
         </template>

@@ -167,13 +167,13 @@ namespace Rock.Blocks.Plugins.EventCalendar
                 var p = GetCurrentPerson();
                 if (Locations != null && Locations.Count() > 0)
                 {
-                    var locs = Locations.Select( l => l.ToViewModel( p, true ) );
-                    viewModel.locations = locs.ToList();
+                    Locations.LoadAttributes();
+                    viewModel.locations = Locations;
                 }
                 if (Ministries != null && Ministries.Count() > 0)
                 {
-                    var mins = Ministries.Select( m => m.ToViewModel( p, true ) );
-                    viewModel.ministries = mins.ToList();
+                    Ministries.LoadAttributes();
+                    viewModel.ministries = Ministries;
                 }
 
                 //Attributes
@@ -889,8 +889,8 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
         private class CalendarBlockViewModel
         {
             public List<ContentChannelItemBag> events { get; set; }
-            public List<DefinedValueBag> locations { get; set; }
-            public List<DefinedValueBag> ministries { get; set; }
+            public List<DefinedValue> locations { get; set; }
+            public List<DefinedValue> ministries { get; set; }
             public AttributeBag requestStatus { get; set; }
             public AttributeBag requestType { get; set; }
             public string formUrl { get; set; }

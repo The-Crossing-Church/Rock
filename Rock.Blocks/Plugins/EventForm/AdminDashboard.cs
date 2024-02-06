@@ -1391,6 +1391,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             item.LoadAttributes();
+            item.ChildItems.Select( ccia => ccia.ChildContentChannelItem ).LoadAttributes();
             string subject = "Some of Your Changes Have Been Approved";
             string message = "Please see below which modifications have been approved or denied:<br/>";
             message += "<strong>Approved Modifications</strong><br/>";
@@ -1442,7 +1443,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItemId == events[i].eventid );
                     if (e != null)
                     {
-                        e.ChildContentChannelItem.LoadAttributes();
+                        //e.ChildContentChannelItem.LoadAttributes();
                         message += "<strong>Approved Modifications for " + DateTime.Parse( e.GetAttributeValue( "EventDate" ) ).ToString( "MM/dd/yyyy" ) + "</strong><br/>";
                         message += "<ul>";
                         for (int k = 0; i < events[i].approvedAttrs.Count(); k++)
