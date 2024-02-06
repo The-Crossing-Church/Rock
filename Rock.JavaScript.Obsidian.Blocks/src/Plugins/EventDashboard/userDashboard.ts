@@ -837,6 +837,7 @@ label, .control-label {
   line-height: 18px;
   letter-spacing: normal;
   font-size: 14px;
+  font-weight: 700 !important;
 }
 .ant-form-item-label {
   text-align: left;

@@ -167,12 +167,10 @@ namespace Rock.Blocks.Plugins.EventCalendar
                 var p = GetCurrentPerson();
                 if (Locations != null && Locations.Count() > 0)
                 {
-                    Locations.LoadAttributes();
                     viewModel.locations = Locations;
                 }
                 if (Ministries != null && Ministries.Count() > 0)
                 {
-                    Ministries.LoadAttributes();
                     viewModel.ministries = Ministries;
                 }
 

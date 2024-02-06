@@ -136,8 +136,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     if (Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ))
                     {
                         DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                        var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList().Select( l => l.ToViewModel( p, true ) );
-                        viewModel.locations = locs.ToList();
+                        var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
+                        locs.LoadAttributes();
+                        viewModel.locations = locs;
                     }
                     if (Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ))
                     {
@@ -1128,7 +1129,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public List<ContentChannelItemAssociation> eventDetails { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
-            public List<DefinedValueBag> locations { get; set; }
+            public List<DefinedValue> locations { get; set; }
             public List<Rock.Model.DefinedValue> ministries { get; set; }
             public List<Rock.Model.DefinedValue> budgetLines { get; set; }
             public List<Rock.Model.DefinedValue> drinks { get; set; }

@@ -60,6 +60,7 @@ export default defineComponent({
           return selectedGuids.includes(r.guid)
         }) as any
         let val = value.includes('[') ? JSON.parse(value) : []
+        console.log(selectedRooms, val)
         let setup = [] as any[]
         if(selectedRooms && selectedRooms.length > 0) {
           for(let i = 0; i < selectedRooms.length; i++) {
@@ -74,6 +75,7 @@ export default defineComponent({
             setup.push(obj)
           }
         }
+        console.log(setup)
         return setup
       },
       getDrinkInfo(value: string) {
@@ -130,7 +132,7 @@ export default defineComponent({
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in opsAttrs">
       <template v-if="av.attr.key =='RoomSetUp'">
-        <template v-if="av.changeValue != av.value">
+        <template v-if="av.changeValue != ''">
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
@@ -184,7 +186,7 @@ export default defineComponent({
         </template>
       </template>
       <template v-else-if="av.attr.key == 'Drinks'">
-        <template v-if="av.changeValue != av.value">
+        <template v-if="av.changeValue != ''">
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
@@ -203,7 +205,7 @@ export default defineComponent({
         </template>
       </template>
       <template v-else-if="av.attr.key == 'OpsInventory'">
-        <template v-if="av.changeValue != av.value">
+        <template v-if="av.changeValue != ''">
           <div class="row mb-2">
             <div class="col col-xs-6">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
