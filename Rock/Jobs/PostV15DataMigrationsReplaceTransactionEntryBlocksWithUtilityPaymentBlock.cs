@@ -274,133 +274,133 @@ DELETE [Block] WHERE [Id] = @BlockToBeReplacedBlockId
         /// <inheritdoc cref="RockJob.Execute()"/>
         public override void Execute()
         {
-            // get the configured timeout, or default to 240 minutes if it is blank
-            var commandTimeout = GetAttributeValue( AttributeKey.CommandTimeout ).AsIntegerOrNull() ?? 14400;
+            //// get the configured timeout, or default to 240 minutes if it is blank
+            //var commandTimeout = GetAttributeValue( AttributeKey.CommandTimeout ).AsIntegerOrNull() ?? 14400;
 
-            using ( var rockContext = new Rock.Data.RockContext() )
-            {
-                rockContext.Database.CommandTimeout = commandTimeout;
+            //using ( var rockContext = new Rock.Data.RockContext() )
+            //{
+            //    rockContext.Database.CommandTimeout = commandTimeout;
 
-                // BlockType to be replaced
-                var transactionEntryBlockTypeGuid = "74EE3481-3E5A-4971-A02E-D463ABB45591".AsGuid();
-                var blockService = new BlockService( rockContext );
-                var attributeService = new AttributeService( rockContext );
-                var attributeValueService = new AttributeValueService( rockContext );
-                List<BlockSwapMigrationHelperClass> blockSwapHelpers = new List<BlockSwapMigrationHelperClass>();
+            //    // BlockType to be replaced
+            //    var transactionEntryBlockTypeGuid = "74EE3481-3E5A-4971-A02E-D463ABB45591".AsGuid();
+            //    var blockService = new BlockService( rockContext );
+            //    var attributeService = new AttributeService( rockContext );
+            //    var attributeValueService = new AttributeValueService( rockContext );
+            //    List<BlockSwapMigrationHelperClass> blockSwapHelpers = new List<BlockSwapMigrationHelperClass>();
 
-                // Get all current transaction entry block instances except the one on the Fundraising Transaction Entry Page.
-                foreach ( var block in blockService.Queryable().Where( p => p.BlockType.Guid == transactionEntryBlockTypeGuid ).ToList() )
-                {
-                    // Get all the block attributes of the old/existing block except the ones with different keys (those will be mapped manually)
-                    var differentAttributeKeys = attributeKeyMappings.Select( m => m.OldBlockKey );
-                    var blockAttributes = attributeService.Queryable()
-                        .Where( a =>
-                            a.EntityType.Name == "Rock.Model.Block"
-                            && a.EntityTypeQualifierColumn == "BlockTypeId"
-                            && a.EntityTypeQualifierValue == block.BlockTypeId.ToString()
-                            && !differentAttributeKeys.Contains( a.Key ) )
-                        .ToList();
-                    Dictionary<string, string> attributesToAdd = new Dictionary<string, string>();
+            //    // Get all current transaction entry block instances except the one on the Fundraising Transaction Entry Page.
+            //    foreach ( var block in blockService.Queryable().Where( p => p.BlockType.Guid == transactionEntryBlockTypeGuid ).ToList() )
+            //    {
+            //        // Get all the block attributes of the old/existing block except the ones with different keys (those will be mapped manually)
+            //        var differentAttributeKeys = attributeKeyMappings.Select( m => m.OldBlockKey );
+            //        var blockAttributes = attributeService.Queryable()
+            //            .Where( a =>
+            //                a.EntityType.Name == "Rock.Model.Block"
+            //                && a.EntityTypeQualifierColumn == "BlockTypeId"
+            //                && a.EntityTypeQualifierValue == block.BlockTypeId.ToString()
+            //                && !differentAttributeKeys.Contains( a.Key ) )
+            //            .ToList();
+            //        Dictionary<string, string> attributesToAdd = new Dictionary<string, string>();
 
-                    // Add to the attributeKeyMappings, this represents the list of attributes whose key match the replacement block's attribute keys
-                    // if those attributes have any values they will be copied over to the replacement block instance.
-                    attributeKeyMappings.AddRange( blockAttributes.Select( a => new AttributeKeyMapping() { NewBlockKey = a.Key, OldBlockKey = a.Key } ) );
+            //        // Add to the attributeKeyMappings, this represents the list of attributes whose key match the replacement block's attribute keys
+            //        // if those attributes have any values they will be copied over to the replacement block instance.
+            //        attributeKeyMappings.AddRange( blockAttributes.Select( a => new AttributeKeyMapping() { NewBlockKey = a.Key, OldBlockKey = a.Key } ) );
 
-                    // List of attribute values which serve the same functionality but have different keys or field types. These need custom logic to carry over their
-                    // functionality to the new block instance.
-                    var manuallyMappedAttributeValues = attributeValueService.Queryable()
-                        .Where( a =>
-                            ( a.Attribute.Key == "SuccessHeader"
-                            || a.Attribute.Key == "SuccessTitle"
-                            || a.Attribute.Key == "ACHGateway"
-                            || a.Attribute.Key == "CCGateway" )
-                            && a.EntityId == block.Id )
-                        .ToList();
+            //        // List of attribute values which serve the same functionality but have different keys or field types. These need custom logic to carry over their
+            //        // functionality to the new block instance.
+            //        var manuallyMappedAttributeValues = attributeValueService.Queryable()
+            //            .Where( a =>
+            //                ( a.Attribute.Key == "SuccessHeader"
+            //                || a.Attribute.Key == "SuccessTitle"
+            //                || a.Attribute.Key == "ACHGateway"
+            //                || a.Attribute.Key == "CCGateway" )
+            //                && a.EntityId == block.Id )
+            //            .ToList();
 
-                    var blockFinishLavaTemplate = finishLavaTemplate;
-                    foreach ( var attributeValue in manuallyMappedAttributeValues )
-                    {
-                        switch ( attributeValue.AttributeKey )
-                        {
-                            case "SuccessHeader":
-                                // Escape any single quote so it doesn't break the sql script.
-                                var successHeader = attributeValue.Value.Replace( "'", "''" );
-                                // Success header from the TransactionEntry block uses 'FinancialTransaction' as its lava variable name for the Transaction entity,
-                                // the FinishLavaTemplate however uses 'Transaction' so we replace 'FinancialTransaction' variable names with 'Transaction'.
-                                successHeader = successHeader.Replace( "{{ FinancialTransaction.", "{{ Transaction." );
-                                blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_HEADER##", successHeader );
-                                break;
-                            case "SuccessTitle":
-                                // Escape any single quotes so it doesn't break the sql script.
-                                var successTitle = attributeValue.Value.Replace( "'", "''" );
-                                blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_TITLE##", successTitle );
-                                break;
-                            case "ACHGateway":
-                                attributesToAdd.AddOrReplace( "EnableACH", "True" );
-                                break;
-                            case "CCGateway":
-                                attributesToAdd.AddOrReplace( "EnableCreditCard", "True" );
-                                break;
-                        }
-                    }
+            //        var blockFinishLavaTemplate = finishLavaTemplate;
+            //        foreach ( var attributeValue in manuallyMappedAttributeValues )
+            //        {
+            //            switch ( attributeValue.AttributeKey )
+            //            {
+            //                case "SuccessHeader":
+            //                    // Escape any single quote so it doesn't break the sql script.
+            //                    var successHeader = attributeValue.Value.Replace( "'", "''" );
+            //                    // Success header from the TransactionEntry block uses 'FinancialTransaction' as its lava variable name for the Transaction entity,
+            //                    // the FinishLavaTemplate however uses 'Transaction' so we replace 'FinancialTransaction' variable names with 'Transaction'.
+            //                    successHeader = successHeader.Replace( "{{ FinancialTransaction.", "{{ Transaction." );
+            //                    blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_HEADER##", successHeader );
+            //                    break;
+            //                case "SuccessTitle":
+            //                    // Escape any single quotes so it doesn't break the sql script.
+            //                    var successTitle = attributeValue.Value.Replace( "'", "''" );
+            //                    blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_TITLE##", successTitle );
+            //                    break;
+            //                case "ACHGateway":
+            //                    attributesToAdd.AddOrReplace( "EnableACH", "True" );
+            //                    break;
+            //                case "CCGateway":
+            //                    attributesToAdd.AddOrReplace( "EnableCreditCard", "True" );
+            //                    break;
+            //            }
+            //        }
 
-                    // If the above loop did not replace the SUCCESS_HEADER or SUCCESS_TITLE do that here.
-                    blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_HEADER##", defaultSuccessHeader );
-                    blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_TITLE##", defaultSuccessTitle );
+            //        // If the above loop did not replace the SUCCESS_HEADER or SUCCESS_TITLE do that here.
+            //        blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_HEADER##", defaultSuccessHeader );
+            //        blockFinishLavaTemplate = blockFinishLavaTemplate.Replace( "##SUCCESS_TITLE##", defaultSuccessTitle );
 
-                    attributesToAdd.Add( "FinishLavaTemplate", blockFinishLavaTemplate );
+            //        attributesToAdd.Add( "FinishLavaTemplate", blockFinishLavaTemplate );
 
-                    // Create helper class for each page with the Transaction Entry Block instance the help with the swap
-                    // from the Transaction Entry Block to the UtilityPaymentEntry block.
-                    var helperClass = new BlockSwapMigrationHelperClass()
-                    {
-                        AttributesToCopy = attributeKeyMappings,
-                        AttributesToAdd = attributesToAdd,
-                        NewBlockBlockTypeGuid = "4CCC45A5-4AB9-4A36-BF8D-A6E316790004",
-                        NewBlockGuid = Guid.NewGuid().ToString(),
-                        NewBlockName = block.Name,
-                        OldBlockId = block.Id,
-                        OldBlockTypeId = block.BlockTypeId,
-                        PageId = block.PageId.GetValueOrDefault(),
-                    };
+            //        // Create helper class for each page with the Transaction Entry Block instance the help with the swap
+            //        // from the Transaction Entry Block to the UtilityPaymentEntry block.
+            //        var helperClass = new BlockSwapMigrationHelperClass()
+            //        {
+            //            AttributesToCopy = attributeKeyMappings,
+            //            AttributesToAdd = attributesToAdd,
+            //            NewBlockBlockTypeGuid = "4CCC45A5-4AB9-4A36-BF8D-A6E316790004",
+            //            NewBlockGuid = Guid.NewGuid().ToString(),
+            //            NewBlockName = block.Name,
+            //            OldBlockId = block.Id,
+            //            OldBlockTypeId = block.BlockTypeId,
+            //            PageId = block.PageId.GetValueOrDefault(),
+            //        };
 
-                    blockSwapHelpers.Add( helperClass );
-                }
+            //        blockSwapHelpers.Add( helperClass );
+            //    }
 
-                // Iterate over the helper classes to set the block details into the SQL script.
-                foreach ( var blockSwapHelper in blockSwapHelpers )
-                {
-                    var setUpSql = string.Format( setUpSqlFormat,
-                        blockSwapHelper.PageId,// 0
-                        blockSwapHelper.OldBlockTypeId,// 1 
-                        blockSwapHelper.NewBlockBlockTypeGuid,// 2
-                        blockSwapHelper.NewBlockGuid,// 3
-                        blockSwapHelper.NewBlockName,// 4
-                        blockSwapHelper.OldBlockId // 5
-                        );
-                    var stringBuilder = new StringBuilder( setUpSql );
+            //    // Iterate over the helper classes to set the block details into the SQL script.
+            //    foreach ( var blockSwapHelper in blockSwapHelpers )
+            //    {
+            //        var setUpSql = string.Format( setUpSqlFormat,
+            //            blockSwapHelper.PageId,// 0
+            //            blockSwapHelper.OldBlockTypeId,// 1 
+            //            blockSwapHelper.NewBlockBlockTypeGuid,// 2
+            //            blockSwapHelper.NewBlockGuid,// 3
+            //            blockSwapHelper.NewBlockName,// 4
+            //            blockSwapHelper.OldBlockId // 5
+            //            );
+            //        var stringBuilder = new StringBuilder( setUpSql );
 
-                    if ( blockSwapHelper.AttributesToCopy != null )
-                    {
-                        foreach ( var attributeKey in blockSwapHelper.AttributesToCopy )
-                        {
-                            stringBuilder.AppendFormat( copyAttributeValueSqlFormat, attributeKey.NewBlockKey, attributeKey.OldBlockKey );
-                        }
-                    }
+            //        if ( blockSwapHelper.AttributesToCopy != null )
+            //        {
+            //            foreach ( var attributeKey in blockSwapHelper.AttributesToCopy )
+            //            {
+            //                stringBuilder.AppendFormat( copyAttributeValueSqlFormat, attributeKey.NewBlockKey, attributeKey.OldBlockKey );
+            //            }
+            //        }
 
-                    if ( blockSwapHelper.AttributesToAdd != null )
-                    {
-                        foreach ( var newAttributeValue in blockSwapHelper.AttributesToAdd )
-                        {
-                            stringBuilder.AppendFormat( createOrUpdateAttributeValueSqlFormat, newAttributeValue.Key, newAttributeValue.Value );
-                        }
-                    }
+            //        if ( blockSwapHelper.AttributesToAdd != null )
+            //        {
+            //            foreach ( var newAttributeValue in blockSwapHelper.AttributesToAdd )
+            //            {
+            //                stringBuilder.AppendFormat( createOrUpdateAttributeValueSqlFormat, newAttributeValue.Key, newAttributeValue.Value );
+            //            }
+            //        }
 
-                    stringBuilder.AppendLine( deleteOldBlockSql );
+            //        stringBuilder.AppendLine( deleteOldBlockSql );
 
-                    rockContext.Database.ExecuteSqlCommand( stringBuilder.ToString() );
-                }
-            }
+            //        rockContext.Database.ExecuteSqlCommand( stringBuilder.ToString() );
+            //    }
+            //}
 
             DeleteJob( GetJobId() );
         }
