@@ -131,32 +131,35 @@ namespace Rock.Workflow.Action.CheckIn
                 else
                 {
                     // Now we have to care about schedules.
-                    FilterLocationSchedules( checkinGroup, locationList, selectedSchedules, remove );
+                    FilterLocationSchedules( checkinGroup, locationList, selectedSchedules, remove, attributeLocationSelectionStrategy );
                 }
             }
         }
 
-        private void FilterLocationSchedules( CheckInGroup checkinGroup, List<CheckInLocation> locationList, List<CheckInSchedule> selectedSchedules, bool remove )
+        private void FilterLocationSchedules( CheckInGroup checkinGroup, List<CheckInLocation> locationList, List<CheckInSchedule> selectedSchedules, bool remove, CheckinConfigurationHelper.LocationSelectionStrategy attributeLocationSelectionStrategy )
         {
-            // Check the locations in the sorted or for the first one that has all the schedules available and use it if it exists.
-            var locationForSchedules = locationList.Where( l => l.Schedules.Select( s => s.Schedule.Id ).Intersect( selectedSchedules.Select( ss => ss.Schedule.Id ) ).Count() == selectedSchedules.Count ).FirstOrDefault();
-            if ( locationForSchedules != null )
+            if (attributeLocationSelectionStrategy == CheckinConfigurationHelper.LocationSelectionStrategy.Balance)
             {
-                // Remove the location/schedule that we want to use from locationList. Then remove any Location in locationList from the list of locations in checkinGroup.
-                locationList.Remove( locationForSchedules );
-                foreach ( var location in locationList )
+                // Check the locations in the sorted or for the first one that has all the schedules available and use it if it exists.
+                var locationForSchedules = locationList.Where( l => l.Schedules.Select( s => s.Schedule.Id ).Intersect( selectedSchedules.Select( ss => ss.Schedule.Id ) ).Count() == selectedSchedules.Count ).FirstOrDefault();
+                if (locationForSchedules != null)
                 {
-                    if ( remove )
+                    // Remove the location/schedule that we want to use from locationList. Then remove any Location in locationList from the list of locations in checkinGroup.
+                    locationList.Remove( locationForSchedules );
+                    foreach (var location in locationList)
                     {
-                        checkinGroup.Locations.Remove( location );
+                        if (remove)
+                        {
+                            checkinGroup.Locations.Remove( location );
+                        }
+                        else
+                        {
+                            location.ExcludedByFilter = true;
+                        }
                     }
-                    else
-                    {
-                        location.ExcludedByFilter = true;
-                    }
-                }
 
-                return;
+                    return;
+                }
             }
 
             var locationsSelectedForSchedule = new List<( int locationId, int scheduleId )>();
