@@ -102,6 +102,7 @@
     <Compile Include="Web\UI\Controls\PageTitle.cs" />
     <Compile Include="Workflow\Action\Groups\AddPersonToGroupFromAttribute.cs" />
     <Compile Include="Workflow\Action\Checkin\FilterGroupsForMultiAge.cs" />
+    <Compile Include="Workflow\Action\People\CreateNamelessPersonFromPhoneNumber.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotLiquid\DotLiquid.csproj">
