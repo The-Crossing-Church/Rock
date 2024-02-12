@@ -8,6 +8,7 @@ _ReSharper.*
 *.v11.suo
 *.user
 *.suo
+*.dll.config
 #*.Framework.XML
 
 #specific files
@@ -17,6 +18,7 @@ desktop.ini
 Rock.XML
 Quartz.xml
 StyleCop.Cache
+org.thecrossingchurch.Tests.Integrations/App.config
 
 #build artifacts
 **/[Bb]in/[Dd]ebug
@@ -27,6 +29,8 @@ StyleCop.Cache
 #specific folders
 RockWeb/Cache/*
 RockWeb/Content/ASM_Thumbnails
+RockWeb/Content/*
+PrecompiledWeb/*
 RockWeb/App_Data/PackageStaging
 RockWeb/App_Data/MobileAppBundles
 RockWeb/Obsidian/
