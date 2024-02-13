@@ -52,7 +52,7 @@ namespace Rock.Blocks.Plugins.EventForm
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     [TextField( "Ops Inventory", "Attribute Key for Ops Inventory", key: AttributeKey.OpsInventory, defaultValue: "OpsInventory", category: "Attributes", order: 9 )]
     [TextField( "Room Set-up", "Attribute Key for Room SetUp", key: AttributeKey.RoomSetUp, defaultValue: "RoomSetUp", category: "Attributes", order: 10 )]
-    [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCode", category: "Attributes", order: 11 )]
+    [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCodes", category: "Attributes", order: 11 )]
     [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 12 )]
     #endregion Block Attributes
 
@@ -794,8 +794,9 @@ namespace Rock.Blocks.Plugins.EventForm
                 }
                 else
                 {
-                    DateTime start = DateTime.Parse( $"{detail.GetAttributeValue( "EventDate" )} {detail.GetAttributeValue( "StartTime" )}" );
-                    DateTime end = DateTime.Parse( $"{detail.GetAttributeValue( "EventDate" )} {detail.GetAttributeValue( "EndTime" )}" );
+                    string rawDate = detail.GetAttributeValue( "EventDate" ).Split( 'T' )[0];
+                    DateTime start = DateTime.Parse( $"{rawDate} {detail.GetAttributeValue( "StartTime" )}" );
+                    DateTime end = DateTime.Parse( $"{rawDate} {detail.GetAttributeValue( "EndTime" )}" );
                     DateRange r = new DateRange() { Start = start, End = end };
                     PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
                     eventDates.Add( d );
