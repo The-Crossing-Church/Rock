@@ -82,6 +82,15 @@ export default defineComponent({
           this.e.attributeValues.DrinkSetupLocation = this.e.attributeValues.FoodSetupLocation
         }
       },
+      'e.attributeValues.NeedsDelivery'(val) {
+        if(this.e?.attributes) {
+          if(val == 'True') {
+            this.e.attributes.FoodTime.name = 'What time would you like your food to be delivered?'
+          } else {
+            this.e.attributes.FoodTime.name = 'What time would you like your food ready for pickup?'
+          }
+        }
+      },
       errors: {
         handler(val) {
           this.$emit("validation-change", { ref: this.refName, errors: val})

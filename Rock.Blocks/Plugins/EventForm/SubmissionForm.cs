@@ -1144,9 +1144,17 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;
+            string dateKey = GetAttributeValue( AttributeKey.DetailsEventDate );
             foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
             {
-                item.SetPublicAttributeValue( av.Key, av.Value, p, false );
+                if (av.Key == dateKey)
+                {
+                    item.SetAttributeValue( av.Key, av.Value );
+                }
+                else
+                {
+                    item.SetPublicAttributeValue( av.Key, av.Value, null, false );
+                }
             }
 
             return item;

@@ -612,7 +612,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         }
 
         [BlockAction]
-        public BlockActionResult ProposedChangesAction( int id, string action )
+        public BlockActionResult ProposedChangesAction( string id, string action )
         {
             try
             {

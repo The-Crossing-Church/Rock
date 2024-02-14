@@ -1180,7 +1180,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     ConflictData d = new ConflictData() { range = new DateRange() };
                     string formattedDate = DateTime.Parse( dates[i] ).ToString( "yyyy-MM-dd" );
                     d.range.Start = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( startKey )}" );
-                    d.range.End = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( endKey )}" );
+                    d.range.End = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( endKey )}" ).AddMinutes( -1 );
                     var startBuffer = events[0].GetAttributeValue( startBufferKey );
                     if (!String.IsNullOrEmpty( startBuffer ))
                     {
@@ -1213,7 +1213,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     av => av.EntityId,
                     ( itm, av ) => itm
                 ).OrderBy( cci => cci.Title );
-                var eventDetails = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem );
+                var eventDetails = items.SelectMany( itm => itm.ChildItems.Where( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ) ).Select( itm => itm.ChildContentChannelItem );
                 //Filter items to isSame, others will be in the eventDetails list
                 var isSameAttr = item.Attributes[isSameKey];
                 var isSameValues = avSvc.Queryable().Where( av => av.AttributeId == isSameAttr.Id && av.Value == "True" );
@@ -1225,13 +1225,14 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 //Events on same date
                 var eventAttr = events[0].Attributes[eventDateKey];
                 var eventDateAttr = item.Attributes[eventDatesKey];
-                var eventDateValues = avSvc.Queryable().Where( av => (av.AttributeId == eventAttr.Id && av.Value == dateCompareVal) || (av.AttributeId == eventDateAttr.Id && av.Value.Contains( dateCompareVal )) );
+                var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value == dateCompareVal );
+                var eventDatesValues = avSvc.Queryable().Where( av => av.AttributeId == eventDateAttr.Id && av.Value.Contains( dateCompareVal ) );
                 eventDetails = eventDetails.Join( eventDateValues,
                     itm => itm.Id,
                     av => av.EntityId,
                     ( itm, av ) => itm
                 );
-                items = items.Join( eventDateValues,
+                items = items.Join( eventDatesValues,
                     itm => itm.Id,
                     av => av.EntityId,
                     ( itm, av ) => itm
@@ -1287,16 +1288,16 @@ namespace Rock.Blocks.Plugins.EventDashboard
             return conflicts.Distinct().Select( c =>
             {
                 var x = c.ToViewModel( null, true );
-                if (String.IsNullOrEmpty( c.GetAttributeValue( eventDateKey ) ))
+                //if (String.IsNullOrEmpty( c.GetAttributeValue( eventDateKey ) ))
+                //{
+                var parent = c.ParentItems.FirstOrDefault();
+                if (parent != null)
                 {
-                    var parent = c.ParentItems.FirstOrDefault();
-                    if (parent != null)
-                    {
-                        parent.ContentChannelItem.LoadAttributes();
-                        x.AttributeValues.Add( eventDatesKey, parent.ContentChannelItem.GetAttributeValue( eventDatesKey ) );
-                        x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.IdKey );
-                    }
+                    parent.ContentChannelItem.LoadAttributes();
+                    x.AttributeValues.Add( eventDatesKey, parent.ContentChannelItem.GetAttributeValue( eventDatesKey ) );
+                    x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.IdKey );
                 }
+                //}
                 return x;
             } ).ToList();
         }

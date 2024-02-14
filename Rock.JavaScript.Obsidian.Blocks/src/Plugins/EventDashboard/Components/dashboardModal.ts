@@ -220,6 +220,8 @@ export default defineComponent({
         return ""
       },
       openRelated(request: any) {
+        console.log('open related')
+        console.log(request)
         if(request.attributeValues.ParentId && request.attributeValues.ParentId != "") {
           request.idKey = request.attributeValues.ParentId
         }
@@ -379,146 +381,144 @@ export default defineComponent({
     </div>
   </div>
   <div id="accordion" class="accordion">
-    <template v-for="(ci, idx) in request.childItems" :key="ci.id">
-      <div class='panel no-border'>
-        <a role="button" :href="'#collapse-' + ci.id" data-parent="#accordion" data-toggle="collapse" aria-expanded="false" :aria-controls="'#collapse-' + ci.id">
-          <h5 class='header pb-1'>{{ getPanelName(ci.attributeValues.EventDate, ci.attributeValues.Rooms) }} 
-          <i v-if="ci.attributeValues.EventIsValid == 'True'" class="fa fa-check-circle text-accent"></i>
-          <i v-else class="fa fa-exclamation-circle text-inprogress"></i>
-          <i class='fa expand-icon pull-right'></i></h5>
-        </a>
-        <div :class='getCollapseClassName(idx)' :id="'collapse-' + ci.id" aria-expanded="false">
-          <div class="row">
-            <div class="col col-xs-12 col-md-6">
-              <template v-if="ci.changes && ci.changes.attributeValues.StartTime != ci.attributeValues.StartTime">
-                <div class="row">
-                  <div class="col col-xs-6">
-                    <rck-field
-                      v-model="ci.attributeValues.StartTime"
-                      :attribute="ci.attributes.StartTime"
-                      class="text-red"
-                      :showEmptyValue="true"
-                    ></rck-field>
-                  </div>
-                  <div class="col col-xs-6">
-                    <rck-field
-                      v-model="ci.changes.attributeValues.StartTime"
-                      :attribute="ci.attributes.StartTime"
-                      class="text-primary"
-                      :showEmptyValue="true"
-                      :showLabel="false"
-                      style="padding-top: 18px;"
-                    ></rck-field>
-                  </div>
+    <div v-for="(ci, idx) in request.childItems" :key="ci.idKey" class='panel no-border'>
+      <a role="button" :href="'#collapse-' + ci.idKey" data-parent="#accordion" data-toggle="collapse" aria-expanded="false" :aria-controls="'#collapse-' + ci.idKey">
+        <h5 class='header pb-1'>{{ getPanelName(ci.attributeValues.EventDate, ci.attributeValues.Rooms) }} 
+        <i v-if="ci.attributeValues.EventIsValid == 'True'" class="fa fa-check-circle text-accent"></i>
+        <i v-else class="fa fa-exclamation-circle text-inprogress"></i>
+        <i class='fa expand-icon pull-right'></i></h5>
+      </a>
+      <div :class='getCollapseClassName(idx)' :id="'collapse-' + ci.idKey" aria-expanded="false">
+        <div class="row">
+          <div class="col col-xs-12 col-md-6">
+            <template v-if="ci.changes && ci.changes.attributeValues.StartTime != ci.attributeValues.StartTime">
+              <div class="row">
+                <div class="col col-xs-6">
+                  <rck-field
+                    v-model="ci.attributeValues.StartTime"
+                    :attribute="ci.attributes.StartTime"
+                    class="text-red"
+                    :showEmptyValue="true"
+                  ></rck-field>
                 </div>
-              </template>
-              <template v-else>
-                <rck-field
-                  v-model="ci.attributeValues.StartTime"
-                  :attribute="ci.attributes.StartTime"
-                  :showEmptyValue="true"
-                ></rck-field>
-              </template>
-            </div>
-            <div class="col col-xs-12 col-md-6">
-              <template v-if="ci.changes && ci.changes.attributeValues.EndTime != ci.attributeValues.EndTime">
-                <div class="row">
-                  <div class="col col-xs-6">
-                    <rck-field
-                      v-model="ci.attributeValues.EndTime"
-                      :attribute="ci.attributes.EndTime"
-                      class="text-red"
-                      :showEmptyValue="true"
-                    ></rck-field>
-                  </div>
-                  <div class="col col-xs-6">
-                    <rck-field
-                      v-model="ci.changes.attributeValues.EndTime"
-                      :attribute="ci.attributes.EndTime"
-                      class="text-primary"
-                      :showEmptyValue="true"
-                      :showLabel="false"
-                      style="padding-top: 18px;"
-                    ></rck-field>
-                  </div>
+                <div class="col col-xs-6">
+                  <rck-field
+                    v-model="ci.changes.attributeValues.StartTime"
+                    :attribute="ci.attributes.StartTime"
+                    class="text-primary"
+                    :showEmptyValue="true"
+                    :showLabel="false"
+                    style="padding-top: 18px;"
+                  ></rck-field>
                 </div>
-              </template>
-              <template v-else>
-                <rck-field
-                  v-model="ci.attributeValues.EndTime"
-                  :attribute="ci.attributes.EndTime"
-                  :showEmptyValue="true"
-                ></rck-field>
-              </template>
-            </div>
+              </div>
+            </template>
+            <template v-else>
+              <rck-field
+                v-model="ci.attributeValues.StartTime"
+                :attribute="ci.attributes.StartTime"
+                :showEmptyValue="true"
+              ></rck-field>
+            </template>
           </div>
-          <div class="row mb-2">
-            <div class="col col-xs-6">
-              <rck-lbl>Start Time Set-up Buffer</rck-lbl> <br/>
-              <template v-if="ci.changes && ci.changes.attributeValues.StartBuffer != ci.attributeValues.StartBuffer">
-                <div class="row">
-                  <div class="col col-xs-6 text-red">
-                    <template v-if="ci.attributeValues.StartBuffer != ''">
-                      {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
-                    </template>
-                    <template v-else>
-                      0 minutes: {{previewStartBuffer(ci.attributeValues.StartTime, 0)}}
-                    </template>
-                  </div>
-                  <div class="col col-xs-6 text-primary">
-                    <template v-if="ci.changes.attributeValues.StartBuffer != ''">
-                      {{ci.changes.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, ci.changes.attributeValues.StartBuffer)}}
-                    </template>
-                    <template v-else>
-                      0 minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, 0)}}
-                    </template>
-                  </div>
+          <div class="col col-xs-12 col-md-6">
+            <template v-if="ci.changes && ci.changes.attributeValues.EndTime != ci.attributeValues.EndTime">
+              <div class="row">
+                <div class="col col-xs-6">
+                  <rck-field
+                    v-model="ci.attributeValues.EndTime"
+                    :attribute="ci.attributes.EndTime"
+                    class="text-red"
+                    :showEmptyValue="true"
+                  ></rck-field>
                 </div>
-              </template>
-              <template v-else>
-                <template v-if="ci.attributeValues.StartBuffer != ''">
-                  {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
-                </template>
-              </template>
-            </div>
-            <div class="col col-xs-6">
-              <rck-lbl>End Time Tear-down Buffer</rck-lbl> <br/>
-              <template v-if="ci.changes && ci.changes.attributeValues.EndBuffer != ci.attributeValues.EndBuffer">
-                <div class="row">
-                  <div class="col col-xs-6 text-red">
-                    <template v-if="ci.attributeValues.EndBuffer != ''">
-                      {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
-                    </template>
-                    <template v-else>
-                      0 minutes: {{previewEndBuffer(ci.attributeValues.EndTime, 0)}}
-                    </template>
-                  </div>
-                  <div class="col col-xs-6 text-primary">
-                    <template v-if="ci.changes.attributeValues.EndBuffer != ''">
-                      {{ci.changes.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, ci.changes.attributeValues.EndBuffer)}}
-                    </template>
-                    <template v-else>
-                      0 minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, 0)}}
-                    </template>
-                  </div>
+                <div class="col col-xs-6">
+                  <rck-field
+                    v-model="ci.changes.attributeValues.EndTime"
+                    :attribute="ci.attributes.EndTime"
+                    class="text-primary"
+                    :showEmptyValue="true"
+                    :showLabel="false"
+                    style="padding-top: 18px;"
+                  ></rck-field>
                 </div>
-              </template>
-              <template v-else>
-                <template v-if="ci.attributeValues.EndBuffer != ''">
-                  {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
-                </template>
-              </template>
-            </div>
+              </div>
+            </template>
+            <template v-else>
+              <rck-field
+                v-model="ci.attributeValues.EndTime"
+                :attribute="ci.attributes.EndTime"
+                :showEmptyValue="true"
+              ></rck-field>
+            </template>
           </div>
-          <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
-          <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks" :needsSpace="needsSpace"></tcc-catering>
-          <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering"></tcc-ops>
-          <tcc-childcare v-if="request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' )" :details="ci" :needsCatering="needsChildcareCatering"></tcc-childcare>
-          <tcc-registration v-if="request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' )" :details="ci"></tcc-registration>
-          <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>
         </div>
+        <div class="row mb-2">
+          <div class="col col-xs-6">
+            <rck-lbl>Start Time Set-up Buffer</rck-lbl> <br/>
+            <template v-if="ci.changes && ci.changes.attributeValues.StartBuffer != ci.attributeValues.StartBuffer">
+              <div class="row">
+                <div class="col col-xs-6 text-red">
+                  <template v-if="ci.attributeValues.StartBuffer != ''">
+                    {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+                  </template>
+                  <template v-else>
+                    0 minutes: {{previewStartBuffer(ci.attributeValues.StartTime, 0)}}
+                  </template>
+                </div>
+                <div class="col col-xs-6 text-primary">
+                  <template v-if="ci.changes.attributeValues.StartBuffer != ''">
+                    {{ci.changes.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, ci.changes.attributeValues.StartBuffer)}}
+                  </template>
+                  <template v-else>
+                    0 minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, 0)}}
+                  </template>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <template v-if="ci.attributeValues.StartBuffer != ''">
+                {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+              </template>
+            </template>
+          </div>
+          <div class="col col-xs-6">
+            <rck-lbl>End Time Tear-down Buffer</rck-lbl> <br/>
+            <template v-if="ci.changes && ci.changes.attributeValues.EndBuffer != ci.attributeValues.EndBuffer">
+              <div class="row">
+                <div class="col col-xs-6 text-red">
+                  <template v-if="ci.attributeValues.EndBuffer != ''">
+                    {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+                  </template>
+                  <template v-else>
+                    0 minutes: {{previewEndBuffer(ci.attributeValues.EndTime, 0)}}
+                  </template>
+                </div>
+                <div class="col col-xs-6 text-primary">
+                  <template v-if="ci.changes.attributeValues.EndBuffer != ''">
+                    {{ci.changes.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, ci.changes.attributeValues.EndBuffer)}}
+                  </template>
+                  <template v-else>
+                    0 minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, 0)}}
+                  </template>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <template v-if="ci.attributeValues.EndBuffer != ''">
+                {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+              </template>
+            </template>
+          </div>
+        </div>
+        <tcc-space v-if="request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' )" :details="ci" :rooms="rooms"></tcc-space>
+        <tcc-catering v-if="request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' )" :details="ci" :drinks="drinks" :needsSpace="needsSpace"></tcc-catering>
+        <tcc-ops v-if="request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' )" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering"></tcc-ops>
+        <tcc-childcare v-if="request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' )" :details="ci" :needsCatering="needsChildcareCatering"></tcc-childcare>
+        <tcc-registration v-if="request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' )" :details="ci"></tcc-registration>
+        <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>
       </div>
-    </template>
+    </div>
     <tcc-web-cal v-if="request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' )" :request="request"></tcc-web-cal>
     <tcc-production v-if="request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' )" :request="request"></tcc-production>
     <tcc-publicity v-if="request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' )" :request="request"></tcc-publicity>
@@ -556,7 +556,7 @@ export default defineComponent({
     <template v-if="request.conflicts && request.conflicts.length > 0">
       <h3 class="text-red">Conflicts</h3>
       <div class="row">
-        <div class="col col-xs-4 hover" v-for="c in request.conflicts" :key="c.id" @click="openRelated(c)">
+        <div class="col col-xs-4 hover" v-for="c in request.conflicts" :key="c.idKey" @click="openRelated(c)">
           {{c.title}}<br/> 
           {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
         </div>
@@ -565,7 +565,7 @@ export default defineComponent({
     <template v-if="request.changesConflicts && request.changesConflicts.length > 0">
       <h3 class="text-red">Conflicts With Requested Changes</h3>
       <div class="row">
-        <div class="col col-xs-4 hover" v-for="c in request.changesConflicts" :key="c.id" @click="openRelated(c)">
+        <div class="col col-xs-4 hover" v-for="c in request.changesConflicts" :key="c.idKey" @click="openRelated(c)">
           {{c.title}}<br/> 
           {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
         </div>

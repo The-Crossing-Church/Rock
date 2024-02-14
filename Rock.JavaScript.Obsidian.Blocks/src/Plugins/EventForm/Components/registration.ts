@@ -139,6 +139,9 @@ export default defineComponent({
           if(val && val >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
             this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
           }
+          if(!val || val <= 100) {
+            this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
+          }
         }
       },
       'e.attributeValues.NeedsCheckin'(val, original) {
