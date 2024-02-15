@@ -317,7 +317,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 //Event Details Approved Changes
                 for (var i = 0; i < details.Count(); i++)
                 {
-                    var eventChanges = events.FirstOrDefault( e => e.eventid == details[i].Id );
+                    var eventChanges = events.FirstOrDefault( e => e.eventidKey == details[i].IdKey );
                     var detailChangesAssoc = details[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
                     var detailChanges = detailChangesAssoc.ChildContentChannelItem;
                     if (eventChanges != null)
@@ -1442,7 +1442,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             {
                 for (int i = 0; i < events.Count(); i++)
                 {
-                    var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItemId == events[i].eventid );
+                    var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.IdKey == events[i].eventidKey );
                     if (e != null)
                     {
                         //e.ChildContentChannelItem.LoadAttributes();
@@ -1560,7 +1560,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
         public class EventPartialApproval
         {
-            public int eventid { get; set; }
+            public string eventidKey { get; set; }
             public List<string> approvedAttrs { get; set; }
             public List<string> deniedAttrs { get; set; }
         }

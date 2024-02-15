@@ -730,7 +730,6 @@ export default defineComponent({
         }
         let registrationTense = this.findTense(14, registrationFirstGoLive)
         let webCalTense = this.findTense(14, this.viewModel.request.attributeValues.WebCalendarGoLive)
-        console.log(twoWeeksTense, thirtyDaysTense, registrationTense, webCalTense)
         //Drafts, cut anything that is past-deadline
         if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
           if(twoWeeksTense == 'was') {

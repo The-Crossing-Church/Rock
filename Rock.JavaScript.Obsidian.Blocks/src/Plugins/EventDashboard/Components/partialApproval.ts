@@ -74,7 +74,7 @@ export default defineComponent({
         let events = [] as any[]
         if(this.request?.childItems) {
           for(let i=0; i<this.request.childItems.length; i++) {
-            let item = {"eventid": this.request.childItems[i].id, "date": this.request.childItems[i].attributeValues.EventDate, "approvedAttrs": [] as string[], "deniedAttrs": [] as string[], sections: [] as any[]}
+            let item = {"eventIdKey": this.request.childItems[i].idKey, "date": this.request.childItems[i].attributeValues.EventDate, "approvedAttrs": [] as string[], "deniedAttrs": [] as string[], sections: [] as any[]}
             for(let key in this.request.childItems[i].attributes) {
               let attrItem = { attr: this.request.childItems[i].attributes[key], value: "", changeValue: null }
               if(attrItem.attr.categories.length == 0) {
@@ -101,9 +101,9 @@ export default defineComponent({
         }
         this.eventChanges = events
       },
-      approveAttribute(id: number, key: string) {
+      approveAttribute(idKey: string, key: string) {
         for(let i = 0; i < this.eventChanges.length; i++) {
-          if(this.eventChanges[i].eventid == id) {
+          if(this.eventChanges[i].eventIdKey == idKey) {
             let idx = this.eventChanges[i].approvedAttrs.indexOf(key)
             if(idx < 0) {
               this.eventChanges[i].approvedAttrs.push(key)
@@ -115,9 +115,9 @@ export default defineComponent({
           }
         }
       },
-      denyAttribute(id: number, key: string) {
+      denyAttribute(idKey: string, key: string) {
         for(let i = 0; i < this.eventChanges.length; i++) {
-          if(this.eventChanges[i].eventid == id) {
+          if(this.eventChanges[i].eventIdKey == idKey) {
             let idx = this.eventChanges[i].approvedAttrs.indexOf(key)
             if(idx >= 0) {
               this.eventChanges[i].approvedAttrs.splice(idx, 1)
@@ -320,7 +320,7 @@ export default defineComponent({
       v-on:denied="denyRequestAttribute(request.attributes.NeedsOnline.key)"
     ></tcc-pa-val>
   </template>
-  <template v-for="e in eventChanges" :key="e.id">
+  <template v-for="e in eventChanges" :key="e.eventIdKey">
     <h3>
       <template v-if="e.date != ''">Changes on {{e.date}}</template>
       <template v-else>Event Changes</template>
@@ -334,8 +334,8 @@ export default defineComponent({
         :attribute="i.attr"
         :originalValue="i.value"
         :newValue="i.changeValue"
-        v-on:approved="approveAttribute(e.eventid, i.attr.key)"
-        v-on:denied="denyAttribute(e.eventid, i.attr.key)"
+        v-on:approved="approveAttribute(e.eventIdKey, i.attr.key)"
+        v-on:denied="denyAttribute(e.eventIdKey, i.attr.key)"
       ></tcc-pa-val>
     </template>
   </template>

@@ -60,7 +60,6 @@ export default defineComponent({
           return selectedGuids.includes(r.guid)
         }) as any
         let val = value.includes('[') ? JSON.parse(value) : []
-        console.log(selectedRooms, val)
         let setup = [] as any[]
         if(selectedRooms && selectedRooms.length > 0) {
           for(let i = 0; i < selectedRooms.length; i++) {
@@ -75,7 +74,6 @@ export default defineComponent({
             setup.push(obj)
           }
         }
-        console.log(setup)
         return setup
       },
       getDrinkInfo(value: string) {

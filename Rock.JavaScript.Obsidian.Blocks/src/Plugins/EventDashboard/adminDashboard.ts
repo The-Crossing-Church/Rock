@@ -229,8 +229,6 @@ export default defineComponent({
       return ""
     },
     selectItem(item: any) { 
-      console.log('select item')
-      console.log(item)
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'

@@ -123,7 +123,6 @@ export default defineComponent({
         })
       },
       getSetUpDesc(guid: string) {
-        console.log('get set up')
         if(this.rooms) {
           let room = this.rooms?.filter((r: any) => {
             return r.guid == guid

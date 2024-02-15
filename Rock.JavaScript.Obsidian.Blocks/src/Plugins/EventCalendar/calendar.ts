@@ -362,7 +362,6 @@ export default defineComponent({
       //Only load new data if we haven't filtered to a particular event since we should already have the data for it
       if(this.filters.parentId == 0) {
         if(!this.lastLoadRange.contains(this.currentDate)) {
-          console.log(this.lastLoadRange, this.currentDate, nextRange)
           if(!this.lastLoadRange.engulfs(nextRange)) {
             if(this.view == 'month') {
               this.loadData(this.currentDate.startOf('month'), this.currentDate.endOf('month'))

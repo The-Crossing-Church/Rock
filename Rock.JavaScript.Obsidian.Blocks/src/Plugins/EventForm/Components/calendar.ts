@@ -168,7 +168,6 @@ export default defineComponent({
         },
         toggleSelect(day: DateTime) {
             if(this.readonly) {
-                console.log('is readonly')
                 return
             }
             if (day.month == this.displayMonth.month && day >= this.startDate && day <= this.endDate) {
@@ -189,7 +188,6 @@ export default defineComponent({
                     }
                 }
                 dates = dates.sort()
-                console.log('dates', dates)
                 this.selectedDates = dates
             }
         },
