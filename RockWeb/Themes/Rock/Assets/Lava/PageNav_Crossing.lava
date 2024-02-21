@@ -31,7 +31,10 @@
 								{% if grandchildPage.DisplayChildPages %}
 									{% for greatgrandchildPage in grandchildPage.Pages %}
 										<li class="nav-item{% if greatgrandchildPage.IsParentOfCurrent or greatgrandchildPage.Current %} current{% endif %}">
-											<a class="nav-link" role="menu-item" href="{{ greatgrandchildPage.Url }}">{{ greatgrandchildPage.Title }}</a>
+											<a class="nav-link" role="menu-item" href="{{ greatgrandchildPage.Url }}">
+												<i class="{{ greatgrandchildPage.IconCssClass }}"></i>
+												{{ greatgrandchildPage.Title }}
+											</a>
 										</li>
 									{% endfor %}
 								{% endif %}
