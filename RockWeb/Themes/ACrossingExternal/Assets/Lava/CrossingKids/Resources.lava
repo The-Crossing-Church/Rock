@@ -30,6 +30,7 @@
                 </div>
             [[ enditem ]]
         {% endfor %}
+        [[ button url:'/Ministry/Children/Resources/Category/{{group.Key}}' text:'Explore All' ]][[ endbutton ]]
     {[ endrescarousel ]}
 {% endfor %}
 <script>

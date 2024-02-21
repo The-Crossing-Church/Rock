@@ -1,0 +1,136 @@
+{% assign title = 'Global' | PageParameter:'Title' | Split:',' %}
+{% assign author = 'Global' | PageParameter:'Author' | Split:',' %}
+{% assign category = 'Global' | PageParameter:'Series' | Split:',' %}
+{% assign tags = 'Global' | PageParameter:'Tags' %}
+
+<div class='justify-center'>
+    <div class='search-input'>
+        <input id="txtResourceSearch" type="text" placeholder="Search for something else..." />
+        <i class='fa fa-search' onclick="searchResources()"></i>
+        <i class="fa fa-sliders-h" onclick="openModal()"></i>
+    </div>
+</div>
+<div class='justify-center' style="padding-top:28px;">
+    {% for t in title %}
+        {% if t != '' %}
+            <div class="badge badge-pill background--medium-blue">
+              Title: {{t}} <i class="fa fa-sm fa-times" onclick="removeFilter('Title', '{{t}}')"></i>
+            </div>
+        {% endif %}
+    {% endfor %}
+    {% for a in author %}
+        {% if a != '' %}
+            <div class="badge badge-pill background--medium-blue">
+              Author: {{a}} <i class="fa fa-sm fa-times" onclick="removeFilter('Author', '{{a}}')"></i>
+            </div>
+        {% endif %}
+    {% endfor %}
+    {% for c in category %}
+        {% if c != '' %}
+            <div class="badge badge-pill background--medium-blue">
+              Category: {{c}} <i class="fa fa-sm fa-times" onclick="removeFilter('Category', '{{c | EscapeDataString}}')"></i>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<div class="row row-equal-height mt-custom-2x">
+    {% for item in Items %}
+        <div class="col col-xs-12 col-sm-6 col-md-3" data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{item.Title}}" data-trigger="hover" data-content="<div>{{ item | Attribute:'Description'  | Escape }}</div>">
+            <a href="/Ministry/Children/Resources/{{item.PrimarySlug}}">
+                <div class="img-wrapper">
+                    <img src="{{item | Attribute:'Image'}}" alt="{{item.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />
+                </div>
+                <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
+                    {{item.Title | Split:':' | First}}
+                </div>
+                <div class='text-center text--upper mb-2' style='font-size: .75em; font-weight: 700;'>
+                    {{item | Attribute:'Author' }}
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+
+<script>
+    $('[data-toggle="popover"]').popover()
+
+    $(document).ready(function(){
+        $('#txtResourceSearch').bind("enterKey", function (e) {
+            searchResources()
+        })
+        $('#txtResourceSearch').keyup(function (e) {
+            if (e.keyCode == 13) {
+                e.preventDefault()
+                $(this).trigger("enterKey");
+            }
+        })
+    })
+    
+    function searchResources() {
+        window.location.href = "/Ministry/Children/Resources/Search?Title=" + $('#txtResourceSearch').val()
+    }
+
+    function openModal() {
+        var modal = document.getElementById("filterModal");
+        modal.style.display = "block";
+        var span = document.getElementsByClassName("close")[0];
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+    }
+
+    function removeFilter(filter, value) {
+        value = value.replaceAll('%27',"'").replaceAll('%20',' ')
+        let params = new URLSearchParams(window.location.search)
+        console.log(params)
+        let searchVal = params.get(filter)
+        console.log(searchVal)
+        if (searchVal == value ) {
+            params.delete(filter)
+        } else if (searchVal.includes(value)) {
+            let vals = searchVal.split(',')
+            vals = vals.filter(v => { return v != value })
+            params.set(filter, vals.join(','))
+        }
+        window.location.href = "/Ministry/Children/Resources/Search?" + params.toString()
+    }
+</script>
+
+<style>
+    .search-input {
+        width: 100%;
+        max-width: 300px;
+        margin: auto;
+        border-radius: 30px;
+        border: 2px solid #1B3142;
+        padding: 6px;
+    }
+    .fa {
+        cursor: pointer;
+    }
+    .search-input input, .search-input input:focus {
+        border: none;
+        width: 80%;
+        outline:0px !important;
+        -webkit-appearance:none;
+        box-shadow: none !important;
+    }
+    .badge-pill {
+        margin: 4px;
+        font-size: 14px;
+    }
+    .img-wrapper {
+        width: 100%;
+        text-align: center;
+    }
+</style>

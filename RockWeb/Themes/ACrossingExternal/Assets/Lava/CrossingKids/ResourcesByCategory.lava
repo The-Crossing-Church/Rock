@@ -1,0 +1,36 @@
+{% assign category = 'Global' | PageParameter:'Series' | Pluralize %}
+{{ category | SetPageTitle }}
+<div class="row row-equal-height">
+    {% for item in Items %}
+        <div class="col col-xs-12 col-sm-6 col-md-3" data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" title="{{item.Title}}" data-trigger="hover" data-content="<div>{{ item | Attribute:'Description'  | Escape }}</div>">
+            <a href="/Ministry/Children/Resources/{{item.PrimarySlug}}">
+                <div class="img-wrapper">
+                    <img src="{{item | Attribute:'Image'}}" alt="{{item.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />
+                </div>
+                <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
+                    {{item.Title | Split:':' | First}}
+                </div>
+                <div class='text-center text--upper mb-2' style='font-size: .75em; font-weight: 700;'>
+                    {{item | Attribute:'Author' }}
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+<div class="py-custom-2x">
+    <a class="btn btn-primary" href="/Ministry/Children/Resources#{{'Global' | PageParameter:'Series' | Downcase | Pluralize | Replace:' ',''}}">
+        <i class="fa fa-chevron-left mr-2"></i> Back
+    </a>
+</div>
+
+
+<script>
+  $('[data-toggle="popover"]').popover()
+</script>
+
+<style>
+    .img-wrapper {
+        width: 100%;
+        text-align: center;
+    }
+</style>
