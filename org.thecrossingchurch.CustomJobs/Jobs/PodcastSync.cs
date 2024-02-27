@@ -28,6 +28,7 @@ using Rock;
 using Newtonsoft.Json;
 using Rock.Security;
 using Rock.Web.Cache;
+using System.Security.Policy;
 
 namespace org.crossingchurch.PodcastSync.Jobs
 {
@@ -168,6 +169,10 @@ namespace org.crossingchurch.PodcastSync.Jobs
                 {
                     item = cci_svc.Queryable().Where( cci => cci.ContentChannelId == channel.Id ).ToList().FirstOrDefault( cci => cci.Title == podcast.title || podcast.title.Contains( cci.Title ) || podcast.title.StartsWith( cci.Title ) );
                 }
+                if (!podcast.draft)
+                {
+                    podcast.pubdate = podcast.pubdate.ToLocalTime();
+                }
                 if (item == null)
                 {
                     item = new ContentChannelItem()
@@ -244,10 +249,13 @@ namespace org.crossingchurch.PodcastSync.Jobs
             public DateTime createdAt { get; set; }
             public DateTime updatedAt { get; set; }
             public DateTime pubdate { get; set; }
+            public string pubdateTimezone { get; set; }
             public string summary { get; set; }
             public string audioFile { get; set; }
             public string imageFile { get; set; }
             public string uid { get; set; }
+            public string status { get; set; }
+            public bool draft { get; set; }
             public PodcastCustomFields customFields { get; set; }
         }
         private class PodcastCustomFields
