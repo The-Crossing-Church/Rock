@@ -508,6 +508,7 @@ namespace Rock.Blocks.Plugins.Checkin
                 }
             }
             viewModel.EmptyPerson = new Person().ToViewModel( null, true );
+            viewModel.EmptyPerson.ConnectionStatusValueId = viewModel.DefaultConnectionStatus.Id;
             if (mobileNumber != null)
             {
                 var phoneNumber = new PhoneNumber()

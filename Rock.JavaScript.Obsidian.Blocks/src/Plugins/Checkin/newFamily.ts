@@ -77,6 +77,8 @@ export default defineComponent({
       }
       newPerson.phoneNumbers = [ JSON.parse(JSON.stringify(this.viewModel?.emptyPersonPhoneNumber)) ]
       newPerson.ageClassification = ageClassification
+      let connectionStatus = this.viewModel?.defaultConnectionStatus as any
+      newPerson.connectionStatusValueId = connectionStatus.id
       list.push(newPerson)
     },
     setPerson() {
