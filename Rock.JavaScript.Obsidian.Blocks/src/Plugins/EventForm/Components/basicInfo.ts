@@ -159,6 +159,11 @@ export default defineComponent({
             //When there is only one event date these values should reset to their defaults
             this.viewModel.request.attributeValues.IsSame = "True"
             this.viewModel.request.attributeValues.EventsNeedSeparateLinks = "False"
+            this.viewModel.events?.forEach(e => {
+              if(e.attributeValues) {
+                e.attributeValues.EventDate = ''
+              }
+            })
           }
         }, 
         deep: true

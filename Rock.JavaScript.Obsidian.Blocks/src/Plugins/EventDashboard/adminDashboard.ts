@@ -238,7 +238,16 @@ export default defineComponent({
           response.data.details.forEach((detail: any) => {
             detail.detail.changes = detail.detailPendingChanges
           })
-          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
+            let aDate = DateTime.fromFormat(a.attributeValues.EventDate, 'yyyy-MM-dd')
+            let bDate = DateTime.fromFormat(b.attributeValues.EventDate, 'yyyy-MM-dd')
+            if(aDate < bDate) {
+              return -1
+            } else if (aDate > bDate) {
+              return 1
+            }
+            return 0
+          })
           response.data.request.changes = response.data.requestPendingChanges
           response.data.request.comments = response.data.comments
           response.data.request.conflicts = response.data.conflicts
@@ -332,7 +341,16 @@ export default defineComponent({
           response.data.details.forEach((detail: any) => {
             detail.detail.changes = detail.detailPendingChanges
           })
-          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
+            let aDate = DateTime.fromFormat(a.attributeValues.EventDate, 'yyyy-MM-dd')
+            let bDate = DateTime.fromFormat(b.attributeValues.EventDate, 'yyyy-MM-dd')
+            if(aDate < bDate) {
+              return -1
+            } else if (aDate > bDate) {
+              return 1
+            }
+            return 0
+          })
           response.data.request.changes = response.data.requestPendingChanges
           response.data.request.comments = response.data.comments
           response.data.request.conflicts = response.data.conflicts

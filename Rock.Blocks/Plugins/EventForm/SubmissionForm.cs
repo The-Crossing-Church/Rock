@@ -708,16 +708,16 @@ namespace Rock.Blocks.Plugins.EventForm
                         originalDetail = cciSvc.Get( detail.Id );
                         detail = changes;
                     }
+                    if (!String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ))
+                    {
+                        detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
+                    }
+                    else
+                    {
+                        detail.Title = item.Title;
+                    }
                     if (detail.Id == 0)
                     {
-                        if (!String.IsNullOrEmpty( detail.GetAttributeValue( "EventDate" ) ))
-                        {
-                            detail.Title = item.Title + ": " + detail.GetAttributeValue( "EventDate" );
-                        }
-                        else
-                        {
-                            detail.Title = item.Title;
-                        }
                         cciSvc.Add( detail );
                         needsAssociation = true;
                     }

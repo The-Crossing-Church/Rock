@@ -298,6 +298,8 @@ export default defineComponent({
               let t = JSON.parse(JSON.stringify(this.viewModel?.events[0]))
               t.attributeValues.EventDate = e
               t.id = 0
+              t.idKey = ""
+              t.title = this.viewModel?.request.title + ": " + e
               this.viewModel?.events.push(t)
             }
         })
