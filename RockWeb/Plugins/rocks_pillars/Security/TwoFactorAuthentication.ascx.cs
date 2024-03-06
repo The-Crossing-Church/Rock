@@ -211,7 +211,7 @@ namespace RockWeb.Plugins.rocks_pillars.Security
                     RedirectToLogin( encryptedToken );
                 }
                 else
-                { 
+                {
                     ShowError( "The code you entered is not correct or has expired. Please click 'Cancel' to return to previous screen to re-send a new code." );
                 }
             }
@@ -276,7 +276,7 @@ namespace RockWeb.Plugins.rocks_pillars.Security
 
             if ( login != null )
             {
-                if ( mediumTypes.Contains( "Email") && login.Person.Email.IsNotNullOrWhiteSpace() )
+                if ( mediumTypes.Contains( "Email" ) && login.Person.Email.IsNotNullOrWhiteSpace() )
                 {
                     rblMediums.Items.Add( new ListItem( MaskEmail( login.Person.Email ), "email" ) );
                 }
@@ -336,7 +336,7 @@ namespace RockWeb.Plugins.rocks_pillars.Security
         {
             try
             {
-                if (login != null)
+                if ( login != null )
                 {
                     var tokenList = new List<_2FAToken>();
                     tokenList.FromEncryptedString( login.Person.GetAttributeValue( _2FAAttributeKey ) );
@@ -344,56 +344,56 @@ namespace RockWeb.Plugins.rocks_pillars.Security
                     var newToken = ( new _2FAToken( GenerateCode(), RockDateTime.Now ) );
                     tokenList.Add( newToken );
 
-                    login.Person.SetAttributeValue(_2FAAttributeKey, tokenList.EncryptedString() );
-                    login.Person.SaveAttributeValue(_2FAAttributeKey, rockContext);
+                    login.Person.SetAttributeValue( _2FAAttributeKey, tokenList.EncryptedString() );
+                    login.Person.SaveAttributeValue( _2FAAttributeKey, rockContext );
 
                     // Send Code to Person
-                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields(null);
-                    mergeFields.Add("Person", login.Person);
-                    mergeFields.Add("Code", newToken.Code );
+                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
+                    mergeFields.Add( "Person", login.Person );
+                    mergeFields.Add( "Code", newToken.Code );
 
                     RockMessage rockMessage = null;
                     RockMessageRecipient recipient = null;
-                    if (rblMediums.SelectedValue == "email")
+                    if ( rblMediums.SelectedValue == "email" )
                     {
                         var emailMessage = new RockEmailMessage
                         {
-                            Subject = GetAttributeValue(AttributeKeys.EmailSubject),
-                            Message = GetAttributeValue(AttributeKeys.EmailContent)
+                            Subject = GetAttributeValue( AttributeKeys.EmailSubject ),
+                            Message = GetAttributeValue( AttributeKeys.EmailContent )
                         };
                         rockMessage = emailMessage;
-                        recipient = new RockEmailMessageRecipient(login.Person, mergeFields);
+                        recipient = new RockEmailMessageRecipient( login.Person, mergeFields );
                     }
                     else
                     {
-                        if (fromGuid.HasValue)
+                        if ( fromGuid.HasValue )
                         {
                             var smsMessage = new RockSMSMessage
                             {
-                                FromNumber = DefinedValueCache.Get(fromGuid.Value, rockContext),
-                                Message = GetAttributeValue(AttributeKeys.SMSContent)
+                                FromSystemPhoneNumber = SystemPhoneNumberCache.Get( fromGuid.Value, rockContext ),
+                                Message = GetAttributeValue( AttributeKeys.SMSContent )
                             };
                             rockMessage = smsMessage;
 
-                            var pn = login.Person.GetPhoneNumber(Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid());
-                            if (pn != null && pn.IsMessagingEnabled)
+                            var pn = login.Person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
+                            if ( pn != null && pn.IsMessagingEnabled )
                             {
-                                string smsNumber = string.Format("+{0}{1}", pn.CountryCode, pn.Number);
-                                recipient = new RockSMSMessageRecipient(login.Person, smsNumber, mergeFields);
+                                string smsNumber = string.Format( "+{0}{1}", pn.CountryCode, pn.Number );
+                                recipient = new RockSMSMessageRecipient( login.Person, smsNumber, mergeFields );
                             }
                         }
                     }
 
-                    rockMessage.AddRecipient(recipient);
-                    rockMessage.AppRoot = Rock.Web.Cache.GlobalAttributesCache.Get().GetValue("InternalApplicationRoot") ?? string.Empty;
+                    rockMessage.AddRecipient( recipient );
+                    rockMessage.AppRoot = Rock.Web.Cache.GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" ) ?? string.Empty;
                     rockMessage.CreateCommunicationRecord = true;
                     rockMessage.Send();
                 }
-            } 
+            }
 
             catch ( Exception ex )
             {
-                ExceptionLogService.LogException(ex, null);
+                ExceptionLogService.LogException( ex, null );
 
                 nbMessage.NotificationBoxType = NotificationBoxType.Danger;
                 nbMessage.Title = "The following error occurred when attempting to send code:";
@@ -408,7 +408,7 @@ namespace RockWeb.Plugins.rocks_pillars.Security
             if ( userGuid.HasValue )
             {
                 var userLogin = new UserLoginService( rockContext ).Get( userGuid.Value );
-                if (userLogin != null && userLogin.Person != null )
+                if ( userLogin != null && userLogin.Person != null )
                 {
                     userLogin.Person.LoadAttributes( rockContext );
                     return userLogin;
