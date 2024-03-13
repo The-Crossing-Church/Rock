@@ -102,7 +102,7 @@ namespace Rock.Model
                )
                .Select( l => l.Id ) );
             }
-            if ( locationIds.Count() < 10000 )
+            if ( locationIds.Count() < 3000 )
             {
                 return Queryable().Where( l => locationIds.Contains( l.Id ) );
             }
