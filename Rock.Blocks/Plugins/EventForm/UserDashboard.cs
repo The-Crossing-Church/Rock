@@ -509,7 +509,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     if (item.GetAttributeValue( "NeedsPublicity" ) == "True")
                     {
                         requestType.Add( "Publicity" );
-                        var attrs = item.Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Publicity" ) );
+                        var attrs = item.Attributes.Where( a => a.Value.Categories.Select( cc => cc.Name ).Contains( "Event Publicity" ) && a.Key != "PublicityStartDate" && a.Key != "PublicityEndDate" );
                         foreach (var attr in attrs)
                         {
                             item.SetAttributeValue( attr.Key, original.GetAttributeValue( attr.Key ) );

@@ -1,4 +1,5 @@
 import AntSelect from "ant-design-vue/lib/select"
+import AntTreeSelect from "ant-design-vue/lib/tree-select"
 import AntAutoComplete from "ant-design-vue/lib/auto-complete"
 import AntSteps from "ant-design-vue/lib/steps"
 import AntButton from "ant-design-vue/lib/button"
@@ -27,6 +28,7 @@ const Luxon = {
 // Only include the components we are actually going to use.
 const AntDesignVue = {
     Select: AntSelect,
+    TreeSelect: AntTreeSelect,
     AutoComplete: AntAutoComplete,
     Steps: AntSteps,
     Button: AntButton,

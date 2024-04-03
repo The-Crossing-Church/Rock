@@ -1482,7 +1482,7 @@ label, .control-label {
   padding: 32px;
   border-radius: 4px;
 }
-.ant-steps-item-process .ant-steps-item-icon, .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-icon, .ant-steps-item-process .ant-steps-item-icon, .ant-switch-checked, .ant-btn-primary, .ant-steps-item-finish>.ant-steps-item-container>.ant-steps-item-content>.ant-steps-item-title:after, .dp__range_end, .dp__range_start, .dp__active_date {
+.ant-steps-item-process .ant-steps-item-icon, .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-icon, .ant-steps-item-process .ant-steps-item-icon, .ant-switch-checked, .ant-btn-primary, .ant-steps-item-finish>.ant-steps-item-container>.ant-steps-item-content>.ant-steps-item-title:after, .dp__range_end, .dp__range_start, .dp__active_date, .ant-select-tree-checkbox-checked .ant-select-tree-checkbox-inner {
   background-color: #347689;
   border-color: #347689;
 }
@@ -1493,6 +1493,17 @@ label, .control-label {
 .ant-btn-accent-outlined, ant-steps .ant-steps-item:not(.ant-steps-item-active)>.ant-steps-item-container[role=button]:hover .ant-steps-item-title {
   color: #8ED2C9;
   border-color: #8ED2C9;
+}
+.ant-checkbox-indeterminate .ant-checkbox-inner::after {
+  background-color: #8ED2C9;
+}
+.ant-checkbox-input:focus + .ant-checkbox-inner, .ant-checkbox-checked::after, .ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+  border-color: #8ED2C9;
+}
+.ant-select-focused {
+  border: 1px solid #748b92;
+  outline: none;
+  box-shadow: 0 0 0 2px #cfd7da;
 }
 .ant-steps-item-container:hover, .ant-steps .ant-steps-item:not(.ant-steps-item-active):not(.ant-steps-item-process)>.ant-steps-item-container[role=button]:hover .ant-steps-item-icon, .ant-steps .ant-steps-item:not(.ant-steps-item-active)>.ant-steps-item-container[role=button]:hover .ant-steps-item-title {
   color: #347689 !important;

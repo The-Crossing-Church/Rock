@@ -260,7 +260,7 @@ export default defineComponent({
         ></rck-text>
       </div>
       <template #overlay>
-        <a-menu class="tcc-dropdown">
+        <a-menu class="tcc-dropdown" @click="(event) => event?.preventDefault()">
           <div class="tcc-menu-header">
             <div class="tcc-menu-search">
               <rck-text

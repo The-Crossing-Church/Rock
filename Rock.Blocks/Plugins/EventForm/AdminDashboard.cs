@@ -1168,138 +1168,146 @@ namespace Rock.Blocks.Plugins.EventDashboard
             string startBufferKey = GetAttributeValue( AttributeKey.StartBuffer );
             string endBufferKey = GetAttributeValue( AttributeKey.EndBuffer );
             string roomKey = GetAttributeValue( AttributeKey.Rooms );
-            for (int k = 0; k < events.Count(); k++)
+            try
             {
-                List<string> dates = item.GetAttributeValue( eventDatesKey ).Split( ',' ).ToList();
-                if (!String.IsNullOrEmpty( events[k].GetAttributeValue( eventDateKey ) ))
+                for (int k = 0; k < events.Count(); k++)
                 {
-                    dates = new List<string>() { events[k].GetAttributeValue( eventDateKey ) };
+                    List<string> dates = item.GetAttributeValue( eventDatesKey ).Split( ',' ).ToList();
+                    if (!String.IsNullOrEmpty( events[k].GetAttributeValue( eventDateKey ) ))
+                    {
+                        dates = new List<string>() { events[k].GetAttributeValue( eventDateKey ) };
+                    }
+                    for (int i = 0; i < dates.Count(); i++)
+                    {
+                        ConflictData d = new ConflictData() { range = new DateRange() };
+                        string formattedDate = DateTime.Parse( dates[i] ).ToString( "yyyy-MM-dd" );
+                        d.range.Start = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( startKey )}" );
+                        d.range.End = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( endKey )}" ).AddMinutes( -1 );
+                        var startBuffer = events[0].GetAttributeValue( startBufferKey );
+                        if (!String.IsNullOrEmpty( startBuffer ))
+                        {
+                            int buffer = Int32.Parse( startBuffer );
+                            d.range.Start = d.range.Start.Value.AddMinutes( buffer * -1 );
+                        }
+                        var endBuffer = events[0].GetAttributeValue( endBufferKey );
+                        if (!String.IsNullOrEmpty( endBuffer ))
+                        {
+                            int buffer = Int32.Parse( endBuffer );
+                            d.range.End = d.range.End.Value.AddMinutes( buffer );
+                        }
+                        d.rooms = events[k].GetAttributeValue( roomKey );
+                        //Only care about events we have rooms, dates, and times for
+                        if (!String.IsNullOrEmpty( events[k].GetAttributeValue( startKey ) ) && !String.IsNullOrEmpty( events[k].GetAttributeValue( endKey ) ) && !String.IsNullOrEmpty( events[k].GetAttributeValue( roomKey ) ))
+                        {
+                            eventDates.Add( d );
+                        }
+                    }
                 }
-                for (int i = 0; i < dates.Count(); i++)
+                for (int i = 0; i < eventDates.Count(); i++)
                 {
-                    ConflictData d = new ConflictData() { range = new DateRange() };
-                    string formattedDate = DateTime.Parse( dates[i] ).ToString( "yyyy-MM-dd" );
-                    d.range.Start = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( startKey )}" );
-                    d.range.End = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( endKey )}" ).AddMinutes( -1 );
-                    var startBuffer = events[0].GetAttributeValue( startBufferKey );
-                    if (!String.IsNullOrEmpty( startBuffer ))
+                    string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
+                    var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id && cci.Id != originalId ).OrderBy( cci => cci.Title );
+                    //Requests that are on the calendar
+                    var statusAttr = item.Attributes[statusKey];
+                    var statusValues = avSvc.Queryable().Where( av => av.AttributeId == statusAttr.Id && (av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" )) );
+                    items = items.Join( statusValues,
+                        itm => itm.Id,
+                        av => av.EntityId,
+                        ( itm, av ) => itm
+                    ).OrderBy( cci => cci.Title );
+                    var eventDetails = items.SelectMany( itm => itm.ChildItems.Where( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ) ).Select( itm => itm.ChildContentChannelItem );
+                    //Filter items to isSame, others will be in the eventDetails list
+                    var isSameAttr = item.Attributes[isSameKey];
+                    var isSameValues = avSvc.Queryable().Where( av => av.AttributeId == isSameAttr.Id && av.Value == "True" );
+                    items = items.Join( isSameValues,
+                        itm => itm.Id,
+                        av => av.EntityId,
+                        ( itm, av ) => itm
+                    ).OrderBy( cci => cci.Title );
+                    //Events on same date
+                    var eventAttr = events[0].Attributes[eventDateKey];
+                    var eventDateAttr = item.Attributes[eventDatesKey];
+                    var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value == dateCompareVal );
+                    var eventDatesValues = avSvc.Queryable().Where( av => av.AttributeId == eventDateAttr.Id && av.Value.Contains( dateCompareVal ) );
+                    eventDetails = eventDetails.Join( eventDateValues,
+                        itm => itm.Id,
+                        av => av.EntityId,
+                        ( itm, av ) => itm
+                    );
+                    items = items.Join( eventDatesValues,
+                        itm => itm.Id,
+                        av => av.EntityId,
+                        ( itm, av ) => itm
+                    ).OrderBy( cci => cci.Title );
+                    var ccItems = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem ).ToList();
+                    ccItems.AddRange( eventDetails );
+                    var roomAttr = events[0].Attributes[roomKey];
+                    //Events with overlapping rooms
+                    var roomValues = avSvc.Queryable().Where( av => av.AttributeId == roomAttr.Id ).ToList().Where( av =>
                     {
-                        int buffer = Int32.Parse( startBuffer );
-                        d.range.Start = d.range.Start.Value.AddMinutes( buffer * -1 );
-                    }
-                    var endBuffer = events[0].GetAttributeValue( endBufferKey );
-                    if (!String.IsNullOrEmpty( endBuffer ))
+                        if (av.AttributeId == roomAttr.Id)
+                        {
+                            var intersection = av.Value.Split( ',' ).Intersect( eventDates[i].rooms.Split( ',' ) );
+                            if (intersection.Count() > 0)
+                            {
+                                return true;
+                            }
+                        }
+                        return false;
+                    } );
+                    ccItems = ccItems.Join( roomValues,
+                        itm => itm.Id,
+                        av => av.EntityId,
+                        ( itm, av ) => itm
+                    ).Distinct().ToList();
+                    //Check Times overlap
+                    ccItems.LoadAttributes();
+                    ccItems = ccItems.Where( itm =>
                     {
-                        int buffer = Int32.Parse( endBuffer );
-                        d.range.End = d.range.End.Value.AddMinutes( buffer );
-                    }
-                    d.rooms = events[k].GetAttributeValue( roomKey );
-                    //Only care about events we have rooms, dates, and times for
-                    if (!String.IsNullOrEmpty( events[k].GetAttributeValue( startKey ) ) && !String.IsNullOrEmpty( events[k].GetAttributeValue( endKey ) ) && !String.IsNullOrEmpty( events[k].GetAttributeValue( roomKey ) ))
-                    {
-                        eventDates.Add( d );
-                    }
-                }
-            }
-            for (int i = 0; i < eventDates.Count(); i++)
-            {
-                string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
-                var items = cciSvc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId && cci.Id != item.Id && cci.Id != originalId ).OrderBy( cci => cci.Title );
-                //Requests that are on the calendar
-                var statusAttr = item.Attributes[statusKey];
-                var statusValues = avSvc.Queryable().Where( av => av.AttributeId == statusAttr.Id && (av.Value != "Draft" && av.Value != "Submitted" && av.Value != "Denied" && !av.Value.Contains( "Cancelled" )) );
-                items = items.Join( statusValues,
-                    itm => itm.Id,
-                    av => av.EntityId,
-                    ( itm, av ) => itm
-                ).OrderBy( cci => cci.Title );
-                var eventDetails = items.SelectMany( itm => itm.ChildItems.Where( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ) ).Select( itm => itm.ChildContentChannelItem );
-                //Filter items to isSame, others will be in the eventDetails list
-                var isSameAttr = item.Attributes[isSameKey];
-                var isSameValues = avSvc.Queryable().Where( av => av.AttributeId == isSameAttr.Id && av.Value == "True" );
-                items = items.Join( isSameValues,
-                    itm => itm.Id,
-                    av => av.EntityId,
-                    ( itm, av ) => itm
-                ).OrderBy( cci => cci.Title );
-                //Events on same date
-                var eventAttr = events[0].Attributes[eventDateKey];
-                var eventDateAttr = item.Attributes[eventDatesKey];
-                var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value == dateCompareVal );
-                var eventDatesValues = avSvc.Queryable().Where( av => av.AttributeId == eventDateAttr.Id && av.Value.Contains( dateCompareVal ) );
-                eventDetails = eventDetails.Join( eventDateValues,
-                    itm => itm.Id,
-                    av => av.EntityId,
-                    ( itm, av ) => itm
-                );
-                items = items.Join( eventDatesValues,
-                    itm => itm.Id,
-                    av => av.EntityId,
-                    ( itm, av ) => itm
-                ).OrderBy( cci => cci.Title );
-                var ccItems = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem ).ToList();
-                ccItems.AddRange( eventDetails );
-                var roomAttr = events[0].Attributes[roomKey];
-                //Events with overlapping rooms
-                var roomValues = avSvc.Queryable().Where( av => av.AttributeId == roomAttr.Id ).ToList().Where( av =>
-                {
-                    if (av.AttributeId == roomAttr.Id)
-                    {
-                        var intersection = av.Value.Split( ',' ).Intersect( eventDates[i].rooms.Split( ',' ) );
-                        if (intersection.Count() > 0)
+                        DateRange r = new DateRange();
+                        r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
+                        r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" ).AddMinutes( -1 );
+                        var startBuffer = itm.GetAttributeValue( startBufferKey );
+                        var endBuffer = itm.GetAttributeValue( endBufferKey );
+                        if (!String.IsNullOrEmpty( startBuffer ))
+                        {
+                            int buffer = Int32.Parse( startBuffer );
+                            r.Start = r.Start.Value.AddMinutes( buffer * -1 );
+                        }
+                        if (!String.IsNullOrEmpty( endBuffer ))
+                        {
+                            int buffer = Int32.Parse( endBuffer );
+                            r.End = r.End.Value.AddMinutes( buffer );
+                        }
+                        if (r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ))
                         {
                             return true;
                         }
-                    }
-                    return false;
-                } );
-                ccItems = ccItems.Join( roomValues,
-                    itm => itm.Id,
-                    av => av.EntityId,
-                    ( itm, av ) => itm
-                ).ToList();
-                //Check Times overlap
-                ccItems.LoadAttributes();
-                ccItems = ccItems.Where( itm =>
-                {
-                    DateRange r = new DateRange();
-                    r.Start = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "StartTime" )}" );
-                    r.End = DateTime.Parse( $"{dateCompareVal} {itm.GetAttributeValue( "EndTime" )}" ).AddMinutes( -1 );
-                    var startBuffer = itm.GetAttributeValue( startBufferKey );
-                    var endBuffer = itm.GetAttributeValue( endBufferKey );
-                    if (!String.IsNullOrEmpty( startBuffer ))
-                    {
-                        int buffer = Int32.Parse( startBuffer );
-                        r.Start = r.Start.Value.AddMinutes( buffer * -1 );
-                    }
-                    if (!String.IsNullOrEmpty( endBuffer ))
-                    {
-                        int buffer = Int32.Parse( endBuffer );
-                        r.End = r.End.Value.AddMinutes( buffer );
-                    }
-                    if (r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ))
-                    {
-                        return true;
-                    }
-                    return false;
-                } ).ToList();
-                conflicts.AddRange( ccItems );
-            }
-            return conflicts.Distinct().Select( c =>
-            {
-                var x = c.ToViewModel( null, true );
-                //if (String.IsNullOrEmpty( c.GetAttributeValue( eventDateKey ) ))
-                //{
-                var parent = c.ParentItems.FirstOrDefault();
-                if (parent != null)
-                {
-                    parent.ContentChannelItem.LoadAttributes();
-                    x.AttributeValues.Add( eventDatesKey, parent.ContentChannelItem.GetAttributeValue( eventDatesKey ) );
-                    x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.IdKey );
+                        return false;
+                    } ).ToList();
+                    conflicts.AddRange( ccItems );
                 }
-                //}
-                return x;
-            } ).ToList();
+                return conflicts.Distinct().Select( c =>
+                {
+                    var x = c.ToViewModel( null, true );
+                    //if (String.IsNullOrEmpty( c.GetAttributeValue( eventDateKey ) ))
+                    //{
+                    var parent = c.ParentItems.FirstOrDefault();
+                    if (parent != null)
+                    {
+                        parent.ContentChannelItem.LoadAttributes();
+                        x.AttributeValues.Add( eventDatesKey, parent.ContentChannelItem.GetAttributeValue( eventDatesKey ) );
+                        x.AttributeValues.Add( "ParentId", parent.ContentChannelItem.IdKey );
+                    }
+                    //}
+                    return x;
+                } ).ToList();
+
+            } catch (Exception e)
+            {
+                var ex = e;
+                return new List<ContentChannelItemBag>();
+            }
         }
 
         private void CommentNotification( ContentChannelItem comment, ContentChannelItem item )
