@@ -15,6 +15,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Ical.Net.CalendarComponents;
 using Ical.Net.Serialization;
+using Rock.Address;
+using System.IO;
+using System.Net;
 
 namespace org.crossingchurch.OurRock.Rest.Controllers
 {
@@ -27,7 +30,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetMainBuilding" )]
-        public void GetMainBuilding( string token )
+        public HttpStatusCode GetMainBuilding( string token )
         {
             var x = System.Web.HttpContext.Current;
             if ( String.IsNullOrWhiteSpace( token ) )
@@ -43,9 +46,10 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                     x.Response.Clear();
                     x.Response.ClearHeaders();
                     x.Response.ClearContent();
+                    x.Response.BufferOutput = true;
                     x.Response.ContentType = "text/calendar";
                     x.Response.Write( GenerateData( mainBuildingLocations, "Main Building" ) );
-                    x.Response.End();
+                    return HttpStatusCode.OK;
                 }
                 else
                 {
@@ -55,9 +59,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             catch ( Exception ex )
             {
                 ExceptionLogService.LogException( ex );
-                x.Response.StatusCode = 500;
                 x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
-                x.Response.End();
+                return HttpStatusCode.BadRequest;
             }
         }
 
@@ -68,7 +71,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetStudentCenter" )]
-        public void GetStudentCenter( string token )
+        public HttpStatusCode GetStudentCenter( string token )
         {
             var x = System.Web.HttpContext.Current;
             if ( String.IsNullOrWhiteSpace( token ) )
@@ -84,9 +87,10 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                     x.Response.Clear();
                     x.Response.ClearHeaders();
                     x.Response.ClearContent();
+                    x.Response.BufferOutput = true;
                     x.Response.ContentType = "text/calendar";
                     x.Response.Write( GenerateData( studentCenterLocations, "Student Center" ) );
-                    x.Response.End();
+                    return HttpStatusCode.OK;
                 }
                 else
                 {
@@ -96,9 +100,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             catch ( Exception ex )
             {
                 ExceptionLogService.LogException( ex );
-                x.Response.StatusCode = 500;
                 x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
-                x.Response.End();
+                return HttpStatusCode.BadRequest;
             }
         }
 
@@ -109,7 +112,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetGym" )]
-        public void GetGym( string token )
+        public HttpStatusCode GetGym( string token )
         {
             var x = System.Web.HttpContext.Current;
             if ( String.IsNullOrWhiteSpace( token ) )
@@ -125,9 +128,10 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                     x.Response.Clear();
                     x.Response.ClearHeaders();
                     x.Response.ClearContent();
+                    x.Response.BufferOutput = true;
                     x.Response.ContentType = "text/calendar";
                     x.Response.Write( GenerateData( studentCenterLocations, "Gym" ) );
-                    x.Response.End();
+                    return HttpStatusCode.OK;
                 }
                 else
                 {
@@ -137,9 +141,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             catch ( Exception ex )
             {
                 ExceptionLogService.LogException( ex );
-                x.Response.StatusCode = 500;
                 x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
-                x.Response.End();
+                return HttpStatusCode.BadRequest;
             }
         }
 
@@ -150,7 +153,7 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
         /// <returns></returns>
         [HttpGet]
         [System.Web.Http.Route( "api/EventForm/GetOutdoor" )]
-        public void GetOutdoor( string token )
+        public HttpStatusCode GetOutdoor( string token )
         {
             var x = System.Web.HttpContext.Current;
             if ( String.IsNullOrWhiteSpace( token ) )
@@ -166,9 +169,10 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                     x.Response.Clear();
                     x.Response.ClearHeaders();
                     x.Response.ClearContent();
+                    x.Response.BufferOutput = true;
                     x.Response.ContentType = "text/calendar";
                     x.Response.Write( GenerateData( outdoorLocations, "Outdoor Spaces" ) );
-                    x.Response.End();
+                    return HttpStatusCode.OK;
                 }
                 else
                 {
@@ -178,9 +182,8 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
             catch ( Exception ex )
             {
                 ExceptionLogService.LogException( ex );
-                x.Response.StatusCode = 500;
                 x.Response.Write( $"API Error: {ex.Message}\r\n{ex.StackTrace}" );
-                x.Response.End();
+                return HttpStatusCode.BadRequest;
             }
         }
 
