@@ -413,7 +413,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
                         //Custom Giving Props
                         var givingPersonIds = person.GivingGroup != null ? person.GivingGroup.Members.Select( gm => gm.PersonId ) : null;
-                        if (givingPersonIds.Count() > 0)
+                        if ( givingPersonIds != null && givingPersonIds.Count() > 0)
                         {
                             var givingAliasIds = pa_svc.Queryable().Where( pa => givingPersonIds.Contains( pa.PersonId ) ).Select( pa => pa.Id );
 
