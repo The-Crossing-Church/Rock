@@ -20,6 +20,13 @@
 
 <html class="no-js">
 <head runat="server">
+    <!-- Google Tag Manager -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=GTM-PDZFLRCH"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
+        </script>
+    <!-- End Google Tag Manager -->
 
     <meta charset="utf-8">
     <title></title>
@@ -166,20 +173,14 @@
         })
     </script>
     <!-- Start of HubSpot Embed Code -->
-    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>
+    <%--<script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>--%>
     <!-- End of HubSpot Embed Code -->
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DF7S9N70GH"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-DF7S9N70GH');
-    </script>
-    <!-- End Google Analytics -->
 
 </head>
 <body runat="server" id="body">
+    <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PDZFLRCH" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
 
     <form id="form1" runat="server">
 

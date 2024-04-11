@@ -57,18 +57,25 @@
         {% endif %}
       {% else %}
         {% assign displayDates = scheduledDates %}
+        {% assign endDates = '' %}
+        {% assign sdSize = scheduledDates | Size %}
+        {% if sdSize > 1 %}
+            {% assign displayDates = scheduledDates | First %}
+            {% assign endDates = scheduledDates | Last %}
+        {% endif %}
         {% assign endTimes = scheduledDates | First | DateAdd:EventItemOccurrence.Schedule.DurationInMinutes,'m' | Date:'h:mm tt' %}
         {% eventitemoccurrence where:'EventItemId == {{EventItemOccurrence.EventItemId}}' %}
             {% for i in eventitemoccurrenceItems %}
                 {% if i.Id != EventItemOccurrence.Id %}
                     {% assign sdates = i.Schedule.iCalendarContent | DatesFromICal:'all'  %}
                     {% assign ct = sdates | Size %}
-                    {% if ct == 1 %}
-                        {% assign nextDate = sdates | First %}
-                        {% assign diff = 'Now' DateDiff:nextDate %}
-                        {% if diff > 0 %}
-                            {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %}
-                            {% capture endTimes %}{{endTimes}},{{nextDate | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt'}}{% endcapture %}
+                    {% assign nextDate = sdates | First %}
+                    {% assign diff = 'Now' DateDiff:nextDate %}
+                    {% if diff > 0 %}
+                        {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %}
+                        {% capture endTimes %}{{endTimes}},{{nextDate | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt'}}{% endcapture %}
+                        {% if endDates != '' %}
+                            {% capture endDates %}{{endDates}},{{sdates | Last}}{% endcapture %}
                         {% endif %}
                     {% endif %}
                 {% endif %}
@@ -77,16 +84,18 @@
         {% assign ddSize = displayDates | Size %}
         {% if ddSize > 1 %}
             {% assign displayDates = displayDates | Split:',' %}
-            {% comment %} {% assign displayDates = displayDates | Sort %} {% endcomment %}
+        {% endif %}
+        {% if endDates != '' %}
+            {% assign endDates = endDates | Split:',' %}
         {% endif %}
         {% assign endTimes = endTimes | Split:',' %}
         <ul class="list-unstyled">
             {% for d in displayDates %}
                 <li>
                     {% if dateTimeFormat == 'No Time' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}}
+                        {{d | Date:'dddd, MMMM d, yyyy'}}{% if endDates != '' %} - {{endDates[forloop.index0] | Date:'dddd, MMMM d, yyyy'}}{% endif %}
                     {% elseif dateTimeFormat == 'All Day' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day)
+                        {{d | Date:'dddd, MMMM d, yyyy'}}{% if endDates != '' %} - {{endDates[forloop.index0] | Date:'dddd, MMMM d, yyyy'}}{% endif %} (All Day)
                     {% else %}
                         {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTimes[forloop.index0]}}{% endif %}
                     {% endif %}
