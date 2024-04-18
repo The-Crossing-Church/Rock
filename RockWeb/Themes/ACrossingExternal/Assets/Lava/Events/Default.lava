@@ -84,9 +84,16 @@
         {% assign ddSize = displayDates | Size %}
         {% if ddSize > 1 %}
             {% assign displayDates = displayDates | Split:',' %}
+        {% elseif ddSize == 0 %}
+            {% capture displayDates %}[ "{{displayDates}}" ]{% endcapture %}
+            {% assign displayDates = displayDates | FromJSON %}
         {% endif %}
-        {% if endDates != '' %}
+        {% assign edSize = endDates | Size %}
+        {% if edSize > 1 %}
             {% assign endDates = endDates | Split:',' %}
+        {% elseif edSize == 0 %}
+            {% capture endDates %}[ "{{endDates}}" ]{% endcapture %}
+            {% assign endDates = endDates | FromJSON %}
         {% endif %}
         {% assign endTimes = endTimes | Split:',' %}
         <ul class="list-unstyled">
