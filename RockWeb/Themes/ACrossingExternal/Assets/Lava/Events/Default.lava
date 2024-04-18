@@ -93,9 +93,11 @@
             {% for d in displayDates %}
                 <li>
                     {% if dateTimeFormat == 'No Time' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}}{% if endDates != '' %} - {{endDates[forloop.index0] | Date:'dddd, MMMM d, yyyy'}}{% endif %}
+                        {{d | Date:'dddd, MMMM d, yyyy'}}
                     {% elseif dateTimeFormat == 'All Day' %}
-                        {{d | Date:'dddd, MMMM d, yyyy'}}{% if endDates != '' %} - {{endDates[forloop.index0] | Date:'dddd, MMMM d, yyyy'}}{% endif %} (All Day)
+                        {{d | Date:'dddd, MMMM d, yyyy'}} (All Day)
+                    {% elseif dateTimeFormat == 'Date Range' %}
+                        {{d | Date:'dddd, MMMM d'}} {% if endDates != '' %} - {{endDates[forloop.index0] | Date:'dddd, MMMM d, yyyy'}}{% endif %}
                     {% else %}
                         {{d | Date:'dddd, MMMM d, yyyy h:mm tt'}}{% if duration > 0 %} - {{endTimes[forloop.index0]}}{% endif %}
                     {% endif %}
