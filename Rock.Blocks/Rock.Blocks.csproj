@@ -42,6 +42,10 @@
       <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL" />
+    <Reference Include="RestSharp, Version=105.2.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RockWeb\Bin\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -64,6 +68,7 @@
     <Compile Include="Engagement\SignUp\SignUpDetail.cs" />
     <Compile Include="Group\GroupAttendanceDetail.cs" />
     <Compile Include="Plugins\Checkin\NewFamily.cs" />
+    <Compile Include="Plugins\Cms\HubSpotBlogSearch.cs" />
     <Compile Include="Plugins\EventForm\AdminDashboard.cs" />
     <Compile Include="Plugins\EventForm\Calendar.cs" />
     <Compile Include="Plugins\EventForm\SubmissionForm.cs" />
