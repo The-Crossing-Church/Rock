@@ -30,8 +30,17 @@ export default defineComponent({
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Registration")) {
               item.value = this.details.attributeValues[key]
-              if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
-                item.changeValue = this.details.changes.attributeValues[key]
+              if(this.details.changes.attributes[key].fieldTypeGuid == '6b6aa175-4758-453f-8d83-fcd8044b5f36') {
+                //Date fields, need to handle the equality check differently
+                if(this.details.changes.changes) {
+                  if(this.details.changes.attributeValues[key].split('T')[0] != this.details.changes.changes.attributeValues[key].split('T')[0]) {
+                    item.changeValue = this.details.changes.changes.attributeValues[key]
+                  }
+                }
+              } else {
+                if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
+                  item.changeValue = this.details.changes.attributeValues[key]
+                }
               }
               attrs.push(item)
             }

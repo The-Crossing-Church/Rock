@@ -27,8 +27,17 @@ export default defineComponent({
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Publicity")) {
               item.value = this.request.attributeValues[key]
-              if(this.request.changes && this.request.changes.attributeValues[key] != this.request.attributeValues[key]) {
-                item.changeValue = this.request.changes.attributeValues[key]
+              if(this.request.attributes[key].fieldTypeGuid == '6b6aa175-4758-453f-8d83-fcd8044b5f36') {
+                //Date fields, need to handle the equality check differently
+                if(this.request.changes) {
+                  if(this.request.attributeValues[key].split('T')[0] != this.request.changes.attributeValues[key].split('T')[0]) {
+                    item.changeValue = this.request.changes.attributeValues[key]
+                  }
+                }
+              } else {
+                if(this.request.changes && this.request.changes.attributeValues[key] != this.request.attributeValues[key]) {
+                  item.changeValue = this.request.changes.attributeValues[key]
+                }
               }
               attrs.push(item)
             }

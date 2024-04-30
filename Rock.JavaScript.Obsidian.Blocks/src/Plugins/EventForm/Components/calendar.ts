@@ -208,7 +208,13 @@ export default defineComponent({
             }
             //Set the selecte dates
             if (this.modelValue) {
-                let dates = this.modelValue.split(",").map((d: string) => d.trim())
+                let dates = [] as any[]
+                if(this.modelValue.includes(',')) {
+                    dates = this.modelValue.split(",").map((d: string) => d.trim())
+                } else {
+                    dates = [ this.modelValue ]
+                }
+                dates = dates.map((d: string) => d.includes('T') ? d.split('T')[0] : d)
                 this.selectedDates = dates
                 let today = DateTime.now()
                 let firstDate = DateTime.fromFormat(dates[0], "yyyy-MM-dd")

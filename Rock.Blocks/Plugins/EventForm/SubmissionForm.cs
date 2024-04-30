@@ -780,7 +780,7 @@ namespace Rock.Blocks.Plugins.EventForm
             var avSvc = new AttributeValueService( context );
             List<PreApprovalData> eventDates = new List<PreApprovalData>();
             AttributeCache roomAttr = null;
-            AttributeCache eventDateAttr = null;
+            AttributeCache detailsEventDateAttr = null;
             AttributeCache startTimeAttr = null;
             AttributeCache endTimeAttr = null;
             AttributeCache startBufferAttr = null;
@@ -791,7 +791,7 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 var detail = FromViewModel( events[i] );
                 roomAttr = detail.Attributes[GetAttributeValue( AttributeKey.Rooms )];
-                eventDateAttr = detail.Attributes[GetAttributeValue( AttributeKey.DetailsEventDate )];
+                detailsEventDateAttr = detail.Attributes[GetAttributeValue( AttributeKey.DetailsEventDate )];
                 startTimeAttr = detail.Attributes[GetAttributeValue( AttributeKey.StartDateTime )];
                 endTimeAttr = detail.Attributes[GetAttributeValue( AttributeKey.EndDateTime )];
                 startBufferAttr = detail.Attributes[GetAttributeValue( AttributeKey.StartBuffer )];
@@ -913,7 +913,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         //Conflicts
                         if ( noConflicts )
                         {
-                            if ( roomAttr != null && eventDateAttr != null && startTimeAttr != null && endTimeAttr != null && startBufferAttr != null && endBufferAttr != null )
+                            if ( roomAttr != null && detailsEventDateAttr != null && startTimeAttr != null && endTimeAttr != null && startBufferAttr != null && endBufferAttr != null )
                             {
                                 if ( EventDatesAttrGuid != Guid.Empty && RequestStatusAttrGuid != Guid.Empty && IsSameAttrGuid != Guid.Empty )
                                 {
@@ -936,7 +936,7 @@ namespace Rock.Blocks.Plugins.EventForm
                                         av => av.EntityId,
                                         ( itm, av ) => itm
                                     );
-                                    var eventDetails = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem );
+                                    var eventDetails = items.SelectMany( itm => itm.ChildItems.Where( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ccia => ccia.ChildContentChannelItem ) );
                                     //Filter items to isSame, others will be in the eventDetails list
                                     var isSameAttr = new AttributeService( context ).Get( IsSameAttrGuid );
                                     var isSameValues = avSvc.Queryable().Where( av => av.AttributeId == isSameAttr.Id && av.Value == "True" );
@@ -947,13 +947,14 @@ namespace Rock.Blocks.Plugins.EventForm
                                     );
                                     //Events on same date
                                     var eventAttr = new AttributeService( context ).Get( EventDatesAttrGuid );
-                                    var eventDateValues = avSvc.Queryable().Where( av => ( av.AttributeId == eventDateAttr.Id && av.Value == dateCompareVal ) || ( av.AttributeId == eventAttr.Id && av.Value.Contains( dateCompareVal ) ) );
+                                    var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == detailsEventDateAttr.Id && av.Value == dateCompareVal );
+                                    var eventDatesValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value.Contains( dateCompareVal ) );
                                     eventDetails = eventDetails.Join( eventDateValues,
                                         itm => itm.Id,
                                         av => av.EntityId,
                                         ( itm, av ) => itm
                                     );
-                                    items = items.Join( eventDateValues,
+                                    items = items.Join( eventDatesValues,
                                         itm => itm.Id,
                                         av => av.EntityId,
                                         ( itm, av ) => itm

@@ -129,7 +129,7 @@ export default defineComponent({
   </a-dropdown>
 </div> 
 <v-style>
-  .tcc-menu-header {
+  .tcc-dropdown .tcc-menu-header {
     position: sticky;
     top: 0;
     z-index: 10;
@@ -143,14 +143,6 @@ export default defineComponent({
   }
   .tcc-menu-search .control-wrapper {
     width: 95%;
-  }
-  .tcc-menu-banner {
-    font-weight: 500;
-    background-color: #347689 !important;
-    border-color: #347689 !important;
-    color: #fff;
-    padding: 4px 12px;
-    font-size: 16px;
   }
   .tcc-dropdown-item {
     padding: 4px;
