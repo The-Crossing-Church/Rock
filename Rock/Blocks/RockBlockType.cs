@@ -70,7 +70,41 @@ namespace Rock.Blocks
         #region Methods
 
         /// <inheritdoc/>
-        public abstract object GetBlockInitialization( RockClientType clientType );
+        public virtual object GetBlockInitialization( RockClientType clientType )
+        {
+            if ( clientType == RockClientType.Web )
+            {
+                return GetObsidianBlockInitialization();
+            }
+            else if ( clientType == RockClientType.Mobile )
+            {
+                return GetMobileConfigurationValues();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the property values that will be sent to the browser and available to the client side code as it initializes.
+        /// </summary>
+        /// <returns>
+        /// A collection of string/object pairs.
+        /// </returns>
+        public virtual object GetObsidianBlockInitialization()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the property values that will be sent to the device in the application bundle.
+        /// </summary>
+        /// <returns>
+        /// A collection of string/object pairs.
+        /// </returns>
+        public virtual object GetMobileConfigurationValues()
+        {
+            return null;
+        }
 
         /// <summary>
         /// Renews the security grant token that should be used by controls with this block.
@@ -140,6 +174,16 @@ namespace Rock.Blocks
             return RequestContext.CurrentPerson;
         }
 
+
+        /// <summary>
+        /// Returns a page parameter.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        public string PageParameter( string name )
+        {
+            return RequestContext?.GetPageParameter( name );
+        }
         #endregion
 
         #region Action Response Methods
