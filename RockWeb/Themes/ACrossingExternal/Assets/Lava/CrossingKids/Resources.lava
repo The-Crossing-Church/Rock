@@ -30,7 +30,8 @@
                 </div>
             [[ enditem ]]
         {% endfor %}
-        [[ button url:'/Ministry/Children/Resources/Category/{{group.Key}}' text:'Explore All' ]][[ endbutton ]]
+        {% capture url %}/Ministry/Children/Resources/Category/{{ group.Key | EscapeDataString }}{% endcapture %}
+        [[ button url:'{{url}}' text:'Explore All' ]][[ endbutton ]]
     {[ endrescarousel ]}
 {% endfor %}
 <script>
