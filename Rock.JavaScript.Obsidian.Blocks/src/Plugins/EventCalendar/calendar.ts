@@ -259,17 +259,20 @@ export default defineComponent({
             if(this.filters.resources.includes('Childcare Catering')) {
               inFilter = e.needsChildcareCatering == true
             }
+            if(this.filters.resources.includes('Childcare')) {
+              inFilter = e.needsChildcare == true
+            }
             if(this.filters.resources.includes('Extra Resources')) {
-              inFilter = e.needsOpsAccommodations == true
+              inFilter = e.needsOps == true
             }
             if(this.filters.resources.includes('Registration')) {
               inFilter = e.needsRegistration == true
             }
             if(this.filters.resources.includes('Web Calendar')) {
-              inFilter = e.needsWebCalendar == true
+              inFilter = e.needsCalendar == true
             }
             if(this.filters.resources.includes('Production')) {
-              inFilter = e.needsProductionAccommodations == true
+              inFilter = e.needsProduction == true
             }
             if(this.filters.resources.includes('Publicity')) {
               inFilter = e.needsPublicity == true
