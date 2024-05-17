@@ -1003,7 +1003,7 @@ namespace Rock.Blocks.Plugins.EventForm
                                             return true;
                                         }
                                         return false;
-                                    } ).ToList();
+                                    } ).Distinct().ToList();
                                     if ( ccItems.Count() > 0 )
                                     {
                                         noConflicts = false;
