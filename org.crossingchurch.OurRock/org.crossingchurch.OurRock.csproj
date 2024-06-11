@@ -99,6 +99,7 @@
     <Compile Include="Communications\Transport\Twilio.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reporting\DataFilter\Person\GroupTypeFirstAttendance.cs" />
+    <Compile Include="Reporting\DataFilter\RelatedEntityFilter.cs" />
     <Compile Include="Reporting\DataTransform\Person\AllowCheckInByTransform.cs" />
     <Compile Include="Reporting\DataTransform\Person\CanCheckInTransform.cs" />
     <Compile Include="Rest\Controllers\EventFormCalendarController.cs" />
