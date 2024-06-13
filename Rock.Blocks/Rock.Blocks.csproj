@@ -64,6 +64,7 @@
     <Compile Include="..\Rock.Version\AssemblySharedInfo.cs">
       <Link>Properties\AssemblySharedInfo.cs</Link>
     </Compile>
+    <Compile Include="Communication\EmailPreferenceEntry.cs" />
     <Compile Include="Crm\FamilyPreRegistration.cs" />
     <Compile Include="Engagement\SignUp\SignUpDetail.cs" />
     <Compile Include="Group\GroupAttendanceDetail.cs" />

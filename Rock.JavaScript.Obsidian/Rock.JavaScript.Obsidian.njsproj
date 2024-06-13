@@ -163,6 +163,7 @@
     <Folder Include="Framework\ViewModels\Blocks\Cms\PersistedDatasetDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Cms\PersonalLinkSectionDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Communication\" />
+    <Folder Include="Framework\ViewModels\Blocks\Communication\EmailPreferenceEntry\" />
     <Folder Include="Framework\ViewModels\Blocks\Communication\SnippetDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Communication\SnippetTypeDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Communication\SystemPhoneNumberDetail\" />
@@ -250,6 +251,7 @@
     <TypeScriptCompile Include="Framework\Controls\copyButton.ts" />
     <TypeScriptCompile Include="Framework\Controls\dataViewPicker.ts" />
     <TypeScriptCompile Include="Framework\Controls\electronicSignature.ts" />
+    <TypeScriptCompile Include="Framework\Controls\emailBox.ts" />
     <TypeScriptCompile Include="Framework\Controls\entityTypePicker.ts" />
     <TypeScriptCompile Include="Framework\Controls\eventItemPicker.ts" />
     <TypeScriptCompile Include="Framework\Controls\fieldTypePicker.ts" />
@@ -482,7 +484,6 @@
     <TypeScriptCompile Include="Framework\Controls\dateRangePicker.ts" />
     <TypeScriptCompile Include="Framework\Controls\dateTimePicker.ts" />
     <TypeScriptCompile Include="Framework\Controls\dropDownList.ts" />
-    <TypeScriptCompile Include="Framework\Controls\emailBox.ts" />
     <TypeScriptCompile Include="Framework\Controls\listBox.ts" />
     <TypeScriptCompile Include="Framework\Controls\genderDropDownList.ts" />
     <TypeScriptCompile Include="Framework\Controls\helpBlock.ts" />
@@ -630,6 +631,9 @@
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Cms\PersistedDatasetDetail\persistedDatasetDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Cms\PersonalLinkSectionDetail\personalLinkSectionBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Cms\PersonalLinkSectionDetail\personalLinkSectionDetailOptionsBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\EmailPreferenceEntry\emailPreferenceEntryInitializationBox.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\EmailPreferenceEntry\emailPreferenceEntrySaveRequestBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\EmailPreferenceEntry\emailPreferenceEntrySaveResponseBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\SnippetDetail\snippetBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\SnippetDetail\snippetDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\SnippetTypeDetail\snippetTypeBag.d.ts" />
