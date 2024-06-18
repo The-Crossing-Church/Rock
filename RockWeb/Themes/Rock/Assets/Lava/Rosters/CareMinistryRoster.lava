@@ -8,7 +8,7 @@
                 font-size: 20px;
                 padding: 0in .4in 0in .4in;
             }
-            
+
             table {
                 border-style: none;
             }
@@ -19,12 +19,12 @@
             font-weight:600;
             border-style: none;
             }
-            
+
             table>thead>tr>th {
             padding: 12px 8px !important;
             font-size:18px;
             border-style: none;
-            
+
             }
 
         </style>
@@ -34,20 +34,20 @@
         <div class="container">
         {% sql return:'groups' %}
             WITH CTE AS (
-            
+
             	SELECT [Id], [ParentGroupId]
             	FROM [Group]
             	WHERE [Id] = {{ groupId }}
-            
+
             	UNION ALL
-            
+
             	SELECT G.[Id], G.[ParentGroupId]
             	FROM [Group] G
             	INNER JOIN CTE ON CTE.[Id] = G.[ParentGroupId]
-            
+
             )
-            
-            SELECT 
+
+            SELECT
                 G.[Id] AS [GroupId],
                 G.[Name] AS [Title],
 				CASE WHEN [AvgAge] IS NOT NULL AND [AvgAge] <= 18 THEN 'Child' ELSE 'Adult' END AS [GroupAge]
@@ -55,11 +55,11 @@
             INNER JOIN [Group] G ON G.[Id] = CTE.[Id]
             INNER JOIN [GroupType] T ON T.[Id] = G.[GroupTypeId]
             CROSS APPLY (
-            	SELECT 
+            	SELECT
 					COUNT(*) AS [MemberCount],
 					AVG([Age]) AS [AvgAge]
 				FROM (
-					SELECT 
+					SELECT
 					       (CASE
 					           WHEN TRY_CONVERT(datetime, MP.[BirthDate]) IS NOT NULL THEN dbo.[ufnCrm_GetAge](MP.[BirthDate])
 					           ELSE NULL
@@ -77,10 +77,10 @@
             ORDER BY G.[Name]
 
         {% endsql %}
-        
+
         {% for group in groups %}
             <h3>{{ group.Title }}</h3>
-         
+
             {% sql return:'rows' %}
                  SELECT [Id],
                         CONCAT([NickName] + ' ', [LastName]) AS [Name],
@@ -122,13 +122,13 @@
             {% endsql %}
             <span style="float:right;">{{ 'Now' | Date:'MM/dd/yyyy'}}</span><br/>
             <span style="float:right;">{{rows | Size}} Members</span>
-            
+
             <table class="table">
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Age</th>
-                        <!--<th>Birth Date</th>-->
+                        <!--<th>Age</th>-->
+                        <th>Birth Date</th>
                         <th>Gender</th>
                         <th>Marital Status</th>
                         <!--<th>Member Status/Role</th>-->
@@ -140,19 +140,19 @@
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    
+
                         <!--Test for row color-->
                         {% assign rowTest = forloop.index | Modulo:2 %}
-                
+
                         {% if rowTest == 1 %}
                             <tr style="background:#f9f9f9">
                         {% else %}
                             <tr style="background:#f1f1f1">
                         {% endif %}
-                        
+
                             <td>{{ row.Name }}</td>
-                            <td>{{ row.Age }}</td>
-                            <!--<td>{{ row.BirthDate }}</td>-->
+                            <!--<td>{{ row.Age }}</td>-->
+                            <td>{{ row.BirthDate }}</td>
                             <td>{{ row.Gender }}</td>
                             <td>{{ row.MaritalStatus }}</td>
                             <!--<td>{{ row.GroupMemberStatus }} ({{ row.Role }})</td>-->
@@ -165,9 +165,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-            
+
             <p style="page-break-after: always;">&nbsp;</p>
-        
+
         {% endfor %}
 
         </div>
