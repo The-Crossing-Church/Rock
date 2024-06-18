@@ -3838,25 +3838,25 @@ function onTaskCompleted( resultData )
             /// </summary>
             public class CommunicationProperties
             {
-                public int? CommunicationId;
-                public int? SenderPersonAliasId;
-                public string EnabledLavaCommands;
-                public string CommunicationName;
-                public bool IsBulkCommunication;
-                public CommunicationType MediumType;
+                public int? CommunicationId { get; set; }
+                public int? SenderPersonAliasId { get; set; }
+                public string EnabledLavaCommands { get; set; }
+                public string CommunicationName { get; set; }
+                public bool IsBulkCommunication { get; set; }
+                public CommunicationType MediumType { get; set; }
 
-                public int? CommunicationListGroupId;
-                public bool ExcludeDuplicateRecipientAddress;
-                public List<int> CommunicationGroupSegmentDataViewIds;
+                public int? CommunicationListGroupId { get; set; }
+                public bool ExcludeDuplicateRecipientAddress { get; set; }
+                public List<int> CommunicationGroupSegmentDataViewIds { get; set; }
 
-                public SegmentCriteria CommunicationGroupSegmentFilterType;
-                public int? CommunicationTemplateId;
-                public List<int> EmailBinaryFileIds;
-                public List<int> SmsBinaryFileIds;
+                public SegmentCriteria CommunicationGroupSegmentFilterType { get; set; }
+                public int? CommunicationTemplateId { get; set; }
+                public List<int> EmailBinaryFileIds { get; set; }
+                public List<int> SmsBinaryFileIds { get; set; }
 
-                public DateTime? FutureSendDateTime;
+                public DateTime? FutureSendDateTime { get; set; }
 
-                public CommunicationDetails Details = new CommunicationDetails();
+                public CommunicationDetails Details { get; set; } = new CommunicationDetails();
             }
 
             #endregion

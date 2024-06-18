@@ -34,6 +34,7 @@
     <Content Include="build\build-fast.js" />
     <Content Include="package.json" />
     <Content Include="rollup.config.js" />
+    <Content Include="src\Communication\emailPreferenceEntry.obs" />
     <Content Include="src\Crm\familyPreRegistration.obs" />
     <Content Include="src\Crm\FamilyPreRegistration\preRegistrationChild.partial.obs" />
     <Content Include="src\Crm\FamilyPreRegistration\preRegistrationChildren.partial.obs" />
