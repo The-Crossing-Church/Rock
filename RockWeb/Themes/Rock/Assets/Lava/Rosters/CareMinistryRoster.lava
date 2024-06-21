@@ -92,7 +92,7 @@
                         MaritalStatusValueId,
                         Value                                AS 'MaritalStatus',
                         ConnectionStatus,
-                        CONVERT(VARCHAR(5), [BirthDate], 1)  AS [BirthDate],
+                        CONVERT(VARCHAR(8), [BirthDate], 1)  AS [BirthDate],
                         DATEDIFF(YY, BirthDate, GETDATE()) AS Age,
                         [Email],
                         NumberFormatted AS 'CellPhone',
