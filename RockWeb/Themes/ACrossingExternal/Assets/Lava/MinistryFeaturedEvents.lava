@@ -18,11 +18,6 @@
                 </div>
                 <div class='col col-xs-12 col-md-6'>
                   <h2>{{i.EventItem.Name}}</h2>
-                  {% assign dateTimeFormat = i | Attribute:'DateTimeDisplayFormat' %}
-                  {% if dateTimeFormat != 'No Time' %}
-                    {{ i.Schedule.FriendlyScheduleText }} <br/>
-                  {% endif %}
-                  <br/>
                   <div class="truncate">
                     {{i.EventItem.Description}}
                   </div>
