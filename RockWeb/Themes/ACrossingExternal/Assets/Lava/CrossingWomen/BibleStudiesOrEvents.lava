@@ -1,0 +1,328 @@
+{% assign startDate = Item | Attribute:'EventsInRange','RawValue' | Split:',' | First | Date:'yyyy-MM-dd' %}
+{% assign endDate = Item | Attribute:'EventsInRange','RawValue' | Split:',' | Last | Date:'yyyy-MM-dd' %}
+{% assign daysUntil = endDate | DaysUntil %}
+{% assign cats = Item | Attribute:'EventCategoriestoDisplay' | Split:',' %}
+{% assign category = '' %}
+{% for c in cats %}
+    {% capture category %}{{category}}{% if forloop.index0 != 0 %},{% endif %}'{{c}}'{% endcapture %}
+{% endfor %}
+
+{% sql %}
+    SELECT EventItemId
+    FROM EventCalendarItem
+            INNER JOIN (
+                        SELECT DISTINCT EntityId
+                        FROM (
+                            SELECT EntityId, Value AS Category
+                            FROM EventCalendarItem
+                                    INNER JOIN AttributeValue ON EntityId = EventCalendarItem.Id
+                            WHERE AttributeId IN (33214, 33215)
+                            ) AS AV
+                                CROSS APPLY STRING_SPLIT(Category, ',')
+                        WHERE value IN ({{category}})
+                        ) AS eventCategories ON EntityId = Id
+            INNER JOIN EventItem ON EventCalendarItem.EventItemId = EventItem.Id
+    WHERE EventCalendarId = 1
+{% endsql %}
+
+<div class="row row-equal-height">
+    {% assign ids = results | Select:'EventItemId' | Join:',' %}
+    {% eventitem ids:'{{ ids }}' %}
+        {% for event in eventitemItems %}
+            {% assign inRange = false %}
+            {% assign occurrenceIds = '[]' | FromJSON %}
+            {% assign test = '[]' | FromJSON %}
+            {% assign daysOfWeek = '[]' | FromJSON %}
+            {% assign startTimes = '[]' | FromJSON %}
+            {% eventscheduledinstance eventid:'{{event.Id}}' daterange:'{{daysUntil}}d' %}
+                {% for item in EventScheduledInstances %}
+                    {% if item.Date >= startDate %}
+                        {% assign dow = item.Date | Date:'dddd' | Pluralize %}
+                        {% assign daysOfWeek = daysOfWeek | AddToArray:dow %}
+                        {% assign startTimes = startTimes | AddToArray:item.Time %}
+                        {% assign dowOrder = 0 %}
+                        {% if dow == 'Mondays' %}
+                            {% assign dowOrder = 1 %}
+                        {% elseif dow == 'Tuesdays' %}
+                            {% assign dowOrder = 2 %}
+                        {% elseif dow == 'Wednesdays' %}
+                            {% assign dowOrder = 3 %}
+                        {% elseif dow == 'Thursdays' %}
+                            {% assign dowOrder = 4 %}
+                        {% elseif dow == 'Fridays' %}
+                            {% assign dowOrder = 5 %}
+                        {% elseif dow == 'Saturdays' %}
+                            {% assign dowOrder = 6 %}
+                        {% endif %}
+                        {% capture occItem %}{ "Id": {{item.EventItemOccurrence.Id}}, "DOW": {{ dowOrder }} }{% endcapture %}
+                        {% assign occItem = occItem | FromJSON %}
+                        {% assign occurrenceIds = occurrenceIds | AddToArray:occItem %}
+                        {% assign inRange = true %}
+                    {% endif %}
+                {% endfor %}
+            {% endeventscheduledinstance %}
+            {% assign occurrenceIds = occurrenceIds |  OrderBy:'DOW' | Select:'Id' %}
+            {% if inRange == true %}
+                {% assign occurrenceIds = occurrenceIds | Distinct %}
+                {% assign daysOfWeek = daysOfWeek | Distinct %}
+                {% assign startTimes = startTimes | Distinct %}
+                <div class="col-xs-12 col-md-3 text-center hover womens-card">
+                    <a href="/Events/Detail?EventOccurrenceId={{occurrenceIds | First}}" target="_blank">
+                        {% assign registrationIsOpen = false %}
+                        {% assign occMeetings = '[]' | FromJSON %}
+                        {% for occ in occurrenceIds %}
+                            {% assign eventOcc = event.EventItemOccurrences | Where:'Id',occ | First %}
+                            {% assign eventItemOccurrenceLinkages = eventOcc.Linkages %}
+                            {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+                            {% assign numMeets = eventOcc.Schedule.iCalendarContent | DatesFromICal:'all' | Size %}
+                            {% assign occMeetings = occMeetings |  AddToArray:numMeets %}
+                            {% if eventItemOccurrenceLinkagesCount > 0 %}
+                                {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                                    {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+                                    {% if daysTillEndDate and daysTillEndDate > 0 %}
+                                        {% assign registrationIsOpen = true %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                        {% assign occMeetings = occMeetings | Distinct | Size %}
+                        <div>
+                            {% if registrationIsOpen == false %}
+                                <div class="banner-wrapper">
+                                    <div class="reg-closed-banner">Registration Closed</div>
+                                </div>
+                            {% endif %}
+                            <div class='wrapper' >
+                                <img class="img-responsive" src="/GetImage.ashx?Guid={{ event.Photo.Guid }}" alt="{{e.EventItem.Name | Split:' - ' | Last}}" />
+                            </div>
+                        </div>
+                        <div style='font-size: .9375em;' class="my-2">
+                            {{event.Name}}
+                        </div>
+                        <div class='text--upper mb-2' style='font-size: .75em; font-weight: 700;'>
+                            {% for occ in occurrenceIds %}
+                                {% assign s = event.EventItemOccurrences | Where:'Id',occ | First | Property:'Schedule' %}
+                                {% assign firstDate = '' %}
+                                {% assign lastDate = '' %}
+                                {% assign numMeetings = 0 %}
+                                {% assign dates = s.iCalendarContent | DatesFromICal:'all' | Sort %}
+                                {% assign numMeetings = dates | Size %}
+                                {% for d in dates %}
+                                    {% if firstDate == '' or d < firstDate %}
+                                        {% assign firstDate = d %}
+                                    {% endif %}
+                                    {% if lastDate == '' or d > lastDate %}
+                                        {% assign lastDate = d %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{dates | First | Date:'ddd tt'}} {{dates | First | Date:'MMMM d'}}{% if firstDate != lastDate %} - {{dates | Last | Date:'MMMM d'}}{% endif %}<br/>
+                                {% if occMeetings > 1 or forloop.last == true %}
+                                    Meets {{numMeetings}} {{'time' | PluralizeForQuantity:numMeetings}} <br/>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </a>
+                    <div class="actions">
+                        {% assign ct = occurrenceIds | Size %}
+                        {% for occ in occurrenceIds %}
+                            {% assign lastOcc = forloop.last %}
+                            {% assign eventOcc = event.EventItemOccurrences | Where:'Id',occ | First %}
+                            {% assign eventItemOccurrenceLinkages = eventOcc.Linkages %}
+                            {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
+                            {% if eventItemOccurrenceLinkagesCount > 0 %}
+                                {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                                    {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
+                                    {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
+                                    {% assign showRegistration = true %}
+                                    {% assign registrationMessage = '' %}
+
+                                    {% if daysTillStartDate and daysTillStartDate > 0 %}
+                                        {% assign showRegistration = false %}
+                                        {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                            {% capture registrationMessage %}Registration opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                        {% else %}
+                                            {% capture registrationMessage %}Registration for {{ eventItemOccurrenceLinkage.PublicName }} opens on {{ eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                        {% endif %}
+                                    {% endif %}
+
+                                    {% if daysTillEndDate and daysTillEndDate < 0 %}
+                                        {% assign showRegistration = false %}
+                                        {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                            {% capture registrationMessage %}Registration closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                        {% else %}
+                                            {% capture registrationMessage %}Registration for {{ eventItemOccurrenceLinkage.PublicName }} closed on {{ eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime | Date:'MM/dd/yy' }}{% endcapture %}
+                                        {% endif %}
+                                    {% endif %}
+
+                                    {% assign hasMulti = false %}
+                                    {% if ct > 1 or eventItemOccurrenceLinkagesCount > 1%}
+                                        {% assign hasMulti = true %}
+                                    {% endif %}
+
+                                    {% if showRegistration == true %}
+                                        {% assign maxAtt = eventItemOccurrenceLinkage.RegistrationInstance.MaxAttendees %}
+                                        {% sql return:'attendees' %}
+                                            SELECT COUNT(*) AS 'ct' FROM RegistrationRegistrant
+                                            WHERE RegistrationId IN (
+                                                SELECT Id FROM Registration WHERE RegistrationInstanceId = {{eventItemOccurrenceLinkage.RegistrationInstanceId}}
+                                            )
+                                        {% endsql %}
+                                        {% assign numAtt = attendees[0].ct %}
+                                        {% if maxAtt == null or maxAtt == '' %}
+                                            {% assign maxAtt = 0 %}
+                                        {% endif %}
+                                        {% if numAtt < maxAtt or maxAtt == 0 %}
+                                            {% assign statusLabel = 'Register' %}
+                                        {% else %}
+                                            {% if eventItemOccurrenceLinkage.RegistrationInstance.RegistrationTemplate.WaitListEnabled == true %}
+                                                {% assign statusLabel = 'Join Wait List' %}
+                                            {% else %}
+                                                {% assign statusLabel = 'Full' %}
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                            {% assign registrationButtonText = statusLabel %}
+                                        {% else %}
+                                            {% assign registrationButtonText = statusLabel | Plus:' for ' | Plus:eventItemOccurrenceLinkage.PublicName %}
+                                        {% endif %}
+                                        {% if statusLabel == 'Full' %}
+                                            {% if eventItemOccurrenceLinkagesCount == 1 %}
+                                                {% assign registrationButtonText = 'Registration Full' %}
+                                            {% else %}
+                                                {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
+                                            {% endif %}
+                                            <div class='text--upper reg-msg mb-{% if hasMulti == true and lastOcc == true and forloop.last == true %}4{% else %}1{% endif %}' style='height: 40px; font-size: .75em; font-weight: 700;'>
+                                                <div class="d-flex h-100 align-center justify-center">
+                                                    {{ registrationButtonText }}
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
+                                                {% capture regUrl %}/Registration?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&Slug={{eventItemOccurrenceLinkage.UrlSlug}}{% endcapture %}
+                                            {% else %}
+                                                {% capture regUrl %}/Registration?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}{% endcapture %}
+                                            {% endif %}
+                                            <a class="btn btn-primary mb-{% if hasMulti == true and lastOcc == true and forloop.last == true %}4{% else %}1{% endif %}" href="{{regUrl}}" >
+                                                {% if ct > 1 and eventItemOccurrenceLinkagesCount == 1 %}
+                                                    {{registrationButtonText}} for {{eventOcc.NextStartDateTime | Date:'ddd'}} {{eventOcc.NextStartDateTime | Date:'tt'}}
+                                                {% else %}
+                                                    {{registrationButtonText}}
+                                                {% endif %}
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class='text--upper reg-msg mb-{% if hasMulti == true and lastOcc == true and forloop.last == true %}4{% else %}1{% endif %}' style='height: 40px; font-size: .75em; font-weight: 700; width: 100%;'>
+                                            <div class="d-flex h-100 align-center justify-center">
+                                                {{registrationMessage}}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if eventItemOccurrenceLinkagesCount == 1 and ct == 1 %}
+                                    <div class="d-none d-md-block mb-4" style="height: 40px;"></div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endeventitem %}
+</div>
+<style>
+    .reg-closed-banner {
+        background-color: rgba(0,0,0,.4);
+        padding: 8px;
+        width: 100%;
+        font-size: 30px;
+        color: #fff;
+    }
+    .banner-wrapper {
+        position: absolute;
+        z-index: 10;
+        top: 20%;
+        left: 16px;
+        right: 16px;
+        margin: 0px 16px;
+    }
+    .study-link {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+    }
+    .wrapper img {
+        width: 100%;
+    }
+    .banner-wrapper + .wrapper img {
+        filter: grayscale(.8);
+    }
+    .wrapper {
+        padding: 0px 16px;
+    }
+    .womens-card {
+        padding-bottom: 104px;
+    }
+    .womens-card-button {
+        position: absolute;
+        bottom: 16px;
+        left: 0;
+        right: 0;
+    }
+    .btn-circle {
+        height: 40px;
+        width: 40px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-primary.active, .btn[aria-expanded="true"] {
+        background-color: #a2c3cc;
+        color: #1b3142;
+        border-color: #1b3142;
+    }
+    .actions {
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        text-align: center;
+    }
+    @media (max-width:599px) {
+        .reg-closed-banner {
+            font-size: 3em;
+        }
+        .filter-wrapper {
+            height: 45px;
+        }
+    }
+    @media (min-width:600px) {
+        .mb-2 {
+            margin-bottom: 1.5rem !important;
+        }
+    }
+    @media (max-width: 991px) {
+        .womens-card {
+            padding-bottom: 0px;
+            margin-bottom: 32px;
+        }
+        .actions {
+            position: relative;
+            text-align: center;
+        }
+        .actions .btn {
+            display: block !important;
+            width: fit-content;
+            margin: auto;
+        }
+    }
+</style>
+<script>
+    $(document).ready(function() {
+        $('[data-toggle="popover"]').popover()
+        var tabs = $('#studiesTabs');
+        tabs.on('show.bs.collapse','.collapse', function() {
+            tabs.find('.collapse.in').collapse('hide');
+        });
+    })
+</script>
