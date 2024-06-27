@@ -46,6 +46,9 @@
       -webkit-box-orient: vertical;
       text-overflow: -o-ellipsis-lastline;
     }
+    .truncate p {
+      margin-bottom: 0px;
+    }
   }
 </style>
 {% endif %}
