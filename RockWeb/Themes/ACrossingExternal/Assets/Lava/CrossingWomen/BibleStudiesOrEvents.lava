@@ -1,13 +1,16 @@
+{% assign internalAttrId = internalAttrId |  AsInteger %}
+{% assign publicAttrId = publicAttrId |  AsInteger %}
+{% assign eventCalId = eventCalId |  AsInteger %}
 {% assign startDate = Item | Attribute:'EventsInRange','RawValue' | Split:',' | First | Date:'yyyy-MM-dd' %}
 {% assign endDate = Item | Attribute:'EventsInRange','RawValue' | Split:',' | Last | Date:'yyyy-MM-dd' %}
 {% assign daysUntil = endDate | DaysUntil %}
 {% assign cats = Item | Attribute:'EventCategoriestoDisplay' | Split:',' %}
 {% assign category = '' %}
 {% for c in cats %}
-    {% capture category %}{{category}}{% if forloop.index0 != 0 %},{% endif %}'{{c}}'{% endcapture %}
+    {% capture category %}{{category}}{% if forloop.index0 != 0 %},{% endif %}'{{ c |  SanitizeSql }}'{% endcapture %}
 {% endfor %}
 
-{% sql %}
+{% sql internalid:'{{internalAttrId}}' externalid:'{{publicAttrId}}' calid:'{{eventCalId}}' %}
     SELECT EventItemId
     FROM EventCalendarItem
             INNER JOIN (
@@ -16,13 +19,13 @@
                             SELECT EntityId, Value AS Category
                             FROM EventCalendarItem
                                     INNER JOIN AttributeValue ON EntityId = EventCalendarItem.Id
-                            WHERE AttributeId IN (33214, 33215)
+                            WHERE AttributeId IN (@internalid, @externalid)
                             ) AS AV
                                 CROSS APPLY STRING_SPLIT(Category, ',')
                         WHERE value IN ({{category}})
                         ) AS eventCategories ON EntityId = Id
             INNER JOIN EventItem ON EventCalendarItem.EventItemId = EventItem.Id
-    WHERE EventCalendarId = 1
+    WHERE EventCalendarId = @calid
 {% endsql %}
 
 <div class="row row-equal-height">
