@@ -179,6 +179,14 @@ namespace Rock.Blocks.Communication
             public const string PublicName = "PublicName";
         }
 
+        // [Crossing Custom Code] Communication attributes for associated communication list(s)
+        private static class CommunicationAttributeKey
+        {
+            public const string CommunicationList = "CommunicationList";
+            public const string ParentCommunicationList = "ParentCommunicationList";
+        }
+        // [End Custom Code]
+
         private static class NavigationUrlKey
         {
             public const string ParentPage = "ParentPage";
@@ -265,6 +273,9 @@ We have unsubscribed you from the following lists:
             {
                 var service = new PersonService( rockContext );
 
+                // [Crossing Custom Code] Get associated segment communication list(S)
+                var commListGuids = GetCommunicationLists( communication );
+
                 if ( communication?.ListGroupId.HasValue == true )
                 {
                     // Auto-unsubscribe from a specific communication list.
@@ -273,6 +284,19 @@ We have unsubscribed you from the following lists:
                         .IsCommunicationList();
                     service.UnsubscribeFromEmail( person, communicationListsQuery );
                 }
+
+                // [Crossing Custom Code] Unsubscribe from associated segment communication list(s)
+                else if ( commListGuids.Any() )
+                {
+                    // Auto-unsubscribe from a communication list from segment block
+                    var communicationListsQuery = new GroupService( rockContext )
+                        .Queryable()
+                        .Where( c => commListGuids.Contains( c.Guid ) )
+                        .IsCommunicationList();
+                    service.UnsubscribeFromEmail( person, communicationListsQuery );
+                }
+                // [End Custom Code]
+
                 else
                 {
                     // Auto-unsubscribe from all email.
@@ -375,6 +399,10 @@ We have unsubscribed you from the following lists:
             if ( person != null )
             {
                 var communication = GetCommunication( rockContext );
+
+                // [Crossing Custom Code] Get associated segment communication list(S)
+                var commListGuids = GetCommunicationLists( communication ); 
+
                 if ( communication != null && communication.ListGroupId.HasValue && isUnsubscribeVisible )
                 {
                     box.EmailPreference = UNSUBSCRIBE;
@@ -382,6 +410,26 @@ We have unsubscribed you from the following lists:
 
                     box.SuccessfullyUnsubscribedText = isPersonUnsubscribed ? $"You have been successfully unsubscribed from the \"{GetName(communication.ListGroup)}\" communication list. If you would like to be removed from all communications see the options below." : null;
                 }
+
+                // [Crossing Custom Code] Unsubscribe from associated segment communication list(s)
+                else if ( communication != null && commListGuids.Any() && isUnsubscribeVisible )
+                {
+                    box.EmailPreference = UNSUBSCRIBE;
+
+                    var optionList = commListGuids.Select( g => g.ToString() ).ToList();
+                    box.UnsubscribeFromList = new List<ViewModels.Utility.ListItemBag>() { box.UnsubscribeFromListOptions.Find( l => optionList.Contains( l.Value ) ) };
+
+                    var unsubscribeGroupNames = new GroupService( rockContext )
+                        .Queryable()
+                        .Where( g => commListGuids.Contains( g.Guid ) )
+                        .IsCommunicationList()
+                        .Select( g => g.Name )
+                        .ToList()
+                        .AsDelimited( " and " );
+
+                    box.SuccessfullyUnsubscribedText = isPersonUnsubscribed ? $"You have been successfully unsubscribed from the \"{unsubscribeGroupNames}\" communication list. If you would like to be removed from all communications see the options below." : null;
+                }
+                // [End Custom Code]
 
                 var anyOptionChecked = false;
                 switch ( person.EmailPreference )
@@ -574,7 +622,17 @@ We have unsubscribed you from the following lists:
                 }
 
                 // if they selected the CommunicationList associated with the CommunicationId from the Url, log an 'Unsubscribe' Interaction 
-                if ( communication != null && communication.ListGroupId.HasValue && communicationListGuid == communication.ListGroup.Guid )
+
+                // [Crossing Custom Code] Get associated segment communication list(S)
+                var commListGuids = GetCommunicationLists( communication );
+                if ( communication.ListGroup != null )
+                {
+                    commListGuids.Add( communication.ListGroup.Guid );
+                }
+                if ( communication != null && commListGuids.Contains( communicationListGuid ) )
+
+                //if ( communication != null && communication.ListGroupId.HasValue && communicationListGuid == communication.ListGroup.Guid )
+                // [End Custom Code]
                 {
                     var communicationRecipient = communication.GetRecipientsQry( rockContext ).Where( a => a.PersonAlias.PersonId == person.Id ).FirstOrDefault();
                     if ( communicationRecipient != null )
@@ -698,6 +756,9 @@ We have unsubscribed you from the following lists:
             if ( communicationId.HasValue )
             {
                 _communication = new CommunicationService( rockContext ).Get( communicationId.Value );
+
+                // [Crossing Custom Code] Load the custom communication list attribute(s) for the communication 
+                _communication.LoadAttributes( rockContext );       
             }
 
             return _communication;
@@ -724,6 +785,28 @@ We have unsubscribed you from the following lists:
 
             return name;
         }
+
+        // [Crossing Custom Code]
+        // Get the Communication List(s) associated with the communication that may have been set by
+        // the custom segments block
+        private List<Guid> GetCommunicationLists( Rock.Model.Communication communication )
+        {
+            List<Guid> commListGuids = new List<Guid>();
+
+            var segmentCommGroupGuid = communication.GetAttributeValue( CommunicationAttributeKey.CommunicationList ).AsGuidOrNull();
+            if ( segmentCommGroupGuid.HasValue )
+            {
+                commListGuids.Add( segmentCommGroupGuid.Value );
+            }
+            var segmentParentCommGroupGuid = communication.GetAttributeValue( CommunicationAttributeKey.ParentCommunicationList ).AsGuidOrNull();
+            if ( segmentParentCommGroupGuid.HasValue )
+            {
+                commListGuids.Add( segmentParentCommGroupGuid.Value );
+            }
+
+            return commListGuids;
+        }
+
         #endregion Methods
 
         #region Block Actions
