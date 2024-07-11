@@ -27,7 +27,6 @@
             INNER JOIN EventItem ON EventCalendarItem.EventItemId = EventItem.Id
     WHERE EventCalendarId = @calid
 {% endsql %}
-
 <div class="row row-equal-height">
     {% assign ids = results | Select:'EventItemId' | Join:',' %}
     {% eventitem ids:'{{ ids }}' %}
@@ -39,7 +38,8 @@
             {% assign startTimes = '[]' | FromJSON %}
             {% eventscheduledinstance eventid:'{{event.Id}}' daterange:'{{daysUntil}}d' %}
                 {% for item in EventScheduledInstances %}
-                    {% if item.Date >= startDate %}
+                    {% assign daysBetween = startDate | DateDiff:item.Date,'d' %}
+                    {% if daysBetween >= 0 %}
                         {% assign dow = item.Date | Date:'dddd' | Pluralize %}
                         {% assign daysOfWeek = daysOfWeek | AddToArray:dow %}
                         {% assign startTimes = startTimes | AddToArray:item.Time %}
@@ -127,6 +127,7 @@
                     </a>
                     <div class="actions">
                         {% assign ct = occurrenceIds | Size %}
+                        {% assign displayedRegistrations = '[]' | FromJSON %}
                         {% for occ in occurrenceIds %}
                             {% assign lastOcc = forloop.last %}
                             {% assign eventOcc = event.EventItemOccurrences | Where:'Id',occ | First %}
@@ -134,6 +135,10 @@
                             {% assign eventItemOccurrenceLinkagesCount = eventItemOccurrenceLinkages | Size %}
                             {% if eventItemOccurrenceLinkagesCount > 0 %}
                                 {% for eventItemOccurrenceLinkage in eventItemOccurrenceLinkages %}
+                                    {% if displayedRegistrations contains eventItemOccurrenceLinkage.RegistrationInstanceId %}
+                                        {% continue %}
+                                    {% endif %}
+                                    {% assign displayedRegistrations = displayedRegistrations |  AddToArray:eventItemOccurrenceLinkage.RegistrationInstanceId %}
                                     {% assign daysTillStartDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.StartDateTime,'m' %}
                                     {% assign daysTillEndDate = 'Now' | DateDiff:eventItemOccurrenceLinkage.RegistrationInstance.EndDateTime,'m' %}
                                     {% assign showRegistration = true %}
@@ -194,7 +199,7 @@
                                             {% else %}
                                                 {% assign registrationButtonText = eventItemOccurrenceLinkage.PublicName | Plus: ' (Registration Full) ' %}
                                             {% endif %}
-                                            <div class='text--upper reg-msg mb-{% if hasMulti == true and lastOcc == true and forloop.last == true %}4{% else %}1{% endif %}' style='height: 40px; font-size: .75em; font-weight: 700;'>
+                                            <div class='text--upper reg-msg mb-1' style='height: 40px; font-size: .75em; font-weight: 700;'>
                                                 <div class="d-flex h-100 align-center justify-center">
                                                     {{ registrationButtonText }}
                                                 </div>
@@ -205,7 +210,7 @@
                                             {% else %}
                                                 {% capture regUrl %}/Registration?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}{% endcapture %}
                                             {% endif %}
-                                            <a class="btn btn-primary mb-{% if hasMulti == true and lastOcc == true and forloop.last == true %}4{% else %}1{% endif %}" href="{{regUrl}}" >
+                                            <a class="btn btn-primary mb-1" href="{{regUrl}}" >
                                                 {% if ct > 1 and eventItemOccurrenceLinkagesCount == 1 %}
                                                     {{registrationButtonText}} for {{eventOcc.NextStartDateTime | Date:'ddd'}} {{eventOcc.NextStartDateTime | Date:'tt'}}
                                                 {% else %}
@@ -214,7 +219,7 @@
                                             </a>
                                         {% endif %}
                                     {% else %}
-                                        <div class='text--upper reg-msg mb-{% if hasMulti == true and lastOcc == true and forloop.last == true %}4{% else %}1{% endif %}' style='height: 40px; font-size: .75em; font-weight: 700; width: 100%;'>
+                                        <div class='text--upper reg-msg mb-1' style='height: 40px; font-size: .75em; font-weight: 700; width: 100%;'>
                                             <div class="d-flex h-100 align-center justify-center">
                                                 {{registrationMessage}}
                                             </div>
@@ -222,7 +227,7 @@
                                     {% endif %}
                                 {% endfor %}
                                 {% if eventItemOccurrenceLinkagesCount == 1 and ct == 1 %}
-                                    <div class="d-none d-md-block mb-4" style="height: 40px;"></div>
+                                    <div class="d-none d-md-block mb-1" style="height: 40px;"></div>
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
@@ -290,6 +295,9 @@
         left: 0px;
         right: 0px;
         text-align: center;
+    }
+    .womens-card .actions:last-child {
+        margin-bottom: 1.5rem !important; /* Since we don't want to double print registration buttons we can't use the last item in for loop anymore */
     }
     @media (max-width:599px) {
         .reg-closed-banner {
