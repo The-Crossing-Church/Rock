@@ -757,8 +757,11 @@ We have unsubscribed you from the following lists:
             {
                 _communication = new CommunicationService( rockContext ).Get( communicationId.Value );
 
-                // [Crossing Custom Code] Load the custom communication list attribute(s) for the communication 
-                _communication.LoadAttributes( rockContext );       
+                // [Crossing Custom Code] Load the custom communication list attribute(s) for the communication
+                if ( _communication != null )
+                {
+                    _communication.LoadAttributes( rockContext );
+                }
             }
 
             return _communication;
@@ -793,23 +796,27 @@ We have unsubscribed you from the following lists:
         {
             List<Guid> commListGuids = new List<Guid>();
 
-            var segmentCommGroupGuid = communication.GetAttributeValue( CommunicationAttributeKey.CommunicationList ).AsGuidOrNull();
-            if ( segmentCommGroupGuid.HasValue )
+            if ( communication != null )
             {
-                commListGuids.Add( segmentCommGroupGuid.Value );
-            }
-            var segmentParentCommGroupGuid = communication.GetAttributeValue( CommunicationAttributeKey.ParentCommunicationList ).AsGuidOrNull();
-            if ( segmentParentCommGroupGuid.HasValue )
-            {
-                commListGuids.Add( segmentParentCommGroupGuid.Value );
+                var segmentCommGroupGuid = communication.GetAttributeValue( CommunicationAttributeKey.CommunicationList ).AsGuidOrNull();
+                if ( segmentCommGroupGuid.HasValue )
+                {
+                    commListGuids.Add( segmentCommGroupGuid.Value );
+                }
+                var segmentParentCommGroupGuid = communication.GetAttributeValue( CommunicationAttributeKey.ParentCommunicationList ).AsGuidOrNull();
+                if ( segmentParentCommGroupGuid.HasValue )
+                {
+                    commListGuids.Add( segmentParentCommGroupGuid.Value );
+                }
             }
 
             return commListGuids;
+
         }
 
         #endregion Methods
 
-        #region Block Actions
+       #region Block Actions
 
         /// <summary>
         /// Saves the email preference.
