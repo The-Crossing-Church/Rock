@@ -1661,7 +1661,7 @@ $('#{0}').tooltip();
                     CreateGroupHeader( availableSchedule.GroupName, availableSchedule.GroupType );
                 }
 
-                if ( availableSchedule.ScheduledDateTime.Date != currentOccurrenceDate.Date )
+                if ( availableSchedule.ScheduledDateTime.Date != currentOccurrenceDate.Date || availableSchedule.GroupId != currentGroupId )
                 {
                     if ( currentScheduleId != -1 && availableSchedule.GroupId == currentGroupId )
                     {
