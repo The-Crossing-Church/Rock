@@ -109,7 +109,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             var headers = new List<string> { "HubSpot FirstName", "Rock FirstName", "HubSpot LastName", "Rock LastName", "HubSpot Email", "Rock Email", "HubSpot Phone", "Rock Phone", "HubSpot Connection Status", "Rock Connection Status", "HubSpot Link", "Rock Link", "HubSpot CreatedDate", "Rock Created Date", "HubSpot Modified Date", "Rock Modified Date", "Rock ID" };
             var h = 1;
             var row = 2;
-            foreach (var header in headers)
+            foreach ( var header in headers )
             {
                 worksheet.Cells[1, h].Value = header;
                 h++;
@@ -136,7 +136,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
             //WriteToLog( string.Format( "Total Contacts to Match: {0}", contacts.Count() ) );
-            for (var i = 0; i < contacts.Count(); i++)
+            for ( var i = 0; i < contacts.Count(); i++ )
             {
                 //Stopwatch watch = new Stopwatch();
                 //watch.Start();
@@ -144,11 +144,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 Person person = null;
                 bool hasMultiEmail = false;
                 List<int> matchingIds = FindPersonIds( contacts[i] );
-                if (matchingIds.Count > 1)
+                if ( matchingIds.Count > 1 )
                 {
                     hasMultiEmail = true;
                 }
-                if (matchingIds.Count == 1)
+                if ( matchingIds.Count == 1 )
                 {
                     person = personService.Get( matchingIds.First() );
                 }
@@ -158,14 +158,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //WriteToLog( string.Format( "    After SQL: {0}", watch.ElapsedMilliseconds ) );
 
                 //Atempt to match 1:1 based on email history making sure we exclude emails with multiple matches in the person table
-                if (person == null && !hasMultiEmail)
+                if ( person == null && !hasMultiEmail )
                 {
                     string email = contacts[i].properties.email.ToLower();
                     var matches = history_svc.Queryable().Where( hist => hist.EntityTypeId == 15 && hist.ValueName == "Email" && hist.NewValue.ToLower() == email ).Select( hist => hist.EntityId ).Distinct();
-                    if (matches.Count() == 1)
+                    if ( matches.Count() == 1 )
                     {
                         //If 1:1 Email match and Hubspot has no other info, make it a match
-                        if (String.IsNullOrEmpty( contacts[i].properties.firstname ) && String.IsNullOrEmpty( contacts[i].properties.lastname ))
+                        if ( String.IsNullOrEmpty( contacts[i].properties.firstname ) && String.IsNullOrEmpty( contacts[i].properties.lastname ) )
                         {
                             person = personService.Get( matches.First() );
                         }
@@ -175,17 +175,17 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
                 bool inBucket = false;
                 //Try to mark people that are potential matches, only people who can at least match email or phone and one other thing
-                if (person == null)
+                if ( person == null )
                 {
                     var contact = contacts[i];
                     //Matches phone number and one other piece of info
-                    if (!String.IsNullOrEmpty( contact.properties.phone ))
+                    if ( !String.IsNullOrEmpty( contact.properties.phone ) )
                     {
                         var phone_matches = personService.Queryable().Where( p => p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.properties.phone ) ).ToList();
-                        if (phone_matches.Count() > 0)
+                        if ( phone_matches.Count() > 0 )
                         {
                             phone_matches = phone_matches.Where( p => CustomEquals( p.FirstName, contact.properties.firstname ) || CustomEquals( p.NickName, contact.properties.firstname ) || CustomEquals( p.Email, contact.properties.email ) || CustomEquals( p.LastName, contact.properties.lastname ) ).ToList();
-                            for (var j = 0; j < phone_matches.Count(); j++)
+                            for ( var j = 0; j < phone_matches.Count(); j++ )
                             {
                                 //Save this information in the excel sheet....
                                 SaveData( worksheet, row, phone_matches[j], contact );
@@ -199,10 +199,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     {
                         return CustomEquals( p.Email, contact.properties.email );
                     } ).ToList();
-                    if (email_matches.Count() > 0)
+                    if ( email_matches.Count() > 0 )
                     {
-                        email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.properties.firstname ) || CustomEquals( p.NickName, contact.properties.firstname ) || (!String.IsNullOrEmpty( contact.properties.phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.properties.phone )) || CustomEquals( p.LastName, contact.properties.lastname ) ).ToList();
-                        for (var j = 0; j < email_matches.Count(); j++)
+                        email_matches = email_matches.Where( p => CustomEquals( p.FirstName, contact.properties.firstname ) || CustomEquals( p.NickName, contact.properties.firstname ) || ( !String.IsNullOrEmpty( contact.properties.phone ) && p.PhoneNumbers.Select( pn => pn.Number ).Contains( contact.properties.phone ) ) || CustomEquals( p.LastName, contact.properties.lastname ) ).ToList();
+                        for ( var j = 0; j < email_matches.Count(); j++ )
                         {
                             //Save this information in the excel sheet....
                             SaveData( worksheet, row, email_matches[j], contact );
@@ -228,23 +228,23 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //}
 
                 //Schedule HubSpot update if 1:1 match
-                if (person != null)
+                if ( person != null )
                 {
                     var properties = new List<HubspotPropertyUpdate>() { new HubspotPropertyUpdate() { property = "rock_id", value = person.Id.ToString() } };
 
                     //If the Hubspot Contact does not have FirstName, LastName, or Phone Number we want to update those...
-                    if (String.IsNullOrEmpty( contacts[i].properties.firstname ))
+                    if ( String.IsNullOrEmpty( contacts[i].properties.firstname ) )
                     {
                         properties.Add( new HubspotPropertyUpdate() { property = "firstname", value = person.NickName } );
                     }
-                    if (String.IsNullOrEmpty( contacts[i].properties.lastname ))
+                    if ( String.IsNullOrEmpty( contacts[i].properties.lastname ) )
                     {
                         properties.Add( new HubspotPropertyUpdate() { property = "lastname", value = person.LastName } );
                     }
-                    if (String.IsNullOrEmpty( contacts[i].properties.phone ))
+                    if ( String.IsNullOrEmpty( contacts[i].properties.phone ) )
                     {
                         PhoneNumber mobile = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == 12 );
-                        if (mobile != null && !mobile.IsUnlisted)
+                        if ( mobile != null && !mobile.IsUnlisted )
                         {
                             properties.Add( new HubspotPropertyUpdate() { property = "phone", value = mobile.NumberFormatted } );
                         }
@@ -255,10 +255,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
                 else
                 {
-                    if (inBucket)
+                    if ( inBucket )
                     {
                         var alreadyKnown = contacts[i].properties.has_potential_rock_match;
-                        if (alreadyKnown != "True")
+                        if ( alreadyKnown != "True" )
                         {
                             //We don't have an exact match but we have guesses, so update Hubspot to reflect that.
                             var bucket_prop = props.FirstOrDefault( p => p.label == "Rock Custom Has Potential Rock Match" );
@@ -285,30 +285,30 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             try
             {
                 //For Testing Write to Log File
-                //WriteToLog( string.Format( "{0}     ID: {1}{2}PROPS:{2}{3}", RockDateTime.Now.ToString( "HH:mm:ss.ffffff" ), current_id, Environment.NewLine, JsonConvert.SerializeObject( properties ) ) );
+                WriteToLog( string.Format( "{0}     ID: {1}{2}PROPS:{2}{3}", RockDateTime.Now.ToString( "HH:mm:ss.ffffff" ), current_id, Environment.NewLine, JsonConvert.SerializeObject( properties ) ) );
 
-                var client = new RestClient( url );
-                client.Timeout = -1;
-                var request = new RestRequest( Method.PATCH );
-                request.AddHeader( "accept", "application/json" );
-                request.AddHeader( "content-type", "application/json" );
-                request.AddHeader( "Authorization", $"Bearer {key}" );
-                request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
-                IRestResponse response = client.Execute( request );
-                if((int)response.StatusCode == 429)
-                {
-                    if(attempt < 3)
-                    {
-                        Thread.Sleep( 9000 );
-                        MakeRequest(current_id, url, properties, attempt + 1 );
-                    }
-                }
-                if (response.StatusCode != HttpStatusCode.OK)
-                {
-                    throw new Exception( response.Content );
-                }
+                //var client = new RestClient( url );
+                //client.Timeout = -1;
+                //var request = new RestRequest( Method.PATCH );
+                //request.AddHeader( "accept", "application/json" );
+                //request.AddHeader( "content-type", "application/json" );
+                //request.AddHeader( "Authorization", $"Bearer {key}" );
+                //request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
+                //IRestResponse response = client.Execute( request );
+                //if((int)response.StatusCode == 429)
+                //{
+                //    if(attempt < 3)
+                //    {
+                //        Thread.Sleep( 9000 );
+                //        MakeRequest(current_id, url, properties, attempt + 1 );
+                //    }
+                //}
+                //if (response.StatusCode != HttpStatusCode.OK)
+                //{
+                //    throw new Exception( response.Content );
+                //}
             }
-            catch (Exception e)
+            catch ( Exception e )
             {
                 var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
                 ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Request:{Environment.NewLine}{e.Message}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ) );
@@ -318,9 +318,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         private void WriteToLog( string message )
         {
             string logFile = System.Web.Hosting.HostingEnvironment.MapPath( "~/App_Data/Logs/HubSpotMatchLog.txt" );
-            using (System.IO.FileStream fs = new System.IO.FileStream( logFile, System.IO.FileMode.Append, System.IO.FileAccess.Write ))
+            using ( System.IO.FileStream fs = new System.IO.FileStream( logFile, System.IO.FileMode.Append, System.IO.FileAccess.Write ) )
             {
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter( fs ))
+                using ( System.IO.StreamWriter sw = new System.IO.StreamWriter( fs ) )
                 {
                     sw.WriteLine( message );
                 }
@@ -338,8 +338,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             IRestResponse contactResponse = contactClient.Execute( contactRequest );
             var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
             //Contacts with emails that do not already have Rock IDs in the desired business unit
-            contacts.AddRange( contactResults.results.Where( c => c.properties.email != null && c.properties.email != "" && (c.properties.rock_id == null || c.properties.rock_id == "" || c.properties.rock_id == "0") && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) ).ToList() );
-            if (contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500)
+            contacts.AddRange( contactResults.results.Where( c => c.properties.email != null && c.properties.email != "" && ( c.properties.rock_id == null || c.properties.rock_id == "" || c.properties.rock_id == "0" ) && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) ).ToList() );
+            if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
             {
                 GetContacts( contactResults.paging.next.link );
             }
@@ -347,7 +347,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
         private List<int> FindPersonIds( HSContactResult contact )
         {
-            using (RockContext context = new RockContext())
+            using ( RockContext context = new RockContext() )
             {
                 SqlParameter[] sqlParams = new SqlParameter[] {
                     new SqlParameter( "@rock_id", contact.properties.rock_id.HasValue() ? contact.properties.rock_id : "" ),
@@ -389,12 +389,12 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             //Add FirstNames
             worksheet.Cells[row, 1].Value = contact.properties.firstname;
             worksheet.Cells[row, 2].Value = person.NickName;
-            if (person.NickName != person.FirstName)
+            if ( person.NickName != person.FirstName )
             {
                 worksheet.Cells[row, 2].Value += " (" + person.FirstName + ")";
             }
             //Color cells if they match
-            if (CustomEquals( contact.properties.firstname, person.FirstName ) || CustomEquals( contact.properties.firstname, person.NickName ))
+            if ( CustomEquals( contact.properties.firstname, person.FirstName ) || CustomEquals( contact.properties.firstname, person.NickName ) )
             {
                 worksheet = ColorCell( worksheet, row, 1 );
                 worksheet = ColorCell( worksheet, row, 2 );
@@ -404,7 +404,7 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             worksheet.Cells[row, 3].Value = contact.properties.lastname;
             worksheet.Cells[row, 4].Value = person.LastName;
             //Color cells if they match 
-            if (CustomEquals( contact.properties.lastname, person.LastName ))
+            if ( CustomEquals( contact.properties.lastname, person.LastName ) )
             {
                 worksheet = ColorCell( worksheet, row, 3 );
                 worksheet = ColorCell( worksheet, row, 4 );
@@ -414,7 +414,7 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             worksheet.Cells[row, 5].Value = contact.properties.email;
             worksheet.Cells[row, 6].Value = person.Email;
             //Color cells if they match
-            if (CustomEquals( contact.properties.email, person.Email ))
+            if ( CustomEquals( contact.properties.email, person.Email ) )
             {
                 worksheet = ColorCell( worksheet, row, 5 );
                 worksheet = ColorCell( worksheet, row, 6 );
@@ -425,7 +425,7 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             worksheet.Cells[row, 7].Value = contact.properties.phone;
             worksheet.Cells[row, 8].Value = num != null ? num.Number : "No Matching Number";
             //Color cells if they match
-            if (num != null && CustomEquals( contact.properties.phone, num.Number ))
+            if ( num != null && CustomEquals( contact.properties.phone, num.Number ) )
             {
                 worksheet = ColorCell( worksheet, row, 7 );
                 worksheet = ColorCell( worksheet, row, 8 );
@@ -440,10 +440,10 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
 
             //Add Created Dates
-            if (!String.IsNullOrEmpty( contact.properties.createdate ))
+            if ( !String.IsNullOrEmpty( contact.properties.createdate ) )
             {
                 DateTime hubspotVal;
-                if (DateTime.TryParse( contact.properties.createdate, out hubspotVal ))
+                if ( DateTime.TryParse( contact.properties.createdate, out hubspotVal ) )
                 {
                     worksheet.Cells[row, 13].Value = hubspotVal.ToString( "MM/dd/yyyy" );
                 }
@@ -451,10 +451,10 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             worksheet.Cells[row, 14].Value = person.CreatedDateTime.Value.ToString( "MM/dd/yyyy" );
 
             //Add Modified Dates
-            if (!String.IsNullOrEmpty( contact.properties.lastmodifieddate ))
+            if ( !String.IsNullOrEmpty( contact.properties.lastmodifieddate ) )
             {
                 DateTime hubspotVal;
-                if (DateTime.TryParse( contact.properties.lastmodifieddate, out hubspotVal ))
+                if ( DateTime.TryParse( contact.properties.lastmodifieddate, out hubspotVal ) )
                 {
                     worksheet.Cells[row, 15].Value = hubspotVal.ToString( "MM/dd/yyyy" );
                 }
@@ -470,7 +470,7 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
 
         private bool CustomEquals( string a, string b )
         {
-            if (!String.IsNullOrEmpty( a ) && !String.IsNullOrEmpty( b ))
+            if ( !String.IsNullOrEmpty( a ) && !String.IsNullOrEmpty( b ) )
             {
                 return a.ToLower() == b.ToLower();
             }
@@ -525,6 +525,18 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
         public string id { get; set; }
         public HSContactProperties properties { get; set; }
         public string archived { get; set; }
+        public virtual int rock_id
+        {
+            get
+            {
+                int id = 0;
+                if ( properties != null && properties.rock_id != null )
+                {
+                    Int32.TryParse( properties.rock_id, out id );
+                }
+                return id;
+            }
+        }
     }
     public class HSResultPaging
     {
