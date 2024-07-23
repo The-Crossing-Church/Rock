@@ -196,13 +196,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
             //TIME TESTING
             timeData.Add( $"Job,Get PersonAttributeValues,{watch.Elapsed.TotalSeconds}" );
-
-            var baseGroupMemberQuery = gm_svc.Queryable( "Group.ParentGroup,GroupRole,Group.GroupType.GroupTypePurposeValue,Person,Group" );
-            var givingGroupsQuery = baseGroupMemberQuery.Join( aliasQuery.Select( pa => pa.Person ),
+            var baseGroupMemberQuery = gm_svc.Queryable( "Group.ParentGroup,GroupRole,Group.GroupType.GroupTypePurposeValue,Person" );
+            var personQry = aliasQuery.Select( pa => pa.Person );
+            var persons = personQry.ToList();
+            var givingGroupsQuery = baseGroupMemberQuery.Join( personQry,
                                                                 gm => gm.GroupId,
                                                                 p => p.GivingGroupId,
                                                                 ( gm, p ) => gm );
-            var familyGroupsQuery = baseGroupMemberQuery.Join( aliasQuery.Select( pa => pa.Person ),
+            var familyGroupsQuery = baseGroupMemberQuery.Join( personQry,
                                                                 gm => gm.GroupId,
                                                                 p => p.PrimaryFamilyId,
                                                                 ( gm, p ) => gm );
@@ -834,10 +835,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             contacts.AddRange( contactResults.results.Where( c => c.properties.rock_id != null && c.properties.rock_id != "" && c.properties.email != null && c.properties.email != "" && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids != "" && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) ).ToList() );
 
             //For Testing
-            //if ( contacts.Count >= 1000 )
-            //{
-            //    return;
-            //}
+            if ( contacts.Count >= 1000 )
+            {
+                return;
+            }
 
             if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
             {
