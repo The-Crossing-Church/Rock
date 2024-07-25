@@ -198,72 +198,56 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             timeData.Add( $"Job,Get PersonAttributeValues,{watch.Elapsed.TotalSeconds}" );
             var baseGroupMemberQuery = gm_svc.Queryable( "Group.ParentGroup,GroupRole,Group.GroupType.GroupTypePurposeValue,Person" );
             var personQry = aliasQuery.Select( pa => pa.Person );
-            var persons = personQry.ToList();
-            var givingGroupsQuery = baseGroupMemberQuery.Join( personQry,
-                                                                gm => gm.GroupId,
-                                                                p => p.GivingGroupId,
-                                                                ( gm, p ) => gm );
-            var familyGroupsQuery = baseGroupMemberQuery.Join( personQry,
-                                                                gm => gm.GroupId,
-                                                                p => p.PrimaryFamilyId,
-                                                                ( gm, p ) => gm );
-            var personMembershipsQuery = baseGroupMemberQuery.Join( aliasQuery,
+            var allGivingGroupIds = aliasQuery.Select( pa => pa.Person.GivingGroupId ).Distinct().ToList();
+            var allFamilyGroupIds = aliasQuery.Select( pa => pa.Person.PrimaryFamilyId ).Distinct().ToList();
+            var familyGroupsQuery = baseGroupMemberQuery.Where( gm => allFamilyGroupIds.Contains( gm.GroupId ) );
+            var personMembershipsQuery = baseGroupMemberQuery.Where( gm => gm.GroupTypeId != 10 && gm.GroupTypeId != 11 )
+                                                             .Join( aliasQuery,
                                                                 gm => gm.PersonId,
                                                                 pa => pa.PersonId,
                                                                 ( gm, pa ) => gm );
 
-            List<GroupMember> givingGroupMemberships = givingGroupsQuery.ToList();
             List<GroupMember> familyGroupMemberships = familyGroupsQuery.ToList();
             List<GroupMember> personGroupMemberships = personMembershipsQuery.ToList();
 
-            List<GroupMember> childKnownRelationships = new List<GroupMember>();
-            List<GroupMember> personsKnownRelationshipMemberships = new List<GroupMember>();
-            IQueryable<GroupMember> personsKnownRelationshipMembershipsQuery = gm_svc.Queryable( "Person" ).Where( gm => gm.GroupRoleId == 5 )
+            IQueryable<GroupMember> personsKnownRelationshipMembershipsQuery = gm_svc.Queryable( "Person,Group" ).Where( gm => gm.GroupTypeId == 11 && gm.GroupRoleId == 5 )
                                                         .Join( aliasQuery,
                                                             gm => gm.PersonId,
                                                             pa => pa.PersonId,
                                                             ( gm, pa ) => gm
-                                                        );//.Select( gm => gm.Group );
-            personsKnownRelationshipMemberships = personsKnownRelationshipMembershipsQuery.ToList();
-            var childRelationships = new List<int> { 4, 15, 17 };
-            List<int> krGroupIds = personsKnownRelationshipMemberships.Select( krgm => krgm.GroupId ).ToList();
-            childKnownRelationships = gm_svc.Queryable( "Person" ).Where( gm => childRelationships.Contains( gm.GroupRoleId ) && krGroupIds.Contains( gm.GroupId ) ).ToList();
-
+                                                        );
+            IQueryable<GroupMember> childKnownRelationshipsQry = gm_svc.Queryable( "Person" ).Where( gm => gm.GroupTypeId == 11 && ( gm.GroupRoleId == 15 || gm.GroupRoleId == 17 ) );
+            var children = personsKnownRelationshipMembershipsQuery.Join( childKnownRelationshipsQry,
+                    kr => kr.GroupId,
+                    cr => cr.GroupId,
+                    ( kr, cr ) => new { Parent = kr, Child = cr }
+                ).GroupBy( obj => obj.Parent.Person ).Select( grp => new ChildrenMap { Parent = grp.Key, Children = grp.Select( g => g.Child.Person ).ToList() } ).ToList();
 
             //TIME TESTING
             timeData.Add( $"Job,Get Known Child Relationships,{watch.Elapsed.TotalSeconds}" );
 
-            List<PersonAlias> givingAliases = new List<PersonAlias>();
-            List<FinancialTransaction> givingTransactions = new List<FinancialTransaction>();
-            List<FinancialTransaction> allTmbtTransactions = new List<FinancialTransaction>();
-            IQueryable<GroupMember> givingGroupMembers = gm_svc.Queryable().Join( aliasQuery.Select( pa => pa.Person ),
-                                                            gm => gm.GroupId,
-                                                            p => p.GivingGroupId,
-                                                            ( gm, p ) => gm
-                                                        );
-            IQueryable<PersonAlias> givingAliasQuery = pa_svc.Queryable( "Person" ).Join( givingGroupMembers,
-                   pa => pa.PersonId,
-                   gm => gm.PersonId,
-                   ( pa, gm ) => pa
-            );
-            givingAliases = givingAliasQuery.ToList();
-            List<int> givingAliasIds = givingAliases.Select( pa => pa.Id ).ToList();
+            IQueryable<GroupMember> allGivingGroupMemberships = gm_svc.Queryable().Where( gm => allGivingGroupIds.Contains( gm.GroupId ) );
+            var givingAliasesByGroup = pa_svc.Queryable().Join( allGivingGroupMemberships,
+                pa => pa.PersonId,
+                gm => gm.PersonId,
+                ( pa, gm ) => new { gm.GroupId, pa }
+                ).GroupBy( d => d.GroupId ).Select( grp => new { GroupId = grp.Key, AliasIds = grp.Select( g => g.pa.Id ).ToList() } );
+            var givingAliasesByPerson = aliasQuery.Join( givingAliasesByGroup,
+                    pa => pa.Person.GivingGroupId,
+                    g => g.GroupId,
+                    ( pa, g ) => new { pa.Person, GivingAliases = g.AliasIds }
+                );
 
-            //givingTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionTypeValueId == transactionTypeValueId && ft.AuthorizedPersonAliasId.HasValue && givingAliasIds.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList();
-            givingTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionTypeValueId == transactionTypeValueId && ft.AuthorizedPersonAliasId.HasValue ).Join( givingAliasQuery,
-                    ft => ft.AuthorizedPersonAliasId,
-                    pa => pa.Id,
-                    ( ft, pa ) => ft
-                ).ToList();
 
+            IQueryable<FinancialTransaction> allGivingTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionTypeValueId == transactionTypeValueId && ft.AuthorizedPersonAliasId.HasValue );
+
+            List<TransactionMap> givingTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allGivingTransactions.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
+
+            List<TransactionMap> tmbtTransactions = new List<TransactionMap>();
             if ( includeTMBT )
             {
-                allTmbtTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == account.Id ) )
-                                            .Join( givingAliasQuery,
-                                                ft => ft.AuthorizedPersonAliasId,
-                                                pa => pa.Id,
-                                                ( ft, pa ) => ft
-                                            ).ToList();
+                var allTmbtTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == account.Id ) );
+                tmbtTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allTmbtTransactions.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
             }
             #endregion
 
@@ -293,11 +277,6 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                                                                 pa => pa.PersonId,
                                                                                 ( av, pa ) => av
                                                                             ).ToList();
-                List<GroupMember> givingGroupSubset = givingGroupMemberships.Join( aliasSubset,
-                                                                                gm => gm.GroupId,
-                                                                                pa => pa.Person.GivingGroupId,
-                                                                                ( gm, pa ) => gm
-                                                                            ).ToList();
                 List<GroupMember> familyGroupSubset = familyGroupMemberships.Join( aliasSubset,
                                                                                 gm => gm.GroupId,
                                                                                 pa => pa.Person.PrimaryFamilyId,
@@ -308,35 +287,21 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                                                                         pa => pa.PersonId,
                                                                                         ( gm, pa ) => gm
                                                                                     ).ToList();
-                List<GroupMember> krSubset = personsKnownRelationshipMemberships.Join( aliasSubset,
-                                                                                    gm => gm.PersonId,
-                                                                                    pa => pa.PersonId,
-                                                                                    ( gm, pa ) => gm
-                                                                                ).ToList();
-                List<GroupMember> childKRSubset = childKnownRelationships.Join( krSubset,
-                                                                            gm => gm.GroupId,
-                                                                            pa => pa.GroupId,
-                                                                            ( gm, pa ) => gm
-                                                                        ).ToList();
-                List<int> givingGroupIds = aliasSubset.Where( pa => pa.Person.GivingGroupId.HasValue ).Select( pa => pa.Person.GivingGroupId.Value ).Distinct().ToList();
-                List<GroupMember> givingGroupMembersSubset = givingGroupMembers.Where( gm => givingGroupIds.Contains( gm.GroupId ) ).ToList();
-                List<PersonAlias> givingAliasSubset = givingAliases.Join( givingGroupMembersSubset,
-                                                                       pa => pa.PersonId,
-                                                                       gm => gm.PersonId,
-                                                                      ( pa, gm ) => pa
-                                                                    ).ToList();
-                List<int> givingAliasIdsSubset = givingAliasSubset.Select( pa => pa.Id ).ToList();
-
-                List<FinancialTransaction> financialTransactionSubset = givingTransactions.Join( givingAliasSubset,
-                                                                                                ft => ft.AuthorizedPersonAliasId,
-                                                                                                pa => pa.Id,
-                                                                                                ( ft, pa ) => ft
-                                                                                            ).ToList();
-                List<FinancialTransaction> tmbtTransactionSubset = allTmbtTransactions.Join( givingAliasSubset,
-                                                                                                ft => ft.AuthorizedPersonAliasId,
-                                                                                                pa => pa.Id,
-                                                                                                ( ft, pa ) => ft
-                                                                                            ).ToList();
+                var childrenSubset = children.Join( aliasSubset,
+                                                    c => c.Parent.Id,
+                                                    pa => pa.PersonId,
+                                                    ( c, pa ) => c
+                                                ).ToList();
+                List<TransactionMap> givingTransactionsSubset = givingTransactions.Join( aliasSubset,
+                        ft => ft.Person.Id,
+                        pa => pa.PersonId,
+                        ( ft, pa ) => ft
+                    ).ToList();
+                List<TransactionMap> tmbtTransactionsSubset = tmbtTransactions.Join( aliasSubset,
+                        ft => ft.Person.Id,
+                        pa => pa.PersonId,
+                        ( ft, pa ) => ft
+                    ).ToList();
 
                 var hubspotAttrs = attrs;
                 var hubspotProps = props;
@@ -344,7 +309,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 var hubspotKeys = attrKeys;
                 Task task = new Task( () =>
                 {
-                    ProcessList( subset, hubspotKeys, hubspotAttrs, hubspotProps, transactionTypeValueId, includeTMBT, hubspotTmbt, account, rockPersonAttributes, aliasSubset, personAttSubset, givingGroupSubset, familyGroupSubset, personMembershipsSubset, childKRSubset, krSubset, givingAliasSubset, givingAliasIdsSubset, financialTransactionSubset, tmbtTransactionSubset );
+                    ProcessList( subset, hubspotKeys, hubspotAttrs, hubspotProps, includeTMBT, hubspotTmbt, rockPersonAttributes, aliasSubset, personAttSubset, familyGroupSubset, personMembershipsSubset, childrenSubset, givingTransactionsSubset, tmbtTransactionsSubset );
                 } );
                 taskBag.Add( task );
                 task.Start();
@@ -353,8 +318,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             var x = 7;
         }
 
-        private void ProcessList( List<HSContactResult> contacts, List<string> attrKeys, List<HubspotProperty> attrs, List<HubspotProperty> props, int transactionTypeValueId, bool includeTMBT, List<HubspotProperty> tmbtProps, FinancialAccount account, List<Rock.Model.Attribute> rockPersonAttributes, List<PersonAlias> aliases, List<AttributeValue> personAttributeValues, List<GroupMember> givingGroupMemberships, List<GroupMember> familyGroupMemberships, List<GroupMember> personGroupMemberships, List<GroupMember> childKnownRelationships, List<GroupMember> personsKnownRelationshipMemberships, List<PersonAlias> givingAliases, List<int> allGivingAliasIds, List<FinancialTransaction> givingTransactions, List<FinancialTransaction> allTmbtTransactions )
+        private void ProcessList( List<HSContactResult> contacts, List<string> attrKeys, List<HubspotProperty> attrs, List<HubspotProperty> props, bool includeTMBT, List<HubspotProperty> tmbtProps, List<Rock.Model.Attribute> rockPersonAttributes, List<PersonAlias> aliases, List<AttributeValue> personAttributeValues, List<GroupMember> familyGroupMemberships, List<GroupMember> personGroupMemberships, List<ChildrenMap> childKnownRelationships, List<TransactionMap> givingTransactions, List<TransactionMap> allTmbtTransactions )
         {
+            int fiveYearsAgo = DateTime.Now.Year - 5; //Used for calculating child's age group
+            var child_ages_prop = props.FirstOrDefault( p => p.label == "Rock Custom Children's Age Groups" );
+
             //TIME TESTING
             List<string> timeData = new List<string>() { "Thread Id, Description, Elapsed Seconds" };
             Stopwatch watch = new Stopwatch();
@@ -386,7 +354,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //    person = personService.Get( 1 );
                 //}
 
-                if ( person != null )
+                if ( person != null && !person.IsDeceased )
                 {
                     try
                     {
@@ -495,25 +463,16 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         //TIME TESTING
                         timeData.Add( $"{Task.CurrentId},Finish Processing Properties For: {contacts[i].properties.rock_id},{watch.Elapsed.TotalSeconds}" );
 
-                        int fiveYearsAgo = DateTime.Now.Year - 5; //Used for calculating child's age group
                         //Special Property for Parents
-                        if ( familyGroupMemberships.FirstOrDefault( gm => gm.PersonId == person.Id ).GroupRole.Name == "Adult" )
+                        if ( person.AgeClassification == AgeClassification.Adult )
                         {
                             var family = familyGroupMemberships.Where( p => p.GroupId == person.PrimaryFamilyId ).ToList();
                             //Direct Family Members
-                            var child_ages_prop = props.FirstOrDefault( p => p.label == "Rock Custom Children's Age Groups" );
                             var children = family.Where( gm => gm.Person != null && gm.PersonId != person.Id && gm.Person.AgeClassification == AgeClassification.Child ).Select( gm => gm.Person ).ToList();
                             var agegroups = "";
                             //Known Relationships
                             children.AddRange(
-                                personsKnownRelationshipMemberships
-                                    .Where( gm => gm.PersonId == person.Id )
-                                    .Join( childKnownRelationships,
-                                        gm => gm.GroupId,
-                                        cgm => cgm.GroupId,
-                                        ( gm, cgm ) => cgm
-                                    ).Select( gm => gm.Person )
-                                    .ToList()
+                                childKnownRelationships.Where( kr => kr.Parent.Id == person.Id ).SelectMany( kr => kr.Children ).ToList()
                             );
                             agegroups = String.Join( ",", children.Distinct().Select( p =>
                                 {
@@ -561,7 +520,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         //TIME TESTING
                         timeData.Add( $"{Task.CurrentId},Finish Processing Child Age Groups For: {contacts[i].properties.rock_id},{watch.Elapsed.TotalSeconds}" );
 
-                        if ( person.Members != null && person.Members.Count() > 0 )
+                        var memberships = personGroupMemberships.Where( gm => gm.PersonId == person.Id );
+                        if ( memberships.Count() > 0 )
                         {
                             //Special properties for a person's group membership 
                             //Currently in adult small group, currently in a 20s small group, currently in veritas small group, currently serving, currently in connections, membership list
@@ -576,7 +536,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                                 term = "summer";
                             }
                             //All current memberships for this year
-                            var memberships = person.Members.Where( m => m.Group != null && m.GroupMemberStatus == GroupMemberStatus.Active && m.Group.IsActive && ( m.Group.Name.Contains( today.ToString( "yyyy" ) ) ||
+                            memberships = memberships.Where( m => m.Group != null && m.GroupMemberStatus == GroupMemberStatus.Active && m.Group.IsActive && ( m.Group.Name.Contains( today.ToString( "yyyy" ) ) ||
                                  m.Group.Name.Contains( $"{today.AddYears( -1 ).ToString( "yyyy" )}-{today.ToString( "yy" )}" ) ) ).ToList();
                             //Where the group name has Fall/Winter/Summer or Purpose == Serving Area
                             var current_serving = memberships.Where( m => m.Group.Name.ToLower().Contains( term ) || ( m.Group.GroupType.GroupTypePurposeValue != null && m.Group.GroupType.GroupTypePurposeValue.Value == "Serving Area" ) ).ToList();
@@ -639,20 +599,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                         timeData.Add( $"{Task.CurrentId},Finish Processing Group Memberships For: {contacts[i].properties.rock_id},{watch.Elapsed.TotalSeconds}" );
 
                         //Custom Giving Props
-                        if ( person.GivingGroupId.HasValue )
+                        TransactionMap transactionMap = givingTransactions.FirstOrDefault( ft => ft.Person.Id == person.Id );
+                        if ( transactionMap != null )
                         {
-                            var personsGivingGroup = givingGroupMemberships.Where( gm => gm.GroupId == person.GivingGroupId ).ToList();
-                            var givingAliasIds = givingAliases.Join( personsGivingGroup,
-                                    pa => pa.PersonId,
-                                    gm => gm.PersonId,
-                                    ( pa, gm ) => pa
-                                ).Select( pa => pa.Id ).ToList();
-
-                            var validTransactions = givingTransactions.Join( givingAliasIds,
-                                    ft => ft.AuthorizedPersonAliasId,
-                                    id => id,
-                                    ( ft, id ) => ft
-                            ).OrderBy( ft => ft.TransactionDateTime );
+                            var validTransactions = transactionMap.ValidTransactions.OrderBy( ft => ft.TransactionDateTime );
 
                             if ( validTransactions.Count() > 0 )
                             {
@@ -689,13 +639,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             //    }
                             //}
 
-                            if ( includeTMBT && account != null )
+                            TransactionMap tmbtTransaction = allTmbtTransactions.FirstOrDefault( ft => ft.Person.Id == person.Id );
+                            if ( includeTMBT && tmbtTransaction != null )
                             {
-                                var tmbtTransactions = allTmbtTransactions.Join( givingAliasIds,
-                                    ft => ft.AuthorizedPersonAliasId,
-                                    id => id,
-                                    ( ft, id ) => ft
-                                ).OrderBy( ft => ft.TransactionDateTime );
+                                var tmbtTransactions = tmbtTransaction.ValidTransactions.OrderBy( ft => ft.TransactionDateTime );
                                 if ( tmbtTransactions.Count() > 0 )
                                 {
                                     //Total Amount
@@ -765,7 +712,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
             foreach ( string line in timeData )
             {
-                WriteToLog( line, "~/App_Data/Logs/HubSpotPatchTiming_DBFirst.csv" );
+                WriteToLog( line, $"~/App_Data/Logs/HubSpotPatchTiming_DBFirst_{Task.CurrentId}.csv" );
             }
             watch.Stop();
             WriteToLog( $"{Task.CurrentId},Thread Complete,{watch.Elapsed.TotalSeconds}", "~/App_Data/Logs/HubSpotPatchTiming_DBFirst.csv" );
@@ -835,10 +782,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             contacts.AddRange( contactResults.results.Where( c => c.properties.rock_id != null && c.properties.rock_id != "" && c.properties.email != null && c.properties.email != "" && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids != "" && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) ).ToList() );
 
             //For Testing
-            if ( contacts.Count >= 1000 )
-            {
-                return;
-            }
+            //if ( contacts.Count >= 1000 )
+            //{
+            //    return;
+            //}
 
             if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
             {
@@ -859,6 +806,16 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
             }
             return "";
+        }
+        private class ChildrenMap
+        {
+            public Person Parent { get; set; }
+            public List<Person> Children { get; set; }
+        }
+        private class TransactionMap
+        {
+            public Person Person { get; set; }
+            public List<FinancialTransaction> ValidTransactions { get; set; }
         }
     }
 }
