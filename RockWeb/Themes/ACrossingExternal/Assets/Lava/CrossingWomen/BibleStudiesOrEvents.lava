@@ -134,7 +134,7 @@
                                         {% assign lastDate = d %}
                                     {% endif %}
                                 {% endfor %}
-                                {{dates | First | Date:'ddd tt'}} {{dates | First | Date:'MMMM d'}}{% if firstDate != lastDate %} - {{dates | Last | Date:'MMMM d'}}{% endif %}<br/>
+                                <span class="mr-2">{{dates | First | Date:'ddd tt'}}</span> {{dates | First | Date:'MMMM d'}}{% if firstDate != lastDate %} - {{dates | Last | Date:'MMMM d'}}{% endif %}<br/>
                                 {% if occMeetings > 1 or forloop.last == true %}
                                     Meets {{numMeetings}} {{'time' | PluralizeForQuantity:numMeetings}} <br/>
                                 {% endif %}
