@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Rock.Attribute;
 using Rock.Model;
 using Rock.Web.Cache;
 using RestSharp;
 using Newtonsoft.Json;
 using Rock.Web.UI.Controls;
+using System.ComponentModel;
 
 namespace Rock.Blocks.Plugins.Cms
 {
+    [DisplayName( "HubSpot Blog Search" )]
+    [Category( "Obsidian > Plugin > CMS" )]
+    [Description( "A block to match the new Content Collection search" )]
+    [IconCssClass( "fas fa-book-open" )]
     #region BlockAttributes
     [TextField( "Global Attribute Key", "The attribute key of the Global attribute that stores the HubSpot Private App Secret", true, "", key: AttributeKey.HubSpotAttributeKey )]
     [LavaCommandsField( "Enabled Lava Commands", "", false, key: AttributeKey.LavaCommands )]
@@ -84,7 +87,6 @@ namespace Rock.Blocks.Plugins.Cms
         }
         private List<BlogPost> SearchBlog( string q, List<string> tags )
         {
-
             //Get blog posts that match
             var postClient = new RestClient( "https://api.hubapi.com/contentsearch/v2/search?portalId=6480645&term=" + q + "," + String.Join( ",", tags ) + "&type=BLOG_POST&state=PUBLISHED&domain=info.thecrossingchurch.com" );
             postClient.Timeout = -1;
