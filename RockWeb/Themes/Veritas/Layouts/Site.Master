@@ -147,7 +147,7 @@
                                 <a href="/Veritas/Serving">Serve With Us</a>
                             </li>
                             <li class="menu-item main-nav-item">
-                                <a href="/Registration/veritas-rides">I Need a Ride</a>
+                                <a href="/Connect">Connect</a>
                             </li>
                             <li class="menu-item main-nav-item">
                                 <a class="btn btn-accent" href="/Veritas/Events?aud=College">Events</a>
@@ -173,7 +173,7 @@
                                 <a href="/Veritas/Serving" class="text-white">Serve With Us</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/Registration/veritas-rides" class="text-white">I Need a Ride</a>
+                                <a href="/Connect" class="text-white">Connect</a>
                             </li>
                             <li class="menu-item">
                                 <a href="/Veritas/Events?aud=College" class="text-white">Events</a>
