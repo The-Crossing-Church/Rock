@@ -560,7 +560,6 @@ namespace org.crossingchurch.OurRock.Reporting.DataFilter
             {
                 ddlSecondaryTargetFKCol.Visible = false;
             }
-
         }
 
         protected void ddlSecondaryEntity_SelectedIndexChange( object sender, EventArgs e )
@@ -673,6 +672,10 @@ namespace org.crossingchurch.OurRock.Reporting.DataFilter
                         ddlEntityFilterOption.Items.Add( new ListItem( "Greater Than Or Equal To" ) );
                         ddlEntityFilterOption.Items.Add( new ListItem( "Less Than" ) );
                         ddlEntityFilterOption.Items.Add( new ListItem( "Less Than Or Equal To" ) );
+                    }
+                    if ( selectedDataType.data_type.Contains( "date" ) )
+                    {
+                        ddlEntityFilterOption.Items.Add( new ListItem( "Range" ) );
                     }
                 }
                 colEntityFilterOption.Visible = true;
