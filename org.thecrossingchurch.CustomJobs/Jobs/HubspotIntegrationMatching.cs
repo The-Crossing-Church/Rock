@@ -444,7 +444,7 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
 
             //Add links
             worksheet.Cells[row, 11].Value = "https://app.hubspot.com/contacts/6480645/contact/" + contact.id;
-            worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Perosn/" + person.Id;
+            worksheet.Cells[row, 12].Value = "https://rock.thecrossingchurch.com/Person/" + person.Id;
 
             //Add Created Dates
             if ( !String.IsNullOrEmpty( contact.properties.createdate ) )
