@@ -65,7 +65,7 @@
         $(document).ready(function () {
             $('#txtSearch').bind("enterKey", function (e) {
                 console.log('The Search content is: ' + $('#txtSearch').val())
-                window.location.href = "/Search?q=" + $('#txtSearch').val()
+                window.location.href = "/Search?s=1&q=" + $('#txtSearch').val()
             });
             $('#txtSearch').keyup(function (e) {
                 if (e.keyCode == 13) {
@@ -73,7 +73,7 @@
                     var search = document.getElementById('txtSearch');
                     if (document.activeElement === search) {
                         console.log('The Search content is: ' + $('#txtSearch').val())
-                        window.location.href = "/Search?q=" + $('#txtSearch').val()
+                        window.location.href = "/Search?s=1&q=" + $('#txtSearch').val()
                     }
                 }
             });
@@ -82,7 +82,7 @@
                 if (document.activeElement === search) {
                     e.preventDefault();
                     console.log('The Search content is: ' + $('#txtSearch').val())
-                    window.location.href = "/Search?q=" + $('#txtSearch').val()
+                    window.location.href = "/Search?s=1&q=" + $('#txtSearch').val()
                 }
             })
             $('#mobile-menu-toggle').click(function () {
