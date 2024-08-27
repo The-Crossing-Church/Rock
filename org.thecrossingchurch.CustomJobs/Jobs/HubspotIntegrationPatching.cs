@@ -24,15 +24,14 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Jobs;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 using Newtonsoft.Json;
-using System.Net;
 using System.Reflection;
 using RestSharp;
 using Rock.Security;
 using System.ComponentModel;
-using System.Threading;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
@@ -43,25 +42,130 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     /// </summary>
     [DisplayName( "Hubspot Integration: Update Records" )]
     [Description( "This job only updates Hubspot contacts with a valid Rock ID with additional info from Rock." )]
-    [DisallowConcurrentExecution]
 
-    [TextField( "AttributeKey", "", true, "HubspotAPIKeyGlobal" )]
-    [TextField( "Business Unit", "Hubspot Business Unit value", true, "0" )]
-    [DefinedValueField( "Contribution Transaction Type",
-        AllowMultiple = false,
-        AllowAddingNewValues = false,
-        DefaultValue = Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION,
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_TYPE
+    #region General Settings Job Attributes 
+    [TextField( "Global Attribute Key for HubSpot API Bearer Token",
+        Description = "For ease of rotating, your HubSpot API Key could be stored in a global attribute encrypted type attribute.",
+        IsRequired = true,
+        DefaultValue = "HubspotAPIKeyGlobal",
+        Key = AttributeKey.APIKeyAttribute,
+        Category = "General Settings",
+        Order = 0
     )]
-    [BooleanField( "Include TMBT", defaultValue: false )]
-    [AccountField( "Financial Account", "If syncing a total amount given which fund should we sync from" )]
-    [IntegerField( "Number of Threads", "How many threads we should split this job into", true, 50 )]
-    public class HubspotIntegrationPatching : IJob
+    [TextField( "Business Unit",
+        Description = "Hubspot Business Unit value, add hs_all_assigned_business_unit_ids to the additional properties if you are using business units",
+        IsRequired = false,
+        DefaultValue = "0",
+        Key = AttributeKey.BusinessUnit,
+        Category = "General Settings",
+        Order = 2
+    )]
+    [ValueListField( "HubSpot Property Group Names",
+        Description = "The internal names of the property groups that contain values that should sync to Rock Properties, Attributes, and Custom Calculations",
+        IsRequired = true,
+        DefaultValue = "",
+        ValuePrompt = "group_name",
+        Key = AttributeKey.PropertyGroups,
+        Category = "General Settings",
+        Order = 3
+    )]
+    [TextField( "Additional HubSpot Properties",
+        Description = "If properties outside of Id, Name, Email, Phone, Created Date, and Last Modified Date are required add them as a comma seperated list here.",
+        IsRequired = false,
+        DefaultValue = "",
+        Key = AttributeKey.AdditionalHubSpotProps,
+        Category = "General Settings",
+        Order = 4 )]
+    [DefinedValueField( "Valid Transaction Types",
+        Description = "If you need financial data, specify the transaction types that should be available for processing. If both this field and financial account field are empty, no finanical data will be available for processing.",
+        AllowMultiple = true,
+        AllowAddingNewValues = false,
+        IsRequired = false,
+        DefaultValue = Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION,
+        DefinedTypeGuid = Rock.SystemGuid.DefinedType.FINANCIAL_TRANSACTION_TYPE,
+        Key = AttributeKey.TransactionTypeValue,
+        Category = "General Settings",
+        Order = 5
+    )]
+    [AccountsField( "Financial Account",
+        Description = "If you need financial data, specify which accounts should be included in processing. If both this field and financial transaction type field are empty, no finanical data will be available for processing.",
+        IsRequired = false,
+        Key = AttributeKey.FinancialAccount,
+        Category = "General Settings",
+        Order = 6
+    )]
+    [IntegerField( "Number of Threads",
+        Description = "How many threads we should split this job into",
+        IsRequired = true,
+        DefaultValue = "50",
+        Key = AttributeKey.ThreadCount,
+        Category = "General Settings",
+        Order = 7
+    )]
+    #endregion
+
+    #region Testing Environment Configuration Job Attributes 
+    [BooleanField( "Disable POST/PATCH Requests",
+        Description = "Selecting this will stop this Rock Job from writing any data to HubSpot",
+        IsRequired = true,
+        DefaultBooleanValue = true,
+        Category = "Testing Environment Configuration",
+        Key = AttributeKey.DisableUpdates,
+        Order = 0
+    )]
+    [CustomDropdownListField( "Sync Type",
+        Description = "Determines what the sync should do when updating HubSpot data, whether that should be logging the data instead of making a request, syncing to a specific HubSpot record for testing, or the full sync for production use.",
+        ListSource = "None^No Sync,Single^Sync to Single HubSpot Record,Full^Regular Sync for Production Use",
+        DefaultValue = "None",
+        Category = "Testing Environment Configuration",
+        Key = AttributeKey.SyncType,
+        Order = 1
+    )]
+    [IntegerField( "HubSpot Record ID",
+        Description = "If you wish to test by syncing data to a specific HubSpot record, enter the ID here. URL for POST/PATCH will be updated to use this ID.",
+        IsRequired = false,
+        DefaultValue = "",
+        Key = AttributeKey.HubSpotRecordId,
+        Category = "Testing Environment Configuration",
+        Order = 2
+    )]
+    [IntegerField( "Rock Record ID",
+        Description = "If you wish to test by syncing data of a specific Rock record, enter the ID here. Only the record with this ID will be processed.",
+        IsRequired = false,
+        DefaultValue = "",
+        Key = AttributeKey.RockRecordId,
+        Category = "Testing Environment Configuration",
+        Order = 3
+    )]
+    #endregion
+
+    #region Custom Configuration Attributes
+    [AccountField( "TMBT Financial Account", "For the custom TMBT props, the financial account to use for those calculations.", false, "", "Custom Configuration", 0, "TMBTAccount" )]
+    #endregion
+    public class HubspotIntegrationPatching : RockJob
     {
         private string key { get; set; }
         private List<HSContactResult> contacts { get; set; }
         private int request_count { get; set; }
         private string businessUnit { get; set; }
+
+        #region Attribute Keys
+        private class AttributeKey
+        {
+            public const string APIKeyAttribute = "AttributeKey";
+            public const string BusinessUnit = "BusinessUnit";
+            public const string PropertyGroups = "PropertyGroups";
+            public const string AdditionalHubSpotProps = "AdditionalHubSpotProps";
+            public const string ThreadCount = "ThreadCount";
+            public const string TransactionTypeValue = "TransactionTypeValue";
+            public const string FinancialAccount = "FinancialAccount";
+
+            public const string DisableUpdates = "DisableUpdates";
+            public const string SyncType = "SyncType";
+            public const string HubSpotRecordId = "HubSpotRecordId";
+            public const string RockRecordId = "RockRecordId";
+        }
+        #endregion Attribute Keys
 
         /// <summary> 
         /// Empty constructor for job initialization
@@ -81,24 +185,22 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         /// <see cref="ITrigger" /> fires that is associated with
         /// the <see cref="IJob" />.
         /// </summary>
-        public virtual void Execute( IJobExecutionContext context )
+        public override void Execute()
         {
-            JobDataMap dataMap = context.JobDetail.JobDataMap;
 
             //Bearer Token, but I didn't change the Attribute Key
-            string attrKey = dataMap.GetString( "AttributeKey" );
+            string attrKey = GetAttributeValue( AttributeKey.APIKeyAttribute );
             key = Encryption.DecryptString( GlobalAttributesCache.Get().GetValue( attrKey ) );
-            businessUnit = dataMap.GetString( "BusinessUnit" );
-            int numThreads = dataMap.GetString( "NumberofThreads" ).AsInteger();
+            businessUnit = GetAttributeValue( AttributeKey.BusinessUnit );
+            int numThreads = GetAttributeValue( AttributeKey.ThreadCount ).AsInteger();
             if ( numThreads <= 0 )
             {
-                numThreads = 50;
+                numThreads = 50; //Default number of threads if not configured
             }
-
 
             PersonService personService = new PersonService( new RockContext() );
 
-            //Get Hubspot Properties in Rock Information Group
+            //Get Hubspot Properties
             //This will allow us to add properties temporarily to the sync and then not continue to have them forever
             var propClient = new RestClient( "https://api.hubapi.com/crm/v3/properties/contacts?properties=name,label,createdUserId,groupName,options,fieldType" );
             propClient.Timeout = -1;
@@ -106,36 +208,47 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             propRequest.AddHeader( "Authorization", $"Bearer {key}" );
             IRestResponse propResponse = propClient.Execute( propRequest );
             var props = new List<HubspotProperty>();
-            var tmbtProps = new List<HubspotProperty>();
+            //var tmbtProps = new List<HubspotProperty>();
             var propsQry = JsonConvert.DeserializeObject<HSPropertyQueryResult>( propResponse.Content );
             props = propsQry.results;
 
-            //Filter to props in Rock Information Group
-            props = props.Where( p => p.groupName == "rock_information" ).ToList();
-            tmbtProps = propsQry.results.Where( p => p.groupName == "rock_tmbt_information" ).ToList();
-            //Business Unit hs_all_assigned_business_unit_ids
-            //Save a list of the ones that are Rock attributes
+            //Filter to props in the desired property groups for the sync
+            string rawPropertyGroupNames = GetAttributeValue( AttributeKey.PropertyGroups );
+            List<string> propertyGroupNames = rawPropertyGroupNames.Split( ',' ).ToList();
+            props = props.Where( p => propertyGroupNames.Contains( p.groupName ) ).ToList();
+
+            //Save a list of the properties that are Rock attributes as denoted by their label's naming convention
             var attrs = props.Where( p => p.label.Contains( "Rock Attribute " ) ).ToList();
             RockContext _context = new RockContext();
             List<string> attrKeys = attrs.Select( hs => hs.label.Replace( "Rock Attribute ", "" ) ).ToList();
 
-            Guid transactionTypeGuid = dataMap.GetString( "ContributionTransactionType" ).AsGuid();
-            var transactionTypeDefinedValue = new DefinedValueService( _context ).Get( transactionTypeGuid );
-            int transactionTypeValueId = transactionTypeDefinedValue.Id;
+            List<Guid?> transactionTypeGuids = GetAttributeValue( AttributeKey.TransactionTypeValue ).Split( ',' ).AsGuidOrNullList();
+            var transactionTypeDefinedValues = new DefinedValueService( _context ).Queryable().Where( dv => transactionTypeGuids.Contains( dv.Guid ) );
+            List<int> transactionTypeValueIds = transactionTypeDefinedValues.Select( dv => dv.Id ).ToList();
 
-            bool includeTMBT = dataMap.GetString( "IncludeTMBT" ).AsBoolean();
-            Guid? accountGuid = dataMap.GetString( "FinancialAccount" ).AsGuidOrNull();
-            FinancialAccount account = null;
-            if ( accountGuid.HasValue )
+            List<Guid?> accountGuids = GetAttributeValue( AttributeKey.FinancialAccount ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
+            List<FinancialAccount> accounts = new List<FinancialAccount>();
+            if ( accountGuids.Count > 0 )
             {
-                account = new FinancialAccountService( _context ).Get( accountGuid.Value );
+                accounts = new FinancialAccountService( _context ).Queryable().Where( fa => accountGuids.Contains( fa.Guid ) ).ToList();
             }
 
+            //TODO COOKSEY: Custom Props Interface
+            var additionalPropertiesInterface = typeof( IAdditionalProperties );
+            var implementations = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany( s => s.GetTypes() )
+                .Where( p => additionalPropertiesInterface.IsAssignableFrom( p ) && !p.IsInterface );
+
+            var x = 7;
+            x++;
+
             //Get List of all contacts from Hubspot
+            //Business Unit hs_all_assigned_business_unit_ids
             contacts = new List<HSContactResult>();
             request_count = 0;
             GetContacts( "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,phone,hs_all_assigned_business_unit_ids,rock_id,which_best_describes_your_involvement_with_the_crossing_,has_potential_rock_match,createdate,lastmodifieddate" );
 
+            //Get Attributes for Person Entity who's keys are in the list obtained from HubSpot 
             var rockAttributes = new AttributeService( _context ).Queryable( "FieldType" ).Where( a => a.EntityTypeId == 15 && attrKeys.Contains( a.Key ) );
             List<Rock.Model.Attribute> rockPersonAttributes = new List<Rock.Model.Attribute>();
             rockPersonAttributes = rockAttributes.ToList();
@@ -157,11 +270,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
                 var hubspotAttrs = attrs;
                 var hubspotProps = props;
-                var hubspotTmbt = tmbtProps;
                 var hubspotKeys = attrKeys;
                 Task task = new Task( () =>
                 {
-                    ProcessList( subset, hubspotKeys, hubspotAttrs, hubspotProps, includeTMBT, hubspotTmbt, rockPersonAttributes, transactionTypeValueId, account );
+                    ProcessList( subset, hubspotKeys, hubspotAttrs, hubspotProps, rockPersonAttributes, transactionTypeValueIds, accounts );
                 } );
                 taskBag.Add( task );
                 task.Start();
@@ -169,7 +281,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             Task.WaitAll( taskBag.ToArray() );
         }
 
-        private void ProcessList( List<HSContactResult> contacts, List<string> attrKeys, List<HubspotProperty> attrs, List<HubspotProperty> props, bool includeTMBT, List<HubspotProperty> tmbtProps, List<Rock.Model.Attribute> rockPersonAttributes, int transactionTypeValueId, FinancialAccount account )
+        private void ProcessList( List<HSContactResult> contacts, List<string> attrKeys, List<HubspotProperty> attrs, List<HubspotProperty> props, List<Rock.Model.Attribute> rockPersonAttributes, List<int> transactionTypeValueIds, List<FinancialAccount> accounts )
         {
             int sixYearsAgo = DateTime.Now.Year - 6; //Used for calculating child's age group
             var child_ages_prop = props.FirstOrDefault( p => p.label == "Rock Custom Children's Age Groups" );
@@ -253,16 +365,17 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     ( pa, g ) => new { pa.Person, GivingAliases = g.AliasIds }
                 );
 
-            IQueryable<FinancialTransaction> allGivingTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionTypeValueId == transactionTypeValueId && ft.AuthorizedPersonAliasId.HasValue );
+            IQueryable<FinancialTransaction> allValidTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => transactionTypeValueIds.Contains( ft.TransactionTypeValueId ) && ft.AuthorizedPersonAliasId.HasValue );
 
-            List<TransactionMap> givingTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allGivingTransactions.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
+            List<TransactionMap> givingTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allValidTransactions.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
 
+            //TODO COOKSEY: Fix Cusotm implementation
             List<TransactionMap> allTmbtTransactions = new List<TransactionMap>();
-            if ( includeTMBT )
-            {
-                var allTmbtTransactionsQry = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == account.Id ) );
-                allTmbtTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allTmbtTransactionsQry.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
-            }
+            //if ( includeTMBT )
+            //{
+            //    var allTmbtTransactionsQry = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == account.Id ) );
+            //    allTmbtTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allTmbtTransactionsQry.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
+            //}
             #endregion
 
 
@@ -560,40 +673,40 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
 
                             TransactionMap tmbtTransaction = allTmbtTransactions.FirstOrDefault( ft => ft.Person.Id == person.Id );
-                            if ( includeTMBT && tmbtTransaction != null )
-                            {
-                                var tmbtTransactions = tmbtTransaction.ValidTransactions.OrderBy( ft => ft.TransactionDateTime );
-                                if ( tmbtTransactions.Count() > 0 )
-                                {
-                                    //Total Amount
-                                    var total = tmbtTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) );
-                                    var total_contribution_amount_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Total TMBT Contribution Amount" );
-                                    properties.Add( new HubspotPropertyUpdate() { property = total_contribution_amount_prop.name, value = total.ToString() } );
-                                    var first_contribution_amt_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom First TMBT Contribution Amount" );
-                                    properties.Add( new HubspotPropertyUpdate() { property = first_contribution_amt_prop.name, value = tmbtTransactions.First().TotalAmount.ToString() } );
-                                    var first_contribution_date_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom First TMBT Contribution Date" );
-                                    string firstDate = ConvertDate( tmbtTransactions.First().TransactionDateTime );
-                                    if ( !String.IsNullOrEmpty( firstDate ) )
-                                    {
-                                        properties.Add( new HubspotPropertyUpdate() { property = first_contribution_date_prop.name, value = firstDate } );
-                                    }
+                            //if ( includeTMBT && tmbtTransaction != null )
+                            //{
+                            //    var tmbtTransactions = tmbtTransaction.ValidTransactions.OrderBy( ft => ft.TransactionDateTime );
+                            //    if ( tmbtTransactions.Count() > 0 )
+                            //    {
+                            //        //Total Amount
+                            //        var total = tmbtTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) );
+                            //        var total_contribution_amount_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Total TMBT Contribution Amount" );
+                            //        properties.Add( new HubspotPropertyUpdate() { property = total_contribution_amount_prop.name, value = total.ToString() } );
+                            //        var first_contribution_amt_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom First TMBT Contribution Amount" );
+                            //        properties.Add( new HubspotPropertyUpdate() { property = first_contribution_amt_prop.name, value = tmbtTransactions.First().TotalAmount.ToString() } );
+                            //        var first_contribution_date_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom First TMBT Contribution Date" );
+                            //        string firstDate = ConvertDate( tmbtTransactions.First().TransactionDateTime );
+                            //        if ( !String.IsNullOrEmpty( firstDate ) )
+                            //        {
+                            //            properties.Add( new HubspotPropertyUpdate() { property = first_contribution_date_prop.name, value = firstDate } );
+                            //        }
 
-                                    string frquency = String.Join( ", ", tmbtTransactions.Select( ft => ft.ScheduledTransactionId.HasValue ? ft.ScheduledTransaction.TransactionFrequencyValue.Description : "One Time" ).Distinct() );
-                                    var frequency_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom TMBT Contribution Frequency" );
-                                    properties.Add( new HubspotPropertyUpdate() { property = frequency_prop.name, value = frquency } );
+                            //        string frquency = String.Join( ", ", tmbtTransactions.Select( ft => ft.ScheduledTransactionId.HasValue ? ft.ScheduledTransaction.TransactionFrequencyValue.Description : "One Time" ).Distinct() );
+                            //        var frequency_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom TMBT Contribution Frequency" );
+                            //        properties.Add( new HubspotPropertyUpdate() { property = frequency_prop.name, value = frquency } );
 
-                                    tmbtTransactions = tmbtTransactions.OrderByDescending( ft => ft.TransactionDateTime );
+                            //        tmbtTransactions = tmbtTransactions.OrderByDescending( ft => ft.TransactionDateTime );
 
-                                    var last_contribution_amt_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Last TMBT Contribution Amount" );
-                                    properties.Add( new HubspotPropertyUpdate() { property = last_contribution_amt_prop.name, value = tmbtTransactions.First().TotalAmount.ToString() } );
-                                    var last_contribution_date_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Last TMBT Contribution Date" );
-                                    string lastDate = ConvertDate( tmbtTransactions.First().TransactionDateTime );
-                                    if ( !String.IsNullOrEmpty( lastDate ) )
-                                    {
-                                        properties.Add( new HubspotPropertyUpdate() { property = last_contribution_date_prop.name, value = lastDate } );
-                                    }
-                                }
-                            }
+                            //        var last_contribution_amt_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Last TMBT Contribution Amount" );
+                            //        properties.Add( new HubspotPropertyUpdate() { property = last_contribution_amt_prop.name, value = tmbtTransactions.First().TotalAmount.ToString() } );
+                            //        var last_contribution_date_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Last TMBT Contribution Date" );
+                            //        string lastDate = ConvertDate( tmbtTransactions.First().TransactionDateTime );
+                            //        if ( !String.IsNullOrEmpty( lastDate ) )
+                            //        {
+                            //            properties.Add( new HubspotPropertyUpdate() { property = last_contribution_date_prop.name, value = lastDate } );
+                            //        }
+                            //    }
+                            //}
                         }
 
                         //If the Hubspot Contact does not have FirstName, LastName, or Phone Number we want to update those...

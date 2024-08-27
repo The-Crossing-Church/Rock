@@ -1,49 +1,22 @@
-﻿// <copyright>
-// Copyright by the Spark Development Network
-//
-// Licensed under the Rock Community License (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.rockrms.com/license
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
-using System.Web;
 using Quartz;
 using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using Rock.Web.UI;
-using Rock.Web.UI.Controls;
 using Newtonsoft.Json;
-using System.Net;
-using System.IO;
-using System.Reflection;
 using OfficeOpenXml;
 using System.Drawing;
 using OfficeOpenXml.Style;
 using RestSharp;
 using Rock.Security;
 using System.Diagnostics;
-using static Quartz.Plugin.Xml.XMLSchedulingDataProcessorPlugin;
 using RestSharp.Extensions;
-using Rock.Workflow.Action;
 using System.ComponentModel;
 using System.Threading;
 
@@ -136,6 +109,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             request_count = 0;
             //GetContacts( "https://api.hubapi.com/crm/v3/objects/contacts/search", "0" );
             GetContacts( "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,phone,hs_all_assigned_business_unit_ids,rock_id,which_best_describes_your_involvement_with_the_crossing_,has_potential_rock_match,createdate,lastmodifieddate&archived=false" );
+
+            var x = 7;
 
             //Foreach contact with an email, look for a 1:1 match in Rock by email and schedule it's update 
             //WriteToLog( string.Format( "Total Contacts to Match: {0}", contacts.Count() ) );
@@ -338,7 +313,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             IRestResponse contactResponse = contactClient.Execute( contactRequest );
             var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
             //Contacts with emails that do not already have Rock IDs in the desired business unit
-            contacts.AddRange( contactResults.results.Where( c => c.properties.email != null && c.properties.email != "" && ( c.properties.rock_id == null || c.properties.rock_id == "" || c.properties.rock_id == "0" ) && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) ).ToList() );
+            contacts.AddRange( contactResults.results.Where( c => ( c.properties.rock_id == null || c.properties.rock_id == "" || c.properties.rock_id == "0" ) && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) && ( ( c.properties.email != null && c.properties.email != "" ) || ( c.properties.phone != null && c.properties.phone != "" ) ) ).ToList() );
             all_contacts.AddRange( contactResults.results );
             //For Testing
             //if ( contacts.Count >= 1000 )
@@ -346,6 +321,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //    return;
             //}
 
+            //Eventually we will have to change this check, but for right now we add the Request Count < 5000 so we don't end up in an infinite loop scenario
             if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 5000 )
             {
                 GetContacts( contactResults.paging.next.link );
@@ -484,84 +460,5 @@ WHERE ((@email IS NOT NULL AND @email != '') AND
             return false;
         }
 
-    }
-
-    [DebuggerDisplay( "Label: {label}, FieldType: {fieldType}" )]
-    public class HubspotProperty
-    {
-        public string name { get; set; }
-        public string label { get; set; }
-        public string fieldType { get; set; }
-        public string groupName { get; set; }
-    }
-
-    public class HubspotPropertyUpdate
-    {
-        public string property { get; set; }
-        public string value { get; set; }
-    }
-
-    public class HSContactProperties
-    {
-        public string createdate { get; set; }
-        public string email { get; set; }
-        public string firstname { get; set; }
-        public string has_potential_rock_match { get; set; }
-        public string hs_all_assigned_business_unit_ids { get; set; }
-        public string lastname { get; set; }
-        public string lastmodifieddate { get; set; }
-        private string _phone { get; set; }
-        public string phone
-        {
-            get
-            {
-                return !String.IsNullOrEmpty( _phone ) ? _phone.Replace( " ", "" ).Replace( "(", "" ).Replace( ")", "" ).Replace( "-", "" ) : "";
-            }
-            set
-            {
-                _phone = value;
-            }
-        }
-        public string rock_id { get; set; }
-        public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
-    }
-
-    [DebuggerDisplay( "Id: {id}, Email: {properties.email}" )]
-    public class HSContactResult
-    {
-        public string id { get; set; }
-        public HSContactProperties properties { get; set; }
-        public string archived { get; set; }
-        public virtual int rock_id
-        {
-            get
-            {
-                int id = 0;
-                if ( properties != null && properties.rock_id != null )
-                {
-                    Int32.TryParse( properties.rock_id, out id );
-                }
-                return id;
-            }
-        }
-    }
-    public class HSResultPaging
-    {
-        public HSResultPagingNext next { get; set; }
-    }
-    public class HSResultPagingNext
-    {
-        public string after { get; set; }
-        public string link { get; set; }
-    }
-    public class HSContactQueryResult
-    {
-        public int total { get; set; }
-        public List<HSContactResult> results { get; set; }
-        public HSResultPaging paging { get; set; }
-    }
-    public class HSPropertyQueryResult
-    {
-        public List<HubspotProperty> results { get; set; }
     }
 }
