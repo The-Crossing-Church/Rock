@@ -119,7 +119,7 @@
       >
         <template v-slot:event="{event}">
           {% raw %}<div data-container="body" data-toggle="popover" data-placement="auto right" data-html="true" :title="event.name" data-trigger="hover" :data-content="summary(event.description)" @click="openEvent(event)"><strong>{{event.name}}</strong></div>{% endraw %}
-        </template> 
+        </template>
       </v-calendar>
       <div class='d-none d-md-block' style="position: relative;">
         <v-dialog
@@ -179,7 +179,7 @@
 </div>
 
 <script>
-    
+
     document.addEventListener("DOMContentLoaded", function () {
         new Vue({
             el: "#app",
@@ -401,10 +401,10 @@
     margin: auto;
 }
 .audience-input {
-    margin: auto; 
+    margin: auto;
 }
 .search-input input, .search-input input:focus {
-    border: none; 
+    border: none;
     width: 90%;
     outline:0px !important;
     -webkit-appearance:none;
@@ -425,6 +425,9 @@
 }
 .audience-input>.v-input>.v-input__control>.v-input__slot>.v-select__slot>.v-label.v-label--active {
     display: none;
+}
+.v-calendar-weekly__day {
+    min-height: 130px;
 }
 {% comment %}
 .audience-input>.v-input>.v-input__control>.v-input__slot label {
@@ -453,6 +456,6 @@
     font-weight: normal;
 }
 .v-dialog__content--active {
-  z-index: 2000 !important; 
+  z-index: 2000 !important;
 }
 </style>
