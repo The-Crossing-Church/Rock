@@ -34,6 +34,8 @@ using Rock.Security;
 using System.ComponentModel;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using System.Net;
+using System.Threading;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -87,7 +89,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         Category = "General Settings",
         Order = 5
     )]
-    [AccountsField( "Financial Account",
+    [AccountsField( "Financial Accounts",
         Description = "If you need financial data, specify which accounts should be included in processing. If both this field and financial transaction type field are empty, no finanical data will be available for processing.",
         IsRequired = false,
         Key = AttributeKey.FinancialAccount,
@@ -102,6 +104,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         Category = "General Settings",
         Order = 7
     )]
+    [KeyValueListField( "Custom Configuration Values",
+        Description = "This will be passed to any instance of the IAdditionalProperties interface as a dictionary",
+        IsRequired = false,
+        Key = AttributeKey.CustomConfig,
+        Category = "General Settings",
+        Order = 8
+    )]
     #endregion
 
     #region Testing Environment Configuration Job Attributes 
@@ -115,11 +124,18 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     )]
     [CustomDropdownListField( "Sync Type",
         Description = "Determines what the sync should do when updating HubSpot data, whether that should be logging the data instead of making a request, syncing to a specific HubSpot record for testing, or the full sync for production use.",
-        ListSource = "None^No Sync,Single^Sync to Single HubSpot Record,Full^Regular Sync for Production Use",
-        DefaultValue = "None",
+        ListSource = "Single^Sync to Single HubSpot Record,Full^Regular Sync for Production Use",
+        DefaultValue = "Single",
         Category = "Testing Environment Configuration",
         Key = AttributeKey.SyncType,
         Order = 1
+    )]
+    [IntegerField( "HubSpot Contact Limit",
+        Description = "If you want to provide a hard limit for the number of contacts that should be pulled from HubSpot for processing provide it here.",
+        IsRequired = false,
+        Key = AttributeKey.ContactLimit,
+        Category = "Testing Environment Configuration",
+        Order = 3
     )]
     [IntegerField( "HubSpot Record ID",
         Description = "If you wish to test by syncing data to a specific HubSpot record, enter the ID here. URL for POST/PATCH will be updated to use this ID.",
@@ -127,7 +143,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         DefaultValue = "",
         Key = AttributeKey.HubSpotRecordId,
         Category = "Testing Environment Configuration",
-        Order = 2
+        Order = 4
     )]
     [IntegerField( "Rock Record ID",
         Description = "If you wish to test by syncing data of a specific Rock record, enter the ID here. Only the record with this ID will be processed.",
@@ -135,12 +151,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         DefaultValue = "",
         Key = AttributeKey.RockRecordId,
         Category = "Testing Environment Configuration",
-        Order = 3
+        Order = 5
     )]
-    #endregion
-
-    #region Custom Configuration Attributes
-    [AccountField( "TMBT Financial Account", "For the custom TMBT props, the financial account to use for those calculations.", false, "", "Custom Configuration", 0, "TMBTAccount" )]
     #endregion
     public class HubspotIntegrationPatching : RockJob
     {
@@ -148,6 +160,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         private List<HSContactResult> contacts { get; set; }
         private int request_count { get; set; }
         private string businessUnit { get; set; }
+
+        private bool updatesAreDisabled { get; set; }
+        private string syncType { get; set; }
+        private int? contactLimit { get; set; }
+        private string hubSpotTestContactId { get; set; }
+        private int? rockTestContactId { get; set; }
+        private Person rockTestPerson { get; set; }
 
         #region Attribute Keys
         private class AttributeKey
@@ -159,9 +178,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             public const string ThreadCount = "ThreadCount";
             public const string TransactionTypeValue = "TransactionTypeValue";
             public const string FinancialAccount = "FinancialAccount";
+            public const string CustomConfig = "CustomConfig";
 
             public const string DisableUpdates = "DisableUpdates";
             public const string SyncType = "SyncType";
+            public const string ContactLimit = "ContactLimit";
             public const string HubSpotRecordId = "HubSpotRecordId";
             public const string RockRecordId = "RockRecordId";
         }
@@ -187,34 +208,38 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         /// </summary>
         public override void Execute()
         {
-
-            //Bearer Token, but I didn't change the Attribute Key
-            string attrKey = GetAttributeValue( AttributeKey.APIKeyAttribute );
-            key = Encryption.DecryptString( GlobalAttributesCache.Get().GetValue( attrKey ) );
-            businessUnit = GetAttributeValue( AttributeKey.BusinessUnit );
-            int numThreads = GetAttributeValue( AttributeKey.ThreadCount ).AsInteger();
-            if ( numThreads <= 0 )
+            //Testing Environment Attributes
+            updatesAreDisabled = GetAttributeValue( AttributeKey.DisableUpdates ).AsBoolean();
+            syncType = GetAttributeValue( AttributeKey.SyncType );
+            contactLimit = GetAttributeValue( AttributeKey.ContactLimit ).AsIntegerOrNull();
+            hubSpotTestContactId = GetAttributeValue( AttributeKey.HubSpotRecordId );
+            rockTestContactId = GetAttributeValue( AttributeKey.RockRecordId ).AsIntegerOrNull();
+            if ( rockTestContactId.HasValue )
             {
-                numThreads = 50; //Default number of threads if not configured
+                rockTestPerson = new PersonService( new RockContext() ).Get( rockTestContactId.Value );
             }
 
-            PersonService personService = new PersonService( new RockContext() );
+            //Pull HubSpot Authorization from Global Attribute so we don't have to update it everywhere when we rotate the key
+            string attrKey = GetAttributeValue( AttributeKey.APIKeyAttribute );
+            key = Encryption.DecryptString( GlobalAttributesCache.Get().GetValue( attrKey ) ); //global variable should be an encrypted field
+
+            //Business Unit is not requried, but if provided will filter to contacts in that business unit
+            businessUnit = GetAttributeValue( AttributeKey.BusinessUnit );
 
             //Get Hubspot Properties
-            //This will allow us to add properties temporarily to the sync and then not continue to have them forever
+            //This will allow us to dynamically add or remove properties/attributes/custom values we want synced
             var propClient = new RestClient( "https://api.hubapi.com/crm/v3/properties/contacts?properties=name,label,createdUserId,groupName,options,fieldType" );
             propClient.Timeout = -1;
             var propRequest = new RestRequest( Method.GET );
             propRequest.AddHeader( "Authorization", $"Bearer {key}" );
             IRestResponse propResponse = propClient.Execute( propRequest );
             var props = new List<HubspotProperty>();
-            //var tmbtProps = new List<HubspotProperty>();
             var propsQry = JsonConvert.DeserializeObject<HSPropertyQueryResult>( propResponse.Content );
             props = propsQry.results;
 
-            //Filter to props in the desired property groups for the sync
+            //Filter to props in the desired property groups for the sync so we don't try to process unnecessary fields
             string rawPropertyGroupNames = GetAttributeValue( AttributeKey.PropertyGroups );
-            List<string> propertyGroupNames = rawPropertyGroupNames.Split( ',' ).ToList();
+            List<string> propertyGroupNames = rawPropertyGroupNames.Split( '|' ).Where( g => !String.IsNullOrEmpty( g ) ).ToList();
             props = props.Where( p => propertyGroupNames.Contains( p.groupName ) ).ToList();
 
             //Save a list of the properties that are Rock attributes as denoted by their label's naming convention
@@ -222,10 +247,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             RockContext _context = new RockContext();
             List<string> attrKeys = attrs.Select( hs => hs.label.Replace( "Rock Attribute ", "" ) ).ToList();
 
+            //Financial Data Sync Props
+            //Get the transaction types we care about 
             List<Guid?> transactionTypeGuids = GetAttributeValue( AttributeKey.TransactionTypeValue ).Split( ',' ).AsGuidOrNullList();
             var transactionTypeDefinedValues = new DefinedValueService( _context ).Queryable().Where( dv => transactionTypeGuids.Contains( dv.Guid ) );
             List<int> transactionTypeValueIds = transactionTypeDefinedValues.Select( dv => dv.Id ).ToList();
 
+            //Get the specific financial accounts we care about
             List<Guid?> accountGuids = GetAttributeValue( AttributeKey.FinancialAccount ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
             List<FinancialAccount> accounts = new List<FinancialAccount>();
             if ( accountGuids.Count > 0 )
@@ -233,25 +261,45 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 accounts = new FinancialAccountService( _context ).Queryable().Where( fa => accountGuids.Contains( fa.Guid ) ).ToList();
             }
 
-            //TODO COOKSEY: Custom Props Interface
-            var additionalPropertiesInterface = typeof( IAdditionalProperties );
-            var implementations = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany( s => s.GetTypes() )
-                .Where( p => additionalPropertiesInterface.IsAssignableFrom( p ) && !p.IsInterface );
+            //Custom Configuration values
+            //Easily add or update additional data without needing to modify the core job
+            Dictionary<string, string> customConfigurationValues = new Dictionary<string, string>();
+            string rawCustomConfigValues = GetAttributeValue( AttributeKey.CustomConfig );
+            rawCustomConfigValues.ToKeyValuePairList().ForEach( kvp =>
+            {
+                if ( !String.IsNullOrEmpty( kvp.Key ) && !String.IsNullOrEmpty( kvp.Value.ToString() ) )
+                {
+                    customConfigurationValues.Add( kvp.Key, kvp.Value.ToString() );
+                }
+            } );
 
-            var x = 7;
-            x++;
+            //Build the distinct list of properties we want included with our Contact records from HubSpot
+            List<string> requestedProperties = new List<string>() { "rock_id", "firstname", "lastname", "email", "phone", "createdate", "lastmodifieddate" };
+            List<string> additionalProperties = GetAttributeValue( AttributeKey.AdditionalHubSpotProps ).Split( ',' ).ToList();
+            requestedProperties.AddRange( additionalProperties );
+            if ( !String.IsNullOrEmpty( businessUnit ) )
+            {
+                requestedProperties.Add( "hs_all_assigned_business_unit_ids" );
+            }
+            requestedProperties = requestedProperties.Select( p => p.ToLower() ).Where( p => !String.IsNullOrEmpty( p ) ).Distinct().ToList();
 
-            //Get List of all contacts from Hubspot
-            //Business Unit hs_all_assigned_business_unit_ids
+            //Get List of all contacts from Hubspot with the requested properties
             contacts = new List<HSContactResult>();
             request_count = 0;
-            GetContacts( "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,phone,hs_all_assigned_business_unit_ids,rock_id,which_best_describes_your_involvement_with_the_crossing_,has_potential_rock_match,createdate,lastmodifieddate" );
+            string contactsUrl = "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=" + String.Join( ",", requestedProperties ) + "&archived=false";
+            GetContacts( contactsUrl );
 
             //Get Attributes for Person Entity who's keys are in the list obtained from HubSpot 
             var rockAttributes = new AttributeService( _context ).Queryable( "FieldType" ).Where( a => a.EntityTypeId == 15 && attrKeys.Contains( a.Key ) );
             List<Rock.Model.Attribute> rockPersonAttributes = new List<Rock.Model.Attribute>();
             rockPersonAttributes = rockAttributes.ToList();
+
+            //Configurable thread count to easily account for different environments 
+            int numThreads = GetAttributeValue( AttributeKey.ThreadCount ).AsInteger();
+            if ( numThreads <= 0 )
+            {
+                numThreads = 50; //Default number of threads if not configured
+            }
 
             ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
             int listSize = contacts.Count() / numThreads;
@@ -271,9 +319,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 var hubspotAttrs = attrs;
                 var hubspotProps = props;
                 var hubspotKeys = attrKeys;
+                var rockAccounts = accounts;
+                var configValues = customConfigurationValues;
                 Task task = new Task( () =>
                 {
-                    ProcessList( subset, hubspotKeys, hubspotAttrs, hubspotProps, rockPersonAttributes, transactionTypeValueIds, accounts );
+                    ProcessList( subset, hubspotKeys, hubspotAttrs, hubspotProps, rockPersonAttributes, transactionTypeValueIds, rockAccounts, configValues );
                 } );
                 taskBag.Add( task );
                 task.Start();
@@ -281,10 +331,8 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             Task.WaitAll( taskBag.ToArray() );
         }
 
-        private void ProcessList( List<HSContactResult> contacts, List<string> attrKeys, List<HubspotProperty> attrs, List<HubspotProperty> props, List<Rock.Model.Attribute> rockPersonAttributes, List<int> transactionTypeValueIds, List<FinancialAccount> accounts )
+        private void ProcessList( List<HSContactResult> contacts, List<string> attrKeys, List<HubspotProperty> attrs, List<HubspotProperty> props, List<Rock.Model.Attribute> rockPersonAttributes, List<int> transactionTypeValueIds, List<FinancialAccount> accounts, Dictionary<string, string> customConfigurationValues )
         {
-            int sixYearsAgo = DateTime.Now.Year - 6; //Used for calculating child's age group
-            var child_ages_prop = props.FirstOrDefault( p => p.label == "Rock Custom Children's Age Groups" );
 
             RockContext _context = new RockContext();
             PersonAliasService pa_svc = new PersonAliasService( _context );
@@ -294,15 +342,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
             #region DB Queries
             //Get valid integer Rock Ids
-            List<int> rockIds = contacts.Select( c =>
-            {
-                int id;
-                if ( Int32.TryParse( c.properties.rock_id, out id ) )
-                {
-                    return id;
-                }
-                return 0;
-            } ).Where( id => id > 0 ).ToList();
+            List<int> rockIds = contacts.Select( c => c.rock_id ).Where( id => id > 0 ).ToList();
 
             //Get Person Aliases for list of Rock Ids
             IQueryable<PersonAlias> aliasQuery = pa_svc.Queryable( "Person.ConnectionStatusValue,Person.MaritalStatusValue,Person.PhoneNumbers,Person.PrimaryFamily.GroupLocations" ).Where( pa => pa.AliasPersonId.HasValue && rockIds.Contains( pa.AliasPersonId.Value ) );
@@ -324,8 +364,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
             //Group Membership for Giving, Family (Children), Known Relationships (Adult Children)
             var baseGroupMemberQuery = gm_svc.Queryable( "Group.ParentGroup,GroupRole,Group.GroupType.GroupTypePurposeValue,Person" );
-            var allGivingGroupIds = aliasQuery.Select( pa => pa.Person.GivingGroupId ).Distinct().ToList();
             var allFamilyGroupIds = aliasQuery.Select( pa => pa.Person.PrimaryFamilyId ).Distinct().ToList();
+            //Giving Group Ids or save a list of records where the person gives independently 
+            var allGivingGroupIds = aliasQuery.Select( pa => pa.Person.GivingGroupId ).Distinct().ToList();
+            var allPersonalGivingPersonIds = aliasQuery.Where( pa => !pa.Person.GivingGroupId.HasValue ).Select( pa => pa.PersonId ).Distinct().ToList();
 
             List<GroupMember> familyGroupMemberships = baseGroupMemberQuery.Where( gm => allFamilyGroupIds.Contains( gm.GroupId ) ).ToList();
             List<GroupMember> personGroupMemberships = baseGroupMemberQuery.Where( gm => gm.GroupTypeId != 10 && gm.GroupTypeId != 11 )
@@ -352,6 +394,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                  .Select( grp => new ChildrenMap { Parent = grp.Key, Children = grp.Select( g => g.Child.Person ).ToList() } )
                  .ToList();
 
+            //Find the possible aliases a gift could be given under based on the giving group or a person's own aliases
             IQueryable<GroupMember> allGivingGroupMemberships = gm_svc.Queryable().Where( gm => allGivingGroupIds.Contains( gm.GroupId ) );
             var givingAliasesByGroup = pa_svc.Queryable().Join( allGivingGroupMemberships,
                     pa => pa.PersonId,
@@ -364,50 +407,93 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     g => g.GroupId,
                     ( pa, g ) => new { pa.Person, GivingAliases = g.AliasIds }
                 );
+            var personalGivingAliasesByPerson = aliasQuery.Where( pa => allPersonalGivingPersonIds.Contains( pa.PersonId ) )
+                .GroupBy( g => g.Person )
+                .Select( grp => new { Person = grp.Key, GivingAliases = grp.Select( pa => pa.Id ).ToList() } );
 
-            IQueryable<FinancialTransaction> allValidTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => transactionTypeValueIds.Contains( ft.TransactionTypeValueId ) && ft.AuthorizedPersonAliasId.HasValue );
+            List<int> accountIds = accounts.Select( fa => fa.Id ).ToList();
+            IQueryable<FinancialTransaction> allValidTransactions = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.AuthorizedPersonAliasId.HasValue &&
+                ( transactionTypeValueIds.Count > 0 || accountIds.Count > 0 ) && //If no accounts are selected and no tranasction types are selected, no transactions will be processed
+                ( transactionTypeValueIds.Contains( ft.TransactionTypeValueId ) || ft.TransactionDetails.Any( ftd => accountIds.Contains( ftd.AccountId ) ) )
+            );
 
             List<TransactionMap> givingTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allValidTransactions.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
+            givingTransactions.AddRange( personalGivingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allValidTransactions.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList() );
 
-            //TODO COOKSEY: Fix Cusotm implementation
-            List<TransactionMap> allTmbtTransactions = new List<TransactionMap>();
-            //if ( includeTMBT )
-            //{
-            //    var allTmbtTransactionsQry = ft_svc.Queryable( "TransactionDetails.Account" ).Where( ft => ft.TransactionDetails.Any( ftd => ftd.AccountId == account.Id ) );
-            //    allTmbtTransactions = givingAliasesByPerson.ToList().Select( ga => new TransactionMap { Person = ga.Person, ValidTransactions = allTmbtTransactionsQry.Where( ft => ga.GivingAliases.Contains( ft.AuthorizedPersonAliasId.Value ) ).ToList() } ).ToList();
-            //}
+            //Filter out transaction details that didn't meet requirements
+            if ( accountIds.Count > 0 )
+            {
+                givingTransactions = givingTransactions.Select( tm =>
+                {
+                    tm.ValidTransactions = tm.ValidTransactions.Select( ft =>
+                    {
+                        ft.TransactionDetails = ft.TransactionDetails.Where( ftd => accountIds.Contains( ftd.AccountId ) ).ToList();
+                        return ft;
+                    } ).ToList();
+                    return tm;
+                } ).ToList();
+            }
+
+            //Get Extensions of DB Queries we need to run
+            Dictionary<string, object> additionalQueries = new Dictionary<string, object>();
+            var instances = from t in Assembly.GetExecutingAssembly().GetTypes()
+                            where t.GetInterfaces().Contains( typeof( IAdditionalProperties ) )
+                                     && t.GetConstructor( Type.EmptyTypes ) != null
+                            select Activator.CreateInstance( t ) as IAdditionalProperties;
+            foreach ( var instance in instances )
+            {
+                try
+                {
+                    Dictionary<string, object> results = instance.GetAdditionalProperties( customConfigurationValues, rockIds, aliasQuery );
+                    foreach ( var result in results )
+                    {
+                        additionalQueries.Add( result.Key, result.Value );
+                    }
+                }
+                catch ( Exception ex )
+                {
+                    ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Unable to add custom queries from {instance.GetType().FullName}.", ex ) );
+                }
+            }
             #endregion
 
 
             for ( var i = 0; i < contacts.Count(); i++ )
             {
-                int current_pid;
+                int current_pid = contacts[i].rock_id;
                 int current_id = 0;
                 Person person = null;
-                if ( Int32.TryParse( contacts[i].properties.rock_id, out current_pid ) )
+                if ( current_pid > 0 )
                 {
                     person = aliases.Where( pa => pa.AliasPersonId == current_pid ).Select( pa => pa.Person ).FirstOrDefault();
                 }
 
                 //For Testing
-                //if ( contacts[i].properties.email != "coolrobot@hubspot.com" )
-                //{
-                //    person = null;
-                //}
-                //else
-                //{
-                //    person = personService.Get( 1 );
-                //}
+                if ( rockTestContactId.HasValue && rockTestPerson != null )
+                {
+                    person = rockTestPerson;
+                }
 
-                if ( person != null && !person.IsDeceased )
+                //In general we don't want to process records for deceased people, the exception is if HubSpot is unaware they are deceased
+                bool updateDeceased = false;
+                var rockIsDeceasedProp = props.FirstOrDefault( p => p.label == "Rock Property IsDeceased" );
+                if ( rockIsDeceasedProp != null )
+                {
+                    string hubspotIsDeceased;
+                    contacts[i].properties.TryGetValue( rockIsDeceasedProp.name, out hubspotIsDeceased );
+                    if ( hubspotIsDeceased != "true" )
+                    {
+                        updateDeceased = true;
+                    }
+                }
+
+                if ( person != null && ( !person.IsDeceased || updateDeceased ) )
                 {
                     try
                     {
                         current_id = person.Id;
-                        //Build the POST request and schedule in the db 10 at a time 
+                        //Url for the hubspot record to update
                         var url = $"https://api.hubapi.com/crm/v3/objects/contacts/{contacts[i].id}";
-                        //For Testing
-                        //var url = $"https://api.hubapi.com/crm/v3/objects/contacts/1";
 
                         var properties = new List<HubspotPropertyUpdate>();
                         var personAttributes = personAttributeValues.Where( av => av.EntityId == person.Id ).ToList();
@@ -436,7 +522,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                             catch ( Exception e )
                             {
-                                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Property Name{Environment.NewLine}{attrs[j].label}{Environment.NewLine}Exception from Job:{Environment.NewLine}{e.Message}{Environment.NewLine}" ) );
+                                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error Updating Attribute:{Environment.NewLine}Current Rock Id: {current_id}, Property Name: {attrs[j].label}", e ) );
                                 current_prop = null;
                             }
                             //If the attribute is in our list of props from Hubspot
@@ -478,8 +564,13 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             {
                                 if ( propInfo.PropertyType.FullName == "Rock.Model.DefinedValue" )
                                 {
-                                    DefinedValue dv = JsonConvert.DeserializeObject<DefinedValue>( JsonConvert.SerializeObject( propInfo.GetValue( person ) ) );
+                                    DefinedValue dv = ( DefinedValue ) propInfo.GetValue( person );
                                     properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = dv.Value } );
+                                }
+                                else if ( propInfo.PropertyType.FullName.Contains( "Boolean" ) )
+                                {
+                                    bool value = ( bool ) propInfo.GetValue( person );
+                                    properties.Add( new HubspotPropertyUpdate() { property = current_prop.name, value = value.ToString().ToLower() } );
                                 }
                                 else if ( propInfo.PropertyType.FullName.Contains( "Date" ) )
                                 {
@@ -502,223 +593,33 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             }
                         }
 
-                        //Special Property for Parents
-                        if ( person.AgeClassification == AgeClassification.Adult )
-                        {
-                            var family = familyGroupMemberships.Where( p => p.GroupId == person.PrimaryFamilyId ).ToList();
-                            //Direct Family Members
-                            var children = family.Where( gm => gm.Person != null && gm.PersonId != person.Id && gm.Person.AgeClassification == AgeClassification.Child ).Select( gm => gm.Person ).ToList();
-                            var agegroups = "";
-                            //Known Relationships
-                            children.AddRange(
-                                childKnownRelationships.Where( kr => kr.Parent.Id == person.Id ).SelectMany( kr => kr.Children ).ToList()
-                            );
-                            agegroups = String.Join( ",", children.Distinct().Select( p =>
-                                {
-                                    if ( p.GradeOffset.HasValue )
-                                    {
-                                        if ( p.GradeOffset.Value > 12 )
-                                        {
-                                            return "EarlyChildhood";
-                                        }
-                                        else if ( p.GradeOffset.Value > 6 )
-                                        {
-                                            return "Elementary";
-                                        }
-                                        else if ( p.GradeOffset.Value > 3 )
-                                        {
-                                            return "Middle";
-                                        }
-                                        else if ( p.GradeOffset.Value >= 0 && p.GradeOffset.Value <= 3 )
-                                        {
-                                            return "SeniorHigh";
-                                        }
-                                        return "Adult";
-                                    }
-                                    else
-                                    {
-                                        if ( p.AgeClassification == AgeClassification.Adult )
-                                        {
-                                            return "Adult";
-                                        }
-                                        if ( p.BirthYear >= sixYearsAgo )
-                                        {
-                                            return "EarlyChildhood";
-                                        }
-                                    }
-                                    return "Unknown";
-                                } ).Where( a => a != "Unknown" ).Distinct().ToList()
-                            ); //In theory we shouldn't have unknown data, but we can't use it so ignore it
-
-                            if ( agegroups.Length > 0 )
-                            {
-                                properties.Add( new HubspotPropertyUpdate() { property = child_ages_prop.name, value = agegroups } );
-                            }
-                        }
-
-                        var memberships = personGroupMemberships.Where( gm => gm.PersonId == person.Id );
-                        if ( memberships.Count() > 0 )
-                        {
-                            //Special properties for a person's group membership 
-                            //Currently in adult small group, currently in a 20s small group, currently in veritas small group, currently serving, currently in connections, membership list
-                            var today = DateTime.UtcNow;
-                            var term = "fall";
-                            if ( DateTime.Compare( today, new DateTime( today.Year, 5, 15 ) ) <= 0 )
-                            {
-                                term = "winter";
-                            }
-                            else if ( DateTime.Compare( today, new DateTime( today.Year, 8, 15 ) ) <= 0 )
-                            {
-                                term = "summer";
-                            }
-                            //All current memberships for this year
-                            memberships = memberships.Where( m => m.Group != null && m.GroupMemberStatus == GroupMemberStatus.Active && m.Group.IsActive && ( m.Group.Name.Contains( today.ToString( "yyyy" ) ) ||
-                                 m.Group.Name.Contains( $"{today.AddYears( -1 ).ToString( "yyyy" )}-{today.ToString( "yy" )}" ) ) ).ToList();
-                            //Where the group name has Fall/Winter/Summer or Purpose == Serving Area
-                            var current_serving = memberships.Where( m => m.Group.Name.ToLower().Contains( term ) || ( m.Group.GroupType.GroupTypePurposeValue != null && m.Group.GroupType.GroupTypePurposeValue.Value == "Serving Area" ) ).ToList();
-                            //All current groups with the words Small Group, SG or Purpose == Small Group
-                            var current_sg = memberships.Where( m => m.Group.Name.ToLower().Contains( "small group" ) || m.Group.Name.ToLower().Contains( "sg" ) || ( m.Group.GroupType.GroupTypePurposeValue != null && m.Group.GroupType.GroupTypePurposeValue.Value == "Small Group" ) ).ToList();
-
-                            var serving_prop = props.FirstOrDefault( p => p.label == "Rock Custom Currently Serving" );
-                            var sg_props = props.Where( p => p.label.Contains( "Small Group" ) ).ToList();
-
-                            //set the serving prop
-                            if ( serving_prop != null )
-                            {
-                                if ( current_serving.Count() > 0 )
-                                {
-                                    properties.Add( new HubspotPropertyUpdate() { property = serving_prop.name, value = "true" } );
-                                }
-                                else
-                                {
-                                    properties.Add( new HubspotPropertyUpdate() { property = serving_prop.name, value = "false" } );
-                                }
-                            }
-                            //figure out if they attend small group
-                            if ( current_sg.Count() > 0 && person.AgeClassification != AgeClassification.Child )
-                            {
-                                if ( current_sg.Count() > 1 && current_sg.Where( sg => !sg.GroupRole.IsLeader ).Count() > 0 )
-                                { //See if we can get this to one small group hopefully
-                                    current_sg = current_sg.Where( sg => !sg.GroupRole.IsLeader ).ToList();
-                                }
-                                foreach ( var sg in current_sg )
-                                {
-                                    var small_group = sg_props.FirstOrDefault( p => p.label == "Rock Custom Currently in Adult Small Group" );
-                                    if ( sg.Group.ParentGroup.Name.ToLower().Contains( "veritas" ) )
-                                    {
-                                        small_group = sg_props.FirstOrDefault( p => p.label == "Rock Custom Currently in Veritas Small Group" );
-                                    }
-                                    else if ( sg.Group.ParentGroup.Name.ToLower().Contains( "twenties" ) )
-                                    {
-                                        small_group = sg_props.FirstOrDefault( p => p.label == "Rock Custom Currently in Twenties Small Group" );
-                                    }
-
-                                    var exists = properties.FirstOrDefault( p => p.property == small_group.name );
-                                    if ( exists == null )
-                                    {
-                                        properties.Add( new HubspotPropertyUpdate() { property = small_group.name, value = "true" } );
-                                    }
-                                }
-                            }
-                            //Make the other values false so we keep the list up to date
-                            foreach ( var sg_prop in sg_props )
-                            {
-                                var exists = properties.FirstOrDefault( p => p.property == sg_prop.name );
-                                if ( exists == null )
-                                {
-                                    properties.Add( new HubspotPropertyUpdate() { property = sg_prop.name, value = "false" } );
-                                }
-                            }
-                        }
-
-                        //Custom Giving Props
                         TransactionMap transactionMap = givingTransactions.FirstOrDefault( ft => ft.Person.Id == person.Id );
-                        if ( transactionMap != null )
+
+                        //Run custom processing for additional properties
+                        foreach ( var instance in instances )
                         {
-                            var validTransactions = transactionMap.ValidTransactions.OrderBy( ft => ft.TransactionDateTime );
-
-                            if ( validTransactions.Count() > 0 )
+                            try
                             {
-                                //Hubspot Giving Properties
-                                var first_contribution_date_prop = props.FirstOrDefault( p => p.label == "Rock Custom FirstContributionDate" );
-                                var last_contribution_date_prop = props.FirstOrDefault( p => p.label == "Rock Custom LastContributionDate" );
-                                string firstDate = ConvertDate( validTransactions.First().TransactionDateTime );
-                                if ( !String.IsNullOrEmpty( firstDate ) )
-                                {
-                                    properties.Add( new HubspotPropertyUpdate() { property = first_contribution_date_prop.name, value = firstDate } );
-                                }
-                                var first_contribution_fund_prop = props.FirstOrDefault( p => p.label == "Rock Custom FirstContributionFund" );
-                                properties.Add( new HubspotPropertyUpdate() { property = first_contribution_fund_prop.name, value = validTransactions.First().TransactionDetails.First().Account.Name } );
-
-                                //Get Last Transaction
-                                validTransactions = validTransactions.OrderByDescending( ft => ft.TransactionDateTime );
-                                string lastDate = ConvertDate( validTransactions.First().TransactionDateTime );
-                                if ( !String.IsNullOrEmpty( lastDate ) )
-                                {
-                                    properties.Add( new HubspotPropertyUpdate() { property = last_contribution_date_prop.name, value = lastDate } );
-                                }
-                                var last_contribution_fund_prop = props.FirstOrDefault( p => p.label == "Rock Custom LastContributionFund" );
-                                properties.Add( new HubspotPropertyUpdate() { property = last_contribution_fund_prop.name, value = validTransactions.First().TransactionDetails.First().Account.Name } );
+                                var additionalProps = instance.ProcessAdditionalProperties( customConfigurationValues, additionalQueries, attrs, props, aliases, personAttributeValues, familyGroupMemberships, personGroupMemberships, childKnownRelationships, transactionMap, contacts[i], person );
+                                properties.AddRange( additionalProps );
                             }
-
-                            //ZipCode
-                            var homeAddress = person.GetHomeLocation();
-                            if ( homeAddress != null )
+                            catch ( Exception ex )
                             {
-                                var zipcode_prop = props.FirstOrDefault( p => p.label == "Rock Custom ZipCode" );
-                                if ( zipcode_prop != null )
-                                {
-                                    properties.Add( new HubspotPropertyUpdate() { property = zipcode_prop.name, value = homeAddress.PostalCode } );
-                                }
+                                ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Unable to add custom properties from {instance.GetType().Name} for contact. HubSpot ID: {contacts[i].id}, Rock ID: {person.Id}", ex ) );
                             }
-
-                            TransactionMap tmbtTransaction = allTmbtTransactions.FirstOrDefault( ft => ft.Person.Id == person.Id );
-                            //if ( includeTMBT && tmbtTransaction != null )
-                            //{
-                            //    var tmbtTransactions = tmbtTransaction.ValidTransactions.OrderBy( ft => ft.TransactionDateTime );
-                            //    if ( tmbtTransactions.Count() > 0 )
-                            //    {
-                            //        //Total Amount
-                            //        var total = tmbtTransactions.Sum( ft => ft.TransactionDetails.Sum( ftd => ftd.Amount ) );
-                            //        var total_contribution_amount_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Total TMBT Contribution Amount" );
-                            //        properties.Add( new HubspotPropertyUpdate() { property = total_contribution_amount_prop.name, value = total.ToString() } );
-                            //        var first_contribution_amt_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom First TMBT Contribution Amount" );
-                            //        properties.Add( new HubspotPropertyUpdate() { property = first_contribution_amt_prop.name, value = tmbtTransactions.First().TotalAmount.ToString() } );
-                            //        var first_contribution_date_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom First TMBT Contribution Date" );
-                            //        string firstDate = ConvertDate( tmbtTransactions.First().TransactionDateTime );
-                            //        if ( !String.IsNullOrEmpty( firstDate ) )
-                            //        {
-                            //            properties.Add( new HubspotPropertyUpdate() { property = first_contribution_date_prop.name, value = firstDate } );
-                            //        }
-
-                            //        string frquency = String.Join( ", ", tmbtTransactions.Select( ft => ft.ScheduledTransactionId.HasValue ? ft.ScheduledTransaction.TransactionFrequencyValue.Description : "One Time" ).Distinct() );
-                            //        var frequency_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom TMBT Contribution Frequency" );
-                            //        properties.Add( new HubspotPropertyUpdate() { property = frequency_prop.name, value = frquency } );
-
-                            //        tmbtTransactions = tmbtTransactions.OrderByDescending( ft => ft.TransactionDateTime );
-
-                            //        var last_contribution_amt_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Last TMBT Contribution Amount" );
-                            //        properties.Add( new HubspotPropertyUpdate() { property = last_contribution_amt_prop.name, value = tmbtTransactions.First().TotalAmount.ToString() } );
-                            //        var last_contribution_date_prop = tmbtProps.FirstOrDefault( p => p.label == "Rock Custom Last TMBT Contribution Date" );
-                            //        string lastDate = ConvertDate( tmbtTransactions.First().TransactionDateTime );
-                            //        if ( !String.IsNullOrEmpty( lastDate ) )
-                            //        {
-                            //            properties.Add( new HubspotPropertyUpdate() { property = last_contribution_date_prop.name, value = lastDate } );
-                            //        }
-                            //    }
-                            //}
                         }
+
 
                         //If the Hubspot Contact does not have FirstName, LastName, or Phone Number we want to update those...
-                        if ( String.IsNullOrEmpty( contacts[i].properties.firstname ) )
+                        if ( String.IsNullOrEmpty( contacts[i].firstname ) )
                         {
                             properties.Add( new HubspotPropertyUpdate() { property = "firstname", value = person.NickName } );
                         }
-                        if ( String.IsNullOrEmpty( contacts[i].properties.lastname ) )
+                        if ( String.IsNullOrEmpty( contacts[i].lastname ) )
                         {
                             properties.Add( new HubspotPropertyUpdate() { property = "lastname", value = person.LastName } );
                         }
-                        if ( String.IsNullOrEmpty( contacts[i].properties.phone ) )
+                        if ( String.IsNullOrEmpty( contacts[i].phone ) )
                         {
                             PhoneNumber mobile = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == 12 );
                             if ( mobile != null && !mobile.IsUnlisted )
@@ -732,9 +633,10 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                     }
                     catch ( Exception err )
                     {
-                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{err}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Job:{Environment.NewLine}{err.Message}{Environment.NewLine}" ) );
+                        ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error: Unable to process contact.{Environment.NewLine}HubSpot Id: {contacts[i].id}, Rock Id: {current_id}, Name: {contacts[i].firstname} {contacts[i].lastname}, Email: {contacts[i].email}", err ) );
                     }
                 }
+
             }
         }
 
@@ -743,44 +645,52 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //Update the Hubspot Contact
             try
             {
-                //For Testing Write to Log File
-                WriteToLog( string.Format( "{0}     ID: {1}{2}PROPS:{2}{3}", RockDateTime.Now.ToString( "HH:mm:ss.ffffff" ), current_id, Environment.NewLine, JsonConvert.SerializeObject( properties ) ), $"~/App_Data/Logs/HubSpotPatchLog_DBInThread_{Task.CurrentId}.txt" );
-
-                //var client = new RestClient( url );
-                //client.Timeout = -1;
-                //var request = new RestRequest( Method.PATCH );
-                //request.AddHeader( "accept", "application/json" );
-                //request.AddHeader( "content-type", "application/json" );
-                //request.AddHeader( "Authorization", $"Bearer {key}" );
-                //request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
-                //IRestResponse response = client.Execute( request );
-                //if ( ( int ) response.StatusCode == 429 )
-                //{
-                //    if ( attempt < 3 )
-                //    {
-                //        Thread.Sleep( 9000 );
-                //        MakeRequest( current_id, url, properties, attempt + 1 );
-                //    }
-                //}
-                //if ( response.StatusCode != HttpStatusCode.OK )
-                //{
-                //    throw new Exception( response.Content );
-                //}
+                //Only run if we have not disabled POST/PATCH Requests
+                if ( !updatesAreDisabled )
+                {
+                    if ( syncType == "Single" && !String.IsNullOrEmpty( hubSpotTestContactId ) )
+                    {
+                        //If syncing to a single record for testing was selected overwrite the URL
+                        url = "https://api.hubapi.com/crm/v3/objects/contacts/" + hubSpotTestContactId;
+                    }
+                    var x = 7;
+                    var client = new RestClient( url );
+                    client.Timeout = -1;
+                    var request = new RestRequest( Method.PATCH );
+                    request.AddHeader( "accept", "application/json" );
+                    request.AddHeader( "content-type", "application/json" );
+                    request.AddHeader( "Authorization", $"Bearer {key}" );
+                    request.AddParameter( "application/json", $"{{\"properties\": {{ {String.Join( ",", properties.Select( p => $"\"{p.property}\": \"{p.value}\"" ) )} }} }}", ParameterType.RequestBody );
+                    IRestResponse response = client.Execute( request );
+                    if ( ( int ) response.StatusCode == 429 )
+                    {
+                        if ( attempt < 3 )
+                        {
+                            Thread.Sleep( 9000 );
+                            MakeRequest( current_id, url, properties, attempt + 1 );
+                        }
+                    }
+                    if ( response.StatusCode != HttpStatusCode.OK )
+                    {
+                        throw new Exception( response.Content );
+                    }
+                }
+                else
+                {
+                    //For Testing Write to Log File instead of making request
+                    WriteToLog( string.Format( "{0}     ID: {1}{2}PROPS:{2}{3}", RockDateTime.Now.ToString( "HH:mm:ss.ffffff" ), current_id, Environment.NewLine, JsonConvert.SerializeObject( properties ) ) );
+                }
             }
             catch ( Exception e )
             {
                 var json = $"{{\"properties\": {JsonConvert.SerializeObject( properties )} }}";
-                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error{Environment.NewLine}{e}{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Exception from Request:{Environment.NewLine}{e.Message}{Environment.NewLine}Request:{Environment.NewLine}{json}{Environment.NewLine}" ) );
+                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error: API Exception{Environment.NewLine}Current Id: {current_id}{Environment.NewLine}Request:{Environment.NewLine}{json}", e ) );
             }
         }
 
-        private void WriteToLog( string message, string file = "" )
+        private void WriteToLog( string message )
         {
-            if ( String.IsNullOrEmpty( file ) )
-            {
-                file = "~/App_Data/Logs/HubSpotPatchLog.txt";
-            }
-            string logFile = System.Web.Hosting.HostingEnvironment.MapPath( file );
+            string logFile = System.Web.Hosting.HostingEnvironment.MapPath( $"~/App_Data/Logs/HubSpotPatchLog_{Task.CurrentId}.txt" );
             using ( System.IO.FileStream fs = new System.IO.FileStream( logFile, System.IO.FileMode.Append, System.IO.FileAccess.Write ) )
             {
                 using ( System.IO.StreamWriter sw = new System.IO.StreamWriter( fs ) )
@@ -799,13 +709,22 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
             IRestResponse contactResponse = contactClient.Execute( contactRequest );
             var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
-            contacts.AddRange( contactResults.results.Where( c => c.properties.rock_id != null && c.properties.rock_id != "" && c.properties.email != null && c.properties.email != "" && c.properties.hs_all_assigned_business_unit_ids != null && c.properties.hs_all_assigned_business_unit_ids != "" && c.properties.hs_all_assigned_business_unit_ids.Split( ';' ).Contains( businessUnit ) ).ToList() );
+            contacts.AddRange( contactResults.results.Where( c =>
+                c.properties["rock_id"] != null && c.properties["rock_id"] != "" &&
+                c.properties["email"] != null && c.properties["email"] != "" &&
+                ( String.IsNullOrEmpty( businessUnit ) ||
+                    ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
+                      c.properties["hs_all_assigned_business_unit_ids"] != "" &&
+                      c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+                    )
+                )
+            ).ToList() );
 
             //For Testing
-            //if ( contacts.Count >= 1000 )
-            //{
-            //    return;
-            //}
+            if ( contactLimit.HasValue && contacts.Count >= contactLimit )
+            {
+                return;
+            }
 
             if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
             {
@@ -826,16 +745,6 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
             }
             return "";
-        }
-        private class ChildrenMap
-        {
-            public Person Parent { get; set; }
-            public List<Person> Children { get; set; }
-        }
-        private class TransactionMap
-        {
-            public Person Person { get; set; }
-            public List<FinancialTransaction> ValidTransactions { get; set; }
         }
     }
 }

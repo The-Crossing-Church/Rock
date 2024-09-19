@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Rock.Jobs;
+using System.Linq;
+using Rock;
+using Rock.Model;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -11,8 +13,22 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
     public interface IAdditionalProperties
     {
-        Dictionary<string, object> GetAdditionalProperties( RockJob rockJob );
+        Dictionary<string, object> GetAdditionalProperties( Dictionary<string, string> configurationValues, List<int> rockIds, IQueryable<PersonAlias> aliasQuery );
+        List<HubspotPropertyUpdate> ProcessAdditionalProperties( Dictionary<string, string> configurationValues, Dictionary<string, object> data, List<HubspotProperty> attrs, List<HubspotProperty> props, List<PersonAlias> aliases, List<AttributeValue> personAttributeValues, List<GroupMember> familyGroupMemberships, List<GroupMember> personGroupMemberships, List<ChildrenMap> childKnownRelationships, TransactionMap givingTransactions, HSContactResult contact, Person person );
     }
+
+    #region Patching Helpers
+    public class ChildrenMap
+    {
+        public Person Parent { get; set; }
+        public List<Person> Children { get; set; }
+    }
+    public class TransactionMap
+    {
+        public Person Person { get; set; }
+        public List<FinancialTransaction> ValidTransactions { get; set; }
+    }
+    #endregion
 
     [DebuggerDisplay( "Label: {label}, FieldType: {fieldType}" )]
     public class HubspotProperty
@@ -29,47 +45,72 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         public string value { get; set; }
     }
 
-    public class HSContactProperties
-    {
-        public string createdate { get; set; }
-        public string lastmodifieddate { get; set; }
-        public string email { get; set; }
-        public string firstname { get; set; }
-        public string lastname { get; set; }
-        public string has_potential_rock_match { get; set; }
-        public string hs_all_assigned_business_unit_ids { get; set; }
-        private string _phone { get; set; }
-        public string phone
-        {
-            get
-            {
-                return !String.IsNullOrEmpty( _phone ) ? _phone.Replace( " ", "" ).Replace( "(", "" ).Replace( ")", "" ).Replace( "-", "" ).Replace( "+", "" ) : "";
-            }
-            set
-            {
-                _phone = value;
-            }
-        }
-        public string rock_id { get; set; }
-        public string which_best_describes_your_involvement_with_the_crossing_ { get; set; }
-    }
-
-    [DebuggerDisplay( "Id: {id}, Email: {properties.email}" )]
+    [DebuggerDisplay( "Id: {id}, Email: {email}" )]
     public class HSContactResult
     {
         public string id { get; set; }
-        public HSContactProperties properties { get; set; }
+        public Dictionary<string, string> properties { get; set; }
         public string archived { get; set; }
         public virtual int rock_id
         {
             get
             {
                 int id = 0;
-                if ( properties != null && properties.rock_id != null )
+                if ( properties != null && properties["rock_id"] != null )
                 {
-                    Int32.TryParse( properties.rock_id, out id );
+                    Int32.TryParse( properties["rock_id"], out id );
                 }
                 return id;
+            }
+        }
+        public virtual string firstname
+        {
+            get
+            {
+                string _firstname = String.Empty;
+                if ( properties != null )
+                {
+                    properties.TryGetValue( "firstname", out _firstname );
+                }
+                return _firstname;
+            }
+        }
+        public virtual string lastname
+        {
+            get
+            {
+                string _lastname = String.Empty;
+                if ( properties != null )
+                {
+                    properties.TryGetValue( "lastname", out _lastname );
+                }
+                return _lastname;
+            }
+        }
+        public virtual string email
+        {
+            get
+            {
+                string _email = String.Empty;
+                if ( properties != null )
+                {
+                    properties.TryGetValue( "email", out _email );
+                }
+                //For easier matching to Rock
+                return !String.IsNullOrEmpty( _email ) ? _email.ToLower() : "";
+            }
+        }
+        public virtual string phone
+        {
+            get
+            {
+                string _phone = String.Empty;
+                if ( properties != null )
+                {
+                    properties.TryGetValue( "phone", out _phone );
+                }
+                //Hubspot can format phone numbers, so we need to strip the formatting so we can match on the end of the number in Rock to account for country codes
+                return !String.IsNullOrEmpty( _phone ) ? _phone.Replace( " ", "" ).Replace( "(", "" ).Replace( ")", "" ).Replace( "-", "" ).Replace( "+", "" ) : "";
             }
         }
     }
@@ -91,5 +132,11 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
     public class HSPropertyQueryResult
     {
         public List<HubspotProperty> results { get; set; }
+    }
+
+    public class PotentialMatch
+    {
+        public HSContactResult hubspotContact { get; set; }
+        public Person rockPerson { get; set; }
     }
 }
