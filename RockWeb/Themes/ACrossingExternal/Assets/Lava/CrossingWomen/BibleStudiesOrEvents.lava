@@ -1,6 +1,7 @@
 {% assign internalAttrId = internalAttrId |  AsInteger %}
 {% assign publicAttrId = publicAttrId |  AsInteger %}
 {% assign eventCalId = eventCalId |  AsInteger %}
+{% assign priorityAttrId = priorityAttrId |  AsInteger %}
 {% assign startDate = Item | Attribute:'EventsInRange','RawValue' | Split:',' | First | Date:'yyyy-MM-dd' %}
 {% assign endDate = Item | Attribute:'EventsInRange','RawValue' | Split:',' | Last | Date:'yyyy-MM-dd' %}
 {% assign daysUntil = endDate | DaysUntil %}
@@ -10,8 +11,8 @@
     {% capture category %}{{category}}{% if forloop.index0 != 0 %},{% endif %}'{{ c |  SanitizeSql }}'{% endcapture %}
 {% endfor %}
 
-{% sql internalid:'{{internalAttrId}}' externalid:'{{publicAttrId}}' calid:'{{eventCalId}}' %}
-    SELECT EventItemId
+{% sql internalid:'{{internalAttrId}}' externalid:'{{publicAttrId}}' calid:'{{eventCalId}}' priorityid:'{{priorityAttrId}}' %}
+    SELECT EventCalendarItem.EventItemId
     FROM EventCalendarItem
             INNER JOIN (
                         SELECT DISTINCT EntityId
@@ -25,11 +26,26 @@
                         WHERE value IN ({{category}})
                         ) AS eventCategories ON EntityId = Id
             INNER JOIN EventItem ON EventCalendarItem.EventItemId = EventItem.Id
+            LEFT OUTER JOIN (
+                            SELECT EventItemId, MIN(CAST(Value AS int)) AS Priority
+                            FROM AttributeValue
+                                    INNER JOIN EventItemOccurrence ON EntityId = EventItemOccurrence.Id
+                            WHERE AttributeId = @priorityid
+                            GROUP BY EventItemId
+                            ) AS Priority ON Priority.EventItemId = EventCalendarItem.EventItemId
     WHERE EventCalendarId = @calid
+    ORDER BY Priority
 {% endsql %}
 <div class="row row-equal-height">
     {% assign ids = results | Select:'EventItemId' | Join:',' %}
+    {% assign eventIds = results | Select:'EventItemId' %}
     {% eventitem ids:'{{ ids }}' %}
+        {% assign eventArr = '[]' | FromJSON %}
+        {% for i in eventIds %}
+            {% assign e = eventitemItems | Where:'Id',i | First %}
+            {% assign eventArr = eventArr | AddToArray:e %}
+        {% endfor %}
+        {% assign eventitemItems = eventArr %}
         {% for event in eventitemItems %}
             {% assign inRange = false %}
             {% assign occurrenceIds = '[]' | FromJSON %}
@@ -118,7 +134,7 @@
                                         {% assign lastDate = d %}
                                     {% endif %}
                                 {% endfor %}
-                                {{dates | First | Date:'ddd tt'}} {{dates | First | Date:'MMMM d'}}{% if firstDate != lastDate %} - {{dates | Last | Date:'MMMM d'}}{% endif %}<br/>
+                                <span class="mr-2">{{dates | First | Date:'ddd tt'}}</span> {{dates | First | Date:'MMMM d'}}{% if firstDate != lastDate %} - {{dates | Last | Date:'MMMM d'}}{% endif %}<br/>
                                 {% if occMeetings > 1 or forloop.last == true %}
                                     Meets {{numMeetings}} {{'time' | PluralizeForQuantity:numMeetings}} <br/>
                                 {% endif %}

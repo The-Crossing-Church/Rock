@@ -114,9 +114,18 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="tech.triumph.CloudinaryStorageProvider, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RockWeb\Bin\tech.triumph.CloudinaryStorageProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="tech.triumph.WebAgility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\RockWeb\Bin\tech.triumph.WebAgility.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Jobs\CloudinaryConversion.cs" />
     <Compile Include="Jobs\EventFormConversion.cs" />
     <Compile Include="Jobs\HubSpotIntegrationCustomActions.cs" />
     <Compile Include="Jobs\HubspotIntegrationMatching.cs" />

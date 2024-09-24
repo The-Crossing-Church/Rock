@@ -560,7 +560,6 @@ namespace org.crossingchurch.OurRock.Reporting.DataFilter
             {
                 ddlSecondaryTargetFKCol.Visible = false;
             }
-
         }
 
         protected void ddlSecondaryEntity_SelectedIndexChange( object sender, EventArgs e )
@@ -673,6 +672,10 @@ namespace org.crossingchurch.OurRock.Reporting.DataFilter
                         ddlEntityFilterOption.Items.Add( new ListItem( "Greater Than Or Equal To" ) );
                         ddlEntityFilterOption.Items.Add( new ListItem( "Less Than" ) );
                         ddlEntityFilterOption.Items.Add( new ListItem( "Less Than Or Equal To" ) );
+                    }
+                    if ( selectedDataType.data_type.Contains( "date" ) )
+                    {
+                        ddlEntityFilterOption.Items.Add( new ListItem( "Range" ) );
                     }
                 }
                 colEntityFilterOption.Visible = true;
@@ -857,13 +860,19 @@ namespace org.crossingchurch.OurRock.Reporting.DataFilter
                     if ( ddlSecondaryEntity != null )
                     {
                         ddlSecondaryEntity.SelectedValue = config.secondary_entity;
-                        ddlSecondaryEntity_SelectedIndexChange( ddlSecondaryEntity, new EventArgs() );
+                        if ( !String.IsNullOrEmpty( ddlSecondaryEntity.SelectedValue ) )
+                        {
+                            ddlSecondaryEntity_SelectedIndexChange( ddlSecondaryEntity, new EventArgs() );
+                        }
                     }
                     var ddlSecondaryFK = rowSecondaryEntity.Controls[1].Controls[0] as RockDropDownList;
                     if ( ddlSecondaryFK != null )
                     {
                         ddlSecondaryFK.SelectedValue = config.secondary_join_primary_column;
-                        ddlSecondarySourceEntityColumn_SelectedIndexChange( ddlSecondaryFK, new EventArgs() );
+                        if ( !String.IsNullOrEmpty( ddlSecondaryFK.SelectedValue ) )
+                        {
+                            ddlSecondarySourceEntityColumn_SelectedIndexChange( ddlSecondaryFK, new EventArgs() );
+                        }
                     }
                     var ddlSecondaryTargetFK = rowSecondaryEntity.Controls[2].Controls[0] as RockDropDownList;
                     if ( ddlSecondaryTargetFK != null )
@@ -1027,6 +1036,30 @@ namespace org.crossingchurch.OurRock.Reporting.DataFilter
                 if ( DateTime.TryParse( input_value, out parsed ) )
                 {
                     value = parsed.ToString();
+                }
+                else
+                {
+                    //Check if they entered CURRENT +/- int
+                    string lowered = input_value.ToLower();
+                    if ( lowered.Contains( "curr" ) )
+                    {
+                        if ( lowered.Contains( ' ' ) )
+                        {
+                            double minutes = 0;
+                            var input_terms = input_value.Split( ' ' );
+                            if ( input_terms[1][0] == '+' )
+                            {
+                                input_terms[1] = input_terms[1].Substring( 1 );
+                            }
+                            minutes = double.Parse( input_terms[1] );
+                            value = RockDateTime.Now.AddMinutes( minutes ).ToString();
+                        }
+                        else
+                        {
+                            //User Requested Current Time
+                            value = RockDateTime.Now.ToString();
+                        }
+                    }
                 }
             }
             else if ( data_type == "datetimeoffset" )

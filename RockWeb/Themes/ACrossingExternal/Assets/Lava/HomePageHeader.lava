@@ -9,6 +9,17 @@
 {% assign subtitles = Item | Attribute:'HeroSubtitle' | Split: ',' %}
 {% assign ctaText = Item | Attribute:'CTAText' | Split: ',' %}
 {% assign ctaUrl = Item | Attribute:'CTAURL' | Split: ',' %}
+{% if isHeader == null or isHeader == '' %}
+    {% assign isHeader = false %}
+{% endif %}
+{% assign indexOfFirstHeader = 0 %}
+{% for t in titles %}
+    {% assign t = t | ToLowerCase | Replace:'/','' %}
+    {% if t != 'na' %}
+        {% assign indexOfFirstHeader = forloop.index0 %}
+        {% break %}
+    {% endif %}
+{% endfor %}
 {% assign altText = Item | Attribute:'HeroImageAltText' | Split: ',' %}
 {% assign imageSize = images | Size %}
 {% if imageSize == 1 %}
@@ -68,12 +79,22 @@
                 <div class='hero-overlay text--centered align-center justify-center {% if hasTitle == false %}cta--only{% endif %}'>
                     <div class='text--white'>
                         {% if hasTitle %}
-                            <h1 class='text--white'>{{titles[forloop.index0]}}</h1>
-                            {% if hasSubtitle %}
-                                <br/>
-                                <h2 class='text--white subtitle'>{{subtitles[forloop.index0] | Replace:'##SERVICE_TIMES##',times}}</h2>
-                                <br class='d-none d-md-block'/>
-                                <br class='d-none d-md-block'/>
+                            {% if isHeader == true and indexOfFirstHeader == forloop.index0 %}
+                                <h1 class='text--white'>{{titles[forloop.index0] | Replace:'~',','}}</h1>
+                                {% if hasSubtitle %}
+                                    <br/>
+                                    <h2 class="text--white subtitle">{{subtitles[forloop.index0] | Replace:'~',',' | Replace:'##SERVICE_TIMES##',times}}</h2>
+                                    <br class='d-none d-md-block'/>
+                                    <br class='d-none d-md-block'/>
+                                {% endif %}
+                            {% else %}
+                                <div class='h1'>{{titles[forloop.index0] | Replace:'~',','}}</div>
+                                {% if hasSubtitle %}
+                                    <br/>
+                                    <div class="h2 text--white subtitle">{{subtitles[forloop.index0] | Replace:'~',',' | Replace:'##SERVICE_TIMES##',times}}</div>
+                                    <br class='d-none d-md-block'/>
+                                    <br class='d-none d-md-block'/>
+                                {% endif %}
                             {% endif %}
                         {% endif %}
                         {% if hasBtn == true %}
@@ -119,10 +140,10 @@
   bottom: 0;
   left: 0;
   right: 0;
-  overflow: hidden; 
+  overflow: hidden;
 }
 .hero-overlay {
-  position: absolute; 
+  position: absolute;
   width: 100%;
   top: 0;
   height: 100%;
@@ -136,14 +157,14 @@
 /* Mobile Adjustments */
 @media only screen and (max-width: 767px) {
   .hero-image-helper {
-    margin-top: 50%; 
+    margin-top: 50%;
   }
   .hero-image {
     width: 200vw;
-    margin-left: -50vw; 
+    margin-left: -50vw;
   }
   .hero-overlay {
-    max-height: 50vw; 
+    max-height: 50vw;
   }
 }
 </style>
