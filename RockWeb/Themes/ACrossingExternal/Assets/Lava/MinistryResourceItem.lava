@@ -1,0 +1,22 @@
+<div class='row py-4'>
+    <div class='col col-xs-12 col-md-4'>
+        {% assign cci = Item %}
+        {[ cloudinaryimg item:cci imgType:'resource' imgclasses:'w-100' ]}
+    </div>
+    <div class='col col-xs-12 col-md-8'>
+        <h1>{{ Item.Title }}</h1>
+        <hr/>
+        <h3 class='text--upper'>{{Item | Attribute:'Author' }}</h3>
+        <br/>
+        {{ Item.Content }}
+        <br/>
+        {% assign link = Item | Attribute:'Link' %}
+        {% if link != '' %}
+            <br/>
+            <a href="{{ Item | Attribute:'Link'}}" target="_blank">Get it on Amazon</a>
+        {% endif %}
+    </div>
+</div>
+{% if backUrl != empty and backUrl != '' %}
+    
+{% endif %}

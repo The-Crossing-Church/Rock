@@ -6,7 +6,7 @@
     {% if mod > 0 %}
         {% assign classname = 'background--grey py-custom-2x' %}
     {% endif %}
-    {[ rescarousel carouselid:'resource{{forloop.index0}}-carousel' containerclass:'{{classname}}' ]}
+    {[ rescarousel carouselid:'resource{{forloop.index0}}-carousel' containerclass:'{{classname}}' itemheight:'400' ]}
         [[ title ]]
             {{group.Key | Pluralize}}
         [[ endtitle ]]
@@ -16,7 +16,8 @@
                     <a href="/Ministry/Children/Resources/{{i.PrimarySlug}}" class="h-100">
                         <div class="h-100">
                             <div class="slide-content text-center">
-                                <img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />
+                                {[ cloudinaryimg item:i imgType:'resource-carousel' ]}
+                                {% comment %}<img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />{% endcomment %}
 
                                 <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
                                     {{i.Title | Split:':' | First}}
@@ -37,3 +38,10 @@
 <script>
   $('[data-toggle="popover"]').popover()
 </script>
+
+
+<style>
+    .img-wrapper {
+        height: 385px !important;
+    }
+</style>
