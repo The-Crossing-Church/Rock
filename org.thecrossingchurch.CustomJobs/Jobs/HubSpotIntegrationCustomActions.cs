@@ -38,14 +38,28 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             //Special Property for Parents
             if ( person.AgeClassification == AgeClassification.Adult )
             {
-                properties.AddRange( GetChildrensAgeGroups( familyGroupMemberships, childKnownRelationships, person, props ) );
+                try
+                {
+                    properties.AddRange( GetChildrensAgeGroups( familyGroupMemberships, childKnownRelationships, person, props ) );
+                }
+                catch ( Exception ex )
+                {
+                    ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Custom Action, unable to add children's age group. HubSpot ID: {contact.id}, Rock ID: {person.Id}", ex ) );
+                }
             }
 
             //Set Serving Teams and Small Groups
             var memberships = personGroupMemberships.Where( gm => gm.PersonId == person.Id ).ToList();
             if ( memberships.Count() > 0 )
             {
-                properties.AddRange( GetGroupMembershipData( memberships, props, person ) );
+                try
+                {
+                    properties.AddRange( GetGroupMembershipData( memberships, props, person ) );
+                }
+                catch ( Exception ex )
+                {
+                    ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Custom Action, unable to add serving teams and small groups. HubSpot ID: {contact.id}, Rock ID: {person.Id}", ex ) );
+                }
             }
 
             if ( givingTransactions != null && givingTransactions.ValidTransactions.Count > 0 )
@@ -55,12 +69,26 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 {
                     account = ( FinancialAccount ) data["TMBTAccount"];
                 }
-                properties.AddRange( GetGivingProps( props, givingTransactions, person, account ) );
+                try
+                {
+                    properties.AddRange( GetGivingProps( props, givingTransactions, person, account ) );
+                }
+                catch ( Exception ex )
+                {
+                    ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Custom Action, unable to add giving data. HubSpot ID: {contact.id}, Rock ID: {person.Id}", ex ) );
+                }
 
                 if ( account != null )
                 {
                     //Get the TMBT Giving Props!
-                    properties.AddRange( GetTMBTGivingProps( props, givingTransactions, person, account ) );
+                    try
+                    {
+                        properties.AddRange( GetTMBTGivingProps( props, givingTransactions, person, account ) );
+                    }
+                    catch ( Exception ex )
+                    {
+                        ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Custom Action, unable to add TMBT giving data. HubSpot ID: {contact.id}, Rock ID: {person.Id}", ex ) );
+                    }
                 }
             }
 
@@ -71,7 +99,14 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 var zipcode_prop = props.FirstOrDefault( p => p.label == "Rock Custom ZipCode" );
                 if ( zipcode_prop != null )
                 {
-                    properties.Add( new HubspotPropertyUpdate() { property = zipcode_prop.name, value = homeAddress.PostalCode } );
+                    try
+                    {
+                        properties.Add( new HubspotPropertyUpdate() { property = zipcode_prop.name, value = homeAddress.PostalCode } );
+                    }
+                    catch ( Exception ex )
+                    {
+                        ExceptionLogService.LogException( new Exception( $"HubSpot Sync Error: Custom Action, unable to add home address zipcode. HubSpot ID: {contact.id}, Rock ID: {person.Id}", ex ) );
+                    }
                 }
             }
 
@@ -230,9 +265,9 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             var validTransactions = transactionMap.ValidTransactions.Where( ft => tmbtAccount == null || ft.TransactionDetails.Any( ftd => ftd.AccountId != tmbtAccount.Id ) )
                 .Select( ft =>
                 {
-                    ft.TransactionDetails = ft.TransactionDetails.Where( ftd => ftd.AccountId != tmbtAccount.Id ).ToList();
+                    ft.TransactionDetails = ft.TransactionDetails.Where( ftd => tmbtAccount == null || ftd.AccountId != tmbtAccount.Id ).ToList();
                     return ft;
-                } ).OrderBy( ft => ft.TransactionDateTime );
+                } ).Where( ft => ft.TransactionDetails.Count() > 0 ).OrderBy( ft => ft.TransactionDateTime );
 
             if ( validTransactions.Count() > 0 )
             {
