@@ -1,5 +1,4 @@
-﻿
-{% assign items = '[]' | FromJSON %}
+﻿{% assign items = '[]' | FromJSON %}
 {% for i in Items %}
     {% assign featuredRange = i | Attribute:'FeatureDates' %}
     {% assign featuredStart = i | Attribute:'FeatureDates' | Split:' to ' | First %}
@@ -20,7 +19,7 @@
     <h2 class="text--centered">Recommended Resources</h2>
     <a class='hidden-anchor' id="resources"></a>
     <br/>
-    {[ rescarousel carouselid:'resources-carousel' ]}
+    {[ rescarousel carouselid:'resources-carousel' itemheight:'400' ]}
         {% assign ct = 0 %}
         {% for i in items %}
             [[ item ]]
@@ -28,7 +27,8 @@
                     <a href="/Ministry/Children/Resources/{{i.PrimarySlug}}" class="h-100">
                         <div class="h-100">
                             <div class="slide-content text-center">
-                                <img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />
+                                {[ cloudinaryimg item:i imgType:'resource-carousel' ]}
+                                {% comment %}<img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 2/3; height: 300px;" />{% endcomment %}
 
                                 <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
                                     {{i.Title | Split:':' | First}}
