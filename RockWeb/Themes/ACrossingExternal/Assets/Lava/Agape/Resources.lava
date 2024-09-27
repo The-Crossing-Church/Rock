@@ -9,7 +9,8 @@
                 <a href="/Ministry/Agape/Resources/{{i.PrimarySlug}}" class="h-100">
                     <div class="h-100">
                         <div class="slide-content text-center">
-                            <img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 3/4; height: 300px;" />
+                            {[ cloudinaryimg item:i imgType:'resource-carousel' ]}
+                            {% comment %} <img src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" style="box-shadow: 2px 4px 6px rgba(0,0,0,0.2); aspect-ratio: 3/4; height: 300px;" /> {% endcomment %}
 
                             <div class="text-center pt-2" style='font-size: .9375em; font-weight: light;'>
                                 {{i.Title | Split:':' | First}}
