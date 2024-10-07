@@ -669,8 +669,12 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                             Thread.Sleep( 9000 );
                             MakeRequest( current_id, url, properties, attempt + 1 );
                         }
+                        else
+                        {
+                            throw new Exception( "Rate limit and retry limit reached", new Exception( response.Content ) );
+                        }
                     }
-                    if ( response.StatusCode != HttpStatusCode.OK )
+                    else if ( response.StatusCode != HttpStatusCode.OK )
                     {
                         throw new Exception( response.Content );
                     }
