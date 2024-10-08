@@ -760,10 +760,10 @@ header:not(.panel-heading) {
 .mt-custom-2x, .my-custom-2x {
   margin-top: 2rem !important;
 }
-h1, h2, h3, h4, h5, h6 {
-    color: @color-dark-teal; 
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  color: @color-dark-teal;
 }
-h1 {
+h1, .h1 {
   font-size: 3em;
   line-height: 1.1875em;
   font-weight: 900;
@@ -777,7 +777,7 @@ h2, .h2 {
   letter-spacing: 1px;
   margin: 0 auto;
 }
-h3 {
+h3, .h3 {
   font-size: 1.5em;
   line-height: 1.20833em;
   letter-spacing: 1px;
@@ -799,13 +799,13 @@ h5 {
   margin: 10px 0 0;
 }
 @media only screen and (max-width: 768px) {
-  h1 {
+  h1, .h1 {
     font-size: 1.875em;
   }
   h2, .h2 {
     font-size: 1.5em;
   }
-  h3 {
+  h3, .h3 {
     font-size: 1.25em;
   }
   .py-custom-2x, pt-custom-2x {
