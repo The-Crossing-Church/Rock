@@ -307,9 +307,13 @@ namespace org.crossingchurch.OurRock.Rest.Controllers
                     {
                         if ( eventList[i].GetAttributeValue( "IsSame" ) == "False" )
                         {
-                            DateTime eventDate = DateTime.Parse( details[h].GetAttributeValue( "EventDate" ) );
-                            CalendarEvent e = GenerateEvent( eventDate, startTime, endTime, startBuffer, endBuffer, eventLocation, eventList[i].Title, contact, timeZoneId );
-                            c.Events.Add( e );
+                            DateTime eventDate;
+                            //Getting errors about being unable ot parse a datetime, at this time cannot find an event causing the issues but we'll wrap it just to handle that error
+                            if ( DateTime.TryParse( details[h].GetAttributeValue( "EventDate" ), out eventDate ) )
+                            {
+                                CalendarEvent e = GenerateEvent( eventDate, startTime, endTime, startBuffer, endBuffer, eventLocation, eventList[i].Title, contact, timeZoneId );
+                                c.Events.Add( e );
+                            }
                         }
                         else
                         {
