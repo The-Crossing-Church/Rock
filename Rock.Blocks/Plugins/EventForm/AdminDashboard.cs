@@ -1201,6 +1201,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     }
                 }
             }
+            var z = 7;
             for ( int i = 0; i < eventDates.Count(); i++ )
             {
                 string dateCompareVal = eventDates[i].range.Start.Value.ToString( "yyyy-MM-dd" );
@@ -1232,13 +1233,16 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     av => av.EntityId,
                     ( itm, av ) => itm
                 );
+                var eventDetailConflicts = eventDetails.ToList();
                 items = items.Join( eventDatesValues,
                     itm => itm.Id,
                     av => av.EntityId,
                     ( itm, av ) => itm
                 ).OrderBy( cci => cci.Title );
+                var itemConflicts = items.ToList();
                 var ccItems = items.Select( itm => itm.ChildItems.FirstOrDefault( ccia => ccia.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ChildContentChannelItem ).ToList();
                 ccItems.AddRange( eventDetails );
+                var ccItemConflicts = ccItems.ToList();
                 var roomAttr = events[0].Attributes[roomKey];
                 //Events with overlapping rooms
                 var roomValues = avSvc.Queryable().Where( av => av.AttributeId == roomAttr.Id ).ToList().Where( av =>
@@ -1277,7 +1281,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         int buffer = Int32.Parse( endBuffer );
                         r.End = r.End.Value.AddMinutes( buffer );
                     }
-                    if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
+                    if ( eventDates[i].range.Start.Value < r.End.Value && eventDates[i].range.End.Value > r.Start.Value )
                     {
                         return true;
                     }
@@ -1285,6 +1289,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 } ).ToList();
                 conflicts.AddRange( ccItems );
             }
+            var y = 7;
             return conflicts.Distinct().Select( c =>
             {
                 var x = c.ToViewModel( null, true );
