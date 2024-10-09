@@ -128,7 +128,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
 
                                 try
                                 {
-                                    binaryFile.SetAttributeValue( "AltText", binaryFile.FileName );
+                                    binaryFile.SetAttributeValue( "AltText", binaryFile.FileName.Split('.').First() );
                                 }
                                 catch
                                 {
