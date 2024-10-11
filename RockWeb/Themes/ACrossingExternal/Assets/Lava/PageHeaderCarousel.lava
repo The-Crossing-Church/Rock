@@ -82,7 +82,7 @@
                                     <br class='d-none d-md-block'/>
                                 {% endif %}
                             {% else %}
-                                <div class='h1'>{{titles[forloop.index0] | Replace:'~',','}}</div>
+                                <div class='h1 text--white'>{{titles[forloop.index0] | Replace:'~',','}}</div>
                                 {% if hasSubtitle %}
                                     <br/>
                                     <div class="h2 text--white subtitle">{{subtitles[forloop.index0] | Replace:'~',',' | Replace:'##SERVICE_TIMES##',times}}</div>
