@@ -1,13 +1,11 @@
 ﻿{% assign svcTimes = 'Global' | Attribute:'ServiceTimes' | ReplaceLast:',',' and' %}
+{% assign cloudItem = Item %}
 <div>
     <div class='card--custom card-with-button' style="height:100%; min-height: 400px;">
-        <div class='land-image-wrapper'>
-            <div class='land-image-helper'></div>
-            <div class='land-image align-center'>
-                <img src="{{Item | Attribute:'Image'}}" alt="Join Us In Person" />
-            </div>
-            <div class='overlay justify-center'>
-                <h1 class='text--white' style="text-shadow: 1px 1px 5px black;">In Person</h1>
+        <div class='img-wrapper'>
+            {[ cloudinaryimg item:cloudItem imgtype:'card' transform:'c_fill,w_600,h_300,g_center' overlaycolor:'#000000' overlaystrength:'10' ]}
+            <div class='img-overlay justify-center'>
+                <h3 class='h1 text--white' style="text-shadow: 1px 1px 5px black;">In Person</h3>
             </div>
         </div>
         <div class='card--body' style="padding: 32px 16px;">
@@ -20,30 +18,13 @@
     </div>
 </div>
 <style>
-    .overlay {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        margin-left: -50%;
-        width: 100%;
-        height: 100%;
-        align-items: flex-end;
-        background-color: rgba(0,0,0,0.1);
-    }
-    .land-image-wrapper {
-        display: inline-block;
+    .img-wrapper {
         position: relative;
-        width: 100%;
     }
-    .land-image-helper {
-        margin-top: 50%;
-    }
-    .land-image {
+    .img-overlay {
         position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        overflow: hidden;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
     }
 </style>

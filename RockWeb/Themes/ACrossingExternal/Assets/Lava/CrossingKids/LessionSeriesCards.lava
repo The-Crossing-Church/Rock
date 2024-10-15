@@ -1,0 +1,13 @@
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-sm-6 col-md-4 text--centered'>
+            <a href="/Ministry/Children/Lessons/{{i | Attribute:'AgeGroup'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}">
+                <div class='img-wrapper'>
+                    {[ cloudinaryimg item:i imgtype:'watch' imgclasses:'w-100' ]}
+                </div>
+                <h4>{{i.Title}}</h4>
+                {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+            </a>
+        </div>
+    {% endfor %}
+</div>

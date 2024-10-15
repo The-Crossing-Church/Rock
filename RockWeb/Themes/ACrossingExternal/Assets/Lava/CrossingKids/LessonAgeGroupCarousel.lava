@@ -16,7 +16,7 @@
                 <a href="/Ministry/Children/Lessons/{{i | Attribute:'AgeGroup'}}/{{i | Attribute:'Series'}}/{{i.PrimarySlug}}">
                     <div style="padding: 8px">
                         <div class='img-wrapper'>
-                            <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                            {[ cloudinaryimg item:i imgtype:'watch' imgclasses:'w-100' ]}
                         </div>
                         <h4>{{i.Title}}</h4>
                         <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
