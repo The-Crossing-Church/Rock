@@ -127,7 +127,7 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <!--<th>Age</th>-->
+                        <th>Age</th>
                         <th>Birth Date</th>
                         <th>Gender</th>
                         <th>Marital Status</th>
@@ -151,7 +151,7 @@
                         {% endif %}
 
                             <td>{{ row.Name }}</td>
-                            <!--<td>{{ row.Age }}</td>-->
+                            <td>{{ row.Age }}</td>
                             <td>{{ row.BirthDate }}</td>
                             <td>{{ row.Gender }}</td>
                             <td>{{ row.MaritalStatus }}</td>
