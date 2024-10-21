@@ -40,7 +40,8 @@ export default defineComponent({
     currentDate: DateTime,
     formUrl: String,
     dashboardUrl: String,
-    isAdmin: Boolean
+    isAdmin: Boolean,
+    currentPersonId: Number
   },
   setup() {
 
@@ -278,6 +279,7 @@ export default defineComponent({
         :formUrl="formUrl"
         :dashboardUrl="dashboardUrl"
         :isAdmin="isAdmin"
+        :currentPersonId="currentPersonId"
       ></tcc-event>
     </template>
   </div>

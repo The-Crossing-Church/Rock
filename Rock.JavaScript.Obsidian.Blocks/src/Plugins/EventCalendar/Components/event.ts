@@ -20,7 +20,8 @@ export default defineComponent({
     cols: Number,
     formUrl: String,
     dashboardUrl: String,
-    isAdmin: Boolean
+    isAdmin: Boolean,
+    currentPersonId: Number
   },
   setup() {
 
@@ -115,7 +116,7 @@ export default defineComponent({
     
   },
   mounted() {
-    
+    console.log(store.state)
   },
   updated() {
     
@@ -184,10 +185,10 @@ export default defineComponent({
       </div>
     </template>
     <template #footer>
-      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id || isAdmin" @click="openInForm">
+      <a-btn shape="circle" type="accent" v-if="event.createdByPersonId == currentPersonId || event.modifiedByPersonId == currentPersonId || isAdmin" @click="openInForm">
         <i class="fa fa-pencil"></i>
       </a-btn>
-      <a-btn shape="circle" type="accent" v-if="event.submitterId == currentPerson.id || isAdmin" @click="openInDash">
+      <a-btn shape="circle" type="accent" v-if="event.createdByPersonId == currentPersonId || event.modifiedByPersonId == currentPersonId || isAdmin" @click="openInDash">
         <i class="fas fa-external-link-alt"></i>
       </a-btn>
       <a-btn shape="circle" type="primary" v-if="relatedEvents.length > 0" @click="filterToEvent">

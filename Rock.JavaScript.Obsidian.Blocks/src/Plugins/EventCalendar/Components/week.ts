@@ -12,7 +12,8 @@ export default defineComponent({
     currentDate: DateTime,
     formUrl: String,
     dashboardUrl: String,
-    isAdmin: Boolean
+    isAdmin: Boolean,
+    currentPersonId: Number
   },
   setup() {
 
@@ -103,6 +104,7 @@ export default defineComponent({
                 :formUrl="formUrl"
                 :dashboardUrl="dashboardUrl"
                 :isAdmin="isAdmin"
+                :currentPersonId="currentPersonId"
                 v-on:filterToEvent="filterToEvent"
               ></tcc-day>
             </div>

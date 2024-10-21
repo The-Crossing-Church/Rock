@@ -161,33 +161,34 @@ namespace Rock.Blocks.Plugins.EventCalendar
 
             SetProperties();
 
-            if (EventContentChannelId > 0 && EventDetailsContentChannelId > 0)
+            if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 )
             {
                 //Lists
                 var p = GetCurrentPerson();
-                if (Locations != null && Locations.Count() > 0)
+                viewModel.currentPersonId = p.Id;
+                if ( Locations != null && Locations.Count() > 0 )
                 {
                     viewModel.locations = Locations;
                 }
-                if (Ministries != null && Ministries.Count() > 0)
+                if ( Ministries != null && Ministries.Count() > 0 )
                 {
                     viewModel.ministries = Ministries;
                 }
 
                 //Attributes
                 string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-                if (!String.IsNullOrEmpty( requestStatusAttrKey ))
+                if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
                 {
                     viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).ToViewModel();
                 }
                 string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-                if (!String.IsNullOrEmpty( resourcesAttrKey ))
+                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
                 {
                     viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).ToViewModel();
                 }
                 viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
                 viewModel.formUrl = this.GetLinkedPageUrl( AttributeKey.SubmissionPage );
-                if (viewModel.isEventAdmin)
+                if ( viewModel.isEventAdmin )
                 {
                     viewModel.dashboardUrl = this.GetLinkedPageUrl( AttributeKey.AdminDashboard );
                 }
@@ -209,7 +210,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
             try
             {
                 SetProperties();
-                if (EventDatesAttr != null && EventDateAttr != null && StartTimeAttr != null && StartBufferAttr != null && EndTimeAttr != null && EndBufferAttr != null && LocationAttr != null)
+                if ( EventDatesAttr != null && EventDateAttr != null && StartTimeAttr != null && StartBufferAttr != null && EndTimeAttr != null && EndBufferAttr != null && LocationAttr != null )
                 {
                     var calendars = GetEventDataSQL( start, end );
 
@@ -217,7 +218,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
                 }
                 throw new Exception( "Configuration Error: Cannot find Event Dates Attribute" );
             }
-            catch (Exception e)
+            catch ( Exception e )
             {
                 ExceptionLogService.LogException( e );
                 return ActionBadRequest( e.Message );
@@ -237,13 +238,13 @@ namespace Rock.Blocks.Plugins.EventCalendar
                 ContentChannelId = viewModel.ContentChannelId,
                 ContentChannelTypeId = viewModel.ContentChannelTypeId
             };
-            if (!String.IsNullOrEmpty( viewModel.IdKey ))
+            if ( !String.IsNullOrEmpty( viewModel.IdKey ) )
             {
                 item = new ContentChannelItemService( context ).Get( viewModel.IdKey );
             }
             item.LoadAttributes();
             item.Title = viewModel.Title;
-            foreach (KeyValuePair<string, string> av in viewModel.AttributeValues)
+            foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
             {
                 item.SetPublicAttributeValue( av.Key, av.Value, p, false );
             }
@@ -257,13 +258,13 @@ namespace Rock.Blocks.Plugins.EventCalendar
             Guid eventCCGuid = Guid.Empty;
             Guid eventDetailsCCGuid = Guid.Empty;
 
-            if (Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ))
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventContentChannel ), out eventCCGuid ) )
             {
                 ContentChannel cc = new ContentChannelService( rockContext ).Get( eventCCGuid );
                 EventContentChannelId = cc.Id;
                 EventContentChannelTypeId = cc.ContentChannelTypeId;
             }
-            if (Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ))
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventDetailsContentChannel ), out eventDetailsCCGuid ) )
             {
                 ContentChannel dCC = new ContentChannelService( rockContext ).Get( eventDetailsCCGuid );
                 EventDetailsContentChannelId = dCC.Id;
@@ -272,118 +273,118 @@ namespace Rock.Blocks.Plugins.EventCalendar
             }
             var attr_svc = new AttributeService( rockContext );
             string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
-            if (!String.IsNullOrEmpty( eventDatesAttrKey ))
+            if ( !String.IsNullOrEmpty( eventDatesAttrKey ) )
             {
                 EventDatesAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == eventDatesAttrKey );
             }
             string statusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-            if (!String.IsNullOrEmpty( statusAttrKey ))
+            if ( !String.IsNullOrEmpty( statusAttrKey ) )
             {
                 RequestStatusAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == statusAttrKey );
             }
             string infrstructureSpaceAttrKey = GetAttributeValue( AttributeKey.InfrstructureSpaceAttrKey );
-            if (!String.IsNullOrEmpty( infrstructureSpaceAttrKey ))
+            if ( !String.IsNullOrEmpty( infrstructureSpaceAttrKey ) )
             {
                 InfrastructureSpaceAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == infrstructureSpaceAttrKey );
             }
             string eventDateAttrKey = GetAttributeValue( AttributeKey.DetailsEventDate );
-            if (!String.IsNullOrEmpty( eventDateAttrKey ))
+            if ( !String.IsNullOrEmpty( eventDateAttrKey ) )
             {
                 EventDateAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == eventDateAttrKey );
             }
             string startTimeAttrKey = GetAttributeValue( AttributeKey.StartDateTime );
-            if (!String.IsNullOrEmpty( startTimeAttrKey ))
+            if ( !String.IsNullOrEmpty( startTimeAttrKey ) )
             {
                 StartTimeAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startTimeAttrKey );
             }
             string startBufferAttrKey = GetAttributeValue( AttributeKey.StartBuffer );
-            if (!String.IsNullOrEmpty( startBufferAttrKey ))
+            if ( !String.IsNullOrEmpty( startBufferAttrKey ) )
             {
                 StartBufferAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == startBufferAttrKey );
             }
             string endTimeAttrKey = GetAttributeValue( AttributeKey.EndDateTime );
-            if (!String.IsNullOrEmpty( endTimeAttrKey ))
+            if ( !String.IsNullOrEmpty( endTimeAttrKey ) )
             {
                 EndTimeAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endTimeAttrKey );
             }
             string endBufferAttrKey = GetAttributeValue( AttributeKey.EndBuffer );
-            if (!String.IsNullOrEmpty( endBufferAttrKey ))
+            if ( !String.IsNullOrEmpty( endBufferAttrKey ) )
             {
                 EndBufferAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == endBufferAttrKey );
             }
             string locationAttrKey = GetAttributeValue( AttributeKey.Rooms );
-            if (!String.IsNullOrEmpty( locationAttrKey ))
+            if ( !String.IsNullOrEmpty( locationAttrKey ) )
             {
                 LocationAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventDetailsContentChannelTypeId.ToString() && a.Key == locationAttrKey );
             }
             string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
-            if (!String.IsNullOrEmpty( ministryAttrKey ))
+            if ( !String.IsNullOrEmpty( ministryAttrKey ) )
             {
                 MinistryAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == ministryAttrKey );
             }
             string contactAttrKey = GetAttributeValue( AttributeKey.ContactAttrKey );
-            if (!String.IsNullOrEmpty( contactAttrKey ))
+            if ( !String.IsNullOrEmpty( contactAttrKey ) )
             {
                 ContactAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == contactAttrKey );
             }
             string isSameAttrKey = GetAttributeValue( AttributeKey.IsSameAttrKey );
-            if (!String.IsNullOrEmpty( isSameAttrKey ))
+            if ( !String.IsNullOrEmpty( isSameAttrKey ) )
             {
                 IsSameAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == isSameAttrKey );
             }
             string needsSpaceAttrKey = GetAttributeValue( AttributeKey.NeedsSpaceAttrKey );
-            if (!String.IsNullOrEmpty( needsSpaceAttrKey ))
+            if ( !String.IsNullOrEmpty( needsSpaceAttrKey ) )
             {
                 NeedsSpaceAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsSpaceAttrKey );
             }
             string needsOnlineAttrKey = GetAttributeValue( AttributeKey.NeedsOnlineAttrKey );
-            if (!String.IsNullOrEmpty( needsOnlineAttrKey ))
+            if ( !String.IsNullOrEmpty( needsOnlineAttrKey ) )
             {
                 NeedsOnlineAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsOnlineAttrKey );
             }
             string needsPublicityAttrKey = GetAttributeValue( AttributeKey.NeedsPublicityAttrKey );
-            if (!String.IsNullOrEmpty( needsPublicityAttrKey ))
+            if ( !String.IsNullOrEmpty( needsPublicityAttrKey ) )
             {
                 NeedsPublicityAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsPublicityAttrKey );
             }
             string needsRegistrationAttrKey = GetAttributeValue( AttributeKey.NeedsRegistrationAttrKey );
-            if (!String.IsNullOrEmpty( needsRegistrationAttrKey ))
+            if ( !String.IsNullOrEmpty( needsRegistrationAttrKey ) )
             {
                 NeedsRegistrationAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsRegistrationAttrKey );
             }
             string needsCalendarAttrKey = GetAttributeValue( AttributeKey.NeedsCalendarAttrKey );
-            if (!String.IsNullOrEmpty( needsCalendarAttrKey ))
+            if ( !String.IsNullOrEmpty( needsCalendarAttrKey ) )
             {
                 NeedsCalendarAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsCalendarAttrKey );
             }
             string needsCateringAttrKey = GetAttributeValue( AttributeKey.NeedsCateringAttrKey );
-            if (!String.IsNullOrEmpty( needsCateringAttrKey ))
+            if ( !String.IsNullOrEmpty( needsCateringAttrKey ) )
             {
                 NeedsCateringAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsCateringAttrKey );
             }
             string needsChildcareAttrKey = GetAttributeValue( AttributeKey.NeedsChildcareAttrKey );
-            if (!String.IsNullOrEmpty( needsChildcareAttrKey ))
+            if ( !String.IsNullOrEmpty( needsChildcareAttrKey ) )
             {
                 NeedsChildcareAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsChildcareAttrKey );
             }
             string needsChildcareCateringAttrKey = GetAttributeValue( AttributeKey.NeedsChildcareCateringAttrKey );
-            if (!String.IsNullOrEmpty( needsChildcareCateringAttrKey ))
+            if ( !String.IsNullOrEmpty( needsChildcareCateringAttrKey ) )
             {
                 NeedsChildcareCateringAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsChildcareCateringAttrKey );
             }
             string needsOpsAttrKey = GetAttributeValue( AttributeKey.NeedsOpsAttrKey );
-            if (!String.IsNullOrEmpty( needsOpsAttrKey ))
+            if ( !String.IsNullOrEmpty( needsOpsAttrKey ) )
             {
                 NeedsOpsAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsOpsAttrKey );
             }
             string needsProductionAttrKey = GetAttributeValue( AttributeKey.NeedsProductionAttrKey );
-            if (!String.IsNullOrEmpty( needsProductionAttrKey ))
+            if ( !String.IsNullOrEmpty( needsProductionAttrKey ) )
             {
                 NeedsProductionAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsProductionAttrKey );
             }
 
             Guid locationGuid = Guid.Empty;
-            if (Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ))
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
             {
                 LocationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
                 var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == LocationDT.Id ).ToList();
@@ -391,7 +392,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
                 Locations = locs;
             }
             Guid ministryGuid = Guid.Empty;
-            if (Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ))
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
             {
                 MinistryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
                 var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == MinistryDT.Id );
@@ -410,10 +411,10 @@ namespace Rock.Blocks.Plugins.EventCalendar
             Rock.Model.Person p = GetCurrentPerson();
             Guid securityRoleGuid = Guid.Empty;
             //A role was configured and the current person is not null
-            if (Guid.TryParse( GetAttributeValue( attrKey ), out securityRoleGuid ) && p != null)
+            if ( Guid.TryParse( GetAttributeValue( attrKey ), out securityRoleGuid ) && p != null )
             {
                 Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
-                if (securityRole.Members.Select( gm => gm.PersonId ).Contains( p.Id ))
+                if ( securityRole.Members.Select( gm => gm.PersonId ).Contains( p.Id ) )
                 {
                     hasRole = true;
                 }
@@ -423,7 +424,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
 
         private List<EventFormCalendar> GetEventDataSQL( DateTime start, DateTime end )
         {
-            using (RockContext context = new RockContext())
+            using ( RockContext context = new RockContext() )
             {
                 var sqlParams = new SqlParameter[] {
                     new SqlParameter( "@eventDetailsContentChannelId", EventDetailsContentChannelId ),
@@ -875,8 +876,8 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
                     {
                         name = c.Key,
                         events = c.OrderBy( e => e.start ).ToList(),
-                        color = color != null ? ("rgba(" + color.Split( '^' )[1] + ", .7)") : "rgba(78, 135, 140, .7)",
-                        border = color != null ? ("rgba(" + color.Split( '^' )[1] + ", 1)") : "rgba(78, 135, 140, 1)"
+                        color = color != null ? ( "rgba(" + color.Split( '^' )[1] + ", .7)" ) : "rgba(78, 135, 140, .7)",
+                        border = color != null ? ( "rgba(" + color.Split( '^' )[1] + ", 1)" ) : "rgba(78, 135, 140, 1)"
                     };
                 } ).ToList();
             }
@@ -894,6 +895,7 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
             public string formUrl { get; set; }
             public string dashboardUrl { get; set; }
             public bool isEventAdmin { get; set; }
+            public int currentPersonId { get; set; }
         }
 
         private class EventFormCalendar

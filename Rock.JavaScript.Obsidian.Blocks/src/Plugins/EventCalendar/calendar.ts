@@ -660,6 +660,7 @@ export default defineComponent({
       :formUrl="viewModel.formUrl"
       :dashboardUrl="viewModel.dashboardUrl"
       :isAdmin="viewModel.isEventAdmin"
+      :currentPersonId="viewModel.currentPersonId"
       v-on:selectDay="selectDay"
       v-on:filterToEvent="filterToEvent"
     ></tcc-week>
@@ -670,6 +671,7 @@ export default defineComponent({
       :formUrl="viewModel.formUrl"
       :dashboardUrl="viewModel.dashboardUrl"
       :isAdmin="viewModel.isEventAdmin"
+      :currentPersonId="viewModel.currentPersonId"
       v-on:filterToEvent="filterToEvent"
     ></tcc-day>
   </div>

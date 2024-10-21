@@ -54,6 +54,9 @@ namespace Rock.Blocks.Plugins.EventForm
     [TextField( "Room Set-up", "Attribute Key for Room SetUp", key: AttributeKey.RoomSetUp, defaultValue: "RoomSetUp", category: "Attributes", order: 10 )]
     [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCodes", category: "Attributes", order: 11 )]
     [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 12 )]
+
+    [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
+    [TextField( "Shared With Attribut Key", category: "Sharing", order: 2, key: AttributeKey.SharedWithAttr )]
     #endregion Block Attributes
 
     public class SubmissionForm : RockObsidianBlockType
@@ -94,6 +97,8 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string RoomSetUp = "RoomSetUp";
             public const string DiscountCode = "DiscountCode";
             public const string DiscountCodeMatrix = "DiscountCodeMatrix";
+            public const string SharingGroupType = "SharingGroupType";
+            public const string SharedWithAttr = "SharedWithAttr";
         }
 
         /// <summary>
@@ -255,6 +260,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 return ActionInternalServerError( e.Message );
             }
         }
+
         [BlockAction]
         public BlockActionResult Submit( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events )
         {
@@ -394,6 +400,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         viewModel.request.ContentChannelId = EventChangesContentChannelId;
                     }
                 }
+                //TODO: Verify Permission
                 return viewModel;
             }
             else
@@ -585,6 +592,7 @@ namespace Rock.Blocks.Plugins.EventForm
         {
             SetProperties();
             ContentChannelItem item = FromViewModel( viewModel );
+            //TODO: Verify Permissions
             var cciSvc = new ContentChannelItemService( context );
             var assocSvc = new ContentChannelItemAssociationService( context );
             var avSvc = new AttributeValueService( context );
@@ -770,7 +778,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 }
             }
 
-            FormResponse res = new FormResponse() { id = item.Id, notValidForPreApprovalReasons = notValidForPreApprovalReasons, isPreApproved = notValidForPreApprovalReasons.Count() == 0 };
+            FormResponse res = new FormResponse() { id = item.Id, idKey = item.IdKey, notValidForPreApprovalReasons = notValidForPreApprovalReasons, isPreApproved = notValidForPreApprovalReasons.Count() == 0 };
             return res;
         }
 
@@ -1112,20 +1120,53 @@ namespace Rock.Blocks.Plugins.EventForm
             }
 
             //User Permissions
-            //TODO Cooksey: Finish Permissions for View vs Edit access
             if ( !String.IsNullOrEmpty( item.IdKey ) )
             {
-                Rock.Model.PersonAlias createdBy = null;
+                List<int> ids = new List<int>() { p.Id };
+                PersonAlias createdBy = null;
                 if ( item.CreatedByPersonAliasId.HasValue )
                 {
                     createdBy = new PersonAliasService( new RockContext() ).Get( item.CreatedByPersonAliasId.Value );
                 }
-                Rock.Model.PersonAlias modifiedBy = null;
+                PersonAlias modifiedBy = null;
                 if ( item.ModifiedByPersonAliasId.HasValue )
                 {
                     modifiedBy = new PersonAliasService( new RockContext() ).Get( item.ModifiedByPersonAliasId.Value );
                 }
-                if ( ( createdBy != null && createdBy.PersonId == p.Id ) || ( modifiedBy != null && modifiedBy.PersonId == p.Id ) )
+                //Shared Request
+                string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttr );
+                if ( !String.IsNullOrEmpty( sharedWithAttrKey ) )
+                {
+                    var sharedWithAttrValue = item.AttributeValues[sharedWithAttrKey];
+                    if ( !String.IsNullOrEmpty( sharedWithAttrValue ) )
+                    {
+                        List<int> sharedWithIds = sharedWithAttrValue.Split( ',' ).Select( i =>
+                        {
+                            int id;
+                            if ( int.TryParse( i, out id ) )
+                            {
+                                return id;
+                            }
+                            return 0;
+                        } ).Where( i => i > 0 ).ToList();
+                        ids.AddRange( sharedWithIds );
+                    }
+                }
+
+                Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+                if ( sharedRequestGroupTypeGuid.HasValue )
+                {
+                    //Shared requests are configured, find any for the current user.
+                    var SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                    var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id ).Where( g => g.Members.Any( gm => gm.PersonId == p.Id && gm.GroupRole.Name == "Can View" ) ).ToList();
+                    for ( int k = 0; k < groups.Count(); k++ )
+                    {
+                        var pids = groups[k].Members.Where( gm => gm.GroupRole.Name == "Request Creator" ).Select( gm => gm.Person.Id );
+                        ids.AddRange( pids );
+                    }
+                }
+
+                if ( ( createdBy != null && ids.Contains( createdBy.PersonId ) ) || ( modifiedBy != null && ids.Contains( modifiedBy.PersonId ) ) )
                 {
                     permissions.Add( "Edit" );
                 }
@@ -1844,6 +1885,7 @@ namespace Rock.Blocks.Plugins.EventForm
         public class FormResponse
         {
             public int id { get; set; }
+            public string idKey { get; set; }
             public List<string> notValidForPreApprovalReasons { get; set; }
             public bool isPreApproved { get; set; }
             public string message { get; set; }

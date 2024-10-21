@@ -1314,7 +1314,7 @@ export default defineComponent({
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
-      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting">
+      <a-btn v-if="step == lastStep" class="pull-right" type="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting || !viewModel.permissions.includes('Edit')">
         <template v-if="viewModel.request.attributeValues.RequestStatus == 'Approved'">
           Request Changes
         </template>  
@@ -1326,7 +1326,7 @@ export default defineComponent({
         </template>  
       </a-btn> 
       <a-btn v-else class="pull-right" type="primary" @click="next">Next</a-btn>
-      <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle">Save</a-btn>
+      <a-btn v-if="viewModel.request.attributeValues.RequestStatus == 'Draft'" style="margin: 0px 4px;" class="pull-right" type="accent" @click="saveDraft" :disabled="noTitle || !viewModel.permissions.includes('Edit')">Save</a-btn>
     </div>
   </div>
   <div class="row" v-if="canSubmit && step == lastStep">

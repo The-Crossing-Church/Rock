@@ -11,4 +11,5 @@ export type CalendarBlockViewModel = {
     formUrl: String;
     dashboardUrl: String;
     isEventAdmin: boolean;
+    currentPersonId: Number;
 };
