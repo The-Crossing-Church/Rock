@@ -370,7 +370,7 @@ export default defineComponent({
               this.isSave = false
               this.modal = true
               if(this.viewModel?.request) {
-                this.viewModel.request.idKey = res?.data?.id
+                this.viewModel.request.idKey = res?.data?.idKey
               }
             } else if (res.isError || res.Message) {
               this.toastIsError = true
