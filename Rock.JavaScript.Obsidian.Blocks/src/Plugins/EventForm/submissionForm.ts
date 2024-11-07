@@ -338,6 +338,10 @@ export default defineComponent({
     },
     saveDraft() {
       if(this.viewModel) {
+        let el = document.getElementById('updateProgress')
+        if(el) {
+          el.style.display = 'block'
+        }
         this.validate()
         this.save(this.viewModel).then((res: any) => {
           if(res.isSuccess){
@@ -348,8 +352,23 @@ export default defineComponent({
             if(this.viewModel?.request) {
               this.viewModel.request.idKey = res.data.idKey
             }
-          } else if (res.isError) {
-
+          } else if (res.isError || res.Message) {
+            this.toastIsError = true
+            this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
+          }
+        }).catch((err: any) => {
+          console.log('catch error')
+          if(err.Message) {
+            this.toastIsError = true
+            this.toastMessage = err.Message
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
+          }
+        }).finally(() => {
+          if(el) {
+            el.style.display = 'none'
           }
         })
       }
@@ -375,8 +394,8 @@ export default defineComponent({
             } else if (res.isError || res.Message) {
               this.toastIsError = true
               this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
-              let el = document.getElementById('toast')
-              el?.classList.add("show")
+              let toast = document.getElementById('toast')
+              toast?.classList.add("show")
             }
           }
           this.isSubmitting = false
@@ -385,8 +404,8 @@ export default defineComponent({
           if(err.Message) {
             this.toastIsError = true
             this.toastMessage = err.Message
-            let el = document.getElementById('toast')
-            el?.classList.add("show")
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
           }
         }).finally(() => {
           if(el) {
@@ -945,6 +964,9 @@ export default defineComponent({
       if(this.viewModel?.events) {
         if(val == 'True' && this.viewModel.events.length > 1) {
           this.viewModel.events = this.viewModel.events.slice(0, 1)
+          if(this.viewModel.events[0].attributeValues) {
+            this.viewModel.events[0].attributeValues.EventDate = ''
+          }
         } else {
           this.matchMultiEvent()
         }

@@ -78,6 +78,7 @@ export default defineComponent({
           label: 'Room (Capacity)',
           value: 'Room (Capacity)',
           isHeader: true,
+          isBanner: true,
           disabled: true
         }] 
         data.push(...this.items.filter((i: any) => i.isHeader)
@@ -85,6 +86,7 @@ export default defineComponent({
             label: grp.value, 
             value: grp.value, 
             isHeader: true,
+            isBanner: false,
             disabled: false,
             children: this.items.filter((i:any) => i.type == grp.value)
               .map((i: any) => ({ 
@@ -93,7 +95,17 @@ export default defineComponent({
                 isHeader: false,
                 disabled: i.isDisabled, 
                 description: i.description
-              })) })))
+              })) 
+          }))
+        )
+        data.forEach((grp: any) => {
+          if(grp.children) {
+            let disabledChildren = grp.children.filter((i: any) => i.disabled)
+            if(disabledChildren.length == grp.children.length) {
+              grp.disabled = true
+            }
+          }
+        })
         return data
       }
     },
@@ -174,8 +186,8 @@ export default defineComponent({
         <i class="fa fa-angle-down"></i>
         <i class="fa fa-angle-right"></i>
       </template>
-      <template #title="{ value, label, isHeader, description, disabled }">
-        <div v-if="isHeader && disabled" class="tcc-menu-header tcc-menu-banner">
+      <template #title="{ value, label, isHeader, isBanner, description, disabled }">
+        <div v-if="isHeader && isBanner" class="tcc-menu-header tcc-menu-banner">
           Room (Capacity)
         </div>
         <span v-else-if="isHeader" class="tcc-dropdown-header hover">

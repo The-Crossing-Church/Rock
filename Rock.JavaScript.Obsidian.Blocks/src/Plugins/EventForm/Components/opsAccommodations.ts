@@ -201,6 +201,11 @@ export default defineComponent({
           }
         })
         stdrSetUp = stdrSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+        this.selectedRoomSetUp.forEach((rsu: any) => {
+          rsu.NumberofTables = !rsu.NumberofTables ? 0 : rsu.NumberofTables
+          rsu.NumberofChairs = !rsu.NumberofChairs ? 0 : rsu.NumberofChairs
+        })
+        console.log(this.selectedRoomSetUp)
         this.selectedRoomSetUp = this.selectedRoomSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
         let isSame = true
         if(stdrSetUp.length != this.selectedRoomSetUp.length) {
@@ -233,7 +238,7 @@ export default defineComponent({
         }
         if(parseInt(a.NumberofTables) < parseInt(b.NumberofTables)) {
           return -1
-        } else if(parseInt(a.NumberOfTables) > parseInt(b.NumberOfTables)) {
+        } else if(parseInt(a.NumberofTables) > parseInt(b.NumberofTables)) {
           return 1
         }
         if(parseInt(a.NumberofChairs) < parseInt(b.NumberofChairs)) {

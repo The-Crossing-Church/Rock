@@ -133,6 +133,8 @@ export default defineComponent({
           } else {
             events = e.childItems.filter((child: any) => dates.includes(child.childContentChannelItem.attributeValues?.EventDate.value))
           }
+          console.log(e)
+          console.log(events)
           //Check if the times overlap
           let overlaps = false
           if(e.attributeValues?.IsSame.value == 'True') {

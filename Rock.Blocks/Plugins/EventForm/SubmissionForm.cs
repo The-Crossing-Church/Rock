@@ -250,8 +250,8 @@ namespace Rock.Blocks.Plugins.EventForm
         {
             try
             {
-                FormResponse r = SaveRequest( viewModel, events );
-                r.message = "Your request has been saved.";
+                FormResponse r = SaveRequest( viewModel, events, false );
+                r.message = "Your draft has been saved.";
                 return ActionOk( r );
             }
             catch ( Exception e )
@@ -267,7 +267,7 @@ namespace Rock.Blocks.Plugins.EventForm
             try
             {
                 string originalStatus = viewModel.AttributeValues["RequestStatus"];
-                FormResponse r = SaveRequest( viewModel, events );
+                FormResponse r = SaveRequest( viewModel, events, true );
                 ContentChannelItem item = new ContentChannelItemService( context ).Get( r.id );
                 item.LoadAttributes();
                 string currentStatus = item.GetAttributeValue( "RequestStatus" );
@@ -588,11 +588,15 @@ namespace Rock.Blocks.Plugins.EventForm
             return items;
         }
 
-        private FormResponse SaveRequest( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events )
+        private FormResponse SaveRequest( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events, bool isSubmission )
         {
             SetProperties();
             ContentChannelItem item = FromViewModel( viewModel );
-            //TODO: Verify Permissions
+            List<string> permissions = SetPermissions( viewModel, CheckSecurityRole( context, AttributeKey.EventAdminRole ) );
+            if ( !permissions.Contains( "Edit" ) )
+            {
+                throw new UnauthorizedAccessException( "You are not authorized to edit this request." );
+            }
             var cciSvc = new ContentChannelItemService( context );
             var assocSvc = new ContentChannelItemAssociationService( context );
             var avSvc = new AttributeValueService( context );
@@ -603,7 +607,7 @@ namespace Rock.Blocks.Plugins.EventForm
             var currentStatus = item.GetAttributeValue( "RequestStatus" );
 
             //Pre-Approval Check
-            var notValidForPreApprovalReasons = PreApprovalCheck( item, events );
+            var notValidForPreApprovalReasons = PreApprovalCheck( item, events, isSubmission );
             var isPreApproved = item.GetAttributeValue( "IsPreApproved" );
 
             if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Pending Changes" && isPreApproved == "True" )
@@ -782,7 +786,7 @@ namespace Rock.Blocks.Plugins.EventForm
             return res;
         }
 
-        private List<string> PreApprovalCheck( ContentChannelItem item, List<ContentChannelItemBag> events )
+        private List<string> PreApprovalCheck( ContentChannelItem item, List<ContentChannelItemBag> events, bool isSubmission )
         {
             var cciSvc = new ContentChannelItemService( context );
             var avSvc = new AttributeValueService( context );
@@ -811,8 +815,20 @@ namespace Rock.Blocks.Plugins.EventForm
                     for ( int k = 0; k < dates.Length; k++ )
                     {
                         DateTime start = DateTime.Parse( $"{dates[k]} {detail.GetAttributeValue( "StartTime" )}" );
-                        DateTime end = DateTime.Parse( $"{dates[k]} {detail.GetAttributeValue( "EndTime" )}" );
+                        DateTime end = DateTime.Parse( $"{dates[k]} {detail.GetAttributeValue( "EndTime" )}" ).AddMinutes( -1 );
                         DateRange r = new DateRange() { Start = start, End = end };
+                        var startBuffer = detail.GetAttributeValue( startBufferAttr.Key );
+                        var endBuffer = detail.GetAttributeValue( endBufferAttr.Key );
+                        if ( !String.IsNullOrEmpty( startBuffer ) )
+                        {
+                            int buffer = Int32.Parse( startBuffer );
+                            r.Start.Value.AddMinutes( buffer * -1 );
+                        }
+                        if ( !String.IsNullOrEmpty( endBuffer ) )
+                        {
+                            int buffer = Int32.Parse( endBuffer );
+                            r.End.Value.AddMinutes( buffer );
+                        }
                         PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
                         eventDates.Add( d );
                     }
@@ -822,8 +838,20 @@ namespace Rock.Blocks.Plugins.EventForm
                     DateTime? eventDate = detail.GetAttributeValue( "EventDate" ).AsDateTime();
                     string dateString = eventDate.Value.ToString( "yyyy-MM-dd" );
                     DateTime start = DateTime.Parse( $"{dateString} {detail.GetAttributeValue( "StartTime" )}" );
-                    DateTime end = DateTime.Parse( $"{dateString} {detail.GetAttributeValue( "EndTime" )}" );
+                    DateTime end = DateTime.Parse( $"{dateString} {detail.GetAttributeValue( "EndTime" )}" ).AddMinutes( -1 );
                     DateRange r = new DateRange() { Start = start, End = end };
+                    var startBuffer = detail.GetAttributeValue( startBufferAttr.Key );
+                    var endBuffer = detail.GetAttributeValue( endBufferAttr.Key );
+                    if ( !String.IsNullOrEmpty( startBuffer ) )
+                    {
+                        int buffer = Int32.Parse( startBuffer );
+                        r.Start.Value.AddMinutes( buffer * -1 );
+                    }
+                    if ( !String.IsNullOrEmpty( endBuffer ) )
+                    {
+                        int buffer = Int32.Parse( endBuffer );
+                        r.End.Value.AddMinutes( buffer );
+                    }
                     PreApprovalData d = new PreApprovalData() { range = r, rooms = detail.GetAttributeValue( "Rooms" ), attendance = detail.GetAttributeValue( "ExpectedAttendance" ) };
                     eventDates.Add( d );
                 }
@@ -1004,7 +1032,7 @@ namespace Rock.Blocks.Plugins.EventForm
                                         if ( !String.IsNullOrEmpty( endBuffer ) )
                                         {
                                             int buffer = Int32.Parse( endBuffer );
-                                            r.End.Value.AddMinutes( buffer ).AddMinutes( -1 );
+                                            r.End.Value.AddMinutes( buffer );
                                         }
                                         if ( r.Contains( eventDates[i].range.Start.Value ) || r.Contains( eventDates[i].range.End.Value ) )
                                         {
@@ -1024,8 +1052,11 @@ namespace Rock.Blocks.Plugins.EventForm
                     if ( inRange && validAttendance && validRooms && noConflicts )
                     {
                         item.SetAttributeValue( "IsPreApproved", "True" );
-                        item.SetAttributeValue( "RequestStatus", "Approved" );
-                        item.SaveAttributeValue( "RequestStatus" );
+                        if ( isSubmission ) //We were pre-approving when people tried to save drafts, need to not do that. 
+                        {
+                            item.SetAttributeValue( "RequestStatus", "Approved" );
+                            item.SaveAttributeValue( "RequestStatus" );
+                        }
                     }
                 }
                 else
