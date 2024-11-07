@@ -1,0 +1,23 @@
+<div class='col col-xs-12 col-md-4'>
+    {% contentchannelitem id:'{{Item.EntityId}}' %}
+        {% capture url %}/Veritas/Watch/{{contentchannelitem.PrimarySlug}}{% endcapture %}
+        {% assign publishDate = contentchannelitem.StartDateTime | Date:'MMMM dd, yyyy' %}
+    {% endcontentchannelitem %}
+    <a href="{{url}}">
+        <div style="padding: 8px">
+            <div class='img-wrapper'>
+                {% assign item = Item %}
+                {[ cloudinaryimg item:item imgtype:'watch' imgclasses:'w-100' issearch:'true' ]}
+                <div class="type-icon">
+                    {% if Item.SermonVideoValueRaw != '' or Item.FullServiceVideoValueRaw != '' %}
+                        <i class='fa fa-video'></i>
+                    {% elseif Item.SermonAudioValueRaw != '' %}
+                        <i class="fa fa-headphones"></i>
+                    {% endif %}
+                </div>
+            </div>
+            <h4>{{Item.Name}}</h4>
+            <p>{{Item.AuthorValueFormatted}}, {{ publishDate }}</p>
+        </div>
+    </a>
+</div>

@@ -1,0 +1,40 @@
+<br/>
+<div class="inset">
+    <div class="justify-center text--centered" style="flex-direction: column;">
+        <a href="/Veritas" class='justify-center pb-4'>
+            <img src="/Themes/Veritas/Assets/Logos/logo.png"  style="max-width: 300px; height: 100%; width: 100%; object-fit: cover;" class="img-responsive">
+        </a>
+        <div class='contact pb-4'>
+            <p>
+                <a href="https://www.google.com/maps/place/3615%20Southland%20Dr,%20Columbia,%20MO%2065201">3615 Southland Drive Columbia, Missouri 65201</a>
+            </p>
+            <p>
+                <a href="tel:5732564410">(573) 256-4410</a>
+            </p>
+        </div>
+        <div class='link-wrapper pb-4'>
+            <a class="btn btn-accent" href="/Give/Veritas">Support Veritas Staff</a>
+        </div>
+        <div class='link-wrapper pb-4'>
+            <a class="btn btn-accent" href="https://thecrossingchurch.com">Learn About The Crossing</a>
+        </div>
+        <div class='footer-social-media pb-4'>
+            <ul class="links">
+                {% contentchannelitem where:'ContentChannelId == 86' %}
+                    {% for i in contentchannelitemItems %}
+                        <li>
+                            <a href="{{ i | Attribute:'Link' }}" target="_blank">
+                                {% assign icon = i | Attribute:'FontAwesomeIcon' %}
+                                {% if icon != '' %}
+                                    <i class="fab fa-{{ i | Attribute:'FontAwesomeIcon' }}"></i>
+                                {% else %}
+                                    <img src="{{ i | Attribute:'AlternativeIcon' }}" style="height: 23px;" />
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% endcontentchannelitem %}
+            </ul>
+        </div>
+    </div>
+</div>

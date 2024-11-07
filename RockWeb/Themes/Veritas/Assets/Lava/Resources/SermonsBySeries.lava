@@ -1,0 +1,34 @@
+{% assign Items = Items | GroupByAttribute:'Series' %}
+{% for s in Items %}
+    {% assign item = s | PropertyToKeyValue  %}
+    {% assign classname = '' %}
+    {% assign mod = forloop.index0 | Modulo:2 %}
+    {% if mod > 0 %}
+        {% assign classname = 'background--grey full-width' %}
+    {% endif %}
+    {[ carousel carouselid:'watch-preview-{{forloop.index}}' itemheight:'300' containerclass:'{{classname}}' ]}
+        [[ title ]]
+            {{item.Key}}
+        [[ endtitle ]]
+        {% if forloop.index0 == 0 %}
+            {% assign videos = item.Value | Sort:'StartDateTime','Desc' %}
+        {% else %}
+            {% assign videos = item.Value | Sort:'StartDateTime','Asc' %}
+        {% endif %}
+        {% for i in videos limit:9 %}
+            [[ item ]]
+                <a href="/Veritas/Watch/{{i.PrimarySlug}}">
+                    <div style="padding: 8px">
+                        <div class='img-wrapper'>
+                            {[ cloudinaryimg item:i imgtype:'watch' imgclasses:'w-100' ]}
+                        </div>
+                        <h4>{{i.Title}}</h4>
+                        <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                    </div>
+                </a>
+            [[ enditem ]]
+        {% endfor %}
+        {% capture url %}/Veritas/Watch/Series?Series={{item.Key}}{% endcapture %}
+        [[ button url:'{{url}}' text:'Explore All']][[ endbutton ]]
+    {[ endcarousel ]}
+{% endfor %}

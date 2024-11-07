@@ -1,0 +1,15 @@
+{% assign title = 'Globals' | PageParameter:'Series' %}
+{{ title | SetPageTitle }}
+<h1 class='text--centered'>{{title}}</h1>
+<br/>
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-md-4'>
+            <a href="/Veritas/Watch/{{i.PrimarySlug}}">
+                {[ cloudinaryimg item:i imgtype:'watch' imgclasses:'w-100' ]}
+                <h4>{{i.Title}}</h4>
+                {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+            </a>
+        </div>
+    {% endfor %}
+</div>

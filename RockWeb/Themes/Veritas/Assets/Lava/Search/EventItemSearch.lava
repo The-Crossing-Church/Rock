@@ -1,0 +1,21 @@
+{% eventitem id:'{{Item.EntityId}}' %}
+    {% assign audiences = eventitem.EventItemAudiences | Select:'DefinedValue' | Where:'Value','College' | Size %}
+    {% if audiences >= 1 %}
+        <div class='col col-xs-12 col-md-4'>
+            <a target="_blank" href="/Veritas/Events/Detail?EventOccurrenceId={{eventitem.EventItemOccurrences | OrderBy:'NextStartDateTime' | First | Property:'Id' }}">
+                <div class="img-wrapper">
+                    {% assign altImage = eventitem | Attribute:'AlternateEventCardImage' %}
+                    {% capture imageUrl %}/GetImage.ashx?Guid={{ eventitem.Photo.Guid }}{% endcapture %}
+                    {% if altImage != '' and altImage != null %}
+                        {% assign imageUrl = altImage %}
+                    {% endif %}
+                    <img src="{{imageUrl}}" class="w-100" />
+                    <div class="type-icon">
+                        <i class="fa fa-calendar"></i>
+                    </div>
+                </div>
+                <h4 class="mt-0">{{ Item.Name }}</h4>
+            </a>
+        </div>
+    {% endif %}
+{% endeventitem %}

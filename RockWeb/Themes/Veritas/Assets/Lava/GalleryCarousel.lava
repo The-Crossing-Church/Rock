@@ -1,11 +1,11 @@
-{[ carousel carouselid:'gallery' itemheight:'200' ]}
+{[ carousel carouselid:'gallery' itemheight:'300' ]}
     [[ title ]]
         Gallery
     [[ endtitle ]]
     {% for i in Items %}
         [[ item ]]
             <div class="img-wrapper">
-                {[ cloudinaryimg item:i imgtype:'card' ]}
+                {[ cloudinaryimg item:i imgtype:'card' imgclasses:'w-100' ]}
             </div>
         [[ enditem ]]
     {% endfor %}

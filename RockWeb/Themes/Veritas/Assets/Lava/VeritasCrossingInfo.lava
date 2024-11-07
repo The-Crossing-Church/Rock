@@ -1,0 +1,26 @@
+{% assign svcTimes =  'Global' | Attribute:'ServiceTimes' | Split:',' | Join:', ' | ReplaceLast:', ',' and ' %}
+<br/><br/>
+  <div class='row row-equal-height'>
+    <div class='col col-xs-12 col-md-4 align-center'>
+      <div class='img-wrapper'>
+        {% assign item = Item %}
+        {[ cloudinaryimg item:item imgtype:'card' imgclasses:'w-100' ]}
+      </div>
+    </div>
+    <div class='col col-xs-12 col-md-8 align-center'>
+      <div>
+        <h3>{{Item | Attribute:'Heading'}}</h3>
+        {{Item.Content | Replace:'##SERVICE_TIMES##', svcTimes}}
+        <br/>
+      </div>
+    </div>
+  </div>
+<style>
+    .img-wrapper img {
+        width: 100%;
+        border-radius: 16px;
+    }
+    .img-wrapper {
+        width: 100%;
+    }
+</style>
