@@ -68,6 +68,12 @@ export default defineComponent({
               items: val.filter((v: any) => { 
                 return v.Room == selectedRooms[i].guid 
               }).map((v: any) => {
+                if(v.NumberofTables == 0 && v.NumberofChairs == 0) {
+                  return 'Empty room.'
+                } 
+                if(v.NumberofTables == 0) {
+                  return `${v.NumberofChairs} chairs.`
+                }
                 return `${v.NumberofTables} ${v.TypeofTable} ${parseInt(v.NumberofTables) > 1 ? 'tables' : 'table'} with ${v.NumberofChairs} chairs each.`
               })
             }

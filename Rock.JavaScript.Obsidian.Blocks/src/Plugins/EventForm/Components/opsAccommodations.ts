@@ -368,8 +368,16 @@ export default defineComponent({
               <template v-if="su.NumberofTables > 1">
                 {{su.NumberofTables}} {{su.TypeofTable}} tables with {{su.NumberofChairs}} chairs each.
               </template>
+              <template v-else-if="su.NumberofTables == 0">
+                <template v-if="su.NumberofChairs > 0">
+                  {{su.NumberofChairs}} chairs.
+                </template>
+                <template v-else>
+                  Empty room.
+                </template>
+              </template>
               <template v-else>
-                {{su.NumberofTables}} {{su.TypeofTable}} table with {{su.NumberofChairs}} charis.
+                {{su.NumberofTables}} {{su.TypeofTable}} table with {{su.NumberofChairs}} chairs.
               </template>
             </div>
           </div>
@@ -549,7 +557,7 @@ export default defineComponent({
 </rck-form>
 <a-modal v-model:visible="modal" style="min-width: 50%;">
   <div style="height: 16px;"></div>
-  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)"></tcc-setup>
+  <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)" :disabled="selectedRoomSetUp.length == 1"></tcc-setup>
   <div class="text-center mt-4 mb-0 alert alert-danger">
     <i>
       Please Note: Configuring a custom set-up will automatically add a 30 minute buffer to your reservation. It may impact the rooms/spaces available to you.

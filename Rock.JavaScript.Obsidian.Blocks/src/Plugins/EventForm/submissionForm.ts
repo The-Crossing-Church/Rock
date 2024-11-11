@@ -1366,7 +1366,12 @@ export default defineComponent({
         </strong>
       </div>
       <div v-if="response.isPreApproved">
-        Due to the nature of your request, it has been pre-approved. 
+        <template v-if="response.message.includes('draft')">
+          This request is eligible for pre-approval.
+        </template>
+        <template v-else>
+          Due to the nature of your request, it has been pre-approved. 
+        </template>
       </div>
       <div v-else>
         This request is not eligible for pre-approval based on the following criteria: 

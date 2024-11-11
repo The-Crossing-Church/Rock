@@ -85,7 +85,7 @@ export default defineComponent({
     ></rck-text>
   </div>
   <div class="col col-xs-1">
-    <a-btn type="red" @click="removeConfiguration">
+    <a-btn type="red" @click="removeConfiguration" :disabled="disabled">
       <i class="fas fa-trash"></i>
     </a-btn>
   </div>
