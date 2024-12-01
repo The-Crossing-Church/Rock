@@ -1016,6 +1016,7 @@ namespace Rock.Blocks.Plugins.EventForm
                                         ( itm, av ) => itm
                                     ).ToList();
                                     //Check Times overlap
+                                    ccItems = ccItems.Distinct().ToList();
                                     ccItems.LoadAttributes();
                                     ccItems = ccItems.Where( itm =>
                                     {
