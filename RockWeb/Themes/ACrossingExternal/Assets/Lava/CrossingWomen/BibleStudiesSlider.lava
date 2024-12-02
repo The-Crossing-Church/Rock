@@ -9,19 +9,21 @@
                     {% else %}
                         {% assign idx = forloop.index0 | Minus: 1 %}
                     {% endif %}
+                    {% assign itm = Items[idx] %}
                     <div class='img-wrapper'>
-                        <img class="d-block" style="max-width: 250px;" src="{{Items[idx] | Attribute:'Image'}}" alt="{{Items[idx] | Attribute:'ImageAltText'}}"/>
+                        {[ cloudinaryimg item:itm imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
                     </div>
                     <div class='img-wrapper'>
-                        <img class="d-block" style="max-width: 250px;" src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'ImageAltText'}}"/>
+                        {[ cloudinaryimg item:i imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
                     </div>
                     {% if forloop.last %}
                         {% assign idx = 0 %}
                     {% else %}
                         {% assign idx = forloop.index0 | Plus: 1 %}
                     {% endif %}
+                    {% assign itm = Items[idx] %}
                     <div class='img-wrapper'>
-                        <img class="d-block" style="max-width: 250px;" src="{{Items[idx] | Attribute:'Image'}}" alt="{{Items[idx] | Attribute:'ImageAltText'}}"/>
+                        {[ cloudinaryimg item:itm imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
                     </div>
                 </div>
             [[ endslide ]]
@@ -31,6 +33,7 @@
 <style>
     .img-wrapper {
         padding: 8px;
+        max-width: 266px;
     }
     @media only screen and (max-width: 819px) {
         .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:first-child {
