@@ -60,9 +60,6 @@ export default defineComponent({
         eventDates:  { lowerValue: "", upperValue: "" },
         eventModified: { lowerValue: "", upperValue: "" }
       }
-      defaultFilters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
-      let twoWeeks = Duration.fromObject({weeks: 2})
-      defaultFilters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
 
       /** A method to load a specific request's details */
       const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
