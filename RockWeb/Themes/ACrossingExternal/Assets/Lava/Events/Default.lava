@@ -70,7 +70,7 @@
                     {% assign sdates = i.Schedule.iCalendarContent | DatesFromICal:'all'  %}
                     {% assign ct = sdates | Size %}
                     {% assign nextDate = sdates | First %}
-                    {% assign diff = 'Now' DateDiff:nextDate %}
+                    {% assign diff = 'Now' | DateDiff:nextDate %}
                     {% if diff > 0 %}
                         {% capture displayDates %}{{displayDates}},{{nextDate}}{% endcapture %}
                         {% capture endTimes %}{{endTimes}},{{nextDate | DateAdd:i.Schedule.DurationInMinutes,'m' | Date:'h:mm tt'}}{% endcapture %}

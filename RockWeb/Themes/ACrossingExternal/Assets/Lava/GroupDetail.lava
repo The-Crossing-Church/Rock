@@ -82,25 +82,27 @@
 	{% endif %}
 	{% endcomment %}
 
-	{% if LinkedPages.RosterPage != '' and  (LinkedPages.AttendancePage != '' or Group.GroupType.TakesAttendance == 'False') %}
-		<ul class="nav nav-tabs margin-v-lg">
-			{% if LinkedPages.RosterPage != '' %}
-				{% if LinkedPages.RosterPage == CurrentPage.Path %}
-					<li role="presentation" class="active"><a href="{{ LinkedPages.RosterPage }}?GroupId={{ Group.Id }}">Roster</a></li>
-				{% else %}
-					<li role="presentation"><a href="{{ LinkedPages.RosterPage }}?GroupId={{ Group.Id }}">Roster</a></li>
-				{% endif %}
-			{% endif %}
-
-			{% if LinkedPages.AttendancePage != '' and Group.GroupType.TakesAttendance == 'True' %}
-				{% if LinkedPages.AttendancePage == CurrentPage.Path %}
-					<li role="presentation" class="active"><a href="{{ LinkedPages.AttendancePage }}?GroupId={{ Group.Id }}">Attendance</a></li>
-				{% else %}
-					<li role="presentation"><a href="{{ LinkedPages.AttendancePage }}?GroupId={{ Group.Id }}">Attendance</a></li>
-				{% endif %}
-			{% endif %}
-		</ul>
-	{% endif %}
+	{% if LinkedPages.RosterPage != '' %}
+	    {% if LinkedPages.AttendancePage != '' or Group.GroupType.TakesAttendance == 'False' %}
+    		<ul class="nav nav-tabs margin-v-lg">
+    			{% if LinkedPages.RosterPage != '' %}
+    				{% if LinkedPages.RosterPage == CurrentPage.Path %}
+    					<li role="presentation" class="active"><a href="{{ LinkedPages.RosterPage }}?GroupId={{ Group.Id }}">Roster</a></li>
+    				{% else %}
+    					<li role="presentation"><a href="{{ LinkedPages.RosterPage }}?GroupId={{ Group.Id }}">Roster</a></li>
+    				{% endif %}
+    			{% endif %}
+    
+    			{% if LinkedPages.AttendancePage != '' and Group.GroupType.TakesAttendance == 'True' %}
+    				{% if LinkedPages.AttendancePage == CurrentPage.Path %}
+    					<li role="presentation" class="active"><a href="{{ LinkedPages.AttendancePage }}?GroupId={{ Group.Id }}">Attendance</a></li>
+    				{% else %}
+    					<li role="presentation"><a href="{{ LinkedPages.AttendancePage }}?GroupId={{ Group.Id }}">Attendance</a></li>
+    				{% endif %}
+    			{% endif %}
+    		</ul>
+    	{% endif %}
+    {% endif %}
 
 	{% if LinkedPages.RosterPage == CurrentPage.Path %}
 
