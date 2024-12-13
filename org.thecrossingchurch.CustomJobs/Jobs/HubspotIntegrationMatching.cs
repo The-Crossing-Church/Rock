@@ -510,37 +510,48 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
         private void GetContacts( string url )
         {
-            request_count++;
-            var contactClient = new RestClient( url );
-            contactClient.Timeout = -1;
-            var contactRequest = new RestRequest( Method.GET );
-            contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
-            contactRequest.AddHeader( "accept", "application/json" );
-            contactRequest.AddHeader( "content-type", "application/json" );
-            IRestResponse contactResponse = contactClient.Execute( contactRequest );
-            var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
-            //Contacts with emails that do not already have Rock IDs in the desired business unit (if applicaable) 
-            contacts.AddRange( contactResults.results.Where( c =>
-                ( c.properties["rock_id"] == null || c.properties["rock_id"] == "" || c.properties["rock_id"] == "0" ) &&
-                ( ( c.email != null && c.email != "" ) || ( c.phone != null && c.phone != "" ) ) &&
-                ( String.IsNullOrEmpty( businessUnit ) ||
-                    ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
-                      c.properties["hs_all_assigned_business_unit_ids"] != "" &&
-                      c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+            try
+            {
+                request_count++;
+                var contactClient = new RestClient( url );
+                contactClient.Timeout = -1;
+                var contactRequest = new RestRequest( Method.GET );
+                contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
+                contactRequest.AddHeader( "accept", "application/json" );
+                contactRequest.AddHeader( "content-type", "application/json" );
+                IRestResponse contactResponse = contactClient.Execute( contactRequest );
+                if ( contactResponse.StatusCode != HttpStatusCode.OK )
+                {
+                    throw new Exception( contactResponse.Content );
+                }
+                var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
+                //Contacts with emails that do not already have Rock IDs in the desired business unit (if applicaable) 
+                contacts.AddRange( contactResults.results.Where( c =>
+                    ( c.properties["rock_id"] == null || c.properties["rock_id"] == "" || c.properties["rock_id"] == "0" ) &&
+                    ( ( c.email != null && c.email != "" ) || ( c.phone != null && c.phone != "" ) ) &&
+                    ( String.IsNullOrEmpty( businessUnit ) ||
+                        ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
+                          c.properties["hs_all_assigned_business_unit_ids"] != "" &&
+                          c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+                        )
                     )
-                )
-            ).ToList() );
+                ).ToList() );
 
-            //For Testing
-            if ( contactLimit.HasValue && contacts.Count >= contactLimit )
-            {
-                return;
+                //For Testing
+                if ( contactLimit.HasValue && contacts.Count >= contactLimit )
+                {
+                    return;
+                }
+
+                //Eventually we will have to change this check, but for right now we add the Request Count < 5000 so we don't end up in an infinite loop scenario
+                if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 5000 )
+                {
+                    GetContacts( contactResults.paging.next.link );
+                }
             }
-
-            //Eventually we will have to change this check, but for right now we add the Request Count < 5000 so we don't end up in an infinite loop scenario
-            if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 5000 )
+            catch ( Exception e )
             {
-                GetContacts( contactResults.paging.next.link );
+                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error: Get Contacts API Exception", e ) );
             }
         }
 

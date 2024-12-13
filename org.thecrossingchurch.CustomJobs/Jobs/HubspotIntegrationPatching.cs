@@ -36,6 +36,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Net;
 using System.Threading;
+using Rock.Address;
 
 namespace org.crossingchurch.HubspotIntegration.Jobs
 {
@@ -706,33 +707,44 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
         private void GetContacts( string url )
         {
-            request_count++;
-            var contactClient = new RestClient( url );
-            contactClient.Timeout = -1;
-            var contactRequest = new RestRequest( Method.GET );
-            contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
-            IRestResponse contactResponse = contactClient.Execute( contactRequest );
-            var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
-            contacts.AddRange( contactResults.results.Where( c =>
-                c.properties["rock_id"] != null && c.properties["rock_id"] != "" &&
-                c.properties["email"] != null && c.properties["email"] != "" &&
-                ( String.IsNullOrEmpty( businessUnit ) ||
-                    ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
-                      c.properties["hs_all_assigned_business_unit_ids"] != "" &&
-                      c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+            try
+            {
+                request_count++;
+                var contactClient = new RestClient( url );
+                contactClient.Timeout = -1;
+                var contactRequest = new RestRequest( Method.GET );
+                contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
+                IRestResponse contactResponse = contactClient.Execute( contactRequest );
+                if ( contactResponse.StatusCode != HttpStatusCode.OK )
+                {
+                    throw new Exception( contactResponse.Content );
+                }
+                var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
+                contacts.AddRange( contactResults.results.Where( c =>
+                    c.properties["rock_id"] != null && c.properties["rock_id"] != "" &&
+                    c.properties["email"] != null && c.properties["email"] != "" &&
+                    ( String.IsNullOrEmpty( businessUnit ) ||
+                        ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
+                          c.properties["hs_all_assigned_business_unit_ids"] != "" &&
+                          c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+                        )
                     )
-                )
-            ).ToList() );
+                ).ToList() );
 
-            //For Testing
-            if ( contactLimit.HasValue && contacts.Count >= contactLimit )
-            {
-                return;
+                //For Testing
+                if ( contactLimit.HasValue && contacts.Count >= contactLimit )
+                {
+                    return;
+                }
+
+                if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
+                {
+                    GetContacts( contactResults.paging.next.link );
+                }
             }
-
-            if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 500 )
+            catch ( Exception e )
             {
-                GetContacts( contactResults.paging.next.link );
+                ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error: Get Contacts API Exception", e ) );
             }
         }
 
