@@ -1,5 +1,8 @@
 ﻿{% assign svcTimes = 'Global' | Attribute:'ServiceTimes' | ReplaceLast:',',' and' %}
 {% assign section = 'Global' | PageParameter:'Section' %}
+{% capture baptismForm %}
+<i>To sign up for baptism, contact <a onclick="openBaptismForm()">Nicole Summerall</a>.</i>
+{% endcapture %}
 <div>
   <div class='d-none d-md-block'>
     <ul class="nav nav-tabs justify-center" role="tablist">
@@ -41,7 +44,7 @@
                         {% for item in i.Items %}
                             {% assign title = item | Attribute:'Question' %}
                             [[ item title:'{{title}}' ]]
-                                {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes }}
+                                {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes | Replace: '##BAPTISM_FORM##',baptismForm }}
                             [[ enditem ]]
                         {% endfor %}
                     {[ endtccaccordion ]}
@@ -66,7 +69,7 @@
                             {% for item in i.Items %}
                                 {% assign title = item | Attribute:'Question' %}
                                 [[ item title:'{{title}}' ]]
-                                    {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes }}
+                                    {{item.Content | Replace:'##SERVICE_TIMES##',svcTimes | Replace: '##BAPTISM_FORM##',baptismForm }}
                                 [[ enditem ]]
                             {% endfor %}
                         {[ endtccaccordion ]}
@@ -89,6 +92,15 @@ $('.{{accname}}-collapse').on('shown.bs.collapse', function(e) {
         }, 500);
     }
 });
+function openBaptismForm() {
+    $('#contactCollapse').on('shown.bs.collapse', function () {
+        $('html,body').animate({
+            scrollTop: $(this).offset().top - 140
+        }, 500);
+        {% comment %} this.scrollIntoView() {% endcomment %}
+    })
+    $('#contactCollapse').collapse('open')
+}
 </script>
 <style>
     .faq-collapse {
