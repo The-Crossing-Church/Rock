@@ -24,6 +24,7 @@ using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using Rock.Lava.RockLiquid.Blocks;
 
 namespace com_thecrossingchurch.LavaFilters
 {
@@ -326,26 +327,52 @@ namespace com_thecrossingchurch.LavaFilters
             var first = e.First();
             first.LoadAttributes();
             var attrId = first.Attributes[attribute].Id;
+            var fieldType = first.Attributes[attribute].FieldType;
+            bool isMulti = false;
+            if ( fieldType.Guid.ToString().ToUpper() == Rock.SystemGuid.FieldType.MULTI_SELECT )
+            {
+                isMulti = true;
+            }
+            if ( first.Attributes[attribute].QualifierValues.ContainsKey( "allowmultiple" ) )
+            {
+                var allowsMulti = first.Attributes[attribute].QualifierValues["allowmultiple"];
+                if ( allowsMulti.Value == "True" )
+                {
+                    isMulti |= true;
+                }
+            }
+
             var values = new AttributeValueService( new RockContext() ).Queryable().Where( av => av.AttributeId == attrId );
-            var data = e.Join( values,
-                    entity => entity.Id,
+
+            var list = values.Select( av => new { av.EntityId, av.Value } ).ToList();
+
+            if ( isMulti )
+            {
+                var splitValues = values.ToList().SelectMany( av =>
+                {
+                    return av.Value.Split( ',' ).Select( s => { av.Value = s; return av; } );
+                } );
+                list = splitValues.Select( av => new { av.EntityId, av.Value } ).ToList();
+            }
+
+            var data = list.Join( e,
                     v => v.EntityId,
-                    ( entity, v ) =>
+                    entity => entity.Id,
+                    ( v, entity ) =>
                     {
-                        entity.AttributeValues[attribute] = new AttributeValueCache( v );
-                        return entity;
+                        return new { v.Value, Entity = entity };
                     }
                 );
 
-            var grouping = data.AsQueryable().GroupBy( x => x.GetAttributeValue( attribute ) );
+            var grouping = data.GroupBy( x => x.Value ).Select( grp => new { grp.Key, Value = grp.Select( i => i.Entity ).ToList() } );
             Dictionary<string, object> groupedList;
             if ( limit.HasValue )
             {
-                groupedList = grouping.ToDictionary( g => g.Key != null ? g.Key.ToString() : string.Empty, g => ( object ) g.Take( limit.Value ).ToList() );
+                groupedList = grouping.ToDictionary( g => g.Key != null ? g.Key.ToString() : string.Empty, g => ( object ) g.Value.Take( limit.Value ).ToList() );
             }
             else
             {
-                groupedList = grouping.ToDictionary( g => g.Key != null ? g.Key.ToString() : string.Empty, g => ( object ) g.ToList() );
+                groupedList = grouping.ToDictionary( g => g.Key != null ? g.Key.ToString() : string.Empty, g => ( object ) g.Value.ToList() );
             }
 
             return groupedList;
@@ -406,6 +433,72 @@ namespace com_thecrossingchurch.LavaFilters
                 }
             }
             return tk;
+        }
+
+        /// <summary>
+        /// Convert a color string to a different format
+        /// </summary>
+        /// <param name="input">The color in original format</param>
+        /// <param name="format">The desired format</param>
+        /// <returns></returns>
+        public static string FormatColor( object input, string format )
+        {
+            Color? color = null;
+            string colorStr = input.ToString();
+            if ( colorStr.Contains( "rgb" ) )
+            {
+                string rgbStr = "";
+                string[] colorParts = colorStr.Split( '(' );
+                if ( colorParts.Length > 1 )
+                {
+                    colorParts = colorParts[1].Split( ')' );
+                    rgbStr = colorParts[0];
+                }
+                if ( !String.IsNullOrEmpty( rgbStr ) )
+                {
+                    List<double> rgbVals = rgbStr.Split( ',' ).ToList().Select( str =>
+                    {
+                        double val;
+                        Double.TryParse( str.Trim(), out val );
+                        return val;
+                    } ).ToList();
+                    if ( rgbVals.Count == 3 )
+                    {
+                        color = Color.FromArgb( rgbVals[0].ToIntSafe(), rgbVals[1].ToIntSafe(), rgbVals[2].ToIntSafe() );
+                    }
+                    if ( rgbVals.Count == 4 )
+                    {
+                        int alpha = ( int ) ( 255 * rgbVals[3] );
+                        color = Color.FromArgb( alpha, rgbVals[0].ToIntSafe(), rgbVals[1].ToIntSafe(), rgbVals[2].ToIntSafe() );
+                    }
+                }
+            }
+            else
+            {
+                color = ColorTranslator.FromHtml( input.ToString() );
+            }
+            string formattedColor = "";
+            if ( color.HasValue )
+            {
+                //standardize desired format
+                if ( format.ToLower().Contains( "rgba" ) )
+                {
+                    formattedColor = $"rgba({color.Value.R},{color.Value.G},{color.Value.B},{color.Value.A})";
+                }
+                else if ( format.ToLower().Contains( "rgb" ) )
+                {
+                    formattedColor = $"rgb({color.Value.R},{color.Value.G},{color.Value.B})";
+                }
+                else if ( format.ToLower().Contains( "hex" ) )
+                {
+                    formattedColor = "#" + color.Value.R.ToString( "X2" ) + color.Value.G.ToString( "X2" ) + color.Value.B.ToString( "X2" ) + color.Value.A.ToString( "X2" );
+                }
+                else
+                {
+                    formattedColor = color.Value.ToKnownColor().ToString();
+                }
+            }
+            return formattedColor;
         }
     }
 }
