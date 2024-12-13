@@ -229,7 +229,7 @@ $(document).ready(() => {
                             Unknown: {{week.Unknown}},
                             Total: {{week.Transactions}},
                             Scheduled: {{week.IsScheduled}},
-                            Amount: "{{week.["Total Amount"] | FormatAsCurrency}}",
+                            Amount: "{{week["Total Amount"] | FormatAsCurrency}}",
                         },
                     {% endfor %}
                 ]

@@ -40,11 +40,12 @@ namespace com_thecrossingchurch.LavaFilters
         /// <exception cref="System.NotImplementedException"></exception>
         public void OnStartup()
         {
+            LavaService.RegisterFilters( typeof( RockFilters ) );
             Template.RegisterFilter( typeof( RockFilters ) );
         }
     }
 
-    public class RockFilters
+    public static class RockFilters
     {
         /// <summary>
         /// Generate QR Code for URL.

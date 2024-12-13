@@ -5,7 +5,7 @@
     {% assign root = 'Global' | Attribute:'InternalApplicationRoot' %}
     {% assign rockAdmin = CurrentPerson | Group: '2','All' | Size %}
     {% assign womensSecurityGroup = CurrentPerson | Group: '110733','All' | Size %}
-    {% assign CKSecurityGroup = CurrentPerson  Person| Group: '110498','All' | Size %}
+    {% assign CKSecurityGroup = CurrentPerson  | Group: '110498','All' | Size %}
     {% assign SGSecurityGroup = CurrentPerson | Group: '110732','All' | Size %}
     {% assign CareSecurityGroup = CurrentPerson | Group: '109193','All' | Size %}
     {% assign CareAdminSecurityGroup = CurrentPerson | Group: '213512','All' | Size %}
