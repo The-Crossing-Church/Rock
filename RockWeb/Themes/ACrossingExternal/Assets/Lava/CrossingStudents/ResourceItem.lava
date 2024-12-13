@@ -16,7 +16,8 @@
     {% else %}
         <div class='row'>
             <div class='col col-xs-12 col-md-4'>
-                <img src="{{ Item | Attribute:'Image' }}" style="width: 100%;" alt="{{Item.Title}}"/>
+                {% assign cci = Item %}
+                {[ cloudinaryimg item:cci imgType:'resource' imgclasses:'w-100' ]}
             </div>
             <div class='col col-xs-12 col-md-8'>
                 <h1>{{Item.Title}}</h1>

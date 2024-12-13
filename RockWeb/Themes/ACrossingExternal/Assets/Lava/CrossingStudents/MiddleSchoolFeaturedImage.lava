@@ -1,4 +1,11 @@
 ﻿<div class='text--centered'>
-    <img style="width:100%; max-width:300px; margin-bottom: 16px;" src="https://rock.thecrossingchurch.com/Content/Crossing%20Students/MS_Black_Horizontal.png" alt="Crossing Middle School"/>
-    <img style="width:100%; max-width:300px; margin-bottom: 16px;" class="card--custom card-with-button" src="{{ Item | Attribute:'Image' }}" alt="{{ Item.Title }}"/>
+    {% binaryfile id:'393666' %}
+        <div class="w-100" style="max-width: 300px; margin: auto;">
+            <img style="margin-bottom: 16px;" class="w-100" src="{{ binaryfile | CloudinaryTransform: 'c_fill,w_600,h_180,g_auto' }}" alt="{{binaryfile | Attribute:'AltText'}}" />
+        </div>
+    {% endbinaryfile %}
+    <div class="card--custom card-with-button w-100" style="max-width: 300px; margin: auto; margin-bottom: 16px;">
+        {% assign i = Item %}
+        {[ cloudinaryimg item:i imgtype:'card' imgclasses:'w-100' ]}
+    </div>
 </div>
