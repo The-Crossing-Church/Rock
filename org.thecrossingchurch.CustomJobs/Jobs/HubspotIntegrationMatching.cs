@@ -232,12 +232,15 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             worksheet.PrinterSettings.BottomMargin = .5m;
             var headers = new List<string> { "HubSpot FirstName", "Rock FirstName", "HubSpot LastName", "Rock LastName", "HubSpot Email", "Rock Email", "HubSpot Phone", "Rock Phone", "Rock Connection Status", "HubSpot Link", "Rock Link", "HubSpot CreatedDate", "Rock Created Date", "HubSpot Modified Date", "Rock Modified Date", "Rock ID" };
             //If someone has requested additional values we will assume they want them in the excel sheet
-            for ( int i = 0; i < additionalProperties.Count; i++ )
+            if ( props != null && props.Count() > 0 )
             {
-                var currentProp = props.FirstOrDefault( p => p.name == additionalProperties[i] );
-                if ( currentProp != null )
+                for ( int i = 0; i < additionalProperties.Count; i++ )
                 {
-                    headers.Add( currentProp.label );
+                    var currentProp = props.FirstOrDefault( p => p.name == additionalProperties[i] );
+                    if ( currentProp != null )
+                    {
+                        headers.Add( currentProp.label );
+                    }
                 }
             }
 
