@@ -1,0 +1,40 @@
+<div class="container-fluid">
+  <h4 class="month text-center">{{ StartDate | Date:'MMMM yyyy'}}</h4>
+
+  <div class="row days">
+  	{% for day in DayEvents %}
+		<h5>
+			{% if day.FocusMonth %}
+				{{ day.Date | Date:'ddd d'}}
+			{% else %}
+				{{ day.Date | Date:'ddd MMM d'}}
+			{% endif %}
+		</h5>
+  	{% endfor %}
+  </div>
+
+	{% for day in DayEvents%}
+	  {% cycle '<div class="row">', '', '', '', '', '', '' %}
+
+	  <a href="{{ day.DayLink }}" class="col-xs-12 calendar-day">
+        <span class="container martop15">
+          {% for event in day.EventItemOccurrenceSummaries %}
+              <div class="event-month" style="background-color: {{ event.Color }}; color: white;">
+			    {% if event.Location <> '' %}<strong>{{ event.Location }}</strong><br/>{% endif %}
+                {{ event.Time }}
+                {% if event.Blocked %}Blocked:{% endif %}
+                {{ event.Name }}
+                <span class="tooltiptext">
+                  {{ event.Campus }}  
+                  {% if event.Location && event.Location != '' %}<br/>{{ event.Location }}{% endif %}
+                  {% if event.Ministry && event.Ministry != '' %}<br/>{{ event.Ministry }}{% endif %}
+                </span>
+              </div>
+          {% endfor %}
+        </span>
+	  </a>
+
+	  {% cycle '', '', '', '', '', '', '</div>' %}
+	{% endfor %} 
+
+</div>

@@ -1,0 +1,18 @@
+{% for item in Items %}
+
+	<article>
+		<h4>{{ item.Title }} <small>{{ item.StartDateTime | Date:'MM-dd-yyyy hh:mm tt' }}</small></h4>
+		<div class='margin-b-lg' >
+			{{ item.Content }}
+		</div>
+	  
+		<div class='actions'>
+			<script>
+				document.write('<a class="btn btn-default" href="' + document.referrer + '">Back</a>');
+			</script>
+			<a class='btn btn-primary' href='{{ LinkedPages.DetailPage }}?contentItemId={{ item.Id }}'>Edit</a>	  
+		</div>
+	</article>
+
+{% endfor %}
+

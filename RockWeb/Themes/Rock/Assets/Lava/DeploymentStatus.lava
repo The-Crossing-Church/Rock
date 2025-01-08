@@ -1,0 +1,19 @@
+<div class="alert alert-info">
+    <h5>Environment Status</h5>
+    <b>Database:</b> Production on {{Item | Attribute:'DatabaseCopyDate' | Date:'MM/dd/yyyy'}} <br/>
+    <b>Code Version: </b> {{ Item | Attribute:'InstanceVersion' }} <br/>
+    {% assign instance = Item | Attribute:'InstanceVersion' %}
+    {% assign prod = Item | Attribute:'ProductionVersion' %}
+    {% assign today = 'Now' | Date:'yyyy-MM-dd' %}
+    {% assign prodDeployment = Item | Attribute:'ProductionDeploymentDate' | Date:'yyyy-MM-dd' %}
+    {% assign diff = today | DateDiff:prodDeployment,'d' %}
+    {% if diff <= 0 %}
+        {% if instance == prod %}
+            <b>Code Matches Production Since:</b> {{ Item | Attribute:'ProductionDeploymentDate' | Date:'MM/dd/yyyy' }}
+        {% else %}
+            <b>Code is Ahead of Production and Not Yet Been Scheduled</b>
+        {% endif %}
+    {% else %}
+        <b>Code: </b> Version {{ Item | Attribute:'ProductionDeploymentVersion' }} to Production on {{ Item | Attribute:'ProductionDeploymentDate' | Date:'MM/dd/yyyy' }}
+    {% endif %}
+</div>
