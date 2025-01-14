@@ -128,8 +128,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.thecrossingchurch.Custo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.thecrossingchurch.LavaFilters", "org.thecrossingchurch.LavaFilters\org.thecrossingchurch.LavaFilters.csproj", "{903F4B69-47D0-403E-80F2-8C40693E51E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "org.thecrossingchurch.Tests.Integrations", "org.thecrossingchurch.Tests.Integrations\org.thecrossingchurch.Tests.Integrations.csproj", "{00F0388E-0D0C-4966-949C-AE3DE7865B8D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rocks.pillars.SignatureField", "rocks.pillars.SignatureField\rocks.pillars.SignatureField.csproj", "{13024929-6EBC-490A-8276-5515AF7DD34E}"
 EndProject
 Global
