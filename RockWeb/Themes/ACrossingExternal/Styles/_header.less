@@ -1,0 +1,811 @@
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d8888b.  888          888               888 
+// d88P  Y88b 888          888               888 
+// 888    888 888          888               888 
+// 888        888  .d88b.  88888b.   8888b.  888 
+// 888  88888 888 d88""88b 888 "88b     "88b 888 
+// 888    888 888 888  888 888  888 .d888888 888 
+// Y88b  d88P 888 Y88..88P 888 d88P 888  888 888 
+//  "Y8888P88 888  "Y88P"  88888P"  "Y888888 888 
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+header.tcc-site-header {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1030 !important;
+  background-color: @color-primary;
+  transition: all @transition-duration-header @transition-function-header, top @transition-duration-hide-header @transition-function-hide-header;
+
+  .header-wrapper {
+    max-width: 98%;
+    width: 1336px;
+    margin: auto;
+
+    .col {
+      padding: 0px;
+    }
+  }
+
+  a {
+    text-decoration: none !important;
+  }
+
+  //Rock Login
+  // -------------------------
+  .login-wrapper {
+    height: 35px;
+
+    .loginstatus {
+      background-color: hsla(0, 0%, 100%, .1) !important;
+      border-radius: 0px 0px 10px 10px !important;
+      font-size: 14px;
+      transition: background-color @transition-duration-header @transition-function-header;
+  
+      li {
+        min-width: auto !important;
+  
+        a {
+          font-size: 14px;
+          line-height: 1em;
+          text-align: center;
+          padding: 10px 15px;
+          font-weight: @font-weight-bold;
+          color: @color-white;
+          transition: color @transition-duration-header @transition-function-header;
+        }
+
+        //Logged Out Display
+        a[id$="_lbLogin"] {
+          text-transform: uppercase;
+          padding: 10px 30px !important;
+        }
+        
+        a:hover {
+          color: @color-primary;
+          background-color: transparent;
+        }
+      }
+
+      //Logged In display
+      li[id$="_liDropdown"] {
+
+        a {
+          min-width: 160px;
+        }
+
+        ul.dropdown-menu {
+
+          li {
+            
+            a {
+              color: @color-dark-grey;
+            }
+            a:hover {
+              color: @color-secondary;
+            }
+          }
+        }
+      }
+    }
+
+    //Bootstrap Override
+    .nav .open > a, .nav > li > a:hover, .nav > li > a:focus {
+      background-color: transparent !important;
+      border: none !important;
+    }
+  }
+  //Recommend doing something like this that is more visible 
+  // .loginstatus:hover {
+  //   background-color: hsla(0, 0%, 100%, .3);
+  // }
+
+  .page-menu,
+  .login-status {
+    float: right;
+  }
+
+  //Logo
+  // -------------------------
+  .website-logo {
+    padding: 10px 0px;
+    height: 80px;
+    margin-top: auto;
+    margin-bottom: auto;
+
+    a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: relative;
+
+      .header-image {
+        height: 100%;
+      }
+    }
+  }
+
+  //Nav
+  // -------------------------
+  
+}
+
+//Style for body to drop under header
+main:not(.container-fluid) {
+  display: block;
+  padding-top: 150px !important;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  8888888b.                    888      888                     
+//  888  "Y88b                   888      888                     
+//  888    888                   888      888                     
+//  888    888  .d88b.  .d8888b  888  888 888888 .d88b.  88888b.  
+//  888    888 d8P  Y8b 88K      888 .88P 888   d88""88b 888 "88b 
+//  888    888 88888888 "Y8888b. 888888K  888   888  888 888  888 
+//  888  .d88P Y8b.          X88 888 "88b Y88b. Y88..88P 888 d88P 
+//  8888888P"   "Y8888   88888P' 888  888  "Y888 "Y88P"  88888P"  
+//                                                       888      
+//                                                       888      
+//                                                       888      
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+header.tcc-site-header {
+
+  #desktop-menu {
+
+    //Logo
+    // -------------------------
+    .website-logo {
+
+      .header-image {
+        position: absolute;
+      }
+      
+      .header-dark {
+        opacity: 0;
+        transition: opacity @transition-duration-header @transition-function-header;
+      }
+      
+      .header-light {
+        opacity: 1;
+        transition: opacity @transition-duration-header @transition-function-header;
+      }
+    }
+
+    //Nav
+    // -------------------------
+    .main-menu {
+      display: flex;
+      justify-content: end;
+      align-items: center;
+      height: 100%;
+
+      nav.main-navigation {
+        display: flex;
+  
+        .main-nav-item {
+          display: flex;
+          align-items: center;
+        }
+      }
+    }
+
+    .nav-header:not(a) {
+      cursor: default;
+    }
+
+    .nav-header {
+      color: @color-white;
+      padding-left: 15px;
+      padding-right: 15px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      transition: color @transition-duration-header @transition-function-header;
+
+      i.fa {
+        margin-left: 7px;
+      }
+    }
+
+    //Dropdown Memu
+    // -------------------------
+    .main-nav-item {
+      position: relative;
+    }
+
+    .dropmenu-wrapper {
+      position: absolute;
+      top: 0;
+      display: none;
+      margin-top: 20px;
+      padding-top: 40px;
+    }
+
+    .dropmenu-content {
+      background-color: @color-white;
+      min-width: 240px;
+      padding: 28px 0px;
+      margin: 0px;
+      border-radius: 10px;
+      overflow-y: visible;
+      border: none;
+      box-shadow: 0 10px 40px 0 rgba(66,66,66,.07);
+
+      ul.sub-menu-nav {
+        list-style: none;
+        padding: 0px;
+        margin: 0px;
+
+        li {
+          display: block;
+
+          a {
+            display: block;
+            padding: 9px 36px;
+            font-size: 16px;
+            line-height: 1.125em;
+            font-weight: 500;
+            color: @color-dark-grey;
+          }
+          a:hover {
+            color: @color-secondary;
+          }
+        }
+        li:not(:first-child) {
+          margin-top: 4px;
+        }
+      }
+    }
+
+    .dropmenu:hover .dropmenu-wrapper {
+      display: block;
+      transform: translate(-50%, 0);
+      left: 50%;
+    }
+
+    // Arrow at top of dropdown menu
+    .dropmenu:hover {
+      .dropmenu-trigger:after {
+        border-bottom: 11px solid @color-white;
+        border-left: 11px solid transparent;
+        border-right: 11px solid transparent;
+        content: "";
+        display: block;
+        left: 50%;
+        margin-left: -11px;
+        margin-top: -11px;
+        position: absolute;
+        bottom: -32px;
+        z-index: 1600;
+      }
+    }
+
+    // Border below nav item title
+    .main-nav-item:hover,
+    .main-nav-item.open {
+      .nav-header:before {
+        content: "";
+        position: absolute;
+        border-bottom: 2px solid @color-white;
+        left: 11px;
+        right: 11px;
+        bottom: -10px;
+      }
+
+      a.nav-header:hover {
+        color: @color-white !important;
+      }
+    }
+
+    //Extended Menu
+    .dropdown-submenu {
+      position: relative;
+    }
+
+    .dropdown-submenu > .dropdown-content.depth-2 {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 100%;
+      margin-top: -28px;
+      margin-left: -1px;
+      -webkit-border-radius: 0 6px 6px 6px;
+      -moz-border-radius: 0 6px 6px;
+      border-radius: 0 6px 6px 6px;
+      box-shadow: 0 10px 40px 0 rgba(66,66,66,.07), inset 10px 10px 10px 0 rgba(66,66,66,.07);
+    }
+
+    .dropdown-submenu:hover > .dropdown-content {
+      display: block;
+    }
+
+    .dropdown-toggle {
+      cursor: pointer;
+    }
+
+    //CTA
+    // -------------------------
+    .btn-main-nav {
+      padding: 20px 32px;
+      margin: 29px 0px 30px 10px;
+      min-width: auto;
+      font-size: 16px !important;
+      color: @color-secondary !important;
+      border: none;
+      transition: all @transition-duration-header @transition-function-header;
+    }
+  
+    .btn-main-nav:hover {
+      color: @color-primary !important;
+    }
+
+    //Desktop Responsive
+    // -------------------------
+    
+    @media (max-width: 1620px) {
+      .nav-header {
+        padding-left: 17px;
+        padding-right: 17px;
+        font-size: 14px;
+      }
+
+      .btn-main-nav {
+        padding: 20px 15px;
+        font-size: 14px !important;
+      }
+
+      //Style for body to drop under header
+      main:not(.container-fluid) {
+        padding-top: 150px !important;
+      }
+    }
+    @media (max-width: 1290px) {
+      .nav-header {
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 12px;
+      }
+      
+      .btn-main-nav {
+        font-size: 12px !important;
+      }
+
+      //Style for body to drop under header
+      main:not(.container-fluid) {
+        padding-top: 150px !important;
+      }
+    }
+  }
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 8888888b.                    888      888                           .d8888b.                           888 888               888 
+// 888  "Y88b                   888      888                          d88P  Y88b                          888 888               888 
+// 888    888                   888      888                          Y88b.                               888 888               888 
+// 888    888  .d88b.  .d8888b  888  888 888888 .d88b.  88888b.        "Y888b.    .d8888b 888d888 .d88b.  888 888  .d88b.   .d88888 
+// 888    888 d8P  Y8b 88K      888 .88P 888   d88""88b 888 "88b          "Y88b. d88P"    888P"  d88""88b 888 888 d8P  Y8b d88" 888 
+// 888    888 88888888 "Y8888b. 888888K  888   888  888 888  888            "888 888      888    888  888 888 888 88888888 888  888 
+// 888  .d88P Y8b.          X88 888 "88b Y88b. Y88..88P 888 d88P      Y88b  d88P Y88b.    888    Y88..88P 888 888 Y8b.     Y88b 888 
+// 8888888P"   "Y8888   88888P' 888  888  "Y888 "Y88P"  88888P"        "Y8888P"   "Y8888P 888     "Y88P"  888 888  "Y8888   "Y88888 
+//                                                      888                                                                         
+//                                                      888                                                                         
+//                                                      888                                                                         
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+header.tcc-site-header.scrolled {
+  background-color: @color-white;
+  -webkit-box-shadow: 0 0 20px 0 rgba(66, 66, 66, .07);
+  -moz-box-shadow: 0 0 20px 0 rgba(66, 66, 66, .07);
+  box-shadow: 0 0 20px 0 rgba(66, 66, 66, .07);  
+  
+  //Rock Login
+  // -------------------------
+  .login-wrapper {
+
+    .loginstatus {
+      background-color: hsla(0, 0%, 0%, .1) !important;
+
+      li {
+
+        a {
+          color: @color-dark-grey;
+        }
+      }
+    }
+  }
+  
+  #desktop-menu {
+
+    //Logo
+    // -------------------------
+    .website-logo {
+
+      a {
+
+        .header-dark {
+          opacity: 1;
+        }
+
+        .header-light {
+          opacity: 0;
+        }
+      }
+    }
+
+    //Nav
+    // -------------------------
+    .nav-header {
+      color: @color-primary;
+    }
+    .main-nav-item:hover {
+
+      .nav-header {
+        color: @color-secondary;
+      }
+    }
+
+    .main-nav-item:hover,
+    .main-nav-item.open {
+
+      .nav-header:before {
+        border-color: @color-secondary;
+      }
+      
+      a.nav-header:hover {
+        color: @color-secondary !important;
+      }
+    }
+
+    //CTA
+    // -------------------------
+    .btn-main-nav {
+      color: @color-white !important;
+    }
+  }
+}
+
+header.tcc-site-header.hide-header {
+  top: -150px;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 888b     d888          888      d8b 888          
+// 8888b   d8888          888      Y8P 888          
+// 88888b.d88888          888          888          
+// 888Y88888P888  .d88b.  88888b.  888 888  .d88b.  
+// 888 Y888P 888 d88""88b 888 "88b 888 888 d8P  Y8b 
+// 888  Y8P  888 888  888 888  888 888 888 88888888 
+// 888   "   888 Y88..88P 888 d88P 888 888 Y8b.     
+// 888       888  "Y88P"  88888P"  888 888  "Y8888  
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+header.tcc-site-header {
+  #mobile-menu {
+    display: none;
+    background-color: @color-white;
+
+    .main-navigation {
+      width: 100%;
+      display: flex;
+      justify-content: end;
+      align-items: center;
+
+      .menu-trigger {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 6px;
+
+        .menu-trigger-icon {
+          cursor: pointer;
+          display: block;
+          height: 24px;
+          margin-top: 1px;
+          position: relative;
+          transform: scale(.75);
+          transition: .5s ease-in-out;
+          width: 30px;
+
+          span {
+            background: @color-primary;
+            border-radius: 0;
+            display: block;
+            height: 3px;
+            left: 0;
+            opacity: 1;
+            position: absolute;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+            width: 100%;
+          }
+
+          span:first-child {
+            top: 0;
+          }
+          span:nth-child(2), span:nth-child(3) {
+            top: 9px;
+          }
+          span:nth-child(4) {
+            top: 18px;
+          }
+        }
+      }
+      .menu-trigger.active {
+
+        .menu-trigger-icon {
+
+          span:first-child {
+            left: 50%;
+            top: 9px;
+            width: 0;
+          }
+          span:nth-child(2){
+            transform: rotate(45deg);
+          }
+          span:nth-child(3) {
+            transform: rotate(-45deg);
+          }
+          span:nth-child(4) {
+            left: 50%;
+            top: 18px;
+            width: 0;
+          }
+        }
+      }
+    }
+    .drawer-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: visible;
+      z-index: -1;
+      transition: top @transition-duration-hide-header @transition-function-hide-header;
+
+      .drawer-scroll-wrapper {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 0;
+        overflow-x: hidden;
+        overflow-y: scroll;
+        overscroll-behavior: contain;
+        background-color: @color-white;
+        transition: height @transition-duration-mobile-header @transition-function-mobile-header;
+
+        .drawer {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 0px;
+          width: 100%;
+          padding: 66px 35px 0px 35px;
+          // overflow-y: scroll;
+          // overflow-x: hidden;
+          // overscroll-behavior: contain;
+          background-color: @color-white;
+          transition: height @transition-duration-mobile-header @transition-function-mobile-header,  top @transition-duration-hide-header @transition-function-hide-header;
+    
+          .menu-item {
+            border-bottom: 1px solid #d1d3d4;
+            font-size: @font-size-mobile-p;
+            color: @color-primary-focus !important;
+            padding: 21px 20px 21px 0px;
+  
+            .nav-header {
+              position: relative;
+  
+              .fa-angle-right {
+                position: absolute;
+                right: -9px;
+                top: 50%;
+                transform: translate(0, -50%);
+              }
+  
+              .fa-angle-left {
+                position: absolute;
+                left: -9px;
+                top: 50%;
+                transform: translate(0, -50%);
+              }
+
+              //Overrides for the Login Status Block
+              // .login-status {
+              //   float: none;
+
+              //   .loginstatus {
+              //     margin: 0px; 
+              //     overflow: visible;
+
+              //     li.dropdown {
+              //       text-align: left;
+              //       position: inherit;
+
+              //       a {
+              //         position: relative; 
+
+              //         b.fa.fa-caret-down {
+              //           position: absolute;
+              //           right: 12px;
+              //           top: 50%;
+              //           transform: translate(0, -50%);
+              //         }
+              //         b.fa.fa-caret-down::before {
+              //           content: "\f105" !important;
+              //         }
+              //       }
+
+              //       a:hover, a:focus {
+              //         background-color: transparent;
+              //       }
+
+              //       ul.dropdown-menu {
+              //         position: absolute;
+              //         top: -80vh;
+              //         left: 100%;
+              //         height: 100vh;
+              //         width: 100vw;
+              //         z-index: 10;
+              //         overflow: hidden;
+              //         background-color: @color-white;
+              //         transition: left @transition-duration-mobile-header @transition-function-mobile-header;
+              //         list-style: none;
+              //         padding: 0px 35px 0px 35px;
+              //         margin: 0px;
+              //       }
+              //     }
+
+              //     li.dropdown.open {
+                    
+              //       ul.dropdown-menu {
+              //         left: -35px;
+              //       }
+              //     }
+              //   }
+              // }
+            }
+  
+            .nav-header.return-header {
+              color: @color-dark-grey;
+              font-weight: @font-weight-bold;
+              text-align: center;
+            }
+
+            a {
+              display: block;
+              font-size: @font-size-mobile-p;
+              color: @color-primary-focus !important;
+              //Make entire box clickable link without disrupting the overall styles
+              margin: -21px -20px -21px 0px;
+              padding: 21px 20px 21px 0px;
+            }
+  
+            .slide-sub-menu {
+              position: absolute;
+              top: 66px;
+              left: 100%;
+              height: 100%;
+              width: 100%;
+              z-index: 10;
+              overflow: hidden;
+              background-color: @color-white;
+              transition: left @transition-duration-mobile-header @transition-function-mobile-header;
+  
+              ul {
+                list-style: none;
+                padding: 0px 35px 0px 35px;
+                margin: 0px;
+              }
+            }
+
+            .slide-sub-menu.depth-2 {
+              top: 0px;
+            }
+  
+            .slide-sub-menu.active {
+              left: 0;
+            }
+          }
+  
+          .menu-item:first {
+            margin-top: 20px;
+          }
+  
+          .btn-mobile-nav {
+            margin-top: 21px;
+          }
+        }
+      }
+
+      .drawer-scroll-wrapper.active {
+        height: 100vh;
+
+        .drawer {
+          height: fit-content;
+          // padding-bottom: 35px;
+        }
+      }
+    }
+  }
+}
+// Phones and Tablets
+@media (max-width: 768px) {
+  header.tcc-site-header {
+
+    .header-wrapper {
+      max-width: 90%;
+    }
+  }
+}
+// Portable Devices
+@media (max-width: 1024px) {
+  header.tcc-site-header {
+    background-color: @color-white;
+    
+    //Logo
+    // -------------------------
+    .website-logo {
+      height: 66px;
+    }
+
+    #desktop-menu, .login-wrapper {
+      display: none;
+    }
+
+    .header-image {
+      max-height: 66px !important;
+      max-width: 100%;
+
+      .header-dark {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+
+    #mobile-menu {
+      display: block;
+    }
+  }
+
+  header.tcc-site-header.hide-header {
+    top: -66px;
+    
+    #mobile-menu {
+
+      .drawer-wrapper, .drawer-wrapper .drawer {
+        top: -66px;
+      }
+    }
+  }
+
+  main:not(.container-fluid) {
+    padding-top: 66px !important;
+  }
+}
+
+
+
+
+
+

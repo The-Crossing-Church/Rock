@@ -1,0 +1,325 @@
+<div class="grid">
+    <div class="grid-col">
+        <div class="footer-section">
+            <div class="footer-title">
+                The Crossing
+            </div>
+            <ul role="menu">
+                <li role="menuitem">
+                    <p class="d-flex">
+                        <i class="fas fa-map-marker"></i>
+                        3615 Southland Drive <br/>
+                        Columbia, Missouri 65201
+                    </p>
+                </li>
+                <li role="menuitem">
+                    <p class="d-flex">
+                        <i class="fa"></i>
+                        Phone: (573) 256-4410
+                    </p>
+                </li>
+                <li role="menuitem">
+                    <p class="d-flex">
+                        <i class="fa"></i>
+                        {% assign svcs = 'Global' | Attribute:'ServiceTimes' | Split:',' %}
+                        Join us Sunday's in person or online at {{svcs | Join:', ' |  ReplaceLast:',',', and' }} AM CT
+                    </p>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="grid-col">
+        <div class="footer-section">
+            <div class="footer-title">
+                <a href="https://info.thecrossingchurch.com/im-new">
+                    I'm New to The Crossing
+                </a>
+            </div>
+        </div>
+        <div class="footer-section has-collapse">
+            <div class="footer-title desktop">
+                Ministries
+            </div>
+            <div class="footer-title" data-toggle="collapse" href="#collapse_ministries" aria-expanded="false" aria-controls="collapse_ministries">
+                Ministries
+                <i class="fa expand-icon"></i>
+            </div>
+            <ul id="collapse_ministries" role="menu"  class="collapse no-collpse-desktop">
+                <li role="menuitem">
+                    <a href="/Ministry/Children">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Crossing Kids
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Students">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Crossing Students
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="https://veritascomo.com/Veritas" target="_blank">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Veritas
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Adults/Women">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Crossing Women
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Adults/Men">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Crossing Men
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Adults/Twenties">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Crossing Twenties
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Adults/Small-Groups">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Small Groups
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Agape">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Disability & Inclusion
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Counseling">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Professional Counseling
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Ministry/Care">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Care & Support
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="grid-col">
+        <div class="footer-section has-collapse">
+            <div class="footer-title desktop">
+                Events
+            </div>
+            <div class="footer-title" data-toggle="collapse" href="#collapse_events" aria-expanded="false" aria-controls="collapse_events">
+                Events
+                <i class="fa expand-icon"></i>
+            </div>
+            <ul id="collapse_events" role="menu"  class="collapse no-collpse-desktop">
+                <li role="menuitem">
+                    <a href="/Events">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        All Events
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Serving">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Volunteer & Serve
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-section has-collapse">
+            <div class="footer-title desktop">
+                Content
+            </div>
+            <div class="footer-title" data-toggle="collapse" href="#collapse_content" aria-expanded="false" aria-controls="collapse_content">
+                Content
+                <i class="fa expand-icon"></i>
+            </div>
+            <ul id="collapse_content" role="menu"  class="collapse no-collpse-desktop">
+                <li role="menuitem">
+                    <a href="/Resources/Watch/Sermon%20Archives">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Sermons
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Resources/Listen">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Podcasts
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Resources/Read">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Blog
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Resources">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        View All
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="grid-col">
+        <div class="footer-section has-collapse">
+            <div class="footer-title desktop">
+                About
+            </div>
+            <div class="footer-title" data-toggle="collapse" href="#collapse_about" aria-expanded="false" aria-controls="collapse_about">
+                About
+                <i class="fa expand-icon"></i>
+            </div>
+            <ul id="collapse_about" role="menu"  class="collapse no-collpse-desktop">
+                <li role="menuitem">
+                    <a href="/About">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        About Us
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Staff">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Staff
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Missions">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Missions & Partners
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/FAQs">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        FAQs
+                    </a>
+                </li>
+                <li role="menuitem">
+                    <a href="/Contact-Us">
+                        <i class="fa fa-angle-right"></i>
+                        <!-- <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="14" height="14" aria-hidden="true">
+                            <g id="Angle Right1_layer">
+                                <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"></path>
+                            </g>
+                        </svg> -->
+                        Contact Us
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="footer-copyright">
+    <p>
+        @ 2025 The Crossing <br/>
+        All Rights Reserved.
+    </p>
+</div>

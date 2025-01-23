@@ -1,0 +1,373 @@
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  8888888888                888         8888888b.                    888                          888    d8b                            
+//  888                       888         888  "Y88b                   888                          888    Y8P                            
+//  888                       888         888    888                   888                          888                                   
+//  8888888  .d88b.  88888b.  888888      888    888  .d88b.   .d8888b 888  8888b.  888d888 8888b.  888888 888  .d88b.  88888b.  .d8888b  
+//  888     d88""88b 888 "88b 888         888    888 d8P  Y8b d88P"    888     "88b 888P"      "88b 888    888 d88""88b 888 "88b 88K      
+//  888     888  888 888  888 888         888    888 88888888 888      888 .d888888 888    .d888888 888    888 888  888 888  888 "Y8888b. 
+//  888     Y88..88P 888  888 Y88b.       888  .d88P Y8b.     Y88b.    888 888  888 888    888  888 Y88b.  888 Y88..88P 888  888      X88 
+//  888      "Y88P"  888  888  "Y888      8888888P"   "Y8888   "Y8888P 888 "Y888888 888    "Y888888  "Y888 888  "Y88P"  888  888  88888P' 
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+// Fonts
+// -------------------------
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/135715/00000000000000000000e800/21/l?subset_id=2&fvd=n1&v=3) format("woff2"), 
+       url(https://use.typekit.net/af/135715/00000000000000000000e800/21/d?subset_id=2&fvd=n1&v=3) format("woff"), 
+       url(https://use.typekit.net/af/135715/00000000000000000000e800/21/a?subset_id=2&fvd=n1&v=3) format("opentype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/f11877/00000000000000000000e801/21/l?subset_id=2&fvd=i1&v=3) format("woff2"), 
+       url(https://use.typekit.net/af/f11877/00000000000000000000e801/21/d?subset_id=2&fvd=i1&v=3) format("woff"), 
+       url(https://use.typekit.net/af/f11877/00000000000000000000e801/21/a?subset_id=2&fvd=i1&v=3) format("opentype");
+  font-weight: 100;
+  font-style: italic;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/903b78/00000000000000000000e7fe/21/l?subset_id=2&fvd=n3&v=3) format("woff2"),
+       url(https://use.typekit.net/af/903b78/00000000000000000000e7fe/21/d?subset_id=2&fvd=n3&v=3) format("woff"), 
+       url(https://use.typekit.net/af/903b78/00000000000000000000e7fe/21/a?subset_id=2&fvd=n3&v=3) format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/e40ebd/00000000000000000000e802/21/l?subset_id=2&fvd=i3&v=3) format("woff2"), 
+       url(https://use.typekit.net/af/e40ebd/00000000000000000000e802/21/d?subset_id=2&fvd=i3&v=3) format("woff"), 
+       url(https://use.typekit.net/af/e40ebd/00000000000000000000e802/21/a?subset_id=2&fvd=i3&v=3) format("opentype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/778be9/00000000000000000000e803/21/l?subset_id=2&fvd=n5&v=3) format("woff2"),
+       url(https://use.typekit.net/af/778be9/00000000000000000000e803/21/d?subset_id=2&fvd=n5&v=3) format("woff"), 
+       url(https://use.typekit.net/af/778be9/00000000000000000000e803/21/a?subset_id=2&fvd=n5&v=3) format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/2caf60/00000000000000000000e804/21/l?subset_id=2&fvd=i5&v=3) format("woff2"),
+       url(https://use.typekit.net/af/2caf60/00000000000000000000e804/21/d?subset_id=2&fvd=i5&v=3) format("woff"), 
+       url(https://use.typekit.net/af/2caf60/00000000000000000000e804/21/a?subset_id=2&fvd=i5&v=3) format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/ad3298/00000000000000000000e805/21/l?subset_id=2&fvd=n7&v=3) format("woff2"),
+       url(https://use.typekit.net/af/ad3298/00000000000000000000e805/21/d?subset_id=2&fvd=n7&v=3) format("woff"), 
+       url(https://use.typekit.net/af/ad3298/00000000000000000000e805/21/a?subset_id=2&fvd=n7&v=3) format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/ca1028/00000000000000000000e806/21/l?subset_id=2&fvd=i7&v=3) format("woff2"),
+       url(https://use.typekit.net/af/ca1028/00000000000000000000e806/21/d?subset_id=2&fvd=i7&v=3) format("woff"), 
+       url(https://use.typekit.net/af/ca1028/00000000000000000000e806/21/a?subset_id=2&fvd=i7&v=3) format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/48f4f3/00000000000000000000e807/21/l?subset_id=2&fvd=n9&v=3) format("woff2"),
+       url(https://use.typekit.net/af/48f4f3/00000000000000000000e807/21/d?subset_id=2&fvd=n9&v=3) format("woff"), 
+       url(https://use.typekit.net/af/48f4f3/00000000000000000000e807/21/a?subset_id=2&fvd=n9&v=3) format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: auto;
+}
+
+@font-face {
+  font-family: museo-sans;
+  src: url(https://use.typekit.net/af/582fd2/00000000000000000000e808/21/l?subset_id=2&fvd=i9&v=3) format("woff2"),
+       url(https://use.typekit.net/af/582fd2/00000000000000000000e808/21/d?subset_id=2&fvd=i9&v=3) format("woff"), 
+       url(https://use.typekit.net/af/582fd2/00000000000000000000e808/21/a?subset_id=2&fvd=i9&v=3) format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: auto;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d8888b.                                             888       .d8888b.  888             888                   
+// d88P  Y88b                                            888      d88P  Y88b 888             888                   
+// 888    888                                            888      Y88b.      888             888                   
+// 888         .d88b.  88888b.   .d88b.  888d888 8888b.  888       "Y888b.   888888 888  888 888  .d88b.  .d8888b  
+// 888  88888 d8P  Y8b 888 "88b d8P  Y8b 888P"      "88b 888          "Y88b. 888    888  888 888 d8P  Y8b 88K      
+// 888    888 88888888 888  888 88888888 888    .d888888 888            "888 888    888  888 888 88888888 "Y8888b. 
+// Y88b  d88P Y8b.     888  888 Y8b.     888    888  888 888      Y88b  d88P Y88b.  Y88b 888 888 Y8b.          X88 
+//  "Y8888P88  "Y8888  888  888  "Y8888  888    "Y888888 888       "Y8888P"   "Y888  "Y88888 888  "Y8888   88888P' 
+//                                                                                       888                       
+//                                                                                  Y8b d88P                       
+//                                                                                   "Y88P"                        
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+html, body,
+p {
+  font-family: @font-family-primary;
+}
+
+body, p, a {
+  font-size: @font-size-p;
+  line-height: @line-height-p;
+  color: @color-dark-grey;
+}
+
+.btn:not(.btn-default):not(.btn-filter-toggle), 
+.nav-pills > li > a {
+  font-size: @font-size-btn !important;
+  line-height: @line-height-btn !important;
+  font-weight: @font-weight-bold !important;
+}
+
+a {
+  // text-decoration: underline; //Impact Style
+  text-decoration: none !important;
+}
+
+a:hover {
+  color: @color-secondary;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  888    888                        888 d8b                            
+//  888    888                        888 Y8P                            
+//  888    888                        888                                
+//  8888888888  .d88b.   8888b.   .d88888 888 88888b.   .d88b.  .d8888b  
+//  888    888 d8P  Y8b     "88b d88" 888 888 888 "88b d88P"88b 88K      
+//  888    888 88888888 .d888888 888  888 888 888  888 888  888 "Y8888b. 
+//  888    888 Y8b.     888  888 Y88b 888 888 888  888 Y88b 888      X88 
+//  888    888  "Y8888  "Y888888  "Y88888 888 888  888  "Y88888  88888P' 
+//                                                          888          
+//                                                     Y8b d88P          
+//                                                      "Y88P"           
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: @font-family-secondary;
+  font-weight: @font-weight-base;
+  color: @color-primary;
+  letter-spacing: 1px; //TODO: Remove for Trust Theme
+}
+
+h1, .h1 {
+  font-size: @font-size-h1;
+  line-height: @line-height-h1;
+  margin: 0 auto; //TODO: Remove for Trust Theme
+}
+
+h2, .h2 {
+  font-size: @font-size-h2;
+  line-height: @line-height-h2;
+  margin: 0 auto; //TODO: Remove for Trust Theme
+}
+
+h3, .h3 {
+  font-size: @font-size-h3;
+  line-height: @line-height-h3;
+  margin: 10px 0 0; //TODO: Remove for Trust Theme
+}
+
+h4, .h4 {
+  font-size: @font-size-h4;
+  line-height: @line-height-h4;
+  margin: 10px 0 0; //TODO: Remove for Trust Theme
+}
+
+h5, .h5 {
+  font-size: @font-size-h5;
+  line-height: @line-height-h5;
+  margin: 10px 0 0; //TODO: Remove for Trust Theme
+}
+
+h6, .h6 {
+  font-size: @font-size-h6;
+  line-height: @line-height-h6;
+  font-weight: @font-weight-bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+h1:empty {
+  // hides the page title h1 tag if the page has the title hidden
+  display: none;
+}
+
+.pagetitle {
+  text-align: center;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 8888888888                888                    
+// 888                       888                    
+// 888                       888                    
+// 8888888  .d88b.   .d88b.  888888 .d88b.  888d888 
+// 888     d88""88b d88""88b 888   d8P  Y8b 888P"   
+// 888     888  888 888  888 888   88888888 888     
+// 888     Y88..88P Y88..88P Y88b. Y8b.     888     
+// 888      "Y88P"   "Y88P"   "Y888 "Y8888  888      
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+footer {
+  font-family: @font-family-footer;
+  
+  p, a, .footer-title {
+    font-family: @font-family-footer;
+    font-size: @font-size-footer;
+    line-height: @line-height-footer;
+  }
+  
+  .footer-title, .footer-title a {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: @letter-spacing-footer-title;
+    color: @color-black;
+  }
+  .footer-title:hover a {
+    color: @color-secondary;
+  }
+  
+  li a .fa {
+    font-weight: @font-weight-bold;
+    font-size: @font-size-footer;
+  }
+  .footer-copyright p {
+    font-size: 14px;
+    font-weight: @font-weight-base;
+    line-height: 1.5em;
+  }
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 8888888b.                                                       d8b                   
+// 888   Y88b                                                      Y8P                   
+// 888    888                                                                            
+// 888   d88P .d88b.  .d8888b  88888b.   .d88b.  88888b.  .d8888b  888 888  888  .d88b.  
+// 8888888P" d8P  Y8b 88K      888 "88b d88""88b 888 "88b 88K      888 888  888 d8P  Y8b 
+// 888 T88b  88888888 "Y8888b. 888  888 888  888 888  888 "Y8888b. 888 Y88  88P 88888888 
+// 888  T88b Y8b.          X88 888 d88P Y88..88P 888  888      X88 888  Y8bd8P  Y8b.     
+// 888   T88b "Y8888   88888P' 88888P"   "Y88P"  888  888  88888P' 888   Y88P    "Y8888  
+//                             888                                                       
+//                             888                                                       
+//                             888                                                       
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Portable Devices
+//TODO: Remove for Trust Theme
+@media (max-width: 1024px) {
+  h1, .h1 {
+    font-size: 2.5em;
+  }
+  h2, .h2 {
+    font-size: 2em;
+  }
+}
+
+// Phones and Tablets
+@media (max-width: 768px) {
+  h1, .h1 {
+    font-size: @font-size-mobile-h1;
+    line-height: @line-height-mobile-h1;
+  }
+
+  h2, .h2 {
+    font-size: @font-size-mobile-h2;
+    line-height: @line-height-mobile-h2;
+  }
+
+  h3, .h3 {
+    font-size: @font-size-mobile-h3;
+    line-height: @line-height-mobile-h3;
+  }
+
+  h4, .h4 {
+    font-size: @font-size-mobile-h4;
+    line-height: @line-height-mobile-h4;
+  }
+
+  h5, .h5 {
+    font-size: @font-size-mobile-h5;
+    line-height: @line-height-mobile-h5;
+  }
+
+  h6, .h6 {
+    font-size: @font-size-mobile-h6;
+    line-height: @line-height-mobile-h6;
+  }
+  body, p, a {
+    font-size: @font-size-mobile-p;
+    line-height: @line-height-mobile-p;
+  }
+
+  .btn:not(.btn-default):not(.btn-filter-toggle):not(.btn-main-nav), 
+  .nav-pills > li > a {
+    font-size: @font-size-mobile-btn !important;
+    line-height: @line-height-mobile-btn !important;
+  }
+}
+
+// The Smallest Phones
+//TODO: Remove for Trust Theme
+@media (max-width: 348px) {
+  h1, .h1 {
+    font-size: 1.5em;
+  }
+  h2, .h2 {
+    font-size: 1.25em;
+  }
+
+  .hero-overlay {
+    max-height: 75vw !important;
+  }
+  
+  .hero-image-helper {
+    margin-top: 75% !important;
+  }
+
+  .hero-image {
+    width: 300vw !important;
+    margin-left: -100vw !important;
+  }
+}
