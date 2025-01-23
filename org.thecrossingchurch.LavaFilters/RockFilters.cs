@@ -339,7 +339,7 @@ namespace com_thecrossingchurch.LavaFilters
                 var allowsMulti = first.Attributes[attribute].QualifierValues["allowmultiple"];
                 if ( allowsMulti.Value == "True" )
                 {
-                    isMulti |= true;
+                    isMulti = true;
                 }
             }
 
@@ -356,10 +356,10 @@ namespace com_thecrossingchurch.LavaFilters
                 list = splitValues.Select( av => new { av.EntityId, av.Value } ).ToList();
             }
 
-            var data = list.Join( e,
-                    v => v.EntityId,
+            var data = e.Join( list,
                     entity => entity.Id,
-                    ( v, entity ) =>
+                    v => v.EntityId,
+                    ( entity, v ) =>
                     {
                         return new { v.Value, Entity = entity };
                     }
