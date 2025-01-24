@@ -1,0 +1,190 @@
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d8888b.  888          888               888 
+// d88P  Y88b 888          888               888 
+// 888    888 888          888               888 
+// 888        888  .d88b.  88888b.   8888b.  888 
+// 888  88888 888 d88""88b 888 "88b     "88b 888 
+// 888    888 888 888  888 888  888 .d888888 888 
+// Y88b  d88P 888 Y88..88P 888 d88P 888  888 888 
+//  "Y8888P88 888  "Y88P"  88888P"  "Y888888 888 
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+footer {
+  padding: 40px 0px;
+  
+  .footer-wrapper {
+    width: 1336px;
+    max-width: 98%;
+    margin: auto;
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+      
+      .grid-col {
+        width: 25%;
+        padding: 0px 1.5%;
+      }
+    }
+
+    .footer-section {
+      padding: 25px 0px;
+    }
+
+    .footer-title {
+      border-bottom: 1px solid rgba(88, 89, 91, .25);
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+    }
+
+    .footer-title[data-toggle="collapse"] {
+      display: none;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0px;
+      margin: 0px;
+
+      li {
+        vertical-align: top;
+        float: none;
+        margin-bottom: 15px;
+
+        svg, i {
+          margin-right: 12px;
+          min-width: 12px;
+        }
+      }
+    }
+  }
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 888b     d888          888      d8b 888          
+// 8888b   d8888          888      Y8P 888          
+// 88888b.d88888          888          888          
+// 888Y88888P888  .d88b.  88888b.  888 888  .d88b.  
+// 888 Y888P 888 d88""88b 888 "88b 888 888 d8P  Y8b 
+// 888  Y8P  888 888  888 888  888 888 888 88888888 
+// 888   "   888 Y88..88P 888 d88P 888 888 Y8b.     
+// 888       888  "Y88P"  88888P"  888 888  "Y8888  
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+// Portable Devices
+@media (max-width: 1024px) {
+
+  footer {
+
+    .footer-wrapper {
+
+      .grid {
+
+        .grid-col {
+          width: 100%;
+
+          .footer-section.has-collapse {
+            padding: 0px;
+            
+            .footer-title {
+              margin: 0px;
+              padding: 20px 42px 20px 0px;
+            }
+
+            .footer-title[data-toggle="collapse"] {
+              display: block;
+              position: relative;
+
+              .expand-icon {
+                position: absolute;
+                right: 0;
+                width: 42px;
+                text-align: center;
+                top: 50%;
+                transform: translate(0px, -50%);
+              }
+            }
+
+            .footer-title[aria-expanded="false"] .expand-icon:before {
+                content: "\f078"
+            }
+
+            .footer-title[aria-expanded="true"] .expand-icon:before {
+                content: "\f077"
+            }
+
+            .footer-title.desktop {
+              display: none;
+            }
+
+            ul {
+              margin-top: 20px;
+            }
+          }
+        }
+      }
+      .footer-copyright {
+        text-align: center;
+      }
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+
+  footer {
+    
+    .footer-wrapper {
+      max-width: 90%;
+    }
+  }
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  8888888b.                    888      888                     
+//  888  "Y88b                   888      888                     
+//  888    888                   888      888                     
+//  888    888  .d88b.  .d8888b  888  888 888888 .d88b.  88888b.  
+//  888    888 d8P  Y8b 88K      888 .88P 888   d88""88b 888 "88b 
+//  888    888 88888888 "Y8888b. 888888K  888   888  888 888  888 
+//  888  .d88P Y8b.          X88 888 "88b Y88b. Y88..88P 888 d88P 
+//  8888888P"   "Y8888   88888P' 888  888  "Y888 "Y88P"  88888P"  
+//                                                       888      
+//                                                       888      
+//                                                       888      
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+@media (min-width: 1025px) {
+
+  footer {
+
+    .footer-wrapper {
+
+      .grid {
+
+        .grid-col {
+
+          .footer-section.has-collapse { 
+            //Disable Collapse and Make it Visible
+            .collapse.no-collpse-desktop {
+              display: block;
+              height: auto !important;
+              visibility: visible;
+            }
+          }
+        }
+      }
+    }
+  }        
+}

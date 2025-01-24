@@ -8,8 +8,7 @@
         <!-- Start Content Area -->
         
         <!-- Page Title -->
-        <Rock:PageIcon ID="PageIcon" runat="server" /> 
-        <tcc:PageTitle ID="PageTitle" runat="server" Tag="h1" CssClasses="pagetitle py-custom-2x" />
+        <Rock:PageIcon ID="PageIcon" runat="server" /> <tcc:PageTitle ID="PageTitle" runat="server" Tag="h1" CssClasses="pagetitle py-custom-2x" />
         <Rock:PageBreadCrumbs ID="PageBreadCrumbs" runat="server" />
                     
         <!-- Ajax Error -->

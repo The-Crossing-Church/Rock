@@ -1,4 +1,19 @@
-﻿
+﻿// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  8888888                                         888             
+//    888                                           888             
+//    888                                           888             
+//    888   88888b.d88b.  88888b.   .d88b.  888d888 888888 .d8888b  
+//    888   888 "888 "88b 888 "88b d88""88b 888P"   888    88K      
+//    888   888  888  888 888  888 888  888 888     888    "Y8888b. 
+//    888   888  888  888 888 d88P Y88..88P 888     Y88b.       X88 
+//  8888888 888  888  888 88888P"   "Y88P"  888      "Y888  88888P' 
+//                        888                                       
+//                        888                                       
+//                        888      
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 // Load Master Styles
 // -------------------------
 @import "../../../Styles/Bootstrap/variables.less";
@@ -9,184 +24,304 @@
 @import "_variable-overrides.less";
 @import "_print.less";
 
-/*
-    Rock Theme Styles
-
-    1. HTML Overrides
-    2. Bootstrap Overides
-    3. Theme Styling
-    4. Responsive Overrides
-
-*/
-
-// 1. HTML Overrides
+// Load Typography Styles
 // -------------------------
+@import "_typography.less";
+
+// Load HubSpot Overrides
+// -------------------------
+@import "_hubspot-overrides.less";
+
+// Load Specific Element Styles
+// -------------------------
+@import "_header.less";
+@import "_buttons.less";
+@import "_cards.less";
+@import "_inputs.less";
+@import "_footer.less";
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d8888b.                                             888       .d8888b.  888             888                   
+// d88P  Y88b                                            888      d88P  Y88b 888             888                   
+// 888    888                                            888      Y88b.      888             888                   
+// 888         .d88b.  88888b.   .d88b.  888d888 8888b.  888       "Y888b.   888888 888  888 888  .d88b.  .d8888b  
+// 888  88888 d8P  Y8b 888 "88b d8P  Y8b 888P"      "88b 888          "Y88b. 888    888  888 888 d8P  Y8b 88K      
+// 888    888 88888888 888  888 88888888 888    .d888888 888            "888 888    888  888 888 88888888 "Y8888b. 
+// Y88b  d88P Y8b.     888  888 Y8b.     888    888  888 888      Y88b  d88P Y88b.  Y88b 888 888 Y8b.          X88 
+//  "Y8888P88  "Y8888  888  888  "Y8888  888    "Y888888 888       "Y8888P"   "Y888  "Y88888 888  "Y8888   88888P' 
+//                                                                                       888                       
+//                                                                                  Y8b d88P                       
+//                                                                                   "Y88P"                        
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 html {
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-main {
-    display: block;
+body {
+  overflow-x: hidden;
 }
 
-// 2. Bootstrap Overrides
-// -------------------------
-
-.navbar {
-    position: static; // default is relative which causes the dropdowns to go under the other navbars dispite having a higher z-index - JME 9/9/2013
-    // using fontawesome nav toggle button instead of the BS default
-    .navbar-toggle {
-        padding: 6px 10px;
-
-        i.fa-bars {
-            color: @navbar-inverse-toggle-icon-bar-bg;
-        }
-    }
-}
-
-a:hover i.fs {
-    text-decoration: none;
-}
-
-// 3. Theme Styling
-// -------------------------
-
-h1.pagetitle:empty { // hides the page title h1 tag if the page has the title hidden
-  display: none;
+a:hover {
+  cursor: pointer;
 }
 
 .page-icon {
-    display: none;
-}
-
-header {
-    .page-menu,
-    .login-status {
-        float: right;
-    }
-
-    .navbar {
-        background-color: @header-bg;
-        border: 0;
-    }
-}
-
-// homepage items
-#announcement-rotator {
-    margin: 0 -@grid-gutter-width/2 @spacing-lg-px;
-
-    .item {
-        img {
-            width: 100%;
-        }
-    }
-}
-
-.announcement-list {
-    .announcement {
-        margin: 0 auto @spacing-lg-px;
-        max-width: 390px;
-    }
-
-    .announcement-title {
-        margin: @spacing-sm-px 0;
-    }
-
-    img {
-        width: 100%;
-    }
-}
-
-.announcement-detail {
-    img {
-        width: 100%;
-    }
-}
-
-.nav-sub {
-    li {
-        border: 1px solid @gray-lighter;
-        border-radius: @border-radius-base;
-    }
-}
-
-footer {
-    margin-bottom: 50px;
-
-    .footer-message {
-        float: left;
-    }
-
-    .footer-address {
-        float: right;
-    }
+  display: none;
 }
 
 #splash.error {
-    background-color: @gray-lighter;
+  background-color: @color-grey;
 
-    #content {
-        margin-top: 20px;
-        background-color: @body-bg;
-        border-radius: @border-radius-base;
-        padding: 20px;
-    }
+  #content {
+    margin-top: 20px;
+    background-color: @body-bg;
+    border-radius: @border-radius-base;
+    padding: 20px;
+  }
 }
 
 .not-found h2 {
-    font-size: 200px;
-    font-weight: @font-weight-bold;
-    letter-spacing: -5px;
-    line-height: 210px;
+  font-size: 200px;
+  font-weight: @font-weight-bold;
+  letter-spacing: -5px;
+  line-height: 210px;
 
-    i {
-        color: #f03;
-        font-size: 210px;
-        position: relative;
-        top: -12px;
-    }
+  i {
+    color: @brand-danger;
+    font-size: 210px;
+    position: relative;
+    top: -12px;
+  }
 }
 
-/* hide block panels */
-.panel.panel-block {
-    border: 0;
-    box-shadow: none;
 
-    & > .panel-heading,
-    & > .rock-panel-drawer {
-        display: none;
-    }
 
-    & > .panel-body {
-        padding: 0;
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  888    888          888                                 .d8888b.  888                                              
+//  888    888          888                                d88P  Y88b 888                                              
+//  888    888          888                                888    888 888                                              
+//  8888888888  .d88b.  888 88888b.   .d88b.  888d888      888        888  8888b.  .d8888b  .d8888b   .d88b.  .d8888b  
+//  888    888 d8P  Y8b 888 888 "88b d8P  Y8b 888P"        888        888     "88b 88K      88K      d8P  Y8b 88K      
+//  888    888 88888888 888 888  888 88888888 888          888    888 888 .d888888 "Y8888b. "Y8888b. 88888888 "Y8888b. 
+//  888    888 Y8b.     888 888 d88P Y8b.     888          Y88b  d88P 888 888  888      X88      X88 Y8b.          X88 
+//  888    888  "Y8888  888 88888P"   "Y8888  888           "Y8888P"  888 "Y888888  88888P'  88888P'  "Y8888   88888P' 
+//                          888                                                                                        
+//                          888                                                                                        
+//                          888                                                                                                                                    
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        .grid.grid-panel {
-            margin: 0;
-        }
-    }
-}
 
-// 4. Responsive Overrides
+
+// Section Helper Classes
 // -------------------------
-
-// default styling should be for phones 767px or less
-
-// Small devices (tablets, 768px and up)
-@media (min-width: @screen-sm-min) {
-    #announcement-rotator {
-        margin: @spacing-lg-px 0;
-    }
+.background--grey {
+  background-color: @color-light-grey;
+}
+.background--dark-blue, .background--primary {
+  background-color: @color-primary;
+}
+.background--medium-blue, .background--secondary {
+  background-color: @color-secondary;
+}
+.background--light-blue, .background--accent {
+  background-color: @color-accent;
+}
+.full-width {
+  width: 100vw;
+  margin-left: -50vw;
+  left: 50%;
+  position: relative;
 }
 
-// Medium devices (desktops, 992px and up)
-@media (min-width: @screen-md-min) {
+// Typography Helper Classes
+// -------------------------
+.text--dark-blue, .text--primary {
+  color: @color-primary !important;
+}
+.text--medium-blue, .text--dark-teal, .text--secondary {
+  color: @color-secondary !important;
+}
+.text--light-blue, .text--accent {
+  color: @color-accent !important;
+}
+.text--white {
+  color: @color-white !important;
 }
 
-// Large devices (large desktops, 1200px and up)
-@media (min-width: @screen-lg-min) {
+.text--upper {
+  text-transform: uppercase !important;
 }
+// LEGACY Only here for support, use bootstrap's text-center instead
+.text--centered {
+  text-align: center !important; 
+}
+
+//Spacing Helper Classes
+// -------------------------
+.py-custom-2x, .pt-custom-2x {
+  padding-top: 2rem !important;
+}
+
+.pb-custom-2x, .py-custom-2x {
+  padding-bottom: 2rem !important;
+}
+
+.mb-custom-2x, .my-custom-2x {
+  margin-bottom: 2rem !important;
+}
+
+.mt-custom-2x, .my-custom-2x {
+  margin-top: 2rem !important;
+}
+
+@media only screen and (max-width: 768px) {
+  .py-custom-2x, pt-custom-2x {
+    padding-top: 1rem !important;
+  }
+
+  .pb-custom-2x, .py-custom-2x {
+    padding-bottom: 1rem !important;
+  }
+
+  .mt-custom-2x, .my-custom-2x {
+    margin-top: 1rem !important;
+  }
+
+  .mb-custom-2x, .my-custom-2x {
+    margin-bottom: 1rem !important;
+  }
+}
+
+//Alignment Helper Classes
+// -------------------------
+.justify-left {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.justify-center {
+  display: flex;
+  justify-content: center;
+}
+
+.justify-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.align-center {
+  display: flex;
+  align-items: center;
+}
+
+.margin-auto {
+  display: block;
+  margin: auto;
+}
+
+//Display Helper Classes
+// -------------------------
+.hover {
+  cursor: pointer;
+}
+
+.hidden-anchor {
+  visibility: hidden;
+  position: relative;
+  top: -200px;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d8888b.                    d8b          888      888b     d888               888 d8b          
+// d88P  Y88b                   Y8P          888      8888b   d8888               888 Y8P          
+// Y88b.                                     888      88888b.d88888               888              
+//  "Y888b.    .d88b.   .d8888b 888  8888b.  888      888Y88888P888  .d88b.   .d88888 888  8888b.  
+//     "Y88b. d88""88b d88P"    888     "88b 888      888 Y888P 888 d8P  Y8b d88" 888 888     "88b 
+//       "888 888  888 888      888 .d888888 888      888  Y8P  888 88888888 888  888 888 .d888888 
+// Y88b  d88P Y88..88P Y88b.    888 888  888 888      888   "   888 Y8b.     Y88b 888 888 888  888 
+//  "Y8888P"   "Y88P"   "Y8888P 888 "Y888888 888      888       888  "Y8888   "Y88888 888 "Y888888                                                                                          
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+.social-media .links {
+  display: block;
+  padding: 0;
+  list-style: none;
+}
+
+.social-media .links li {
+  display: inline-block;
+  margin: 0 15px;
+}
+
+.social-media .links li a {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1b3142;
+  color: #fff;
+  text-decoration: none;
+  position: relative;
+  font-size: 30px;
+  text-align: center;
+}
+
+.social-media .links li a i, .social-media .links li a img {
+  font-size: 25px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//        d8888                                            d8b 888      d8b 888 d8b 888             
+//       d88888                                            Y8P 888      Y8P 888 Y8P 888             
+//      d88P888                                                888          888     888             
+//     d88P 888  .d8888b .d8888b .d88b.  .d8888b  .d8888b  888 88888b.  888 888 888 888888 888  888 
+//    d88P  888 d88P"   d88P"   d8P  Y8b 88K      88K      888 888 "88b 888 888 888 888    888  888 
+//   d88P   888 888     888     88888888 "Y8888b. "Y8888b. 888 888  888 888 888 888 888    888  888 
+//  d8888888888 Y88b.   Y88b.   Y8b.          X88      X88 888 888 d88P 888 888 888 Y88b.  Y88b 888 
+// d88P     888  "Y8888P "Y8888P "Y8888   88888P'  88888P' 888 88888P"  888 888 888  "Y888  "Y88888 
+//                                                                                              888 
+//                                                                                         Y8b d88P 
+//                                                                                          "Y88P"  
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+.screen-skip {
+  visibility: hidden;
+  height: 0px;
+  speak: none;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d88888b.                                    d8b      888                   
+// d88P" "Y88b                                   Y8P      888                   
+// 888     888                                            888                   
+// 888     888 888  888  .d88b.  888d888 888d888 888  .d88888  .d88b.  .d8888b  
+// 888     888 888  888 d8P  Y8b 888P"   888P"   888 d88" 888 d8P  Y8b 88K      
+// 888     888 Y88  88P 88888888 888     888     888 888  888 88888888 "Y8888b. 
+// Y88b. .d88P  Y8bd8P  Y8b.     888     888     888 Y88b 888 Y8b.          X88 
+//  "Y88888P"    Y88P    "Y8888  888     888     888  "Y88888  "Y8888   88888P' 
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 @import "_css-overrides.less";

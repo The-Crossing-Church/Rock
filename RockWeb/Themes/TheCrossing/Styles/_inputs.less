@@ -1,0 +1,191 @@
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  .d8888b.  888                        888      888                                          
+// d88P  Y88b 888                        888      888                                          
+// 888    888 888                        888      888                                          
+// 888        88888b.   .d88b.   .d8888b 888  888 88888b.   .d88b.  888  888  .d88b.  .d8888b  
+// 888        888 "88b d8P  Y8b d88P"    888 .88P 888 "88b d88""88b `Y8bd8P' d8P  Y8b 88K      
+// 888    888 888  888 88888888 888      888888K  888  888 888  888   X88K   88888888 "Y8888b. 
+// Y88b  d88P 888  888 Y8b.     Y88b.    888 "88b 888 d88P Y88..88P .d8""8b. Y8b.          X88 
+//  "Y8888P"  888  888  "Y8888   "Y8888P 888  888 88888P"   "Y88P"  888  888  "Y8888   88888P'                                                  
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+.rock-check-box .control-wrapper {
+  float: left;
+}
+
+.rockcheckboxlist .checkbox-inline .label-text {
+  margin-top: 2px;
+  padding-left: 6px;
+}
+
+.checkbox input:checked ~ .label-text::after,
+.checkbox-inline input:checked ~ .label-text::after {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23ffffff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E");
+}
+
+
+.rock-check-box .control-label {
+  margin-top: 2px;
+}
+
+.checkbox-inline:first-child,
+.radio-inline:first-child {
+  padding-left: 20px;
+}
+
+.radio,
+.checkbox {
+  min-height: 20px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.checkbox .label-text {
+  padding-left: 4px;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 8888888                            888             
+//   888                              888             
+//   888                              888             
+//   888   88888b.  88888b.  888  888 888888 .d8888b  
+//   888   888 "88b 888 "88b 888  888 888    88K      
+//   888   888  888 888  888 888  888 888    "Y8888b. 
+//   888   888  888 888 d88P Y88b 888 Y88b.       X88 
+// 8888888 888  888 88888P"   "Y88888  "Y888  88888P' 
+//                  888                               
+//                  888                               
+//                  888                               
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 8888888b.                888 d8b               888888b.            888    888                              
+// 888   Y88b               888 Y8P               888  "88b           888    888                              
+// 888    888               888                   888  .88P           888    888                              
+// 888   d88P  8888b.   .d88888 888  .d88b.       8888888K.  888  888 888888 888888 .d88b.  88888b.  .d8888b  
+// 8888888P"      "88b d88" 888 888 d88""88b      888  "Y88b 888  888 888    888   d88""88b 888 "88b 88K      
+// 888 T88b   .d888888 888  888 888 888  888      888    888 888  888 888    888   888  888 888  888 "Y8888b. 
+// 888  T88b  888  888 Y88b 888 888 Y88..88P      888   d88P Y88b 888 Y88b.  Y88b. Y88..88P 888  888      X88 
+// 888   T88b "Y888888  "Y88888 888  "Y88P"       8888888P"   "Y88888  "Y888  "Y888 "Y88P"  888  888  88888P'                                                                                            
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+.radio .label-text::before,
+.checkbox .label-text::before,
+.radio-inline .label-text::before,
+.checkbox-inline .label-text::before {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  content: "";
+  user-select: none;
+  background-color: #fff;
+  border: 2px solid #d8d8d8;
+  border-radius: 0.25rem;
+}
+
+.radio .label-text::before,
+.radio-inline .label-text::before {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.radio .label-text::after,
+.checkbox .label-text::after,
+.radio-inline .label-text::after,
+.checkbox-inline .label-text::after {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  content: "";
+  background: no-repeat center;
+  background-size: 50%;
+}
+
+.radio input,
+.checkbox input,
+.radio-inline input,
+.checkbox-inline input {
+  position: absolute;
+  z-index: -1;
+  opacity: 0;
+}
+
+.radio input:checked ~ .label-text::before,
+.checkbox input:checked ~ .label-text::before,
+.radio-inline input:checked ~ .label-text::before,
+.checkbox-inline input:checked ~ .label-text::before {
+  background-color: @color-primary;
+  border-color: @color-primary;
+}
+
+.radio input:focus ~ .label-text::before,
+.checkbox input:focus ~ .label-text::before,
+.radio-inline input:focus ~ .label-text::before,
+.checkbox-inline input:focus ~ .label-text::before {
+  box-shadow: 0 0 0 1px @color-white, 0 0 0 3px rgba(52, 118, 137, 0.2);
+}
+
+.radio input:active ~ .label-text::before,
+.checkbox input:active ~ .label-text::before,
+.radio-inline input:active ~ .label-text::before,
+.checkbox-inline input:active ~ .label-text::before {
+  color: @color-white;
+  background-color: @color-light-blue;
+}
+
+.radio input:disabled ~ .label-text,
+.checkbox input:disabled ~ .label-text,
+.radio-inline input:disabled ~ .label-text,
+.checkbox-inline input:disabled ~ .label-text {
+  color: @color-grey;
+}
+
+.radio input:disabled ~ .label-text::before,
+.checkbox input:disabled ~ .label-text::before,
+.radio-inline input:disabled ~ .label-text::before,
+.checkbox-inline input:disabled ~ .label-text::before {
+  background-color: @color-light-grey;
+}
+
+.radio-inline + .radio-inline,
+.checkbox-inline + .checkbox-inline {
+  margin-left: 0;
+}
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 8888888b.                                888                                          
+// 888  "Y88b                               888                                          
+// 888    888                               888                                          
+// 888    888 888d888 .d88b.  88888b.   .d88888  .d88b.  888  888  888 88888b.  .d8888b  
+// 888    888 888P"  d88""88b 888 "88b d88" 888 d88""88b 888  888  888 888 "88b 88K      
+// 888    888 888    888  888 888  888 888  888 888  888 888  888  888 888  888 "Y8888b. 
+// 888  .d88P 888    Y88..88P 888 d88P Y88b 888 Y88..88P Y88b 888 d88P 888  888      X88 
+// 8888888P"  888     "Y88P"  88888P"   "Y88888  "Y88P"   "Y8888888P"  888  888  88888P' 
+//                            888                                                        
+//                            888                                                        
+//                            888                                                        
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+

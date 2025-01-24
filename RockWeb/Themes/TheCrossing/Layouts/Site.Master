@@ -1,9 +1,10 @@
 ﻿<%@ Master Language="C#" AutoEventWireup="true" Inherits="Rock.Web.UI.RockMasterPage" %>
+
 <%@ Import Namespace="System.Web.Optimization" %>
 <!DOCTYPE html>
 
 <script runat="server">
-    
+
     // keep code below to call base class init method
 
     /// <summary>
@@ -13,98 +14,519 @@
     protected override void OnInit( EventArgs e )
     {
         base.OnInit( e );
-    }    
-    
+    }
+
 </script>
 
 <html class="no-js">
 <head runat="server">
+    <!-- Google Tag Manager -->
+    <script>
+        (function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start': new Date().getTime(), event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-PDZFLRCH');
+    </script>
+    <!-- End Google Tag Manager -->
 
     <meta charset="utf-8">
     <title></title>
-    
+
     <script src="<%# ResolveRockUrl("~/Scripts/jquery-1.12.4.min.js" ) %>"></script>
 
     <!-- Set the viewport width to device width for mobile -->
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
     <asp:ContentPlaceHolder ID="css" runat="server" />
 
-	<!-- Included CSS Files -->
-    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>"/>
-	<link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>"/>
+    <!-- Included CSS Files -->
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/bootstrap.css", true) %>" />
+    <link rel="stylesheet" href="<%# ResolveRockUrl("~~/Styles/theme.css", true) %>" />
 
-    <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>" ></script>
+    <script src="<%# ResolveRockUrl("~/Scripts/modernizr.js" ) %>"></script>
 
     <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
+    <!-- Start of HubSpot Embed Code -->
+    <%--<script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/6480645.js"></script>--%>
+    <!-- End of HubSpot Embed Code -->
 
+    <script>
+        $(document).ready(() => {
+            //Mobile Menu Drawer 
+            $('#mobile-menu-trigger').click(function(e){
+                $('#mobile-menu-trigger').toggleClass('active')
+                $('#mobile-menu .drawer-scroll-wrapper').toggleClass('active')
+                if(!$('#mobile-menu-trigger').hasClass('active')) {
+                    //Close any open sub-menus
+                    $('.slide-sub-menu').removeClass('active')
+                    //Scroll back to top
+                    document.getElementsByClassName('drawer-scroll-wrapper')[0].scrollTop = 0
+                }
+                e.preventDefault()
+            })
+            $('.nav-header.has-sub-menu').click((e) => {
+                $(e.currentTarget).siblings().first().addClass('active')
+                //Scroll back to top so sub-menu doesn't open halfway down
+                document.getElementsByClassName('drawer-scroll-wrapper')[0].scrollTop = 0
+                e.preventDefault()
+            })
+            $('.nav-header.return-header').click((e) => {
+                $(e.currentTarget).parent().parent().parent().removeClass('active')
+                e.preventDefault()
+            })
+            //Accommodate Sticky Navs at Bottom of Page
+            if($('.sticky-nav.bottom').length > 0) {
+                $('footer').css('padding-bottom', '112px');
+            }
+        })
+
+        //Header Scroll Behavior
+        let lastScrollPos = 0
+        let firstCall = true
+        document.addEventListener('scroll', () => {
+            let pos = window.pageYOffset || document.documentElement.scrollTop
+            let header = document.getElementById('tcc_site_header')
+            let cta = document.getElementsByClassName('btn-main-nav')[0]
+            let mobileDrawer = document.querySelector('#mobile-menu .drawer')
+            if (!mobileDrawer.className.includes('active')) {
+                if (pos > 100 && firstCall) {
+                    header.classList.add('scrolled')
+                    header.classList.add('hide-header')
+                    cta.classList.add('btn-secondary')
+                    cta.classList.remove('btn-white')
+                }
+                if (pos > lastScrollPos) {
+                    //Scrolled Down
+                    if (header && !header.className.includes('scrolled')) {
+                        header.classList.add('scrolled')
+                    } else if (!header.className.includes('hide-header') && pos > 100) {
+                        header.classList.add('hide-header')
+                    }
+                    if (cta && cta.className.includes('btn-white')) {
+                        cta.classList.add('btn-secondary')
+                        cta.classList.remove('btn-white')
+                    }
+                } else if (pos < lastScrollPos) {
+                    //Scrolled Up
+                    if (header.className.includes('hide-header')) {
+                        header.classList.remove('hide-header')
+                    }
+                }
+                lastScrollPos = pos <= 0 ? 0 : pos
+                firstCall = false
+                if (header && lastScrollPos == 0) {
+                    header.classList.remove('scrolled')
+                    header.classList.remove('hide-header')
+                    if (cta && cta.className.includes('btn-secondary')) {
+                        cta.classList.add('btn-white')
+                        cta.classList.remove('btn-secondary')
+                    }
+                }
+            }
+        }, false)
+    </script>
 </head>
 <body runat="server" id="body">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript>
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PDZFLRCH" height="0" width="0" style="display: none; visibility: hidden"></iframe>
+    </noscript>
+    <!-- End Google Tag Manager (noscript) -->
 
     <form id="form1" runat="server">
 
         <!-- Page Header -->
-        <header>
-        
-			<div class="row" style="background-color: #163244;">
-				<div class="col-md-12">
-					<a href="https://www.thecrossingchurch.com/" >
-						<img src="/Themes/TheCrossing/Assets/Logos/logo.png" class="header-image img-responsive" />
-					</a>
-				</div>
-			</div>
-
-            <!-- Brand Bar -->
-            <nav class="navbar navbar-inverse navbar-static-top">
-                <div class="container">
-			        <div class="navbar-header">
-                        <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
-                            <i class="fa fa-bars"></i>
-                        </button>
-                        <Rock:Zone Name="Header" runat="server" />
-			        </div>	
-                    <div class="navbar-collapse collapse">   
-                        <!-- Main Navigation -->
-                        <div class="pull-right">
-                            <Rock:Zone Name="Login" runat="server" />
-                        </div>
-                        <Rock:Zone Name="Navigation" runat="server" />
-			        </div>	
+        <header id="tcc_site_header" class="tcc-site-header">
+            <div class="header-wrapper login-wrapper">
+                <div class="pull-right">
+                    <Rock:Zone Name="Login" runat="server" />
                 </div>
-            </nav>
-
+            </div>
+            <div id="desktop-menu" class="row row-equal-height header-wrapper">
+                <div class="col col-xs-3">
+                    <div class="website-logo">
+                        <a href="/Home">
+                            <img src="/Themes/ACrossingExternal/Assets/Logos/Horizontal_Dark.svg" class="header-image header-dark" />
+                            <img src="/Themes/ACrossingExternal/Assets/Logos/Horizontal_Light.svg" class="header-image header-light" />
+                        </a>
+                    </div>
+                </div>
+                <div class="col col-xs-9 align-end justify-center">
+                    <div class="main-menu">
+                        <nav aria-label="Main Menu" role="menubar" class="main-navigation">
+                            <div class="menu-item main-nav-item dropmenu">
+                                <div class="nav-header dropmenu-trigger">
+                                    Ministries
+                                    <i class="fa fa-angle-down"></i>
+                                </div>
+                                <div class="dropmenu-wrapper">
+                                    <div class="dropmenu-content multi-level" role="menu">
+                                        <ul class="sub-menu-nav">
+                                            <li>
+                                                <a href="/Ministry/Children">Kids</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Ministry/Students">Students</a>
+                                            </li>
+                                            <li>
+                                                <a href="https://veritascomo.com/Veritas" target="_blank">College</a>
+                                            </li>
+                                            <li class="dropdown-submenu">
+                                                <a target="_self" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Adults
+                                                    <i class="fa fa-angle-right pull-right"></i>
+                                                </a>
+                                                <div class="dropdown-menu dropdown-content dropmenu-content depth-2">
+                                                    <ul class="sub-menu-nav">
+                                                        <li>
+                                                            <a href="/Ministry/Adults/Women">Women</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="/Ministry/Adults/Men">Men</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="/Ministry/Adults/Twenties">Twenties</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="/Ministry/Adults/Small-Groups">Small Groups</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a href="/Ministry/Care">Care & Support</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Ministry/Counseling">Counseling</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Ministry/Agape">Disability & Inclusion</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="menu-item main-nav-item dropmenu">
+                                <div class="nav-header dropmenu-trigger">
+                                    Content
+                                    <i class="fa fa-angle-down"></i>
+                                </div>
+                                <div class="dropmenu-wrapper">
+                                    <div class="dropmenu-content">
+                                        <ul class="sub-menu-nav">
+                                            <li>
+                                                <a href="/Resources/Watch/Sermon%20Archives">Sermons</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Resources/Listen">Podcasts</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Resources/Read">Blog</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Resources">View All</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="menu-item main-nav-item dropmenu">
+                                <div class="nav-header dropmenu-trigger">
+                                    Events & Opportunities
+                                    <i class="fa fa-angle-down"></i>
+                                </div>
+                                <div class="dropmenu-wrapper">
+                                    <div class="dropmenu-content">
+                                        <ul class="sub-menu-nav">
+                                            <li>
+                                                <a href="/Events">All Events</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Events?aud=Crossing%20Kids">Kid's Events</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Ministry/Adults/Women/womens-events">Women's Events</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Events?aud=Men">Men's Events</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Serving">Volunteer & Serve</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="menu-item main-nav-item dropmenu">
+                                <a href="/About" class="nav-header dropmenu-trigger">
+                                    About
+                                    <i class="fa fa-angle-down"></i>
+                                </a>
+                                <div class="dropmenu-wrapper">
+                                    <div class="dropmenu-content">
+                                        <ul class="sub-menu-nav">
+                                            <li>
+                                                <a href="/About">About Us</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Staff">Staff</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Missions">Missions & Partners</a>
+                                            </li>
+                                            <li>
+                                                <a href="/FAQs">FAQs</a>
+                                            </li>
+                                            <li>
+                                                <a href="/Contact-Us">Contact Us</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="menu-item main-nav-item">
+                                <a class="nav-header" href="/Give">Give</a>
+                            </div>
+                            <div class="menu-item main-nav-item">
+                                <a class="nav-header" href="/Livestream">Livestream</a>
+                            </div>
+                        </nav>
+                        <a href="https://info.thecrossingchurch.com/im-new" class="btn btn-main-nav btn-white">
+                            Get Connected
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="mobile-menu" >
+                <div>
+                    <div class="row row-equal-height header-wrapper">
+                        <div class="col col-xs-6">
+                            <div class="website-logo">
+                                <a href="/Home">
+                                    <img src="/Themes/ACrossingExternal/Assets/Logos/Horizontal_Dark.svg" class="header-image header-dark" />
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col col-xs-6 align-end justify-center">
+                            <div class="main-menu">
+                                <div class="main-navigation">
+                                    <a class="menu-trigger" id="mobile-menu-trigger">
+                                        <span class="menu-trigger-icon">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="drawer-wrapper">
+                        <div class="drawer-scroll-wrapper">
+                            <div class="drawer">
+                                <div class="menu-item main-nav-item">
+                                    <div class="nav-header has-sub-menu">
+                                        Ministries
+                                        <i class="fa fa-angle-right"></i>
+                                    </div>
+                                    <div class="slide-sub-menu">
+                                        <ul>
+                                            <li class="menu-item">
+                                                <div class="nav-header return-header">
+                                                    <i class="fa fa-angle-left"></i>
+                                                    Ministries
+                                                </div>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Ministry/Children">Kids</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Ministry/Students">Students</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="https://veritascomo.com/Veritas" target="_blank">College</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <div class="nav-header has-sub-menu">
+                                                    Adults
+                                                    <i class="fa fa-angle-right pull-right"></i>
+                                                </div>
+                                                <div class="slide-sub-menu depth-2">
+                                                    <ul>
+                                                        <li class="menu-item">
+                                                            <div class="nav-header return-header">
+                                                                <i class="fa fa-angle-left"></i>
+                                                                Adults
+                                                            </div>
+                                                        </li>
+                                                        <li class="menu-item">
+                                                            <a href="/Ministry/Adults/Women">Women</a>
+                                                        </li>
+                                                        <li class="menu-item">
+                                                            <a href="/Ministry/Adults/Men">Men</a>
+                                                        </li>
+                                                        <li class="menu-item">
+                                                            <a href="/Ministry/Adults/Twenties">Twenties</a>
+                                                        </li>
+                                                        <li class="menu-item">
+                                                            <a href="/Ministry/Adults/Small-Groups">Small Groups</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Ministry/Care">Care & Support</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Ministry/Counseling">Counseling</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Ministry/Agape">Disability & Inclusion</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="menu-item main-nav-item">
+                                    <div class="nav-header has-sub-menu">
+                                        Content
+                                        <i class="fa fa-angle-right pull-right"></i>
+                                    </div>
+                                    <div class="slide-sub-menu">
+                                        <ul>
+                                            <li class="menu-item">
+                                                <div class="nav-header return-header">
+                                                    <i class="fa fa-angle-left"></i>
+                                                    Content
+                                                </div>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Resources/Watch/Sermon%20Archives">Sermons</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Resources/Listen">Podcasts</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Resources/Read">Blog</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Resources">View All</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="menu-item main-nav-item">
+                                    <div class="nav-header has-sub-menu">
+                                        Events & Opportunities
+                                        <i class="fa fa-angle-right pull-right"></i>
+                                    </div>
+                                    <div class="slide-sub-menu">
+                                        <ul>
+                                            <li class="menu-item">
+                                                <div class="nav-header return-header">
+                                                    <i class="fa fa-angle-left"></i>
+                                                    Events & Opportunities
+                                                </div>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Events">All Events</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Events?aud=Crossing%20Kids">Kid's Events</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Ministry/Adults/Women/womens-events">Women's Events</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Events?aud=Men">Men's Events</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Serving">Volunteer & Serve</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="menu-item main-nav-item">
+                                    <div class="nav-header has-sub-menu">
+                                        About
+                                        <i class="fa fa-angle-right pull-right"></i>
+                                    </div>
+                                    <div class="slide-sub-menu">
+                                        <ul>
+                                            <li class="menu-item">
+                                                <div class="nav-header return-header">
+                                                    <i class="fa fa-angle-left"></i>
+                                                    About
+                                                </div>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/About">About Us</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Staff">Staff</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Missions">Missions & Partners</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/FAQs">FAQs</a>
+                                            </li>
+                                            <li class="menu-item">
+                                                <a href="/Contact-Us">Contact Us</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="menu-item main-nav-item">
+                                    <a class="nav-header" href="/Give">Give</a>
+                                </div>
+                                <div class="menu-item main-nav-item">
+                                    <a class="nav-header" href="/Livestream">Livestream</a>
+                                </div>
+                                <div class="menu-item main-nav-item">
+                                    <a class="nav-header" href="/MyAccount">My Account</a>
+                                    <%-- <Rock:Zone Name="MobileLogin" runat="server" /> --%>
+                                </div>
+                                <a href="https://info.thecrossingchurch.com/im-new" class="btn btn-mobile-nav btn-primary">
+                                    Get Connected
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </header>
-		
+
         <asp:ContentPlaceHolder ID="feature" runat="server"></asp:ContentPlaceHolder>
 
         <asp:ContentPlaceHolder ID="main" runat="server"></asp:ContentPlaceHolder>
 
-	    <footer style="background-color: #163244;">
-			<div class="container">
-				<div class="row">
-			        <div class="col-md-12">
-				        <Rock:Zone Name="Footer" runat="server" />
-			        </div>
-		        </div>
-			</div>
-	    </footer>
-	
-        
+        <footer>
+            <div class="footer-wrapper">
+                <Rock:Zone Name="Footer" runat="server" />
+            </div>
+        </footer>
+
+
         <%-- controls for scriptmanager and update panel --%>
-        <asp:ScriptManager ID="sManager" runat="server"/>
-        <asp:UpdateProgress id="updateProgress" runat="server" DisplayAfter="800">
-		        <ProgressTemplate>
-		            <div class="updateprogress-status">
-                        <div class="spinner">
-                          <div class="rect1"></div>
-                          <div class="rect2"></div>
-                          <div class="rect3"></div>
-                          <div class="rect4"></div>
-                          <div class="rect5"></div>
-                        </div>
+        <asp:ScriptManager ID="sManager" runat="server" />
+        <asp:UpdateProgress ID="updateProgress" runat="server" DisplayAfter="800">
+            <ProgressTemplate>
+                <div class="updateprogress-status">
+                    <div class="spinner">
+                        <div class="rect1"></div>
+                        <div class="rect2"></div>
+                        <div class="rect3"></div>
+                        <div class="rect4"></div>
+                        <div class="rect5"></div>
                     </div>
-                    <div class="updateprogress-bg modal-backdrop"></div>
-		        </ProgressTemplate>
+                </div>
+                <div class="updateprogress-bg modal-backdrop"></div>
+            </ProgressTemplate>
         </asp:UpdateProgress>
 
     </form>
