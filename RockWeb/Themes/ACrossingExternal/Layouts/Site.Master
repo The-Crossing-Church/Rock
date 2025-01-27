@@ -243,7 +243,7 @@
                                             <li>
                                                 <a href="/Events">All Events</a>
                                             </li>
-                                            <li>
+                                            <%-- <li>
                                                 <a href="/Events?aud=Crossing%20Kids">Kid's Events</a>
                                             </li>
                                             <li>
@@ -251,7 +251,7 @@
                                             </li>
                                             <li>
                                                 <a href="/Events?aud=Men">Men's Events</a>
-                                            </li>
+                                            </li> --%>
                                             <li>
                                                 <a href="/Serving">Volunteer & Serve</a>
                                             </li>
@@ -435,7 +435,7 @@
                                             <li class="menu-item">
                                                 <a href="/Events">All Events</a>
                                             </li>
-                                            <li class="menu-item">
+                                            <%-- <li class="menu-item">
                                                 <a href="/Events?aud=Crossing%20Kids">Kid's Events</a>
                                             </li>
                                             <li class="menu-item">
@@ -443,7 +443,7 @@
                                             </li>
                                             <li class="menu-item">
                                                 <a href="/Events?aud=Men">Men's Events</a>
-                                            </li>
+                                            </li> --%>
                                             <li class="menu-item">
                                                 <a href="/Serving">Volunteer & Serve</a>
                                             </li>
