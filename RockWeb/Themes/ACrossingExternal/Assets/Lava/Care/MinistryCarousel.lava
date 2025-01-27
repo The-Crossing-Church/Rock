@@ -1,10 +1,10 @@
-﻿{[ carousel carouselid:'care-ministries-cards' itemheight:'375' imgheight:'175' ]}
+﻿{[ carousel carouselid:'care-ministries-cards' itemheight:'430' imgheight:'175' ]}
     [[ title ]]
         Further Care and Support
     [[ endtitle ]]
     {% for i in Items %}
         [[ item ]]
-            <div style="padding: 8px">
+            <div style="padding: 8px; height: 95%;">
                 <div class='card--custom card-with-button'>
                     <div class='img-wrapper'>
                         <img class="d-block w-100" src="{{i | Attribute:'CardImage'}}" alt="{{i.Title}}" />
@@ -26,8 +26,3 @@
         [[ enditem ]]
     {% endfor %}
 {[ endcarousel ]}
-<style>
-.slide div .card--custom {
-    min-height: 315px;
-}
-</style>
