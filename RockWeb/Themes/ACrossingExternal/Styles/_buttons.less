@@ -16,7 +16,7 @@
 
 // .btn:not(.btn-default):not(.btn-filter-toggle):not(a[class^="js-"]), 
 .registrationentry-summary .actions .btn-default,
-.btn-primary, .btn-secondary, .btn-accent, .btn-white {
+.btn-primary, .btn-secondary, .btn-accent, .btn-white, .btn-external {
   text-decoration: none !important;
   cursor: pointer !important;
   padding: calc(@padding-btn-y - 2) calc(@padding-btn-x - 2); //20px 40px was requested, but drop by two to account for border
@@ -28,7 +28,7 @@
 }
 
 // .btn:not(.btn-default):not(.btn-filter-toggle):not(.btn-secondary):not(.btn-accent):not(.btn-white),
-.btn-primary {
+.btn-primary, .btn-external {
   background-color: @color-primary !important;
   border-color: @color-primary !important;
   color: @color-white !important;
@@ -74,7 +74,7 @@
 
 
 
-.btn-primary:hover {
+.btn-primary:hover, .btn-external:hover {
   background-color: @color-primary-focus !important;
   border-color: @color-primary-focus !important;
   color: @color-white !important;
@@ -116,7 +116,7 @@
 
 
 
-.btn-primary.ghost {
+.btn-primary.ghost, .btn-external.ghost {
   background-color: @color-white !important;
   color: @color-primary !important;
 }
@@ -154,7 +154,7 @@
 
 
 
-.btn-primary.ghost:hover {
+.btn-primary.ghost:hover, .btn-external.ghost:hover {
   background-color: @color-primary !important;
   border-color: @color-primary !important;
   color: @color-white !important;
@@ -251,7 +251,7 @@
   }
 }
 
-.control-wrapper .btn-group .btn-primary:not(.btn-lg) {
+.control-wrapper .btn-group .btn-primary:not(.btn-lg), .control-wrapper .btn-group .btn-external:not(.btn-lg) {
   height: 34px;
   padding: 6px 12px;
   border-top-left-radius: 4px;
