@@ -1,19 +1,19 @@
 ﻿{% assign svcTimes = 'Global' | Attribute:'ServiceTimes' | ReplaceLast:',',' and' %}
 {% assign cloudItem = Item %}
 <div>
-    <div class='card--custom card-with-button' style="height:100%; min-height: 400px;">
+    <div class='card--custom card-with-button ck-home-card'>
         <div class='img-wrapper'>
             {[ cloudinaryimg item:cloudItem imgtype:'card' transform:'c_fill,w_600,h_300,g_center' overlaycolor:'#000000' overlaystrength:'10' ]}
             <div class='img-overlay justify-center'>
                 <h3 class='h1 text--white' style="text-shadow: 1px 1px 5px black;">In Person</h3>
             </div>
         </div>
-        <div class='card--body' style="padding: 32px 16px;">
+        <div class='card--body' style="padding: 32px 16px 0px 16px;">
             {{Item.Content | Replace:'##SERVICE_TIMES##',svcTimes}}
         </div>
     </div>
     <div class='link-wrapper justify-center'>
-        <a class='btn btn-primary' style="margin-right: 16px;" href="/Ministry/Children/Sundays">Learn More</a>
+        <a class='btn btn-primary' href="/Ministry/Children/Sundays">Learn More</a>
         <a class='btn btn-primary' href="/Ministry/Children/Sunday-Curriculum">Sunday Curriculum</a>
     </div>
 </div>
@@ -26,5 +26,22 @@
         bottom: 0px;
         left: 0px;
         right: 0px;
+    }
+    .ck-home-card {
+        height: 100%;
+        min-height: 370px; /* SM - LG Screens */
+    }
+    .ck-home-card + .link-wrapper a.btn {
+        min-width: 224.38px;
+    }
+    @media (min-width: 1200px) {
+        .ck-home-card {
+            min-height: 405px; /* XL+ Screens */
+        }
+    }
+    @media (max-width: 576px) {
+        .ck-home-card {
+            min-height: auto; /* XS Screens */
+        }
     }
 </style>
