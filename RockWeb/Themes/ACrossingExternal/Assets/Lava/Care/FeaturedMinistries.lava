@@ -1,4 +1,5 @@
-﻿{[ slider containerclass:'full-width background--grey' sliderid:'featured-items' ]}
+﻿<a class="hidden-anchor" id="form"></a>
+{[ slider containerclass:'full-width background--grey' sliderid:'featured-items' ]}
     {% assign ct = 0 %}
     {% for i in Items %}
         {% assign featuredRange = i | Attribute:'FeaturedDates' %}
@@ -41,7 +42,7 @@
                                             {% endfor %}
                                         {% endfor %}
                                     {% endregistrationtemplate %}
-                                    <a class="px-4 align-center hover" href="/Ministry/Care?Slug={{i.Id}}#form">
+                                    <a class="px-4 align-center hover" onclick="openModal({{i.Id}})">
                                         <h4>
                                             Contact
                                         </h4>
@@ -55,7 +56,7 @@
                                 </div>
                                 <br/>
                                 <div class='justify-center'>
-                                    <div onclick="$('#modal_{{i.Id}}').modal('show')" class='btn btn-primary'>Learn More</div>
+                                    <div onclick="$('#modal_inquiry').modal('show')" class='btn btn-primary'>Learn More</div>
                                 </div>
                             </div>
                         </div>
@@ -66,3 +67,14 @@
 
     {% endfor %}
 {[ endslider ]}
+
+<script>
+    function openModal(id) {
+        console.log('clicked: ' + id)
+        let params = new URLSearchParams(document.location.search)
+        params.set("ItemId", id)
+        history.replaceState(null, null, "?"+params.toString())
+        console.log(params)
+        $('#modal_inquiry').modal('show')
+    }
+</script>
