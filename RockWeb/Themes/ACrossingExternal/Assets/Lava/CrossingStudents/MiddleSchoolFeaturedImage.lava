@@ -4,7 +4,7 @@
             <img style="margin-bottom: 16px;" class="w-100" src="{{ binaryfile | CloudinaryTransform: 'c_fill,w_600,h_180,g_auto' }}" alt="{{binaryfile | Attribute:'AltText'}}" />
         </div>
     {% endbinaryfile %}
-    <div class="card--custom card-with-button w-100" style="max-width: 300px; margin: auto; margin-bottom: 16px;">
+    <div class="card--custom card-with-button p-0 w-100" style="max-width: 300px; margin: auto; margin-bottom: 16px;">
         {% assign i = Item %}
         {[ cloudinaryimg item:i imgtype:'card' imgclasses:'w-100' ]}
     </div>
