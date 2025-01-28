@@ -8,14 +8,14 @@
                 <div style="padding: 8px;" class='text--centered'>
                     <strong>{{i | Attribute:'TileTitle' }}</strong>
                     <br/>
-                    <p>
+                    <p class="mb-4">
                         {{i.Content | Replace:'##LAST_SERVICE##',lastSvc}}
                     </p>
                     {% assign mapMB = i | Attribute:'MainBuildMapURL' %}
                     {% assign mapSC = i | Attribute:'StudentCenterMapURL' %}
                     {% if mapMB != '' and mapSC != '' %}
-                        <a class='btn btn-accent' href="{{mapMB}}" target="_blank">Main Building</a>
-                        <a class='btn btn-accent' href="{{mapSC}}" target="_blank">Student Center</a>
+                        <a class="mr-2" style='font-weight: bold;' href="{{mapMB}}" target="_blank">Main Building <i class="ml-2 fa fa-angle-right"></i></a>
+                        <a class="ml-2" style='font-weight: bold;' href="{{mapSC}}" target="_blank">Student Center <i class="ml-2 fa fa-angle-right"></i></a>
                     {% endif %}
                 </div>
             </div>
