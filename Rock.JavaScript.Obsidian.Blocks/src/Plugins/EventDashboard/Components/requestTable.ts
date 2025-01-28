@@ -1,0 +1,261 @@
+import { defineComponent, PropType } from "vue"
+import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { DateTime } from "luxon"
+import { Table, Button, Popover } from "ant-design-vue"
+import RockField from "@Obsidian/Controls/rockField"
+import TCCDropDownList from "../Components/dropDownList"
+import GridAction from "../Components/adminGridAction"
+import RockText from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel"
+import DateRangePicker from "@Obsidian/Controls/dateRangePicker"
+import PersonPicker from "@Obsidian/Controls/personPicker"
+
+export default defineComponent({
+    name: "EventDashboard.Components.RequestTable",
+    components: {
+      "a-table": Table,
+      "a-btn": Button,
+      "a-pop": Popover,
+      "rck-text": RockText,
+      "rck-lbl": RockLabel,
+      "rck-field": RockField,
+      "rck-date-range": DateRangePicker,
+      "rck-person": PersonPicker,
+      "tcc-ddl": TCCDropDownList,
+      "tcc-grid": GridAction,
+    },
+    props: {
+      events: Array as PropType<ContentChannelItemBag[]>,
+      workflowURL: String,
+      defaultFilters: Object as any,
+      option: String,
+      openByDefault: Boolean,
+      users: Array as PropType<any[]>
+    },
+    setup() {
+
+    },
+    data() {
+        return {
+          filters: {
+            title: "",
+            statuses: [] as string[],
+            resources: [] as string[],
+            ministry: "",
+            submitter: "",
+            eventDates:  { lowerValue: "", upperValue: "" },
+            eventModified: { lowerValue: "", upperValue: "" }
+          },
+          loading: false,
+          columns: [
+            {
+              title: 'Title',
+              dataIndex: 'title',
+              key: 'reqtitle'
+            },
+            {
+              title: 'Submitted By',
+              dataIndex: 'createdByPersonAliasId',
+              key: 'submitter'
+            },
+            {
+              title: 'Submitted On',
+              dataIndex: 'startDateTime',
+              key: 'start'
+            },
+            {
+              title: 'Event Dates',
+              dataIndex: 'attributeValues.EventDates',
+              key: 'dates'
+            },
+            {
+              title: 'Requested Resources',
+              dataIndex: 'attributeValues.RequestType',
+              key: 'resources'
+            },
+            {
+              title: 'Status',
+              key: 'action'
+            },
+          ],
+          resources: [
+            "Room", 
+            "Online Event",
+            "Catering",
+            "Childcare",
+            "Extra Resources",
+            "Registration",
+            "Web Calendar",
+            "Production",
+            "Publicity"
+          ],
+          defaultClass: ""
+        };
+    },
+    computed: {
+      ministryAttr(): PublicAttributeBag | undefined {
+        if(this.events && this.events[0]) {
+          return this.events[0]?.attributes?.Ministry
+        }
+        return undefined
+      },
+      filterCollapseId() {
+        return this.option?.replace(" ", "") + "filterCollapse"
+      },
+      filterCollapseSelector() {
+        return '#' + this.filterCollapseId
+      },
+      collapseId() {
+        return this.option?.replace(" ", "") + "Collapse"
+      },
+      collapseSelector() {
+        return '#' + this.collapseId
+      }
+    },
+    methods: {
+      formatDateTime(date: any): string {
+        if(date) {
+          return DateTime.fromISO(date).toFormat("MM/dd/yyyy hh:mm a");
+        }
+        return ""
+      },
+      formatDates(dates: string): string {
+        if(dates) {
+          let dateArray = dates.split(",").map((d: string) => DateTime.fromFormat(d.trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy"))
+          return dateArray.join(", ")
+        }
+        return ""
+      },
+      clearFilters() {
+        this.filters = {
+          title: "",
+          statuses: [],
+          resources: [] as string[],
+          ministry: "",
+          submitter: "",
+          eventDates:  { lowerValue: "", upperValue: "" },
+          eventModified: { lowerValue: "", upperValue: "" }
+        }
+      },
+      updateFromGridAction(id: number, status: string) {
+        this.$emit("updatestatus", id, status)
+      },
+      addBuffer(id: number) {
+        this.$emit("addbuffer", id)
+      },
+      selectItem(item: any) {
+        this.$emit("selectitem", item)
+      },
+      filter() {
+        this.loading = true
+        this.$emit("filter", this.option?.replace(" ", ""), this.filters)
+      },
+      getIsValid(r: any) {
+        return r?.attributeValues?.RequestIsValid == 'True'
+      },
+      getSubmitter(id: number) {
+        if(this.users && this.users.length > 0) {
+          let submitter = this.users.filter(u => {
+            return u.primaryAliasId == id
+          })
+          if(submitter) {
+            return submitter[0].fullName
+          }
+        }
+      }
+    },
+    watch: {
+      events: { 
+        handler(val) {
+          this.loading = false
+        }, 
+        deep: true
+      }
+    },
+    mounted() {
+      if(this.openByDefault) {
+        this.defaultClass = "collapse in"
+      } else {
+        this.defaultClass = "collapse"
+      }
+    },
+    template: `
+<div style="display: flex; align-items: center;">
+  <i class="fa fa-filter mr-2 mb-2 hover fa-lg" data-toggle="collapse" :data-target="filterCollapseSelector" aria-expanded="false" :aria-controls="filterCollapseId"></i>
+  <h2 class="text-primary hover" data-toggle="collapse" :data-target="collapseSelector" aria-expanded="false" :aria-controls="collapseId">{{option}}</h2>
+</div>
+<div :class="defaultClass" :id="collapseId">  
+  <div class="collapse" :id="filterCollapseId">
+    <div class="row">
+      <div class="col col-xs-12 col-md-4">
+        <rck-text
+          label="Request Name"
+          v-model="filters.title"
+        ></rck-text>
+      </div>
+      <div class="col col-xs-12 col-md-4">
+        <rck-text
+          label="Submitter/Modifier"
+          v-model="filters.submitter"
+        ></rck-text>
+      </div>
+      <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
+        <rck-field
+          v-model="filters.ministry"
+          :attribute="ministryAttr"
+          :is-edit-mode="true"
+        ></rck-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 col-md-6">
+        <tcc-ddl
+          label="Requested Resources"
+          :items="resources"
+          v-model="filters.resources"
+        ></tcc-ddl>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <rck-date-range
+          label="Has Event Date in Range"
+          v-model="filters.eventDates"
+        ></rck-date-range>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12">
+        <a-btn type="grey" @click="clearFilters">Clear Filters</a-btn>
+        <a-btn class="pull-right" type="primary" @click="filter" :loading="loading">Filter</a-btn>
+      </div>
+    </div>
+  </div>
+  <a-table :columns="columns" :data-source="events" :pagination="{ pageSize: 30 }">
+    <template #bodyCell="{ column, record }">
+      <template v-if="column.key == 'reqtitle'">
+        <div class="hover" @click="selectItem(record)">
+          <i v-if="getIsValid(record)" class="fa fa-check-circle text-accent mr-2"></i>
+          <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i>
+          {{ record.title }}
+        </div>
+      </template>
+      <template v-else-if="column.key == 'submitter'">
+        {{ getSubmitter(record.createdByPersonAliasId) }}
+      </template>
+      <template v-else-if="column.key == 'start'">
+        {{ formatDateTime(record.startDateTime) }}
+      </template>
+      <template v-else-if="column.key == 'dates'">
+        {{ formatDates(record.attributeValues.EventDates) }}
+      </template>
+      <template v-else-if="column.key == 'resources'">
+        {{ record.attributeValues.RequestType }}
+      </template>
+      <template v-else-if="column.key == 'action'">
+        <tcc-grid :request="record" :url="workflowURL" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBuffer"></tcc-grid>
+      </template>
+    </template>
+  </a-table>
+</div>
+`
+});

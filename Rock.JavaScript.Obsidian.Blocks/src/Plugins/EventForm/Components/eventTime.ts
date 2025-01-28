@@ -1,0 +1,107 @@
+import { defineComponent, PropType } from "vue"
+import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import RockField from "@Obsidian/Controls/rockField"
+import RockForm from "@Obsidian/Controls/rockForm"
+import Validator from "./validator"
+import TimePicker from "./timePicker"
+import rules from "../Rules/rules"
+
+
+export default defineComponent({
+    name: "EventForm.Components.EventTime",
+    components: {
+      "rck-field": RockField,
+      "rck-form": RockForm,
+      "tcc-validator": Validator,
+      "tcc-time": TimePicker,
+    },
+    props: {
+      e: {
+          type: Object as PropType<ContentChannelItemBag>,
+          required: false
+      },
+      request: {
+          type: Object as PropType<ContentChannelItemBag>,
+          required: false
+      },
+      showValidation: Boolean,
+      refName: String
+    },
+    setup() {
+
+    },
+    data() {
+        return {
+          rules: rules,
+          errors: [] as Record<string, string>[]
+        };
+    },
+    computed: {
+      
+    },
+    methods: {
+      validate() {
+        let formRef = this.$refs as any
+        for(let r in formRef) {
+          if(formRef[r].className?.includes("validator")) {
+            formRef[r].validate()
+          }
+        }
+      },
+      validationChange(errs: Record<string, string>[]) {
+        this.errors = errs
+      }
+    },
+    watch: {
+      errors: {
+        handler(val) {
+          this.$emit("validation-change", { ref: this.refName, errors: val})
+        },
+        deep: true
+      }
+    },
+    mounted() {
+      if(this.showValidation) {
+        this.validate()
+      }
+    },
+    template: `
+<rck-form ref="form" @validationChanged="validationChange">
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.StartTime, 'Start Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, true)]" ref="validators_start">
+        <tcc-time 
+          :label="e.attributes.StartTime.name"
+          v-model="e.attributeValues.StartTime"
+          :dates="request.attributeValues.EventDates" 
+          @quicksettime="setEndTime"
+          :quick-set-items='[
+            {"mine": "08:20:00", "theirs": "09:25:00", "title": "1st Service"},
+            {"mine": "09:35:00", "theirs": "10:40:00", "title": "2nd Service"},
+            {"mine": "10:50:00", "theirs": "11:55:00", "title": "3rd Service"}
+          ]'
+          id="TimeStartTime"
+        ></tcc-time>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.EndTime, 'End Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, false)]" ref="validators_end">
+        <tcc-time 
+          :label="e.attributes.EndTime.name"
+          v-model="e.attributeValues.EndTime"
+          :dates="request.attributeValues.EventDates" 
+          @quicksettime="setStartTime"
+          :quick-set-items='[
+            {"theirs": "08:20:00", "mine": "09:25:00", "title": "1st Service"},
+            {"theirs": "09:35:00", "mine": "10:40:00", "title": "2nd Service"},
+            {"theirs": "10:50:00", "mine": "11:55:00", "title": "3rd Service"}
+          ]'
+          id="TimeEndTime"
+        ></tcc-time>
+      </tcc-validator>
+    </div>
+  </div>
+  <br/>
+</rck-form>
+`
+});
