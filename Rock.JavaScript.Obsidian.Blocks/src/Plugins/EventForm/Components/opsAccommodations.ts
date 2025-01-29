@@ -351,7 +351,7 @@ export default defineComponent({
                 {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} tables with {{su.attributeValues.NumberofChairs.value}} chairs each.
               </template>
               <template v-else>
-                {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} table with {{su.attributeValues.NumberofChairs.value}} charis.
+                {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} table with {{su.attributeValues.NumberofChairs.value}} chairs.
               </template>
             </div>
           </div>
