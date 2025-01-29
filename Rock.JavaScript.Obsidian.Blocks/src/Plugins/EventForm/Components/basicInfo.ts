@@ -1,14 +1,14 @@
 import { defineComponent, PropType } from "vue"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
 import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel"
 import { useStore } from "@Obsidian/PageState"
 import { Switch } from "ant-design-vue"
 import { DateTime } from "luxon"
-import RockForm from "@Obsidian/Controls/rockForm"
-import RockField from "@Obsidian/Controls/rockField"
-import RockFormField from "@Obsidian/Controls/rockFormField"
-import TextBox from "@Obsidian/Controls/textBox"
-import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import RockFormField from "@Obsidian/Controls/rockFormField.obs"
+import TextBox from "@Obsidian/Controls/textBox.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import Validator from "./validator"
 import DatePicker from "./calendar"
 import AutoComplete from "./roomPicker"
@@ -59,7 +59,7 @@ export default defineComponent({
     },
     computed: {
         /** The person currently authenticated */
-        currentPerson(): PersonBag | null {
+        currentPerson(): CurrentPersonBag | null {
             return store.state.currentPerson;
         },
         eventDates() {

@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue";
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { Popover, Button, Badge } from "ant-design-vue"
 
 

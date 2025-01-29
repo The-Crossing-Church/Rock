@@ -1,5 +1,5 @@
 import { defineComponent } from "vue"
-import RockField from "@Obsidian/Controls/rockField"
+import RockField from "@Obsidian/Controls/rockField.obs"
 
 export default defineComponent({
     name: "EventDashboard.Components.Modal.CalendarInfo",

@@ -6,6 +6,8 @@ using System.Linq;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Blocks.Plugins.ViewModels;
+using Rock.Blocks.Plugins.EventForm;
 
 namespace Rock.Blocks.Plugins.EventCalendar
 {
@@ -108,6 +110,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
 
         #region Properties
 
+        private ObsidianPluginsShared EventFormHelper = new ObsidianPluginsShared();
         private int EventContentChannelId { get; set; }
         private int EventContentChannelTypeId { get; set; }
         private int EventDetailsContentChannelId { get; set; }
@@ -177,12 +180,12 @@ namespace Rock.Blocks.Plugins.EventCalendar
                 string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
                 if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
                 {
-                    viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey );
+                    viewModel.requestStatus = EventFormHelper.GetCommonAttributeEntityBag( new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ) );
                 }
                 string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
                 if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
                 {
-                    viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey );
+                    viewModel.requestType = EventFormHelper.GetCommonAttributeEntityBag( new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ) );
                 }
                 viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
                 viewModel.formUrl = this.GetLinkedPageUrl( AttributeKey.SubmissionPage );
@@ -227,28 +230,28 @@ namespace Rock.Blocks.Plugins.EventCalendar
 
         #region Helpers
 
-        //private ContentChannelItem FromViewModel( ContentChannelItem viewModel )
-        //{
-        //    RockContext context = new RockContext();
-        //    Rock.Model.Person p = GetCurrentPerson();
-        //    ContentChannelItem item = new ContentChannelItem()
-        //    {
-        //        ContentChannelId = viewModel.ContentChannelId,
-        //        ContentChannelTypeId = viewModel.ContentChannelTypeId
-        //    };
-        //    if ( !String.IsNullOrEmpty( viewModel.IdKey ) )
-        //    {
-        //        item = new ContentChannelItemService( context ).Get( viewModel.IdKey );
-        //    }
-        //    item.LoadAttributes();
-        //    item.Title = viewModel.Title;
-        //    foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
-        //    {
-        //        item.SetPublicAttributeValue( av.Key, av.Value, p, false );
-        //    }
+        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel )
+        {
+            RockContext context = new RockContext();
+            Rock.Model.Person p = GetCurrentPerson();
+            ContentChannelItem item = new ContentChannelItem()
+            {
+                ContentChannelId = viewModel.ContentChannelId,
+                ContentChannelTypeId = viewModel.ContentChannelTypeId
+            };
+            if ( !String.IsNullOrEmpty( viewModel.IdKey ) )
+            {
+                item = new ContentChannelItemService( context ).Get( viewModel.IdKey );
+            }
+            item.LoadAttributes();
+            item.Title = viewModel.Title;
+            foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
+            {
+                item.SetPublicAttributeValue( av.Key, av.Value, p, false );
+            }
 
-        //    return item;
-        //}
+            return item;
+        }
 
         private void SetProperties()
         {
@@ -885,11 +888,11 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
 
         private class CalendarBlockViewModel
         {
-            public List<ContentChannelItem> events { get; set; }
+            public List<ContentChannelItemBag> events { get; set; }
             public List<DefinedValue> locations { get; set; }
             public List<DefinedValue> ministries { get; set; }
-            public Model.Attribute requestStatus { get; set; }
-            public Model.Attribute requestType { get; set; }
+            public AttributeBag requestStatus { get; set; }
+            public AttributeBag requestType { get; set; }
             public string formUrl { get; set; }
             public string dashboardUrl { get; set; }
             public bool isEventAdmin { get; set; }

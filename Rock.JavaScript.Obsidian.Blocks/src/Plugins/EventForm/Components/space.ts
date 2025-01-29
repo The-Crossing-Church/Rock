@@ -1,14 +1,14 @@
 import { defineComponent, PropType} from "vue"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime, Duration, Interval } from "luxon"
 import { useStore } from "@Obsidian/PageState"
 import { Switch, Button } from "ant-design-vue"
-import RockField from "@Obsidian/Controls/rockField"
-import RockForm from "@Obsidian/Controls/rockForm"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
 import Validator from "./validator"
-import TextBox from "@Obsidian/Controls/textBox"
-import RockLabel from "@Obsidian/Controls/rockLabel"
+import TextBox from "@Obsidian/Controls/textBox.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RoomPicker from "./roomPickerv2"
 import RoomSetUp from "./roomSetUp"
 import Toggle from "./toggle"
@@ -68,7 +68,7 @@ export default defineComponent({
   },
   computed: {
     /** The person currently authenticated */
-    currentPerson(): PersonBag | null {
+    currentPerson(): CurrentPersonBag | null {
       return store.state.currentPerson;
     },
     rooms() {

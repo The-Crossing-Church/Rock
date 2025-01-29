@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue";
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
-import RockForm from "@Obsidian/Controls/rockForm"
-import RockField from "@Obsidian/Controls/rockField"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
+import RockField from "@Obsidian/Controls/rockField.obs"
 import Validator from "./validator"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"

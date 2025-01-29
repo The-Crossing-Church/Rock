@@ -1,6 +1,6 @@
 import { defineComponent } from "vue"
-import RockLabel from "@Obsidian/Controls/rockLabel"
-import RockText from "@Obsidian/Controls/textBox"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import RockText from "@Obsidian/Controls/textBox.obs"
 import { Select } from "ant-design-vue"
 
 const {Option } = Select

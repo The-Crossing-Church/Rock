@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
 import { Modal, Button, TreeSelect } from "ant-design-vue";
-import RockLabel from "@Obsidian/Controls/rockLabel";
+import RockLabel from "@Obsidian/Controls/rockLabel.obs";
 
 const { TreeNode } = TreeSelect
 

@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
-import TextBox from "@Obsidian/Controls/textBox";
-import RockLabel from "@Obsidian/Controls/rockLabel";
+import TextBox from "@Obsidian/Controls/textBox.obs";
+import RockLabel from "@Obsidian/Controls/rockLabel.obs";
 import { DateTime } from "luxon";
 import { Button, Modal } from "ant-design-vue";
 import Validator from "./validator";

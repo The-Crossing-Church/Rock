@@ -713,7 +713,7 @@ export default defineComponent({
         {{ formatDateTime(record.startDateTime) }}
       </template>
       <template v-else-if="column.key == 'dates'">
-        {{ formatDates(record.attributeValues.EventDates.value) }}
+        {{ formatDates(record.attributeValues.EventDates) }}
       </template>
       <template v-else-if="column.key == 'action'">
         <tcc-grid :request="record" :commentNotification="lastCommentIsFromUser(record)" v-on:duplicate="copyFromGridAction" v-on:updatestatus="updateFromGridAction"></tcc-grid>

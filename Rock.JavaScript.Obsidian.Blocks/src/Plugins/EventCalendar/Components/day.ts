@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue"
 import { DateTime, Interval } from "luxon"
 import { useStore } from "@Obsidian/PageState"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
 import Event from "./event"
 
 const store = useStore()
@@ -37,7 +37,10 @@ export default defineComponent({
   },
   props: {
     calendars: Array,
-    currentDate: DateTime,
+    currentDate: {
+      type: Object as PropType<DateTime>,
+      required: false 
+    },
     formUrl: String,
     dashboardUrl: String,
     isAdmin: Boolean,
@@ -54,7 +57,7 @@ export default defineComponent({
   },
   computed: {
     /** The person currently authenticated */
-    currentPerson(): PersonBag | null {
+    currentPerson(): CurrentPersonBag | null {
       return store.state.currentPerson
     },
     daysCalendar(): Array<any> {

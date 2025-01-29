@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue";
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
+import { DefinedValueBag } from "../../ViewModels/definedValueBag"
 import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel";
 import Toggle from "./toggle";
 import { DateTime, Duration } from "luxon";

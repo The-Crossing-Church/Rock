@@ -41,6 +41,12 @@
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="RestSharp, Version=105.2.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\RestSharp.105.2.3\lib\net46\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -79,6 +85,26 @@
     <Compile Include="Core\ScheduleCategoryExclusionList.cs" />
     <Compile Include="Administration\PageProperties.cs" />
     <Compile Include="Mobile\CheckIn\CheckIn.cs" />
+    <Compile Include="Plugins\Checkin\NewFamily.cs" />
+    <Compile Include="Plugins\Cms\DragNDrop.cs" />
+    <Compile Include="Plugins\Cms\DragNDropHtml.cs" />
+    <Compile Include="Plugins\Cms\HubSpotBlogSearch.cs" />
+    <Compile Include="Plugins\EventForm\AdminDashboard.cs" />
+    <Compile Include="Plugins\EventForm\Calendar.cs" />
+    <Compile Include="Plugins\ObsidianPluginsShared.cs" />
+    <Compile Include="Plugins\EventForm\SubmissionForm.cs" />
+    <Compile Include="Plugins\EventForm\UserDashboard.cs" />
+    <Compile Include="Plugins\ReportingOld\ServerActivity.cs" />
+    <Compile Include="Plugins\Reporting\EmailCampaignImpact.cs" />
+    <Compile Include="Plugins\ViewModels\AttributeBag.cs" />
+    <Compile Include="Plugins\ViewModels\AttributeValueBag.cs" />
+    <Compile Include="Plugins\ViewModels\ContentChannelItemAssociationBag.cs" />
+    <Compile Include="Plugins\ViewModels\ContentChannelItemBag.cs" />
+    <Compile Include="Plugins\ViewModels\DefinedTypeBag.cs" />
+    <Compile Include="Plugins\ViewModels\DefinedValueBag.cs" />
+    <Compile Include="Plugins\ViewModels\GroupBag.cs" />
+    <Compile Include="Plugins\ViewModels\PersonBag.cs" />
+    <Compile Include="Plugins\ViewModels\PhoneNumberBag.cs" />
     <Compile Include="Tv\RokuApplicationDetail.cs" />
     <Compile Include="Cms\ShortLink.cs" />
     <Compile Include="Cms\LayoutList.cs" />

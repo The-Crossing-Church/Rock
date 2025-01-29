@@ -1,5 +1,5 @@
 import { defineComponent, PropType } from "vue"
-import RockField from "@Obsidian/Controls/rockField"
+import RockField from "@Obsidian/Controls/rockField.obs"
 
 export default defineComponent({
     name: "Checkin.Components.AdditionalAttributes",

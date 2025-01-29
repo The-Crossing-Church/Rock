@@ -1,8 +1,8 @@
 import { defineComponent, PropType } from "vue"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { PersonBag } from "../../ViewModels/personBag"
 import { DateTime } from "luxon"
-import DropDownList from "@Obsidian/Controls/dropDownList"
-import FormField from "@Obsidian/Controls/rockFormField"
+import DropDownList from "@Obsidian/Controls/dropDownList.obs"
+import FormField from "@Obsidian/Controls/rockFormField.obs"
 
 export default defineComponent({
     name: "Checkin.Components.Placement",

@@ -1,9 +1,9 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime, Interval } from "luxon"
-import RockField from "@Obsidian/Controls/rockField"
-import RockForm from "@Obsidian/Controls/rockForm"
-import RockLabel from "@Obsidian/Controls/rockLabel"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import { Button, Modal, Select } from "ant-design-vue"
 import OpsInventory from "./opsInventoryEntry"
 

@@ -1,8 +1,8 @@
 import { defineComponent } from "vue";
 import { Input, Menu, Dropdown, Modal, Button } from "ant-design-vue";
-import TextBox from "@Obsidian/Controls/textBox";
-import RockLabel from "@Obsidian/Controls/rockLabel";
-import Checkbox from "@Obsidian/Controls/checkBox";
+import TextBox from "@Obsidian/Controls/textBox.obs";
+import RockLabel from "@Obsidian/Controls/rockLabel.obs";
+import Checkbox from "@Obsidian/Controls/checkBox.obs";
 
 const { Item } = Menu;
 

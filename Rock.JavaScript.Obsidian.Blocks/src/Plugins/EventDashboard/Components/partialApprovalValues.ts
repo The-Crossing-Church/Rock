@@ -1,5 +1,5 @@
 import { defineComponent } from "vue"
-import RockField from "@Obsidian/Controls/rockField"
+import RockField from "@Obsidian/Controls/rockField.obs"
 import { Button } from "ant-design-vue"
 
 export default defineComponent({

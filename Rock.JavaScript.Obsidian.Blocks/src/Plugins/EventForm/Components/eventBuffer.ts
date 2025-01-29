@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime } from "luxon"
-import RockField from "@Obsidian/Controls/rockField"
+import RockField from "@Obsidian/Controls/rockField.obs"
 
 export default defineComponent({
     name: "EventForm.Components.EventBuffer",

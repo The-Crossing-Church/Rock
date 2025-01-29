@@ -7,6 +7,8 @@ using Rock.Attribute;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
+using Rock.Blocks.Plugins.ViewModels;
+using Rock.Blocks.Plugins.EventForm;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugins.EventDashboard
@@ -96,6 +98,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
         #endregion Keys
 
+        private ObsidianPluginsShared EventFormHelper = new ObsidianPluginsShared();
+
         #region Obsidian Block Type Overrides
 
         /// <summary>
@@ -169,12 +173,12 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
                     if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
                     {
-                        viewModel.requestStatus = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey );
+                        viewModel.requestStatus = EventFormHelper.GetCommonAttributeEntityBag( new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ) );
                     }
                     string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
                     if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
                     {
-                        viewModel.requestType = new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey );
+                        viewModel.requestType = EventFormHelper.GetCommonAttributeEntityBag( new AttributeService( rockContext ).Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ) );
                     }
 
                     List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Where( s => !String.IsNullOrEmpty( s ) ).ToList();
@@ -227,25 +231,37 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     item = parent.ContentChannelItem;
                 }
             }
-            response.request = item;
+            response.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
+            item.LoadAttributes();
+            response.request.LoadAttributesAndValuesForPublicView( item, RequestContext.CurrentPerson );
             var requestchanges = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).FirstOrDefault();
             if ( requestchanges != null )
             {
-                response.requestPendingChanges = requestchanges.ChildContentChannelItem;
+                response.requestPendingChanges = EventFormHelper.GetCommonContentChannelItemEntityBag( requestchanges.ChildContentChannelItem );
+                requestchanges.ChildContentChannelItem.LoadAttributes();
+                response.requestPendingChanges.LoadAttributesAndValuesForPublicView( requestchanges.ChildContentChannelItem, RequestContext.CurrentPerson );
             }
             var details = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( i => i.ChildContentChannelItem ).ToList();
-            response.details = details.Select( i => new Details() { detail = i } ).ToList();
+            response.details = details.Select( i =>
+            {
+                var detail = new Details() { detail = EventFormHelper.GetCommonContentChannelItemEntityBag( i ) };
+                i.LoadAttributes();
+                detail.detail.LoadAttributesAndValuesForPublicView( i, RequestContext.CurrentPerson );
+                return detail;
+            } ).ToList();
             for ( int i = 0; i < details.Count(); i++ )
             {
                 var detailChanges = details[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
                 if ( detailChanges != null )
                 {
-                    response.details[i].detailPendingChanges = detailChanges.ChildContentChannelItem;
+                    response.details[i].detailPendingChanges = EventFormHelper.GetCommonContentChannelItemEntityBag( detailChanges.ChildContentChannelItem );
+                    detailChanges.ChildContentChannelItem.LoadAttributes();
+                    response.details[i].detailPendingChanges.LoadAttributesAndValuesForPublicView( detailChanges.ChildContentChannelItem, RequestContext.CurrentPerson );
                 }
             }
-            response.comments = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).Select( ci => new Comment { comment = ci.ChildContentChannelItem, createdBy = ci.ChildContentChannelItem.CreatedByPersonName } ).ToList();
-            response.createdBy = item.CreatedByPersonAlias.Person;
-            response.modifiedBy = item.ModifiedByPersonAlias.Person;
+            response.comments = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).Select( ci => new Comment { comment = EventFormHelper.GetCommonContentChannelItemEntityBag( ci.ChildContentChannelItem ), createdBy = ci.ChildContentChannelItem.CreatedByPersonName } ).ToList();
+            response.createdBy = EventFormHelper.GetCommonPersonEntityBag( item.CreatedByPersonAlias.Person );
+            response.modifiedBy = EventFormHelper.GetCommonPersonEntityBag( item.ModifiedByPersonAlias.Person );
             return ActionOk( response );
         }
 
@@ -956,9 +972,13 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 }
             }
 
-            itemList.LoadAttributes();
-
-            viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).ToList();
+            viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
+            {
+                var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                cci.LoadAttributes();
+                bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
+                return bag;
+            } ).ToList();
             viewModel.eventDetails = itemList.SelectMany( i => i.ChildItems ).ToList();
             return viewModel;
         }
@@ -1125,7 +1145,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
         public class DashboardViewModel
         {
-            public List<ContentChannelItem> events { get; set; }
+            public List<ContentChannelItemBag> events { get; set; }
             public List<ContentChannelItemAssociation> eventDetails { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
@@ -1134,8 +1154,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public List<DefinedValue> budgetLines { get; set; }
             public List<DefinedValue> drinks { get; set; }
             public List<DefinedValue> inventory { get; set; }
-            public Model.Attribute requestStatus { get; set; }
-            public Model.Attribute requestType { get; set; }
+            public AttributeBag requestStatus { get; set; }
+            public AttributeBag requestType { get; set; }
             public string workflowURL { get; set; }
             public List<string> defaultStatuses { get; set; }
             public int eventDetailsCCId { get; set; }
@@ -1144,24 +1164,24 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
         public class GetRequestResponse
         {
-            public ContentChannelItem request { get; set; }
-            public ContentChannelItem requestPendingChanges { get; set; }
+            public ContentChannelItemBag request { get; set; }
+            public ContentChannelItemBag requestPendingChanges { get; set; }
             public List<Comment> comments { get; set; }
             public List<Details> details { get; set; }
-            public Person createdBy { get; set; }
-            public Person modifiedBy { get; set; }
+            public PersonBag createdBy { get; set; }
+            public PersonBag modifiedBy { get; set; }
         }
 
         public class Comment
         {
-            public ContentChannelItem comment { get; set; }
+            public ContentChannelItemBag comment { get; set; }
             public string createdBy { get; set; }
         }
 
         public class Details
         {
-            public ContentChannelItem detail { get; set; }
-            public ContentChannelItem detailPendingChanges { get; set; }
+            public ContentChannelItemBag detail { get; set; }
+            public ContentChannelItemBag detailPendingChanges { get; set; }
         }
 
         public class Filters

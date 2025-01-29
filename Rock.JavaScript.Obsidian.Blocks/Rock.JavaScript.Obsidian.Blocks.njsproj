@@ -438,6 +438,7 @@
     <Folder Include="src\WorkFlow\FormBuilder\FormBuilderDetail\" />
     <Folder Include="src\WorkFlow\FormBuilder\FormTemplateDetail\" />
     <Folder Include="src\WorkFlow\FormBuilder\Shared\" />
+    <Folder Include="src\Plugins\ViewModels\" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\Cms\AdaptiveMessageAdaptationDetail\types.partial.ts" />

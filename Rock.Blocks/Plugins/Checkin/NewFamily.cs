@@ -5,7 +5,9 @@ using System.Linq;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Web.Cache;
+using Rock.Blocks.Plugins.EventForm;
 
 namespace Rock.Blocks.Plugins.Checkin
 {
@@ -327,7 +329,7 @@ namespace Rock.Blocks.Plugins.Checkin
 
     #endregion Block Attributes
 
-    public class NewFamily : RockBlockType
+    public class NewFamily : RockObsidianBlockType
     {
         #region Keys
 
@@ -395,194 +397,204 @@ namespace Rock.Blocks.Plugins.Checkin
         /// </returns>
         public override object GetObsidianBlockInitialization()
         {
-            try
+            SetProperties();
+            DefinedValueService dv_svc = new DefinedValueService( context );
+            DefinedTypeService dt_svc = new DefinedTypeService( context );
+            AttributeService attr_svc = new AttributeService( context );
+            PersonService per_svc = new PersonService( context );
+            PersonAliasService alias_svc = new PersonAliasService( context );
+            GroupService grp_svc = new GroupService( context );
+            GroupTypeService gt_svc = new GroupTypeService( context );
+
+            NewFamilyBlockViewModel viewModel = new NewFamilyBlockViewModel();
+
+            viewModel.ShowTitle = GetAttributeValue( AttributeKey.ShowTitle );
+            viewModel.TitleDefinedType = dt_svc.Get( Guid.Parse( SystemGuid.DefinedType.PERSON_TITLE ) );
+            viewModel.ShowNickName = GetAttributeValue( AttributeKey.ShowNickName );
+            viewModel.ShowMiddleName = GetAttributeValue( AttributeKey.ShowMiddleName );
+            viewModel.ShowSuffix = GetAttributeValue( AttributeKey.ShowSuffix );
+            viewModel.SuffixDefinedType = dt_svc.Get( Guid.Parse( SystemGuid.DefinedType.PERSON_SUFFIX ) );
+            viewModel.ConnectionStatusDefinedType = dt_svc.Get( Guid.Parse( SystemGuid.DefinedType.PERSON_CONNECTION_STATUS ) );
+            viewModel.DefaultConnectionStatusGuid = GetAttributeValue( AttributeKey.DefaultConnectionStatus ).AsGuid();
+            viewModel.DefaultConnectionStatus = dv_svc.Get( viewModel.DefaultConnectionStatusGuid );
+            viewModel.RequireConnectionStatus = GetAttributeValue( AttributeKey.RequireConnectionStatus );
+            viewModel.RequireGender = GetAttributeValue( AttributeKey.RequireGender );
+            viewModel.RequireBirthDate = GetAttributeValue( AttributeKey.RequireBirthDate );
+            viewModel.RequireGradeOrAbility = GetAttributeValue( AttributeKey.RequireGradeOrAbility );
+            viewModel.ShowMaritalStatus = GetAttributeValue( AttributeKey.ShowMaritalStatus );
+            viewModel.MaritalStatusDefinedType = dt_svc.Get( SystemGuid.DefinedType.PERSON_MARITAL_STATUS );
+            viewModel.AdultDefaultMaritalStatusGuid = GetAttributeValue( AttributeKey.AdultDefaultMaritalStatus ).AsGuid();
+            viewModel.ChildDefaultMaritalStatusGuid = GetAttributeValue( AttributeKey.ChildDefaultMaritalStatus ).AsGuid();
+            viewModel.DefaultAdultMaritalStatus = dv_svc.Get( viewModel.AdultDefaultMaritalStatusGuid );
+            viewModel.DefaultChildMaritalStatus = dv_svc.Get( viewModel.ChildDefaultMaritalStatusGuid );
+            viewModel.ShowEmail = GetAttributeValue( AttributeKey.ShowEmail ).AsBoolean();
+            viewModel.ShowEmailOptOut = GetAttributeValue( AttributeKey.ShowEmailOptOut ).AsBoolean();
+            viewModel.ShowCell = GetAttributeValue( AttributeKey.ShowCell ).AsBoolean();
+            viewModel.ShowSMSEnabled = GetAttributeValue( AttributeKey.ShowSMSEnabled ).AsBoolean();
+            viewModel.PhoneType = dv_svc.Get( GetAttributeValue( AttributeKey.MobileDefinedValue ).AsGuid() );
+            viewModel.ShowAddress = GetAttributeValue( AttributeKey.ShowAddress ).AsBoolean();
+            viewModel.ExistingPersonPhoneCantBeMessaged = false;
+            viewModel.AdultAttributeCategories = adultAttributeCategories;
+            viewModel.AdultAttributes = adultAttributes;
+            viewModel.ChildAttributeCategories = childAttributeCategories;
+            viewModel.ChildAttributes = childAttributes.Select( a =>
             {
-                SetProperties();
-                DefinedValueService dv_svc = new DefinedValueService( context );
-                DefinedTypeService dt_svc = new DefinedTypeService( context );
-                AttributeService attr_svc = new AttributeService( context );
-                PersonService per_svc = new PersonService( context );
-                PersonAliasService alias_svc = new PersonAliasService( context );
-                GroupService grp_svc = new GroupService( context );
-                GroupTypeService gt_svc = new GroupTypeService( context );
-
-                NewFamilyBlockViewModel viewModel = new NewFamilyBlockViewModel();
-
-                viewModel.ShowTitle = GetAttributeValue( AttributeKey.ShowTitle );
-                viewModel.TitleDefinedType = dt_svc.Get( Guid.Parse( SystemGuid.DefinedType.PERSON_TITLE ) );
-                viewModel.ShowNickName = GetAttributeValue( AttributeKey.ShowNickName );
-                viewModel.ShowMiddleName = GetAttributeValue( AttributeKey.ShowMiddleName );
-                viewModel.ShowSuffix = GetAttributeValue( AttributeKey.ShowSuffix );
-                viewModel.SuffixDefinedType = dt_svc.Get( Guid.Parse( SystemGuid.DefinedType.PERSON_SUFFIX ) );
-                viewModel.ConnectionStatusDefinedType = dt_svc.Get( Guid.Parse( SystemGuid.DefinedType.PERSON_CONNECTION_STATUS ) );
-                viewModel.DefaultConnectionStatusGuid = GetAttributeValue( AttributeKey.DefaultConnectionStatus ).AsGuid();
-                viewModel.DefaultConnectionStatus = dv_svc.Get( viewModel.DefaultConnectionStatusGuid );
-                viewModel.RequireConnectionStatus = GetAttributeValue( AttributeKey.RequireConnectionStatus );
-                viewModel.RequireGender = GetAttributeValue( AttributeKey.RequireGender );
-                viewModel.RequireBirthDate = GetAttributeValue( AttributeKey.RequireBirthDate );
-                viewModel.RequireGradeOrAbility = GetAttributeValue( AttributeKey.RequireGradeOrAbility );
-                viewModel.ShowMaritalStatus = GetAttributeValue( AttributeKey.ShowMaritalStatus );
-                viewModel.MaritalStatusDefinedType = dt_svc.Get( SystemGuid.DefinedType.PERSON_MARITAL_STATUS );
-                viewModel.AdultDefaultMaritalStatusGuid = GetAttributeValue( AttributeKey.AdultDefaultMaritalStatus ).AsGuid();
-                viewModel.ChildDefaultMaritalStatusGuid = GetAttributeValue( AttributeKey.ChildDefaultMaritalStatus ).AsGuid();
-                viewModel.DefaultAdultMaritalStatus = dv_svc.Get( viewModel.AdultDefaultMaritalStatusGuid );
-                viewModel.DefaultChildMaritalStatus = dv_svc.Get( viewModel.ChildDefaultMaritalStatusGuid );
-                viewModel.ShowEmail = GetAttributeValue( AttributeKey.ShowEmail ).AsBoolean();
-                viewModel.ShowEmailOptOut = GetAttributeValue( AttributeKey.ShowEmailOptOut ).AsBoolean();
-                viewModel.ShowCell = GetAttributeValue( AttributeKey.ShowCell ).AsBoolean();
-                viewModel.ShowSMSEnabled = GetAttributeValue( AttributeKey.ShowSMSEnabled ).AsBoolean();
-                viewModel.PhoneType = dv_svc.Get( GetAttributeValue( AttributeKey.MobileDefinedValue ).AsGuid() );
-                viewModel.ShowAddress = GetAttributeValue( AttributeKey.ShowAddress ).AsBoolean();
-                viewModel.ExistingPersonPhoneCantBeMessaged = false;
-                viewModel.AdultAttributeCategories = adultAttributeCategories;
-                viewModel.AdultAttributes = adultAttributes;
-                viewModel.ChildAttributeCategories = childAttributeCategories;
-                viewModel.ChildAttributes = childAttributes.ToList();
-                viewModel.AbilityLevelDefinedType = dt_svc.Get( GetAttributeValue( AttributeKey.AbilityLevelDefinedType ).AsGuid() );
-                viewModel.AbilityLevelAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.AbilityLevelAttribute ).AsGuid() );
-                viewModel.GradeDefinedType = dt_svc.Get( GetAttributeValue( AttributeKey.GradeDefinedType ).AsGuid() );
-                DateTime? gradeTransition = GlobalAttributesCache.Get().GetValue( "GradeTransitionDate" ).MonthDayStringAsDateTime();
-                viewModel.GraduationYear = RockDateTime.Now.Year;
-                if (RockDateTime.Now >= gradeTransition)
+                var bag = FamilyFormHelper.GetCommonAttributeEntityBag( a );
+                a.LoadAttributes();
+                bag.LoadAttributesAndValuesForPublicView( a, RequestContext.CurrentPerson );
+                return bag;
+            } ).ToList();
+            viewModel.AbilityLevelDefinedType = dt_svc.Get( GetAttributeValue( AttributeKey.AbilityLevelDefinedType ).AsGuid() );
+            viewModel.AbilityLevelAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.AbilityLevelAttribute ).AsGuid() );
+            viewModel.GradeDefinedType = dt_svc.Get( GetAttributeValue( AttributeKey.GradeDefinedType ).AsGuid() );
+            DateTime? gradeTransition = GlobalAttributesCache.Get().GetValue( "GradeTransitionDate" ).MonthDayStringAsDateTime();
+            viewModel.GraduationYear = RockDateTime.Now.Year;
+            if ( RockDateTime.Now >= gradeTransition )
+            {
+                viewModel.GraduationYear++;
+            }
+            Guid? ckDeskStopGroupGuid = GetAttributeValue( AttributeKey.CKDeskStopGroup ).AsGuidOrNull();
+            Rock.Model.Group ckDeskStopGroup = null;
+            if ( ckDeskStopGroupGuid != null )
+            {
+                ckDeskStopGroup = new GroupService( context ).Get( ckDeskStopGroupGuid.Value );
+            }
+            Guid? checkinGroupTypeGuid = GetAttributeValue( AttributeKey.CheckinGroupType ).AsGuidOrNull();
+            if ( checkinGroupTypeGuid.HasValue )
+            {
+                GroupType checkinGroupType = gt_svc.Get( checkinGroupTypeGuid.Value );
+                var groups = grp_svc.GetByGroupTypeId( checkinGroupType.Id ).ToList();
+                groups.LoadAttributes();
+                viewModel.Groups = groups.Select( g =>
                 {
-                    viewModel.GraduationYear++;
+                    var bag = FamilyFormHelper.GetCommonGroupEntityBag( g );
+                    g.LoadAttributes();
+                    bag.LoadAttributesAndValuesForPublicView( g, RequestContext.CurrentPerson );
+                    return bag;
+                } ).ToList();
+            }
+            viewModel.GroupStartDOBAttribute = FamilyFormHelper.GetCommonAttributeEntityBag( attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrStartDOB ).AsGuid() ) );
+            viewModel.GroupEndDOBAttribute = FamilyFormHelper.GetCommonAttributeEntityBag( attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrEndDOB ).AsGuid() ) );
+            viewModel.GroupAbilityAttribute = FamilyFormHelper.GetCommonAttributeEntityBag( attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrAbility ).AsGuid() ) );
+            viewModel.GroupGradeAttribute = FamilyFormHelper.GetCommonAttributeEntityBag( groupGradeAttribute );
+            ExistingPersonId = PageParameter( PageParameterKey.ExistingPersonId ).AsIntegerOrNull();
+            if ( ExistingPersonId.HasValue )
+            {
+                Person p = per_svc.Get( ExistingPersonId.Value );
+                viewModel.ExistingPerson = FamilyFormHelper.GetCommonPersonEntityBag( p );
+                p.LoadAttributes();
+                viewModel.ExistingPerson.LoadAttributesAndValuesForPublicView( p, RequestContext.CurrentPerson );
+                if ( mobileNumber != null )
+                {
+                    var number = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
+                    viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
+                    number.LoadAttributes();
+                    viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicView( number, RequestContext.CurrentPerson );
                 }
-                Guid? ckDeskStopGroupGuid = GetAttributeValue( AttributeKey.CKDeskStopGroup ).AsGuidOrNull();
-                Model.Group ckDeskStopGroup = null;
-                if (ckDeskStopGroupGuid != null)
+                if ( ckDeskStopGroup != null )
                 {
-                    ckDeskStopGroup = new GroupService( context ).Get( ckDeskStopGroupGuid.Value );
-                }
-                Guid? checkinGroupTypeGuid = GetAttributeValue( AttributeKey.CheckinGroupType ).AsGuidOrNull();
-                if (checkinGroupTypeGuid.HasValue)
-                {
-                    GroupType checkinGroupType = gt_svc.Get( checkinGroupTypeGuid.Value );
-                    //Serializing the entire Group objects from the database is costly,
-                    //limit to the parts of the group model that are required instead
-                    var groups = grp_svc.GetByGroupTypeId( checkinGroupType.Id ).ToList()
-                        .Select(g => new Model.Group() {
-                            Id = g.Id,
-                            Name = g.Name,
-                            ParentGroupId = g.ParentGroupId,
-                            GroupTypeId = g.GroupTypeId,
-                            CreatedDateTime = g.CreatedDateTime,
-                            CreatedByPersonAliasId = g.CreatedByPersonAliasId,
-                            GroupCapacity = g.GroupCapacity
-                        } ).ToList();
-                    groups.LoadAttributes();
-                    viewModel.Groups = groups.ToList();
-                }
-                viewModel.GroupStartDOBAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrStartDOB ).AsGuid() );
-                viewModel.GroupEndDOBAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrEndDOB ).AsGuid() );
-                viewModel.GroupAbilityAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrAbility ).AsGuid() );
-                viewModel.GroupGradeAttribute = groupGradeAttribute;
-                ExistingPersonId = PageParameter( PageParameterKey.ExistingPersonId ).AsIntegerOrNull();
-                if (ExistingPersonId.HasValue)
-                {
-                    Person p = per_svc.Get( ExistingPersonId.Value );
-                    viewModel.ExistingPerson = p;
-                    if (mobileNumber != null)
+                    var exists = ckDeskStopGroup.Members.FirstOrDefault( gm => gm.PersonId == p.Id );
+                    if ( exists != null )
                     {
-                        viewModel.ExistingPersonPhoneNumber = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
+                        viewModel.ExistingPersonPhoneCantBeMessaged = true;
                     }
-                    if (ckDeskStopGroup != null)
+                }
+            }
+            else
+            {
+                Guid? existingPersonGuid = PageParameter( PageParameterKey.ExistingPersonAlias ).AsGuidOrNull();
+                if ( existingPersonGuid.HasValue )
+                {
+                    PersonAlias pa = alias_svc.Get( existingPersonGuid.Value );
+                    if ( pa != null )
                     {
-                        var exists = ckDeskStopGroup.Members.FirstOrDefault( gm => gm.PersonId == p.Id );
-                        if (exists != null)
+                        Person p = pa.Person;
+                        viewModel.ExistingPerson = FamilyFormHelper.GetCommonPersonEntityBag( p );
+                        p.LoadAttributes();
+                        viewModel.ExistingPerson.LoadAttributesAndValuesForPublicView( p, RequestContext.CurrentPerson );
+                        if ( mobileNumber != null )
                         {
-                            viewModel.ExistingPersonPhoneCantBeMessaged = true;
+                            var number = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
+                            viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
+                            number.LoadAttributes();
+                            viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicView( number, RequestContext.CurrentPerson );
                         }
-                    }
-                }
-                else
-                {
-                    Guid? existingPersonGuid = PageParameter( PageParameterKey.ExistingPersonAlias ).AsGuidOrNull();
-                    if (existingPersonGuid.HasValue)
-                    {
-                        PersonAlias pa = alias_svc.Get( existingPersonGuid.Value );
-                        if (pa != null)
+                        if ( ckDeskStopGroup != null )
                         {
-                            Person p = pa.Person; // per_svc.Get( pa.PersonId );
-                            viewModel.ExistingPerson = p;
-                            if (mobileNumber != null)
+                            var exists = ckDeskStopGroup.Members.FirstOrDefault( gm => gm.PersonId == p.Id );
+                            if ( exists != null )
                             {
-                                viewModel.ExistingPersonPhoneNumber = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
-                            }
-                            if (ckDeskStopGroup != null)
-                            {
-                                var exists = ckDeskStopGroup.Members.FirstOrDefault( gm => gm.PersonId == p.Id );
-                                if (exists != null)
-                                {
-                                    viewModel.ExistingPersonPhoneCantBeMessaged = true;
-                                }
+                                viewModel.ExistingPersonPhoneCantBeMessaged = true;
                             }
                         }
                     }
                 }
-                viewModel.EmptyPerson = new Person();
-                viewModel.EmptyPerson.ConnectionStatusValueId = viewModel.DefaultConnectionStatus.Id;
-                if (mobileNumber != null)
+            }
+            var emptyPerson = new Person();
+            viewModel.EmptyPerson = FamilyFormHelper.GetCommonPersonEntityBag( emptyPerson );
+            emptyPerson.LoadAttributes();
+            viewModel.EmptyPerson.LoadAttributesAndValuesForPublicView( emptyPerson, RequestContext.CurrentPerson );
+            viewModel.EmptyPerson.ConnectionStatusValueId = viewModel.DefaultConnectionStatus.Id;
+            if ( mobileNumber != null )
+            {
+                var phoneNumber = new PhoneNumber()
                 {
-                    var phoneNumber = new PhoneNumber()
-                    {
-                        NumberTypeValueId = mobileNumber.Id,
-                        IsMessagingEnabled = true
-                    };
-                    viewModel.EmptyPersonPhoneNumber = phoneNumber;
-                }
+                    NumberTypeValueId = mobileNumber.Id,
+                    IsMessagingEnabled = true
+                };
+                viewModel.EmptyPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( phoneNumber );
+                phoneNumber.LoadAttributes();
+                viewModel.EmptyPersonPhoneNumber.LoadAttributesAndValuesForPublicView( phoneNumber, RequestContext.CurrentPerson );
+            }
 
-                return viewModel;
-            }
-            catch ( Exception ex ) {
-                //ExceptionLogService.LogException(ex);
-                return ActionBadRequest( ex.Message );
-            }
+            return viewModel;
         }
 
         #endregion Obsidian Block Type Overrides
 
         #region Properties
 
+        private ObsidianPluginsShared FamilyFormHelper = new ObsidianPluginsShared();
         private int? ExistingPersonId { get; set; }
         private DefinedValue mobileNumber { get; set; }
         private RockContext context { get; set; }
         private List<Guid> childAttributeCategories { get; set; }
         private List<Guid> adultAttributeCategories { get; set; }
-        private List<Model.Attribute> childAttributes { get; set; }
-        private Model.Attribute abilityAttribute { get; set; }
-        private Model.Attribute groupGradeAttribute { get; set; }
-        private List<Model.Attribute> adultAttributes { get; set; }
+        private List<Rock.Model.Attribute> childAttributes { get; set; }
+        private Rock.Model.Attribute abilityAttribute { get; set; }
+        private Rock.Model.Attribute groupGradeAttribute { get; set; }
+        private List<Rock.Model.Attribute> adultAttributes { get; set; }
 
         #endregion
 
         #region Block Actions
         [BlockAction]
-        public BlockActionResult ProcessFamily( List<Person> parents, List<Person> children, List<PhoneNumber> phonenumbers, List<GroupPlacement> placements )
+        public BlockActionResult ProcessFamily( List<PersonBag> parents, List<PersonBag> children, List<PhoneNumberBag> phonenumbers, List<GroupPlacement> placements )
         {
             try
             {
                 SetProperties();
-                Model.Group family = null;
+                Rock.Model.Group family = null;
                 var groupType = GroupTypeCache.GetFamilyGroupType();
                 GroupService grp_svc = new GroupService( context );
                 DefinedValueService dv_svc = new DefinedValueService( context );
                 PhoneNumberService phn_svc = new PhoneNumberService( context );
-                Model.Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
-                Model.Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
-                Model.Group multiAge = grp_svc.Get( GetAttributeValue( AttributeKey.MultiAge ).AsGuid() );
+                Rock.Model.Group overrideA = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideA ).AsGuid() );
+                Rock.Model.Group overrideB = grp_svc.Get( GetAttributeValue( AttributeKey.OverrideB ).AsGuid() );
+                Rock.Model.Group multiAge = grp_svc.Get( GetAttributeValue( AttributeKey.MultiAge ).AsGuid() );
                 List<Person> people = new List<Person>();
                 List<GroupMember> members = new List<GroupMember>();
-                List<Model.Group> groups = new List<Model.Group>();
+                List<Rock.Model.Group> groups = new List<Rock.Model.Group>();
                 DateTime? gradeTransition = GlobalAttributesCache.Get().GetValue( "GradeTransitionDate" ).MonthDayStringAsDateTime();
                 int GraduationYear = RockDateTime.Now.Year;
-                if (RockDateTime.Now >= gradeTransition)
+                if ( RockDateTime.Now >= gradeTransition )
                 {
                     GraduationYear++;
                 }
-                for (int i = 0; i < parents.Count(); i++)
+                for ( int i = 0; i < parents.Count(); i++ )
                 {
                     Person p = FromViewModel( parents[i] );
-                    if (p.Id > 0)
+                    if ( p.Id > 0 )
                     {
                         family = p.PrimaryFamily;
                         break;
@@ -592,17 +604,17 @@ namespace Rock.Blocks.Plugins.Checkin
                         context.People.Add( p );
                         context.SaveChanges();
                         people.Add( p );
-                        for (int k = 0; k < adultAttributes.Count(); k++)
+                        for ( int k = 0; k < adultAttributes.Count(); k++ )
                         {
                             p.SaveAttributeValue( adultAttributes[k].Key, context );
                         }
-                        if (family == null)
+                        if ( family == null )
                         {
-                            family = new Model.Group() { GroupTypeId = groupType.Id, Name = p.LastName };
+                            family = new Rock.Model.Group() { GroupTypeId = groupType.Id, Name = p.LastName };
                             context.Groups.Add( family );
                             context.SaveChanges();
                         }
-                        if (!String.IsNullOrEmpty( phonenumbers[i].NumberFormatted ))
+                        if ( !String.IsNullOrEmpty( phonenumbers[i].NumberFormatted ) )
                         {
                             phonenumbers[i].PersonId = p.Id;
                             phonenumbers[i].Number = phonenumbers[i].NumberFormatted.Replace( "(", "" ).Replace( ")", "" ).Replace( "-", "" ).Replace( " ", "" );
@@ -614,20 +626,20 @@ namespace Rock.Blocks.Plugins.Checkin
                     }
                 }
                 childAttributes.Add( abilityAttribute );
-                for (int i = 0; i < children.Count(); i++)
+                for ( int i = 0; i < children.Count(); i++ )
                 {
-                    Model.Group selected = grp_svc.Get( placements[i].SelectedGroup );
+                    Rock.Model.Group selected = grp_svc.Get( placements[i].SelectedGroup );
                     selected.LoadAttributes();
                     Person p = FromViewModel( children[i] );
                     var selectedGradeValue = selected.AttributeValues[groupGradeAttribute.Key];
-                    if (selectedGradeValue != null && !String.IsNullOrEmpty( selectedGradeValue.Value ))
+                    if ( selectedGradeValue != null && !String.IsNullOrEmpty( selectedGradeValue.Value ) )
                     {
                         p.GraduationYear = GraduationYear + selectedGradeValue.Value.AsInteger();
                     }
                     context.People.Add( p );
                     context.SaveChanges();
                     people.Add( p );
-                    for (int k = 0; k < childAttributes.Count(); k++)
+                    for ( int k = 0; k < childAttributes.Count(); k++ )
                     {
                         p.SaveAttributeValue( childAttributes[k].Key, context );
                     }
@@ -638,10 +650,10 @@ namespace Rock.Blocks.Plugins.Checkin
                     context.GroupMembers.Add( checkinGroup );
                     groups.Add( selected );
                     members.Add( checkinGroup );
-                    if (placements[i].SelectedGroup != placements[i].CorrectGroup)
+                    if ( placements[i].SelectedGroup != placements[i].CorrectGroup )
                     {
                         //Add to Override Group
-                        if (selected.Name.EndsWith( "A" ))
+                        if ( selected.Name.EndsWith( "A" ) )
                         {
                             GroupMember overrideGroup = new GroupMember
                             {
@@ -666,7 +678,7 @@ namespace Rock.Blocks.Plugins.Checkin
                             groups.Add( overrideB );
                         }
                     }
-                    if (multiAge != null && !String.IsNullOrEmpty( selectedGradeValue.Value ) && selectedGradeValue.Value.AsInteger() < 13)
+                    if ( multiAge != null && !String.IsNullOrEmpty( selectedGradeValue.Value ) && selectedGradeValue.Value.AsInteger() < 13 )
                     {
                         //Add Elementary Kids to Multi-Age Group
                         GroupMember multiAgeGroup = new GroupMember
@@ -681,10 +693,10 @@ namespace Rock.Blocks.Plugins.Checkin
                     }
                 }
                 context.SaveChanges();
-                Response r = new Response() { people = people, members = members, groups = groups.ToList() };
+                Response r = new Response() { people = people, members = members, groups = groups.Select( g => new Rock.Model.Group() { Id = g.Id, Name = g.Name } ).ToList() };
                 return ActionOk( r );
             }
-            catch (Exception e)
+            catch ( Exception e )
             {
                 ExceptionLogService.LogException( e );
                 return ActionInternalServerError( e.Message );
@@ -692,7 +704,7 @@ namespace Rock.Blocks.Plugins.Checkin
         }
 
         [BlockAction]
-        public BlockActionResult CheckForExisting( Person viewModel, string mobileNumber )
+        public BlockActionResult CheckForExisting( PersonBag viewModel, string mobileNumber )
         {
             try
             {
@@ -701,13 +713,13 @@ namespace Rock.Blocks.Plugins.Checkin
                 PersonService per_svc = new PersonService( context );
                 var personQuery = new PersonService.PersonMatchQuery( newPerson.FirstName, newPerson.LastName, newPerson.Email, mobileNumber, newPerson.Gender, newPerson.BirthMonth, newPerson.BirthDay, newPerson.BirthYear );
                 var person = per_svc.FindPerson( personQuery, false );
-                if (person != null)
+                if ( person != null )
                 {
                     return ActionOk( new { hasMatch = true, person } );
                 }
                 return ActionOk( new { hasMatch = false } );
             }
-            catch (Exception e)
+            catch ( Exception e )
             {
                 ExceptionLogService.LogException( e );
                 return ActionInternalServerError( e.Message );
@@ -718,7 +730,7 @@ namespace Rock.Blocks.Plugins.Checkin
 
         #region Helpers
 
-        private Person FromViewModel( Person viewModel )
+        private Person FromViewModel( PersonBag viewModel )
         {
             Person p = new Person()
             {
@@ -731,25 +743,25 @@ namespace Rock.Blocks.Plugins.Checkin
                 BirthDay = viewModel.BirthDay,
                 BirthMonth = viewModel.BirthMonth,
                 BirthYear = viewModel.BirthYear,
-                Gender = (Gender) viewModel.Gender,
+                Gender = ( Gender ) viewModel.Gender,
                 GraduationYear = viewModel.GraduationYear,
                 ConnectionStatusValueId = viewModel.ConnectionStatusValueId,
                 MaritalStatusValueId = viewModel.MaritalStatusValueId
             };
-            if (!String.IsNullOrEmpty( viewModel.IdKey ))
+            if ( !String.IsNullOrEmpty( viewModel.IdKey ) )
             {
                 p = new PersonService( context ).Get( viewModel.IdKey );
             }
             p.LoadAttributes();
-            foreach (KeyValuePair<string, AttributeValueCache> av in viewModel.AttributeValues)
+            foreach ( KeyValuePair<string, string> av in viewModel.AttributeValues )
             {
-                p.SetPublicAttributeValue( av.Key, av.Value.Value, p, false );
+                p.SetPublicAttributeValue( av.Key, av.Value, p, false );
             }
 
             return p;
         }
 
-        private PhoneNumber PhoneFromViewModel( PhoneNumber viewModel )
+        private PhoneNumber PhoneFromViewModel( PhoneNumberBag viewModel )
         {
             PhoneNumber phoneNumber = new PhoneNumber()
             {
@@ -769,7 +781,7 @@ namespace Rock.Blocks.Plugins.Checkin
             DefinedValueService dv_svc = new DefinedValueService( context );
             AttributeService attr_svc = new AttributeService( context );
             Guid? mobileDefinedValueGuid = GetAttributeValue( AttributeKey.MobileDefinedValue ).AsGuidOrNull();
-            if (mobileDefinedValueGuid.HasValue)
+            if ( mobileDefinedValueGuid.HasValue )
             {
                 mobileNumber = dv_svc.Get( mobileDefinedValueGuid.Value );
             }
@@ -781,7 +793,7 @@ namespace Rock.Blocks.Plugins.Checkin
             groupGradeAttribute = attr_svc.Get( GetAttributeValue( AttributeKey.GroupAttrGrade ).AsGuid() );
         }
 
-        private void AddFamilyMember( Model.Group family, Person person, GroupTypeRoleCache role )
+        private void AddFamilyMember( Rock.Model.Group family, Person person, GroupTypeRoleCache role )
         {
             GroupMember gm = new GroupMember()
             {
@@ -823,23 +835,23 @@ namespace Rock.Blocks.Plugins.Checkin
             public DefinedValue PhoneType { get; set; }
             public bool ShowAddress { get; set; }
             public List<Guid> AdultAttributeCategories { get; set; }
-            public List<Model.Attribute> AdultAttributes { get; set; }
+            public List<Rock.Model.Attribute> AdultAttributes { get; set; }
             public List<Guid> ChildAttributeCategories { get; set; }
-            public List<Model.Attribute> ChildAttributes { get; set; }
+            public List<AttributeBag> ChildAttributes { get; set; }
             public DefinedType AbilityLevelDefinedType { get; set; }
-            public Model.Attribute AbilityLevelAttribute { get; set; }
+            public Rock.Model.Attribute AbilityLevelAttribute { get; set; }
             public int GraduationYear { get; set; }
             public DefinedType GradeDefinedType { get; set; }
-            public Person ExistingPerson { get; set; }
-            public PhoneNumber ExistingPersonPhoneNumber { get; set; }
+            public PersonBag ExistingPerson { get; set; }
+            public PhoneNumberBag ExistingPersonPhoneNumber { get; set; }
             public bool ExistingPersonPhoneCantBeMessaged { get; set; }
-            public Person EmptyPerson { get; set; }
-            public PhoneNumber EmptyPersonPhoneNumber { get; set; }
-            public List<Model.Group> Groups { get; set; }
-            public Model.Attribute GroupStartDOBAttribute { get; set; }
-            public Model.Attribute GroupEndDOBAttribute { get; set; }
-            public Model.Attribute GroupAbilityAttribute { get; set; }
-            public Model.Attribute GroupGradeAttribute { get; set; }
+            public PersonBag EmptyPerson { get; set; }
+            public PhoneNumberBag EmptyPersonPhoneNumber { get; set; }
+            public List<GroupBag> Groups { get; set; }
+            public AttributeBag GroupStartDOBAttribute { get; set; }
+            public AttributeBag GroupEndDOBAttribute { get; set; }
+            public AttributeBag GroupAbilityAttribute { get; set; }
+            public AttributeBag GroupGradeAttribute { get; set; }
         }
 
         public class GroupPlacement
@@ -852,7 +864,7 @@ namespace Rock.Blocks.Plugins.Checkin
         {
             public List<Person> people { get; set; }
             public List<GroupMember> members { get; set; }
-            public List<Model.Group> groups { get; set; }
+            public List<Rock.Model.Group> groups { get; set; }
         }
     }
 }

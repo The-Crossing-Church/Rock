@@ -1,9 +1,9 @@
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
-import { ContentChannelItemAssociationBag } from "@Obsidian/ViewModels/Entities/contentChannelItemAssociationBag"
-import { AttributeMatrixBag } from "@Obsidian/ViewModels/Entities/attributeMatrixBag"
-import { AttributeMatrixItemBag } from "@Obsidian/ViewModels/Entities/attributeMatrixItemBag"
-import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
+import { DefinedValueBag } from "../ViewModels/definedValueBag"
+import { ContentChannelItemBag } from "../ViewModels/contentChannelItemBag"
+import { ContentChannelItemAssociationBag } from "../ViewModels/contentChannelItemAssociationBag"
+import { AttributeMatrixBag } from "../ViewModels/attributeMatrixBag"
+import { AttributeMatrixItemBag } from "../ViewModels/attributeMatrixItemBag"
+import { AttributeBag } from "../ViewModels/attributeBag"
 
 export type SubmissionFormBlockViewModel = {
     request: ContentChannelItemBag;

@@ -1,15 +1,15 @@
 import { defineComponent, PropType } from "vue"
 import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime } from "luxon"
 import { Table, Button, Popover } from "ant-design-vue"
-import RockField from "@Obsidian/Controls/rockField"
+import RockField from "@Obsidian/Controls/rockField.obs"
 import TCCDropDownList from "../Components/dropDownList"
 import GridAction from "../Components/adminGridAction"
-import RockText from "@Obsidian/Controls/textBox"
-import RockLabel from "@Obsidian/Controls/rockLabel"
-import DateRangePicker from "@Obsidian/Controls/dateRangePicker"
-import PersonPicker from "@Obsidian/Controls/personPicker"
+import RockText from "@Obsidian/Controls/textBox.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
+import PersonPicker from "@Obsidian/Controls/personPicker.obs"
 
 export default defineComponent({
     name: "EventDashboard.Components.RequestTable",

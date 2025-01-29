@@ -1,7 +1,7 @@
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
-import { ContentChannelItemAssociationBag } from "@Obsidian/ViewModels/Entities/contentChannelItemAssociationBag"
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
-import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
+import { ContentChannelItemBag } from "../ViewModels/contentChannelItemBag"
+import { ContentChannelItemAssociationBag } from "../ViewModels/contentChannelItemAssociationBag"
+import { DefinedValueBag } from "../ViewModels/definedValueBag"
+import { AttributeBag } from "../ViewModels/attributeBag"
 
 export type UserDashboardBlockViewModel = {
     events: ContentChannelItemBag[];

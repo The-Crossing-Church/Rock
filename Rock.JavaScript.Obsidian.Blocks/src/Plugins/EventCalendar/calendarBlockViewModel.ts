@@ -1,6 +1,6 @@
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
-import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
+import { ContentChannelItemBag } from "../ViewModels/contentChannelItemBag"
+import { DefinedValueBag } from "../ViewModels/definedValueBag"
+import { AttributeBag } from "../ViewModels/attributeBag"
 
 export type CalendarBlockViewModel = {
     events: ContentChannelItemBag[];

@@ -1,12 +1,12 @@
 import { defineComponent, PropType } from "vue"
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
+import { DefinedValueBag } from "../../ViewModels/definedValueBag"
+import { PersonBag } from "../../ViewModels/personBag"
 import { DateTime } from "luxon"
 import BasicInfo from "./basicInfo"
 import ContactInfo from "./contactInfo"
 import AdditionalAttributes from "./additionalAttributes"
 import Placement from "./placement"
-import RockForm from "@Obsidian/Controls/rockForm"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
 
 export default defineComponent({
     name: "Checkin.Components.Member",
@@ -154,10 +154,10 @@ export default defineComponent({
     mounted() {
       if(this.person) {
         if(!this.person?.maritalStatusValueId && this.defaultMaritalStatus && this.showMaritalStatus) {
-          this.person.maritalStatusValueId = parseInt(this.defaultMaritalStatus.idKey as string)
+          this.person.maritalStatusValueId = this.defaultMaritalStatus.idKey ?? ""
         }
         if(!this.person.connectionStatusValueId && this.defaultConnectionStatus) {
-          this.person.connectionStatusValueId = parseInt(this.defaultConnectionStatus.idKey as string)
+          this.person.connectionStatusValueId = this.defaultConnectionStatus.idKey ?? ""
         }
       }
     },

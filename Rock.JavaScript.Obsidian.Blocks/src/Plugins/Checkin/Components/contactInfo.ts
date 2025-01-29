@@ -1,11 +1,11 @@
 import { defineComponent, PropType } from "vue"
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
-import RockText from "@Obsidian/Controls/textBox"
-import RockDDL from "@Obsidian/Controls/dropDownList"
-import RockLabel from "@Obsidian/Controls/rockLabel"
-import RockField from "@Obsidian/Controls/rockField"
-import RockCheckbox from "@Obsidian/Controls/checkBox"
+import { DefinedValueBag } from "../../ViewModels/definedValueBag"
+import { PersonBag } from "../../ViewModels/personBag"
+import RockText from "@Obsidian/Controls/textBox.obs"
+import RockDDL from "@Obsidian/Controls/dropDownList.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import RockCheckbox from "@Obsidian/Controls/checkBox.obs"
 import PhoneNumberBox from "@Obsidian/Controls/phoneNumberBox.obs"
 
 export default defineComponent({

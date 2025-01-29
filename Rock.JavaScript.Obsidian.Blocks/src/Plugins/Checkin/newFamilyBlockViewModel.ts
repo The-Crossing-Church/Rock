@@ -1,9 +1,9 @@
-import { DefinedValueBag } from "@Obsidian/ViewModels/Entities/definedValueBag"
-import { DefinedTypeBag } from "@Obsidian/ViewModels/Entities/definedtypeBag"
-import { AttributeBag } from "@Obsidian/ViewModels/Entities/attributeBag"
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag"
-import { PhoneNumberBag } from "@Obsidian/ViewModels/Entities/phoneNumberBag"
-import { GroupBag } from "@Obsidian/ViewModels/Entities/groupBag"
+import { DefinedValueBag } from "../ViewModels/definedValueBag"
+import { DefinedTypeBag } from "../ViewModels/definedTypeBag"
+import { AttributeBag } from "../ViewModels/attributeBag"
+import { PersonBag } from "../ViewModels/personBag"
+import { PhoneNumberBag } from "../ViewModels/phoneNumberBag"
+import { GroupBag } from "../ViewModels/groupBag"
 export type NewFamilyBlockViewModel = {
   showTitle: string;
   titleDefinedType: DefinedTypeBag;

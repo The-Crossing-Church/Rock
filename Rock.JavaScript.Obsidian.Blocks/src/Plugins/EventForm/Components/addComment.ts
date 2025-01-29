@@ -1,8 +1,8 @@
 import { defineComponent, PropType } from "vue"
 import { Button, Modal} from "ant-design-vue"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
-import RockText from "@Obsidian/Controls/textBox"
-import RockLabel from "@Obsidian/Controls/rockLabel"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import RockText from "@Obsidian/Controls/textBox.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 
 
 export default defineComponent({

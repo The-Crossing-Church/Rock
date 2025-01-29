@@ -1,9 +1,9 @@
 import { defineComponent, PropType } from "vue"
-import { ContentChannelItemBag } from "@Obsidian/ViewModels/Entities/contentChannelItemBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { Menu, Dropdown } from "ant-design-vue"
 const { MenuItem } = Menu
-import RockField from "@Obsidian/Controls/rockField"
-import RockForm from "@Obsidian/Controls/rockForm"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
 import Validator from "./validator"
