@@ -20,6 +20,7 @@ namespace Rock.Blocks.Plugins.Checkin
     [Category( "Obsidian > Plugin > Check-in" )]
     [Description( "New Family Registration" )]
     [IconCssClass( "fas fa-house-user" )]
+    [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
     [CustomDropdownListField(
@@ -329,7 +330,7 @@ namespace Rock.Blocks.Plugins.Checkin
 
     #endregion Block Attributes
 
-    public class NewFamily : RockObsidianBlockType
+    public class NewFamily : RockBlockType
     {
         #region Keys
 

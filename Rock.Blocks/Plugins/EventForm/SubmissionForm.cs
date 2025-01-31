@@ -23,6 +23,7 @@ namespace Rock.Blocks.Plugins.EventForm
     [Category( "Obsidian > Plugin > Event Form" )]
     [Description( "Obsidian Event Submission Form" )]
     [IconCssClass( "fa fa-calendar-check" )]
+    [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
 
@@ -59,7 +60,7 @@ namespace Rock.Blocks.Plugins.EventForm
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 2, key: AttributeKey.SharedWithAttr )]
     #endregion Block Attributes
 
-    public class SubmissionForm : RockObsidianBlockType
+    public class SubmissionForm : RockBlockType
     {
         #region Keys
 

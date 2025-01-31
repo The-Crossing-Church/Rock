@@ -22,6 +22,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
     [Category( "Obsidian > Plugin > Event Form" )]
     [Description( "Obsidian Event User Dashboard" )]
     [IconCssClass( "fa fa-calendar-check" )]
+    [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
 
@@ -51,7 +52,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 3, key: AttributeKey.SharedWithAttr )]
     #endregion Block Attributes
 
-    public class UserDashboard : RockObsidianBlockType
+    public class UserDashboard : RockBlockType
     {
         #region Keys
 

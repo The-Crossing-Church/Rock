@@ -20,6 +20,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
     [Category( "Obsidian > Plugin > Event Form" )]
     [Description( "Obsidian Event Calendar" )]
     [IconCssClass( "fa fa-calendar-check" )]
+    [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
 
@@ -58,7 +59,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
 
     #endregion Block Attributes
 
-    public class Calendar : RockObsidianBlockType
+    public class Calendar : RockBlockType
     {
         #region Keys
 

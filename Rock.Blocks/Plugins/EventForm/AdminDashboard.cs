@@ -22,6 +22,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
     [Category( "Obsidian > Plugin > Event Form" )]
     [Description( "Obsidian Event Admin Dashboard" )]
     [IconCssClass( "fa fa-calendar-check" )]
+    [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
 
@@ -58,7 +59,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     #endregion Block Attributes
 
-    public class AdminDashboard : RockObsidianBlockType
+    public class AdminDashboard : RockBlockType
     {
         #region Keys
 
