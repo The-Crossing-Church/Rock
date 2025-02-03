@@ -1,19 +1,61 @@
 <div class="alert alert-info">
-    <h5>Environment Status</h5>
-    <b>Database:</b> Production on {{Item | Attribute:'DatabaseCopyDate' | Date:'MM/dd/yyyy'}} <br/>
-    <b>Code Version: </b> {{ Item | Attribute:'InstanceVersion' }} <br/>
-    {% assign instance = Item | Attribute:'InstanceVersion' %}
-    {% assign prod = Item | Attribute:'ProductionVersion' %}
-    {% assign today = 'Now' | Date:'yyyy-MM-dd' %}
-    {% assign prodDeployment = Item | Attribute:'ProductionDeploymentDate' | Date:'yyyy-MM-dd' %}
-    {% assign diff = today | DateDiff:prodDeployment,'d' %}
-    {% if diff <= 0 %}
-        {% if instance == prod %}
-            <b>Code Matches Production Since:</b> {{ Item | Attribute:'ProductionDeploymentDate' | Date:'MM/dd/yyyy' }}
-        {% else %}
-            <b>Code is Ahead of Production and Not Yet Been Scheduled</b>
-        {% endif %}
-    {% else %}
-        <b>Code: </b> Version {{ Item | Attribute:'ProductionDeploymentVersion' }} to Production on {{ Item | Attribute:'ProductionDeploymentDate' | Date:'MM/dd/yyyy' }}
+    <h3>Environment Status</h3>
+    <div class="row">
+        <div class="col col-xs-6">
+            <b>Database:</b> Production on {{Item | Attribute:'DatabaseExportDate' | Date:'MM/dd/yyyy'}}
+        </div>
+        <div class="col col-xs-6">
+            <b>Rock Version: </b> {{ Item | Attribute:'RockVersion' }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col col-xs-6">
+            <b>Build Version: </b> {{ Item | Attribute:'BuildVersion' }}
+        </div>
+        <div class="col col-xs-6">
+            <b>Production Build Version: </b> {{ Item | Attribute:'ProductionBuildVersion' }}
+        </div>
+    </div>
+
+    {% sql %}
+        SELECT EntityTypeId,
+               STRING_AGG((CASE WHEN Name = 'Active' THEN PersistedTextValue END), ', ')              AS Active,
+               STRING_AGG((CASE WHEN Name = 'Transport Container' THEN PersistedTextValue END), ', ') AS Transport
+        FROM Attribute
+                 INNER JOIN AttributeValue ON Attribute.Id = AttributeValue.AttributeId
+        WHERE EntityTypeId IN (37, 38)
+          AND Name IN ('Active', 'Transport Container')
+        GROUP BY EntityTypeId
+        ORDER BY EntityTypeId
+    {% endsql %}
+    {% assign emailActive = 'Active' %}
+    {% if results[0].Active == 'No' %}
+        {% assign emailActive = 'Inactive' %}
     {% endif %}
+    {% assign emailTransport = results[0].Transport %}
+    {% if emailTransport == '' %}
+        {% assign emailTransport = 'Not Configured' %}
+    {% endif %}
+
+    {% assign smsActive = 'Active' %}
+    {% if results[1].Active == 'No' %}
+        {% assign smsActive = 'Inactive' %}
+    {% endif %}
+    {% assign smsTransport = results[1].Transport %}
+    {% if smsTransport == '' %}
+        {% assign smsTransport = 'Not Configured' %}
+    {% endif %}
+    <div class="row">
+        <div class="col col-xs-6">
+            <b>Emails ({{emailActive}}):</b> {{emailTransport}}
+        </div>
+        <div class="col col-xs-6">
+            <b>SMS ({{smsActive}}):</b> {{smsTransport}}
+        </div>
+    </div>
+
+    <br/>
+    <i>
+        Please be aware this environment might get code updates that cause restarts or might have certain features disabled like communications or financial gateways.
+    </i>
 </div>
