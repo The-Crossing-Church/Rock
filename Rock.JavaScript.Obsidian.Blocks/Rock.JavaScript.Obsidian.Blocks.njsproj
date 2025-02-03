@@ -438,6 +438,13 @@
     <Folder Include="src\WorkFlow\FormBuilder\FormBuilderDetail\" />
     <Folder Include="src\WorkFlow\FormBuilder\FormTemplateDetail\" />
     <Folder Include="src\WorkFlow\FormBuilder\Shared\" />
+    <Folder Include="src\Plugins\" />
+    <Folder Include="src\Plugins\Checkin\" />
+    <Folder Include="src\Plugins\Cms\" />
+    <Folder Include="src\Plugins\EventCalendar\" />
+    <Folder Include="src\Plugins\EventDashboard\" />
+    <Folder Include="src\Plugins\EventForm\" />
+    <Folder Include="src\Plugins\Reporting\" />
     <Folder Include="src\Plugins\ViewModels\" />
   </ItemGroup>
   <ItemGroup>
@@ -643,6 +650,62 @@
     <TypeScriptCompile Include="src\WorkFlow\FormBuilder\Shared\personEntrySettings.ts" />
     <TypeScriptCompile Include="src\WorkFlow\FormBuilder\Shared\segmentedPicker.ts" />
     <TypeScriptCompile Include="src\WorkFlow\FormBuilder\Shared\types.partial.ts" />
+    <TypeScriptCompile Include="src\Plugins\Checkin\Components\additionalAttributes.ts" />
+    <TypeScriptCompile Include="src\Plugins\Checkin\Components\basicInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\Checkin\Components\contactInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\Checkin\Components\member.ts" />
+    <TypeScriptCompile Include="src\Plugins\Checkin\Components\placement.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventCalendar\Components\day.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventCalendar\Components\dayView.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventCalendar\Components\event.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventCalendar\Components\month.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventCalendar\Components\week.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\adminGridAction.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\calendarInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\cateringInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\childcareInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\comment.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\dashboardModal.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\dropDownList.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\onlineInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\opsAccomInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\partialApproval.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\partialApprovalValues.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\productionAccomInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\publicityInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\registrationInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\requestTable.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\spaceInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventDashboard\Components\userGridAction.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\addComment.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\basicInfo.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\calendar.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\catering.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\childcare.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\childcareCatering.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\chip.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\datePicker.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\discountCodePicker.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\discountCodes.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\eventBuffer.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\eventTime.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\online.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\opsAccommodations.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\opsInventory.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\opsInventoryDropDown.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\opsInventoryEntry.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\productionTech.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\publicity.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\publicityDropDown.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\registration.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\resourceSwitches.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\roomPicker.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\roomPickerv2.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\space.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\timePicker.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\toggle.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\validator.ts" />
+    <TypeScriptCompile Include="src\Plugins\EventForm\Components\webCal.ts" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\Cms\adaptiveMessageDetail.obs" />
@@ -650,6 +713,11 @@
     <Compile Include="src\Cms\AdaptiveMessageDetail\viewPanel.partial.obs" />
     <Compile Include="src\WebFarm\webFarmNodeLogList.obs" />
     <Compile Include="src\Core\taggedItemList.obs" />
+    <Compile Include="src\Plugins\Checkin\newFamily.obs" />
+    <Compile Include="src\Plugins\EventCalendar\calendar.obs" />
+    <Compile Include="src\Plugins\EventDashboard\adminDashboard.obs" />
+    <Compile Include="src\Plugins\EventDashboard\userDashboard.obs" />
+    <Compile Include="src\Plugins\EventDashboard\submissionForm.obs" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
   <Target Name="InstallNodePackages" AfterTargets="BeforeCompile;BeforeClean" Inputs="package.json" Outputs="node_modules/.install-stamp">
