@@ -91,9 +91,10 @@
         {% assign edSize = endDates | Size %}
         {% if edSize > 1 %}
             {% assign endDates = endDates | Split:',' %}
-        {% elseif edSize == 0 %}
+        {% elseif edSize == 0 and endDates != '' %}
             {% capture endDates %}[ "{{endDates}}" ]{% endcapture %}
             {% assign endDates = endDates | FromJSON %}
+            {% assign edSize = endDates | Size %}
         {% endif %}
         {% assign endTimes = endTimes | Split:',' %}
         <ul class="list-unstyled">
@@ -169,9 +170,9 @@
               <div class='margin-t-sm' style='font-weight: bold;'>{{ registrationButtonText }}</div>
             {% else %}
               {% if eventItemOccurrenceLinkage.UrlSlug != '' %}
-                <a href='{{ RegistrationPage }}/{{eventItemOccurrenceLinkage.UrlSlug}}' class='btn margin-t-sm'>{{ registrationButtonText }}</a>
+                <a href='{{ RegistrationPage }}/{{eventItemOccurrenceLinkage.UrlSlug}}' class='btn btn-primary margin-t-sm'>{{ registrationButtonText }}</a>
               {% else %}
-                <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn margin-t-sm">{{ registrationButtonText }}</a>
+                <a href="{{ RegistrationPage }}?RegistrationInstanceId={{ eventItemOccurrenceLinkage.RegistrationInstanceId }}&EventOccurrenceID={{ eventItemOccurrenceLinkage.EventItemOccurrenceId }}" class="btn btn-primary margin-t-sm">{{ registrationButtonText }}</a>
               {% endif %}
             {% endif %}
           {% else %}
@@ -199,12 +200,12 @@
       {% endif %}
       {% for el in externalLinks %}
         <div class="col col-xs-12" style="min-height: 40px;">
-            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
+            <a href="{{el | Split:'^' | Last}}" class='btn btn-primary margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
         </div>
       {% endfor %}
       {% for el in externalReg %}
         <div class="col col-xs-12" style="min-height: 40px;">
-            <a href="{{el | Split:'^' | Last}}" class='btn margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
+            <a href="{{el | Split:'^' | Last}}" class='btn btn-primary margin-t-sm' target="blank">{{el | Split:'^' | First}}</a>
         </div>
       {% endfor %}
     </div>
