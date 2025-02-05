@@ -1,0 +1,22 @@
+<div class='row' style='display:flex; flex-wrap:wrap'>
+	{% for childPage in Page.Pages %}
+		<div class='col-md-4 col-sm-6 col-xs-12' style='display:flex; flex-direction: column'>
+			<div class='panel panel-block'>
+				<div class='panel-heading'>
+					<h4 class='panel-title'>
+						{% if childPage.IconCssClass != '' %}
+							<i class="{{ childPage.IconCssClass }}"></i>
+						{% endif %}
+						{{ childPage.Title }}
+					</h1>
+				</div>
+				<ul class="list-group list-group-panel">
+					{% for grandChildPage in childPage.Pages %}
+						<li class="list-group-item"><a href="{{ grandChildPage.Url }}" target="_blank">{{ grandChildPage.Title }}</a><br></li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+	{% endfor %}
+</div>
+
