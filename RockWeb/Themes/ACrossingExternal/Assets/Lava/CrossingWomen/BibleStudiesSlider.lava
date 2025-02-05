@@ -1,32 +1,40 @@
-﻿<div class='justify-center'>
-    {[ imgslider sliderid:'bible-studies-slider' containerclass:'wbs-slider-wrapper']}
+﻿<div class='justify-center d-flex d-md-none'>
+    {[ imgslider sliderid:'bible-studies-mobile-slider' containerclass:'wbs-slider-wrapper']}
         {% for i in Items %}
             [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]
             [[ slide ]]
                 <div class="d-flex">
-                    {% if forloop.index0 == 0 %}
-                        {% assign idx = forloop.length | Minus: 1 %}
-                    {% else %}
-                        {% assign idx = forloop.index0 | Minus: 1 %}
-                    {% endif %}
-                    {% assign itm = Items[idx] %}
-                    <div class='img-wrapper'>
-                        {[ cloudinaryimg item:itm imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
-                    </div>
                     <div class='img-wrapper'>
                         {[ cloudinaryimg item:i imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
                     </div>
-                    {% if forloop.last %}
-                        {% assign idx = 0 %}
-                    {% else %}
-                        {% assign idx = forloop.index0 | Plus: 1 %}
-                    {% endif %}
-                    {% assign itm = Items[idx] %}
-                    <div class='img-wrapper'>
-                        {[ cloudinaryimg item:itm imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
-                    </div>
                 </div>
             [[ endslide ]]
+        {% endfor %}
+    {[ endimgslider ]}
+</div>
+<div class='justify-center d-none d-md-flex'>
+    {[ imgslider sliderid:'bible-studies-slider' containerclass:'wbs-slider-wrapper']}
+        {% assign remainder = Items | Size | Modulo:3 %}
+        {% assign limit = Items | Size %}
+        {% if remainder > 0 %}
+            {% assign limit = limit | Minus:remainder %}
+        {% endif %}
+        {% assign ct = 0 %}
+        {% for i in Items limit:limit %}
+            {% assign idx = forloop.index | Modulo: 3 %}
+            {% if forloop.first or idx == 1 %}
+                [[ indicator target:'{{ct}}']][[ endindicator ]]
+                {% assign ct = ct | Plus:1 %}
+                [[ slide ]]
+                    <div class="d-flex">
+            {% endif %}
+                        <div class='img-wrapper'>
+                            {[ cloudinaryimg item:i imgtype:'profile' transform:'c_fill,w_500,h_666,g_center' imgclasses:'w-100' ]}
+                        </div>
+            {% if forloop.last or idx == 0 %}
+                    </div>
+                [[ endslide ]]
+            {% endif %}
         {% endfor %}
     {[ endimgslider ]}
 </div>
@@ -34,15 +42,5 @@
     .img-wrapper {
         padding: 8px;
         max-width: 266px;
-    }
-    @media only screen and (max-width: 819px) {
-        .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:first-child {
-            display: none;
-        }
-    }
-    @media only screen and (max-width: 576px) {
-        .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:first-child, .wbs-slider-wrapper .carousel-item .d-flex .img-wrapper:last-child {
-            display: none;
-        }
     }
 </style>
