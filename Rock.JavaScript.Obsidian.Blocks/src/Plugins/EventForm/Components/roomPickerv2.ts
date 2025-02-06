@@ -217,9 +217,7 @@ export default defineComponent({
     position: sticky;
     top: 0;
     z-index: 10;
-    margin: -4px;
-    margin-top: -16px;
-    margin-bottom: -16px;
+    margin: -50px;
     background-color: #fff;
   }
   .tcc-menu-search {
@@ -262,7 +260,6 @@ export default defineComponent({
     line-height: 1.2;
     font-weight: normal;
     display: inline-block;
-    padding-left: 16px;
   }
   .ant-select-selection-item .tcc-dropdown-item-description {
     display: none;

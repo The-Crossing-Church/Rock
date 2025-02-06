@@ -442,7 +442,7 @@ namespace Rock.Blocks.Plugins.Checkin
             {
                 var bag = FamilyFormHelper.GetCommonAttributeEntityBag( a );
                 a.LoadAttributes();
-                bag.LoadAttributesAndValuesForPublicView( a, RequestContext.CurrentPerson );
+                bag.LoadAttributesAndValuesForPublicEdit( a, RequestContext.CurrentPerson );
                 return bag;
             } ).ToList();
             viewModel.AbilityLevelDefinedType = dt_svc.Get( GetAttributeValue( AttributeKey.AbilityLevelDefinedType ).AsGuid() );
@@ -470,7 +470,7 @@ namespace Rock.Blocks.Plugins.Checkin
                 {
                     var bag = FamilyFormHelper.GetCommonGroupEntityBag( g );
                     g.LoadAttributes();
-                    bag.LoadAttributesAndValuesForPublicView( g, RequestContext.CurrentPerson );
+                    bag.LoadAttributesAndValuesForPublicEdit( g, RequestContext.CurrentPerson );
                     return bag;
                 } ).ToList();
             }
@@ -484,13 +484,13 @@ namespace Rock.Blocks.Plugins.Checkin
                 Person p = per_svc.Get( ExistingPersonId.Value );
                 viewModel.ExistingPerson = FamilyFormHelper.GetCommonPersonEntityBag( p );
                 p.LoadAttributes();
-                viewModel.ExistingPerson.LoadAttributesAndValuesForPublicView( p, RequestContext.CurrentPerson );
+                viewModel.ExistingPerson.LoadAttributesAndValuesForPublicEdit( p, RequestContext.CurrentPerson );
                 if ( mobileNumber != null )
                 {
                     var number = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
                     viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
                     number.LoadAttributes();
-                    viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicView( number, RequestContext.CurrentPerson );
+                    viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( number, RequestContext.CurrentPerson );
                 }
                 if ( ckDeskStopGroup != null )
                 {
@@ -512,13 +512,13 @@ namespace Rock.Blocks.Plugins.Checkin
                         Person p = pa.Person;
                         viewModel.ExistingPerson = FamilyFormHelper.GetCommonPersonEntityBag( p );
                         p.LoadAttributes();
-                        viewModel.ExistingPerson.LoadAttributesAndValuesForPublicView( p, RequestContext.CurrentPerson );
+                        viewModel.ExistingPerson.LoadAttributesAndValuesForPublicEdit( p, RequestContext.CurrentPerson );
                         if ( mobileNumber != null )
                         {
                             var number = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
                             viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
                             number.LoadAttributes();
-                            viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicView( number, RequestContext.CurrentPerson );
+                            viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( number, RequestContext.CurrentPerson );
                         }
                         if ( ckDeskStopGroup != null )
                         {
@@ -534,7 +534,7 @@ namespace Rock.Blocks.Plugins.Checkin
             var emptyPerson = new Person();
             viewModel.EmptyPerson = FamilyFormHelper.GetCommonPersonEntityBag( emptyPerson );
             emptyPerson.LoadAttributes();
-            viewModel.EmptyPerson.LoadAttributesAndValuesForPublicView( emptyPerson, RequestContext.CurrentPerson );
+            viewModel.EmptyPerson.LoadAttributesAndValuesForPublicEdit( emptyPerson, RequestContext.CurrentPerson );
             viewModel.EmptyPerson.ConnectionStatusValueId = viewModel.DefaultConnectionStatus.Id;
             if ( mobileNumber != null )
             {
@@ -545,7 +545,7 @@ namespace Rock.Blocks.Plugins.Checkin
                 };
                 viewModel.EmptyPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( phoneNumber );
                 phoneNumber.LoadAttributes();
-                viewModel.EmptyPersonPhoneNumber.LoadAttributesAndValuesForPublicView( phoneNumber, RequestContext.CurrentPerson );
+                viewModel.EmptyPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( phoneNumber, RequestContext.CurrentPerson );
             }
 
             return viewModel;

@@ -238,7 +238,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             {
                                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( ccci.ChildContentChannelItem );
                                 ccci.ChildContentChannelItem.LoadAttributes();
-                                bag.LoadAttributesAndValuesForPublicView( ccci.ChildContentChannelItem, RequestContext.CurrentPerson );
+                                bag.LoadAttributesAndValuesForPublicEdit( ccci.ChildContentChannelItem, RequestContext.CurrentPerson );
                                 return bag;
                             } ) ).ToList();
                         }
@@ -392,12 +392,12 @@ namespace Rock.Blocks.Plugins.EventForm
                 item = new ContentChannelItemService( context ).Get( id );
                 viewModel.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
                 item.LoadAttributes();
-                viewModel.request.LoadAttributesAndValuesForPublicView( item, p );
+                viewModel.request.LoadAttributesAndValuesForPublicEdit( item, p );
                 viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci =>
                 {
                     var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( ci.ChildContentChannelItem );
                     ci.ChildContentChannelItem.LoadAttributes();
-                    bag.LoadAttributesAndValuesForPublicView( ci.ChildContentChannelItem, p );
+                    bag.LoadAttributesAndValuesForPublicEdit( ci.ChildContentChannelItem, p );
                     return bag;
 
                 } ).ToList();
@@ -407,7 +407,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     viewModel.originalRequest = viewModel.request;
                     viewModel.request = EventFormHelper.GetCommonContentChannelItemEntityBag( changes.ChildContentChannelItem );
                     changes.ChildContentChannelItem.LoadAttributes();
-                    viewModel.request.LoadAttributesAndValuesForPublicView( changes.ChildContentChannelItem, p );
+                    viewModel.request.LoadAttributesAndValuesForPublicEdit( changes.ChildContentChannelItem, p );
                     viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId )
                         .SelectMany( i => i.ChildContentChannelItem.ChildItems )
                         .Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId )
@@ -415,7 +415,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         {
                             var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( ci.ChildContentChannelItem );
                             ci.ChildContentChannelItem.LoadAttributes();
-                            bag.LoadAttributesAndValuesForPublicView( ci.ChildContentChannelItem, p );
+                            bag.LoadAttributesAndValuesForPublicEdit( ci.ChildContentChannelItem, p );
                             return bag;
                         } ).ToList();
                 }
@@ -438,10 +438,10 @@ namespace Rock.Blocks.Plugins.EventForm
                 var details = new ContentChannelItem() { ContentChannelId = EventDetailsContentChannelId, ContentChannelTypeId = EventDetailsContentChannelTypeId };
                 viewModel.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
                 item.LoadAttributes();
-                viewModel.request.LoadAttributesAndValuesForPublicView( item, p );
+                viewModel.request.LoadAttributesAndValuesForPublicEdit( item, p );
                 var detailBag = EventFormHelper.GetCommonContentChannelItemEntityBag( details );
                 details.LoadAttributes();
-                detailBag.LoadAttributesAndValuesForPublicView( details, p );
+                detailBag.LoadAttributesAndValuesForPublicEdit( details, p );
                 viewModel.events = new List<ContentChannelItemBag>() { detailBag };
                 return viewModel;
             }

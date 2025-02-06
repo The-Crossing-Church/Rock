@@ -49,6 +49,7 @@ export type DefinedValueBag = {
     /** Gets or sets the identifier key of this entity. */
     idKey?: string | null;
     id?: number | null;
+    guid?: string | null;
 
     /** Gets or sets a value indicating whether this DefinedValue is active. */
     isActive: boolean;

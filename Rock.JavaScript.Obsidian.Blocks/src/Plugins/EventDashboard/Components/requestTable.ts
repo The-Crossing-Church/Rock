@@ -1,4 +1,4 @@
-import { defineComponent, PropType } from "vue"
+import { defineComponent, Prop, PropType } from "vue"
 import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime } from "luxon"
@@ -10,6 +10,7 @@ import RockText from "@Obsidian/Controls/textBox.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
 import PersonPicker from "@Obsidian/Controls/personPicker.obs"
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag"
 
 export default defineComponent({
     name: "EventDashboard.Components.RequestTable",
@@ -31,7 +32,8 @@ export default defineComponent({
       defaultFilters: Object as any,
       option: String,
       openByDefault: Boolean,
-      users: Array as PropType<any[]>
+      users: Array as PropType<any[]>,
+      ministryAttr: Object as PropType<PublicAttributeBag>
     },
     setup() {
 
@@ -94,12 +96,6 @@ export default defineComponent({
         };
     },
     computed: {
-      ministryAttr(): PublicAttributeBag | undefined {
-        if(this.events && this.events[0]) {
-          return this.events[0]?.attributes?.Ministry
-        }
-        return undefined
-      },
       filterCollapseId() {
         return this.option?.replace(" ", "") + "filterCollapse"
       },
