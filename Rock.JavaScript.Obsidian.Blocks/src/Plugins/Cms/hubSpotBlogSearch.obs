@@ -1,3 +1,4 @@
+<script lang="ts">
 import { defineComponent, provide } from "vue"
 import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
 import { useStore } from "@Obsidian/PageState"
@@ -73,3 +74,4 @@ export default defineComponent({
   <div id="blog-results"></div>
   `
 })
+</script>

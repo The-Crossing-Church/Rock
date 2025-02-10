@@ -7,6 +7,7 @@ import ContactInfo from "./contactInfo"
 import AdditionalAttributes from "./additionalAttributes"
 import Placement from "./placement"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
+import RockFormField from "@Obsidian/Controls/rockFormField.obs"
 
 export default defineComponent({
     name: "Checkin.Components.Member",
@@ -26,6 +27,7 @@ export default defineComponent({
     },
     components: {
       "rck-form": RockForm,
+      "rck-form-field": RockFormField,
       "basic-info": BasicInfo,
       "contact-info": ContactInfo,
       "group-info": Placement,
@@ -88,7 +90,8 @@ export default defineComponent({
     },
     data() {
       return {
-        potentialMatch: null
+        potentialMatch: null,
+        errors: []
       };
     },
     computed: {
@@ -100,7 +103,7 @@ export default defineComponent({
         } else if(this.person?.ageClassification == 2) {
           return "Child"
         }
-        return "PersonBag"
+        return "Person"
       }
     },
     methods: {
@@ -146,6 +149,17 @@ export default defineComponent({
           url = url.split('?')[0]
         }
         return url + "?Id=" + id
+      },
+      validationChanged(errors) {
+        this.$emit("validationChanged", errors, this.$.vnode.key, this.displayName)
+        this.errors = errors
+      },
+      rules(input) {
+        console.log('Member Field Validation: ', input)
+        if(this.errors?.length > 0) {
+          return 'Please fix errors for ' + this.displayName
+        }
+        return ''
       }
     },
     watch: {
@@ -162,73 +176,71 @@ export default defineComponent({
       }
     },
     template: `
-<rck-form ref="form" v-model:submit="showValidation">
-  <basic-info 
-    :showTitle="showTitle" 
-    :titleDefinedType="titleDefinedType"
-    :showNickName="showNickName"
-    :showMiddleName="showMiddleName"
-    :showSuffix="showSuffix"
-    :suffixDefinedType="suffixDefinedType"
-    :defaultConnectionStatus="defaultConnectionStatus"
-    :connectionStatusDefinedType="connectionStatusDefinedType"
-    :showConnectionStatus="showConnectionStatus"
-    :requireConnectionStatus="requireConnectionStatus"
-    :maritalStatusDefinedType="maritalStatusDefinedType"
-    :defaultMaritalStatus="defaultMaritalStatus"
-    :showMaritalStatus="showMaritalStatus"
-    :showBirthDate="showBirthDate"
-    :requireBirthDate="requireBirthDate"
-    :showGender="showGender"
-    :requireGender="requireGender"
-    :showGradeOrAbility="showGradeOrAbility"
-    :requireGradeOrAbility="requireGradeOrAbility"
-    :abilityAttribute="abilityAttribute"
-    :abilityDefinedType="abilityDefinedType"
-    :gradeDefinedType="gradeDefinedType"
-    :graduationYear="graduationYear"
-    :person="person"
-    v-on:checkForDuplicates="debounce(checkForDuplicates, 1000)"
-  ></basic-info>
-  <contact-info
-    v-if="showEmail || showCell"
-    :showEmail="showEmail"
-    :showEmailOptOut="showEmailOptOut"
-    :showCell="showCell"
-    :showSMS="showSMS"
-    :phoneType="phoneType"
-    :person="person"
-    v-on:checkForDuplicates="debounce(checkForDuplicates, 1000)"
-  ></contact-info>
-  <add-attrs 
-    v-if="attributes && attributes.length > 0"
-    :person="person"
-    :attributes="attributes"
-  ></add-attrs>
-  <group-info
-    v-if="person.ageClassification == 2"
-    :person="person"
-    :groups="groups"
-    :startDOBAttribute="groupStartDOBAttribute"
-    :endDOBAttribute="groupEndDOBAttribute"
-    :abilityAttribute="groupAbilityAttribute"
-    :gradeAttribute="groupGradeAttribute"
-    :graduationYear="graduationYear"
-  ></group-info>
-  <div class="alert alert-warning mt-3" v-if="potentialMatch" role="alert">
-      <a target="_blank" :href="'/person/' + potentialMatch.id">
-        Potential Match: {{potentialMatch.fullName}} {{formatDate(potentialMatch.birthDate)}} ({{potentialMatch.age}})
+    <basic-info 
+      :showTitle="showTitle" 
+      :titleDefinedType="titleDefinedType"
+      :showNickName="showNickName"
+      :showMiddleName="showMiddleName"
+      :showSuffix="showSuffix"
+      :suffixDefinedType="suffixDefinedType"
+      :defaultConnectionStatus="defaultConnectionStatus"
+      :connectionStatusDefinedType="connectionStatusDefinedType"
+      :showConnectionStatus="showConnectionStatus"
+      :requireConnectionStatus="requireConnectionStatus"
+      :maritalStatusDefinedType="maritalStatusDefinedType"
+      :defaultMaritalStatus="defaultMaritalStatus"
+      :showMaritalStatus="showMaritalStatus"
+      :showBirthDate="showBirthDate"
+      :requireBirthDate="requireBirthDate"
+      :showGender="showGender"
+      :requireGender="requireGender"
+      :showGradeOrAbility="showGradeOrAbility"
+      :requireGradeOrAbility="requireGradeOrAbility"
+      :abilityAttribute="abilityAttribute"
+      :abilityDefinedType="abilityDefinedType"
+      :gradeDefinedType="gradeDefinedType"
+      :graduationYear="graduationYear"
+      :person="person"
+      v-on:checkForDuplicates="debounce(checkForDuplicates, 1000)"
+    ></basic-info>
+    <contact-info
+      v-if="showEmail || showCell"
+      :showEmail="showEmail"
+      :showEmailOptOut="showEmailOptOut"
+      :showCell="showCell"
+      :showSMS="showSMS"
+      :phoneType="phoneType"
+      :person="person"
+      v-on:checkForDuplicates="debounce(checkForDuplicates, 1000)"
+    ></contact-info>
+    <add-attrs 
+      v-if="attributes && attributes.length > 0"
+      :person="person"
+      :attributes="attributes"
+    ></add-attrs>
+    <group-info
+      v-if="person.ageClassification == 2"
+      :person="person"
+      :groups="groups"
+      :startDOBAttribute="groupStartDOBAttribute"
+      :endDOBAttribute="groupEndDOBAttribute"
+      :abilityAttribute="groupAbilityAttribute"
+      :gradeAttribute="groupGradeAttribute"
+      :graduationYear="graduationYear"
+    ></group-info>
+    <div class="alert alert-warning mt-3" v-if="potentialMatch" role="alert">
+        <a target="_blank" :href="'/person/' + potentialMatch.id">
+          Potential Match: {{potentialMatch.fullName}} {{formatDate(potentialMatch.birthDate)}} ({{potentialMatch.age}})
+        </a>
+        <a :href="generateUrl(potentialMatch.id)" class="ml-3" v-if="potentialMatch.ageClassification == 1">
+          <i class="fas fa-user-plus"></i> Add Child to {{potentialMatch.lastName}} Family
+        </a>
+    </div>
+    <div class="w-100 mt-3" v-if="canRemove" style="height: 26px;">
+      <a class="pull-right btn btn-xs btn-default" @click="remove">
+        <i class="fa fa-trash"></i>
+        Remove {{displayName}}
       </a>
-      <a :href="generateUrl(potentialMatch.id)" class="ml-3" v-if="potentialMatch.ageClassification == 1">
-        <i class="fas fa-user-plus"></i> Add Child to {{potentialMatch.lastName}} Family
-      </a>
-  </div>
-  <div class="w-100 mt-3" v-if="canRemove" style="height: 26px;">
-    <a class="pull-right btn btn-xs btn-default" @click="remove">
-      <i class="fa fa-trash"></i>
-      Remove {{displayName}}
-    </a>
-  </div>
-</rck-form>
+    </div>
 `
 });
