@@ -488,9 +488,12 @@ namespace Rock.Blocks.Plugins.Checkin
                 if ( mobileNumber != null )
                 {
                     var number = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
-                    viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
-                    number.LoadAttributes();
-                    viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( number, RequestContext.CurrentPerson );
+                    if(number != null )
+                    {
+                        viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
+                        number.LoadAttributes();
+                        viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( number, RequestContext.CurrentPerson );
+                    }
                 }
                 if ( ckDeskStopGroup != null )
                 {
@@ -516,9 +519,12 @@ namespace Rock.Blocks.Plugins.Checkin
                         if ( mobileNumber != null )
                         {
                             var number = p.PhoneNumbers.FirstOrDefault( pn => pn.NumberTypeValueId == mobileNumber.Id );
-                            viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
-                            number.LoadAttributes();
-                            viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( number, RequestContext.CurrentPerson );
+                            if( number != null )
+                            {
+                                viewModel.ExistingPersonPhoneNumber = FamilyFormHelper.GetCommonPhoneNumberEntityBag( number );
+                                number.LoadAttributes();
+                                viewModel.ExistingPersonPhoneNumber.LoadAttributesAndValuesForPublicEdit( number, RequestContext.CurrentPerson );
+                            }
                         }
                         if ( ckDeskStopGroup != null )
                         {
