@@ -157,8 +157,14 @@ export default defineComponent({
       this.modal = false
     },
     formatDateRange(range: string) {
-      let dates = range.split(",")
-      return DateTime.fromFormat(dates[0], "yyyy-MM-dd").toFormat("MM/dd/yy") + " - " + DateTime.fromFormat(dates[1], "yyyy-MM-dd").toFormat("MM/dd/yy")
+      if(range) {
+        let dates = range.split(",")
+        if(dates.length > 1) {
+          return DateTime.fromFormat(dates[0], "yyyy-MM-dd").toFormat("MM/dd/yy") + " - " + DateTime.fromFormat(dates[1], "yyyy-MM-dd").toFormat("MM/dd/yy")
+        }
+        return "Invalid Dates Provided"
+      }
+      return ""
     }
   },
   watch: {
