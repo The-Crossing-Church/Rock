@@ -141,6 +141,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 EntityTypeQualifierColumn = entity.EntityTypeQualifierColumn,
                 EntityTypeQualifierValue = entity.EntityTypeQualifierValue,
                 FieldTypeId = entity.FieldTypeId,
+                FieldTypeGuid = entity.FieldType.Guid,
                 IconCssClass = entity.IconCssClass,
                 IsActive = entity.IsActive,
                 IsAnalytic = entity.IsAnalytic,

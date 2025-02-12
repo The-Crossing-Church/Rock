@@ -147,6 +147,7 @@ namespace Rock.Blocks.Plugins.ViewModels
         /// A System.Int32 representing the FieldTyepId of the Rock.Model.FieldType that is used to select/set the Rock.Model.AttributeValue
         /// </value>
         public int FieldTypeId { get; set; }
+        public Guid FieldTypeGuid { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the icon CSS class. This property is only used for CSS based icons.
