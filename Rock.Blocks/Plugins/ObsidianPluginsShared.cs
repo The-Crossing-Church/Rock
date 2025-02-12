@@ -1,6 +1,9 @@
-﻿using Rock.Blocks.Plugins.ViewModels;
+﻿using System.Linq;
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
+using Rock.Field;
 using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugins.EventForm
 {
@@ -124,11 +127,12 @@ namespace Rock.Blocks.Plugins.EventForm
                 return null;
             }
 
+            var attributeCache = AttributeCache.Get( entity.Id );
+
             return new AttributeBag
             {
                 IdKey = entity.IdKey,
                 AbbreviatedName = entity.AbbreviatedName,
-                AllowSearch = entity.AllowSearch,
                 AttributeColor = entity.AttributeColor,
                 DefaultPersistedCondensedHtmlValue = entity.DefaultPersistedCondensedHtmlValue,
                 DefaultPersistedCondensedTextValue = entity.DefaultPersistedCondensedTextValue,
@@ -142,13 +146,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 EntityTypeQualifierValue = entity.EntityTypeQualifierValue,
                 FieldTypeId = entity.FieldTypeId,
                 FieldTypeGuid = entity.FieldType.Guid,
-                IconCssClass = entity.IconCssClass,
                 IsActive = entity.IsActive,
-                IsAnalytic = entity.IsAnalytic,
-                IsAnalyticHistory = entity.IsAnalyticHistory,
-                IsDefaultPersistedValueDirty = entity.IsDefaultPersistedValueDirty,
-                IsGridColumn = entity.IsGridColumn,
-                IsIndexEnabled = entity.IsIndexEnabled,
                 IsMultiValue = entity.IsMultiValue,
                 IsPublic = entity.IsPublic,
                 IsRequired = entity.IsRequired,
@@ -158,11 +156,15 @@ namespace Rock.Blocks.Plugins.EventForm
                 Order = entity.Order,
                 PostHtml = entity.PostHtml,
                 PreHtml = entity.PreHtml,
-                ShowOnBulk = entity.ShowOnBulk,
                 CreatedDateTime = entity.CreatedDateTime,
                 ModifiedDateTime = entity.ModifiedDateTime,
                 CreatedByPersonAliasId = entity.CreatedByPersonAliasId,
-                ModifiedByPersonAliasId = entity.ModifiedByPersonAliasId
+                ModifiedByPersonAliasId = entity.ModifiedByPersonAliasId,
+                QualifierValues = attributeCache.QualifierValues
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Value
+                )
             };
         }
 

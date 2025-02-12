@@ -22,7 +22,7 @@
 //
 
 using System;
-
+using System.Collections.Generic;
 using Rock.ViewModels.Utility;
 
 namespace Rock.Blocks.Plugins.ViewModels
@@ -40,15 +40,6 @@ namespace Rock.Blocks.Plugins.ViewModels
         /// The name of the abbreviated.
         /// </value>
         public string AbbreviatedName { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether this Attribute should be used in 'search by attribute value' UIs. 
-        /// For example, if you had a UI where you would allow the user to find people based on a list of attributes
-        /// </summary>
-        /// <value>
-        ///   true if [allow search]; otherwise, false.
-        /// </value>
-        public bool AllowSearch { get; set; }
 
         /// <summary>
         /// The color to visually distinguish the attribute. For example, Rock.Model.Attribute.AttributeColor might be used to set the color for the Rock.Model.Attribute.IconCssClass of the icon.
@@ -150,67 +141,12 @@ namespace Rock.Blocks.Plugins.ViewModels
         public Guid FieldTypeGuid { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the icon CSS class. This property is only used for CSS based icons.
-        /// </summary>
-        /// <value>
-        /// A System.String representing the name of the icon CSS class. This property will be null if a file based icon is being used.
-        /// </value>
-        public string IconCssClass { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether this attribute is active.
         /// </summary>
         /// <value>
         ///   true if this instance is active; otherwise, false.
         /// </value>
         public bool IsActive { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is analytic.
-        /// NOTE: Only applies if this is an Attribute on an Entity that implements IAnalytic and has an [AnalyticAttributes] Attribute
-        /// If this is true, the Analytic table for this entity should include a field for this attribute
-        /// </summary>
-        /// <value>
-        /// true if this instance is analytic; otherwise, false.
-        /// </value>
-        public bool IsAnalytic { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is analytic history.
-        /// Only applies if this is an Attribute on an Entity that implements IAnalyticHistorical and IsAnalytic is True
-        /// If this is true and IsAnalytic is also true, a change in value of this Attribute on the Entity makes the CurrentRowIndicator=1 record
-        /// to become CurrentRowIndicator=0, sets the ExpireDate, then a new row with CurrentRowIndicator=1 to be created
-        /// </summary>
-        /// <value>
-        /// true if this instance is analytic history; otherwise, false.
-        /// </value>
-        public bool IsAnalyticHistory { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the persisted values are
-        /// considered dirty. If the values are dirty then it should be assumed
-        /// that they are not in sync with the Rock.Model.Attribute.DefaultValue property.
-        /// </summary>
-        /// <value>
-        /// true if the persisted values are considered dirty; otherwise, false.
-        /// </value>
-        public bool IsDefaultPersistedValueDirty { get; set; }
-
-        /// <summary>
-        /// Gets or sets a flag indicating if this Attribute is a Grid Column?
-        /// </summary>
-        /// <value>
-        /// A System.Boolean value that is true if this Attribute is a grid column; otherwise false
-        /// </value>
-        public bool IsGridColumn { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is index enabled.
-        /// </summary>
-        /// <value>
-        /// true if this instance is index enabled; otherwise, false.
-        /// </value>
-        public bool IsIndexEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a flag indicating if the Attribute supports multiple values.
@@ -285,11 +221,6 @@ namespace Rock.Blocks.Plugins.ViewModels
         public string PreHtml { get; set; }
 
         /// <summary>
-        /// Gets or sets a flag indicating if this attribute shows when doing a bulk entry form.
-        /// </summary>
-        public bool ShowOnBulk { get; set; }
-
-        /// <summary>
         /// Gets or sets the created date time.
         /// </summary>
         /// <value>
@@ -320,6 +251,20 @@ namespace Rock.Blocks.Plugins.ViewModels
         /// The modified by person alias identifier.
         /// </value>
         public int? ModifiedByPersonAliasId { get; set; }
+
+        /// <summary>
+        /// Gets the configuration values that define the behavior of the attribute.
+        /// </summary>
+        /// <value>The configuration values.</value>
+        public Dictionary<string, string> ConfigurationValues { get; set; }
+
+        /// <summary>
+        /// Gets the qualifier values.
+        /// </summary>
+        /// <value>
+        /// The qualifier values.
+        /// </value>
+        public Dictionary<string, string> QualifierValues { get; set; }
 
     }
 }
