@@ -116,7 +116,7 @@ export default defineComponent({
     
   },
   mounted() {
-    console.log(store.state)
+    // console.log(store.state)
   },
   updated() {
     
