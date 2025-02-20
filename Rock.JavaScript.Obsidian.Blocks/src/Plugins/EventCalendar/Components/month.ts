@@ -14,7 +14,9 @@ export default defineComponent({
   },
   props: {
     calendars: Array,
-    currentDate: DateTime
+    currentDate: {
+      type: DateTime,
+    }
   },
   setup() {
 

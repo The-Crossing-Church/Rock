@@ -376,7 +376,7 @@ export default defineComponent({
           }
           this.viewModel?.events.forEach((event: any) => {
             if(event.idKey == this.selected.idKey) {
-              event.attributeValues.RequestStatus.value = res.data.status
+              event.attributeValues.RequestStatus = res.data.status
             }
           })
         }

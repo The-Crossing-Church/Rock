@@ -645,6 +645,7 @@ namespace Rock.Blocks.Plugins.EventForm
 
             if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Pending Changes" && isPreApproved == "True" )
             {
+                item = FromViewModel( viewModel, true );
                 //The changes being requested qualify for pre-approval, go ahead and change the event
                 var changesAssoc = item.ParentItems.FirstOrDefault( ci => ci.ContentChannelItem.ContentChannelId == EventContentChannelId );
                 if ( changesAssoc != null )
@@ -665,7 +666,7 @@ namespace Rock.Blocks.Plugins.EventForm
 
                 for ( int i = 0; i < events.Count(); i++ )
                 {
-                    var detail = FromViewModel( events[i] );
+                    var detail = FromViewModel( events[i], true );
                     var originalEventAssoc = detail.ParentItems.FirstOrDefault();
                     if ( originalEventAssoc != null )
                     {
@@ -1247,7 +1248,7 @@ namespace Rock.Blocks.Plugins.EventForm
             return permissions;
         }
 
-        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel )
+        private ContentChannelItem FromViewModel( ContentChannelItemBag viewModel, bool forceContext = false )
         {
             Rock.Model.Person p = GetCurrentPerson();
             ContentChannelItem item = new ContentChannelItem()
@@ -1257,7 +1258,7 @@ namespace Rock.Blocks.Plugins.EventForm
             };
             if ( !String.IsNullOrEmpty( viewModel.IdKey ) )
             {
-                if ( viewModel.AttributeValues.ContainsKey( "RequestStatus" ) && ( viewModel.AttributeValues["RequestStatus"] == "Submitted" || viewModel.AttributeValues["RequestStatus"] == "In Progress" || viewModel.AttributeValues["RequestStatus"] == "Draft" ) )
+                if ( ( viewModel.AttributeValues.ContainsKey( "RequestStatus" ) && ( viewModel.AttributeValues["RequestStatus"] == "Submitted" || viewModel.AttributeValues["RequestStatus"] == "In Progress" || viewModel.AttributeValues["RequestStatus"] == "Draft" ) ) || forceContext )
                 {
                     item = new ContentChannelItemService( context ).Get( viewModel.IdKey );
                 }

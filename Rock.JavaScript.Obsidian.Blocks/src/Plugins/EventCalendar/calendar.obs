@@ -438,7 +438,12 @@ export default defineComponent({
       }
     },
     currentDateAsString(val) {
-      if(val != this.currentDate.toFormat("yyyy-MM-dd")) {
+      let forceUpdate = false
+      if(!val) {
+        val = DateTime.now().toFormat("yyyy-MM-dd")
+        forceUpdate = true
+      }
+      if(val != this.currentDate.toFormat("yyyy-MM-dd") || forceUpdate) {
         this.currentDate = DateTime.fromFormat(val, "yyyy-MM-dd")
         this.dateMenu = false
         if(!this.lastLoadRange.contains(val)) {

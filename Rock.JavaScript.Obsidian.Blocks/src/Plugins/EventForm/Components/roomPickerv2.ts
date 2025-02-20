@@ -301,6 +301,9 @@ export default defineComponent({
     background-color: #347689;
     border-color: #347689;
   }
+  .ant-select-tree-checkbox {
+    margin-top: 6px;
+  }
   .ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector, .ant-select-focused:not(.ant-select-disabled).ant-select-multiple .ant-select-selector {
     border: none !important;
     outline: none !important;

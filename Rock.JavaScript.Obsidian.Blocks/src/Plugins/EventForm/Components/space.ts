@@ -207,6 +207,7 @@ export default defineComponent({
       //         endBuffer: ci.childContentChannelItem.attributeValues.EndBuffer.valueFormatted 
       //       }
       //     })
+      //     // rooms: e.childItems.map((ci: any) => { return ci.childContentChannelItem.attributeValues.Rooms.valueFormatted }).join(", ")
       //   } 
       // }))
       // console.log(existingRooms.filter((value, index, array) => {
@@ -223,6 +224,8 @@ export default defineComponent({
           l.isHeader = false
           if(existingRooms.includes(l.value)){
             l.isDisabled = true
+          } else {
+            l.isDisabled = false
           }
           if (idx > -1) {
             loc[idx].locations.push(l)
