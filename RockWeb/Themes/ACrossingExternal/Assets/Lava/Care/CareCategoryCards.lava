@@ -1,0 +1,21 @@
+<h2 class="text-center my-custom-2x">Get Connected</h2>
+<div class='row row-equal-height mb-custom-2x'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-md-4'>
+            <div class='card--custom card-with-button'>
+                <div class="img-wrapper" style="height:175px; overflow: hidden;">
+                    <img src="{{i | Attribute:'Image'}}" /> //- TODO Cooksey: Replace with Cloudinary
+                </div>
+                <div style='padding: 8px;' class='text-center'>
+                    <h3 class="text-center">{{i | Attribute:'CardTitle'}}</h3>
+                    <div class="card-body">
+                        {{i.Content}}
+                    </div>
+                </div>
+            </div>
+            <div class='link-wrapper text-center'>
+                <a class="btn btn-primary" href="/ministry/care/{{i.PrimarySlug}}">Learn More</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>

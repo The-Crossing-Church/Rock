@@ -1,0 +1,11 @@
+<div class='text--centered'>
+    <i class="far fa-clock fa-3x"></i>
+    <h2>Service Times</h2>
+    <br/>
+    Sunday Mornings In Person or Online <br/>
+    {% assign svcTimes =  'Global' | Attribute:'ServiceTimes' | Split:',' %}
+    {% for s in svcTimes %}
+        {{s}} {% if forloop.last != true %}|{% endif %}
+    {% endfor %}
+    AM CT
+</div>

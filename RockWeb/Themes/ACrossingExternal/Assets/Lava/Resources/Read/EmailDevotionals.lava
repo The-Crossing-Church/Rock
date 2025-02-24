@@ -1,0 +1,25 @@
+{% comment %} https://rock.thecrossingchurch.com/Resources/Read {% endcomment %}
+{[ carousel containerclass:'background--grey full-width' carouselid:'email-devos' itemheight:'315' ]}
+    [[ title ]]Email Devotionals[[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+            <a href="{{i | Attribute:'Link'}}" target="_blank">
+                <div style="padding: 8px">
+                    <div class='img-wrapper'>
+                        <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                    </div>
+                    <h4>{{i.Title}}</h4>
+                    <p style='font-size: 16px;'>
+                        {% assign author = i | Attribute:'Author' %}
+                        {% if author != '' %}
+                            {{author}},
+                        {% endif %}
+                        {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+                    </p>
+                </div>
+            </a>
+        [[ enditem ]]
+    {% endfor %}
+    {% capture url %}/Resources/Read/Email%20Devotionals{% endcapture %}
+    [[ button url:'{{url}}' text:'Explore All' ]][[endbutton ]]
+{[ endcarousel ]}

@@ -1,0 +1,25 @@
+{% comment %} https://rock.thecrossingchurch.com/Resources/Read {% endcomment %}
+{[ carousel containerclass:'full-width' carouselid:'free-downloads' itemheight:'315' ]}
+    [[ title ]]Free Downloads[[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+            <a href="{{i | Attribute:'Link'}}" target="_blank">
+                <div style="padding: 8px">
+                    <div class='img-wrapper'>
+                        <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                    </div>
+                    <h4>{{i.Title}}</h4>
+                    <p style='font-size: 16px;'>
+                        {% assign author = i | Attribute:'Author' %}
+                        {% if author != '' %}
+                            {{author}},
+                        {% endif %}
+                        {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+                    </p>
+                </div>
+            </a>
+        [[ enditem ]]
+    {% endfor %}
+    {% capture url %}/Resources/Read/Free%20Downloads{% endcapture %}
+    [[ button url:'{{url}}' text:'Explore All' ]][[endbutton ]]
+{[ endcarousel ]}

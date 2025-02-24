@@ -1,0 +1,22 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1370 {% endcomment %}
+<div class='py-custom-2x'>
+    {[ slider sliderid:'resourceCarousel' containerclass:'full-width background--grey' ]}
+        {% for i in Items %}
+            {% comment %}[[ indicator target:'{{forloop.index0}}']][[ endindicator ]]{% endcomment %}
+            [[ slide ]]
+                <div class='row'>
+                    <div class='col col-xs-12 col-md-4'>
+                        <div class='img-wrapper'>
+                            <img src="{{i | Attribute:'Image'}}" style="width: 100%; height: auto; border-radius: 16px;"/>
+                        </div>
+                    </div>
+                    <div class='col col-xs-12 col-md-8'>
+                        <div>
+                            {{i.Content}}
+                        </div>
+                    </div>
+                </div>
+            [[ endslide ]]
+        {% endfor %}
+    {[ endslider ]}
+</div>

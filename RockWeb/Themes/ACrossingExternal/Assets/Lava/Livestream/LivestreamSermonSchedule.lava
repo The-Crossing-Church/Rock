@@ -1,0 +1,130 @@
+{% comment %} https://rock.thecrossingchurch.com/Livestream {% endcomment %}
+<script>
+    let data = JSON.parse(`{{Items | ToJSON}}`)
+    let sorttd = luxon.DateTime.now().setZone("America/Chicago")
+    data = data.sort((a,b) => {
+      let aDOW = parseInt(a.AttributeValues.DayofWeek.Value)
+      let bDOW = parseInt(b.AttributeValues.DayofWeek.Value)
+      if(aDOW == 0) {
+        aDOW = 7
+      }
+      if(bDOW == 0) {
+        bDOW = 7
+      }
+      let aDaysUntil, bDaysUntil
+
+      if(sorttd.weekday <= aDOW) {
+        aDaysUntil = aDOW - sorttd.weekday
+      } else {
+        aDaysUntil = 7 + (aDOW - sorttd.weekday)
+      }
+      if(sorttd.weekday <= bDOW) {
+        bDaysUntil = bDOW - sorttd.weekday
+      } else {
+        bDaysUntil = 7 + (bDOW - sorttd.weekday)
+      }
+
+      if(aDaysUntil < bDaysUntil) {
+        return -1
+      } else if(aDaysUntil > bDaysUntil) {
+        return 1
+      } else {
+        if(luxon.DateTime.fromISO(a.StartDateTime) > luxon.DateTime.fromISO(b.StartDateTime)) {
+          return -1
+        } else {
+          return 1
+        }
+      }
+    })
+    console.log(data)
+
+    $(document).ready(() => {
+      let link = 'https://control.resi.io/webplayer/video.html?id=2e8d608b-3752-41a4-944f-9ce6129db73d'
+      $('#videoFrame').attr("src", link);
+      {% comment %}
+      setInterval(() => {
+        let td = luxon.DateTime.now().setZone("America/Chicago")
+        let nextOccurrence = getNextOccurrence(td)
+        let span = getDiff(td, nextOccurrence)
+        if(span.values.seconds >= 0 && span.values.minutes >= 0 && span.values.hours >= 0) {
+          $('.count-down').css('display', 'block')
+          $('#days').html( span.values.days > 9 ? span.values.days : `0${span.values.days}` )
+          $('#hours').html( span.values.hours > 9 ? span.values.hours : `0${span.values.hours}` )
+          $('#minutes').html( span.values.minutes > 9 ? span.values.minutes : `0${span.values.minutes}` )
+          $('#seconds').html( span.values.seconds > 9 ? span.values.seconds : `0${span.values.seconds}` )
+          $('#sermonButtons').css('display','block');
+          let currentLink = $('#videoFrame').attr("src")
+          if(currentLink != sermonLink) {
+            $('#videoFrame').attr("src", sermonLink);
+          }
+        } else {
+          $('.count-down').css('display', 'none')
+          $('#sermonButtons').css('display','none');
+          let currentLink = $('#videoFrame').attr("src")
+          if(currentLink != link) {
+            $('#videoFrame').attr("src", link);
+          }
+        }
+      }, 995)
+      {% endcomment %}
+    })
+    function getDiff(today, nextOccurrence) {
+      let span = nextOccurrence.diff(today, ['days', 'hours', 'minutes', 'seconds', 'milliseconds'])
+      return span
+    }
+    function getNextOccurrence(today) {
+      let currentItem = null
+      data.forEach((i, idx, obj) => {
+        if(itemIsValid(i)) {
+          if(currentItem == null) {
+            currentItem = i
+          }
+        } else {
+          if(i.ExpireDateTime){
+            let td = luxon.DateTime.now().setZone("America/Chicago")
+            if(luxon.DateTime.fromISO(i.ExpireDateTime) < td) {
+              obj.splice(idx, 1)
+            }
+          }
+        }
+      })
+      let dayINeed = parseInt(currentItem.AttributeValues.DayofWeek.Value)
+      let nextOccurrence = today
+      let streamStart = currentItem.AttributeValues.LivestreamStart.Value.split(":").map(i => parseInt(i))
+      let streamEnd = currentItem.AttributeValues.LivestreamEnd.Value.split(":").map(i => parseInt(i))
+      let startTime = { hour: streamStart[0], minute: streamStart[1], second: 0, millisecond: 0 }
+      let endOccurrence = nextOccurrence.set({ hour: streamEnd[0], minute: streamEnd[1], second: 0, millisecond: 0 })
+      if(today.weekday > dayINeed) {
+        nextOccurrence = today.plus({weeks: 1}).minus({days: (today.weekday - dayINeed)})
+      } else if (today.weekday < dayINeed) {
+        nextOccurrence = today.plus({days: (dayINeed - today.weekday)})
+      }
+      if(today.weekday == dayINeed || (dayINeed == 0 && today.weekday == 7)) {
+        nextOccurrence = nextOccurrence.set(startTime)
+        let span = nextOccurrence.diff(today, ['milliseconds'])
+        if(span.values.milliseconds < 0) {
+          span = endOccurrence.diff(today, ['milliseconds'])
+          if(span.values.milliseconds < 0) {
+            nextOccurrence = nextOccurrence.plus({weeks: 1}).set(startTime)
+          }
+        }
+      } else {
+        nextOccurrence = nextOccurrence.set(startTime)
+      }
+      return nextOccurrence
+    }
+    function itemIsValid(item) {
+      let start = luxon.DateTime.fromISO(item.StartDateTime, { zone: "America/Chicago" })
+      let today = luxon.DateTime.now().setZone("America/Chicago")
+      if(item.ExpireDateTime) {
+        let end = luxon.DateTime.fromISO(item.ExpireDateTime, { zone: "America/Chicago" })
+        let interval = luxon.Interval.fromDateTimes(start, end)
+        if(!interval.isAfter(today) && !interval.isBefore(today)) {
+          return true
+        }
+        return false
+      } else {
+        return start <= today
+      }
+    }
+    </script>

@@ -1,0 +1,27 @@
+{% comment %} https://rock.thecrossingchurch.com/Resources/Watch/Sermon%20Archives/Without%20Ceasing {% endcomment %}
+{% assign title = 'Globals' | PageParameter:'Series' %}
+{% if title == '' %}
+    {{ '/Resources/Watch/Sermon-Archives' | PageRedirect }}
+{% endif %}
+
+{% comment %}Custom Breadcrumbs{% endcomment %}
+<ol class='breadcrumb'>
+    <li class='breadcrumb-item'>
+        <a href="/">Home</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources">Resources</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources/Watch">Watch</a>
+    </li>
+    <li class='breadcrumb-item'>
+        <a href="/Resources/Watch/{{ 'Global' | PageParameter:'ResourceCategory'}}">{{ 'Global' | PageParameter:'ResourceCategory'}}</a>
+    </li>
+    <li class='breadcrumb-item'>
+        {{ 'Global' | PageParameter:'Series'}}
+    </li>
+</ol>
+
+{{ title | SetPageTitle }}
+<h1 class='text--centered pb-custom-2x'>{{title}}</h1>

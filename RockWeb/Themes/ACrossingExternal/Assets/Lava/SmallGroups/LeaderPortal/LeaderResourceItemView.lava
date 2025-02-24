@@ -1,0 +1,125 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1486 {% endcomment %}
+{% assign resType = Item | Attribute:'ContentType' %}
+{% if resType == 'Article' or resType == 'Document' or resType == 'Sermon' or resType == 'Podcast' %}
+    <div class="py-custom-2x">
+        <h1 class="text-center mb-2">{{Item.Title}}</h1>
+        <div>
+            <div>
+                {{Item | Attribute:'Author'}}
+            </div>
+            <div class="pull-right" style="display: flex; align-items: center;">
+                {{Item.StartDateTime | Date:'MMM dd, yyyy'}}
+                {% assign download = Item | Attribute:'ItemContentURL' %}
+                {% if download != '' %}
+                    <a class="ml-2 btn btn-circle btn-accent" href="{{download}}" target="_blank">
+                        <i class="fas fa-file-download"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div>
+        <hr/>
+    </div>
+    <div>
+        {{Item.Content}}
+    </div>
+
+    {% if resType == 'Sermon' %}
+        {% assign itemId = Item | Attribute:'Sermon','Id' %}
+        {% if itemId != '' %}
+            {% contentchannelitem id:'{{itemId}}' %}
+                {% assign videoSrc = contentchannelitem | Attribute:'SermonVideo' %}
+                <div class="row mt-4">
+                    <div class="col col-xs-12 col-md-7">
+                        <div class='video-wrapper'>
+                            <iframe title="player" src="{{videoSrc | Replace:'vimeo.com','player.vimeo.com/video'}}" alt="{{Item | Attribute:'ContentAltText'}}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                    <div class="col col-xs-12 col-md-5">
+                        <h4>
+                            {{ contentchannelitem | Attribute:'Author' }}
+                        </h4>
+                        <p class="my-4">
+                            {{ contentchannelitem.Content }}
+                        </p>
+                        <audio controls>
+                            <source src="{{contentchannelitem | Attribute:'SermonAudio'}}" type="audio/mpeg" />
+                        </audio>
+                    </div>
+                </div>
+            {% endcontentchannelitem %}
+        {% endif %}
+    {% elseif resType == 'Podcast' %}
+        {% assign itemId = Item | Attribute:'Podcast','Id' %}
+        {% if itemId != '' %}
+            {% contentchannelitem id:'{{itemId}}' %}
+                {% assign videoSrc = contentchannelitem | Attribute:'Link' %}
+                {% assign isCaptivate = videoSrc | Contains:'captivate' %}
+                <div class="my-4">
+                    {% if isCaptivate %}
+                        <iframe title="player" src="{{videoSrc}}" alt="{{contentchannelitem | Attribute:'ContentAltText'}}" width="100%" height="170px" style="border-radius: 10px; overflow: hidden;" frameborder="0" allowfullscreen></iframe>
+                    {% else %}
+                        <iframe title="player" src="{{videoSrc}}&light=true" alt="{{contentchannelitem | Attribute:'ContentAltText'}}" width="100%" height="215px" id="casted-embed-{{videoSrc | Split:'/' | Last}}" scrolling="no" style="border: none;"></iframe>
+                    {% endif %}
+                </div>
+            {% endcontentchannelitem %}
+        {% endif %}
+    {% endif %}
+{% elseif resType == 'Video' %}
+    <div class='row'>
+        <div class='col col-xs-12 col-md-7'>
+            {% assign media = Item | Attribute:'MediaElement','Id' %}
+            {[ mediaplayer media:'{{media}}' ]}{[ endmediaplayer ]}
+        </div>
+        <div class='col col-xs-12 col-md-5'>
+            <h2>{{Item.Title}}</h2>
+            <br/>
+            <h4>{{Item | Attribute:'Author'}}</h4>
+            <p>{{Item.Content}}</p>
+        </div>
+    </div>
+{% else %}
+    <div class='row py-4'>
+    <div class='col col-xs-12 col-md-4'>
+        <img src="{{ Item | Attribute:'ItemContentURL' }}" style="width: 100%;" />
+    </div>
+    <div class='col col-xs-12 col-md-8'>
+        <h1>{{ Item.Title }}</h1>
+        <hr/>
+        <h3 class='text--upper'>{{Item | Attribute:'Author' }}</h3>
+        <br/>
+        {{ Item.Content }}
+        <br/>
+        {% assign link = Item | Attribute:'Link' %}
+        {% if link != '' %}
+            <br/>
+            <a href="{{ Item | Attribute:'Link'}}" target="_blank">Get it on Amazon</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+<br/>
+
+<style>
+    .btn-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        display: flex !important;
+        justify-content: center !important;
+    }
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 56.25%;
+    }
+    .video-wrapper>iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>

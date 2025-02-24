@@ -1,0 +1,53 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1129 {% endcomment %}
+{% for i in Items %}
+    <div class='card--custom border--bottom' style='padding: 16px;'>
+        <h3>{{i.Title}}</h3>
+        <hr style="margin: 6px;" />
+        <div class='row'>
+            <div class='col col-xs-12 col-md-3 col-md-push-9'>
+                <strong>Need: <span class='text-uppercase need-color-{{i | Attribute:'Need' | Downcase}}'>{{ i | Attribute:'Need' }}</span></strong><br/>
+                <strong>Age Requirement: </strong>{{ i | Attribute:'AgeRequirement' }} <br/>
+                {% assign rem = i | Attribute:'SpotsRemaining' %}
+                {% assign total = i | Attribute:'TotalSpots' %}
+                {% if rem != '' and total != '' %}
+                    <strong>Filled Positions:</strong> {{ total | Minus:rem}}/{{total}}<br/>
+                    <div class='thermometer' id='therm_{{i.Id}}' style="background-image: linear-gradient(to left, white, white {{rem | DividedBy:total | Times:100}}%, #a2c3cc {{rem | DividedBy:total | Times:100}}%, #a2c3cc);"></div>
+                {% endif %}
+            </div>
+            <div class='col col-xs-12 col-md-9 col-md-pull-3'>
+                {{ i.Content }}
+            </div>
+        </div>
+        <br/>
+        {% assign link = i | Attribute:'AlternateLink' %}
+        <div class='text-center'>
+            {% if link != '' %}
+                <a class='btn btn-primary' href="{{link}}">Find Out More!</a>
+            {% else %}
+                <a class='btn btn-primary' href="/Serving/{{i.PrimarySlug}}?OpportunityId={{ i | Attribute:'ConnectionOpportunity','Id'}}">Find Out More!</a>
+            {% endif %}
+        </div>
+    </div>
+    <br/>
+{% endfor %}
+<style>
+    .thermometer {
+        width: 150px;
+        height: 20px;
+        border: 1px solid #c1c1c1;
+        border-radius: 10px;
+        box-shadow: 0 0 1px 0 rgb(0 0 0 / 8%), 0 1px 3px 0 rgb(0 0 0 / 15%);
+    }
+    .need-color-low {
+        color: #8ED062;
+    }
+    .need-color-medium {
+        color: #8ED062;
+    }
+    .need-color-high {
+        color: #FFA65E;
+    }
+    .need-color-urgent {
+        color: #E84855;
+    }
+</style>

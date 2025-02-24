@@ -1,0 +1,53 @@
+{% assign Item = Items[0] %}
+<div class='video-wrapper'>
+    <iframe id="videoFrame" width="100%" height="100%" frameborder="0" seamless="seamless" allowfullscreen=""></iframe>
+</div>
+<br/>
+<div id="sermonButtons" class='text--centered'>
+    {% if currentVideo == 'Sermon' %}
+        <a class='btn btn-primary' href="/Livestream?T=Service">Watch Full Service</a>
+    {% else %}
+        <a class='btn btn-primary' href="/Livestream?T=Sermon">Watch Sermon</a>
+    {% endif %}
+</div>
+
+{% assign cat = Item | Attribute:'Cateogry' %}
+{% assign currentVideo = 'Globals' | PageParameter:'T' %}
+{% if currentVideo == '' %}
+    {% assign currentVideo = 'Service' %}
+{% endif %}
+{% assign videoSrc = Item | Attribute:'Link' %}
+{% if cat == 'Sermon' %}
+    {% if currentVideo == 'Service' %}
+        {% assign videoSrc = Item | Attribute:'FullServiceVideo' %}
+        {% if videoSrc == '' %}
+            {% assign videoSrc = Item | Attribute:'SermonVideo' %}
+            {% assign currentVideo = 'Sermon' %}
+        {% endif %}
+    {% else %}
+        {% assign videoSrc = Item | Attribute:'SermonVideo' %}
+    {% endif %}
+{% endif %}
+
+<script>
+  let sermonLink = "{{videoSrc | Replace:'vimeo.com','player.vimeo.com/video'}}"
+</script>
+
+<style>
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 56.25%;
+    }
+    .video-wrapper>iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    #sermonButtons {
+        display: none;
+    }
+</style>

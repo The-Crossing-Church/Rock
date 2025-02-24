@@ -1,0 +1,100 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1370 {% endcomment %}
+<!-- Add Luxon Time Library -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@2.1.1/build/global/luxon.min.js"></script>
+<h2 id="regHeader" class='text--centered text--accent pt-custom-2x'><!--REGISTRATION BEGINS--></h2>
+<div class="count-down pb-custom-2x" id="countdown">
+  <div class="timer">
+    <ul class="count-down-clock" countdown="2020-09-20 08:10:00">
+      <li>
+        <span id="days">00</span>
+        <p class="days_text">DAYS</p>
+      </li>
+      <li>
+        <span id="hours">00</span>
+        <p class="hours_text">HRS</p>
+      </li>
+      <li>
+        <span id="minutes">00</span>
+        <p class="minutes_text">MIN</p>
+      </li>
+      <li>
+        <span id="seconds">00</span>
+        <p class="seconds_text">SEC</p>
+      </li>
+    </ul>
+  </div>
+</div>
+<script>
+$(document).ready(() => {
+  setInterval(() => {
+    {% assign kcLeadership = CurrentPerson | Group:"251280" | Size %}
+    {% assign kcStaff = CurrentPerson | Group:"128978" | Size %}
+    {% assign allStaff = CurrentPerson | Group:"108682" | Size %}
+    {% assign isStaffOrLeader = false %}
+    {% if kcLeadership > 0 or kcStaff > 0 or allStaff > 0 %}
+        {% assign isStaffOrLeader = true %}
+    {% endif %}
+    {% assign isMember = false %}
+    {% if CurrentPerson.ConnectionStatusValue.Value == 'Member' %}
+        {% assign isMember = true %}
+    {% endif %}
+    {% if isStaffOrLeader == true %}
+      {% assign uDate = Item | Attribute:'StaffCountdown' %}
+    {% elseif isMember == true %}
+      {% assign uDate = Item | Attribute:'MemberCountdown' %}
+    {% else %}
+      {% assign uDate = Item | Attribute:'UniversalCountdown' %}
+    {% endif %}
+    let td = luxon.DateTime.now().setZone("America/Chicago")
+    let nextOccurrence = luxon.DateTime.fromFormat("{{uDate | Date:'yyyy-MM-dd HH:mm'}}", 'yyyy-MM-dd HH:mm', { zone: "America/Chicago" })
+    let span = getDiff(td, nextOccurrence)
+    if(span.values.seconds >= 0 && span.values.minutes >= 0 && span.values.hours >= 0) {
+      $('.count-down').css('display', 'block')
+      $('#days').html( span.values.days > 9 ? span.values.days : `0${span.values.days}` )
+      $('#hours').html( span.values.hours > 9 ? span.values.hours : `0${span.values.hours}` )
+      $('#minutes').html( span.values.minutes > 9 ? span.values.minutes : `0${span.values.minutes}` )
+      $('#seconds').html( span.values.seconds > 9 ? span.values.seconds : `0${span.values.seconds}` )
+    } else {
+      $('.count-down').css('display', 'none')
+      //$('#regHeader').text('REGISTRATION')
+    }
+  }, 995)
+})
+function getDiff(today, nextOccurrence) {
+  let span = nextOccurrence.diff(today, ['days', 'hours', 'minutes', 'seconds', 'milliseconds'])
+  return span
+}
+</script>
+<style>
+.count-down {
+  text-align: center;
+  padding: 20px 15px;
+  display: none;
+}
+.count-down>.timer {
+    display: inline-block;
+    color: #5F9BAC;
+}
+.count-down>.timer>.count-down-clock {
+    display: block;
+    list-style: none;
+    margin: 0 -10px -20px;
+    padding: 0;
+}
+.count-down>.timer>.count-down-clock>li {
+    display: inline-block;
+    vertical-align: middle;
+    padding: 0 10px 20px;
+}
+.count-down>.timer>.count-down-clock>li>span {
+    display: inline-block;
+    line-height: 1em;
+    font-weight: 500;
+    font-size: 2.5em;
+}
+.count-down>.timer>.count-down-clock>li>p {
+    margin: 0;
+    padding: 3px 0 0;
+    font-size: 1.25em;
+}
+</style>

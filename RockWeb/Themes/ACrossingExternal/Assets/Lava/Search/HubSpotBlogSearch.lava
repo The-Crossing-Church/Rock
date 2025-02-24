@@ -1,0 +1,22 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1175 {% endcomment %}
+<a href="/Resources/Read" target="_blank">
+    <h2 class="text-center mb-2">Read</h2>
+</a>
+<div class="row row-equal-height">
+    {% for i in Items limit:6 %}
+        <div class="col col-xs-12 col-md-4 text-center">
+            <a href="{{i.url}}" target="_blank">
+                <div class="img-wrapper">
+                    <img src="{{i.featuredImageUrl}}" class="w-100" />
+                </div>
+                <h4 class="mt-0">{{ i.title }}</h4>
+                <p style='font-size: 16px;'>
+                    {{ i.publishDate | Date:'MMMM dd, yyyy' }}
+                </p>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+<div class="actions">
+   <a target="_blank" href="https://info.thecrossingchurch.com/hs-search-results?term={{Query}}&type=BLOG_POST&type=LISTING_PAGE" class="btn btn-default js-more">Show More</a>
+</div>

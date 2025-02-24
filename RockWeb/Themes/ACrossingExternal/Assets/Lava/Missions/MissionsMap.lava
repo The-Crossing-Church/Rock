@@ -1,0 +1,631 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1478 {% endcomment %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+<div class="row row-eq-height">
+    <div class="col col-xs-12 col-lg-8">
+        <div class="row mb-2">
+            <div class="col col-xs-4">
+                <div class="view-btn-round active" scope="local">
+                    <img src="/Content/About/County_Outline.svg" class="hidden" color="dark" />
+                    <img src="/Content/About/County_Outline_Light.svg" color="light" />
+                </div>
+            </div>
+            <div class="col col-xs-4">
+                <div class="view-btn-round" scope="natl">
+                    <img src="/Content/About/USA_Outline.svg" color="dark" />
+                    <img src="/Content/About/USA_Outline_Light.svg" class="hidden" color="light" />
+                </div>
+            </div>
+            <div class="col col-xs-4">
+                <div class="view-btn-round" scope="global">
+                    <img src="/Content/About/Globe_Outline.svg" color="dark" />
+                    <img src="/Content/About/Globe_Outline_Light.svg" class="hidden" color="light" />
+                </div>
+            </div>
+        </div>
+        <div class="map-border">
+            <div class="map-container" id="img-container">
+                <object
+                    id="map"
+                    type="image/svg+xml" style="width: 100%;"
+                    data="/Content/About/Boone_County_Map.svg"
+                >
+                </object>
+                <div class="spinner-focus hidden"></div>
+                <div class="spinner-border hidden"></div>
+            </div>
+            <img class="d-none d-lg-block" style="position: absolute; bottom: 10px; right: 5px; max-width: 100px;"
+                src="https://thecrossingchurch.com/Content/About/CompassRose.png" />
+        </div>
+    </div>
+    <div class="col col-xs-4 text-center d-none d-lg-block" id="item_scroll" style="overflow-y: scroll;">
+        {% assign items = Items | GroupByAttribute:'Scope' %}
+        {% assign local = items.1 %}
+        {% assign natl = items.2 %}
+        {% assign global = items.3 %}
+        <div id="mission_items" style="position: absolute; width: 95%;"></div>
+    </div>
+    <div class="col col-xs-12 d-block d-lg-none">
+        <div id="mission_items_mobile">
+            <div id="local_mission_items_mobile" scope="local" idx="0">
+                <h4 class="header-border-bottom">Local Ministries</h4>
+            </div>
+            <div id="natl_mission_items_mobile" scope="natl" idx="1">
+                <h4 class="header-border-bottom">National Ministries</h4>
+            </div>
+            <div id="global_mission_items_mobile" scope="global" idx="2">
+                <h4 class="header-border-bottom">International Ministries</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for i in Items %}
+    <div class='modal fade' id='modal_{{i.Id}}' tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class='row'>
+                        {% assign city = i | Attribute:'Location','City' %}
+                        {% assign state = i | Attribute:'Location','State' %}
+                        {% assign countryCode = i | Attribute:'Location','Country' %}
+                        {% definedvalue where:'DefinedTypeId == 45 && Value == "{{countryCode}}"' %}
+                            {% assign ct = definedvalueItems | Size %}
+                            {% if ct > 0 %}
+                                {% assign country = definedvalueItems[0].Description %}
+                            {% endif %}
+                        {% enddefinedvalue %}
+                        {% assign lowerCity = city | Downcase %}
+                        {% assign lowerState = state | Downcase %}
+                        {% assign lowerCountry = country | Downcase %}
+                        {% if city != '' and lowerCity != 'na' %}
+                            {% if state != '' and lowerState != 'na' %}
+                                {% if itemScope == 'Global' and lowerState == 'mo' %}
+                                    {% capture loc %}{{i | Attribute:'Location','City'}}, {{country}}{% endcapture %}
+                                {% else %}
+                                    {% capture loc %}{{i | Attribute:'Location','City'}}, {{i | Attribute:'Location','State'}}, {{country}}{% endcapture %}
+                                {% endif %}
+                            {% else %}
+                                {% capture loc %}{{i | Attribute:'Location','City'}}, {{country}}{% endcapture %}
+                            {% endif %}
+                        {% else %}
+                            {% assign itemScope = i | Attribute:'Scope' %}
+                            {% if state != '' and lowerState != 'na' %}
+                                {% if itemScope == 'Global' and lowerState == 'mo' %}
+                                    {% assign loc = country %}
+                                {% else %}
+                                    {% capture loc %}{{i | Attribute:'Location','State'}}, {{country}}{% endcapture %}
+                                {% endif %}
+                            {% else %}
+                                {% assign loc = country %}
+                            {% endif %}
+                        {% endif %}
+                        {% assign img = i | Attribute:'Image' %}
+                        {% if img != '' %}
+                            <div class='col col-xs-12 col-md-5 justify-center'>
+                                <img src="{{i | Attribute:'Image'}}" style="width: 100%; height: 100%;" />
+                            </div>
+                            <div class='col col-xs-12 col-md-7'>
+                                <h2>{{i.Title}}</h2>
+                                <hr/>
+                                <div class="text-upper">{{loc}}</div>
+                                <p>{{i.Content}}</p>
+                                {% assign email = i | Attribute:'ContactEmail' %}
+                                {% if email != '' %}
+                                    <b class="text-upper">Contact</b> <br/>
+                                    <a href="mailto:{{email}}">{{email}}</a>
+                                {% endif %}
+                                {% assign raw = i | Attribute:'AdditionalLinks' %}
+                                {% if raw != '' %}
+                                    {% assign btns = i | Attribute:'AdditionalLinks' | FromJSON %}
+                                    <div class="justify-center">
+                                        {% for b in btns %}
+                                            <a class="btn btn-primary mx-1" href="{{b.Link}}" {% if b.Target == 'New Tab' %}target="_blank"{% endif %}>{{b.Text}}</a>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class='col col-xs-12'>
+                                <h2>{{i.Title}}</h2>
+                                <hr/>
+                                <div class="text-upper">{{loc}}</div>
+                                <p>{{i.Content}}</p>
+                                {% assign email = i | Attribute:'ContactEmail' %}
+                                {% if email != '' %}
+                                    <b class="text-upper">Contact</b> <br/>
+                                    <a href="mailto:{{email}}">{{email}}</a>
+                                {% endif %}
+                                {% assign raw = i | Attribute:'AdditionalLinks' %}
+                                {% if raw != '' %}
+                                    {% assign btns = i | Attribute:'AdditionalLinks' | FromJSON %}
+                                    <div class="justify-center">
+                                        {% for b in btns %}
+                                            <a class="btn btn-primary mx-1" href="{{b.Link}}" {% if b.Target == 'New Tab' %}target="_blank"{% endif %}>{{b.Text}}</a>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<script>
+    let currentScope
+    $(document).ready(() => {
+        let scopes = [
+            { "name": "local", "viewBox": "200 100 1536 864" },
+            { "name": "natl", "viewBox": "0 0 1920 1080", "zoomOut": "100 100 1920 1080" },
+            { "name": "global", "viewBox": "0 0 1920 1080" },
+        ]
+        currentScope = scopes[0]
+
+        let local = []
+        {% for i in local %}
+            {% assign loc = i | Attribute:'Location','City' %}
+            {% assign lowerLoc = loc | Downcase %}
+            {% if loc == '' or lowerLoc == 'na' %}
+                {% assign loc = i | Attribute:'Location','County' %}
+            {% endif %}
+            local.push({ id: {{ i.Id }}, title: `{{i.Title}}`, x: "{{i | Attribute:'Coordinates' | Split:',' | First}}", y: "{{i | Attribute:'Coordinates' | Split:',' | Last}}", city: "{{ loc }}" })
+        {% endfor %}
+        scopes[0].items = local
+        let natl = []
+        {% for i in natl %}
+            {% assign loc = i | Attribute:'Location','City' %}
+            {% assign lowerLoc = loc | Downcase %}
+            {% if loc == '' or lowerLoc == 'na' %}
+                {% assign loc = i | Attribute:'Location','State' %}
+            {% else %}
+                {% capture loc %}{{i | Attribute:'Location','City'}}, {{i | Attribute:'Location','State'}}{% endcapture %}
+            {% endif %}
+            natl.push({ id: {{ i.Id }}, title: `{{i.Title}}`, x: "{{i | Attribute:'Coordinates' | Split:',' | First}}", y: "{{i | Attribute:'Coordinates' | Split:',' | Last}}", city: "{{ loc }}" })
+        {% endfor %}
+        scopes[1].items = natl
+        let global = []
+        {% for i in global %}
+            {% assign city = i | Attribute:'Location','City' %}
+            {% assign state = i | Attribute:'Location','State' %}
+            {% assign countryCode = i | Attribute:'Location','Country' %}
+            {% definedvalue where:'DefinedTypeId == 45 && Value == "{{countryCode}}"' %}
+                {% assign country = definedvalueItems[0].Description %}
+            {% enddefinedvalue %}
+            {% assign lowerCity = city | Downcase %}
+            {% assign lowerState = state | Downcase %}
+            {% assign lowerCountry = country | Downcase %}
+            {% if city != '' and lowerCity != 'na' %}
+                {% if state != '' and lowerState != 'na' and lowerState != 'mo' %}
+                    {% capture loc %}{{i | Attribute:'Location','City'}}, {{i | Attribute:'Location','State'}}, {{country}}{% endcapture %}
+                {% else %}
+                    {% capture loc %}{{i | Attribute:'Location','City'}}, {{country}}{% endcapture %}
+                {% endif %}
+            {% else %}
+                {% if state != '' and lowerState != 'na' and lowerState != 'mo' %}
+                    {% capture loc %}{{i | Attribute:'Location','State'}}, {{country}}{% endcapture %}
+                {% else %}
+                    {% assign loc = country %}
+                {% endif %}
+            {% endif %}
+            global.push({ id: {{ i.Id }}, title: `{{i.Title}}`, x: "{{i | Attribute:'Coordinates' | Split:',' | First}}", y: "{{i | Attribute:'Coordinates' | Split:',' | Last}}", city: "{{ loc }}" })
+        {% endfor %}
+        scopes[2].items = global
+        let localContainer = document.getElementById('local_mission_items_mobile')
+        let natlContainer = document.getElementById('natl_mission_items_mobile')
+        let globalContainer = document.getElementById('global_mission_items_mobile')
+
+        addMobileItems(local, localContainer)
+        addMobileItems(natl, natlContainer)
+        addMobileItems(global, globalContainer)
+
+        let map = document.getElementById('map')
+        let svg = null
+        map.addEventListener("load", () => {
+            let svgDoc = map.contentDocument
+            svg = svgDoc.children[0]
+            svg.setAttribute("viewBox", currentScope.viewBox)
+            svg.addEventListener("click", (e) => {
+                let xVal = e.clientX / map.offsetWidth
+                let yVal = e.clientY / map.offsetHeight
+                let x = (xVal * 1920) - ((10 / map.offsetWidth) * 1920)
+                let y = (yVal * 1080) - ((29 / map.offsetHeight) * 1080)
+                console.log(Math.round(x) + "," + Math.round(y))
+            })
+            //if(currentScope.zoomOut) {
+            //    svg.setAttribute("viewBox", currentScope.zoomOut)
+            //} else {
+            //    svg.setAttribute("viewBox", currentScope.viewBox)
+            //}
+            let defs = svg.querySelector("defs")
+            let style = document.createElement('style')
+            if(defs) {
+                defs.appendChild(style)
+            } else {
+                svg.appendChild(style)
+                //style = svg.querySelector("style")
+            }
+            style.type = 'text/css'
+            style.sheet.insertRule('.pin { cursor: pointer; opacity: 1; transition: all 0.5s ease-in-out; height: 75px; }', style.sheet.cssRules.length);
+            //style.sheet.insertRule('.pin.local { height: 25px; }', style.sheet.cssRules.length);
+            style.sheet.insertRule('.pin.local.active { height: 85px; transform: translateY(-10px) translateX(-3px); }', style.sheet.cssRules.length);
+            style.sheet.insertRule('.pin.hidden { opacity: 0; transition: opacity 0.5s ease-in-out; }', style.sheet.cssRules.length);
+            style.sheet.insertRule('.pin.active { height: 91px; transform: translateY(-15px) translateX(-5px); }', style.sheet.cssRules.length);
+            setPins(currentScope.items, svg)
+        })
+        {% comment %}
+            let zoomOutEl = document.getElementById("zoomOut")
+            zoomOutEl.addEventListener("click", () => {
+                let map = document.getElementById('map')
+                if (currentScope.name == 'local') {
+                    currentScope = scopes[1]
+                    map.data = "/Content/About/US_Map.svg"
+                    document.getElementById("zoomIn").classList.remove("disabled")
+                    document.getElementById("zoomOut").classList.remove("disabled")
+                } else if (currentScope.name == 'natl') {
+                    currentScope = scopes[2]
+                    map.data = "/Content/About/World_Map.svg"
+                    document.getElementById("zoomOut").classList.add("disabled")
+                    document.getElementById("zoomIn").classList.remove("disabled")
+                } else {
+                    currentScope = scopes[0]
+                    map.data = "/Content/About/Boone_County_Map.svg"
+                    document.getElementById("zoomIn").classList.add("disabled")
+                    document.getElementById("zoomOut").classList.remove("disabled")
+                }
+                //gsap.to(svg, { duration: 1, attr: { viewBox: currentScope.viewBox }, ease: "power3.inOut" })
+            })
+            let zoomInEl = document.getElementById("zoomIn")
+            zoomInEl.addEventListener("click", () => {
+                let map = document.getElementById('map')
+                if (currentScope.name == 'local') {
+                    currentScope = scopes[2]
+                    map.data = "/Content/About/World_Map.svg"
+                    document.getElementById("zoomOut").classList.add("disabled")
+                    document.getElementById("zoomIn").classList.remove("disabled")
+                } else if (currentScope.name == 'natl') {
+                    currentScope = scopes[0]
+                    map.data = "/Content/About/Boone_County_Map.svg"
+                    document.getElementById("zoomIn").classList.add("disabled")
+                    document.getElementById("zoomOut").classList.remove("disabled")
+                } else {
+                    currentScope = scopes[1]
+                    map.data = "/Content/About/US_Map.svg"
+                    document.getElementById("zoomIn").classList.remove("disabled")
+                    document.getElementById("zoomOut").classList.remove("disabled")
+                }
+                //gsap.to(svg, { duration: 1, attr: { viewBox: currentScope.viewBox }, ease: "power3.inOut" })
+            })
+        {% endcomment %}
+        document.querySelectorAll(".view-btn-round").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                let scope = e.currentTarget.getAttribute("scope")
+                $(".view-btn-round").removeClass("active")
+                let sections = $('#mission_items_mobile > div').detach().sort((a,b) => {
+                    if(a.getAttribute("scope") == scope) {
+                        return -1
+                    } else if(b.getAttribute("scope") == scope) {
+                        return 1
+                    } else if(a.getAttribute("idx") < b.getAttribute("idx")) {
+                        return -1
+                    } else if(a.getAttribute("idx") > b.getAttribute("idx")) {
+                        return 1
+                    }
+                    return 0
+                })
+                $('#mission_items_mobile').html(sections)
+                let map = document.getElementById('map')
+                if (scope == 'local') {
+                    $(".view-btn-round[scope='local']").addClass("active")
+                    currentScope = scopes[0]
+                    map.data = "/Content/About/Boone_County_Map.svg"
+                } else if (scope == 'natl') {
+                    $(".view-btn-round[scope='natl']").addClass("active")
+                    currentScope = scopes[1]
+                    map.data = "/Content/About/US_Map.svg"
+                } else {
+                    $(".view-btn-round[scope='global']").addClass("active")
+                    currentScope = scopes[2]
+                    map.data = "/Content/About/World_Map.svg"
+                }
+                $(".view-btn-round.active img[color='dark']").addClass("hidden")
+                $(".view-btn-round.active img[color='light']").removeClass("hidden")
+                $(".view-btn-round:not(.active) img[color='dark']").removeClass("hidden")
+                $(".view-btn-round:not(.active) img[color='light']").addClass("hidden")
+                //gsap.to(svg, { duration: 1, attr: { viewBox: currentScope.viewBox }, ease: "power3.inOut" })
+            })
+        })
+    })
+
+    function setPins(items, svg) {
+        console.log('[SET PINS]')
+        console.log(items, svg)
+        let container = document.getElementById('img-container')
+        let titles = document.getElementById('mission_items')
+        svg.querySelectorAll(".pin").forEach((node) => {
+            node.remove()
+        })
+        $('#mission_items .mission-title').remove()
+        for (let i = 0; i < items.length; i++) {
+            let el = document.createElementNS("http://www.w3.org/2000/svg", 'image')
+            el.classList.add('pin')
+            el.classList.add('hidden')
+            el.id = "pin_" + items[i].id
+            if(items[i].x && items[i].y) {
+                el.setAttribute("x", items[i].x)
+                el.setAttribute("y", items[i].y)
+            }
+            el.setAttribute("onclick", `window.parent.openModal("#modal_${items[i].id}")`)
+            el.setAttribute("href", "/Content/About/map_pin.png")
+            el.setAttribute("height", "75px")
+            switch (currentScope.name) {
+                case "natl":
+                    el.classList.add('natl')
+                    break
+                case "global":
+                    el.classList.add('global')
+                    break
+                default:
+                    el.classList.add('local')
+                    break
+            }
+
+            let title = document.createElement("div")
+            title.classList.add('mission-title')
+            title.classList.add('hidden')
+            title.classList.add('mb-2')
+            title.id = "mission_" + items[i].id
+            title.dataset.toggle = "modal"
+            title.dataset.target = `#modal_${items[i].id}`
+            title.innerText = items[i].title
+            let titleHR = document.createElement("hr")
+            titleHR.classList.add('mission-title-hr')
+            let subtitle = document.createElement("span")
+            subtitle.classList.add('mission-sub-title')
+            subtitle.innerText = items[i].city
+            title.appendChild(titleHR)
+            title.appendChild(subtitle)
+
+            if(items[i].x && items[i].y) {
+                svg.appendChild(el)
+            }
+            titles.appendChild(title)
+        }
+
+        fadeElIn($(svg.querySelectorAll(".pin")).first(), $('.mission-title').first())
+
+        $(document).on('mouseenter mouseleave', '.mission-title', (event) => {
+            let id = event.target.id.split("_")[1]
+            let pin = svg.querySelector(`#pin_${id}`)
+            if (event.type == "mouseenter") {
+                $('.mission-title').removeClass("active")
+                let pins = svg.querySelectorAll('.pin');
+                pins.forEach((p) => {
+                    p.classList.remove('active');
+                })
+                if(pin) {
+                    pin.classList.add("active")
+                }
+                $(event.target).addClass("active")
+            } else {
+                if(pin) {
+                    pin.classList.remove("active")
+                }
+                $(event.target).removeClass("active")
+            }
+        })
+        $(svg).on('mouseenter mouseleave', '.pin', (event) => {
+            let id = event.target.id.split("_")[1]
+            if (event.type == "mouseenter") {
+                $('.mission-title').removeClass("active")
+                let pins = svg.querySelectorAll('.pin')
+                pins.forEach((p) => {
+                    p.classList.remove('active')
+                })
+                $(`#mission_${id}`).addClass("active")
+                $(event.target).addClass("active")
+                //Scroll Mission Title into view
+                let title = document.getElementById(`mission_${id}`)
+                let topPos = title.offsetTop
+                document.getElementById('item_scroll').scroll({ left: 0, top: topPos, behavior: 'smooth' })
+            } else {
+                $(`#mission_${id}`).removeClass("active")
+                $(event.target).removeClass("active")
+            }
+        })
+    }
+
+    function fadeElIn(el, title) {
+        $(el).fadeIn('slow').removeClass('hidden')
+        $(title).fadeIn('slow').removeClass('hidden')
+        setTimeout(() => {
+            el = $(el)
+            title = $(title)
+            if (el[0] && title[0] && el[0].nextSibling && title[0].nextSibling) {
+                fadeElIn(el[0].nextSibling, title[0].nextSibling)
+            }
+        }, 200)
+    }
+
+    function openModal(id) {
+        $(id).modal('show')
+    }
+
+    function addMobileItems(items, container) {
+        console.log('[ADD MOBILE ITEMS]')
+        console.log(items, container)
+        for(let i=0; i<items.length; i++) {
+            let el = document.createElement("div")
+            el.innerHTML = items[i].title
+            el.dataset.toggle = "modal"
+            el.dataset.target = `#modal_${items[i].id}`
+            el.id = "mobile_mission_" + items[i].id
+            container.appendChild(el)
+        }
+    }
+</script>
+<style>
+    .map-container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        aspect-ratio: 1920 / 1080;
+    }
+    .map-container {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 56.25%;
+    }
+    .map-container > object {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .map-border {
+        width: 100%;
+        position: relative;
+    }
+    svg {
+        width: 100%;
+        height: 100%;
+    }
+    .mission-title {
+        cursor: pointer;
+    }
+    .mission-title {
+        opacity: 1;
+        transition: all 0.5s ease-in-out;
+    }
+    .mission-title.hidden {
+        opacity: 0;
+        transition: all 0.5s ease-in-out;
+    }
+    .mission-title.active {
+        text-shadow: 0px 0px 0 black, 0px 0px 0 black, 0px 0px 0 black, 0px 0px 1px black;
+    }
+    .mission-title-hr {
+        margin: 2px 0px;
+    }
+    .mission-sub-title {
+        text-transform: uppercase;
+        font-size: 12px;
+    }
+    .text-upper {
+        text-transform: uppercase;
+    }
+    @media screen and (min-width: 1024px) {
+        .modal {
+            width: 80% !important;
+            margin-left: -40% !important;
+        }
+    }
+    .modal-content {
+        border-bottom: 23px solid #5F9BAC;
+    }
+    .modal {
+        border-radius: 4px 4px 6px 6px;
+    }
+    .view-btn-round {
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        padding: 6px;
+        background-color: #a2c3cc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: auto;
+    }
+    .view-btn-round img {
+        width: 100%;
+    }
+    .header-border-bottom {
+        border-bottom: 1px solid grey;
+    }
+    #mission_items_mobile div {
+        padding-bottom: 4px;
+    }
+
+    /* Bootstrap Spinner */
+    .hidden {
+        display: none;
+    }
+    @keyframes spinner-border {
+        to { transform: rotate(360deg); }
+    }
+    .spinner-border {
+        position: absolute;
+        top: 40%;
+        display: inline-block;
+        width: 6rem;
+        height: 6rem;
+        vertical-align: -.125em;
+        border: 0.25em solid currentcolor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: 1s linear infinite spinner-border;
+    }
+    .spinner-focus {
+        background-color: rgba(0, 0, 0, .5);
+    }
+    .zoom-btn {
+        display: felx;
+        align-items: center;
+        background-color: #fff;
+        border: .3px solid #dfe0e1;
+        padding: 4px 6px;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+    }
+    .zoom-btn:not(.zoom-btn-center) {
+        cursor: pointer;
+    }
+    .zoom-btn-left {
+        border-radius: 4px 0px 0px 4px;
+    }
+    .zoom-btn-right {
+        border-radius: 0px 4px 4px 0px;
+    }
+    .zoom-btn.disabled {
+        cursor: not-allowed;
+        color: #7D7F82;
+    }
+
+    /* Scrollbar */
+    #item_scroll::-webkit-scrollbar, #item_scroll::-webkit-scrollbar-track, #item_scroll::-webkit-scrollbar-thumb {
+        width: 8px;
+        border-radius: 4px;
+    }
+    #item_scroll::-webkit-scrollbar-track {
+        background-color: rgba(0,0,0,0.03);
+    }
+    #item_scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+    }
+    #item_scroll::-webkit-scrollbar-thumb:hover, #item_scroll::-webkit-scrollbar-thumb:active {
+        background-color: rgba(0,0,0,0.3);
+    }
+
+    @media (max-width: 991px) {
+        .row-eq-height {
+            display: block !important;
+        }
+    }
+</style>
+{% stylesheet compile:'less' import:'_variables.less' %}
+    #mission_items_mobile div div {
+        color: @color-medium-blue;
+    }
+    .view-btn-round.active {
+        color: @color-light-blue;
+        background-color: @color-dark-blue;
+    }
+{% endstylesheet %}

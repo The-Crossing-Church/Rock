@@ -1,0 +1,61 @@
+<!-- Add Luxon Time Library -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@2.1.1/build/global/luxon.min.js"></script>
+<br/><br/>
+<div class="count-down background--grey" id="countdown">
+  <p style="font-weight: 900;">BROADCAST WILL BEGIN IN...</p>
+  <div class="timer">
+    <ul class="count-down-clock" countdown="2020-09-20 08:10:00">
+      <li>
+        <span id="days">00</span>
+        <p class="days_text">DAYS</p>
+      </li>
+      <li>
+        <span id="hours">00</span>
+        <p class="hours_text">HRS</p>
+      </li>
+      <li>
+        <span id="minutes">00</span>
+        <p class="minutes_text">MIN</p>
+      </li>
+      <li>
+        <span id="seconds">00</span>
+        <p class="seconds_text">SEC</p>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<style>
+.count-down {
+  text-align: center;
+  padding: 20px 15px;
+  display: none;
+}
+.count-down>.timer {
+    display: inline-block;
+    color: #5F9BAC;
+}
+.count-down>.timer>.count-down-clock {
+    display: block;
+    list-style: none;
+    margin: 0 -10px -20px;
+    padding: 0;
+}
+.count-down>.timer>.count-down-clock>li {
+    display: inline-block;
+    vertical-align: middle;
+    padding: 0 10px 20px;
+}
+.count-down>.timer>.count-down-clock>li>span {
+    display: inline-block;
+    line-height: 1em;
+    font-weight: 500;
+    border-bottom: 2px solid #5F9BAC;
+    font-size: 1.5em;
+}
+.count-down>.timer>.count-down-clock>li>p {
+    margin: 0;
+    padding: 3px 0 0;
+    font-size: .625em;
+}
+</style>

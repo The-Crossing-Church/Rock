@@ -1,0 +1,52 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1525 {% endcomment %}
+{% assign children = CurrentPerson | Children %}
+{% assign needsCK = false %}
+{% assign needsCS = false %}
+{% for child in children %}
+    {% if child.GradeOffset > 6 %}
+        {% assign needsCK = true %}
+    {% elseif child.GradeOffset >= 0 and child.GradeOffset <= 6 %}
+        {% assign needsCS = true %}
+    {% endif %}
+    {% if child.Age < 10 %}
+        {% assign needsCK = true %}
+    {% endif %}
+{% endfor %}
+{% assign audiences = '["30%20Plus"]' | FromJSON %}
+{% if needsCK == true %}
+    {% assign audiences = audiences | AddToArray:'Crossing%20Kids' %}
+{% endif %}
+{% if needsCS == true %}
+    {% assign audiences = audiences | AddToArray:'Crossing%20Students' %}
+{% endif %}
+{% if CurrentPerson.Gender != 'Female' %}
+    {% assign audiences = audiences | AddToArray:'Men' %}
+{% endif %}
+{% if CurrentPerson.Gender != 'Male' %}
+    {% assign audiences = audiences | AddToArray:'Women' %}
+{% endif %}
+{% capture calLink %}/Events?Start={{'Now' | Date:'yyyy-MM'}}-01&aud={{audiences | Join:','}}{% endcapture %}
+
+{% assign path = 'Global' | Page:'Path' | Split:'/' | Last %}
+<div>
+    <div class="p-2">
+        <a class="btn btn-{% if path == 'Resources' or path == 'Leader-Portal' %}primary{% else %}accent{% endif %} w-100" href="/Ministry/Adults/Small-Groups/Leader-Portal/Resources">
+            <i class="fas fa-archive mr-2"></i> Resources
+        </a>
+    </div>
+    <div class="p-2">
+        <a class="btn btn-accent w-100" href="{{calLink}}">
+            <i class="fa fa-calendar mr-2"></i> Calendar
+        </a>
+    </div>
+    <div class="p-2">
+        <a class="btn btn-{% if path == 'Rosters' %}primary{% else %}accent{% endif %} w-100" href="/Ministry/Adults/Small-Groups/Leader-Portal/Rosters">
+            <i class="fas fa-clipboard-list mr-2"></i> Rosters
+        </a>
+    </div>
+    <div class="p-2">
+        <a class="btn btn-{% if path == 'Contact' %}primary{% else %}accent{% endif %} w-100" href="/Ministry/Adults/Small-Groups/Leader-Portal/Contact">
+            <i class="fas fa-at mr-2"></i> Contact Staff/Coach
+        </a>
+    </div>
+</div>

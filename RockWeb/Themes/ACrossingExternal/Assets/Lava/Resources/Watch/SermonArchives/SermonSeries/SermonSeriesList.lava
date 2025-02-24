@@ -1,0 +1,12 @@
+{% comment %} https://rock.thecrossingchurch.com/Resources/Watch/Sermon%20Archives/Without%20Ceasing {% endcomment %}
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-sm-6 col-md-4 text--centered'>
+            <a href="/Resources/Watch/{{ i.ContentChannel | Attribute:'ResourceCategory' }}/{{ i | Attribute:'Series' }}/{{ i.PrimarySlug }}">
+                <img src="{{i | Attribute:'Image'}}" width="100%" />
+                <h4>{{i.Title}}</h4>
+                {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+            </a>
+        </div>
+    {% endfor %}
+</div>

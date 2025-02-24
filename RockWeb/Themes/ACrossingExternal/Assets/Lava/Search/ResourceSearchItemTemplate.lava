@@ -1,0 +1,41 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1413 {% endcomment %}
+<div class="col col-xs-12 col-sm-6 col-md-4 text-center">
+    {% if Item.ItemType == 'Rock.Model.ContentChannelItem' %}
+        {% contentchannelitem id:'{{Item.EntityId}}' %}
+            {% if contentchannelitem.ContentChannel.Name == 'Watch' %}
+                {% capture url %}/Resources/{{contentchannelitem.ContentChannel.Name}}/{{ contentchannelitem.ContentChannel | Attribute:'ResourceCategory' }}/{{contentchannelitem | Attribute:'Series'}}/{{contentchannelitem.PrimarySlug}}{% endcapture %}
+            {% else %}
+                {% capture url %}/Resources/{{contentchannelitem.ContentChannel.Name}}/{{Item.SeriesValueRaw}}{% endcapture %}
+                {% assign subseries = contentchannelitem | Attribute:'Subseries' %}
+                {% if subseries != '' %}
+                    {% capture url %}{{url}}/{{subseries}}/{{contentchannelitem.PrimarySlug}}{% endcapture %}
+                {% else %}
+                    {% capture url %}{{url}}/{{contentchannelitem.PrimarySlug}}{% endcapture %}
+                {% endif %}
+            {% endif %}
+            <a target="_blank" href="{{url}}">
+                <div class="img-wrapper">
+                    <img src="{{Item.ImageValueRaw}}" class="w-100" />
+                </div>
+                <h4 class="mt-0">{{ Item.Name }}</h4>
+                <p style='font-size: 16px;'>
+                    {{ contentchannelitem.StartDateTime | Date:'MMMM dd, yyyy' }}
+                </p>
+            </a>
+        {% endcontentchannelitem %}
+    {% else %}
+        {% eventitem id:'{{Item.EntityId}}' %}
+            <a target="_blank" href="/Events/Detail?EventOccurrenceId={{eventitem.EventItemOccurrences | OrderBy:'NextStartDateTime' | First | Property:'Id' }}">
+                <div class="img-wrapper">
+                    {% assign altImage = eventitem | Attribute:'AlternateEventCardImage' %}
+                    {% capture imageUrl %}/GetImage.ashx?Guid={{ eventitem.Photo.Guid }}{% endcapture %}
+                    {% if altImage != '' and altImage != null %}
+                        {% assign imageUrl = altImage %}
+                    {% endif %}
+                    <img src="{{imageUrl}}" class="w-100" />
+                </div>
+                <h4 class="mt-0">{{ Item.Name }}</h4>
+            </a>
+        {% endeventitem %}
+    {% endif %}
+</div>

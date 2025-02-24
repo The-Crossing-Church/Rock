@@ -1,0 +1,36 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1536 {% endcomment %}
+{% assign commid = 'Global' | PageParameter:'Id' | AsInteger %}
+{% communication id:'{{commid}}' %}
+    {% assign today = 'Now' | Date:'yyyy-MM-dd HH:mm:ss' %}
+    {% if communication.CommunicationTemplate.Id == 612 and communication.Status == 'Approved' and communication.SendDateTime <= today %}
+        <h1 class="text-center mb-4">
+            {{communication.Subject}}
+        </h1>
+        <div class="row">
+            <div class="col col-xs-6">
+                <a class="btn btn-primary" href="/Ministry/Adults/Small-Groups/Leader-Portal/Resources#newsletter">
+                    <i class="fa fa-chevron-left mr-2"></i>
+                    Back
+                </a>
+            </div>
+            <div class="col col-xs-6 text-right">
+                {{communication.SendDateTime | Date:'MMM dd, yyyy'}}
+            </div>
+        </div>
+        <hr/>
+        <iframe
+            src="/page/1537?Id={{commid}}"
+            style="width: 100%;"
+            frameborder="0" scrolling="no" onload="resizeIframe(this)"
+        ></iframe>
+    {% else %}
+        <div class="alert alert-danger mt-4">
+            Unable to preview communication.
+        </div>
+    {% endif %}
+{% endcommunication %}
+<script>
+  function resizeIframe(obj) {
+    obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
+  }
+</script>

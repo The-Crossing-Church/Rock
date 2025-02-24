@@ -1,0 +1,28 @@
+{[ carousel carouselid:'leader-portal-resources' itemheight:'300' ]}
+    [[ title ]]
+        Leader Resources
+    [[ endtitle ]]
+    {% for i in Items %}
+        [[ item ]]
+            <a href="/Ministry/Adults/Small-Groups/Leader-Resources/{{i.PrimarySlug}}">
+                <div>
+                    <div class="img-wrapper">
+                        <img src="{{i | Attribute:'Image'}}" class="d-block w-100" />
+                    </div>
+                    <div style='font-size: 16px;'>
+                        <h4 style="font-size: 18px;" class="mt-0">{{i.Title}}</h4>
+                        <div class="text--upper">{{i | Attribute:'Author'}}</div>
+                        {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+                    </div>
+                </div>
+            </a>
+        [[ enditem ]]
+    {% endfor %}
+
+    [[ button text:'Leader Portal' url:'/Ministry/Adults/Small-Groups/Leader-Portal/Resources' ]][[ endbutton ]]
+{[ endcarousel ]}
+<style>
+    .carousel-card {
+        height: 100%;
+    }
+</style>

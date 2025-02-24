@@ -1,0 +1,15 @@
+{% assign title = Items[0] | Attribute:'Series' %}
+{{ title | SetPageTitle }}
+<h1 class='text-center pb-custom-2x'>{{title}}</h1>
+
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col-xs-12 col-sm-6 col-md-4 text-center pb-2'>
+            <a href="/Resources/Watch/{{ i.ContentChannel | Attribute:'ResourceCategory' | Replace:' ','-' }}/{{ i | Attribute:'Series','RawValue' | Replace:' ','-' }}/{{ i.PrimarySlug }}">
+                <img src="{{i | Attribute:'Image'}}" width="100%" />
+                <h4>{{i.Title}}</h4>
+                {{i.StartDateTime | Date:'MMMM dd, yyyy'}}
+            </a>
+        </div>
+    {% endfor %}
+</div>

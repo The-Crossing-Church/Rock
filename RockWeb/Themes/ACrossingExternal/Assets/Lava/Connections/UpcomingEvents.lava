@@ -1,0 +1,78 @@
+{% assign ct = EventItemOccurrences | Size %}
+{% if ct > 0 %}
+<div class='full-width upcoming-event-wrapper'>
+  <div class='container'>
+    <h2 class='text-center py-custom-2x'>Upcoming Events</h2>
+    {[ slider sliderid:'featured-events' containerclass:'' ]}
+        {% for i in EventItemOccurrences %}
+            [[ indicator target:'{{forloop.index0}}']][[ endindicator ]]
+            [[ slide]]
+              <div class='row'>
+                <div class='col col-xs-12 col-md-6'>
+                  {% assign altImage = i.EventItem | Attribute:'AlternateEventCardImage' %}
+                  {% if altImage != '' %}
+                    <img class="d-block w-100" src="{{ altImage }}" alt="{{i.EventItem.Name}}" />
+                  {% else %}
+                    <img class="d-block w-100" src="/GetImage.ashx?Guid={{ i.EventItem.Photo.Guid }}" alt="{{i.EventItem.Name}}" />
+                  {% endif %}
+                </div>
+                <div class='col col-xs-12 col-md-6'>
+                  <h2>{{i.EventItem.Name}}</h2>
+                  <div class="truncate">
+                    {{i.EventItem.Description}}
+                  </div>
+                  <br/>
+                  <div class='text--centered'>
+                    <a class='btn btn-primary' href="{{DetailsPage}}?EventOccurrenceId={{ i.Id }}">View Event</a>
+                  </div>
+                  <br class="d-block d-md-none"/>
+                </div>
+              </div>
+            [[ endslide ]]
+        {% endfor %}
+    {[ endslider ]}
+    <div class='text-center pb-4'>
+      <a class='btn btn-primary' href="/Events?aud={{AdditionalAudiences | Select:'Value' | Join:','}}">View All Events</a>
+    </div>
+  </div>
+</div>
+<style>
+  @media (max-width: 767px) {
+    .truncate {
+      overflow: hidden;
+      max-height: 113px;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      text-overflow: -o-ellipsis-lastline;
+    }
+    .truncate p {
+      margin-bottom: 0px;
+    }
+  }
+</style>
+{% endif %}
+
+<script>
+    function postFrameHeight() {
+      $('#featured-events div .item').css('min-height', 'auto')
+      let tallest = 0
+      $('#featured-events div .item').each((i, e) => {
+        if ($(e).height() > tallest ) {
+          tallest = $(e).height()
+        }
+      })
+      $('#featured-events div .item').css('min-height', tallest)
+      let slider = document.querySelector('.full-width.upcoming-event-wrapper')
+      let sliderHeight = slider.clientHeight + 10
+      console.log('Events Carousel Height: ' + sliderHeight)
+      window.top.postMessage({ type:'event-slider-info', height: sliderHeight }, 'https://info.thecrossingchurch.com')
+    }
+    $(document).ready(() => {
+      postFrameHeight()
+    })
+    addEventListener("resize", (event) => {
+      console.log('window Resize Occurred')
+      postFrameHeight()
+    });
+  </script>

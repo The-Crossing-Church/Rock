@@ -1,0 +1,91 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1370 {% endcomment %}
+{% assign kcLeadership = CurrentPerson | Group:"251280" | Size %}
+{% assign kcStaff = CurrentPerson | Group:"128978" | Size %}
+{% assign allStaff = CurrentPerson | Group:"108682" | Size %}
+{% assign isStaffOrLeader = false %}
+{% if kcLeadership > 0 or kcStaff > 0 or allStaff > 0 %}
+    {% assign isStaffOrLeader = true %}
+{% endif %}
+{% assign isMember = false %}
+{% if CurrentPerson.ConnectionStatusValue.Value == 'Member' %}
+    {% assign isMember = true %}
+{% endif %}
+
+{% assign canSeeRegistration = false %}
+{% assign publicDate = Item | Attribute:'UniversalCountdown' | Date:'yyyy-MM-dd HH:mm' %}
+{% assign memberDate = Item | Attribute:'MemberCountdown' | Date:'yyyy-MM-dd HH:mm' %}
+{% assign staffDate = Item | Attribute:'StaffCountdown' | Date:'yyyy-MM-dd HH:mm' %}
+{% assign today = 'Now' | Date:'yyyy-MM-dd HH:mm' %}
+
+{% if isStaffOrLeader == true %}
+    {% assign diff = staffDate | DateDiff:today,'m' %}
+{% elseif isMember == true %}
+    {% assign diff = memberDate | DateDiff:today,'m' %}
+{% else %}
+    {% assign diff = publicDate | DateDiff:today,'m' %}
+{% endif %}
+<script>
+    console.log("diff: {{diff}}, staff: {{staffDate | Date:'MM/dd/yyyy HH:mm'}}, member: {{memberDate | Date:'MM/dd/yyyy HH:mm'}}, today: {{today | Date:'MM/dd/yyyy HH:mm'}}");
+</script>
+{% if diff >= 0 %}
+    {% assign canSeeRegistration = true %}
+{% endif %}
+
+
+<div class="py-custom-2x">
+    <div class='row row-equal-height'>
+        {% for i in Item.ChildItems %}
+            {% assign templateId = i.ChildContentChannelItem | Attribute: 'RegistrationTemplate','Id' %}
+            {% registrationinstance where:'RegistrationTemplateId == {{templateId}} && IsActive == True' %}
+                {% for ri in registrationinstanceItems %}
+                    {% assign regOpenFor = ri.EndDateTime | DaysUntil %}
+                    {% eventitemoccurrencegroupmap where:'RegistrationInstanceId == {{ri.Id}}' %}
+                        {% for ei in eventitemoccurrencegroupmapItems %}
+                            {% capture link %}/Events/Detail?EventOccurrenceId={{ei.EventItemOccurrenceId}}{% endcapture %}
+                        {% endfor %}
+                    {% endeventitemoccurrencegroupmap %}
+                {% endfor %}
+            {% endregistrationinstance %}
+            <div class='col col-xs-12 col-md-4'>
+                <div class='card card--custom card-with-button'>
+                    <img src="{{i.ChildContentChannelItem | Attribute:'ImageURL'}}" />
+                    <div class='card-body'>
+                        {{i.ChildContentChannelItem | Attribute:'CardBodyText'}}
+                    </div>
+                </div>
+                <div class='link-wrapper text--centered'>
+                    <a onclick="closeOtherCollapses({{forloop.index0}})" class='btn btn-primary' data-toggle="collapse" href="#info-collapse-{{forloop.index0}}" role="button" aria-expanded="false" aria-controls="info-collapse-{{forloop.index0}}">Learn More</a>
+                    {% if canSeeRegistration == true and regOpenFor >= 0 %}
+                        <a class='btn btn-primary' target="_blank" href="{{link}}">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% comment %}Expansion Panels{% endcomment %}
+    {% for i in Item.ChildItems %}
+        <div class="collapse info-collapse" id="info-collapse-{{forloop.index0}}">
+            <div class='pt-md-5 pt-0'>
+                <div class="card--custom border--bottom">
+                    {{i.ChildContentChannelItem.Content}}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<script>
+    function closeOtherCollapses(targetIdx) {
+        $('.info-collapse').each((idx, e) => {
+            if(idx != targetIdx) {
+                $(e).collapse('hide')
+            }
+        })
+    }
+
+$('.info-collapse').on('shown.bs.collapse', function(e) {
+    console.log('is scrolling')
+    $('html,body').animate({
+        scrollTop: $(e.currentTarget).offset().top - 140
+    }, 600);
+});
+</script>

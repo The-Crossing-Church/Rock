@@ -1,0 +1,20 @@
+{% comment %} https://rock.thecrossingchurch.com/Resource/Watch/HouseWorship/ash-wednesday-worship-night-2023 {% endcomment %}
+{% assign ct = Posts | Size %}
+{% if ct > 0 %}
+    {[ carousel carouselid:'related-content' itemheight:'375' ]}
+        [[ title ]]Recommended for you[[ endtitle ]]
+        {% for p in Posts %}
+            [[ item ]]
+                <a href="{{p.Url}}">
+                    <div style="padding: 8px">
+                        <div class='img-wrapper'>
+                            <img src="{{p.Image}}" class="d-block w-100" alt="{{p.Title}}" />
+                        </div>
+                        <h4>{{p.Title}}</h4>
+                        <p style='font-size: 16px;'>{{p.PublishDate | Date:'MMMM dd, yyyy'}}</p>
+                    </div>
+                </a>
+            [[ enditem ]]
+        {% endfor %}
+    {[ endcarousel ]}
+{% endif %}

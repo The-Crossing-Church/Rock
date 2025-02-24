@@ -1,0 +1,31 @@
+{% comment %} https://rock.thecrossingchurch.com/Music/Watch {% endcomment %}
+<div class='row row-equal-height'>
+    {% for i in Items %}
+        <div class='col col-xs-12 col-sm-6 col-md-4 text--centered'>
+            <a href="/Music/Watch/{{ i.PrimarySlug }}">
+                <div style="padding: 8px">
+                    <div class='img-wrapper'>
+                        <img class="d-block w-100" src="{{i | Attribute:'Image'}}" alt="{{i.Title}}" />
+                    </div>
+                    <h4>{{i.Title}}</h4>
+                    <p style='font-size: 16px;'>{{i.StartDateTime | Date:'MMMM dd, yyyy'}}</p>
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+<style>
+.img-wrapper {
+  height:200px;
+  overflow-y: hidden;
+  position: relative;
+}
+.img-wrapper img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+  transform: translate(-50%,-50%);
+}
+</style>

@@ -1,0 +1,102 @@
+{% comment %} https://rock.thecrossingchurch.com/page/1129 {% endcomment %}
+{% assign ministry = 'Global' | PageParameter:'Ministry' %}
+{% assign need = 'Global' | PageParameter:'Need' %}
+{% assign age = 'Global' | PageParameter:'AgeRequirement' %}
+<div class='justify-center'>
+    {% if ministry != '' %}
+        {% assign ministries = ministry | Split:',' %}
+        {% for m in ministries %}
+            {% definedvalue where:'Guid == "{{m}}"' %}
+                {% assign dv = definedvalueItems | First %}
+                <div class="badge badge-pill background--medium-blue">
+                  Ministry: {{dv.Value}} <i class="fa fa-sm fa-times" onclick="removeFilter('Ministry', '{{m}}')"></i>
+                </div>
+            {% enddefinedvalue %}
+        {% endfor %}
+    {% endif %}
+    {% if need != '' %}
+        {% assign needs = need | Split:',' %}
+        {% for n in needs %}
+            <div class="badge badge-pill background--medium-blue">
+              Need: {{n}} <i class="fa fa-sm fa-times" onclick="removeFilter('Need', '{{n}}')"></i>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% if age != '' %}
+        {% assign ages = age | ToString | Split:',' %}
+        {% for a in ages %}
+            <div class="badge badge-pill background--medium-blue">
+              Age Requirement: {{a}} <i class="fa fa-sm fa-times" onclick="removeFilter('AgeRequirement', '{{a}}')"></i>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+<div class='justify-right'>
+    <div class='btn btn-accent btn-circle pull-right mb-1' onclick="openModal()">
+        <i class="fa fa-sliders-h"></i>
+    </div>
+</div>
+<script>
+    function openModal() {
+        var modal = document.getElementById("filterModal");
+        modal.style.display = "block";
+        var span = document.getElementsByClassName("close")[0];
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+    }
+    function removeFilter(filter, value) {
+        let params = new URLSearchParams(window.location.search)
+        let searchVal = params.get(filter)
+        if (searchVal == value ) {
+            params.delete(filter)
+        } else if (searchVal.includes(value)) {
+            let vals = searchVal.split(',')
+            vals = vals.filter(v => { return v != value })
+            params.set(filter, vals.join(','))
+        }
+        window.location.href = "/Serving?" + params.toString()
+    }
+</script>
+<style>
+    .search-input {
+        width: 100%;
+        max-width: 300px;
+        margin: 35px auto 0;
+        border-radius: 30px;
+        border: 2px solid #1B3142;
+        padding: 6px;
+    }
+    .btn-circle {
+        cursor: pointer;
+        width: 50px !important;
+        height: 50px !important;
+        min-width: 50px !important;
+        padding: 0px;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+    }
+    .search-input input, .search-input input:focus {
+        border: none;
+        width: 80%;
+        outline:0px !important;
+        -webkit-appearance:none;
+        box-shadow: none !important;
+    }
+    .badge-pill {
+        margin: 4px;
+        font-size: 14px;
+    }
+    .fa-times {
+        cursor: pointer;
+    }
+</style>

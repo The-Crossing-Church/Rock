@@ -1,0 +1,15 @@
+<div class="panel panel-default">
+    {% if SourceEntity and SourceEntity != empty %}
+        {% if SourceName != 'Public' %}
+            <a href="/Resources/{{ SourceName }}" target="_blank"><h2 class="text-center mb-2">{{ SourceName }}</h2></a>
+        {% else %}
+            <a href="/Events" target="_blank"><h2 class="text-center mb-2">Events</h2></a>
+        {% endif %}
+    {% endif %}
+    <div class="list-group">
+        <div class="result-items row row-equal-height"></div>
+    </div>
+</div>
+<div class="actions">
+   <a href="#" class="btn btn-default js-more">Show More</a>
+</div>

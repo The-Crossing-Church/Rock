@@ -1,0 +1,69 @@
+<div class="row row-equal-height">
+    {% for i in Items %}
+        <div class="col col-xs-12 col-md-4 my-4">
+            <div class='card--custom card-with-button'>
+                <img class="d-block w-100" src="{{i | Attribute:'CardImage'}}" alt="{{i.Title}}" />
+                <div class="card-body">
+                    <h3>{{i | Attribute:'DisplayTitle'}}</h3>
+                    {{i | Attribute:'ShortDescription'}}
+                </div>
+            </div>
+            <div class='link-wrapper text--centered'>
+                {% assign link = i | Attribute:'AlternateLink' %}
+                {% if link != '' %}
+                    <a href="{{link}}" target="_blank" class='btn btn-primary'>Learn More</a>
+                {% else %}
+                    <div onclick="$('#modal_{{i.Id}}').modal('show')" class='btn btn-primary'>Learn More</div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% for item in Items %}
+{[ modal modalid:'modal_{{item.Id}}' ]}
+    [[ title hasClose:'true' ]][[ endtitle ]]
+    <div class='row'>
+        <div class='col col-xs-12 justify-center text--centered'>
+            <img src="{{item | Attribute:'CardImage'}}" style="width: 100%; height: auto; max-width: 350px;" alt="{{item.Title}}" />
+        </div>
+    </div>
+    <br/>
+    <div class='row'>
+        <div class='col col-xs-12 justify-center text--centered flex-column'>
+            <p>{{item.Content}}</p>
+        </div>
+    </div>
+    <br/>
+    <div class='row'>
+        <div class='col col-xs-12 justify-center text--centered flex-column'>
+            {% assign regGuid = item | Attribute:'RegistrationTemplate','RawValue' %}
+            {% registrationtemplate where:'Guid == "{{regGuid}}"' %}
+                {% for rt in registrationtemplateItems %}
+                    {% assign instances = rt.Instances | Where:'IsActive',1 %}
+                    {% for i in instances %}
+                        {% assign startDiff = 'Now' | DateDiff:i.StartDateTime,'m' %}
+                        {% assign endDiff = 'Now' | DateDiff:i.EndDateTime,'m' %}
+                        {% if startDiff <= 0 and endDiff >= 0 %}
+                            <a class='btn btn-primary mt-3' href="/page/413?RegistrationInstanceId={{item.Id}}">Register</a>
+                        {% else %}
+                            {% if startDiff > 0 %}
+                                Registration beings {{item.StartDateTime | Date:'dddd, MMM d, yyyy'}}
+                            {% else %}
+                                Registration closed on {{item.EndDateTime | Date:'dddd, MMM d, yyyy'}}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% endregistrationtemplate %}
+            {% capture link %}{{'Global' | Page:'Path'}}?ItemId={{item.Id}}#form{% endcapture %}
+            <a class="px-4 align-center hover" href="{{link}}">
+                <h4>Contact</h4>
+            </a>
+        </div>
+    </div>
+{[ endmodal ]}
+
+{% endfor %}
+
+<br/><br/>
