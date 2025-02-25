@@ -1,8 +1,6 @@
 <div class="row row-equal-height d-none d-md-flex mb-custom-2x">
     {% for item in Items %}
-        {% assign ct = Items | Size %}
-        {% assign lg = 12 | DividedBy:ct %}
-        <div class="col col-xs-12 col-md-{{lg}}">
+        <div class="col col-xs-12 col-md-6">
             <div class="card--custom border--bottom" style="height:100%;">
                 <h4>{{item.Title}}</h4>
                 <hr>

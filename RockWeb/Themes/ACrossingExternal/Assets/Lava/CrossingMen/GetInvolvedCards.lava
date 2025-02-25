@@ -1,18 +1,28 @@
-﻿<h2 class="text-center py-custom-2x">Get Involved</h2>
-<div class='row row-equal-height'>
+﻿<br/>
+<h2 class="text--centered">Get Involved</h2>
+<br/>
+<div class='row row-equal-height mb-custom-2x'>
     {% for i in Items %}
         <div class='col col-xs-12 col-md-4'>
             <div class='card--custom card-with-button'>
-                <img src="{{i | Attribute:'Image'}}" alt="{{i | Attribute:'Name'}}" />
+                <img src="{{i | Attribute:'Image'}}" />
                 <div style='padding: 8px;' class='text--centered'>
                     <strong>{{i | Attribute:'Name'}}</strong><br/>
-                    <div class='card-body'>
+                    <div class="card-body">
                         {{i.Content}}
                     </div>
                 </div>
             </div>
             <div class='link-wrapper text--centered'>
-                <a class='btn btn-primary' href="/Ministry/Adults/Men?Slug={{i.Id}}#form">Get Connected</a>
+                {% assign btnsRaw = i | Attribute:'AlternateButton' %}
+                {% if btnsRaw != '' %}
+                    {% assign btns = i | Attribute:'AlternateButton' | FromJSON %}
+                    {% for btn in btns %}
+                        <a href="{{btn.Link}}" {% if btn.Target == 'New Tab' %}target="_blank"{% endif %} class='btn btn-primary mr-1 mt-1'>{{btn.Text}}</a>
+                    {% endfor %}
+                {% else %}
+                    <a class='btn btn-primary' href="/Ministry/Adults/Men?Slug={{i.Id}}#form">Get Connected</a>
+                {% endif %}
             </div>
         </div>
     {% endfor %}
