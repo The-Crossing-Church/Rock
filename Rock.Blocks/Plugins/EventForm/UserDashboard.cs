@@ -234,20 +234,20 @@ namespace Rock.Blocks.Plugins.EventDashboard
             }
             response.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
             item.LoadAttributes();
-            response.request.LoadAttributesAndValuesForPublicView( item, RequestContext.CurrentPerson );
+            response.request.LoadAttributesAndValuesForPublicEdit( item, RequestContext.CurrentPerson );
             var requestchanges = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).FirstOrDefault();
             if ( requestchanges != null )
             {
                 response.requestPendingChanges = EventFormHelper.GetCommonContentChannelItemEntityBag( requestchanges.ChildContentChannelItem );
                 requestchanges.ChildContentChannelItem.LoadAttributes();
-                response.requestPendingChanges.LoadAttributesAndValuesForPublicView( requestchanges.ChildContentChannelItem, RequestContext.CurrentPerson );
+                response.requestPendingChanges.LoadAttributesAndValuesForPublicEdit( requestchanges.ChildContentChannelItem, RequestContext.CurrentPerson );
             }
             var details = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( i => i.ChildContentChannelItem ).ToList();
             response.details = details.Select( i =>
             {
                 var detail = new Details() { detail = EventFormHelper.GetCommonContentChannelItemEntityBag( i ) };
                 i.LoadAttributes();
-                detail.detail.LoadAttributesAndValuesForPublicView( i, RequestContext.CurrentPerson );
+                detail.detail.LoadAttributesAndValuesForPublicEdit( i, RequestContext.CurrentPerson );
                 return detail;
             } ).ToList();
             for ( int i = 0; i < details.Count(); i++ )
@@ -257,7 +257,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 {
                     response.details[i].detailPendingChanges = EventFormHelper.GetCommonContentChannelItemEntityBag( detailChanges.ChildContentChannelItem );
                     detailChanges.ChildContentChannelItem.LoadAttributes();
-                    response.details[i].detailPendingChanges.LoadAttributesAndValuesForPublicView( detailChanges.ChildContentChannelItem, RequestContext.CurrentPerson );
+                    response.details[i].detailPendingChanges.LoadAttributesAndValuesForPublicEdit( detailChanges.ChildContentChannelItem, RequestContext.CurrentPerson );
                 }
             }
             response.comments = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).Select( ci => new Comment { comment = EventFormHelper.GetCommonContentChannelItemEntityBag( ci.ChildContentChannelItem ), createdBy = ci.ChildContentChannelItem.CreatedByPersonName } ).ToList();
