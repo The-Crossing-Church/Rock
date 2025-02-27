@@ -22,7 +22,7 @@
                     <p class="d-flex">
                         <i class="fa"></i>
                         {% assign svcs = 'Global' | Attribute:'ServiceTimes' | Split:',' %}
-                        Join us Sunday's in person or online at {{svcs | Join:', ' |  ReplaceLast:',',', and' }} AM CT
+                        Join us Sundays in person or online at {{svcs | Join:', ' |  ReplaceLast:',',', and' }} AM CT
                     </p>
                 </li>
             </ul>
