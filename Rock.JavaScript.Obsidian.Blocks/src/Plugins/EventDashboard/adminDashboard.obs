@@ -496,10 +496,9 @@ export default defineComponent({
           this.toastMessage = res.errorMessage
           let el = document.getElementById('toast')
           el?.classList.add("show")
-        }
-      }).finally(() => {
-        if(el) {
-          el.style.display = 'none'
+          if(el) {
+            el.style.display = 'none'
+          }
         }
       })
     },
@@ -771,7 +770,7 @@ export default defineComponent({
     </a-btn>
   </template>
 </a-modal>
-<a-modal v-model:visible="partialApprovalModal" width="70%" :closable="false">
+<a-modal v-if="partialApprovalModal" v-model:visible="partialApprovalModal" width="70%" :closable="false">
   <tcc-partial :request="selected" ref="partialApprovalInfo"></tcc-partial>
   <template #footer>
     <a-btn type="accent" @click="partialApproval">

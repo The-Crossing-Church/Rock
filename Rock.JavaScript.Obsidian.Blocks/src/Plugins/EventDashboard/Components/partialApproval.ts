@@ -37,7 +37,7 @@ export default defineComponent({
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Production")) {
               item.value = this.request.attributeValues[key]
-              if(this.request.changes && this.request.changes.attributeValues[key] != this.request.attributeValues[key]) {
+              if(this.request.changes && this.request.changes?.attributeValues[key] != this.request.attributeValues[key]) {
                 item.changeValue = this.request.changes.attributeValues[key]
               }
               if(item.changeValue != null && item.value != item.changeValue) {
@@ -372,6 +372,16 @@ export default defineComponent({
       :newValue="request.changes.attributeValues.WebCalendarDescription"
       v-on:approved="approveRequestAttribute(request.attributes.WebCalendarDescription.key)"
       v-on:denied="denyRequestAttribute(request.attributes.WebCalendarDescription.key)"
+    ></tcc-pa-val>
+  </template>
+  <template v-if="request.attributeValues.Notes != request.changes.attributeValues.Notes">
+    <h3 class="text-accent">Notes</h3>
+    <tcc-pa-val 
+      :attribute="request.attributes.Notes"
+      :originalValue="request.attributeValues.Notes"
+      :newValue="request.changes.attributeValues.Notes"
+      v-on:approved="approveRequestAttribute(request.attributes.Notes.key)"
+      v-on:denied="denyRequestAttribute(request.attributes.Notes.key)"
     ></tcc-pa-val>
   </template>
 </div>
