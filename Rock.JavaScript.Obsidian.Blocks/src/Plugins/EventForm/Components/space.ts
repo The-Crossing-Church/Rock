@@ -21,6 +21,7 @@ type ListItem = {
   value: string,
   description: string,
   isDisabled: boolean,
+  isActive: boolean,
   isHeader: boolean,
   type: string,
   order: number
@@ -89,9 +90,8 @@ export default defineComponent({
         if(l.attributeValues?.StandardSetUpDescription.value) {
           x.description = l.attributeValues.StandardSetUpDescription.value
         }
-        if(!l.isActive) {
-          x.isDisabled = true
-        }
+        x.isActive = l.isActive
+        x.isDisabled = !l.isActive
         if(l.order) {
           x.order = l.order
         }
@@ -222,7 +222,7 @@ export default defineComponent({
           })
           //Disable rooms not available for the date/time
           l.isHeader = false
-          if(existingRooms.includes(l.value)){
+          if(existingRooms.includes(l.value) || !l.isActive){
             l.isDisabled = true
           } else {
             l.isDisabled = false
