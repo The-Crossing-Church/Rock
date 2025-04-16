@@ -399,7 +399,6 @@ namespace Rock.Blocks.Plugins.EventForm
                     ci.ChildContentChannelItem.LoadAttributes();
                     bag.LoadAttributesAndValuesForPublicEdit( ci.ChildContentChannelItem, p );
                     return bag;
-
                 } ).ToList();
                 var changes = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
                 if ( changes != null )
@@ -706,6 +705,11 @@ namespace Rock.Blocks.Plugins.EventForm
                         original.SetAttributeValue( "RequestStatus", "Pending Changes" );
                         original.SaveAttributeValue( "RequestStatus" );
                         item = changes;
+                    }
+                    else
+                    {
+                        //Previously approved item and changes that are pre-approved, need to update context so title changes apply on save
+                        item = FromViewModel( viewModel, true );
                     }
                 }
 
@@ -1112,16 +1116,17 @@ namespace Rock.Blocks.Plugins.EventForm
         {
             RockContext context = new RockContext();
             Rock.Model.Person p = GetCurrentPerson();
+            GlobalAttributesCache attributeCache = GlobalAttributesCache.Get();
             string url;
-            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            string baseUrl = attributeCache.GetValue( "InternalApplicationRoot" );
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
             string subject = p.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>This comment has been added to " + p.FullName + "'s request:</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
                 "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
-            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            var header = attributeCache.GetValue( "EmailHeader" );
+            var footer = attributeCache.GetValue( "EmailFooter" );
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
             var users = GetAdminUsers();
@@ -1386,11 +1391,12 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             message += GetRequestDetails( item, events );
 
-            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
 
             string url = "";
-            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
 
@@ -1534,11 +1540,12 @@ namespace Rock.Blocks.Plugins.EventForm
                 message += "</ul>";
             }
 
-            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
 
             string url;
-            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             message += "<br/>" +

@@ -1337,16 +1337,17 @@ namespace Rock.Blocks.Plugins.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
             string url;
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
-            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
             string subject = p.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>This comment has been added to your request:</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
                 "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
-            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
             var users = GetRequestUsers( item );
@@ -1368,8 +1369,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
             string url;
-            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
             Dictionary<string, string> udqueryParams = new Dictionary<string, string>();
             udqueryParams.Add( "Id", item.Id.ToString() );
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, udqueryParams );
@@ -1396,8 +1398,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     "</tr>" +
                 "</table>";
             }
-            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
             var users = GetRequestUsers( item );
@@ -1419,8 +1421,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
             string url;
-            string baseUrl = GlobalAttributesCache.Get().GetValue( "InternalApplicationRoot" );
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             item.LoadAttributes();
@@ -1507,8 +1510,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         "<td></td>" +
                     "</tr>" +
                 "</table>";
-            var header = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 140 ).Value; //Email Header
-            var footer = new AttributeValueService( context ).Queryable().FirstOrDefault( a => a.AttributeId == 141 ).Value; //Email Footer 
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
             var users = GetRequestUsers( item );
