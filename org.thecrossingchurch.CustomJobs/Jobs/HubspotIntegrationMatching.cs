@@ -511,23 +511,38 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
         }
 
-        private void GetContacts( string url )
+        private void GetContacts( string url, int attempt = 0 )
         {
             try
             {
                 request_count++;
-                var contactClient = new RestClient( url );
+                RestClient contactClient = new RestClient( url );
                 contactClient.Timeout = -1;
-                var contactRequest = new RestRequest( Method.GET );
+                RestRequest contactRequest = new RestRequest( Method.GET );
                 contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
                 contactRequest.AddHeader( "accept", "application/json" );
                 contactRequest.AddHeader( "content-type", "application/json" );
                 IRestResponse contactResponse = contactClient.Execute( contactRequest );
-                if ( contactResponse.StatusCode != HttpStatusCode.OK )
+
+                //Handle API Rate Limit
+                if ( ( int ) contactResponse.StatusCode == 429 )
+                {
+                    if ( attempt < 3 )
+                    {
+                        Thread.Sleep( 9000 );
+                        GetContacts( url, attempt + 1 );
+                    }
+                    else
+                    {
+                        throw new Exception( "Rate limit and retry limit reached", new Exception( contactResponse.Content ) );
+                    }
+                }
+                else if ( contactResponse.StatusCode != HttpStatusCode.OK )
                 {
                     throw new Exception( contactResponse.Content );
                 }
-                var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
+
+                HSContactQueryResult contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
                 //Contacts with emails that do not already have Rock IDs in the desired business unit (if applicaable) 
                 contacts.AddRange( contactResults.results.Where( c =>
                     ( c.properties["rock_id"] == null || c.properties["rock_id"] == "" || c.properties["rock_id"] == "0" ) &&

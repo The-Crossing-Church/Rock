@@ -705,7 +705,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             }
         }
 
-        private void GetContacts( string url )
+        private void GetContacts( string url, int attempt = 0 )
         {
             try
             {
@@ -715,10 +715,25 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 var contactRequest = new RestRequest( Method.GET );
                 contactRequest.AddHeader( "Authorization", $"Bearer {key}" );
                 IRestResponse contactResponse = contactClient.Execute( contactRequest );
-                if ( contactResponse.StatusCode != HttpStatusCode.OK )
+
+                //Handle API Rate Limit
+                if ( ( int ) contactResponse.StatusCode == 429 )
+                {
+                    if ( attempt < 3 )
+                    {
+                        Thread.Sleep( 9000 );
+                        GetContacts( url, attempt + 1 );
+                    }
+                    else
+                    {
+                        throw new Exception( "Rate limit and retry limit reached", new Exception( contactResponse.Content ) );
+                    }
+                }
+                else if ( contactResponse.StatusCode != HttpStatusCode.OK )
                 {
                     throw new Exception( contactResponse.Content );
                 }
+
                 var contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
                 contacts.AddRange( contactResults.results.Where( c =>
                     c.properties["rock_id"] != null && c.properties["rock_id"] != "" &&
