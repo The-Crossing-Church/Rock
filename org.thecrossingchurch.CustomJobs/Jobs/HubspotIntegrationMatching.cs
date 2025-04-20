@@ -129,6 +129,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
         private List<HSContactResult> contacts { get; set; }
         private List<string> additionalProperties { get; set; }
         private int request_count { get; set; }
+        private bool has_next_page { get; set; }
         private string businessUnit { get; set; }
         private string rockUrl { get; set; }
         private string hubspotUrl { get; set; }
@@ -257,7 +258,22 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
             contacts = new List<HSContactResult>();
             request_count = 0;
             string contactsUrl = "https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=" + String.Join( ",", requestedProperties ) + "&archived=false";
-            GetContacts( contactsUrl );
+            has_next_page = true;
+            //Eventually we will have to change this check, but for right now we add the Request Count < 5000
+            //so we don't end up in an infinite loop scenario
+            while ( has_next_page && request_count < 5000 )
+            {
+                HSResultPaging result_paging = GetContacts( contactsUrl );
+
+                if ( result_paging != null && result_paging.next != null && !String.IsNullOrEmpty( result_paging.next.link ) )
+                {
+                    contactsUrl = result_paging.next.link;
+                }
+                else
+                {
+                    has_next_page = false;
+                }
+            }
 
             int numThreads = GetAttributeValue( AttributeKey.ThreadCount ).AsInteger();
             if ( numThreads <= 0 )
@@ -511,7 +527,7 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
 
         }
 
-        private void GetContacts( string url, int attempt = 0 )
+        private HSResultPaging GetContacts( string url, int attempt = 0 )
         {
             try
             {
@@ -558,18 +574,15 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 //For Testing
                 if ( contactLimit.HasValue && contacts.Count >= contactLimit )
                 {
-                    return;
+                    return null;
                 }
 
-                //Eventually we will have to change this check, but for right now we add the Request Count < 5000 so we don't end up in an infinite loop scenario
-                if ( contactResults.paging != null && contactResults.paging.next != null && !String.IsNullOrEmpty( contactResults.paging.next.link ) && request_count < 5000 )
-                {
-                    GetContacts( contactResults.paging.next.link );
-                }
+                return contactResults.paging;
             }
             catch ( Exception e )
             {
                 ExceptionLogService.LogException( new Exception( $"Hubspot Sync Error: Get Contacts API Exception", e ) );
+                return null;
             }
         }
 
