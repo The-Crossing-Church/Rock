@@ -8,6 +8,7 @@ using RestSharp;
 using Newtonsoft.Json;
 using Rock.Web.UI.Controls;
 using System.ComponentModel;
+using Rock.Lava;
 
 namespace Rock.Blocks.Plugins.Cms
 {
@@ -116,6 +117,7 @@ namespace Rock.Blocks.Plugins.Cms
         }
 
         [DotLiquid.LiquidType( "title", "authorFullName", "url", "featuredImageUrl", "publishedDate", "tags", "publishDate" )]
+        [LavaType( "title", "authorFullName", "url", "featuredImageUrl", "publishedDate", "tags", "publishDate" )]
         private class BlogPost
         {
             public string title { get; set; }
