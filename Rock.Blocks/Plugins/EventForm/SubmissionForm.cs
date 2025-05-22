@@ -1021,7 +1021,8 @@ namespace Rock.Blocks.Plugins.EventForm
                                     );
                                     //Events on same date
                                     var eventAttr = new AttributeService( context ).Get( EventDatesAttrGuid );
-                                    var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == detailsEventDateAttr.Id && av.Value == dateCompareVal );
+                                    //When events are edited through Content Channel UI they can get the Event Date format changed which no longer matches yyyy-MM-dd
+                                    var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == detailsEventDateAttr.Id && av.Value.Substring( 0, 10 ) == dateCompareVal );
                                     var eventDatesValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value.Contains( dateCompareVal ) );
                                     eventDetails = eventDetails.Join( eventDateValues,
                                         itm => itm.Id,

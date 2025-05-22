@@ -116,7 +116,7 @@ export default defineComponent({
       if(this.request?.attributeValues?.IsSame == "True") {
         dates = this.request.attributeValues.EventDates.split(",").map(d => d.trim())
       } else {
-        dates.push(this.e?.attributeValues?.EventDate)
+        dates.push(this.e?.attributeValues?.EventDate.substring(0, 10))
       }
       let existingOnDate = existingRequests?.filter((e: any) => {
         if(e.idKey == this.request?.idKey || e.idKey == this.originalRequest?.idKey) {
@@ -131,7 +131,7 @@ export default defineComponent({
           if(e.attributeValues?.IsSame.value == "True") {
             events = e.childItems
           } else {
-            events = e.childItems.filter((child: any) => dates.includes(child.childContentChannelItem.attributeValues?.EventDate.value))
+            events = e.childItems.filter((child: any) => dates.includes(child.childContentChannelItem.attributeValues?.EventDate.value.substring(0, 10))) 
           }
           // console.log(e)
           // console.log(events)
@@ -157,7 +157,7 @@ export default defineComponent({
             })
           } else {
             events = events.filter((event: any) => {
-              let date = event.childContentChannelItem.attributeValues?.EventDate?.value.trim()
+              let date = event.childContentChannelItem.attributeValues?.EventDate?.value.substring(0, 10).trim()
               if(intersect.includes(date)) {
                 let cdStartBuffer = event.childContentChannelItem.attributeValues?.StartBuffer && event.childContentChannelItem.attributeValues?.StartBuffer?.value ? parseInt(event.childContentChannelItem.attributeValues?.StartBuffer.value) : 0
                 let cdStart = DateTime.fromFormat(`${date} ${event.childContentChannelItem.attributeValues?.StartTime.value}`, `yyyy-MM-dd HH:mm:ss`).minus({ minutes: cdStartBuffer })

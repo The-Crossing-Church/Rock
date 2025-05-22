@@ -1208,13 +1208,13 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     string formattedDate = DateTime.Parse( dates[i] ).ToString( "yyyy-MM-dd" );
                     d.range.Start = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( startKey )}" );
                     d.range.End = DateTime.Parse( $"{formattedDate} {events[k].GetAttributeValue( endKey )}" ).AddMinutes( -1 );
-                    var startBuffer = events[0].GetAttributeValue( startBufferKey );
+                    var startBuffer = events[k].GetAttributeValue( startBufferKey );
                     if ( !String.IsNullOrEmpty( startBuffer ) )
                     {
                         int buffer = Int32.Parse( startBuffer );
                         d.range.Start = d.range.Start.Value.AddMinutes( buffer * -1 );
                     }
-                    var endBuffer = events[0].GetAttributeValue( endBufferKey );
+                    var endBuffer = events[k].GetAttributeValue( endBufferKey );
                     if ( !String.IsNullOrEmpty( endBuffer ) )
                     {
                         int buffer = Int32.Parse( endBuffer );
@@ -1253,7 +1253,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 //Events on same date
                 var eventAttr = events[0].Attributes[eventDateKey];
                 var eventDateAttr = item.Attributes[eventDatesKey];
-                var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value == dateCompareVal );
+                //When events are edited through Content Channel UI they can get the Event Date format changed which no longer matches yyyy-MM-dd
+                var eventDateValues = avSvc.Queryable().Where( av => av.AttributeId == eventAttr.Id && av.Value.Substring(0, 10) == dateCompareVal );
                 var eventDatesValues = avSvc.Queryable().Where( av => av.AttributeId == eventDateAttr.Id && av.Value.Contains( dateCompareVal ) );
                 eventDetails = eventDetails.Join( eventDateValues,
                     itm => itm.Id,
