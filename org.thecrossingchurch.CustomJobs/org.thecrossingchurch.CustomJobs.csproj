@@ -129,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jobs\CloudinaryConversion.cs" />
+    <Compile Include="Jobs\ConnectionRequestReminders.cs" />
     <Compile Include="Jobs\EventFormConversion.cs" />
     <Compile Include="Jobs\HubSpotIntegrationCustomActions.cs" />
     <Compile Include="Jobs\HubspotIntegrationMatching.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="Jobs\HubspotIntegrationPatching.cs" />
     <Compile Include="Jobs\CrossingStudentsSteps.cs" />
     <Compile Include="Jobs\MensGroupSync.cs" />
+    <Compile Include="Jobs\PodcastSubseriesUpdates.cs" />
     <Compile Include="Jobs\PodcastSync.cs" />
     <Compile Include="Jobs\StressTest.cs" />
     <Compile Include="Jobs\SyncEventCalendar.cs" />
