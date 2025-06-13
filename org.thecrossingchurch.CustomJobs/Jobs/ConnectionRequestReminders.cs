@@ -199,7 +199,6 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
         #region Global Variables
         private List<string> _jobErrors = new List<string>();
         private int connectionRemindersProcessed;
-        private int workflowRemindersProcessed;
         private RockContext _context;
         private ContentChannel _channel;
         private Attribute _reminderTimeAttr;
@@ -232,24 +231,10 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                 throw new RockJobWarningException( message );
             }
 
-            GetConnectionRequestReminders();
-            //IQueryable<ContentChannelItem> reminders = GetActiveReminders( _channel, _reminderTimeAttr );
+            var reminders = GetConnectionRequestReminders();
+            ProcessReminders( reminders );
 
-            //IQueryable<AttributeValue> connectionStatusValues = av_svc.Queryable().Where( av => av.AttributeId == _connectionRequestStatusAttr.Id && !String.IsNullOrEmpty( av.Value ) );
-            //IQueryable<ContentChannelItem> connectionRequestReminders = reminders.Join( connectionStatusValues,
-            //    cci => cci.Id,
-            //    av => av.EntityId,
-            //    ( cci, av ) => cci
-            //);
-            //int connectionReminderCount = connectionRequestReminders.Count();
-            //if ( connectionReminderCount > 0 )
-            //{
-            //    ProcessConnectionRequestReminders( connectionRequestReminders );
-            //}
-
-            string jobStatus = "Reminders Processed.\n" +
-                connectionRemindersProcessed + " Connection Request Reminder" + ( connectionRemindersProcessed == 1 ? "" : "s" ) + " Sent.\n" +
-                workflowRemindersProcessed + " Workflow Reminder" + ( workflowRemindersProcessed == 1 ? "" : "s" ) + " Sent.";
+            string jobStatus = connectionRemindersProcessed + " Reminder" + ( connectionRemindersProcessed == 1 ? "" : "s" ) + " Sent.";
             if ( _jobErrors.Count > 0 )
             {
                 jobStatus += "\n\n" + _jobErrors.Count + " Error" + ( _jobErrors.Count == 1 ? "" : "s" ) + ":\n" + String.Join( "\n", _jobErrors );
@@ -509,7 +494,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
             return success;
         }
 
-        private void GetConnectionRequestReminders()
+        private List<ConnectionRequestRmeinder> GetConnectionRequestReminders()
         {
             ContentChannelItemService cci_svc = new ContentChannelItemService( _context );
             AttributeValueService av_svc = new AttributeValueService( _context );
@@ -520,6 +505,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
 
             DateTime today = DateTime.Now.StartOfDay();
             string today_date_str = today.ToString( "yyyy-MM-dd" );
+            DateTime currentTime = DateTime.Now;
 
             var reminders =
                 cci_svc.Queryable().Where( cci =>
@@ -587,18 +573,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     MaxReminders = mr_av.ValueAsNumeric,
                     ReminderTime = rt_av.Value,
                     IndicatorActivityTypeId = ia_cat.Id,
-                    ReminderActivityTypeId = ra_cat.Id,
-                    //Reminder = reminder,
-                    //ConnectionStatus = cs,
-                    //ConnectionStatusAV = cs_av,
-                    //IndicatorActivityType = ia_cat,
-                    //IndicatorActivityAV = ia_av,
-                    //ReminderActivityType = ra_cat,
-                    //ReminderActivityAV = ra_av,
-                    //DaysInStatusAV = dis_av,
-                    //RepeatIntervalAV = ri_av,
-                    //MaxReminderAV = mr_av,
-                    //ReminderTimeAV = rt_av
+                    ReminderActivityTypeId = ra_cat.Id
                 };
 
             var mostRecentIndicator = cra_svc.Queryable()
@@ -681,307 +656,140 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                 cr.DaysRequestHasBeenInStatus >= cr.DaysInStatus &&
                 ( !cr.MaxReminders.HasValue || cr.NumberOfReminders < cr.MaxReminders.Value ) &&
                 ( !cr.MostRecentReminderActivityDateTime.HasValue || cr.DaysSinceLastReminder >= cr.RepeatInterval )
-            );
-
-            var x = connectionReminders.ToList();
-            var z = x.Select( foo =>
+            ).ToList().Select( cr =>
             {
-                foo.TargetSendDateTime = DateTime.ParseExact( today_date_str + " " + foo.ReminderTime, "yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture );
-                return foo;
-            } ).ToList();
+                cr.TargetSendDateTime = DateTime.ParseExact( today_date_str + " " + cr.ReminderTime, "yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture );
+                return cr;
+            } ).Where( cr =>
+                cr.TargetSendDateTime <= currentTime
+            ).ToList();
 
-            var y = 7;
+            return connectionReminders;
         }
 
-        /// <summary>
-        /// Method to get the content channel items with a reminder that should be sent in the timeframe between the last time the job ran and now.
-        /// </summary>
-        /// <param name="channel">The channel that contains the system reminders.</param>
-        /// <param name="reminderTimeAttr">The attribute that holds the time to send the reminders.</param>
-        /// <returns></returns>
-        private IQueryable<ContentChannelItem> GetActiveReminders( ContentChannel channel, Attribute reminderTimeAttr )
+        private void ProcessReminders( List<ConnectionRequestRmeinder> connectionReminders )
         {
-            IQueryable<ContentChannelItem> reminders = new ContentChannelItemService( _context ).Queryable().Where( cci => cci.ContentChannelId == channel.Id && cci.StartDateTime <= RockDateTime.Now && ( !cci.ExpireDateTime.HasValue || cci.ExpireDateTime.Value > RockDateTime.Now ) );
-            DateTime? lastRun = ServiceJob.LastSuccessfulRunDateTime;
-            DateTime now = DateTime.Now;
-            int minuteVal = now.Minute;
-            if ( minuteVal < 30 )
-            {
-                minuteVal = 29;
-            }
-            else
-            {
-                minuteVal = 59;
-            }
-            now = new DateTime( now.Year, now.Month, now.Day, now.Hour, minuteVal, 59 );
-
-            List<AttributeValue> reminderTimesInRange = new AttributeValueService( _context ).Queryable().Where( av => av.AttributeId == reminderTimeAttr.Id ).ToList().Where( av =>
-            {
-                if ( !av.ValueAsDateTime.HasValue )
-                {
-                    return false;
-                }
-                if ( !lastRun.HasValue )
-                {
-                    return true;
-                }
-                DateTime dailyTime = new DateTime( now.Year, now.Month, now.Day, av.ValueAsDateTime.Value.Hour, av.ValueAsDateTime.Value.Minute, 0 );
-                if ( dailyTime > lastRun.Value && dailyTime <= now )
-                {
-                    return true;
-                }
-                return false;
-            } ).ToList();
-            List<int> validReminderIds = reminderTimesInRange.Where( av => av.EntityId.HasValue ).Select( av => av.EntityId.Value ).ToList();
-            return reminders.Where( cci => validReminderIds.Contains( cci.Id ) );
-        }
-
-        private void ProcessConnectionRequestReminders( IQueryable<ContentChannelItem> reminders )
-        {
-            AttributeValueService av_svc = new AttributeValueService( _context );
+            ContentChannelItemService cci_svc = new ContentChannelItemService( _context );
             ConnectionRequestService cr_svc = new ConnectionRequestService( _context );
-            ConnectionStatusService cs_svc = new ConnectionStatusService( _context );
             ConnectionActivityTypeService cat_svc = new ConnectionActivityTypeService( _context );
-            ConnectionRequestActivityService cra_svc = new ConnectionRequestActivityService( _context );
             PersonAliasService pa_svc = new PersonAliasService( _context );
 
-            DateTime today = DateTime.Now.StartOfDay();
-            List<ContentChannelItem> reminderList = reminders.ToList();
+            var reminders = connectionReminders.GroupBy( cr => cr.ReminderId ).ToList();
 
-            for ( int i = 0; i < reminderList.Count; i++ )
+            for ( int i = 0; i < reminders.Count(); i++ )
             {
-                int reminderId = reminderList[i].Id;
+                ContentChannelItem reminder = cci_svc.Get( reminders[i].Key );
+                List<ConnectionRequestRmeinder> connections = reminders[i].ToList();
 
-                // Use the connection status attribute values to calculate the connection requests possibly in need of reminder being sent.
-                var connectionStatusAVs = av_svc.Queryable().Where( av => av.AttributeId == _connectionRequestStatusAttr.Id && !String.IsNullOrEmpty( av.Value ) && av.EntityId == reminderId );
-                var connectionStatuses = cs_svc.Queryable().Join( connectionStatusAVs,
-                    cs => cs.Guid.ToString().ToUpper(),
-                    av => av.Value.ToUpper(),
-                    ( cs, av ) => cs
-                );
-                var connectionRequests = cr_svc.Queryable().Where( cr => cr.ConnectionState == ConnectionState.Active ).Join( connectionStatuses,
-                    cr => cr.ConnectionStatusId,
-                    cs => cs.Id,
-                    ( cr, cs ) => cr
-                );
-
-                // Since there is no date associated with the connection status change, use the date of the most recent instance of the indicated activity
-                var connectionActivityAVs = av_svc.Queryable().Where( av => av.AttributeId == _connectionRequestActivityAttr.Id && !String.IsNullOrEmpty( av.Value ) && av.EntityId == reminderId );
-                var connectionActivityTypes = cat_svc.Queryable().Join( connectionActivityAVs,
-                    cat => cat.Guid.ToString().ToUpper(),
-                    av => av.Value.ToUpper(),
-                    ( cat, av ) => cat
-                );
-                var connectionActivities = cra_svc.Queryable().Join( connectionActivityTypes,
-                    cra => cra.ConnectionActivityTypeId,
-                    cat => cat.Id,
-                    ( cra, cat ) => cra
-                ).GroupBy( cra => cra.ConnectionRequestId ).Select( g =>
-                    new ConnectionActivityResult
-                    {
-                        ConnectionRequestId = g.Key,
-                        Activity = g.OrderByDescending( cra => cra.CreatedDateTime ).FirstOrDefault(),
-                        DaysInStatus = DbFunctions.DiffDays( g.OrderByDescending( cra => cra.CreatedDateTime ).Select( cra => cra.CreatedDateTime.Value ).FirstOrDefault(), today )
-                    }
-                );
-                int? daysInStatus = av_svc.Queryable().Where( av => av.AttributeId == _daysInStatusAttr.Id && !String.IsNullOrEmpty( av.Value ) && av.EntityId == reminderId ).FirstOrDefault().Value.AsIntegerOrNull();
-                if ( daysInStatus.HasValue )
+                reminder.LoadAttributes();
+                RecipientOption recipientOption = ( RecipientOption ) reminder.GetAttributeValue( _recipientOptionAttr.Key ).AsInteger();
+                ReminderConfiguration reminderConfiguration = GetReminderDetails( reminder, recipientOption );
+                Guid? reminderActivityGuid = reminder.GetAttributeValue( _connectionRequestReminderActivityAttr.Key ).AsGuidOrNull();
+                ConnectionActivityType reminderActivity = null;
+                if ( reminderActivityGuid.HasValue )
                 {
-                    connectionActivities = connectionActivities.Where( cra => cra.DaysInStatus >= daysInStatus.Value );
+                    reminderActivity = cat_svc.Get( reminderActivityGuid.Value );
                 }
 
-                var reminderActivityAVs = av_svc.Queryable().Where( av => av.AttributeId == _activityReminderAttr.Id && !String.IsNullOrEmpty( av.Value ) && av.EntityId == reminderId );
-                var reminderActivityTypes = cat_svc.Queryable().Join( reminderActivityAVs,
-                    cat => cat.Guid.ToString().ToUpper(),
-                    av => av.Value.ToUpper(),
-                    ( cat, av ) => cat
-                );
-                var reminderActivities = cra_svc.Queryable().Join( reminderActivityTypes,
-                    cra => cra.ConnectionActivityTypeId,
-                    cat => cat.Id,
-                    ( cra, cat ) => cra
-                );
-
-                //Connection Requests currently in the desired status with the indicator activity, that have been in status long enough to trigger reminder
-                var reminderConnectionRequests = connectionRequests.Join( connectionActivities,
-                    cr => cr.Id,
-                    cra => cra.ConnectionRequestId,
-                    ( cr, cra ) => cr
-                ).ToList();
-
-                if ( reminderConnectionRequests.Count > 0 )
+                for ( int k = 0; k < connections.Count(); k++ )
                 {
-                    ContentChannelItem reminder = reminderList[i];
-                    reminder.LoadAttributes();
-
-                    int? repeatInterval = reminder.GetAttributeValue( _repeatIntervalAttr.Key ).AsIntegerOrNull();
-                    int? maxReminders = reminder.GetAttributeValue( _maxReminderAttr.Key ).AsIntegerOrNull();
-                    RecipientOption recipientOption = ( RecipientOption ) reminder.GetAttributeValue( _recipientOptionAttr.Key ).AsInteger();
-                    Guid? reminderActivityGuid = reminder.GetAttributeValue( _connectionRequestReminderActivityAttr.Key ).AsGuidOrNull();
-                    ConnectionActivityType reminderActivity = null;
-                    if ( reminderActivityGuid.HasValue )
+                    ConnectionRequest connectionRequest = cr_svc.Get( connections[k].ConnectionRequestId );
+                    ReminderConfiguration connectionReminderConfiguration = reminderConfiguration;
+                    bool reminderSent = false;
+                    Dictionary<string, object> mergeFields = new Dictionary<string, object>();
+                    mergeFields.Add( "Requestor", connectionRequest.PersonAlias.Person );
+                    mergeFields.Add( "Connector", connectionRequest.ConnectorPersonAlias.Person );
+                    mergeFields.Add( "ConnectionRequest", connectionRequest );
+                    string commName = "Reminder for " + connectionRequest.PersonAlias.Person.FullName + "'s " + connectionRequest.ConnectionOpportunity.Name;
+                    if ( recipientOption == RecipientOption.Requestor )
                     {
-                        reminderActivity = cat_svc.Get( reminderActivityGuid.Value );
+                        connectionReminderConfiguration.Recipient = connectionRequest.PersonAlias.Person;
                     }
-
-                    ReminderConfiguration reminderConfiguration = GetReminderDetails( reminder, recipientOption );
-                    if ( reminderConfiguration.CommunicationTemplate == null || reminderConfiguration.CommunicationType == null || String.IsNullOrEmpty( reminder.GetAttributeValue( _recipientOptionAttr.Key ) ) )
+                    else if ( recipientOption == RecipientOption.Connector )
                     {
-                        _jobErrors.Add( "Unable to Process " + reminder.Title + " Reminders: Invalid Communication Configuration" );
-                        continue;
+                        connectionReminderConfiguration.Recipient = connectionRequest.ConnectorPersonAlias.Person;
                     }
-
-                    for ( int k = 0; k < reminderConnectionRequests.Count; k++ )
+                    else if ( recipientOption == RecipientOption.AttributeValue )
                     {
-                        ReminderConfiguration connectionReminderConfiguration = reminderConfiguration;
-                        ConnectionRequest connectionRequest = reminderConnectionRequests[k];
-                        var mostRecentIndicatorActivity = connectionActivities.FirstOrDefault( cra => cra.ConnectionRequestId == connectionRequest.Id );
-                        if ( mostRecentIndicatorActivity != null )
+                        string attrKey = reminder.GetAttributeValue( _recipientAttrKeyAttr.Key );
+                        string attrValue = connectionRequest.GetAttributeValue( attrKey );
+                        if ( EmailAddressFieldValidator.IsValid( attrValue ) )
                         {
-                            //Should send a reminder when request has been in status for x days, or the current day is a repeat interval and we have not maxed out reminder threshold
-                            bool needsReminder = false;
-                            if ( mostRecentIndicatorActivity.DaysInStatus == daysInStatus.Value )
+                            connectionReminderConfiguration.RecipientEmail = attrValue;
+                            if ( connectionReminderConfiguration.CommunicationType == CommunicationType.SMS )
                             {
-                                needsReminder = true;
-                            }
-                            else if ( mostRecentIndicatorActivity.DaysInStatus > daysInStatus.Value )
-                            {
-                                if ( repeatInterval.HasValue )
+                                if ( !String.IsNullOrEmpty( connectionReminderConfiguration.CommunicationTemplate.Message ) )
                                 {
-                                    int? isRepeatIntervalDay = ( mostRecentIndicatorActivity.DaysInStatus - daysInStatus.Value ) % repeatInterval.Value;
-                                    int expectedNumberOfReminders = ( int ) Math.Floor( ( decimal ) ( mostRecentIndicatorActivity.DaysInStatus - daysInStatus.Value ) / repeatInterval.Value ) + 1;
-                                    int actualNumberOfReminders = expectedNumberOfReminders;
-                                    if ( reminderActivity != null )
-                                    {
-                                        actualNumberOfReminders = cra_svc.Queryable().Where( cra => cra.ConnectionActivityTypeId == reminderActivity.Id && cra.CreatedDateTime > mostRecentIndicatorActivity.Activity.CreatedDateTime && cra.ConnectionRequestId == connectionRequest.Id ).Count();
-                                    }
-                                    if ( !maxReminders.HasValue || actualNumberOfReminders < maxReminders )
-                                    {
-                                        if ( isRepeatIntervalDay == 0 )
-                                        {
-                                            //Is Repeat Interval, Max Reminder Threshold Not Reached
-                                            needsReminder = true;
-                                        }
-                                        else if ( isRepeatIntervalDay > 0 && actualNumberOfReminders < expectedNumberOfReminders )
-                                        {
-                                            //Not Repeat Interval but Missing Reminders
-                                            needsReminder = true;
-                                        }
-                                        //Check if we got off the schedule and most recent reminder was less than repeat interval number of days ago
-                                        if ( reminderActivity != null && actualNumberOfReminders > 0 )
-                                        {
-                                            var mostRecentReminder = cra_svc.Queryable().Where( cra => cra.ConnectionActivityTypeId == reminderActivity.Id && ( cra.CreatedDateTime.HasValue && cra.CreatedDateTime > mostRecentIndicatorActivity.Activity.CreatedDateTime ) && cra.ConnectionRequestId == connectionRequest.Id ).OrderByDescending( cra => cra.CreatedDateTime ).FirstOrDefault();
-                                            DateTime? mostRecentReminderCreatedOn = mostRecentReminder.CreatedDateTime.Value.StartOfDay();
-                                            int daysSinceMostRecentReminder = ( int ) ( today - mostRecentReminderCreatedOn.Value ).TotalDays;
-                                            if ( daysSinceMostRecentReminder < repeatInterval )
-                                            {
-                                                needsReminder = false;
-                                            }
-                                        }
-                                    }
+                                    connectionReminderConfiguration.CommunicationType = CommunicationType.Email;
+                                }
+                                else
+                                {
+                                    connectionReminderConfiguration.CommunicationType = null;
                                 }
                             }
+                        }
+                        else
+                        {
+                            //If the value isn't a valid email address then we'll see if it is a person guid
+                            Guid? guid = attrValue.AsGuidOrNull();
+                            if ( guid.HasValue )
+                            {
+                                PersonAlias pa = pa_svc.Get( guid.Value );
+                                if ( pa != null && pa.Person != null )
+                                {
+                                    connectionReminderConfiguration.Recipient = pa.Person;
+                                }
+                            }
+                        }
+                    }
+                    if ( connectionReminderConfiguration.Recipient != null )
+                    {
+                        mergeFields.Add( "Person", connectionReminderConfiguration.Recipient );
+                    }
 
-                            if ( needsReminder )
+                    try
+                    {
+                        if ( connectionReminderConfiguration.CommunicationType == CommunicationType.Email )
+                        {
+                            RockEmailMessageRecipient recipient = null;
+                            if ( connectionReminderConfiguration.Recipient != null )
                             {
-                                bool reminderSent = false;
-                                Dictionary<string, object> mergeFields = new Dictionary<string, object>();
-                                mergeFields.Add( "Requestor", connectionRequest.PersonAlias.Person );
-                                mergeFields.Add( "Connector", connectionRequest.ConnectorPersonAlias.Person );
-                                mergeFields.Add( "ConnectionRequest", connectionRequest );
-                                string commName = "Reminder for " + connectionRequest.PersonAlias.Person.FullName + "'s " + connectionRequest.ConnectionOpportunity.Name;
-                                if ( recipientOption == RecipientOption.Requestor )
-                                {
-                                    connectionReminderConfiguration.Recipient = connectionRequest.PersonAlias.Person;
-                                }
-                                else if ( recipientOption == RecipientOption.Connector )
-                                {
-                                    connectionReminderConfiguration.Recipient = connectionRequest.ConnectorPersonAlias.Person;
-                                }
-                                else if ( recipientOption == RecipientOption.AttributeValue )
-                                {
-                                    string attrKey = reminder.GetAttributeValue( _recipientAttrKeyAttr.Key );
-                                    string attrValue = connectionRequest.GetAttributeValue( attrKey );
-                                    if ( EmailAddressFieldValidator.IsValid( attrValue ) )
-                                    {
-                                        connectionReminderConfiguration.RecipientEmail = attrValue;
-                                        if ( connectionReminderConfiguration.CommunicationType == CommunicationType.SMS )
-                                        {
-                                            if ( !String.IsNullOrEmpty( connectionReminderConfiguration.CommunicationTemplate.Message ) )
-                                            {
-                                                connectionReminderConfiguration.CommunicationType = CommunicationType.Email;
-                                            }
-                                            else
-                                            {
-                                                connectionReminderConfiguration.CommunicationType = null;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        //If the value isn't a valid email address then we'll see if it is a person guid
-                                        Guid? guid = attrValue.AsGuidOrNull();
-                                        if ( guid.HasValue )
-                                        {
-                                            PersonAlias pa = pa_svc.Get( guid.Value );
-                                            if ( pa != null && pa.Person != null )
-                                            {
-                                                connectionReminderConfiguration.Recipient = pa.Person;
-                                            }
-                                        }
-                                    }
-                                }
-                                if ( connectionReminderConfiguration.Recipient != null )
-                                {
-                                    mergeFields.Add( "Person", connectionReminderConfiguration.Recipient );
-                                }
-
-                                try
-                                {
-                                    if ( connectionReminderConfiguration.CommunicationType == CommunicationType.Email )
-                                    {
-                                        RockEmailMessageRecipient recipient = null;
-                                        if ( connectionReminderConfiguration.Recipient != null )
-                                        {
-                                            recipient = new RockEmailMessageRecipient( connectionReminderConfiguration.Recipient, mergeFields );
-                                        }
-                                        else if ( !String.IsNullOrEmpty( connectionReminderConfiguration.RecipientEmail ) )
-                                        {
-                                            recipient = RockEmailMessageRecipient.CreateAnonymous( connectionReminderConfiguration.RecipientEmail, null );
-                                        }
-                                        if ( recipient == null )
-                                        {
-                                            throw new Exception( "Unable to Generate Recipient for " + commName );
-                                        }
-                                        reminderSent = ProcessEmailReminder( connectionReminderConfiguration, commName, recipient, mergeFields );
-                                    }
-                                    else if ( connectionReminderConfiguration.CommunicationType == CommunicationType.SMS )
-                                    {
-                                        RockSMSMessageRecipient recipient = null;
-                                        if ( connectionReminderConfiguration.Recipient != null )
-                                        {
-                                            recipient = new RockSMSMessageRecipient( connectionReminderConfiguration.Recipient, connectionReminderConfiguration.Recipient.PhoneNumbers.GetFirstSmsNumber(), mergeFields );
-                                        }
-                                        if ( recipient == null )
-                                        {
-                                            throw new Exception( "Unable to Generate Recipient for " + commName );
-                                        }
-                                        reminderSent = ProcessSMSReminder( connectionReminderConfiguration, commName, recipient, mergeFields );
-                                    }
-                                }
-                                catch ( Exception ex )
-                                {
-                                    _jobErrors.Add( ex.Message );
-                                }
-                                if ( reminderSent )
-                                {
-                                    connectionRemindersProcessed++;
-                                    if ( reminderActivity != null )
-                                    {
-                                        AddReminderActivityToConnection( connectionRequest, reminderActivity, connectionReminderConfiguration, reminder );
-                                    }
-                                }
+                                recipient = new RockEmailMessageRecipient( connectionReminderConfiguration.Recipient, mergeFields );
                             }
+                            else if ( !String.IsNullOrEmpty( connectionReminderConfiguration.RecipientEmail ) )
+                            {
+                                recipient = RockEmailMessageRecipient.CreateAnonymous( connectionReminderConfiguration.RecipientEmail, null );
+                            }
+                            if ( recipient == null )
+                            {
+                                throw new Exception( "Unable to Generate Recipient for " + commName );
+                            }
+                            reminderSent = ProcessEmailReminder( connectionReminderConfiguration, commName, recipient, mergeFields );
+                        }
+                        else if ( connectionReminderConfiguration.CommunicationType == CommunicationType.SMS )
+                        {
+                            RockSMSMessageRecipient recipient = null;
+                            if ( connectionReminderConfiguration.Recipient != null )
+                            {
+                                recipient = new RockSMSMessageRecipient( connectionReminderConfiguration.Recipient, connectionReminderConfiguration.Recipient.PhoneNumbers.GetFirstSmsNumber(), mergeFields );
+                            }
+                            if ( recipient == null )
+                            {
+                                throw new Exception( "Unable to Generate Recipient for " + commName );
+                            }
+                            reminderSent = ProcessSMSReminder( connectionReminderConfiguration, commName, recipient, mergeFields );
+                        }
+                    }
+                    catch ( Exception ex )
+                    {
+                        _jobErrors.Add( ex.Message );
+                    }
+                    if ( reminderSent )
+                    {
+                        connectionRemindersProcessed++;
+                        if ( reminderActivity != null )
+                        {
+                            AddReminderActivityToConnection( connectionRequest, reminderActivity, connectionReminderConfiguration, reminder );
                         }
                     }
                 }
