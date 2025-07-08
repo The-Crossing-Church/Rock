@@ -15,20 +15,19 @@
 // </copyright>
 //
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using Quartz;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
-using System.Text.RegularExpressions;
 using System;
 using RestSharp;
 using Rock;
+using Rock.Jobs;
 using Newtonsoft.Json;
 using Rock.Security;
 using Rock.Web.Cache;
-using System.Security.Policy;
+using System.Text.RegularExpressions;
 
 namespace org.crossingchurch.PodcastSync.Jobs
 {
@@ -43,7 +42,7 @@ namespace org.crossingchurch.PodcastSync.Jobs
     [AttributeField( Rock.SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, "ContentChannelId", "55", "Megaphone Id Attribute" )]
     [BooleanField( "Run for all time", "Check this box if the job should run on all podcasts ever created, leave unchecked if it should only get podcasts that have been modified since the last run", ControlType = Rock.Field.Types.BooleanFieldType.BooleanControlType.Checkbox )]
     [DisallowConcurrentExecution]
-    public class PodcastSync : IJob
+    public class PodcastSync : RockJob
     {
         /// <summary> 
         /// Empty constructor for job initialization
@@ -67,48 +66,40 @@ namespace org.crossingchurch.PodcastSync.Jobs
         /// <see cref="ITrigger" /> fires that is associated with
         /// the <see cref="IJob" />.
         /// </summary>
-        public virtual void Execute( IJobExecutionContext context )
+        public override void Execute()
         {
-            JobDataMap dataMap = context.JobDetail.JobDataMap;
             RockContext rockContext = new RockContext();
-            int jobId = 0;
-            ServiceJob job = null;
-            Int32.TryParse( context.JobDetail.Description, out jobId );
-            if (jobId > 0)
-            {
-                job = new ServiceJobService( rockContext ).Get( jobId );
-            }
             Guid seriesDTGuid;
-            Guid.TryParse( dataMap.GetString( "PodcastSeries" ), out seriesDTGuid );
+            Guid.TryParse( GetAttributeValue( "PodcastSeries" ), out seriesDTGuid );
             DefinedType seriesDT;
             List<DefinedValue> series = new List<DefinedValue>();
-            if (seriesDTGuid != null)
+            if ( seriesDTGuid != null )
             {
                 seriesDT = new DefinedTypeService( rockContext ).Get( seriesDTGuid );
                 series = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == seriesDT.Id && dv.IsActive ).ToList();
                 series.LoadAttributes();
             }
             Guid ccGuid;
-            Guid.TryParse( dataMap.GetString( "ContentChannel" ), out ccGuid );
-            if (ccGuid != null)
+            Guid.TryParse( GetAttributeValue( "ContentChannel" ), out ccGuid );
+            if ( ccGuid != null )
             {
                 channel = new ContentChannelService( rockContext ).Get( ccGuid );
             }
-            embedLink = dataMap.GetString( "MegaphoneEmbedLink" );
+            embedLink = GetAttributeValue( "MegaphoneEmbedLink" );
             Guid idAttrGuid;
-            Guid.TryParse( dataMap.GetString( "MegaphoneIdAttribute" ), out idAttrGuid );
-            if (idAttrGuid != null)
+            Guid.TryParse( GetAttributeValue( "MegaphoneIdAttribute" ), out idAttrGuid );
+            if ( idAttrGuid != null )
             {
                 megaphoneIdAttr = new AttributeService( rockContext ).Get( idAttrGuid );
             }
-            string key = dataMap.GetString( "MegaphoneAPIKey" );
+            string key = GetAttributeValue( "MegaphoneAPIKey" );
             string megaphoneApiKey = Encryption.DecryptString( GlobalAttributesCache.Get().GetValue( key ) );
-            string netId = dataMap.GetString( "MegaphoneNetworkId" );
-            bool allTime = dataMap.GetBooleanFromString( "Runforalltime" );
+            string netId = GetAttributeValue( "MegaphoneNetworkId" );
+            bool allTime = GetAttributeValue( "Runforalltime" ).AsBoolean();
 
-            for (int i = 0; i < series.Count(); i++)
+            for ( int i = 0; i < series.Count(); i++ )
             {
-                var podcasts = GetPodcasts( netId, series[i].GetAttributeValue( "MegaphonePodcastId" ), megaphoneApiKey, allTime, job.LastRunDateTime );
+                var podcasts = GetPodcasts( netId, series[i].GetAttributeValue( "MegaphonePodcastId" ), megaphoneApiKey, allTime, ServiceJob.LastSuccessfulRunDateTime.Value.StartOfDay() );
                 ProcessPodcasts( podcasts, series[i].GetAttributeValue( "PodcastSeries" ), series[i].GetAttributeValue( "SeriesImage" ) );
             }
         }
@@ -118,18 +109,18 @@ namespace org.crossingchurch.PodcastSync.Jobs
             string url = $"https://cms.megaphone.fm/api/networks/{networkId}/podcasts/{podcastId}";
             string podcastInfo = MakeRequest( url, token );
             PodcastInfo info = JsonConvert.DeserializeObject<PodcastInfo>( podcastInfo );
-            double x = (double) info.episodesCount / 250;
-            int totalPages = (int) Math.Ceiling( x );
+            double x = ( double ) info.episodesCount / 250;
+            int totalPages = ( int ) Math.Ceiling( x );
             url += "/episodes";
-            if (!getAll)
+            if ( !getAll )
             {
                 url += "?updated_since=" + lastRun.Value.StartOfDay().ToString( "yyyy-MM-ddTHH:mm:ss" ) + "&";
             }
             List<Podcast> podcasts = new List<Podcast>();
-            for (int i = 1; i <= totalPages; i++)
+            for ( int i = 1; i <= totalPages; i++ )
             {
                 string pagination = "";
-                if (getAll)
+                if ( getAll )
                 {
                     pagination = "?";
                 }
@@ -155,25 +146,28 @@ namespace org.crossingchurch.PodcastSync.Jobs
         private void ProcessPodcasts( List<Podcast> podcasts, string series, string image )
         {
             RockContext context = new RockContext();
-            for (int i = 0; i < podcasts.Count(); i++)
+            ContentChannelItemService cci_svc = new ContentChannelItemService( context );
+            AttributeService attr_svc = new AttributeService( context );
+            AttributeQualifierService aq_svc = new AttributeQualifierService( context );
+
+            for ( int i = 0; i < podcasts.Count(); i++ )
             {
                 var podcast = podcasts[i];
                 ContentChannelItem item = null;
                 AttributeValue megaphoneId = new AttributeValueService( context ).Queryable().FirstOrDefault( av => av.AttributeId == megaphoneIdAttr.Id && av.Value == podcast.id.ToString() );
-                ContentChannelItemService cci_svc = new ContentChannelItemService( context );
-                if (megaphoneId != null)
+                if ( megaphoneId != null )
                 {
                     item = cci_svc.Get( megaphoneId.EntityId.Value );
                 }
-                if (megaphoneId == null || item == null)
+                if ( megaphoneId == null || item == null )
                 {
                     item = cci_svc.Queryable().Where( cci => cci.ContentChannelId == channel.Id ).ToList().FirstOrDefault( cci => cci.Title == podcast.title || podcast.title.Contains( cci.Title ) || podcast.title.StartsWith( cci.Title ) );
                 }
-                if (!podcast.draft)
+                if ( !podcast.draft )
                 {
                     podcast.pubdate = podcast.pubdate.ToLocalTime();
                 }
-                if (item == null)
+                if ( item == null )
                 {
                     item = new ContentChannelItem()
                     {
@@ -189,35 +183,58 @@ namespace org.crossingchurch.PodcastSync.Jobs
 
                 item.SetAttributeValue( "MegaphoneId", podcast.id.ToString() );
                 item.SetAttributeValue( "ContentAltText", podcast.title );
-                if (podcast.customFields != null)
+                if ( podcast.customFields != null )
                 {
-                    if (podcast.customFields.Author != null && !String.IsNullOrEmpty( podcast.customFields.Author.ToString() ))
+                    if ( podcast.customFields.Author != null && !String.IsNullOrEmpty( podcast.customFields.Author.ToString() ) )
                     {
                         int pid;
-                        if (Int32.TryParse( podcast.customFields.Author.ToString(), out pid ))
+                        if ( Int32.TryParse( podcast.customFields.Author.ToString(), out pid ) )
                         {
                             Person p = new PersonService( context ).Get( pid );
                             item.SetAttributeValue( "Author", p.PrimaryAlias.Guid );
                         }
                     }
-                    if (podcast.customFields.Author2 != null && !String.IsNullOrEmpty( podcast.customFields.Author2.ToString() ))
+                    if ( podcast.customFields.Author2 != null && !String.IsNullOrEmpty( podcast.customFields.Author2.ToString() ) )
                     {
                         int pid;
-                        if (Int32.TryParse( podcast.customFields.Author2.ToString(), out pid ))
+                        if ( Int32.TryParse( podcast.customFields.Author2.ToString(), out pid ) )
                         {
                             Person p = new PersonService( context ).Get( pid );
                             item.SetAttributeValue( "Author2", p.PrimaryAlias.Guid );
                         }
                     }
-                    if (!String.IsNullOrEmpty( podcast.customFields.Subseries ))
+                    if ( !String.IsNullOrEmpty( podcast.customFields.Subseries ) )
                     {
-                        item.SetAttributeValue( "Subseries", podcast.customFields.Subseries );
+                        string og_subseries = podcast.customFields.Subseries.Trim();
+                        string subseries = podcast.customFields.Subseries.Trim();
+                        var match = Regex.Match( subseries, "[^a-zA-Z\\s-]" );
+                        if ( match.Success )
+                        {
+                            subseries = Regex.Replace( subseries, "[^a-zA-Z\\s-]", "" );
+                        }
+                        subseries = subseries.Replace( "  ", " " );
+                        subseries = subseries.Replace( " ", "-" );
+                        item.SetAttributeValue( "Subseries", subseries );
+                        string qualifier = subseries + "^" + og_subseries;
+                        AttributeCache subseriesAttrCache = item.Attributes["Subseries"];
+                        var qualifierValues = subseriesAttrCache.QualifierValues["values"];
+                        if ( !qualifierValues.Value.Contains( qualifier ) )
+                        {
+                            //Add this new subseries to the list of available options
+                            var subseriesAttr = attr_svc.Get( subseriesAttrCache.Id );
+                            var attrQualifier = subseriesAttr.AttributeQualifiers.FirstOrDefault( aq => aq.Key == "values" );
+                            var values = attrQualifier.Value.Split( ',' ).ToList();
+                            values.Add( qualifier );
+                            values = values.Where(e => !String.IsNullOrEmpty( e ) ).ToList();
+                            attrQualifier.Value = String.Join( ",", values ).Replace("\n", "").Replace(",", ",\n");
+                            context.SaveChanges();
+                        }
                     }
-                    if (!String.IsNullOrEmpty( podcast.customFields.Guest ))
+                    if ( !String.IsNullOrEmpty( podcast.customFields.Guest ) )
                     {
                         item.SetAttributeValue( "Guest", podcast.customFields.Guest );
                     }
-                    if (!String.IsNullOrEmpty( podcast.customFields.MetaDescription ))
+                    if ( !String.IsNullOrEmpty( podcast.customFields.MetaDescription ) )
                     {
                         item.SetAttributeValue( "MetaDescription", podcast.customFields.MetaDescription );
                     }
@@ -226,14 +243,14 @@ namespace org.crossingchurch.PodcastSync.Jobs
                 item.Content = podcast.summary;
                 item.SetAttributeValue( "Link", embedLink + podcast.uid );
                 item.SetAttributeValue( "Series", series );
-                if (item.Title != podcast.title)
+                if ( item.Title != podcast.title )
                 {
                     item.Title = podcast.title;
                     new ContentChannelItemSlugService( context ).DeleteRange( item.ContentChannelItemSlugs );
                 }
                 item.StartDateTime = podcast.pubdate;
                 item.ModifiedDateTime = RockDateTime.Now;
-                if (item.Id == 0)
+                if ( item.Id == 0 )
                 {
                     cci_svc.Add( item );
                 }
