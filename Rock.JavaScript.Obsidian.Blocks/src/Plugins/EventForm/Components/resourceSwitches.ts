@@ -81,13 +81,10 @@ export default defineComponent({
             if (this.viewModel?.request.attributeValues) {
                 var av = (this.viewModel.request.attributeValues['Ministry'])
                 if(av != '') {
-                  let val = JSON.parse(av)
-                  var min = this.viewModel.ministries.filter(m => {
-                      return m.idKey == val.value
-                  })[0] as DefinedValueBag
-                  if (min?.value?.toLowerCase().includes("funeral")) {
-                      return true
-                  }
+                    let val = JSON.parse(av)
+                    if (val?.text?.toLowerCase().includes("funeral")) {
+                        return true
+                    }
                 }
             }
             return false
