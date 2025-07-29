@@ -886,6 +886,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
         /// <returns>If the Reminder was sent sucessfully or not</returns>
         private bool ProcessEmailReminder( ReminderConfiguration reminderConfiguration, string communicationName, RockEmailMessageRecipient recipient, Dictionary<string, object> mergeFields )
         {
+            var errorMessages = new List<string>();
             try
             {
                 RockEmailMessage communication = new RockEmailMessage()
@@ -899,7 +900,11 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     AdditionalMergeFields = mergeFields
                 };
                 communication.AddRecipient( recipient );
-                communication.Send();
+                communication.Send( out errorMessages );
+                if ( errorMessages.Count > 0 )
+                {
+                    throw new Exception( String.Join( "\n", errorMessages ) );
+                }
                 return true;
             }
             catch ( Exception ex )
