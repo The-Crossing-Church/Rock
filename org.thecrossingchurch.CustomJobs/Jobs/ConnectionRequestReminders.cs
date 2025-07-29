@@ -576,6 +576,8 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     ReminderActivityTypeId = ra_cat.Id
                 };
 
+            var x = reminderDetails.ToList();
+
             var mostRecentIndicator = cra_svc.Queryable()
                 .GroupBy( cra => new { cra.ConnectionRequestId, cra.ConnectionActivityTypeId } )
                 .Select( g => new
@@ -584,6 +586,8 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     g.Key.ConnectionActivityTypeId,
                     MostRecentIndicatorActivityDateTime = g.Max( cra => cra.CreatedDateTime )
                 } );
+
+            var y = mostRecentIndicator.ToList();
 
             var reminderActivityReminderAV =
                 av_svc.Queryable().Where( av =>
@@ -602,6 +606,8 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                         ReminderGuid = av.Value.ToUpper()
                     }
                 );
+
+            var z = reminderActivities.ToList();
 
             var connectionReminderActivity =
                 from reminder in reminderDetails
@@ -624,6 +630,8 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     ia.MostRecentIndicatorActivityDateTime,
                     ReminderActivityDateTime = ra.CreatedDateTime
                 };
+
+            var a = connectionReminderActivity.ToList();
 
             var possibleReminders = connectionReminderActivity
                 .Where( cra => !cra.ReminderActivityDateTime.HasValue || cra.ReminderActivityDateTime > cra.MostRecentIndicatorActivityDateTime )
@@ -651,6 +659,8 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     NumberOfReminders = g.Where( cr => cr.ReminderActivityDateTime.HasValue ).Count(),
 
                 } );
+
+            var b = possibleReminders.ToList();
 
             var connectionReminders = possibleReminders.Where( cr =>
                 cr.DaysRequestHasBeenInStatus >= cr.DaysInStatus &&
@@ -711,6 +721,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     }
                     else if ( recipientOption == RecipientOption.AttributeValue )
                     {
+                        connectionRequest.LoadAttributes();
                         string attrKey = reminder.GetAttributeValue( _recipientAttrKeyAttr.Key );
                         string attrValue = connectionRequest.GetAttributeValue( attrKey );
                         if ( EmailAddressFieldValidator.IsValid( attrValue ) )
@@ -908,11 +919,12 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
         /// <returns>If the Reminder was sent sucessfully or not</returns>
         private bool ProcessSMSReminder( ReminderConfiguration reminderConfiguration, string communicationName, RockSMSMessageRecipient recipient, Dictionary<string, object> mergeFields )
         {
+            var errorMessages = new List<string>();
             try
             {
                 RockSMSMessage communication = new RockSMSMessage()
                 {
-                    Message = reminderConfiguration.CommunicationTemplate.Message,
+                    Message = reminderConfiguration.CommunicationTemplate.SMSMessage,
                     CreateCommunicationRecord = true,
                     AdditionalMergeFields = mergeFields
                 };
@@ -921,7 +933,11 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     communication.FromSystemPhoneNumber = SystemPhoneNumberCache.Get( reminderConfiguration.CommunicationTemplate.SmsFromSystemPhoneNumberId.Value );
                 }
                 communication.AddRecipient( recipient );
-                communication.Send();
+                communication.Send( out errorMessages );
+                if ( errorMessages.Count > 0 )
+                {
+                    throw new Exception( String.Join( "\n", errorMessages ) );
+                }
                 return true;
             }
             catch ( Exception ex )
