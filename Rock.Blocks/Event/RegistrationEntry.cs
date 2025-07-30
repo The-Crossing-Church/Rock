@@ -3986,7 +3986,7 @@ namespace Rock.Blocks.Event
 
             // Determine the starting point. External registration updates are
             // currently only supported if we are not doing inline signatures.
-            var allowExternalRegistrationUpdates = context.RegistrationSettings.AllowExternalRegistrationUpdates && !context.RegistrationSettings.IsInlineSignatureRequired;
+            var allowExternalRegistrationUpdates = context.RegistrationSettings.AllowExternalRegistrationUpdates; // && !context.RegistrationSettings.IsInlineSignatureRequired;
             var allowRegistrationUpdates = !isExistingRegistration || allowExternalRegistrationUpdates;
             var startAtBeginning = !isExistingRegistration ||
                 ( allowExternalRegistrationUpdates && PageParameter( PageParameterKey.StartAtBeginning ).AsBoolean() );
