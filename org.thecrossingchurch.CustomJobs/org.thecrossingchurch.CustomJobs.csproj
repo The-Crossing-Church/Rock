@@ -141,6 +141,7 @@
     <Compile Include="Jobs\MensGroupSync.cs" />
     <Compile Include="Jobs\PodcastSubseriesUpdates.cs" />
     <Compile Include="Jobs\PodcastSync.cs" />
+    <Compile Include="Jobs\PopulateEngagementAttributes.cs" />
     <Compile Include="Jobs\StressTest.cs" />
     <Compile Include="Jobs\SyncEventCalendar.cs" />
     <Compile Include="Jobs\PiiAlert.cs" />
