@@ -708,7 +708,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     bool reminderSent = false;
                     Dictionary<string, object> mergeFields = new Dictionary<string, object>();
                     mergeFields.Add( "Requestor", connectionRequest.PersonAlias.Person );
-                    mergeFields.Add( "Connector", connectionRequest.ConnectorPersonAlias.Person );
+                    mergeFields.Add( "Connector", connectionRequest.ConnectorPersonAliasId.HasValue ? connectionRequest.ConnectorPersonAlias.Person : null );
                     mergeFields.Add( "ConnectionRequest", connectionRequest );
                     string commName = "Reminder for " + connectionRequest.PersonAlias.Person.FullName + "'s " + connectionRequest.ConnectionOpportunity.Name;
                     if ( recipientOption == RecipientOption.Requestor )
@@ -717,7 +717,14 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                     }
                     else if ( recipientOption == RecipientOption.Connector )
                     {
-                        connectionReminderConfiguration.Recipient = connectionRequest.ConnectorPersonAlias.Person;
+                        if ( connectionRequest.ConnectorPersonAliasId.HasValue )
+                        {
+                            connectionReminderConfiguration.Recipient = connectionRequest.ConnectorPersonAlias.Person;
+                        }
+                        else
+                        {
+                            _jobErrors.Add( "No Connector on " + commName );
+                        }
                     }
                     else if ( recipientOption == RecipientOption.AttributeValue )
                     {
@@ -784,7 +791,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                             {
                                 recipient = new RockSMSMessageRecipient( connectionReminderConfiguration.Recipient, connectionReminderConfiguration.Recipient.PhoneNumbers.GetFirstSmsNumber(), mergeFields );
                             }
-                            if ( recipient == null )
+                            if ( recipient == null || String.IsNullOrEmpty( recipient.SMSNumber ) )
                             {
                                 throw new Exception( "Unable to Generate Recipient for " + commName );
                             }
@@ -962,36 +969,44 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
         /// <param name="reminder">The Content Channel Item with the reminder configuration.</param>
         private void AddReminderActivityToConnection( ConnectionRequest connectionRequest, ConnectionActivityType reminderActivity, ReminderConfiguration reminderConfiguration, ContentChannelItem reminder )
         {
-            string note = "Reminder " + reminder.Title + " sent to ";
-            ConnectionRequestActivityService cra_svc = new ConnectionRequestActivityService( _context );
-            if ( reminderConfiguration.Recipient != null )
+            try
             {
-                note += reminderConfiguration.Recipient.FullName + " at ";
-                if ( reminderConfiguration.CommunicationType == CommunicationType.Email )
+                string note = "Reminder " + reminder.Title + " sent to ";
+                ConnectionRequestActivityService cra_svc = new ConnectionRequestActivityService( _context );
+                if ( reminderConfiguration.Recipient != null )
                 {
-                    note += reminderConfiguration.Recipient.Email + ".";
+                    note += reminderConfiguration.Recipient.FullName + " at ";
+                    if ( reminderConfiguration.CommunicationType == CommunicationType.Email )
+                    {
+                        note += reminderConfiguration.Recipient.Email + ".";
+                    }
+                    else if ( reminderConfiguration.CommunicationType == CommunicationType.SMS )
+                    {
+                        note += reminderConfiguration.Recipient.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() ).NumberFormatted + ".";
+                    }
                 }
-                else if ( reminderConfiguration.CommunicationType == CommunicationType.SMS )
+                else
                 {
-                    note += reminderConfiguration.Recipient.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() ).NumberFormatted + ".";
+                    note += reminderConfiguration.RecipientEmail + ".";
                 }
+                var reminderSentActivity = new ConnectionRequestActivity()
+                {
+                    ConnectionActivityTypeId = reminderActivity.Id,
+                    ConnectionRequestId = connectionRequest.Id,
+                    ConnectionOpportunityId = connectionRequest.ConnectionOpportunityId,
+                    Note = note
+                };
+                cra_svc.Add( reminderSentActivity );
+                _context.SaveChanges();
+                reminderSentActivity.LoadAttributes();
+                reminderSentActivity.SetAttributeValue( _activityReminderAttr.Key, reminder.Guid );
+                reminderSentActivity.SaveAttributeValue( _activityReminderAttr.Key );
             }
-            else
+            catch ( Exception ex )
             {
-                note += reminderConfiguration.RecipientEmail + ".";
+                ExceptionLogService.LogException( ex );
+                _jobErrors.Add( "Error Adding Activity to : " + connectionRequest.PersonAlias.Person.FullName + "'s " + connectionRequest.ConnectionOpportunity.Name + "\n" + ex.Message );
             }
-            var reminderSentActivity = new ConnectionRequestActivity()
-            {
-                ConnectionActivityTypeId = reminderActivity.Id,
-                ConnectionRequestId = connectionRequest.Id,
-                ConnectionOpportunityId = connectionRequest.ConnectionOpportunityId,
-                Note = note
-            };
-            cra_svc.Add( reminderSentActivity );
-            _context.SaveChanges();
-            reminderSentActivity.LoadAttributes();
-            reminderSentActivity.SetAttributeValue( _activityReminderAttr.Key, reminder.Guid );
-            reminderSentActivity.SaveAttributeValue( _activityReminderAttr.Key );
         }
 
         private class ConnectionActivityResult
