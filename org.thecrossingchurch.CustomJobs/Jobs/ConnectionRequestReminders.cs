@@ -780,7 +780,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                             }
                             if ( recipient == null )
                             {
-                                throw new Exception( "Unable to Generate Recipient for " + commName );
+                                throw new Exception( "Unable to Generate Email Recipient for " + commName );
                             }
                             reminderSent = ProcessEmailReminder( connectionReminderConfiguration, commName, recipient, mergeFields );
                         }
@@ -793,7 +793,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                             }
                             if ( recipient == null || String.IsNullOrEmpty( recipient.SMSNumber ) )
                             {
-                                throw new Exception( "Unable to Generate Recipient for " + commName );
+                                throw new Exception( "Unable to Generate SMS Recipient for " + commName );
                             }
                             reminderSent = ProcessSMSReminder( connectionReminderConfiguration, commName, recipient, mergeFields );
                         }
