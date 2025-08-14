@@ -4118,9 +4118,7 @@
     <Compile Include="Web\UI\Controls\Pickers\WorkflowActionTypePicker.cs" />
     <Compile Include="Web\UI\Controls\Pickers\ConnectionRequestPicker.cs" />
     <Compile Include="Web\UI\Controls\RangeSlider.cs" />
-    <Compile Include="Security\Authentication\Facebook.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Security\Authentication\Facebook.cs" />
     <Compile Include="Search\Person\Email.cs" />
     <Compile Include="Search\Person\Name.cs" />
     <Compile Include="Search\Person\Phone.cs" />
