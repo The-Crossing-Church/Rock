@@ -100,7 +100,7 @@ namespace org.crossingchurch.PodcastSync.Jobs
             for ( int i = 0; i < series.Count(); i++ )
             {
                 var podcasts = GetPodcasts( netId, series[i].GetAttributeValue( "MegaphonePodcastId" ), megaphoneApiKey, allTime, ServiceJob.LastSuccessfulRunDateTime.Value.StartOfDay() );
-                ProcessPodcasts( podcasts, series[i].GetAttributeValue( "PodcastSeries" ), series[i].GetAttributeValue( "SeriesImage" ) );
+                ProcessPodcasts( podcasts, series[i].GetAttributeValue( "PodcastSeries" ), series[i].GetAttributeValue( "SeriesImage" ), series[i].GetAttributeValue( "StartDate" ).AsDateTime(), series[i].GetAttributeValue( "EndDate" ).AsDateTime() );
             }
         }
 
@@ -143,16 +143,28 @@ namespace org.crossingchurch.PodcastSync.Jobs
             return response.Content;
         }
 
-        private void ProcessPodcasts( List<Podcast> podcasts, string series, string image )
+        private void ProcessPodcasts( List<Podcast> podcasts, string series, string image, DateTime? startDate, DateTime? endDate )
         {
             RockContext context = new RockContext();
             ContentChannelItemService cci_svc = new ContentChannelItemService( context );
             AttributeService attr_svc = new AttributeService( context );
+            AttributeValueService av_svc = new AttributeValueService( context );
             AttributeQualifierService aq_svc = new AttributeQualifierService( context );
+            DateTime? modifiedEndDate = null;
+            if ( endDate.HasValue )
+            {
+                modifiedEndDate = endDate.Value.EndOfDay();
+            }
+
+            var seriesAttr = av_svc.Queryable().Where( av => av.AttributeId == 19396 && av.PersistedTextValue == series );
 
             for ( int i = 0; i < podcasts.Count(); i++ )
             {
                 var podcast = podcasts[i];
+                if ( podcast.title.StartsWith( "Draft Episode" ) )
+                {
+                    continue;
+                }
                 ContentChannelItem item = null;
                 AttributeValue megaphoneId = new AttributeValueService( context ).Queryable().FirstOrDefault( av => av.AttributeId == megaphoneIdAttr.Id && av.Value == podcast.id.ToString() );
                 if ( megaphoneId != null )
@@ -161,11 +173,25 @@ namespace org.crossingchurch.PodcastSync.Jobs
                 }
                 if ( megaphoneId == null || item == null )
                 {
-                    item = cci_svc.Queryable().Where( cci => cci.ContentChannelId == channel.Id ).ToList().FirstOrDefault( cci => cci.Title == podcast.title || podcast.title.Contains( cci.Title ) || podcast.title.StartsWith( cci.Title ) );
+                    item = cci_svc.Queryable().Where( cci => cci.ContentChannelId == channel.Id )
+                        .Join( seriesAttr,
+                            cci => cci.Id,
+                            av => av.EntityId,
+                            ( cci, av ) => cci
+                        ).ToList()
+                        .FirstOrDefault( cci => cci.Title == podcast.title || podcast.title.Contains( cci.Title ) || podcast.title.StartsWith( cci.Title ) );
                 }
                 if ( !podcast.draft )
                 {
                     podcast.pubdate = podcast.pubdate.ToLocalTime();
+                }
+                if ( startDate.HasValue && podcast.pubdate < startDate.Value )
+                {
+                    continue;
+                }
+                if ( modifiedEndDate.HasValue && podcast.pubdate > modifiedEndDate.Value )
+                {
+                    continue;
                 }
                 if ( item == null )
                 {
@@ -225,8 +251,8 @@ namespace org.crossingchurch.PodcastSync.Jobs
                             var attrQualifier = subseriesAttr.AttributeQualifiers.FirstOrDefault( aq => aq.Key == "values" );
                             var values = attrQualifier.Value.Split( ',' ).ToList();
                             values.Add( qualifier );
-                            values = values.Where(e => !String.IsNullOrEmpty( e ) ).ToList();
-                            attrQualifier.Value = String.Join( ",", values ).Replace("\n", "").Replace(",", ",\n");
+                            values = values.Where( e => !String.IsNullOrEmpty( e ) ).ToList();
+                            attrQualifier.Value = String.Join( ",", values ).Replace( "\n", "" ).Replace( ",", ",\n" );
                             context.SaveChanges();
                         }
                     }

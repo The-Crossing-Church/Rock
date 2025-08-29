@@ -307,10 +307,11 @@ namespace Rock.Jobs
             var smsNumber = person.PhoneNumbers.GetFirstSmsNumber();
 
             //Custom Code to Also Check the Group Member's Communication Preference
-            var groupMember = group.Members.FirstOrDefault( gm => gm.PersonId == person.Id );
+            //var groupMember = group.Members.FirstOrDefault( gm => gm.PersonId == person.Id );
 
-            if ( ( person.CommunicationPreference == CommunicationType.SMS ||
-                ( groupMember != null && groupMember.CommunicationPreference == CommunicationType.SMS ) )
+            //if ( ( person.CommunicationPreference == CommunicationType.SMS ||
+            //    ( groupMember != null && groupMember.CommunicationPreference == CommunicationType.SMS ) )
+            if ( person.CommunicationPreference == CommunicationType.SMS
                 && !string.IsNullOrWhiteSpace( reminder.SMSMessage )
                 && reminder.SmsFromSystemPhoneNumberId.HasValue
                 && !string.IsNullOrWhiteSpace( smsNumber ) )
