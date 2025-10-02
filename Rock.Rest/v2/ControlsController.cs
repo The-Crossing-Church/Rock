@@ -1014,10 +1014,10 @@ namespace Rock.Rest.v2
                 var accountsList = accountsQry.AsNoTracking().ToList();
 
                 string accountHeaderTemplate = options.AccountHeaderTemplate;
-                if ( accountHeaderTemplate.IsNullOrWhiteSpace() )
-                {
+                //if ( accountHeaderTemplate.IsNullOrWhiteSpace() )
+                //{
                     accountHeaderTemplate = "{{ Account.PublicName }}";
-                }
+                //}
 
                 if ( options.OrderBySelectableAccountsIndex )
                 {
