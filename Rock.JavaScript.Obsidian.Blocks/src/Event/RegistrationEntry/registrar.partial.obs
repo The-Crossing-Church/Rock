@@ -1,7 +1,7 @@
 ﻿<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
 <template>
     <div v-if="isRegistrarPanelShown" class="well">
-        <h4>This {{ registrationEntryTerms.registrationSingularTitleCase }} Was Completed By</h4>
+        <h4>This {{ registrationEntryTerms.registrationSingularTitleCase }} Is Being Submitted By</h4>
         <template v-if="useLoggedInPersonForRegistrar">
             <div class="row">
                 <div class="col-md-6 col-sm-6">

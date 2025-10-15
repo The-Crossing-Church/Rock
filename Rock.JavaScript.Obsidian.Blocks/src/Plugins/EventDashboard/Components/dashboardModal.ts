@@ -184,7 +184,7 @@ export default defineComponent({
       getConflictingDates(conflict: any) {
         if(conflict.attributeValues) {
           if(conflict.attributeValues.EventDate != "") {
-            return DateTime.fromFormat(conflict.attributeValues.EventDate.trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy")
+            return DateTime.fromFormat(conflict.attributeValues.EventDate.substring(0, 10).trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy")
           } else if(conflict.attributeValues.EventDates) {
             let dates = conflict.attributeValues.EventDates.split(",").map((d: string) => d.trim())
             let selectedDates = this.request?.attributeValues.EventDates.split(",").map((d: string) => d.trim())

@@ -559,17 +559,20 @@ namespace org.crossingchurch.HubspotIntegration.Jobs
                 }
 
                 HSContactQueryResult contactResults = JsonConvert.DeserializeObject<HSContactQueryResult>( contactResponse.Content );
-                //Contacts with emails that do not already have Rock IDs in the desired business unit (if applicaable) 
-                contacts.AddRange( contactResults.results.Where( c =>
-                    ( c.properties["rock_id"] == null || c.properties["rock_id"] == "" || c.properties["rock_id"] == "0" ) &&
-                    ( ( c.email != null && c.email != "" ) || ( c.phone != null && c.phone != "" ) ) &&
-                    ( String.IsNullOrEmpty( businessUnit ) ||
-                        ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
-                          c.properties["hs_all_assigned_business_unit_ids"] != "" &&
-                          c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+                //Contacts with emails that do not already have Rock IDs in the desired business unit (if applicaable)
+                if ( contactResults.results != null )
+                {
+                    contacts.AddRange( contactResults.results.Where( c =>
+                        ( c.properties["rock_id"] == null || c.properties["rock_id"] == "" || c.properties["rock_id"] == "0" ) &&
+                        ( ( c.email != null && c.email != "" ) || ( c.phone != null && c.phone != "" ) ) &&
+                        ( String.IsNullOrEmpty( businessUnit ) ||
+                            ( c.properties["hs_all_assigned_business_unit_ids"] != null &&
+                              c.properties["hs_all_assigned_business_unit_ids"] != "" &&
+                              c.properties["hs_all_assigned_business_unit_ids"].Split( ';' ).Contains( businessUnit )
+                            )
                         )
-                    )
-                ).ToList() );
+                    ).ToList() );
+                }
 
                 //For Testing
                 if ( contactLimit.HasValue && contacts.Count >= contactLimit )
