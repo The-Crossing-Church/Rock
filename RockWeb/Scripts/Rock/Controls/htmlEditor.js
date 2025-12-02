@@ -16,8 +16,7 @@
                     ['para', ['paragraph']],
                     ['plugins1', ['rockmergefield']],
                     ['plugins2', ['rockimagebrowser', 'rockfilebrowser', 'rockassetmanager']],
-                    //['plugins3', ['rockpastetext', 'rockpastefromword']],
-                    ['plugins3', ['rockpastetext']],
+                    ['plugins3', ['rockpastetext', 'rockpastefromword']],
                     ['style_group2', ['undo', 'redo']]
                 ],
 
@@ -34,8 +33,7 @@
                     ['para', ['paragraph']],
                     ['plugins1', ['rockmergefield']],
                     ['plugins2', ['rockimagebrowser', 'rockfilebrowser', 'rockassetmanager']],
-                    //['plugins3', ['rockpastetext', 'rockpastefromword']],
-                    ['plugins3', ['rockpastetext']],
+                    ['plugins3', ['rockpastetext', 'rockpastefromword']],
                     ['help_group1', ['help']]
                 ]
         };
