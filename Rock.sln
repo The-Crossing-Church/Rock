@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32804.467
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "RockWeb", "RockWeb\", "{E43B5D55-BED0-4E74-BF97-9327F9A9D656}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "RockWeb(1)", "RockWeb\", "{E43B5D55-BED0-4E74-BF97-9327F9A9D656}"
 	ProjectSection(ProjectDependencies) = postProject
 		{00EDCB8D-EF33-459C-AD62-02876BD24DFF} = {00EDCB8D-EF33-459C-AD62-02876BD24DFF}
 		{05BAAF85-9C53-4CCD-A535-036427B0DF72} = {05BAAF85-9C53-4CCD-A535-036427B0DF72}
@@ -42,57 +42,57 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "RockWeb", "RockWeb\", "{E43
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.7.2"
 		ProjectReferences = "{69AC175C-3997-4514-8C9E-5D24811928C2}|SignNowSDK.dll;"
-		Debug.AspNetCompiler.VirtualPath = "/localhost_6229"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_6230"
 		Debug.AspNetCompiler.PhysicalPath = "RockWeb\"
-		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_6229\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_6230\"
 		Debug.AspNetCompiler.Updateable = "true"
 		Debug.AspNetCompiler.ForceOverwrite = "true"
 		Debug.AspNetCompiler.FixedNames = "false"
 		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.VirtualPath = "/localhost_6229"
+		Release.AspNetCompiler.VirtualPath = "/localhost_6230"
 		Release.AspNetCompiler.PhysicalPath = "RockWeb\"
-		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_6229\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_6230\"
 		Release.AspNetCompiler.Updateable = "true"
 		Release.AspNetCompiler.ForceOverwrite = "true"
 		Release.AspNetCompiler.FixedNames = "false"
 		Release.AspNetCompiler.Debug = "False"
-		VWDPort = "6229"
+		VWDPort = "6230"
 		SlnRelativePath = "RockWeb\"
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotLiquid", "DotLiquid\DotLiquid.csproj", "{00EDCB8D-EF33-459C-AD62-02876BD24DFF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotLiquid", "DotLiquid\DotLiquid.csproj", "{00EDCB8D-EF33-459C-AD62-02876BD24DFF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock", "Rock\Rock.csproj", "{185A31D7-3037-4DAE-8797-0459849A84BD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock", "Rock\Rock.csproj", "{185A31D7-3037-4DAE-8797-0459849A84BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Mailgun", "Rock.Mailgun\Rock.Mailgun.csproj", "{D6B19C0D-DA5E-4F75-8001-04DED86B741F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Mailgun", "Rock.Mailgun\Rock.Mailgun.csproj", "{D6B19C0D-DA5E-4F75-8001-04DED86B741F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Migrations", "Rock.Migrations\Rock.Migrations.csproj", "{704740D8-B539-4560-9F8C-681670C9D6AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Migrations", "Rock.Migrations\Rock.Migrations.csproj", "{704740D8-B539-4560-9F8C-681670C9D6AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.NMI", "Rock.NMI\Rock.NMI.csproj", "{F3692909-952D-4C4A-B2D2-D90D0083CF53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.NMI", "Rock.NMI\Rock.NMI.csproj", "{F3692909-952D-4C4A-B2D2-D90D0083CF53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.PayFlowPro", "Rock.PayFlowPro\Rock.PayFlowPro.csproj", "{A005D091-140E-4EC4-BCDF-CF7D42BB702C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.PayFlowPro", "Rock.PayFlowPro\Rock.PayFlowPro.csproj", "{A005D091-140E-4EC4-BCDF-CF7D42BB702C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Rest", "Rock.Rest\Rock.Rest.csproj", "{ADD1EDD0-A4CB-4E82-B6AD-6AD1D556DEAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Rest", "Rock.Rest\Rock.Rest.csproj", "{ADD1EDD0-A4CB-4E82-B6AD-6AD1D556DEAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Version", "Rock.Version\Rock.Version.csproj", "{6FE0930C-6832-4C2F-8A76-D4E4A2D80DDF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Version", "Rock.Version\Rock.Version.csproj", "{6FE0930C-6832-4C2F-8A76-D4E4A2D80DDF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.SignNow", "Rock.SignNow\Rock.SignNow.csproj", "{1F5956F2-2B0F-49B8-AAF1-2CC28F01426A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.SignNow", "Rock.SignNow\Rock.SignNow.csproj", "{1F5956F2-2B0F-49B8-AAF1-2CC28F01426A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Tests", "Rock.Tests\Rock.Tests.csproj", "{F6BEC5AC-D8E1-48ED-921F-D7D2EB58BF7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Tests", "Rock.Tests\Rock.Tests.csproj", "{F6BEC5AC-D8E1-48ED-921F-D7D2EB58BF7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignNowSDK", "SignNowSDK\SignNowSDK.csproj", "{69AC175C-3997-4514-8C9E-5D24811928C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Slingshot", "Rock.Slingshot\Rock.Slingshot.csproj", "{C1DD2402-5FB2-411E-BF8D-5D9CB3A58E8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Slingshot", "Rock.Slingshot\Rock.Slingshot.csproj", "{C1DD2402-5FB2-411E-BF8D-5D9CB3A58E8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Slingshot.Model", "Rock.Slingshot.Model\Rock.Slingshot.Model.csproj", "{962944DE-8BF4-4175-B55A-E75CF7918272}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Slingshot.Model", "Rock.Slingshot.Model\Rock.Slingshot.Model.csproj", "{962944DE-8BF4-4175-B55A-E75CF7918272}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.StatementGenerator", "Rock.StatementGenerator\Rock.StatementGenerator.csproj", "{42EDF2DD-5284-4B64-93C3-5186619D2B14}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.StatementGenerator", "Rock.StatementGenerator\Rock.StatementGenerator.csproj", "{42EDF2DD-5284-4B64-93C3-5186619D2B14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Security.Authentication.Auth0", "Rock.Security.Authentication.Auth0\Rock.Security.Authentication.Auth0.csproj", "{5055F482-72C7-4CC9-8ED0-A77090C777DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Security.Authentication.Auth0", "Rock.Security.Authentication.Auth0\Rock.Security.Authentication.Auth0.csproj", "{5055F482-72C7-4CC9-8ED0-A77090C777DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.WebStartup", "Rock.WebStartup\Rock.WebStartup.csproj", "{515E22E4-4B9B-4886-8477-E5B312B75EB4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.WebStartup", "Rock.WebStartup\Rock.WebStartup.csproj", "{515E22E4-4B9B-4886-8477-E5B312B75EB4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Checkr", "Rock.Checkr\Rock.Checkr.csproj", "{94A5F880-31AE-4889-B9BE-BA1FDC258E83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Checkr", "Rock.Checkr\Rock.Checkr.csproj", "{94A5F880-31AE-4889-B9BE-BA1FDC258E83}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{585C34CC-D99C-4E21-9957-FDCB364DD275}"
 	ProjectSection(SolutionItems) = preProject
@@ -103,39 +103,39 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Rock.sln.vsspell = Rock.sln.vsspell
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Tests.Integration", "Rock.Tests.Integration\Rock.Tests.Integration.csproj", "{9BB83636-1C9C-4A3F-9C18-5CFDB1EC720A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Tests.Integration", "Rock.Tests.Integration\Rock.Tests.Integration.csproj", "{9BB83636-1C9C-4A3F-9C18-5CFDB1EC720A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.DownhillCss", "Rock.DownhillCss\Rock.DownhillCss.csproj", "{CADD9206-2C6B-42E4-B20B-2DFC3EB4D6D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.DownhillCss", "Rock.DownhillCss\Rock.DownhillCss.csproj", "{CADD9206-2C6B-42E4-B20B-2DFC3EB4D6D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Tests.Shared", "Rock.Tests.Shared\Rock.Tests.Shared.csproj", "{D8DE32C9-25DA-4897-A750-7DD8755B3D45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Tests.Shared", "Rock.Tests.Shared\Rock.Tests.Shared.csproj", "{D8DE32C9-25DA-4897-A750-7DD8755B3D45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.SendGrid", "Rock.SendGrid\Rock.SendGrid.csproj", "{205F439A-2CCC-42C1-B1AB-09E1B629D88C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.SendGrid", "Rock.SendGrid\Rock.SendGrid.csproj", "{205F439A-2CCC-42C1-B1AB-09E1B629D88C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Oidc", "Rock.Oidc\Rock.Oidc.csproj", "{8CCB8E2A-073C-48CB-B31A-621EC5430A42}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Oidc", "Rock.Oidc\Rock.Oidc.csproj", "{8CCB8E2A-073C-48CB-B31A-621EC5430A42}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Blocks", "Rock.Blocks\Rock.Blocks.csproj", "{E8C5F154-201F-4C67-BCDC-34787DEFFEAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Blocks", "Rock.Blocks\Rock.Blocks.csproj", "{E8C5F154-201F-4C67-BCDC-34787DEFFEAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.ViewModels", "Rock.ViewModels\Rock.ViewModels.csproj", "{05BAAF85-9C53-4CCD-A535-036427B0DF72}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.ViewModels", "Rock.ViewModels\Rock.ViewModels.csproj", "{05BAAF85-9C53-4CCD-A535-036427B0DF72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Lava", "Rock.Lava\Rock.Lava.csproj", "{37E293DD-F282-4A34-91FA-5FB8503D5672}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Lava", "Rock.Lava\Rock.Lava.csproj", "{37E293DD-F282-4A34-91FA-5FB8503D5672}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Lava.Shared", "Rock.Lava.Shared\Rock.Lava.Shared.csproj", "{8820CD93-70EE-496D-B17B-0C4C68DD4957}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Lava.Shared", "Rock.Lava.Shared\Rock.Lava.Shared.csproj", "{8820CD93-70EE-496D-B17B-0C4C68DD4957}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Common.Web", "Rock.Common.Web\Rock.Common.Web.csproj", "{50174698-828B-49FB-8DD6-6F9D1B4651A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Common.Web", "Rock.Common.Web\Rock.Common.Web.csproj", "{50174698-828B-49FB-8DD6-6F9D1B4651A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Common", "Rock.Common\Rock.Common.csproj", "{13568622-324E-4493-B605-C9896E725D30}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Common", "Rock.Common\Rock.Common.csproj", "{13568622-324E-4493-B605-C9896E725D30}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Update", "Rock.Update\Rock.Update.csproj", "{B62B27C8-1F77-43CF-8EE7-30DE7F93FACD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Update", "Rock.Update\Rock.Update.csproj", "{B62B27C8-1F77-43CF-8EE7-30DE7F93FACD}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript.EditorJs", "Rock.JavaScript.EditorJs\Rock.JavaScript.EditorJs.esproj", "{DEBE3E84-BE02-4840-9699-F1AEDEF26D49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Lava.Fluid", "Rock.Lava.Fluid\Rock.Lava.Fluid.csproj", "{AFCE6F84-BF3A-4182-A816-8FB47AFC0305}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Lava.Fluid", "Rock.Lava.Fluid\Rock.Lava.Fluid.csproj", "{AFCE6F84-BF3A-4182-A816-8FB47AFC0305}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript.Obsidian", "Rock.JavaScript.Obsidian\Rock.JavaScript.Obsidian.esproj", "{A4FB4B9B-3564-4C25-938C-4350A9515B24}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", "{7A0E1B93-44CB-4EB4-BF4D-433253A29D52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Enums", "Rock.Enums\Rock.Enums.csproj", "{61DECE2B-0434-435E-8D65-49A4FDF98365}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Enums", "Rock.Enums\Rock.Enums.csproj", "{61DECE2B-0434-435E-8D65-49A4FDF98365}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript.Obsidian.Blocks", "Rock.JavaScript.Obsidian.Blocks\Rock.JavaScript.Obsidian.Blocks.esproj", "{11ACFF28-4199-450B-8A43-F59ADEF63A99}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -144,13 +144,13 @@ Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript.Obsidian.Bl
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript", "Rock.JavaScript\Rock.JavaScript.esproj", "{A5935F9E-DA78-46D6-806F-39C782C6A3C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Tests.Integration.Performance", "Rock.Tests.Integration.Performance\Rock.Tests.Integration.Performance.csproj", "{B0DF7CC9-5300-48E7-B173-8CEE492DB2D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Tests.Integration.Performance", "Rock.Tests.Integration.Performance\Rock.Tests.Integration.Performance.csproj", "{B0DF7CC9-5300-48E7-B173-8CEE492DB2D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.AI.OpenAI", "Rock.AI.OpenAI\Rock.AI.OpenAI.csproj", "{BAB8BF5E-6457-4668-ADF1-B917100BA7CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.AI.OpenAI", "Rock.AI.OpenAI\Rock.AI.OpenAI.csproj", "{BAB8BF5E-6457-4668-ADF1-B917100BA7CD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.Tests.Performance", "Rock.Tests.Performance\Rock.Tests.Performance.csproj", "{027005F4-531F-4618-9953-AF8C931EA178}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.NCOA", "Rock.NCOA\Rock.NCOA.csproj", "{6FC5781E-C9FC-41E9-87FB-2A9CA8AA2088}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rock.NCOA", "Rock.NCOA\Rock.NCOA.csproj", "{6FC5781E-C9FC-41E9-87FB-2A9CA8AA2088}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Rock.CloudPrint.Shared.Common", "Applications\RockCloudPrint\Rock.CloudPrint.Shared.Common\Rock.CloudPrint.Shared.Common.shproj", "{6519C205-3304-4D09-86BC-16BE8A0D9C41}"
 EndProject
@@ -158,6 +158,12 @@ Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript.Obsidian.Re
 	ProjectSection(ProjectDependencies) = postProject
 		{A4FB4B9B-3564-4C25-938C-4350A9515B24} = {A4FB4B9B-3564-4C25-938C-4350A9515B24}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.crossingchurch.OurRock", "org.crossingchurch.OurRock\org.crossingchurch.OurRock.csproj", "{77AB5AF2-ED4A-4503-B42C-9805A77F2099}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.thecrossingchurch.CustomJobs", "org.thecrossingchurch.CustomJobs\org.thecrossingchurch.CustomJobs.csproj", "{33EDBB84-66B6-4028-A231-1E14E6601031}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.thecrossingchurch.LavaFilters", "org.thecrossingchurch.LavaFilters\org.thecrossingchurch.LavaFilters.csproj", "{903F4B69-47D0-403E-80F2-8C40693E51E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -331,6 +337,18 @@ Global
 		{F4F169A8-34C5-4628-B33E-CE4697629EAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4F169A8-34C5-4628-B33E-CE4697629EAB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F4F169A8-34C5-4628-B33E-CE4697629EAB}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77AB5AF2-ED4A-4503-B42C-9805A77F2099}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33EDBB84-66B6-4028-A231-1E14E6601031}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33EDBB84-66B6-4028-A231-1E14E6601031}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33EDBB84-66B6-4028-A231-1E14E6601031}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33EDBB84-66B6-4028-A231-1E14E6601031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{903F4B69-47D0-403E-80F2-8C40693E51E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{903F4B69-47D0-403E-80F2-8C40693E51E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{903F4B69-47D0-403E-80F2-8C40693E51E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{903F4B69-47D0-403E-80F2-8C40693E51E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
