@@ -13,20 +13,24 @@
     <div class="row">
         <div class="col-sm-12">
             <RockForm v-model:submit="submit"
+                      :hideErrors="!areValidationErrorsShown"
                       @submit="onFormSubmitted">
                 <EmailBox v-if="linkType === 'email'"
                           v-model="email"
                           label="Link"
+                          rules="required"
                           @blur="onHrefBlurred" />
 
                 <PhoneNumberBox v-if="linkType === 'tel'"
                                 v-model="tel"
                                 label="Link"
+                                rules="required"
                                 @blur="onHrefBlurred" />
 
                 <UrlLinkBox v-if="linkType === 'url'"
                             v-model="url"
                             label="Link"
+                            :rules="['required', isEmptyOrValidUrl]"
                             @blur="onHrefBlurred" />
             </RockForm>
         </div>
@@ -42,6 +46,7 @@
     import RockForm from "@Obsidian/Controls/rockForm.obs";
     import UrlLinkBox from "@Obsidian/Controls/urlLinkBox.obs";
     import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
+    import { isNullish } from "@Obsidian/Utility/util";
 
     const props = defineProps({
         modelValue: {
@@ -74,6 +79,7 @@
     // #region Values
 
     const submit = ref<boolean>(false);
+    const areValidationErrorsShown = ref<boolean>(false);
     const initialHref = props.modelValue ?? "";
     const linkType = ref<LinkType>(getLinkTypeFromHref(initialHref));
     const email = ref<string>(linkType.value === "email" ? initialHref.startsWith("mailto:") ? initialHref.substring(7) : initialHref : "");
@@ -117,24 +123,58 @@
         }
     }
 
+    /**
+     * Validates that the value is empty or is a valid URL.
+     *
+     * @param val
+     * @returns
+     */
+    function isEmptyOrValidUrl(val: unknown): boolean | string {
+        if (isNullish(val) || (typeof val === "string" && val === "")) {
+            // Allow empty value to be handled by "required" rule.
+            return true;
+        }
+
+        if (typeof val === "string") {
+            try {
+                const url = new URL(val);
+
+                if (url.protocol === "http:" || url.protocol === "https:") {
+                    return true;
+                }
+            }
+            catch {
+                /* An appropriate validation error is returned below. */
+            }
+        }
+
+        return "must be a valid URL";
+    }
+
     // #endregion Functions
 
     // #region Event Handlers
 
     function onLinkTypeUpdated(): void {
-        // When the link type changes, clear all fields.
+        // When the link type changes, clear all fields and reset the href.
         email.value = "";
         tel.value = "";
         url.value = "https://";
-
-        // Also clear the href attribute on the element.
         const href = buildHrefValue(linkType.value, email.value, tel.value, url.value);
         emit("update:modelValue", href);
+
+        // Hide the validation errors above the field
+        // when the link type changes so that only the field's border is red
+        // if the user has not yet interacted with it (and if it's invalid).
+        areValidationErrorsShown.value = false;
     }
 
     function onHrefBlurred(): void {
-        // Trigger the form submission.
+        // Trigger the form submission to validate the href.
         submit.value = true;
+
+        // Show the validation errors once the field is blurred for the first time.
+        areValidationErrorsShown.value = true;
     }
 
     function onFormSubmitted(): void {
@@ -155,9 +195,13 @@
     });
 
     watch([email, tel, url], async () => {
-        // Reset the submit flag when any of the fields change.
+        // Whenever any of the href fields change, resubmit the form to revalidate the value.
         await nextTick();
         submit.value = true;
+    }, {
+        // Force the field to immediately validate on initial load.
+        // This should show a red border around the field so the individual knows they need to enter/fix the value.
+        immediate: true
     });
 
     // #endregion
