@@ -15,7 +15,7 @@
 // </copyright>
 //
 
-import { Ref } from "vue";
+import { inject, provide, Ref } from "vue";
 import { Enumerable } from "@Obsidian/Utility/linq";
 
 /**
@@ -147,6 +147,8 @@ export type ContentAreaElements = {
 
 export type HorizontalAlignment = "left" | "center" | "right";
 
+export type LetterCase = "none" | "uppercase" | "lowercase" | "capitalize";
+
 // Utility type to convert a string from camel case to kebab case
 type ToKebabCase<S extends string> =
     S extends `${infer T}${infer U}`
@@ -170,7 +172,7 @@ export type BackgroundFit = "repeat" | "center";
 
 export type BackgroundSize = "original" | "fit-width" | "fit-height";
 
-export type BorderStyle = "solid" | "dashed" | "dotted";
+export type BorderStyle = "solid" | "dashed" | "dotted" | "none";
 
 export type TextAlignment = "left" | "center" | "right" | "justify";
 
@@ -345,12 +347,294 @@ export class WeakPair<K extends object, V> {
     }
 }
 
-export type ButtonWidth = "fitToText" | "full" | "fixed";
+export type ButtonWidthMode = "fitToText" | "full" | "fixed";
 
-export type ButtonWidthValues = { width: ButtonWidth | null | undefined; fixedWidth: number | null | undefined; };
+export type ButtonWidthModel = {
+    mode: ButtonWidthMode | null;
+    fixedWidthPx: number | null;
+};
 
 export type ComponentMigrationHelper = {
     isMigrationRequired(componentElement: Element): boolean;
     migrate(componentElement: Element): Element;
     readonly latestVersion: string;
+};
+
+export type ShorthandModel<T> = {
+    /** Top. */
+    top: T;
+    /** Right. */
+    right: T;
+    /** Bottom. */
+    bottom: T;
+    /** Left. */
+    left: T;
+};
+
+/**
+ * Logical model for a border.
+ * Used for both local button borders and global button border styling.
+ */
+export type BorderModel = {
+    /** CSS border style. */
+    style: ShorthandModel<BorderStyle | null> | null;
+    /** Border width. */
+    widthPx: ShorthandModel<number | null> | null;
+    /** CSS color value, typically hex or rgb(a). */
+    color: ShorthandModel<string | null> | null;
+};
+
+
+
+/**
+ * Generic component adapter for a single component type.
+ * L represents local (per instance) props.
+ * G represents global (per component type) props.
+ */
+export type ComponentAdapter<TLocalProps, TGlobalProps> = {
+    /** Component kind identifier, for example "button". */
+    kind: ComponentTypeName;
+
+    /**
+     * Latest DOM version for component instances of this type.
+     * Stored per node as data-version.
+     */
+    currentVersion: string;
+
+    /**
+     * Migrates a single component instance node to the latest DOM version.
+     * Must update data-component-version on the node.
+     */
+    migrateComponent: (emailDocument: Document, componentElement: HTMLElement) => HTMLElement;
+
+    /**
+     * Reads local (per instance) props from a migrated component node.
+     * These props will be bound directly to property panel controls.
+     */
+    readLocalProps: (componentElement: HTMLElement) => TLocalProps;
+
+    /**
+     * Writes local (per instance) props into a migrated component node.
+     * Called when any bound property panel control changes.
+     */
+    writeLocalProps: (componentElement: HTMLElement, localProps: TLocalProps) => void;
+
+    /**
+     * Reads global props for this component type from the DOM.
+     * For buttons, this typically means parsing canonical style blocks
+     * and any document level attributes that affect all buttons.
+     */
+    readGlobalProps: (emailDocument: Document) => TGlobalProps;
+
+    /**
+     * Writes global props for this component type into the DOM.
+     * For buttons, this typically means updating canonical style blocks
+     * and any document level attributes that affect all buttons.
+     */
+    writeGlobalProps: (emailDocument: Document, globalProps: TGlobalProps) => void;
+
+    /**
+     * Migrates the global DOM structures for this component type.
+     */
+    migrateGlobalProps: (emailDocument: Document) => void;
+
+    /**
+     * Creates a new component element for this component type but does not add it to the document.
+     */
+    createComponentElement: (emailDocument: Document) => HTMLElement;
+
+    /**
+     * Creates a new default global props object for this component type.
+     *
+     * @param emailDocument
+     */
+    getDefaultGlobalProps: () => TGlobalProps;
+
+    /**
+     * Determines if global props for this component type are needed
+     * @param emailDocument
+     * @returns
+     */
+    areGlobalDefaultsNeeded: (emailDocument: Document) => boolean;
+};
+
+/**
+ * Local button props that map directly to your Button component property panel.
+ */
+export type ButtonLocalProps = {
+    /**
+     * Button text content.
+     */
+    text: string;
+
+    /**
+     * Anchor href value.
+     */
+    href: string;
+
+    /**
+     * Font family for the button text.
+     */
+    fontFamily: string | null;
+
+    /**
+     * Font size in pixels for the button text.
+     */
+    fontSizePx: number | null;
+
+    /**
+     * Indicates if the button text is bold.
+     */
+    isBold: boolean | null;
+
+    /**
+     * Indicates if the button text is underlined.
+     */
+    isUnderlined: boolean | null;
+
+    /**
+     * Indicates if the button text is italicized.
+     */
+    isItalicized: boolean | null;
+
+    /**
+     * The letter case to use for the button text.
+     */
+    letterCase: LetterCase | null;
+
+    /**
+     * Line height for the button text.
+     */
+    lineHeight: number | null;
+
+    /**
+     * Text color for the button label.
+     */
+    textColor: string | null;
+
+    /**
+     * Horizontal alignment of the button.
+     */
+    horizontalAlignment: HorizontalAlignment | null;
+
+    /**
+     * Background color of the button.
+     */
+    backgroundColor: string | null;
+
+    /**
+     * Corner radius in pixels for the button.
+     */
+    borderRadiusPx: ShorthandModel<number | null> | null;
+
+    /**
+     * Logical width for this specific button instance.
+     */
+    width: ButtonWidthModel | null;
+
+    /**
+     * Outer margin applied around the button.
+     */
+    marginPx: ShorthandModel<number | null> | null;
+
+    /**
+     * Inner padding applied inside the button.
+     */
+    paddingPx: ShorthandModel<number | null> | null;
+
+    /**
+     * Border styling applied to the button.
+     */
+    border: BorderModel | null;
+};
+
+/**
+ * Global button props that map to the "Button Styling" section
+ * of your GlobalPropertyPanel.
+ */
+export type ButtonGlobalProps = {
+    /**
+     * Global background color for all buttons.
+     */
+    backgroundColor: string | null;
+
+    /**
+     * Global font family for button text.
+     */
+    fontFamily: string | null;
+
+    /**
+     * Global font size in pixels for button text.
+     */
+    fontSizePx: number | null;
+
+    /**
+     * Global bold setting for button text.
+     */
+    isBold: boolean | null;
+
+    /**
+     * Global underline setting for button text.
+     */
+    isUnderlined: boolean | null;
+
+    /**
+     * Global italic setting for button text.
+     */
+    isItalicized: boolean | null;
+
+    /**
+     * Global letter case for button text.
+     */
+    letterCase: LetterCase | null;
+
+    /**
+     * Global line height for button text.
+     */
+    lineHeight: number | null;
+
+    /**
+     * Global text color for button labels.
+     */
+    textColor: string | null;
+
+    /**
+     * Global border settings for buttons.
+     */
+    border: BorderModel | null;
+
+    /**
+     * Global corner radius in pixels for buttons.
+     */
+    borderRadiusPx: ShorthandModel<number | null> | null;
+
+    /**
+     * Global width policy for buttons.
+     */
+    width: ButtonWidthModel | null;
+
+    /**
+     * Global outer margin for buttons.
+     */
+    marginPx: ShorthandModel<number | null> | null;
+
+    /**
+     * Global inner padding for buttons.
+     */
+    paddingPx: ShorthandModel<number | null> | null;
+};
+
+/**
+ * Concrete adapter type alias for the Button component.
+ */
+export type ButtonComponentAdapter = ComponentAdapter<
+    ButtonLocalProps,
+    ButtonGlobalProps
+>;
+
+export type ShorthandPropertyNames = {
+    top: CssStyleDeclarationKebabKey;
+    right: CssStyleDeclarationKebabKey;
+    bottom: CssStyleDeclarationKebabKey;
+    left: CssStyleDeclarationKebabKey;
 };
