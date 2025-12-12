@@ -34,7 +34,6 @@ iframe {
     } from "./providers.partial";
     import {
         checkDropzoneSize,
-        copyShorthandInlineStyles,
         createComponentElement,
         createComponentElementPlaceholder,
         EmptyDropzoneSvgPixelWidth,
@@ -46,8 +45,6 @@ iframe {
         GlobalCssClasses,
         GlobalStylesCssSelectors,
         LineHeights,
-        moveShorthandInlineStyles,
-        moveStandaloneInlineStyles,
         pixelConverter,
         removeTemporaryAttributes,
         removeTemporaryClasses,
@@ -61,7 +58,6 @@ iframe {
         SmallEmptyClass
     } from "./utils.partial";
     import {
-        CssStyleDeclarationKebabKey,
         ComponentTypeDragDropMessage,
         ComponentTypeDragEndMessage,
         ComponentTypeDragLeaveMessage,
@@ -689,85 +685,8 @@ iframe {
     }
 
     async function fixOldWizardElements(document: Document): Promise<void> {
-        // RSVP Component Fixes
-
-        // The old wizard set some font styles and padding on the content elements instead of the button elements.
-        const propertiesToMove: CssStyleDeclarationKebabKey[] = [
-            "font-family",
-            "font-size"
-        ];
-        Enumerable.from(document.querySelectorAll(".accept-button-shell"))
-            .ofType(isHTMLElement)
-            .forEach(buttonShellElement => {
-                const buttonContentElement = buttonShellElement.querySelector(".rsvp-accept-content");
-
-                if (isHTMLElement(buttonContentElement)) {
-                    const buttonElement = buttonContentElement.querySelector(".rsvp-accept-link");
-
-                    if (isHTMLElement(buttonElement)) {
-                        moveStandaloneInlineStyles(
-                            buttonContentElement,
-                            buttonElement,
-                            propertiesToMove);
-
-                        moveShorthandInlineStyles(
-                            buttonContentElement,
-                            buttonElement,
-                            "padding",
-                            ["padding-top", "padding-bottom", "padding-right", "padding-left"]);
-
-                        // The old wizard was missing "display" inline style on the button elements.
-                        buttonElement.style.display = "inline-block";
-
-                        // Copy the button shell padding to the button element for the Corner Radius property.
-                        copyShorthandInlineStyles(
-                            buttonShellElement,
-                            buttonElement,
-                            "border-radius",
-                            ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius"]
-                        );
-                    }
-                }
-            });
-        Enumerable.from(document.querySelectorAll(".decline-button-shell"))
-            .ofType(isHTMLElement)
-            .forEach(buttonShellElement => {
-                const buttonContentElement = buttonShellElement.querySelector(".rsvp-decline-content");
-
-                if (isHTMLElement(buttonContentElement)) {
-                    const buttonElement = buttonContentElement.querySelector(".rsvp-decline-link");
-
-                    if (isHTMLElement(buttonElement)) {
-                        moveStandaloneInlineStyles(
-                            buttonContentElement,
-                            buttonElement,
-                            propertiesToMove);
-
-                        moveShorthandInlineStyles(
-                            buttonContentElement,
-                            buttonElement,
-                            "padding",
-                            ["padding-top", "padding-bottom", "padding-right", "padding-left"]);
-
-                        // The old wizard was missing "display" inline style on the button elements.
-                        buttonElement.style.display = "inline-block";
-
-                        // Copy the button shell padding to the button element for the Corner Radius property.
-                        copyShorthandInlineStyles(
-                            buttonShellElement,
-                            buttonElement,
-                            "border-radius",
-                            ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius"]
-                        );
-
-                        // The old wizard was missing the "rel" attribute on the decline button element.
-                        buttonElement.setAttribute("rel", "noopener noreferrer");
-                    }
-                }
-            });
-
         // Auto-migrate each component type to ensure they are all using the latest versions.
-        document.querySelectorAll(".component:not(.component-button)").forEach(componentElement => {
+        document.querySelectorAll(".component:not(.component-button,.component-rsvp)").forEach(componentElement => {
             try {
                 const componentTypeName = getComponentTypeName(componentElement);
                 const componentHelper = getComponentHelper(componentTypeName);
@@ -1659,7 +1578,7 @@ body:not(.${draggingCssClass}) .rock-runtime-wrapper-element.for-component-secti
             const customComponentElement = tempElement.querySelector(".component");
             if (customComponentElement) {
                 const componentTypeName = getComponentTypeName(customComponentElement);
-                if (componentTypeName !== "button") {
+                if (componentTypeName !== "button" && componentTypeName !== "rsvp") {
                     const helper = getComponentHelper(getComponentTypeName(customComponentElement));
                     if (helper && helper.isMigrationRequired(customComponentElement)) {
                         customComponentElement.replaceWith(helper.migrate(customComponentElement));
@@ -2014,7 +1933,7 @@ body:not(.${draggingCssClass}) .rock-runtime-wrapper-element.for-component-secti
             const isComponentChild = draggingElement.value.contains(componentElement);
             if (componentElement) {
                 const componentTypeName = getComponentTypeName(componentElement);
-                if (componentTypeName !== "button") {
+                if (componentTypeName !== "button" && componentTypeName !== "rsvp") {
                     const componentHelper = getComponentHelper(getComponentTypeName(componentElement));
                     if (componentHelper && componentHelper.isMigrationRequired(componentElement)) {
                         const migratedComponentElement = componentHelper.migrate(componentElement);

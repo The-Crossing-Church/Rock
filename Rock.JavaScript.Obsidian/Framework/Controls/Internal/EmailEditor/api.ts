@@ -24,6 +24,7 @@ import { post, uploadBinaryFile } from "@Obsidian/Utility/http";
 import { Enumerable } from "@Obsidian/Utility/linq";
 import { isPromise } from "@Obsidian/Utility/promiseUtils";
 import { EmailEditorDeleteEmailSectionOptionsBag } from "@Obsidian/ViewModels/Rest/Controls/emailEditorDeleteEmailSectionOptionsBag";
+import { EmailEditorGetGroupOptionsBag } from "@Obsidian/ViewModels/Rest/Controls/emailEditorGetGroupOptionsBag";
 import { EmailEditorEmailSectionBag } from "@Obsidian/ViewModels/Rest/Controls/emailEditorEmailSectionBag";
 import { EmailEditorGetAllEmailSectionsOptionsBag } from "@Obsidian/ViewModels/Rest/Controls/emailEditorGetAllEmailSectionsOptionsBag";
 import { EmailEditorGetEmailSectionOptionsBag } from "@Obsidian/ViewModels/Rest/Controls/emailEditorGetEmailSectionOptionsBag";
@@ -36,6 +37,7 @@ import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 import { Guid } from "@Obsidian/Types";
 import { findComponentInnerWrappers, getImageComponentHelper, getSectionComponentHelper, getTextComponentHelper, getTitleComponentHelper } from "./utils.partial";
 import { inject, provide, Ref } from "vue";
+import { isNullish } from "@Obsidian/Utility/util";
 
 type ElementBinaryFileInfo = {
     binaryFile: ListItemBag | null | undefined;
@@ -176,6 +178,15 @@ export class EmailEditorApi {
         };
 
         return await post("/api/v2/Controls/EmailEditorDeleteEmailSection", undefined, options);
+    }
+
+    public async getGroup(bag: EmailEditorGetGroupOptionsBag): Promise<HttpResult<ListItemBag>> {
+        const options: EmailEditorGetGroupOptionsBag = {
+            ...bag,
+            securityGrantToken: this.securityGrantToken.value
+        };
+
+        return await post("/api/v2/Controls/EmailEditorGetGroup", undefined, options);
     }
 
     private useTemporaryElement(document: Document, html: string, similarElementSelector: string, callback: (tempElement: HTMLElement) => void): void {
