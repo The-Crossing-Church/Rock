@@ -1,0 +1,316 @@
+import { defineComponent, PropType } from "vue"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { AttributeBag } from "../../ViewModels/attributeBag"
+import { DateTime, Duration, Interval } from "luxon"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import RockForm from "@Obsidian/Controls/rockForm.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import Modal from "@Obsidian/Controls/modal.obs"
+import RockButton from "@Obsidian/Controls/rockButton.obs"
+import DropDownList from "@Obsidian/Controls/dropDownList.obs"
+import Toggle from "./toggle"
+import DiscountCodePicker from "./discountCodePicker"
+
+type DiscountCode = {
+  CodeType: string,
+  Amount: string,
+  Code: string,
+  AutoApply: boolean,
+  EffectiveDateRange: string,
+  MaxUses: number
+}
+
+export default defineComponent({
+  name: "EventForm.Components.DiscountCodes",
+  components: {
+    "rck-field": RockField,
+    "rck-form": RockForm,
+    "rck-lbl": RockLabel,
+    "rck-modal": Modal,
+    "rck-btn": RockButton,
+    "rck-ddl": DropDownList,
+    "tcc-switch": Toggle,
+    "tcc-code": DiscountCodePicker
+  },
+  props: {
+    e: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
+    },
+    attrs: Array as PropType<AttributeBag[]>
+  },
+  setup() {
+
+  },
+  data() {
+      return {
+        discountCodes: [] as DiscountCode[],
+        newCode: {} as any,
+        modal: false,
+        message: "",
+        selectedIdx: -1
+      };
+  },
+  computed: {
+    codeAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "Code" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+    codeTypeAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "CodeType" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+    codeTypeOptions() {
+      if(this.codeTypeAttr?.qualifierValues?.values) {
+        let vals = this.codeTypeAttr.qualifierValues.values as any
+        return vals.split(",")
+      }
+    },
+    amountAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "Amount" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+    autoApplyAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "AutoApply" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+    effectiveDateRangeAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "EffectiveDateRange" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+    maxUsesAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "MaxUses" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+  },
+  methods: {
+    updateCodeType(val: string) {
+      this.newCode.CodeType = val
+    },
+    updateAmount(val: string) {
+      this.newCode.Amount = val
+    },
+    edit(idx: number) {
+      this.newCode = JSON.parse(JSON.stringify(this.discountCodes[idx]))
+      this.selectedIdx = idx
+      this.modal = true
+    },
+    save() {
+      let amt = parseInt(this.newCode.Amount)
+      if(this.newCode.CodeType == "%") {
+        if(amt > 100) {
+          this.newCode.Amount = "100"
+        }
+      }
+      if(this.newCode.Amount && this.newCode.Code) {
+        if(this.selectedIdx >= 0) {
+          this.discountCodes[this.selectedIdx] = this.newCode
+        } else {
+          this.discountCodes.push(this.newCode as DiscountCode)
+        }
+        this.modal = false
+        this.message = ""
+      } else {
+        let msg = "Discount codes require an amount and code. "
+        if(this.newCode.Amount == '' && this.newCode.Code == '') {
+          msg += "Please enter an amount and code."
+        } else if (this.newCode.Amount == '') {
+          msg += "Please enter an amount."
+        } else {
+          msg += "Please enter a code."
+        }
+        this.message = msg
+      }
+    },
+    removeCode() {
+      if(this.selectedIdx >= 0) {
+        this.discountCodes.splice(this.selectedIdx, 1)
+      }
+      this.modal = false
+    },
+    formatDateRange(range: string) {
+      if(range) {
+        let dates = range.split(",")
+        if(dates.length > 1) {
+          return DateTime.fromFormat(dates[0], "yyyy-MM-dd").toFormat("MM/dd/yy") + " - " + DateTime.fromFormat(dates[1], "yyyy-MM-dd").toFormat("MM/dd/yy")
+        }
+        return "Invalid Dates Provided"
+      }
+      return ""
+    }
+  },
+  watch: {
+    discountCodes: {
+      handler(val) {
+        if(this.e?.attributeValues) {
+          this.e.attributeValues.DiscountCodes = JSON.stringify(val)
+        }
+      },
+      deep: true
+    },
+    modal(val) {
+      if(!val) {
+        this.selectedIdx = -1
+      }
+    }
+  },
+  mounted() {
+    if(this.e?.attributeValues) {
+      if(this.e?.attributeValues.DiscountCodes) {
+        this.discountCodes = JSON.parse(this.e.attributeValues.DiscountCodes)
+      }
+    }
+  },
+  template: `
+<rck-lbl class="mt-2">Discount Codes</rck-lbl>
+<div class="setup-table mb-2">
+  <div class="row">
+    <div class="col col-xs-11">
+      <template v-if="discountCodes.length > 0">
+        <div class="row">
+          <div class="col col-xs-6 col-md-3 col-lg-2" v-for="(dc, idx) in discountCodes" :key="idx">
+            <div class="p-2">
+              <h6 class="text-uppercase">{{dc.Code}}</h6>
+              <hr class="my-2"/>
+              <template v-if="dc.CodeType == '%'">
+                {{dc.Amount}}%
+              </template>
+              <template v-else>
+                {{dc.CodeType}}{{dc.Amount}}
+              </template>
+              <template v-if="dc.MaxUses != ''">
+                <span class="pl-2">{{dc.MaxUses}} Uses</span>
+              </template>
+              <br/>
+              <template v-if="dc.EffectiveDateRange != ''">
+                {{formatDateRange(dc.EffectiveDateRange)}} <br/>
+              </template>
+              <template v-if="dc.AutoApply == 'True'">
+                <i class="fas fa-check-square"></i> Auto-Apply 
+              </template>
+              <rck-btn @click="edit(idx)" btnType="accent" class="pull-right btn-circle" :id="'btnEditDiscount' + idx">
+                <i class="fa fa-pencil-alt"></i>
+              </rck-btn>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        Click the add button to create a discount code for your event.
+      </template>
+    </div>
+    <div class="col col-xs-1">
+      <rck-btn class="pull-right btn-circle" btnType="accent" @click="newCode = { AutoApply: 'False', CodeType: '%', Amount: '', MaxUses: '', EffectiveDateRange: '', Code: '' }; modal = true;" id="btnNewCode">
+        <i class="fa fa-plus"></i>
+      </rck-btn>
+    </div>
+  </div>
+</div>
+<rck-modal v-model="modal" style="min-width: 50%;"  :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
+  <div class="alert alert-danger mt-2" v-if="message != ''">
+    {{message}}
+  </div>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-code
+        :label="amountAttr.name"
+        :codeType="newCode.CodeType"
+        :amount="newCode.Amount"
+        :items="codeTypeOptions"
+        v-on:updateCodeType="updateCodeType"
+        v-on:updateAmount="updateAmount"
+        id="DiscountCode"
+      ></tcc-code>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="newCode.Code"
+        :attribute="codeAttr"
+        :is-edit-mode="true"
+        id="txtCode"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="newCode.MaxUses"
+        :attribute="maxUsesAttr"
+        :is-edit-mode="true"
+        id="txtMaxUses"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row mt-2">
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="newCode.EffectiveDateRange"
+        :attribute="effectiveDateRangeAttr"
+        :is-edit-mode="true"
+        id="dateEffectiveDateRange"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row mt-2">
+    <div class="col col-xs-12">
+      <tcc-switch
+        v-model="newCode.AutoApply"
+        :label="autoApplyAttr.name"
+        id="boolAutoApply"
+      ></tcc-switch>
+    </div>
+  </div>
+  <template #customButtons>
+    <rck-btn btnType="red" @click="removeCode" v-if="selectedIdx >= 0" id="btnDeleteCode">Delete</rck-btn>
+    <rck-btn btnType="primary" @click="save" id="btnSaveCode">Save</rck-btn>
+  </template>
+</rck-modal>
+<v-style>
+.setup-table {
+  border-radius: 6px;
+  border: 1px solid #dfe0e1;
+  padding: 8px;
+}
+.setup-row {
+  display: flex;
+  align-items: center;
+}
+.setup-row:not(:last-child) {
+  border-bottom: 1px solid #F0F0F0;
+}
+.spacer {
+  flex-grow: 1!important;
+}
+</v-style>
+`
+});

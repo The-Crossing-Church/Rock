@@ -1,0 +1,941 @@
+<script lang="ts">
+import { defineComponent, provide } from "vue"
+import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
+import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
+import { ContentChannelItemBag } from "../ViewModels/contentChannelItemBag"
+import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
+import { UserDashboardBlockViewModel, DuplicateRequestViewModel } from "./userDashboardBlockViewModel"
+import { useStore } from "@Obsidian/PageState"
+import { DateTime } from "luxon"
+import DatePicker from "../EventForm/Components/datePicker"
+import Calendar from "../EventForm/Components/calendar"
+import Chip from "../EventForm/Components/chip"
+import Details from "./Components/dashboardModal"
+import Grid, { Column, TextColumn, DateColumn } from "@Obsidian/Controls/grid"
+import RockText from "@Obsidian/Controls/textBox.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
+import PersonPicker from "@Obsidian/Controls/personPicker.obs"
+import Modal from "@Obsidian/Controls/modal.obs"
+import RockButton from "@Obsidian/Controls/rockButton.obs"
+import DropDownList from "@Obsidian/Controls/dropDownList.obs"
+import Comment from "./Components/comment"
+import UserGridAction from "./Components/userGridAction"
+
+const store = useStore();
+
+export default defineComponent({
+  name: "EventDashboard.UserDashboard",
+  components: {
+    "tcc-details": Details,
+    "tcc-comment": Comment,
+    "tcc-grid": UserGridAction,
+    "tcc-date-picker": DatePicker,
+    "tcc-chip": Chip,
+    "tcc-calendar": Calendar,
+    "rck-ddl": DropDownList,
+    "rck-text": RockText,
+    "rck-lbl": RockLabel,
+    "rck-field": RockField,
+    "rck-date-range": DateRangePicker,
+    "rck-person": PersonPicker,
+    "rck-modal": Modal,
+    "rck-btn": RockButton,
+    "rck-grid": Grid,
+    "rck-col": Column,
+    "rck-col-txt": TextColumn,
+    "rck-col-dt": DateColumn,
+  },
+  setup() {
+      const invokeBlockAction = useInvokeBlockAction();
+      const viewModel = useConfigurationValues<UserDashboardBlockViewModel | null>();
+      viewModel?.events.forEach((e: any) => {
+        e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == viewModel.eventDetailsCCId })
+        e.comments = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == viewModel.commentsCCId })
+      })
+
+      let defaultFilters = {
+        title: "",
+        statuses: viewModel?.defaultStatuses,
+        resources: [] as string[],
+        ministry: "",
+        submitter: { value: "", text: ""},
+        eventDates:  { lowerValue: "", upperValue: "" },
+        eventModified: { lowerValue: "", upperValue: "" }
+      }
+
+      /** A method to load a specific request's details */
+      const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
+          const response = await invokeBlockAction("GetRequestDetails", {
+              id: id
+          });
+          return response
+      };
+      provide("loadDetails", loadDetails);
+
+      const filterRequests: (filters: any) => Promise<any> = async (filters) => {
+        const response = await invokeBlockAction("FilterRequests", {
+            filters: filters
+        });
+        return response
+      }
+      provide("filterRequests", filterRequests);
+
+      const changeStatus: (id: string | null | undefined, status: string) => Promise<any> = async (id, status) => {
+        const response = await invokeBlockAction("ChangeStatus", {
+            id: id, status: status
+        });
+        return response
+      }
+      provide("changeStatus", changeStatus);
+
+      const addComment: (id: string | null | undefined, message: string) => Promise<any> = async (id, message) => {
+        const response = await invokeBlockAction("AddComment", {
+          id: id, message: message
+        });
+        return response
+      }
+      provide("addComment", addComment);
+
+      /** Resubmit a Copy of an Event */
+      const resubmitEvent: (id: string | null | undefined, eventDates: string, removedResources: string[], copyDates: any[]) => Promise<any> = async (id, eventDates, removedResources, copyDates) => {
+          const response = await invokeBlockAction<{ expirationDateTime: string }>("DuplicateEvent", {
+            id: id, eventDates: eventDates, removedResources: removedResources, copyDates: copyDates
+          });
+          if (response.data) {
+              return response
+          }
+      };
+      provide("resubmitEvent", resubmitEvent);
+
+      /** A method for the user to respond to Proposed Changes Denied */
+      const userAction: (id: string | null | undefined, actin: string) => Promise<any> = async (id, action) => {
+          const response = await invokeBlockAction<{ expirationDateTime: string }>("ProposedChangesAction", {
+              id: id, action: action
+          });
+          if (response) {
+            return response
+          }
+      };
+      provide("userAction", userAction);
+
+      return {
+          viewModel,
+          defaultFilters,
+          loadDetails,
+          filterRequests,
+          changeStatus,
+          addComment,
+          resubmitEvent,
+          userAction
+      }
+  },
+  data() {
+      return {
+        columns: [
+          {
+            title: 'Title',
+            dataIndex: 'title',
+            key: 'reqtitle'
+          },
+          {
+            title: 'Submitted On',
+            dataIndex: 'startDateTime',
+            key: 'start'
+          },
+          {
+            title: 'Event Dates',
+            dataIndex: 'attributeValues.EventDates',
+            key: 'dates'
+          },
+          {
+            title: 'Status',
+            key: 'action'
+          },
+        ],
+        selected: {} as ContentChannelItemBag,
+        copy: {} as ContentChannelItemBag,
+        copyDates: [] as any[],
+        removedResources: [] as string[],
+        createdBy: {},
+        modifiedBy: {},
+        modal: false,
+        commentModal: false,
+        resubmissionModal: false,
+        comment: "",
+        visible: false,
+        requestStatuses: [
+          { text: "Draft", value: "Draft" },
+          { text: "Submitted", value: "Submitted" },
+          { text: "In Progress", value: "In Progress" },
+          { text: "Approved", value: "Approved" },
+          { text: "Denied", value: "Denied" },
+          { text: "Cancelled", value: "Cancelled" },
+          { text: "Pending Changes", value: "Pending Changes" },
+          { text: "Proposed Changes Denied", value: "Proposed Changes Denied" },
+          { text: "Changes Accepted by User", value: "Changes Accepted by User" },
+          { text: "Cancelled by User", value: "Cancelled by User" }
+        ],
+        resources: [
+          { text: "Room",  value: "Room" },
+          { text: "Online Event", value: "Online Event" },
+          { text: "Catering", value: "Catering" },
+          { text: "Childcare", value: "Childcare" },
+          { text: "Extra Resources", value: "Extra Resources" },
+          { text: "Registration", value: "Registration" },
+          { text: "Web Calendar", value: "Web Calendar" },
+          { text: "Production", value: "Production" },
+          { text: "Publicity", value: "Publicity" }
+        ],
+        loading: false,
+        btnLoading: {
+          inprogress: false,
+          cancelled: false
+        },
+        toastMessage: "",
+        filters: {} as any
+      };
+  },
+  computed: {
+      /** The person currently authenticated */
+      currentPerson(): CurrentPersonBag | null {
+          return store.state.currentPerson
+      },
+      selectedStatus(): string {
+        if(this.selected?.attributeValues) {
+          return this.selected.attributeValues?.RequestStatus
+        }
+        return ""
+      },
+      ministryAttr(): PublicAttributeBag | undefined {
+        if(this.viewModel?.events[0]) {
+          let attr = this.viewModel.events[0].attributes?.Ministry
+          let ministryValues = this.viewModel.ministries.map(dv => {
+            return { text: dv.value, description: dv.description, value: dv.guid }
+          }).sort((a, b) => {
+            let textA = a.text ?? ""
+            let textB = b.text ?? ""
+            if (textA < textB) {
+              return -1
+            } else if(textA > textB) {
+              return 1
+            }
+            return 0
+          })
+          if(attr?.configurationValues?.values) {
+            attr.configurationValues.values = JSON.stringify(ministryValues)
+          }
+          return attr
+        }
+        return undefined
+      },
+      canEdit(): boolean {
+        if(this.selected && this.selected?.attributeValues?.RequestStatus) {
+          return this.selected.attributeValues.RequestStatus == 'Draft' || this.selected.attributeValues.RequestStatus == 'Submitted' || this.selected.attributeValues.RequestStatus == 'In Progress' || this.selected.attributeValues.RequestStatus == 'Approved' || this.selected.attributeValues.RequestStatus == 'Pending Changes'
+        }
+        return false
+      },
+      minResubmissionDate() {
+        let date = DateTime.now()
+        if(this.copy && this.copy.attributeValues) {
+          if(this.copy.attributeValues.NeedsPublicity == 'True') {
+            date = date.plus({weeks: 6})
+          } else if(this.copy.attributeValues.NeedsChildCare == 'True') {
+            date = date.plus({days: 30})
+          } else if (this.copy.attributeValues.NeedsOnline == 'True' ||
+            this.copy.attributeValues.NeedsCatering == 'True' ||
+            this.copy.attributeValues.NeedsOpsAccommodations == 'True' ||
+            this.copy.attributeValues.NeedsProductionAccommodations == 'True' ||
+            this.copy.attributeValues.NeedsRegistration == 'True' ||
+            this.copy.attributeValues.NeedsWebCalendar == 'True'
+          ) {
+            date = date.plus({days: 14})
+          }
+        }
+        return date.toFormat("yyyy-MM-dd")
+      }
+  },
+  methods: {
+    formatDateTime(date: any): string {
+      if(date) {
+        return DateTime.fromISO(date).toFormat("MM/dd/yyyy hh:mm a");
+      }
+      return ""
+    },
+    formatDate(date: any): string {
+      if(date) {
+        return DateTime.fromISO(date).toFormat("MM/dd/yyyy");
+      }
+      return ""
+    },
+    formatLongDate(date: any): string {
+      return DateTime.fromFormat(date, "yyyy-MM-dd").toFormat("DDDD")
+    },
+    formatDates(dates: string): string {
+      if(dates) {
+        let dateArray = dates.split(",").map((d: string) => DateTime.fromFormat(d.trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy"))
+        return dateArray.join(", ")
+      }
+      return ""
+    },
+    selectItem(item: any) { 
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.loadDetails(item.idKey).then((response: any) => {
+        if(response.data) {
+          response.data.details.forEach((detail: any) => {
+            detail.detail.changes = detail.detailPendingChanges
+          })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
+            let aDate = DateTime.fromFormat(a.attributeValues.EventDate, 'yyyy-MM-dd')
+            let bDate = DateTime.fromFormat(b.attributeValues.EventDate, 'yyyy-MM-dd')
+            if(aDate < bDate) {
+              return -1
+            } else if (aDate > bDate) {
+              return 1
+            }
+            return 0
+          })
+          response.data.request.changes = response.data.requestPendingChanges
+          response.data.request.comments = response.data.comments
+          this.selected = response.data.request
+          this.createdBy = response.data.createdBy
+          this.modifiedBy = response.data.modifiedBy
+          this.modal = true
+        }
+        if(response.isError) {
+          this.toastMessage = response.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
+    editItem (id: string | null | undefined) {
+      window.location.href = "/eventform?Id=" + id
+    },
+    filter() {
+      this.loading = true
+      this.filterRequests(this.filters).then((response: any) => {
+        if(this.viewModel) {
+          this.viewModel.events = response.data.events
+          this.viewModel?.events.forEach((e: any) => {
+            e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == this.viewModel?.eventDetailsCCId })
+            e.comments = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == this.viewModel?.commentsCCId })
+          })
+        }
+        if(response.isError) {
+          this.toastMessage = response.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).catch((err) => {
+        console.log(err)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    resetFilters() {
+      this.filters = this.defaultFilters
+    },
+    clearFilters() {
+      this.filters = {
+        title: "",
+        statuses: [] as string[],
+        resources: [] as string[],
+        ministry: "",
+        submitter: { value: "", text: ""},
+        eventDates:  { lowerValue: "", upperValue: "" },
+        eventModified: { lowerValue: "", upperValue: "" }
+      }
+    },
+    updateFromGridAction(id: number, status: string) {
+      this.selected.idKey = id.toString()
+      this.updateStatus(status)
+    },
+    updateStatus(status: string) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      if(status == "In Progress") {
+        this.btnLoading.inprogress = true
+      } else {
+        this.btnLoading.cancelled = true
+      }
+      this.changeStatus(this.selected.idKey, status).then((res) => {
+        if(res.data?.url) {
+          window.location.href = res.data.url
+        }
+        if(res.data?.status) {
+          if(this.selected?.attributeValues) {
+            this.selected.attributeValues.RequestStatus = res.data.status
+          }
+          this.viewModel?.events.forEach((event: any) => {
+            if(event.idKey == this.selected.idKey) {
+              event.attributeValues.RequestStatus = res.data.status
+            }
+          })
+        }
+        if(res.isError || res.Message) {
+          this.toastMessage = res.errorMessage ? res.errorMessage : res.Message
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).catch((err) => {
+        this.toastMessage = err
+        let el = document.getElementById('toast')
+        el?.classList.add("show")
+      }).finally(() => {
+        this.btnLoading.inprogress = false
+        this.btnLoading.cancelled = false
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
+    getNextComment(idx: number) {
+      let req = this.selected as any
+      if(idx < (req.comments.length - 1)) {
+        return req.comments[idx + 1]
+      }
+      return null
+    },
+    newComment() {
+      this.comment = ""
+      this.commentModal = true
+    },
+    createComment() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.addComment(this.selected.idKey, this.comment).then((res: any) => {
+        if(res.isSuccess) {
+          if(res.data?.comment) {
+            let req = this.selected as any
+            req.comments.push(res.data)
+          }
+        } else if (res.isError) {
+          this.toastMessage = res.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+        this.commentModal = false
+        this.comment = ""
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
+    hideToast() {
+      let el = document.getElementById('toast')
+      el?.classList.remove("show")
+    },
+    copyFromGridAction(id: string | null | undefined) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.loadDetails(id).then((response: any) => {
+        if(response.data) {
+          response.data.details.forEach((detail: any) => {
+            detail.detail.changes = detail.detailPendingChanges
+          })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
+            let aDate = DateTime.fromFormat(a.attributeValues.EventDate, 'yyyy-MM-dd')
+            let bDate = DateTime.fromFormat(b.attributeValues.EventDate, 'yyyy-MM-dd')
+            if(aDate < bDate) {
+              return -1
+            } else if (aDate > bDate) {
+              return 1
+            }
+            return 0
+          })
+          response.data.request.changes = response.data.requestPendingChanges
+          response.data.request.comments = response.data.comments
+          this.selected = response.data.request
+          this.createdBy = response.data.createdBy
+          this.modifiedBy = response.data.modifiedBy
+          this.modal = true
+          this.copyRequest()
+        }
+        if(response.isError) {
+          this.toastMessage = response.errorMessage
+          let el = document.getElementById('toast')
+          el?.classList.add("show")
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
+    copyRequest() {
+      this.copy = JSON.parse(JSON.stringify(this.selected)) 
+      let cp = this.copy as any
+      if(cp && cp.childItems && cp.attributeValues && cp.attributeValues.IsSame == 'False') {
+        this.copyDates = cp.attributeValues.EventDates.split(",").map((d: string) => { 
+          return { originalDate: d.trim(), newDate: ""}
+        })
+      }
+      if(this.copy?.attributeValues && this.copy?.attributeValues?.IsSame == 'True') {
+        this.copy.attributeValues.EventDates = ""
+      }
+      this.resubmissionModal = true
+    },
+    removeCopyDate(date: string) {
+      let cp = this.copy as any
+      let idx = -1
+      for(let i=0; i<cp.childItems.length; i++) {
+        if(cp.childItems[i].originalDate == date) {
+          idx = i
+        }
+      }
+      cp.childItems.splice(idx, 1)
+      this.copyDates.splice(idx, 1)
+    },
+    removeChipDate(date: string) {
+      if (this.copy?.attributeValues?.EventDates) {
+        let dates = this.copy.attributeValues.EventDates.split(',')
+        let idx = dates.indexOf(date)
+        dates.splice(idx, 1)
+        this.copy.attributeValues.EventDates = dates.join(",")
+      }
+    },
+    resubmit() {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      if(this.copy.attributeValues) {
+        let eventDates = ""
+        if(this.copy?.attributeValues?.IsSame == 'True') {
+          eventDates = this.copy.attributeValues.EventDates
+        }
+        this.resubmitEvent(this.copy.idKey, eventDates, this.removedResources, this.copyDates).then((res: any) => {
+          if(res) {
+            if(res.isSuccess) {
+              this.resubmissionModal = false
+              this.copy = {} as ContentChannelItemBag
+              this.copyDates = []
+              this.removedResources = []
+              if(res.data.id) {
+                window.location.href = "/eventform?Id=" + res.data.id
+              }
+            } else if(res.isError) {
+              this.toastMessage = res.errorMessage
+              let toast = document.getElementById('toast')
+              toast?.classList.add("show")
+              if(el) {
+                el.style.display = 'none'
+              }
+            }
+          } else {
+            this.toastMessage = "Unable to resubmit event"
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
+            if(el) {
+              el.style.display = 'none'
+            }
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      }
+    },
+    lastCommentIsFromUser(req: any) {
+      let ct = 0
+      if(req.comments && req.comments.length > 0) {
+        for(let i=req.comments.length - 1; i >= 0; i--) {
+          if(req.comments[i].childContentChannelItem.title.split("From ")[1] != this.currentPerson?.fullName) {
+            ct++
+          } else {
+            return ct
+          }
+        }
+      }
+      return ct
+    },
+    getIsValid(r: any) {
+      return r?.attributeValues?.RequestIsValid == 'True'
+    },
+    proposedChangesAction(action: string, id: string | null | undefined) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.userAction(id, action).then((res) => {
+        if(res) {
+          if(res.isSuccess) {
+            this.loadDetails(id).then((response: any) => {
+              if(response.data) {
+                response.data.details.forEach((detail: any) => {
+                  detail.detail.changes = detail.detailPendingChanges
+                })
+                response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
+                  let aDate = DateTime.fromFormat(a.attributeValues.EventDate, 'yyyy-MM-dd')
+                  let bDate = DateTime.fromFormat(b.attributeValues.EventDate, 'yyyy-MM-dd')
+                  if(aDate < bDate) {
+                    return -1
+                  } else if (aDate > bDate) {
+                    return 1
+                  }
+                  return 0
+                })
+                response.data.request.changes = response.data.requestPendingChanges
+                response.data.request.comments = response.data.comments
+                this.selected = response.data.request
+                if(this.viewModel?.events) {
+                  this.viewModel.events.forEach((r: any) => {
+                    if(r.idKey == this.selected.idKey) {
+                      r = this.selected
+                    }
+                  })
+                }
+                this.createdBy = response.data.createdBy
+                this.modifiedBy = response.data.modifiedBy
+                this.modal = true
+              }
+              if(response.isError) {
+                this.toastMessage = response.errorMessage
+                let el = document.getElementById('toast')
+                el?.classList.add("show")
+              }
+            }).finally(() => {
+              if(el) {
+                el.style.display = 'none'
+              }
+            })
+          } else if(res.isError) {
+            this.toastMessage = res.errorMessage
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
+            if(el) {
+              el.style.display = 'none'
+            }
+          }
+        } else {
+          this.toastMessage = "Unable to update request"
+          let toast = document.getElementById('toast')
+          toast?.classList.add("show")
+          if(el) {
+            el.style.display = 'none'
+          }
+        }
+      })
+    }
+  },
+  watch: {
+    
+  },
+  mounted() {
+    this.filters = this.defaultFilters
+    let params = new URLSearchParams(window.location.search)
+    let id = params.get("Id")
+    if(id) {
+      this.selectItem({idKey: id})
+      let action = params.get("Action")
+      if(action) {
+        this.proposedChangesAction(action, id)
+      }
+    }
+  },
+  template: `
+<div class="card">
+  <h4 class="hover" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+    <i class="fa fa-filter mr-2"></i>
+    Filters
+  </h4>
+  <div class="collapse" id="filterCollapse">
+    <div class="row">
+      <div class="col col-xs-12 col-md-4">
+        <rck-text
+          label="Request Name"
+          v-model="filters.title"
+        ></rck-text>
+      </div>
+      <div class="col col-xs-12 col-md-4">
+        <rck-person
+          label="Submitter/Modifier"
+          v-model="filters.submitter"
+        ></rck-person>
+      </div>
+      <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
+        <rck-field
+          v-model="filters.ministry"
+          :attribute="ministryAttr"
+          :is-edit-mode="true"
+        ></rck-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 col-md-4">
+        <rck-ddl
+          label="Request Status"
+          :items="requestStatuses"
+          v-model="filters.statuses"
+          multiple
+        ></rck-ddl>
+      </div>
+      <div class="col col-xs-12 col-md-4">
+        <rck-ddl
+          label="Requested Resources"
+          :items="resources"
+          v-model="filters.resources"
+          multiple
+        ></rck-ddl>
+      </div>
+      <div class="col col-xs-12 col-md-4">
+        <rck-date-range
+          label="Has Event Date in Range"
+          v-model="filters.eventDates"
+        ></rck-date-range>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 font-weight-light hr">
+        OR
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12 col-md-4">
+        <rck-date-range
+          label="Modified in Range"
+          v-model="filters.eventModified"
+        ></rck-date-range>
+      </div>
+    </div>
+    <div class="row mb-4">
+      <div class="col col-xs-12">
+        <rck-btn class="mr-1" btnType="accent" @click="resetFilters">Reset Defaults</rck-btn>
+        <rck-btn btnType="grey" @click="clearFilters">Clear Filters</rck-btn>
+        <rck-btn class="pull-right" btnType="primary" @click="filter" :isLoading="loading">Filter</rck-btn>
+      </div>
+    </div>
+  </div>
+  <rck-grid :data="{ rows: viewModel.events }" keyField="idKey" :isTitleHidden="true" itemTerm="request">
+    <rck-col-txt
+      name="title"
+      title="Title"
+      field="title"
+    >
+      <template #format="{ row }">
+        <div class="hover w-100" @click="selectItem(row)">
+          <i v-if="getIsValid(row)" class="fa fa-check-circle text-accent mr-2"></i>
+          <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i> 
+          {{ row.title }}
+         </div>
+      </template>
+    </rck-col-txt>
+    <rck-col-dt
+      name="startDateTime"
+      title="Submitted On"
+      field="startDateTime"
+    >
+      <template #format="{ row }">
+        {{ formatDateTime(row.startDateTime) }}
+      </template>
+    </rck-col-dt>
+    <rck-col
+      name="attributeValues.EventDates"
+      title="Event Dates"
+      field="attributeValues.EventDates"
+    >
+      <template #format="{ row }">
+        {{ formatDates(row.attributeValues.EventDates) }}
+      </template>
+    </rck-col>
+    <rck-col
+      name="attributeValues.RequestStatus"
+      title="Status"
+      field="attributeValues.RequestStatus"
+      itemClass="overflow-visible"
+    >
+      <template #format="{ row }">
+        <tcc-grid :request="row" :commentNotification="lastCommentIsFromUser(row)" v-on:duplicate="copyFromGridAction" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+      </template>
+    </rck-col>
+  </rck-grid>
+  <rck-modal v-model="modal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
+    <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
+    <template v-if="selected.comments && selected.comments.length > 0">
+      <h3 class="text-accent">Comments</h3>
+      <div>
+        <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.idKey"></tcc-comment>
+      </div>
+    </template>
+    <template #customButtons>
+      <div class="d-flex justify-left w-100">
+        <rck-btn v-if="canEdit" btnType="primary" @click="editItem(selected.idKey)">
+          <i class="mr-1 fa fa-pencil-alt"></i>
+          Edit
+        </rck-btn>
+        <rck-btn btnType="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled by User')">
+          <i class="mr-1 fa fa-ban"></i>
+          Cancel Request
+        </rck-btn>
+        <rck-btn btnType="primary" v-if="selectedStatus == 'Proposed Changes Denied'" @click="proposedChangesAction('Original', selected.idKey)">
+          <i class="mr-1 fa fa-check"></i>
+          Use Originally Approved
+        </rck-btn>
+        <rck-btn btnType="accent" @click="newComment">
+          <i class="mr-1 fa fa-comment-alt"></i>
+          Add Comment
+        </rck-btn>
+        <rck-btn btnType="med-blue" @click="copyRequest">
+          <i class="mr-1 fas fa-history"></i>
+          Resubmit
+        </rck-btn>
+      </div>
+    </template>
+  </rck-modal>
+  <rck-modal v-model="commentModal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" style="z-index: 2000 !important;" modalWrapperClasses="modal-no-header">
+    <rck-lbl>New Comment</rck-lbl>
+    <rck-text
+      v-model="comment"
+      textMode="multiline"
+    ></rck-text>
+    <template #customButtons>
+      <rck-btn btnType="accent" @click="createComment">
+        <i class="mr-1 fa fa-comment-alt"></i>
+        Add Comment
+      </rck-btn>
+      <rck-btn btnType="grey" @click="commentModal = false;">
+        <i class="mr-1 fa fa-ban"></i>
+        Cancel
+      </rck-btn>
+    </template>
+  </rck-modal>
+  <rck-modal v-model="resubmissionModal" width="75%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" style="z-index: 2000 !important;" modalWrapperClasses="modal-no-header">
+    <h3>Resubmit {{copy.title}}</h3>
+    <div>To resubmit a request, please select the new date(s) for your event.</div>
+    <rck-lbl style="text-transform: uppercase;">Resources Requested for {{copy.title}}</rck-lbl>
+    <div style="display: flex; flex-wrap: wrap; align-content: flex-start;">
+      <tcc-chip v-if="copy.attributeValues?.NeedsSpace == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsSpace = 'False'; removedResources.push('NeedsSpace')">Space</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsOnline == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOnline = 'False'; removedResources.push('NeedsOnline')">Zoom</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsCatering = 'False'; removedResources.push('NeedsCatering')">Catering</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsChildCare == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCare = 'False'; removedResources.push('NeedsChildCare')">Childcare</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsChildCareCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCareCatering = 'False'; removedResources.push('NeedsChildCareCatering')">Childcare Catering</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsRegistration == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsRegistration = 'False'; removedResources.push('NeedsRegistration')">Registration</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsOpsAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOpsAccommodations = 'False'; removedResources.push('NeedsOpsAccommodations')">Ops Accommodations</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsProductionAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsProductionAccommodations = 'False'; removedResources.push('NeedsProductionAccommodations')">Production Accommodations</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsWebCalendar == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsWebCalendar = 'False'; removedResources.push('NeedsWebCalendar')">Web Calendar</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsPublicity == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsPublicity = 'False'; removedResources.push('NeedsPublicity')">Publicity</tcc-chip>
+    </div>
+    <div class="pb-2">Remove any you won't need for your re-submission of this event</div>
+    <template v-if="copy?.attributeValues && copy.attributeValues.IsSame == 'True'">
+      <div class="row">
+        <div class="col col-xs-4">
+          <tcc-calendar
+            :min="minResubmissionDate"
+            :multiple="true"
+            v-model="copy.attributeValues.EventDates"
+          ></tcc-calendar>
+        </div>
+        <div class="col col-xs-12 col-md-8" style="display: flex; flex-wrap: wrap; align-content: flex-start;">
+          <template v-if="copy?.attributeValues?.EventDates != ''">
+            <tcc-chip v-for="d in copy.attributeValues.EventDates.split(',')" :key="d" v-on:chipdeleted="removeChipDate(d)">
+              {{formatLongDate(d)}}
+            </tcc-chip>
+          </template>
+        </div>
+      </div>
+    </template>
+    <template v-else>
+      <div class="row text-center">
+        <div class="col col-xs-4">
+          <rck-lbl>Original Date</rck-lbl>
+        </div>
+        <div class="col col-xs-4">
+          <rck-lbl>New Date</rck-lbl>
+        </div>
+        <div class="col col-xs-4">
+          <rck-lbl>Remove Date</rck-lbl>
+        </div>
+      </div>
+      <div class="row text-center" v-for="(cd, idx) in copyDates" :key="idx" style="display: flex; align-items: end;">
+        <div class="col col-xs-4">
+          {{formatDate(cd.originalDate)}}
+        </div>
+        <div class="col col-xs-4">
+          <tcc-date-picker
+            v-model="cd.newDate"
+            :min="minResubmissionDate"
+          ></tcc-date-picker>
+        </div>
+        <div class="col col-xs-4">
+          <rck-btn class="btn-circle" btnType="red" @click="removeCopyDate(cd.originalDate)">
+            <i class="fas fa-trash"></i>
+          </rck-btn>
+        </div>
+      </div>
+    </template>
+    <template #customButtons>
+      <rck-btn btnType="med-blue" @click="resubmit" :disabled="copy?.attributeValues?.IsSame != 'True' && copyDates.length == 0">
+        <i class="mr-1 fas fa-history"></i>
+        Resubmit Event
+      </rck-btn>
+      <rck-btn btnType="grey" @click="resubmissionModal = false;">
+        <i class="mr-1 fa fa-ban"></i>
+        Cancel
+      </rck-btn>
+    </template>
+  </rck-modal>
+</div>
+<div id="toast" role="alert">
+  <div class="toast-header text-red">
+    <i class="fas fa-exclamation-triangle mr-1"></i>
+    <strong>System Exception</strong>
+    <i class="fa fa-times pull-right hover" @click="hideToast"></i>
+  </div>
+  <div class="toast-body">
+    {{toastMessage}}
+  </div>
+</div>
+<v-style>
+@import "/Styles/Blocks/Plugins/eventForm.css";
+
+/* Make Grid Action Buttons Same Width */
+td .ant-btn {
+  width: 100%;
+  max-width: 200px;
+}
+.tcc-dropdown {
+  display: flex;
+  flex-direction: column;
+  padding: 0px 4px;
+  max-height: 300px;
+  overflow-y: scroll;
+}
+/* Custom hr lines on filters text */
+.hr {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  text-align: center;
+}
+.hr:before, .hr:after {
+  position: absolute;
+  top: 51%;
+  overflow: hidden;
+  width: 50%;
+  height: 1px;
+  content: '\a0';
+  background-color: grey;
+}
+.hr:before {
+  margin-left: -50%;
+  text-align: right;
+}
+</v-style>
+`
+})
+</script>

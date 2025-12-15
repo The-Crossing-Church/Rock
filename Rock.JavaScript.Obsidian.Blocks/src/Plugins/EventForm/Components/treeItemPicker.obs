@@ -1,0 +1,342 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <ContentDropDownPicker @primaryButtonClicked="onSelect"
+                           @secondaryButtonClicked="onCancel"
+                           @clearButtonClicked="onClear"
+                           :iconCssClass="pickerIconClass"
+                           :showClear="showClear"
+                           :modelValue="internalValues"
+                           :fullWidth="fullWidth"
+                           v-model:showPopup="internalShowPopup">
+
+        <TreeList v-model="internalValues"
+                  :multiple="multiple"
+                  :items="items"
+                  :provider="provider"
+                  @update:items="onUpdateItems"
+                  @update:modelValue="selectItemOnClick"
+                  :disableFolderSelection="disableFolderSelection"
+                  :initiallyExpanded="initiallyExpanded"
+                  :autoExpand="autoExpand"
+                  :showChildCount="showChildCount"
+                  :isVisible="internalShowPopup" />
+
+        <template #innerLabel>
+             <div class="taglist tag-group">
+                 <Tag v-for="tag in selectedItems"
+                          :key="tag.value ?? tag.name ?? ''"
+                          :modelValue="tag"
+                          :disabled="disabled"
+                          @removeTag="onRemoveTag(tag)" />
+             </div>
+        </template>
+
+        <template #pickerContentSuperHeader v-if="$slots.pickerContentSuperHeader">
+            <slot name="pickerContentSuperHeader" />
+        </template>
+        <template #pickerContentHeader v-if="$slots.pickerContentHeader">
+            <slot name="pickerContentHeader" />
+        </template>
+        <template #pickerContentHeading v-if="$slots.pickerContentHeading">
+            <slot name="pickerContentHeading" />
+        </template>
+        <template #mainPickerActions v-if="$slots.mainPickerActions">
+            <slot name="mainPickerActions" />
+        </template>
+        <template #primaryButtonLabel v-if="$slots.primaryButtonLabel">
+            <slot name="primaryButtonLabel" />
+        </template>
+        <template #secondaryButtonLabel v-if="$slots.secondaryButtonLabel">
+            <slot name="secondaryButtonLabel" />
+        </template>
+        <template #customPickerActions v-if="$slots.customPickerActions">
+            <slot name="customPickerActions" />
+        </template>
+        <template #prepend="{ isInputGroupSupported }" v-if="$slots.prepend">
+            <slot name="prepend" :isInputGroupSupported="isInputGroupSupported" />
+        </template>
+        <template #inputGroupPrepend="{ isInputGroupSupported }" v-if="$slots.inputGroupPrepend">
+            <slot name="inputGroupPrepend" :isInputGroupSupported="isInputGroupSupported" />
+        </template>
+        <template #append="{ isInputGroupSupported }" v-if="$slots.append">
+            <slot name="append" :isInputGroupSupported="isInputGroupSupported" />
+        </template>
+    </ContentDropDownPicker>
+</template>
+
+<script setup lang="ts">
+    import { computed, PropType, ref, watch, onMounted, onUnmounted } from "vue";
+    import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
+    import { ITreeItemProvider } from "@Obsidian/Utility/treeItemProviders";
+    import { TreeItemBag } from "@Obsidian/ViewModels/Utility/treeItemBag";
+    import TreeList from "./treeList.obs";
+    import { updateRefValue, useVModelPassthrough } from "@Obsidian/Utility/component";
+    import ContentDropDownPicker from "@Obsidian/Controls/contentDropDownPicker.obs";
+    import Tag from "@Obsidian/Controls/Internal/tag.obs"
+    import TagList from "@Obsidian/Controls/tagList.obs"
+    import { forceToArray } from "@Obsidian/Utility/arrayUtils";
+
+    const props = defineProps({
+        modelValue: {
+            type: Object as PropType<ListItemBag | ListItemBag[] | null>,
+            required: false
+        },
+
+        /**
+         * V-Model of whether the popup area is opened.
+         */
+        showPopup: {
+            type: Boolean
+        },
+
+        multiple: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        },
+
+        items: {
+            type: Array as PropType<TreeItemBag[]>
+        },
+
+        provider: {
+            type: Object as PropType<ITreeItemProvider>
+        },
+
+        iconCssClass: {
+            type: String as PropType<string>,
+            default: "ti ti-folder-open"
+        },
+
+        disableFolderSelection: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        },
+
+        /**
+         * List of items (by their `value` property) that should be expanded when the tree list is first loaded
+         * (after root is loaded). This allows us to auto-expand more than just the selected items and their
+         * parents.
+         */
+        initiallyExpanded: {
+            type: Array as PropType<string[]>,
+            default: []
+        },
+
+        /**
+         * Automatically expand parents who have (sub)children that are selected
+         */
+        autoExpand: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        },
+
+        /**
+         * Whether to show the number of children a parent node has, if provided
+         */
+        showChildCount: {
+            type: Boolean,
+            default: false
+        },
+
+        /**
+         * When true the picker will take the full width available rather than
+         * limiting itself to a standard width.
+         */
+        fullWidth: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        },
+
+        /** The optional value to show when nothing is selected. */
+        blankValue: {
+            type: String as PropType<string>,
+            default: ""
+        },
+    });
+
+    const emit = defineEmits<{
+        (_e: "update:modelValue", _value: ListItemBag | ListItemBag[] | null): void,
+        (_e: "update:showPopup", _value: boolean): void,
+        (_e: "valueSelected"): void
+    }>();
+
+
+    /**
+     * Our internal list of selected values. This must be kept seperate
+     * because we don't actually emit the new values until the user clicks
+     * the select button.
+     */
+    const internalValues = ref(forceToArray(props.modelValue, props.multiple).map(v => v.value ?? ""));
+
+    /**
+     * A flat array of items from the tree. This is used to quickly filter
+     * to just the selected items.
+     */
+    const flatItems = ref<TreeItemBag[]>(flatten(props.items ?? [], i => i.children ?? []));
+
+    /** Will contain the value true if the popup tree list should be shown. */
+    const internalShowPopup = useVModelPassthrough(props, "showPopup", emit);
+
+    /** Determines if the clear button should be shown. */
+    const showClear = computed((): boolean => {
+        // Use modelValue since internalValues is used for the in-process
+        // popup, not the actual stored value.
+        return forceToArray(props.modelValue, props.multiple).length > 0;
+    });
+
+    /**
+     * Determines the names of the currently selected items. This shows the
+     * names of the "save safe" items, meaning it is updated after the user
+     * clicks the select button. It does not update on the fly as they are
+     * selecting items.
+     */
+    const selectedItems = computed((): string => {
+        return forceToArray(props.modelValue, true).map((i: any) => { 
+            return { name: i.text, value: i.value, backgroundColor: 'default' } 
+        });
+    });
+
+    /** The CSS class to use for the picker icon. */
+    const pickerIconClass = computed((): string => `${props.iconCssClass} ti-fw`);
+
+    /** Updates the model value from our internal value. */
+    const updateModelValue = (): void => {
+        // Create a new set of selected items to emit.
+        const newModelValue = forceToArray(props.modelValue, true)
+            .filter(v => internalValues.value.includes(v.value ?? ""));
+
+        // Helpful list of the values already in the new model value.
+        const knownValues = newModelValue.map(v => v.value);
+
+        // Determine which values need to be added from the tree list.
+        const additionalValues = internalValues.value
+            .filter(v => !knownValues.includes(v));
+
+        // Go through each additional value and find it in the tree list
+        // and add it to the new model value.
+        for (const v of additionalValues) {
+            const items = flatItems.value.filter(i => i.value === v);
+
+            if (items.length > 0 && items[0].value && items[0].text) {
+                newModelValue.push({
+                    value: items[0].value,
+                    text: items[0].text
+                });
+            }
+        }
+
+        // Emit the new value and close the popup.
+        if (props.multiple) {
+            emit("update:modelValue", newModelValue);
+        }
+        else {
+            emit("update:modelValue", newModelValue.length > 0 ? newModelValue[0] : null);
+        }
+    };
+
+    /**
+     * Event handler for when the list of items in the tree list has been
+     * updated.
+     *
+     * @param newItems The new root items being used by the tree list.
+     */
+    const onUpdateItems = (newItems: TreeItemBag[]): void => {
+        // Update our flatItems array with the list of new items.
+        flatItems.value = flatten(newItems ?? [], i => i.children ?? []);
+    };
+
+    /**
+     * Event handler for when the clear button is clicked by the user.
+     */
+    const onClear = (): void => {
+        emit("update:modelValue", props.multiple ? [] : null);
+    };
+
+    /**
+     * Event handler for when the user clicks the cancel button. Hide the
+     * popup.
+     */
+    const onCancel = (): void => {
+        internalShowPopup.value = false;
+    };
+
+    /**
+     * Event handler for when the user clicks the select button. Save the
+     * current selection and close the popup.
+     */
+    const onSelect = (): void => {
+        updateModelValue();
+        // internalShowPopup.value = false;
+        emit("valueSelected"); // inform that a value was selected, even if it didn't change
+    };
+
+    // Watch for changes to the selected values from the parent control and
+    // update our internal values to match.
+    watch([() => props.modelValue, () => props.multiple], (oldValues, newValues) => {
+        updateRefValue(internalValues, forceToArray(props.modelValue, props.multiple).map(v => v.value ?? ""));
+
+        // If the "multiple" property changed, force update the model value.
+        if (newValues[1] !== oldValues[1]) {
+            updateModelValue();
+        }
+    });
+
+    // The picker should select on item click when we are not selecting multiple items.
+    const selectItemOnClick = (): void => {
+        onSelect();
+    };
+
+    const onRemoveTag = (tag): void => {
+        emit("update:modelValue", [...props.modelValue.filter((v: any) => v.value != tag.value)])
+    };
+
+    /**
+     * Helper function to flatten an array of items that contains child items
+     * of the same type.
+     *
+     * @param source The source array of items to the flattened.
+     * @param childrenSource A callback function that retrieves the child items.
+     *
+     * @returns An array of all items and descendants.
+     */
+    function flatten<T>(source: T[], childrenSource: (value: T) => T[]): T[] {
+        let stack = [...source];
+        const flatArray: T[] = [];
+
+        for (let i = 0; i < stack.length; i++) {
+            const item = stack[i];
+
+            flatArray.push(item);
+
+            stack = stack.concat(childrenSource(item));
+        }
+
+        return flatArray;
+    }
+
+    //Handle click outside of dropdown closing drop down
+    onMounted(() => {
+        document.addEventListener('click', onCancel);
+    });
+
+    onUnmounted(() => {
+        document.removeEventListener('click', onCancel);
+    });
+
+</script>
+<style>
+    .picker.picker-full-width .picker-menu {
+        width: 100%;
+    }
+    .tcc-dropdown-item-description {
+        font-size: .875rem;
+        line-height: 1.2;
+        font-weight: lighter;
+    }
+    .tag-group {
+        width: -webkit-fill-available;
+    }
+    .tag-group .tag {
+        flex: none !important;
+    }
+</style>
