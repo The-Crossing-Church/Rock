@@ -4,16 +4,14 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
+
 using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Jobs;
-using Rock.Lava.RockLiquid.Blocks;
 using Rock.Model;
 using Rock.Web.Cache;
-using static Rock.Jobs.CalculateFamilyAnalytics;
+
 using Attribute = Rock.Model.Attribute;
 
 namespace org.thecrossingchurch.CustomJobs.Jobs

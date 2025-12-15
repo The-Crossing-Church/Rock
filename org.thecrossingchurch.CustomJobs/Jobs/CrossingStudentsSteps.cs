@@ -176,6 +176,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
         /// <param name="stepProgram"></param>
         private void StartedServing( List<Person> students, int servingStep, int servingArea, int stepProgram )
         {
+            StepService step_svc = new StepService( _context );
             //Get all the active groups that are Serving Groups
             var groupTypes = _grouptypesvc.Queryable().Where( gt => gt.GroupTypePurposeValueId == servingArea ).Select( gt => gt.Id ).ToList();
             var groups = _groupsvc.Queryable().Where( g => groupTypes.Contains( g.GroupTypeId ) && g.IsActive == true );
@@ -218,7 +219,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                         CompletedDateTime = membership.CreatedDateTime,
                         StepStatusId = status.Id
                     };
-                    _context.Steps.Add( step );
+                    step_svc.Add( step );
                     _context.SaveChanges();
                     step.LoadAttributes( _context );
                     step.SetAttributeValue( "ServingTeam", validMemberships[j].Guid );
@@ -236,6 +237,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
         /// <param name="stepProgram">The Id of the Crossing Students Step Program</param>
         private void SmallGroupAttendance( List<Person> students, int smallgroupStep, int smallGroup, int stepProgram )
         {
+            StepService step_svc = new StepService( _context );
             //Figure out date range for current/most recent trimester
             var today = DateTime.Now;
             //User override date if we are looking at previous data
@@ -336,7 +338,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                             CompletedDateTime = stepDt,
                             StepStatusId = status.Id
                         };
-                        _context.Steps.Add( step );
+                        step_svc.Add( step );
                         _context.SaveChanges();
                         step.LoadAttributes( _context );
                         step.SetAttributeValue( "SmallGroup", group );
@@ -351,7 +353,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                     {
                         for ( var k = 0; k < forGroup.Count(); k++ )
                         {
-                            _context.Steps.Remove( forGroup[k] );
+                            step_svc.Delete( forGroup[k] );
                         }
                         _context.SaveChanges();
                     }
@@ -367,6 +369,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
         /// <param name="stepProgram"></param>
         private void SundayAttendance( List<Person> students, int sundayStep, int stepProgram )
         {
+            StepService step_svc = new StepService( _context );
             DateTime today = DateTime.Now;
             //Use override if it has a value 
             if ( _overrideDate.HasValue )
@@ -433,7 +436,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                                 CompletedDateTime = stepDt,
                                 StepStatusId = status.Id
                             };
-                            _context.Steps.Add( step );
+                            step_svc.Add( step );
                             //_context.SaveChanges();
                         }
                     }
@@ -444,7 +447,7 @@ namespace org.crossingchurch.CrossingStudentsSteps.Jobs
                         var steps = _stepsvc.Queryable().Where( s => s.StepTypeId == sundayStep && s.PersonAlias.PersonId == studentId && DateTime.Compare( start, s.StartDateTime.Value ) <= 0 && DateTime.Compare( end, s.StartDateTime.Value ) >= 0 ).ToList();
                         for ( var k = 0; k < steps.Count(); k++ )
                         {
-                            _context.Steps.Remove( steps[k] );
+                            step_svc.Delete( steps[k] );
                         }
                     }
                 }

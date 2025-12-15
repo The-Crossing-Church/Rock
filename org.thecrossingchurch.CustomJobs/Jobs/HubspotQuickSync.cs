@@ -151,7 +151,7 @@ namespace org.crossingchurch.HubspotQuickSync.Jobs
                     List<string> errors = new List<string>();
                     var serviceInstance = Reflection.GetServiceForEntityType( typeof( Person ), _context );
                     ParameterExpression parameterExpression = Expression.Parameter( typeof( Person ), "x" );
-                    var exp = dataview.GetExpression( serviceInstance, parameterExpression, out errors );
+                    var exp = dataview.GetExpression( serviceInstance, parameterExpression );
 
                     MethodInfo getMethod = serviceInstance.GetType().GetMethod( "Get", new Type[] { typeof( ParameterExpression ), typeof( Expression ), typeof( Rock.Web.UI.Controls.SortProperty ), typeof( int? ) } );
 
