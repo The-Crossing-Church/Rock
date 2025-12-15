@@ -1,7 +1,10 @@
 import AntSelect from "ant-design-vue/lib/select";
 import AntAutoComplete from "ant-design-vue/lib/auto-complete";
+import AntSteps from "ant-design-vue/lib/steps";
+import AntSwitch from "ant-design-vue/lib/switch";
+import AntBadge from "ant-design-vue/lib/badge";
 import * as Axios from "axios";
-import { DateTime, FixedOffsetZone } from "luxon";
+import { DateTime, Duration, Interval, FixedOffsetZone } from "luxon";
 import * as Mitt from "mitt";
 import * as Vue from "vue";
 import * as TSLib from "tslib";
@@ -9,13 +12,18 @@ import * as TSLib from "tslib";
 // This shrinks the bundle by 11KB over just importing all of luxon.
 const Luxon = {
     DateTime,
+    Duration,
+    Interval,
     FixedOffsetZone
 };
 
 // Only include the components we are actually going to use.
 const AntDesignVue = {
     Select: AntSelect,
-    AutoComplete: AntAutoComplete
+    AutoComplete: AntAutoComplete,
+    Steps: AntSteps,
+    Switch: AntSwitch,
+    Badge: AntBadge
 };
 
 export {
