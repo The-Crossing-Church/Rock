@@ -153,7 +153,7 @@ export default defineComponent({
       } else {
         this.defaultClass = "collapse"
       }
-    },
+    }, //Title, Date, Status on mobile, nothing else 
     template: `
 <div style="display: flex; align-items: center;">
   <i class="fa fa-filter mr-2 mb-2 hover fa-lg" data-toggle="collapse" :data-target="filterCollapseSelector" aria-expanded="false" :aria-controls="filterCollapseId"></i>
@@ -210,6 +210,7 @@ export default defineComponent({
       title="Title"
       field="title"
       :filter="textValueFilter"
+      visiblePriority="xs"
     >
       <template #format="{ row }">
         <div class="hover w-100" @click="selectItem(row)">
@@ -224,6 +225,7 @@ export default defineComponent({
       title="Submitted By"
       field="createdByPersonAliasId"
       :filter="textValueFilter"
+      visiblePriority="md"
     >
       <template #format="{ row }">
         {{getSubmitter(row.createdByPersonAliasId)}}
@@ -234,6 +236,7 @@ export default defineComponent({
       title="Submitted On"
       field="startDateTime"
       :filter="dateValueFilter"
+      visiblePriority="md"
     >
       <template #format="{ row }">
         {{ formatDateTime(row.startDateTime) }}
@@ -243,6 +246,7 @@ export default defineComponent({
       name="attributeValues.EventDates"
       title="Event Dates"
       field="attributeValues.EventDates"
+      visiblePriority="xs"
     >
       <template #format="{ row }">
         {{ formatDates(row.attributeValues.EventDates) }}
@@ -252,6 +256,7 @@ export default defineComponent({
       name="attributeValues.RequestType"
       title="Requested Resources"
       field="attributeValues.RequestType"
+      visiblePriority="md"
     >
       <template #format="{ row }">
         {{ row.attributeValues.RequestType }}
@@ -262,6 +267,7 @@ export default defineComponent({
       title="Status"
       field="attributeValues.RequestStatus"
       itemClass="overflow-visible"
+      visiblePriority="xs"
     >
       <template #format="{ row }">
         <tcc-grid :request="row" :url="workflowURL" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBuffer"></tcc-grid>
