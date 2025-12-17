@@ -356,7 +356,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <rck-btn class="btn-circle" btnType="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly" :id="'btnEditSetUp_' + gsu.guid">
+            <rck-btn class="btn-circle pull-right" btnType="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly" :id="'btnEditSetUp_' + gsu.guid">
               <i class="fa fa-pencil-alt"></i>
             </rck-btn>
           </div>
