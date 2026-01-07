@@ -183,6 +183,8 @@ export default defineComponent({
             return DateTime.fromFormat(d.trim(), "yyyy-MM-dd")
           }).sort()
           dt = DateTime.fromFormat(`${dates[0].toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+        } else {
+          dt = DateTime.fromFormat(`${DateTime.now().toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
         }
         let defaultTime = dt.minus({days: 1})
         //If Childcare close one week before event
