@@ -2486,7 +2486,8 @@ namespace Rock.Blocks.Event
         /// <param name="person">The person.</param>
         /// <param name="phoneTypeGuid">The phone type unique identifier.</param>
         /// <param name="changes">The changes.</param>
-        private void SavePhone( object fieldValue, Person person, Guid phoneTypeGuid, History.HistoryChangeList changes )
+        /// <param name="isMessagingEnabledEditable">Whether the phone Messaging Enabled property is editable.</param>
+        private void SavePhone( object fieldValue, Person person, Guid phoneTypeGuid, History.HistoryChangeList changes, bool isMessagingEnabledEditable )
         {
             string phoneNumber = string.Empty;
             string countryCode = string.Empty;
@@ -2497,7 +2498,7 @@ namespace Rock.Blocks.Event
             {
                 // We got the number and SMS selection, so set both.
                 phoneNumber = phoneData.Number;
-                isMessagingEnabled = phoneData.IsMessagingEnabled;
+                isMessagingEnabled = isMessagingEnabledEditable ? phoneData.IsMessagingEnabled : ( bool? ) null;
                 countryCode = phoneData.CountryCode;
             }
             else if ( fieldValue is string )
@@ -2871,6 +2872,7 @@ namespace Rock.Blocks.Event
             var homeNumberDefinedValue = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid() );
             var mobileNumberDefinedValue = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
             var workNumberDefinedValue = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK.AsGuid() );
+            var isSmsOptInShown = settings.ShowSmsOptIn;
 
             // Set any of the template's person fields
             foreach ( var field in settings.Forms
@@ -2992,7 +2994,7 @@ namespace Rock.Blocks.Event
                         case RegistrationPersonFieldType.MobilePhone:
                             if ( IsFieldUnlockedForEditing( field, personService.GetPhoneNumber( person, mobileNumberDefinedValue )?.Number ) )
                             {
-                                SavePhone( fieldValue, person, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid(), personChanges );
+                                SavePhone( fieldValue, person, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid(), personChanges, isSmsOptInShown );
                             }
 
                             break;
@@ -3000,7 +3002,7 @@ namespace Rock.Blocks.Event
                         case RegistrationPersonFieldType.HomePhone:
                             if ( IsFieldUnlockedForEditing( field, personService.GetPhoneNumber( person, homeNumberDefinedValue )?.Number ) )
                             {
-                                SavePhone( fieldValue, person, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid(), personChanges );
+                                SavePhone( fieldValue, person, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid(), personChanges, isMessagingEnabledEditable: false );
                             }
 
                             break;
@@ -3008,7 +3010,7 @@ namespace Rock.Blocks.Event
                         case RegistrationPersonFieldType.WorkPhone:
                             if ( IsFieldUnlockedForEditing( field, personService.GetPhoneNumber( person, workNumberDefinedValue )?.Number ) )
                             {
-                                SavePhone( fieldValue, person, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK.AsGuid(), personChanges );
+                                SavePhone( fieldValue, person, Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_WORK.AsGuid(), personChanges, isMessagingEnabledEditable: false );
                             }
 
                             break;
