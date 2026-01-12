@@ -6,7 +6,6 @@ import RockText from "@Obsidian/Controls/textBox.obs"
 import RockDDL from "@Obsidian/Controls/dropDownList.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RockField from "@Obsidian/Controls/rockField.obs"
-import GenderDDL from "@Obsidian/Controls/genderDropDownList.obs"
 import DatePicker from "@Obsidian/Controls/datePicker.obs"
 import rules from "../Rules/rules"
 
@@ -17,7 +16,6 @@ export default defineComponent({
       "rck-ddl": RockDDL,
       "rck-lbl": RockLabel,
       "rck-field": RockField,
-      "ddl-gender": GenderDDL,
       "rck-date": DatePicker
     },
     props: {
