@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <LangVersion>8.0</LangVersion>
-    <RockWebPath>F:\TeamCity\buildAgent\work\90f98516b53d176f\RockWeb</RockWebPath>
+    <RockWebPath>..\RockWeb</RockWebPath>
     <CopyToRockWeb>True</CopyToRockWeb>
   </PropertyGroup>
 
