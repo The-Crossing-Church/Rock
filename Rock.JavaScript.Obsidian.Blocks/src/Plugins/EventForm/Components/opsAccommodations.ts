@@ -205,7 +205,6 @@ export default defineComponent({
           rsu.NumberofTables = !rsu.NumberofTables ? 0 : rsu.NumberofTables
           rsu.NumberofChairs = !rsu.NumberofChairs ? 0 : rsu.NumberofChairs
         })
-        console.log(this.selectedRoomSetUp)
         this.selectedRoomSetUp = this.selectedRoomSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
         let isSame = true
         if(stdrSetUp.length != this.selectedRoomSetUp.length) {
@@ -213,6 +212,13 @@ export default defineComponent({
         }
         if(JSON.stringify(stdrSetUp) != JSON.stringify(this.selectedRoomSetUp)) {
           isSame = false
+        }
+        //Check for empty room match 
+        let summedSetUp = this.selectedRoomSetUp.reduce((accummulator, currentItem) => {
+          return { NumberofTables: accummulator.NumberofTables + currentItem.NumberofTables, NumberofChairs: accummulator.NumberofChairs + currentItem.NumberofChairs }
+        }, { NumberofTables: 0, NumberofChairs: 0})
+        if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0 && stdrSetUp.length == 0) {
+          isSame = true
         }
         if(!isSame) {
           this.roomSetUp.push(...this.selectedRoomSetUp)
@@ -382,7 +388,7 @@ export default defineComponent({
             </div>
           </div>
           <div class="col col-xs-1">
-            <rck-btn class="btn-circle" btnType="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly" :id="'btnEditSetUp_' + gsu.guid">
+            <rck-btn class="btn-circle pull-right" btnType="accent" @click="configureRoomSetUp(gsu.guid)" v-if="!readonly" :id="'btnEditSetUp_' + gsu.guid">
               <i class="fa fa-pencil-alt"></i>
             </rck-btn>
           </div>
