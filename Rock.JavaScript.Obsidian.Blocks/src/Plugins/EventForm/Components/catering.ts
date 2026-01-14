@@ -44,22 +44,19 @@ export default defineComponent({
         errors: [] as Record<string, string>[],
         vendorMenu: false,
         vendors: [
-          "Arris’",
-          "B&B",
-          "Chick-fil-A",
-          "Como Smoke and Fire",
-          "D-Rowe’s",
-          "Hy-Vee Catering",
-          "Italian Village",
-          "Jimmy John’s",
-          "Mrs. Tammie",
-          "Panera",
           "Pancheros",
-          "Papa John’s",
-          "Pickleman's",
+          "Domino’s",
           "Pizza Tree",
+          "Italian Village",
           "Shakespeare’s",
-          "Sophia’s"
+          "HyVee",
+          "Como S&F",
+          "D’Rowes",
+          "CFA",
+          "Pickleman’s",
+          "Panera",
+          "Ozark Mountain Biscuit",
+          "Eclipse"
         ]
       };
     },
