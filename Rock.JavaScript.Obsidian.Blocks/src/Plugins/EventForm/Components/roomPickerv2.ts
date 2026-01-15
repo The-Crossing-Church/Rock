@@ -103,7 +103,7 @@ export default defineComponent({
     },
     watch: {
       selectedValue: { 
-        handler (val) {
+        handler (val, oval) {
           if (val) {
             let rockVal = {
               value: val.map((i: any) => i.value).join(","),
@@ -124,13 +124,13 @@ export default defineComponent({
       items: {
         handler(val) {
           //When list of rooms is updated make sure any now disabled rooms are removed from selection
-          let selectedGuids = this.selectedValue
+          let selectedGuids = this.selectedValue.map((i: any) => i.value)
           let selectedRooms = val.filter((i: any) => {
             if(!i.isDisabled) {
               return selectedGuids.includes(i.value)
             }
           }).sort((i: any) => i.order)
-          this.selectedValue = selectedRooms.map((i: any) => i.value)
+          this.selectedValue = selectedRooms
         },
         deep: true
       }
