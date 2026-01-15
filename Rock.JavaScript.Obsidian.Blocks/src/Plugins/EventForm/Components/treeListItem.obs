@@ -261,7 +261,7 @@
             canSelect = props.provider.canSelectItem(props.item, canSelect);
         }
 
-        if (!canSelect) {
+        if (!canSelect || !props.item.isActive) {
             return;
         }
 
