@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32804.467
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "RockWeb(1)", "RockWeb\", "{E43B5D55-BED0-4E74-BF97-9327F9A9D656}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "RockWeb", "RockWeb\", "{E43B5D55-BED0-4E74-BF97-9327F9A9D656}"
 	ProjectSection(ProjectDependencies) = postProject
 		{00EDCB8D-EF33-459C-AD62-02876BD24DFF} = {00EDCB8D-EF33-459C-AD62-02876BD24DFF}
 		{05BAAF85-9C53-4CCD-A535-036427B0DF72} = {05BAAF85-9C53-4CCD-A535-036427B0DF72}
@@ -159,11 +159,11 @@ Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Rock.JavaScript.Obsidian.Re
 		{A4FB4B9B-3564-4C25-938C-4350A9515B24} = {A4FB4B9B-3564-4C25-938C-4350A9515B24}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.crossingchurch.OurRock", "org.crossingchurch.OurRock\org.crossingchurch.OurRock.csproj", "{77AB5AF2-ED4A-4503-B42C-9805A77F2099}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "org.crossingchurch.OurRock", "org.crossingchurch.OurRock\org.crossingchurch.OurRock.csproj", "{77AB5AF2-ED4A-4503-B42C-9805A77F2099}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.thecrossingchurch.CustomJobs", "org.thecrossingchurch.CustomJobs\org.thecrossingchurch.CustomJobs.csproj", "{33EDBB84-66B6-4028-A231-1E14E6601031}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "org.thecrossingchurch.CustomJobs", "org.thecrossingchurch.CustomJobs\org.thecrossingchurch.CustomJobs.csproj", "{33EDBB84-66B6-4028-A231-1E14E6601031}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.thecrossingchurch.LavaFilters", "org.thecrossingchurch.LavaFilters\org.thecrossingchurch.LavaFilters.csproj", "{903F4B69-47D0-403E-80F2-8C40693E51E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "org.thecrossingchurch.LavaFilters", "org.thecrossingchurch.LavaFilters\org.thecrossingchurch.LavaFilters.csproj", "{903F4B69-47D0-403E-80F2-8C40693E51E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
