@@ -303,8 +303,9 @@ export default defineComponent({
   watch: {
     opsInventory: {
       handler(val){
+        let str = JSON.stringify(val)
         if(this.e?.attributeValues) {
-          this.e.attributeValues.OpsInventory = JSON.stringify(val)
+          this.e.attributeValues.OpsInventory = str
         }
       },
       deep: true
@@ -327,6 +328,14 @@ export default defineComponent({
     'e.attributeValues.EventDate': {
       handler(val) {
         this.saveOpsInvConfiguration()
+      }
+    },
+    'e.attributeValues.OpsInventory': {
+      handler(val) {
+        let str = JSON.stringify(this.opsInventory)
+        if(str != val) {
+          this.opsInventory = JSON.parse(val)
+        }
       }
     },
   },

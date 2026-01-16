@@ -73,11 +73,11 @@ export default defineComponent({
     }
   },
   methods: {
-      select(item: ListItem) {
+      select(item: any) {
         if(!item.isDisabled) {
           if(!item.isHeader) {
-            this.selectedValue = item.value
-            this.menuOpen = false
+            this.selectedValue = item
+            this.$emit('select')
           } 
         }
       },
@@ -130,7 +130,7 @@ export default defineComponent({
     <div v-if="item.isHeader" class="text-primary text-bold">
       {{item.value}}
     </div>
-    <div v-else @click="selectedValue = item">
+    <div v-else @click="select(item)">
       {{item.text}}
       <div class="text-subscript">
         {{item.description}}

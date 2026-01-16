@@ -6,6 +6,7 @@ import RockForm from "@Obsidian/Controls/rockForm.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import Modal from "@Obsidian/Controls/modal.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
+import { DateTime } from "luxon"
 import Validator from "./validator"
 import Toggle from "./toggle"
 import rules from "../Rules/rules"
@@ -313,6 +314,14 @@ export default defineComponent({
       }
       if(this.showValidation) {
         this.validate()
+      }
+      //Default delivery time for drinks
+      if(this.e?.attributeValues?.StartTime) {
+        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+        let defaultTime = dt.minus({minutes: 30})
+        if(this.e.attributeValues.DrinkTime == '') {
+          this.e.attributeValues.DrinkTime = defaultTime.toFormat("HH:mm:ss")
+        }
       }
     },
     template: `

@@ -81,7 +81,7 @@ export default defineComponent({
       menu(val) {
         if(val) {
           setTimeout(() => {
-            let el = document.querySelector('.ant-modal:not([style*="display: none"]) .txt-hour') as any
+            let el = document.querySelector('.rock-modal:not([style*="display: none"]) .txt-hour') as any
             if(el) {
               el.focus()
             }

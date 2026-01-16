@@ -49,6 +49,14 @@ export default defineComponent({
   methods: {
     removeConfiguration() {
       this.$emit('removeinventoryconfig')
+    },
+    changeFocus() {
+      setTimeout(() => {
+        let el = $("#txtQuantityNeeded" + this.id)
+        if(el){
+          el.focus()
+        }
+      }, 300)
     }
   },
   watch: {
@@ -72,6 +80,7 @@ export default defineComponent({
       v-model="inventoryRes.InventoryItem"
       :items="inventory"
       :id="'ddlItem' + id"
+      v-on:select="changeFocus"
     ></tcc-inv-ddl>
   </div>
   <div class="col col-xs-5">
