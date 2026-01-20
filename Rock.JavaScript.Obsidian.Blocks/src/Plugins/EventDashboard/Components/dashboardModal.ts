@@ -303,18 +303,24 @@ export default defineComponent({
     <div class="col col-xs-6">
       <div class="row">
         <div class="col col-xs-6">
-          <rck-lbl>Submitted By</rck-lbl><br/>
-          {{createdBy.nickName}} {{createdBy.lastName}}
+          <div class="form-group static-control">
+            <rck-lbl>Submitted By</rck-lbl><br/>
+            {{createdBy.nickName}} {{createdBy.lastName}}
+          </div>
         </div>
         <div class="col col-xs-6" v-if="createdBy.nickName != modifiedBy.nickName">
-          <rck-lbl>Modified By</rck-lbl><br/>
-          {{modifiedBy.nickName}} {{modifiedBy.lastName}}
+          <div class="form-group static-control">
+            <rck-lbl>Modified By</rck-lbl><br/>
+            {{modifiedBy.nickName}} {{modifiedBy.lastName}}
+          </div>
         </div>
       </div>
     </div>
     <div class="col col-xs-6 text-right">
-      <rck-lbl>Submitted On</rck-lbl> <br/>
-      {{formatDateTime(request.startDateTime)}}
+      <div class="form-group static-control">
+        <rck-lbl>Submitted On</rck-lbl><br/>
+        {{formatDateTime(request.startDateTime)}}
+      </div>
     </div>
   </div>
   <div class="row">
@@ -333,10 +339,8 @@ export default defineComponent({
             <rck-field
               v-model="request.changes.attributeValues.Ministry"
               :attribute="request.attributes.Ministry"
-              class="text-primary"
+              class="text-primary hidden-label"
               :showEmptyValue="true"
-              :showLabel="false"
-              style="padding-top: 18px;"
             ></rck-field>
           </div>
         </div>
@@ -363,10 +367,8 @@ export default defineComponent({
             <rck-field
               v-model="request.changes.attributeValues.Contact"
               :attribute="request.attributes.Contact"
-              class="text-primary"
+              class="text-primary hidden-label"
               :showEmptyValue="true"
-              :showLabel="false"
-              style="padding-top: 18px;"
             ></rck-field>
           </div>
         </div>
@@ -412,10 +414,8 @@ export default defineComponent({
               <rck-field
                 v-model="ci.changes.attributeValues.StartTime"
                 :attribute="ci.attributes.StartTime"
-                class="text-primary"
+                class="text-primary hidden-label"
                 :showEmptyValue="true"
-                :showLabel="false"
-                style="padding-top: 18px;"
               ></rck-field>
             </div>
           </div>
@@ -443,10 +443,8 @@ export default defineComponent({
               <rck-field
                 v-model="ci.changes.attributeValues.EndTime"
                 :attribute="ci.attributes.EndTime"
-                class="text-primary"
+                class="text-primary hidden-label"
                 :showEmptyValue="true"
-                :showLabel="false"
-                style="padding-top: 18px;"
               ></rck-field>
             </div>
           </div>
@@ -537,6 +535,56 @@ export default defineComponent({
     <tcc-registration v-if="request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' )" :details="ci"></tcc-registration>
     <tcc-online v-if="request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' )" :details="ci"></tcc-online>
   </rck-panel>
+  <tcc-web-cal v-if="request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' )" :request="request"></tcc-web-cal>
+  <tcc-production v-if="request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' )" :request="request"></tcc-production>
+  <tcc-publicity v-if="request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' )" :request="request"></tcc-publicity>
+  <div class="row" v-if="request.attributeValues.Notes != '' || (request.changes && request.changes.attributeValues.Notes != '')">
+    <template v-if="request.changes && request.changes.attributeValues.Notes != request.attributeValues.Notes">
+      <div class="col col-xs-6">
+        <rck-field
+          v-model="request.attributeValues.Notes"
+          :attribute="request.attributes.Notes"
+          :showEmptyValue="true"
+          class="text-red"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-6">
+        <rck-field
+          v-model="request.changes.attributeValues.Notes"
+          :attribute="request.attributes.Notes"
+          class="text-primary hidden-label"
+          :showEmptyValue="true"
+        ></rck-field>
+      </div>
+    </template>
+    <template v-else>
+      <div class="col col-xs-12">
+        <rck-field
+          v-model="request.attributeValues.Notes"
+          :attribute="request.attributes.Notes"
+          :showEmptyValue="true"
+        ></rck-field>
+      </div>
+    </template>
+  </div>
+  <template v-if="request.conflicts && request.conflicts.length > 0">
+    <h3 class="text-red">Conflicts</h3>
+    <div class="row">
+      <div class="col col-xs-4 hover" v-for="c in request.conflicts" :key="c.idKey" @click="openRelated(c)">
+        {{c.title}}<br/> 
+        {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
+      </div>
+    </div>
+  </template>
+  <template v-if="request.changesConflicts && request.changesConflicts.length > 0">
+    <h3 class="text-red">Conflicts With Requested Changes</h3>
+    <div class="row">
+      <div class="col col-xs-4 hover" v-for="c in request.changesConflicts" :key="c.idKey" @click="openRelated(c)">
+        {{c.title}}<br/> 
+        {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
+      </div>
+    </div>
+  </template>
 </div>
 <rck-modal v-model="modal" width="50%" :clickBackdropToClose="true" :isFooterHidden="true" modalWrapperClasses="modal-no-header">
   <template v-if="request.changes && request.changes.attributeValues.EventDates.split(',').map(d => d.trim()).join(',') != request.attributeValues.EventDates.split(',').map(d => d.trim()).join(',')">
@@ -586,6 +634,9 @@ export default defineComponent({
     right: 8px;
     font-weight: 500;
     font-size: 1.1em;
+  }
+  .hidden-label label.control-label {
+    visibility: hidden;
   }
 </v-style>
 `

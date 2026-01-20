@@ -28,7 +28,7 @@ export default defineComponent({
       getClassName(isOriginal: boolean) {
         let className = "text-red"
         if(!isOriginal) {
-          className = "text-primary"
+          className = "text-primary hidden-label"
         }
         if(this.isApproved == null) {
           return className
@@ -72,8 +72,6 @@ export default defineComponent({
           :attribute="attribute"
           :class="getClassName(false)"
           :showEmptyValue="true"
-          :showLabel="false"
-          style="padding-top: 18px;"
         ></rck-field>
       </div>
     </div>

@@ -123,6 +123,7 @@ export default defineComponent({
   },
   template: `
 <tcc-dd
+  :label="label"
   :items="filteredItems"
   anchorButtonCssClass="w-100 px-0 text-left tcc-dropdown"
 >

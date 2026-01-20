@@ -137,36 +137,38 @@ export default defineComponent({
     <div class="col col-xs-12 col-md-6" v-for="av in opsAttrs">
       <template v-if="av.attr.key =='RoomSetUp'">
         <template v-if="av.changeValue != ''">
-          <div class="row mb-2">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div class="text-red">
-                <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
-                  <template v-if="su.items.length > 0">
-                    <b>{{su.room}}: Custom Setup</b> <br/>
-                    <div v-for="(i, idx) in su.items" :key="idx">
-                      {{i}}
-                    </div>
-                  </template>
-                  <template v-else>
-                    <b>{{su.room}}: Standard Setup</b>
-                  </template>
+          <div class="form-group static-control">
+            <div class="row mb-2">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="text-red">
+                  <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
+                    <template v-if="su.items.length > 0">
+                      <b>{{su.room}}:</b> Custom Setup <br/>
+                      <div v-for="(i, idx) in su.items" :key="idx">
+                        {{i}}
+                      </div>
+                    </template>
+                    <template v-else>
+                      <b>{{su.room}}:</b> Standard Setup
+                    </template>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="col col-xs-6">
-              <br/>
-              <div class="text-primary">
-                <div v-for="su in getSetUpDesc(av.changeValue)" :key="su.room">
-                  <template v-if="su.items.length > 0">
-                    <b>{{su.room}}: Custom Setup</b> <br/>
-                    <div v-for="(i, idx) in su.items" :key="idx">
-                      {{i}}
-                    </div>
-                  </template>
-                  <template v-else>
-                    <b>{{su.room}}: Standard Setup</b>
-                  </template>
+              <div class="col col-xs-6">
+                <br/>
+                <div class="text-primary">
+                  <div v-for="su in getSetUpDesc(av.changeValue)" :key="su.room">
+                    <template v-if="su.items.length > 0">
+                      <b>{{su.room}}:</b> Custom Setup <br/>
+                      <div v-for="(i, idx) in su.items" :key="idx">
+                        {{i}}
+                      </div>
+                    </template>
+                    <template v-else>
+                      <b>{{su.room}}:</b> Standard Setup
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
@@ -174,75 +176,86 @@ export default defineComponent({
         </template>
         <template v-else>
           <div class="mb-2">
-            <rck-lbl>{{av.attr.name}}</rck-lbl> <br/>
-            <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
-              <template v-if="su.items.length > 0">
-                <b>{{su.room}}: Custom Setup</b> <br/>
-                <div v-for="(i, idx) in su.items" :key="idx">
-                  {{i}}
-                </div>
-              </template>
-              <template v-else>
-                <b>{{su.room}}: Standard Setup</b>
-              </template>
+            <div class="form-group static-control">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
+                <template v-if="su.items.length > 0">
+                  <b>{{su.room}}:</b> Custom Setup <br/>
+                  <div v-for="(i, idx) in su.items" :key="idx">
+                    {{i}}
+                  </div>
+                </template>
+                <template v-else>
+                  <b>{{su.room}}:</b> Standard Setup
+                </template>
+              </div>
             </div>
           </div>
         </template>
       </template>
       <template v-else-if="av.attr.key == 'Drinks'">
         <template v-if="av.changeValue != ''">
-          <div class="row mb-2">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
-            </div>
-            <div class="col col-xs-6">
-              <div v-for="(d, idx) in getDrinkInfo(av.changeValue)" :key="idx" class="text-primary">{{d}}</div>
+          <div class="form-group static-control">
+            <div class="row mb-2">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
+              </div>
+              <div class="col col-xs-6">
+                <div v-for="(d, idx) in getDrinkInfo(av.changeValue)" :key="idx" class="text-primary">{{d}}</div>
+              </div>
             </div>
           </div>
         </template>
         <template v-else>
           <div class="mb-2">
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
-            <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
+            <div class="form-group static-control">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
+            </div>
           </div>
         </template>
       </template>
       <template v-else-if="av.attr.key == 'OpsInventory'">
         <template v-if="av.changeValue != ''">
-          <div class="row mb-2">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div class="text-red">
-                <ul v-if="av.value">
-                  <li v-for="(val, idx) in getOpsInventory(av.value)" :key="val.InventoryItem">
-                    {{val.QuantityNeeded}} {{val.ItemName}}
-                  </li>
-                </ul>
-                <div v-else>Empty</div>
+          <div class="form-group static-control">
+            <div class="row mb-2">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="text-red">
+                  <ul v-if="av.value">
+                    <li v-for="(val, idx) in getOpsInventory(av.value)" :key="val.InventoryItem">
+                      {{val.QuantityNeeded}} {{val.ItemName}}
+                    </li>
+                  </ul>
+                  <div v-else>Empty</div>
+                </div>
               </div>
-            </div>
-            <div class="col col-xs-6">
-              <div class="text-primary" style="padding-top: 18px;">
-                <ul v-if="av.changeValue">
-                  <li v-for="(val, idx) in getOpsInventory(av.changeValue)" :key="val.InventoryItem">
-                    {{val.QuantityNeeded}} {{val.ItemName}}
-                  </li>
-                </ul>
-                <div v-else>Empty</div>
+              <div class="col col-xs-6 hidden-label">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="text-primary">
+                  <ul v-if="av.changeValue">
+                    <li v-for="(val, idx) in getOpsInventory(av.changeValue)" :key="val.InventoryItem">
+                      {{val.QuantityNeeded}} {{val.ItemName}}
+                    </li>
+                  </ul>
+                  <div v-else>Empty</div>
+                </div>
               </div>
             </div>
           </div>
         </template>
         <template v-else>
           <div class="mb-2">
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
-            <div>
-              <ul>
-                <li v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
-                  {{i.QuantityNeeded}} {{i.ItemName}}
-                </li>
-              </ul>
+            <div class="form-group static-control">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <div>
+                <ul>
+                  <li v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
+                    {{i.QuantityNeeded}} {{i.ItemName}}
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </template>
@@ -262,10 +275,8 @@ export default defineComponent({
               <rck-field
                 v-model="av.changeValue"
                 :attribute="av.attr"
-                class="text-primary"
+                class="text-primary hidden-label"
                 :showEmptyValue="true"
-                :showLabel="false"
-                style="padding-top: 18px;"
               ></rck-field>
             </div>
           </div>

@@ -80,13 +80,16 @@ export default defineComponent({
     <div class="col col-xs-12 col-md-6" v-for="av in cateringAttrs">
       <template v-if="av.changeValue != ''">
         <template v-if="av.attr.key == 'Drinks'">
-          <div class="row">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
-            </div>
-            <div class="col col-xs-6">
-              <div v-for="(d, idx) in getDrinkInfo(av.changeValue)" :key="idx" class="text-primary">{{d}}</div>
+          <div class="form-group static-control">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
+              </div>
+              <div class="col col-xs-6 hidden-label">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div v-for="(d, idx) in getDrinkInfo(av.changeValue)" :key="idx" class="text-primary">{{d}}</div>
+              </div>
             </div>
           </div>
         </template>
@@ -104,10 +107,8 @@ export default defineComponent({
               <rck-field
                 v-model="av.changeValue"
                 :attribute="av.attr"
-                class="text-primary"
+                class="text-primary hidden-label"
                 :showEmptyValue="true"
-                :showLabel="false"
-                style="padding-top: 18px;"
               ></rck-field>
             </div>
           </div>
@@ -115,8 +116,10 @@ export default defineComponent({
       </template>
       <template v-else>
         <template v-if="av.attr.key == 'Drinks'">
-          <rck-lbl>{{av.attr.name}}</rck-lbl>
-          <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
+          <div class="form-group static-control">
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
+          </div>
         </template>
         <template v-else>
           <rck-field

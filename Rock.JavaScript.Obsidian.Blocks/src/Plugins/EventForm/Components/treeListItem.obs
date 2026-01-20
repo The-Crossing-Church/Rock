@@ -268,12 +268,19 @@
         if(props.item.hasChildren) {
             // Select or Deselect all children instead of item
             let selectedChildren = props.item.children.filter((c: any) => props.modelValue.includes(c.value))
-            let children = props.item.children.map((c: any) => c.value)
-            if(selectedChildren.length == props.item.children.length) {
+            let children = props.item.children.filter((c: any) => c.isActive ).map((c: any) => c.value)
+            console.log('CHILD ITEM SELECT')
+            console.log(selectedChildren)
+            console.log(children)
+            if(selectedChildren.length == children.length) {
                 //Deselect
+                console.log('DESELECT')
+                console.log([...props.modelValue.filter(v => !children.includes(v))])
                 emit("update:modelValue", [...props.modelValue.filter(v => !children.includes(v))])
             } else {
                 //Select
+                console.log('SELECT')
+                console.log([...children])
                 emit("update:modelValue", [...props.modelValue, ...children]);
             }
             return

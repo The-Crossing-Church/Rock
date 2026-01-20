@@ -95,73 +95,82 @@ export default defineComponent({
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in regAttrs">
       <template v-if="av.attr.key == 'DiscountCodes'">
-        <template v-if="av.changeValue != ''">
-          <div class="row" style="pading-bottom: 12px;">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div class="text-red">
-                <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
-                  <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
+        <div class="form-group static-control">
+          <template v-if="av.changeValue != ''">
+            <div class="row" style="pading-bottom: 12px;">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="text-red">
+                  <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
+                    <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
+                  </div>
+                </div>
+              </div>
+              <div class="col col-xs-6 hidden-label">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="text-primary">
+                  <div v-for="c in getDiscountCodes(av.changeValue)" :key="c.Code">
+                    <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="col col-xs-6">
-              <div class="text-primary" style="padding-top: 18px;">
-                <div v-for="c in getDiscountCodes(av.changeValue)" :key="c.Code">
-                  <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
-                </div>
+          </template>
+          <template v-else>
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div style="pading-bottom: 12px;">
+              <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
+                <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <template v-if="c.AutoApply == 'True'"><i class="fas fa-check-square" style="font-size: 16px;"></i> Auto Apply</template> {{formatDiscountCodeMaxUses(c)}}
               </div>
             </div>
-          </div>
-        </template>
-        <template v-else>
-          <rck-lbl>{{av.attr.name}}</rck-lbl>
-          <div style="pading-bottom: 12px;">
-            <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
-              <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <template v-if="c.AutoApply == 'True'"><i class="fas fa-check-square" style="font-size: 16px;"></i> Auto Apply</template> {{formatDiscountCodeMaxUses(c)}}
-            </div>
-          </div>
-        </template>
+          </template>
+        </div>
       </template>
       <template v-else-if="av.attr.key.includes('EmailAdditionalDetails')">
-        <template v-if="av.changeValue != ''">
-          <div class="row">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div class="mb-2 text-red" v-html="av.value.replaceAll('\\n','<br>')"></div>
+        <div class="form-group static-control">
+          <template v-if="av.changeValue != ''">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="mb-2 text-red" v-html="av.value.replaceAll('\\n','<br>')"></div>
+              </div>
+              <div class="col col-xs-6 hidden-label">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="mb-2 text-primary" v-html="av.changeValue.replaceAll('\\n','<br>')"></div>
+              </div>
             </div>
-            <div class="col col-xs-6">
-              <div class="mb-2 text-primary" style="padding-top: 18px;" v-html="av.changeValue.replaceAll('\\n','<br>')"></div>
-            </div>
-          </div>
-        </template>
-        <template v-else>
-          <rck-lbl>{{av.attr.name}}</rck-lbl>
-          <div class="mb-2" v-html="av.value.replaceAll('\\n','<br>')"></div>
-        </template>
+          </template>
+          <template v-else>
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div class="mb-2" v-html="av.value.replaceAll('\\n','<br>')"></div>
+          </template>
+        </div>
       </template>
       <template v-else-if="av.attr.fieldTypeGuid == 'fe95430c-322d-4b67-9c77-dfd1d4408725'">
-        <template v-if="av.changeValue != ''">
-          <div class="row">
-            <div class="col col-xs-6">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <div class="text-red">
-                {{formatDateTime(av.value)}}
+        <div class="form-group static-control">
+          <template v-if="av.changeValue != ''">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="text-red">
+                  {{formatDateTime(av.value)}}
+                </div>
+              </div>
+              <div class="col col-xs-6 hidden-label">
+                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <div class="mb-2 text-primary">
+                  {{formatDateTime(av.changeValue)}}
+                </div>
               </div>
             </div>
-            <div class="col col-xs-6">
-              <div class="mb-2 text-primary" style="padding-top: 18px;">
-                {{formatDateTime(av.changeValue)}}
-              </div>
+          </template>
+          <template v-else>
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div class="mb-2">
+              {{formatDateTime(av.value)}}
             </div>
-          </div>
-        </template>
-        <template v-else>
-          <rck-lbl>{{av.attr.name}}</rck-lbl>
-          <div class="mb-2">
-            {{formatDateTime(av.value)}}
-          </div>
-        </template>
+          </template>
+        </div>
       </template>
       <template v-else>
         <template v-if="av.changeValue != ''">
@@ -178,10 +187,8 @@ export default defineComponent({
               <rck-field
                 v-model="av.changeValue"
                 :attribute="av.attr"
-                class="text-primary"
+                class="text-primary hidden-label"
                 :showEmptyValue="true"
-                :showLabel="false"
-                style="padding-top: 18px;"
               ></rck-field>
             </div>
           </div>

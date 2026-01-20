@@ -1250,7 +1250,7 @@ export default defineComponent({
     }
   },
   template: `
-<div class="card">
+<div class="card" style="min-height: 550px;">
   <a-steps :current="step">
     <a-step class="hover" :key="0" @click="jumpTo(0)" title="Resources" />
     <a-step class="hover" :key="1" @click="jumpTo(1)" title="Basic Info" />

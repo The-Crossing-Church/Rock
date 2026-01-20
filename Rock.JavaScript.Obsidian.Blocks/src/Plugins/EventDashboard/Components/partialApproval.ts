@@ -169,26 +169,28 @@ export default defineComponent({
   <template v-if="request.changes && request.title != request.changes.title">
     <div class="row" style="display: flex; align-items: center;">
       <div class="col col-xs-10">
-        <div class="row">
-          <div class="col col-xs-6 text-red">
-            <rck-lbl>Request Title</rck-lbl><br/>
-            <template v-if="titleApproved">
-              <div class="text-strikethrough">{{request.title}}</div>
-            </template>
-            <template v-else>
-              {{request.title}}
-            </template>
-          </div>
-          <div class="col col-xs-6 text-primary">
-            <div style="padding-top: 18px;">
-              <template v-if="!titleApproved">
-                <div class="text-strikethrough">
-                  {{request.changes.title}}
-                </div>
+        <div class="form-group static-control">
+          <div class="row">
+            <div class="col col-xs-6 text-red">
+              <rck-lbl>Request Title</rck-lbl><br/>
+              <template v-if="titleApproved">
+                <div class="text-strikethrough">{{request.title}}</div>
               </template>
               <template v-else>
-                {{request.changes.title}}
+                {{request.title}}
               </template>
+            </div>
+            <div class="col col-xs-6 text-primary">
+              <div style="padding-top: 18px;">
+                <template v-if="!titleApproved">
+                  <div class="text-strikethrough">
+                    {{request.changes.title}}
+                  </div>
+                </template>
+                <template v-else>
+                  {{request.changes.title}}
+                </template>
+              </div>
             </div>
           </div>
         </div>

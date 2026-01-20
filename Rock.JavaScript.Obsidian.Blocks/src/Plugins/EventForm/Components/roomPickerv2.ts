@@ -105,6 +105,8 @@ export default defineComponent({
       selectedValue: { 
         handler (val, oval) {
           if (val) {
+            console.log('Selected Val Watch')
+            console.log(val)
             let rockVal = {
               value: val.map((i: any) => i.value).join(","),
               text: val.map((i: any) => i.text.split(" (")[0]).join(", ")
@@ -140,7 +142,7 @@ export default defineComponent({
         let parsed = JSON.parse(this.modelValue)
         if(parsed.value) {
           let roomGuids = parsed.value.split(',')
-          this.selectedValue = this.items.filter((i: any) =>  roomGuids.includes(i.value)).map((i: any) => { return { text: i.text, value: i.value }})
+          this.selectedValue = this.items.filter((i: any) => !i.isDisabled && roomGuids.includes(i.value)).map((i: any) => { return { text: i.text, value: i.value }})
         } else {
           this.selectedValue = []
         }

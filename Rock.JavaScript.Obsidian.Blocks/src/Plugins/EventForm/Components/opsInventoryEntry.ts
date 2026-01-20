@@ -79,16 +79,17 @@ export default defineComponent({
     <tcc-inv-ddl
       v-model="inventoryRes.InventoryItem"
       :items="inventory"
+      label="Item"
       :id="'ddlItem' + id"
       v-on:select="changeFocus"
     ></tcc-inv-ddl>
   </div>
   <div class="col col-xs-5">
-    <rck-lbl>Quantity Needed</rck-lbl>
     <rck-text
       v-model="inventoryRes.QuantityNeeded"
       type="number"
       :id="'txtQuantityNeeded' + id"
+      label="Quantity Needed"
     ></rck-text>
   </div>
   <div class="col col-xs-2">

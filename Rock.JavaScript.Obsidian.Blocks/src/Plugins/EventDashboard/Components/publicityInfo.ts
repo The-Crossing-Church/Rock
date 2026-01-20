@@ -73,10 +73,8 @@ export default defineComponent({
             <rck-field
               v-model="av.changeValue"
               :attribute="av.attr"
-              class="text-primary"
+              class="text-primary hidden-label"
               :showEmptyValue="true"
-              :showLabel="false"
-              style="padding-top: 18px;"
             ></rck-field>
           </div>
         </div>
