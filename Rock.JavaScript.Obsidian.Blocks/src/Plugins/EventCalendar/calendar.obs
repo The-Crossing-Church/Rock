@@ -191,9 +191,9 @@ export default defineComponent({
     },
     ministries() {
       let arr = this.viewModel?.ministries as any[]
-      arr = arr?.map((m: DefinedValueBag) => { return m.value })
+      arr = arr?.map((m: DefinedValueBag) => { return { text: m.value, value: m.value }})
       if(arr && arr.length > 0) {
-        return arr.sort()
+        return arr.sort((a: any, b: any) => { return a.text < b.text ? -1 : (a.text > b.text ? 1 : 0) })
       }
       return []
     },
@@ -621,6 +621,7 @@ export default defineComponent({
             v-model="filters.ministries"
             label="Ministries"
             :items="ministries"
+            multiple
           ></rck-ddl>
         </div>
         <div class="col col-xs-12 col-md-4">
