@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
+
 using Rock;
 using Rock.Attribute;
 using Rock.Communication;
@@ -11,6 +12,7 @@ using Rock.Data;
 using Rock.Jobs;
 using Rock.Model;
 using Rock.Web.Cache;
+
 using Attribute = Rock.Model.Attribute;
 
 namespace org.thecrossingchurch.CustomJobs.Jobs
@@ -611,7 +613,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
 
             var connectionReminderActivity =
                 from reminder in reminderDetails
-                join connection in cr_svc.Queryable() on reminder.ConnectionStatusId equals connection.ConnectionStatusId
+                join connection in cr_svc.Queryable().Where( cr => cr.ConnectionState == ConnectionState.Active ) on reminder.ConnectionStatusId equals connection.ConnectionStatusId
                 join ia in mostRecentIndicator on new { ConnectionActivityTypeId = reminder.IndicatorActivityTypeId, ConnectionRequestId = connection.Id } equals new { ia.ConnectionActivityTypeId, ia.ConnectionRequestId }
                 join _ra in reminderActivities on new { ConnectionActivityTypeId = reminder.ReminderActivityTypeId, ConnectionRequestId = connection.Id, reminder.ReminderGuid } equals new { _ra.ConnectionActivityTypeId, _ra.ConnectionRequestId, _ra.ReminderGuid } into raj
                 from ra in raj.DefaultIfEmpty()
