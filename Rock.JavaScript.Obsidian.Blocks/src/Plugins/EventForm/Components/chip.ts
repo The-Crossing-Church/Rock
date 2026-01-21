@@ -24,7 +24,7 @@ export default defineComponent({
     },
     computed: {
       className() {
-        return "tcc-chip " + this.class
+        return "tcc-chip " + this.class ?? ''
       }
     },
     methods: {
@@ -41,16 +41,16 @@ export default defineComponent({
     template: `
 <div :class="className" @click="$emit('click')" :id="id">
   <slot></slot>
-  <i v-if="!disabled" class="fa fa-times-circle" style="padding-left: 6px; color: #676666;" @click="emitCloseClick"></i>
+  <i v-if="!disabled" class="fa fa-times-circle" style="padding-left: 6px; color: var(--color-interface-medium);" @click="emitCloseClick"></i>
 </div>
 <v-style>
   .tcc-chip {
-    background: #e0e0e0;
+    background: var(--color-interface-soft);
     border-radius: 16px;
     font-size: 14px;
     height: 32px;
     border-color: rgba(0,0,0,.12);
-    color: rgba(0,0,0,.87);
+    color: var(--color-interface-strong);
     margin: 4px;
     display: flex;
     padding: 0 12px;

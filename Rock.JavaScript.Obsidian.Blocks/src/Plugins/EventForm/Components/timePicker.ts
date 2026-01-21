@@ -306,7 +306,7 @@ export default defineComponent({
     border-radius: 0px 0px 14px 14px;
   }
   .btn-time-wrapper .active {
-    background-color: #347689;
+    background-color: var(--color-primary);
     color: white;
   }
 </v-style>

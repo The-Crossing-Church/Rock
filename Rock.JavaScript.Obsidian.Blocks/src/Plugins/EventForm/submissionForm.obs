@@ -1250,7 +1250,7 @@ export default defineComponent({
     }
   },
   template: `
-<div class="card" style="min-height: 550px;">
+<div class="card" style="overflow: visible;">
   <a-steps :current="step">
     <a-step class="hover" :key="0" @click="jumpTo(0)" title="Resources" />
     <a-step class="hover" :key="1" @click="jumpTo(1)" title="Basic Info" />
@@ -1266,8 +1266,8 @@ export default defineComponent({
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
           <h2 class="text-accent" style="display: flex; align-items: center;">
             Information for {{formatDate(e.attributeValues.EventDate)}}
-            <rck-btn class="ml-1 btn-round" btnType="accent-outlined" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event</rck-btn>
-            <rck-btn class="ml-1 btn-round" btnType="accent-outlined" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</rck-btn>
+            <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event</rck-btn>
+            <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</rck-btn>
           </h2>
         </template>
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
