@@ -1,7 +1,7 @@
 import { defineComponent, Prop, PropType } from "vue"
 import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
-import { DateTime } from "luxon"
+import { DateTime, Interval } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import TCCDropDownList from "../Components/dropDownList"
 import GridAction from "../Components/adminGridAction"
@@ -12,6 +12,7 @@ import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
 import PersonPicker from "@Obsidian/Controls/personPicker.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import Grid, { Column, TextColumn, DateColumn, PersonColumn, textValueFilter, dateValueFilter, pickExistingValueFilter } from "@Obsidian/Controls/grid"
+import event from "../../EventCalendar/Components/event"
 
 export default defineComponent({
     name: "EventDashboard.Components.RequestTable",
@@ -58,7 +59,7 @@ export default defineComponent({
           textValueFilter: textValueFilter,
           dateValueFilter: dateValueFilter,
           pickExistingValueFilter: pickExistingValueFilter,
-          loading: false,
+          loading: true,
           defaultClass: "",
           resources: [
             { text: "Room",  value: "Room" },
@@ -85,6 +86,57 @@ export default defineComponent({
       },
       collapseSelector() {
         return '#' + this.collapseId
+      },
+      filteredEvents() {
+        let events = this.events
+        
+        if(this.filters.title) {
+          events = events?.filter((e: any) => e.title.toLowerCase().includes(this.filters.title.toLowerCase()))
+        }
+
+        if(this.filters.ministry) {
+          let min = JSON.parse(this.filters.ministry)
+          if(min.text) {
+            console.log('has ministry text')
+            events = events?.filter((e: any) => e.attributeValues.Ministry == min.text)
+          }
+        }
+
+        if(this.filters.submitter) {
+          events = events?.filter((e: any) => e.createdBy.toLowerCase().includes(this.filters.submitter.toLowerCase()) || e.modifiedBy.toLowerCase().includes(this.filters.submitter.toLowerCase()))
+        }
+
+        if(this.filters.resources && this.filters.resources.length > 0) {
+          events = events?.filter((e: any) => {
+            let res = e.attributeValues.RequestType.split(',')
+            let intersects = false
+            res.forEach((r: string) => {
+              if(this.filters.resources.includes(r)) {
+                intersects = true
+              }
+            })
+            return intersects
+          })
+        }
+
+        if(this.filters.eventDates && (this.filters.eventDates.lowerValue || this.filters.eventDates.upperValue)) {
+          let lower = this.filters.eventDates.lowerValue ? DateTime.fromFormat(this.filters.eventDates.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2010-01-01", "yyyy-MM-dd")
+          let upper = this.filters.eventDates.upperValue ? DateTime.fromFormat(this.filters.eventDates.upperValue, "yyyy-MM-dd") : DateTime.fromFormat("2100-01-01", "yyyy-MM-dd")
+          let interval = Interval.fromDateTimes(lower, upper)
+          events = events?.filter((e: any) => {
+            let dates = e.attributeValues.EventDates.split(',')
+            let inRange = false
+            dates.forEach((d: string) => {
+              let dt = DateTime.fromFormat(d, "yyyy-MM-dd")
+              if(interval.contains(dt)) {
+                inRange = true
+              }
+            })
+            return inRange
+          })
+        }
+
+        return events
       }
     },
     methods: {
@@ -153,7 +205,7 @@ export default defineComponent({
       } else {
         this.defaultClass = "collapse"
       }
-    }, //Title, Date, Status on mobile, nothing else 
+    }, 
     template: `
 <div style="display: flex; align-items: center;">
   <i class="fa fa-filter mr-2 mb-2 hover fa-lg" data-toggle="collapse" :data-target="filterCollapseSelector" aria-expanded="false" :aria-controls="filterCollapseId"></i>
@@ -188,6 +240,7 @@ export default defineComponent({
           label="Requested Resources"
           :items="resources"
           v-model="filters.resources"
+          multiple
         ></rck-ddl>
       </div>
       <div class="col col-xs-12 col-md-6">
@@ -198,18 +251,17 @@ export default defineComponent({
       </div>
     </div>
     <div class="row">
-      <div class="col col-xs-12">
+      <div class="col col-xs-12 mb-4">
         <rck-btn btnType="grey" @click="clearFilters">Clear Filters</rck-btn>
-        <rck-btn class="pull-right" btnType="primary" @click="filter" :isLoading="loading">Filter</rck-btn>
+        <!--<rck-btn class="pull-right" btnType="primary" @click="filter" :isLoading="loading">Filter</rck-btn>-->
       </div>
     </div>
   </div>
-  <rck-grid :data="{ rows: events }" keyField="idKey" :isTitleHidden="true" itemTerm="request">
+  <rck-grid :data="{ rows: filteredEvents }" keyField="idKey" :isTitleHidden="true" itemTerm="request" :emptyDataText="loading ? 'Loading Requests...' : 'No Requests to Display'">
     <rck-col-txt
       name="title"
       title="Title"
       field="title"
-      :filter="textValueFilter"
       visiblePriority="xs"
     >
       <template #format="{ row }">
@@ -221,16 +273,11 @@ export default defineComponent({
       </template>
     </rck-col-txt>
     <rck-col-txt
-      name="createdByPersonAliasId"
+      name="createdBy"
       title="Submitted By"
-      field="createdByPersonAliasId"
-      :filter="textValueFilter"
+      field="createdBy"
       visiblePriority="md"
-    >
-      <template #format="{ row }">
-        {{getSubmitter(row.createdByPersonAliasId)}}
-      </template>  
-    </rck-col-txt>
+    ></rck-col-txt>
     <rck-col-dt
       name="startDateTime"
       title="Submitted On"
@@ -259,7 +306,7 @@ export default defineComponent({
       visiblePriority="md"
     >
       <template #format="{ row }">
-        {{ row.attributeValues.RequestType }}
+        {{ row.attributeValues.RequestType.replaceAll(',', ', ') }}
       </template>
     </rck-col>
     <rck-col

@@ -15,6 +15,7 @@ export type AdminDashboardBlockViewModel = {
     ministries: DefinedValueBag[];
     budgetLines: DefinedValueBag[];
     drinks: DefinedValueBag[];
+    inventory: DefinedValueBag[];
     requestStatus: AttributeBag;
     requestType: AttributeBag;
     workflowURL: string;

@@ -171,6 +171,8 @@ namespace Rock.Blocks.Plugins.ViewModels
         /// </value>
         public int? CreatedByPersonAliasId { get; set; }
 
+        public string CreatedBy { get; set; }
+
         /// <summary>
         /// Gets or sets the modified by person alias identifier.
         /// </summary>
@@ -178,6 +180,8 @@ namespace Rock.Blocks.Plugins.ViewModels
         /// The modified by person alias identifier.
         /// </value>
         public int? ModifiedByPersonAliasId { get; set; }
+
+        public string ModifiedBy { get; set; }
 
     }
 }
