@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using Rock.Attribute;
 using Rock.Communication;
 using Rock.Data;
@@ -322,7 +324,15 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 rockContext.SaveChanges();
                 item.SetAttributeValue( requestStatusAttrKey, status );
                 item.SaveAttributeValue( requestStatusAttrKey );
-                StatusChangeNotification( item, status );
+
+                ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
+                Task task = new Task( () =>
+                {
+                    StatusChangeNotification( item, status );
+                } );
+                taskBag.Add( task );
+                task.Start();
+
                 return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ) } );
             }
             catch ( Exception e )
@@ -375,7 +385,13 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
                 rockContext.SaveChanges();
 
-                CommentNotification( comment, request );
+                ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
+                Task task = new Task( () =>
+                {
+                    CommentNotification( comment, request );
+                } );
+                taskBag.Add( task );
+                task.Start();
 
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( comment );
                 return ActionOk( new { createdBy = p.FullName, comment = bag } );
