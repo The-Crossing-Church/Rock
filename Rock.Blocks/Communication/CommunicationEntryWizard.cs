@@ -283,7 +283,7 @@ namespace Rock.Blocks.Communication
 
         private Guid PersonalizationSegmentCategoryGuid => GetAttributeValue( AttributeKey.PersonalizationSegmentCategory ).AsGuid();
 
-        private string SimpleCommunicationPageUrl => this.GetLinkedPageUrl( AttributeKey.SimpleCommunicationPage );
+        private string SimpleCommunicationPageUrl => this.GetLinkedPageUrl( AttributeKey.SimpleCommunicationPage, PageParameterKey.Communication, "((Key))" );
 
         private int MinimumShortLinkTokenLength => this.GetAttributeValue( AttributeKey.MinimumShortLinkTokenLength ).AsInteger();
 
@@ -3005,7 +3005,7 @@ namespace Rock.Blocks.Communication
                     var userCanApprove = this.BlockCache.IsAuthorized( "Approve", currentPerson );
                     var recipientCount = new CommunicationRecipientService( rockContext )
                         .Queryable()
-                        .Where( cr => cr.Id == communication.Id )
+                        .Where( cr => cr.CommunicationId == communication.Id )
                         .Count();
 
                     if ( recipientCount > maxRecipients && !userCanApprove )
