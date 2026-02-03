@@ -34064,18 +34064,18 @@ body.navbar-side-open {
 
 /* CSS Overrides Bottom Start */
 :root {
-    --base-primary: #FF791D;
-    --logo-image: url('/Assets/Images/rock-logo-circle-white.svg');
-    --base-link: #006DCC;
-    --base-secondary: #83758f;
+    --base-primary: #5a7091;
+    --logo-image: url('/GetImage.ashx?guid=d76d7c94-5a74-40a2-aa62-86ef6bd677b9');
+    --base-link: #009b95;
+    --base-secondary: #75788f;
     --base-critical: #ee7725;
     --base-danger: #D70015;
     --base-info: #005DD7;
     --base-success: #01A11E;
     --base-warning: #E58600;
-    --base-interface-strongest: #0a0a0a;
-    --base-interface-stronger: #0d1117;
-    --base-interface-strong: #3d444d;
+    --base-interface-strongest: #1d1f21;
+    --base-interface-stronger: #292929;
+    --base-interface-strong: #3d3d3d;
     --base-interface-medium: #8B8BA7;
     --base-interface-soft: #D9D9E3;
     --base-interface-softer: #f8f8fc;
@@ -34098,5 +34098,12 @@ body.navbar-side-open {
     --spacing-large: 24px;
     --spacing-xlarge: 48px;
     --spacing-huge: 80px;
+}
+
+.rockbadge {
+    color: #4f89bd;
+}
+.badge-icon.badge-disabled {
+    opacity: 1;
 }
 /* CSS Overrides Bottom End */
