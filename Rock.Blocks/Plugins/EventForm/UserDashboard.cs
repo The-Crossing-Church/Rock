@@ -13,6 +13,7 @@ using Rock.Model;
 using Rock.Blocks.Plugins.ViewModels;
 using Rock.Blocks.Plugins.EventForm;
 using Rock.Web.Cache;
+using System.Web.Configuration;
 
 namespace Rock.Blocks.Plugins.EventDashboard
 {
@@ -59,7 +60,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
     [SecurityRoleField( "Staff Group", "The role of people you can share requests with", false, "", "Sharing", 2, AttributeKey.StaffGroup )]
-    [TextField( "Shared With Attribut Key", category: "Sharing", order: 3, key: AttributeKey.SharedWithAttr )]
+    [TextField( "Shared With Attribut Key", category: "Sharing", order: 3, key: AttributeKey.SharedWithAttrKey )]
+
+    [AttributeField( name: "Grid Attributes", allowMultiple: true, required: true, category: "Attributes", order: 0, key: "GridAttrs", entityTypeGuid: Rock.SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16" )]
     #endregion Block Attributes
 
     public class UserDashboard : RockBlockType
@@ -97,7 +100,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public const string RequestActionWorkflow = "RequestActionWorkflow";
             public const string SharingGroupType = "SharingGroupType";
             public const string StaffGroup = "StaffGroup";
-            public const string SharedWithAttr = "SharedWithAttr";
+            public const string SharedWithAttrKey = "SharedWithAttrKey";
         }
 
         /// <summary>
@@ -1014,7 +1017,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         }
 
 
-        private List<ContentChannelItemBag> LoadRequests( Filters filters = null )
+        private List<ContentChannelItemBag> LoadRequestsSQL( Filters filters = null )
         {
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
             Person p = GetCurrentPerson();
@@ -1063,10 +1066,10 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 {
                     ministryAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == ministryAttrKey ).Id.ToString();
                 }
-                Guid? sharedWithAttrGuid = GetAttributeValue( AttributeKey.SharedWithAttr ).AsGuidOrNull();
-                if ( sharedWithAttrGuid.HasValue )
+                string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
+                if ( !String.IsNullOrEmpty( sharedWithAttrKey ) )
                 {
-                    sharedWithAttrId = attr_svc.Get( sharedWithAttrGuid.Value ).Id.ToString();
+                    sharedWithAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == sharedWithAttrKey ).Id.ToString();
                 }
                 Guid? sharingGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
                 if ( sharingGroupTypeGuid.HasValue )
@@ -1330,6 +1333,109 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 return items;
             }
 
+        }
+
+        private List<ContentChannelItemBag> LoadRequests( Filters filters = null )
+        {
+            using ( RockContext context = new RockContext() )
+            {
+                ContentChannelItemService cci_svc = new ContentChannelItemService( context );
+                AttributeValueService av_svc = new AttributeValueService( context );
+
+                int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
+                var p = GetCurrentPerson();
+                List<int> aliasIds = p.Aliases.Select( pa => pa.Id ).ToList();
+
+                if ( filters == null )
+                {
+                    List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Select( i => i.Trim() ).Where( s => !String.IsNullOrEmpty( s ) ).ToList();
+                    //Default Filters
+                    filters = new Filters()
+                    {
+                        statuses = defaultStatuses
+                    };
+                }
+
+                //Attributes
+                List<Guid> attrGuids = GetAttributeValues( "GridAttrs" ).AsGuidList();
+                List<int> attrIds = new List<int>();
+                List<AttributeCache> attrs = new List<AttributeCache>();
+
+                foreach ( Guid attrGuid in attrGuids )
+                {
+                    var attr = AttributeCache.Get( attrGuid );
+                    attrIds.Add( attr.Id );
+                    attrs.Add( attr );
+                }
+
+                var itemQry = cci_svc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
+                var avQry = av_svc.Queryable().Where( av => attrIds.Contains( av.AttributeId ) );
+
+                Guid? sharingGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+                if ( sharingGroupTypeGuid.HasValue )
+                {
+                    GroupMemberService gm_svc = new GroupMemberService( context );
+                    GroupType sharingGT = new GroupTypeService( context ).Get( sharingGroupTypeGuid.Value );
+                    var memberships = gm_svc.Queryable().Where( gm => gm.GroupTypeId == sharingGT.Id && gm.PersonId == p.Id && gm.GroupRoleId == 234 ).Select( gm => gm.GroupId ).ToList();
+                    if ( memberships.Count() > 0 )
+                    {
+                        var otherAliasIds = gm_svc.Queryable().Where( gm => gm.GroupTypeId == sharingGT.Id && memberships.Contains( gm.GroupId ) && gm.GroupRoleId == 235 ).SelectMany( gm => gm.Person.Aliases.Select( pa => pa.Id ) ).ToList();
+                        aliasIds.AddRange( otherAliasIds );
+                    }
+                }
+
+                string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
+                var sharedItemsQry = itemQry;
+                List<int> explicitSharedItemIds = new List<int>();
+                if ( !String.IsNullOrEmpty( sharedWithAttrKey ) )
+                {
+                    var sharedWithAttr = attrs.FirstOrDefault( attr => attr.Key == sharedWithAttrKey );
+                    var sharingAvQry = avQry.Where( av => av.AttributeId == sharedWithAttr.Id && av.Value != "" ).ToList().Where( av => av.Value.Split( ',' ).ToList().Contains( p.Id.ToString() ) );
+                    explicitSharedItemIds = sharingAvQry.Select( av => av.EntityId.Value ).ToList();
+                }
+
+                itemQry = itemQry.Where( cci => ( cci.CreatedByPersonAliasId.HasValue && aliasIds.Contains( cci.CreatedByPersonAliasId.Value ) ) || ( cci.ModifiedByPersonAliasId.HasValue && aliasIds.Contains( cci.ModifiedByPersonAliasId.Value ) ) || explicitSharedItemIds.Contains( cci.Id ) ).OrderByDescending( cci => cci.ModifiedDateTime );
+
+                var items = itemQry.ToList();
+
+                var comments = cci_svc.Queryable().Where( cci => cci.ContentChannelId == EventCommentsContentChannelId );
+                var comment_assoc = new ContentChannelItemAssociationService( context ).Queryable().Join( itemQry,
+                    assoc => assoc.ContentChannelItemId,
+                    cci => cci.Id,
+                    ( assoc, cci ) => assoc
+                ).Join( comments,
+                    assoc => assoc.ChildContentChannelItemId,
+                    cci => cci.Id,
+                    ( assoc, cci ) => assoc
+                ).ToList();
+
+                return items.Select( cci =>
+                {
+                    var avs = avQry.Where( av => av.EntityId == cci.Id );
+                    var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                    bag.CreatedBy = cci.CreatedByPersonName;
+                    bag.ModifiedBy = cci.ModifiedByPersonName;
+                    bag.AttributeValues = new Dictionary<string, string>();
+                    foreach ( var attr in attrs )
+                    {
+                        var av = avs.FirstOrDefault( av => av.AttributeId == attr.Id );
+                        if ( av != null )
+                        {
+                            bag.AttributeValues.Add( attr.Key, av.ValueFormatted );
+                        }
+                    }
+                    var firstUser = comment_assoc.Where( cci_assoc => cci_assoc.ContentChannelItemId == cci.Id && cci_assoc.CreatedByPersonId == p.Id ).OrderByDescending( cci_assoc => cci_assoc.CreatedDateTime ).FirstOrDefault();
+                    if ( firstUser != null )
+                    {
+                        var nonUser = comment_assoc.Where( cci_assoc => cci_assoc.ContentChannelItemId == cci.Id && cci_assoc.CreatedByPersonId != p.Id && cci_assoc.CreatedDateTime < firstUser.CreatedDateTime ).Count();
+                        if ( nonUser > 0 )
+                        {
+                            bag.AttributeValues.Add( "CommentNotifications", nonUser.ToString() );
+                        }
+                    }
+                    return bag;
+                } ).ToList();
+            }
         }
 
         /// <summary>

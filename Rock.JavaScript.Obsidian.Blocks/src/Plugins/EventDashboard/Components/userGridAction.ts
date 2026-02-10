@@ -55,7 +55,7 @@ export default defineComponent({
       
     },
     template: `
-<a-badge :count="commentNotification">
+<a-badge :count="request.attributeValues.CommentNotifications">
   <rck-pop v-model:isVisible="visible" trigger="click" placement="top">
     <div class="d-flex">
       <rck-btn class="mr-1 btn-circle" btnType="primary" v-if="canEdit" @click="edit">
