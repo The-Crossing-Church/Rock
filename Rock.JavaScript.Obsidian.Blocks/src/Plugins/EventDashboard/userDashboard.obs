@@ -261,80 +261,80 @@ export default defineComponent({
         }
         return date.toFormat("yyyy-MM-dd")
       },
-      filteredEvents() {
-        let items = [] as any[]
-        if(this.viewModel?.events) {
-          items = this.viewModel.events
-        }
-        if(items && items.length > 0 && this.filters) {
-          let ids = [] as string[]
-          if(this.filters.eventModified && (this.filters.eventModified.lowerValue || this.filters.eventModified.upperValue)) {
-            let start = this.filters.eventModified.lowerValue ? DateTime.fromFormat(this.filters.eventModified.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2000-01-01", "yyyy-MM-dd")
-            let end = this.filters.eventModified.upperValue ? DateTime.fromFormat(this.filters.eventModified.upperValue, "yyyy-MM-dd") : DateTime.now()
-            let range = Interval.fromDateTimes(start, end)
-            ids = items.filter((e: any) => {
-              return range.contains(DateTime.fromISO(e.modifiedDateTime))
-            }).map((e: any) => e.idKey)
-          }
+      // filteredEvents() {
+      //   let items = [] as any[]
+      //   if(this.viewModel?.events) {
+      //     items = this.viewModel.events
+      //   }
+      //   if(items && items.length > 0 && this.filters) {
+      //     let ids = [] as string[]
+      //     if(this.filters.eventModified && (this.filters.eventModified.lowerValue || this.filters.eventModified.upperValue)) {
+      //       let start = this.filters.eventModified.lowerValue ? DateTime.fromFormat(this.filters.eventModified.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2000-01-01", "yyyy-MM-dd")
+      //       let end = this.filters.eventModified.upperValue ? DateTime.fromFormat(this.filters.eventModified.upperValue, "yyyy-MM-dd") : DateTime.now()
+      //       let range = Interval.fromDateTimes(start, end)
+      //       ids = items.filter((e: any) => {
+      //         return range.contains(DateTime.fromISO(e.modifiedDateTime))
+      //       }).map((e: any) => e.idKey)
+      //     }
 
-          if(this.filters.title) {
-            let title = this.filters.title.toLowerCase()
-            items = items.filter((e: any) => e.title.toLowerCase().includes(title) || ids.includes(e.idKey))
-          }
+      //     if(this.filters.title) {
+      //       let title = this.filters.title.toLowerCase()
+      //       items = items.filter((e: any) => e.title.toLowerCase().includes(title) || ids.includes(e.idKey))
+      //     }
 
-          if(this.filters.submitter) {
-            let submitter = this.filters.submitter.toLowerCase()
-            items = items.filter((e: any) => e.createdBy.toLowerCase().includes(submitter) || e.modifiedBy.toLowerCase().includes(submitter) || ids.includes(e.idKey) )
-          }
+      //     if(this.filters.submitter) {
+      //       let submitter = this.filters.submitter.toLowerCase()
+      //       items = items.filter((e: any) => e.createdBy.toLowerCase().includes(submitter) || e.modifiedBy.toLowerCase().includes(submitter) || ids.includes(e.idKey) )
+      //     }
 
-          if(this.filters.resources && this.filters.resources.length > 0) {
-            items = items?.filter((e: any) => {
-              let res = e.attributeValues.RequestType.split(',').map((r: string) => r.trim())
-              let intersects = false
-              res.forEach((r: string) => {
-                if(this.filters.resources.includes(r)) {
-                  intersects = true
-                }
-              })
-              return intersects || ids.includes(e.idKey)
-            })
-          }
+      //     if(this.filters.resources && this.filters.resources.length > 0) {
+      //       items = items?.filter((e: any) => {
+      //         let res = e.attributeValues.RequestType.split(',').map((r: string) => r.trim())
+      //         let intersects = false
+      //         res.forEach((r: string) => {
+      //           if(this.filters.resources.includes(r)) {
+      //             intersects = true
+      //           }
+      //         })
+      //         return intersects || ids.includes(e.idKey)
+      //       })
+      //     }
 
-          if(this.filters.statuses && this.filters.statuses.length > 0) {
-            items = items?.filter((e: any) => this.filters.statuses.includes(e.attributeValues.RequestStatus) || ids.includes(e.idKey))
-          }
+      //     if(this.filters.statuses && this.filters.statuses.length > 0) {
+      //       items = items?.filter((e: any) => this.filters.statuses.includes(e.attributeValues.RequestStatus) || ids.includes(e.idKey))
+      //     }
 
-          if(this.filters.eventDates) {
-            let lower = this.filters.eventDates.lowerValue ? DateTime.fromFormat(this.filters.eventDates.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2010-01-01", "yyyy-MM-dd")
-            let upper = this.filters.eventDates.upperValue ? DateTime.fromFormat(this.filters.eventDates.upperValue, "yyyy-MM-dd") : DateTime.fromFormat("2100-01-01", "yyyy-MM-dd")
-            let interval = Interval.fromDateTimes(lower, upper)
-            items = items?.filter((e: any) => {
-              let dates = e.attributeValues.EventDates.split(',')
-              let inRange = false
-              dates.forEach((d: string) => {
-                let dt = DateTime.fromFormat(d, "yyyy-MM-dd")
-                if(interval.contains(dt)) {
-                  inRange = true
-                }
-              })
-              return inRange || ids.includes(e.idKey)
-            })
-          }
+      //     if(this.filters.eventDates && (this.filters.eventDates.lowerValue || this.filters.eventDates.upperValue)) {
+      //       let lower = this.filters.eventDates.lowerValue ? DateTime.fromFormat(this.filters.eventDates.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2010-01-01", "yyyy-MM-dd")
+      //       let upper = this.filters.eventDates.upperValue ? DateTime.fromFormat(this.filters.eventDates.upperValue, "yyyy-MM-dd") : DateTime.fromFormat("2100-01-01", "yyyy-MM-dd")
+      //       let interval = Interval.fromDateTimes(lower, upper)
+      //       items = items?.filter((e: any) => {
+      //         let dates = e.attributeValues.EventDates.split(',')
+      //         let inRange = false
+      //         dates.forEach((d: string) => {
+      //           let dt = DateTime.fromFormat(d, "yyyy-MM-dd")
+      //           if(interval.contains(dt)) {
+      //             inRange = true
+      //           }
+      //         })
+      //         return inRange || ids.includes(e.idKey)
+      //       })
+      //     }
 
-          //Check for only recently modified 
-          if( !this.filters.title && 
-              !this.filters.submitter &&
-              this.filters.statuses.length == 0 &&
-              this.filters.resources.length == 0 &&
-              !this.filters.eventDates?.lowerValue &&
-              !this.filters.eventDates?.upperValue && 
-              ids.length > 0
-          ) {
-            items = items.filter((e: any) => ids.includes(e.idKey))
-          }
-        }
-        return items
-      }
+      //     //Check for only recently modified 
+      //     if( !this.filters.title && 
+      //         !this.filters.submitter &&
+      //         this.filters.statuses.length == 0 &&
+      //         this.filters.resources.length == 0 &&
+      //         !this.filters.eventDates?.lowerValue &&
+      //         !this.filters.eventDates?.upperValue && 
+      //         ids.length > 0
+      //     ) {
+      //       items = items.filter((e: any) => ids.includes(e.idKey))
+      //     }
+      //   }
+      //   return items
+      // }
   },
   methods: {
     formatDateTime(date: any): string {
@@ -802,7 +802,7 @@ export default defineComponent({
       </div>
     </div>
   </div>
-  <rck-grid :data="{ rows: filteredEvents }" keyField="idKey" :isTitleHidden="true" itemTerm="request" :emptyDataText="loading ? 'Loading Requests...' : 'No Requests to Display'">
+  <rck-grid :data="{ rows: this.viewModel.events }" keyField="idKey" :isTitleHidden="true" itemTerm="request" :emptyDataText="loading ? 'Loading Requests...' : 'No Requests to Display'">
     <rck-col-txt
       name="title"
       title="Title"

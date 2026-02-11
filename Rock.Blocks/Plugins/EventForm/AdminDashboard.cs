@@ -642,9 +642,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
         /// Loads the requests
         /// </summary>
         /// <returns></returns>
-        private DashboardViewModel LoadRequestsOld( Filters filters = null )
+        private List<ContentChannelItemBag> LoadRequests( Filters filters = null )
         {
-            DashboardViewModel viewModel = new DashboardViewModel();
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
             ContentChannelItem item = new ContentChannelItem();
             List<ContentChannelItem> itemList = new List<ContentChannelItem>();
@@ -854,14 +853,14 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     }
                 }
             }
-            viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
+            var events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
             {
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
                 cci.LoadAttributes();
                 bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
                 return bag;
             } ).ToList();
-            viewModel.events = viewModel.events.Select( e =>
+            return events.Select( e =>
             {
                 int? entityId = Rock.Utility.IdHasher.Instance.GetId( e.IdKey );
                 var i = itemList.FirstOrDefault( il => il.Id == entityId );
@@ -881,10 +880,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
                 return e;
             } ).ToList();
-            return viewModel;
         }
 
-        private List<ContentChannelItemBag> LoadRequests( Filters filters = null )
+        private List<ContentChannelItemBag> LoadRequestsSQL( Filters filters = null )
         {
             int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
             Person p = GetCurrentPerson();

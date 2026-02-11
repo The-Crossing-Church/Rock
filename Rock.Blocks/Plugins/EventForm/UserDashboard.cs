@@ -732,288 +732,285 @@ namespace Rock.Blocks.Plugins.EventDashboard
         /// Loads the requests
         /// </summary>
         /// <returns></returns>
-        private DashboardViewModel LoadRequestsOld( Filters filters = null )
+        private List<ContentChannelItemBag> LoadRequests( Filters filters = null )
         {
-            DashboardViewModel viewModel = new DashboardViewModel();
-            //int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
-            //ContentChannelItem item = new ContentChannelItem();
-            //List<ContentChannelItem> itemList = new List<ContentChannelItem>();
-            //IEnumerable<ContentChannelItem> items = null;
-            //RockContext context = new RockContext();
-            //AttributeValueService av_svc = new AttributeValueService( context );
-            //var p = GetCurrentPerson();
+            int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
+            ContentChannelItem item = new ContentChannelItem();
+            List<ContentChannelItem> itemList = new List<ContentChannelItem>();
+            IEnumerable<ContentChannelItem> items = null;
+            RockContext context = new RockContext();
+            AttributeValueService av_svc = new AttributeValueService( context );
+            var p = GetCurrentPerson();
 
-            //if ( filters == null )
-            //{
-            //    List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Select( i => i.Trim() ).Where( s => !String.IsNullOrEmpty( s ) ).ToList();
-            //    //Default Filters
-            //    filters = new Filters()
-            //    {
-            //        statuses = defaultStatuses
-            //    };
-            //}
+            if ( filters == null )
+            {
+                List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Select( i => i.Trim() ).Where( s => !String.IsNullOrEmpty( s ) ).ToList();
+                //Default Filters
+                filters = new Filters()
+                {
+                    statuses = defaultStatuses
+                };
+            }
 
-            //items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
-            //items.First().LoadAttributes();
+            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
+            items.First().LoadAttributes();
 
-            //IEnumerable<ContentChannelItem> filtered_items = null;
-            //IEnumerable<ContentChannelItem> items_modified_match = null;
-            //string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-            //var requestStatusAttr = items.First().Attributes[requestStatusAttrKey];
-            //string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-            //var requestResourcesAttr = items.First().Attributes[resourcesAttrKey];
-            //string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
-            //var eventDatesAttr = items.First().Attributes[eventDatesAttrKey];
-            //string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttr );
-            //var sharedWithAttr = items.First().Attributes[sharedWithAttrKey];
-            //string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
-            //var ministryAttr = items.First().Attributes[ministryAttrKey];
-            //Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-            //List<int?> aliasIds = new List<int?>();
+            IEnumerable<ContentChannelItem> filtered_items = null;
+            IEnumerable<ContentChannelItem> items_modified_match = null;
+            string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+            var requestStatusAttr = items.First().Attributes[requestStatusAttrKey];
+            string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
+            var requestResourcesAttr = items.First().Attributes[resourcesAttrKey];
+            string eventDatesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
+            var eventDatesAttr = items.First().Attributes[eventDatesAttrKey];
+            string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
+            var sharedWithAttr = items.First().Attributes[sharedWithAttrKey];
+            string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
+            var ministryAttr = items.First().Attributes[ministryAttrKey];
+            Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+            List<int?> aliasIds = new List<int?>();
 
-            ////Only Requests Created By the Current Person or Shared With the Current Person
-            //if ( sharedRequestGroupTypeGuid.HasValue )
-            //{
-            //    //Shared requests are configured, find any for the current user.
-            //    var SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
-            //    var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
-            //    var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == p.Id && gm.GroupRole.Name == "Can View" );
-            //    groups = from g in groups
-            //             join gm in groupMembers on g.Id equals gm.GroupId
-            //             select g;
-            //    var grpList = groups.ToList();
-            //    for ( int k = 0; k < grpList.Count(); k++ )
-            //    {
-            //        var ids = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Request Creator" ).Select( gm => gm.Person.PrimaryAliasId );
-            //        aliasIds.AddRange( ids );
-            //    }
-            //}
-            //List<int?> sharedRequests = new List<int?>();
-            //if ( sharedWithAttr != null )
-            //{
-            //    sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
-            //}
-            //Guid ministryGuid = Guid.Empty;
-            //List<int?> personalRequests = new List<int?>();
-            //if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-            //{
-            //    DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
-            //    var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
-            //    var personalRequest = min.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
-            //    if ( personalRequest != null )
-            //    {
-            //        //filter out personal requests from the shared requests list
-            //        personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
-            //    }
-            //}
-            //items = items.Where( i =>
-            //{
-            //    if ( i.CreatedByPersonAliasId == p.PrimaryAliasId )
-            //    {
-            //        return true;
-            //    }
-            //    //We don't want personal requests in the group based sharing, but if we specifically share it with a person that's ok
-            //    if ( sharedRequests.Contains( i.Id ) )
-            //    {
-            //        return true;
-            //    }
-            //    if ( !personalRequests.Contains( i.Id ) )
-            //    {
-            //        if ( aliasIds.Contains( i.CreatedByPersonAliasId ) )
-            //        {
-            //            return true;
-            //        }
-            //    }
-            //    return false;
-            //} );
+            //Only Requests Created By the Current Person or Shared With the Current Person
+            if ( sharedRequestGroupTypeGuid.HasValue )
+            {
+                //Shared requests are configured, find any for the current user.
+                var SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
+                var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == p.Id && gm.GroupRole.Name == "Can View" );
+                groups = from g in groups
+                         join gm in groupMembers on g.Id equals gm.GroupId
+                         select g;
+                var grpList = groups.ToList();
+                for ( int k = 0; k < grpList.Count(); k++ )
+                {
+                    var ids = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Request Creator" ).Select( gm => gm.Person.PrimaryAliasId );
+                    aliasIds.AddRange( ids );
+                }
+            }
+            List<int?> sharedRequests = new List<int?>();
+            if ( sharedWithAttr != null )
+            {
+                sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
+            }
+            Guid ministryGuid = Guid.Empty;
+            List<int?> personalRequests = new List<int?>();
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+            {
+                DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
+                var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+                var personalRequest = min.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
+                if ( personalRequest != null )
+                {
+                    //filter out personal requests from the shared requests list
+                    personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
+                }
+            }
+            items = items.Where( i =>
+            {
+                if ( i.CreatedByPersonAliasId == p.PrimaryAliasId )
+                {
+                    return true;
+                }
+                //We don't want personal requests in the group based sharing, but if we specifically share it with a person that's ok
+                if ( sharedRequests.Contains( i.Id ) )
+                {
+                    return true;
+                }
+                if ( !personalRequests.Contains( i.Id ) )
+                {
+                    if ( aliasIds.Contains( i.CreatedByPersonAliasId ) )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            } );
 
-            ////OR Filter
-            //if ( filters.eventModified != null )
-            //{
-            //    if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) && !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
-            //    {
-            //        items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
-            //    }
-            //    else
-            //    {
-            //        if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) )
-            //        {
-            //            items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) );
-            //        }
-            //        if ( !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
-            //        {
-            //            items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
-            //        }
-            //    }
-            //}
-            //Person submitter = null;
-            //if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter.value ) )
-            //{
-            //    submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter.value ) );
-            //}
-            ////AND Filters
-            //filtered_items = items.Where( i =>
-            //{
-            //    bool meetsCriteria = true;
-            //    if ( submitter != null )
-            //    {
-            //        if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
-            //        {
-            //            meetsCriteria = false;
-            //        }
-            //    }
-            //    if ( !String.IsNullOrEmpty( filters.title ) )
-            //    {
-            //        if ( !i.Title.ToLower().Contains( filters.title.ToLower() ) )
-            //        {
-            //            meetsCriteria = false;
-            //        }
-            //    }
+            //OR Filter
+            if ( filters.eventModified != null )
+            {
+                if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) && !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
+                {
+                    items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) && i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
+                }
+                else
+                {
+                    if ( !String.IsNullOrEmpty( filters.eventModified.lowerValue ) )
+                    {
+                        items_modified_match = items.Where( i => i.ModifiedDateTime >= DateTime.Parse( filters.eventModified.lowerValue ) );
+                    }
+                    if ( !String.IsNullOrEmpty( filters.eventModified.upperValue ) )
+                    {
+                        items_modified_match = items.Where( i => i.ModifiedDateTime <= DateTime.Parse( filters.eventModified.upperValue ).EndOfDay() );
+                    }
+                }
+            }
+            Person submitter = null;
+            if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter ) )
+            {
+                submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter ) );
+            }
+            //AND Filters
+            filtered_items = items.Where( i =>
+            {
+                bool meetsCriteria = true;
+                if ( submitter != null )
+                {
+                    if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
+                    {
+                        meetsCriteria = false;
+                    }
+                }
+                if ( !String.IsNullOrEmpty( filters.title ) )
+                {
+                    if ( !i.Title.ToLower().Contains( filters.title.ToLower() ) )
+                    {
+                        meetsCriteria = false;
+                    }
+                }
 
-            //    return meetsCriteria;
-            //} );
+                return meetsCriteria;
+            } );
 
-            //IEnumerable<AttributeValue> eventDates = null;
-            //IEnumerable<AttributeValue> requestedResources = null;
-            //IQueryable<AttributeValue> requestStatuses = null;
+            IEnumerable<AttributeValue> eventDates = null;
+            IEnumerable<AttributeValue> requestedResources = null;
+            IQueryable<AttributeValue> requestStatuses = null;
 
-            //if ( filters.eventDates != null && !String.IsNullOrEmpty( filters.eventDates.lowerValue ) && !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
-            //{
-            //    DateTime? lowerValue = null;
-            //    DateTime? upperValue = null;
-            //    if ( !String.IsNullOrEmpty( filters.eventDates.lowerValue ) )
-            //    {
-            //        lowerValue = DateTime.Parse( filters.eventDates.lowerValue );
-            //    }
-            //    if ( !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
-            //    {
-            //        upperValue = DateTime.Parse( filters.eventDates.upperValue );
-            //    }
-            //    if ( lowerValue.HasValue || upperValue.HasValue )
-            //    {
-            //        eventDates = av_svc.Queryable().Where( av => av.AttributeId == eventDatesAttr.Id ).ToList().Where( av =>
-            //        {
-            //            bool dateInRange = false;
+            if ( filters.eventDates != null && !String.IsNullOrEmpty( filters.eventDates.lowerValue ) && !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
+            {
+                DateTime? lowerValue = null;
+                DateTime? upperValue = null;
+                if ( !String.IsNullOrEmpty( filters.eventDates.lowerValue ) )
+                {
+                    lowerValue = DateTime.Parse( filters.eventDates.lowerValue );
+                }
+                if ( !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
+                {
+                    upperValue = DateTime.Parse( filters.eventDates.upperValue );
+                }
+                if ( lowerValue.HasValue || upperValue.HasValue )
+                {
+                    eventDates = av_svc.Queryable().Where( av => av.AttributeId == eventDatesAttr.Id ).ToList().Where( av =>
+                    {
+                        bool dateInRange = false;
 
-            //            List<DateTime> dates = av.Value != "" ? av.Value.Split( ',' ).Select( d => DateTime.Parse( d.Trim() ) ).ToList() : new List<DateTime>();
-            //            for ( int i = 0; i < dates.Count(); i++ )
-            //            {
-            //                if ( lowerValue.HasValue && upperValue.HasValue )
-            //                {
-            //                    if ( dates[i] >= lowerValue.Value && dates[i] <= upperValue.Value )
-            //                    {
-            //                        dateInRange = true;
-            //                    }
-            //                }
-            //                else
-            //                {
-            //                    if ( lowerValue.HasValue )
-            //                    {
-            //                        if ( dates[i] >= lowerValue.Value )
-            //                        {
-            //                            dateInRange = true;
-            //                        }
-            //                    }
-            //                    if ( upperValue.HasValue )
-            //                    {
-            //                        if ( dates[i] <= upperValue.Value )
-            //                        {
-            //                            dateInRange = true;
-            //                        }
-            //                    }
-            //                }
+                        List<DateTime> dates = av.Value != "" ? av.Value.Split( ',' ).Select( d => DateTime.Parse( d.Trim() ) ).ToList() : new List<DateTime>();
+                        for ( int i = 0; i < dates.Count(); i++ )
+                        {
+                            if ( lowerValue.HasValue && upperValue.HasValue )
+                            {
+                                if ( dates[i] >= lowerValue.Value && dates[i] <= upperValue.Value )
+                                {
+                                    dateInRange = true;
+                                }
+                            }
+                            else
+                            {
+                                if ( lowerValue.HasValue )
+                                {
+                                    if ( dates[i] >= lowerValue.Value )
+                                    {
+                                        dateInRange = true;
+                                    }
+                                }
+                                if ( upperValue.HasValue )
+                                {
+                                    if ( dates[i] <= upperValue.Value )
+                                    {
+                                        dateInRange = true;
+                                    }
+                                }
+                            }
 
-            //            }
-            //            return dateInRange;
-            //        } );
-            //        filtered_items = filtered_items.Join( eventDates,
-            //                i => i.Id,
-            //                av => av.EntityId,
-            //                ( i, av ) => i
-            //            );
-            //    }
-            //}
-            //if ( filters.resources != null && filters.resources.Count() > 0 )
-            //{
-            //    requestedResources = av_svc.Queryable().Where( av => av.AttributeId == requestResourcesAttr.Id ).ToList().Where( av =>
-            //    {
-            //        var resources = av.Value.Split( ',' ).Select( v => v.Trim() ).ToList();
-            //        var intersect = filters.resources.Intersect( resources );
-            //        if ( intersect.Count() > 0 )
-            //        {
-            //            return true;
-            //        }
-            //        return false;
-            //    } );
-            //    filtered_items = filtered_items.Join( requestedResources,
-            //            i => i.Id,
-            //            av => av.EntityId,
-            //            ( i, av ) => i
-            //        );
-            //}
-            //if ( filters.statuses.Count() > 0 )
-            //{
-            //    requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && filters.statuses.Contains( av.Value ) );
-            //    filtered_items = filtered_items.Join( requestStatuses,
-            //            i => i.Id,
-            //            av => av.EntityId,
-            //            ( i, av ) => i
-            //        );
-            //}
-            //filtered_items = filtered_items.OrderBy( i => i.Title );
-            //if ( items_modified_match != null && filtered_items != null )
-            //{
-            //    itemList = filtered_items.Union( items_modified_match ).Distinct().ToList();
+                        }
+                        return dateInRange;
+                    } );
+                    filtered_items = filtered_items.Join( eventDates,
+                            i => i.Id,
+                            av => av.EntityId,
+                            ( i, av ) => i
+                        );
+                }
+            }
+            if ( filters.resources != null && filters.resources.Count() > 0 )
+            {
+                requestedResources = av_svc.Queryable().Where( av => av.AttributeId == requestResourcesAttr.Id ).ToList().Where( av =>
+                {
+                    var resources = av.Value.Split( ',' ).Select( v => v.Trim() ).ToList();
+                    var intersect = filters.resources.Intersect( resources );
+                    if ( intersect.Count() > 0 )
+                    {
+                        return true;
+                    }
+                    return false;
+                } );
+                filtered_items = filtered_items.Join( requestedResources,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
+            }
+            if ( filters.statuses.Count() > 0 )
+            {
+                requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && filters.statuses.Contains( av.Value ) );
+                filtered_items = filtered_items.Join( requestStatuses,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
+            }
+            filtered_items = filtered_items.OrderBy( i => i.Title );
+            if ( items_modified_match != null && filtered_items != null )
+            {
+                itemList = filtered_items.Union( items_modified_match ).Distinct().ToList();
 
-            //}
-            //else if ( items_modified_match != null )
-            //{
-            //    itemList = items_modified_match.ToList();
-            //}
-            //else
-            //{
-            //    itemList = filtered_items.ToList();
-            //}
+            }
+            else if ( items_modified_match != null )
+            {
+                itemList = items_modified_match.ToList();
+            }
+            else
+            {
+                itemList = filtered_items.ToList();
+            }
 
-            ////Make sure desired item is in list
-            //if ( id.HasValue )
-            //{
-            //    var exists = items.FirstOrDefault( i => i.Id == id.Value );
-            //    if ( exists == null )
-            //    {
-            //        item = new ContentChannelItemService( context ).Get( id.Value );
-            //        if ( item != null )
-            //        {
-            //            if ( item.ContentChannelId == EventChangesContentChannelId )
-            //            {
-            //                var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
-            //                if ( parent != null )
-            //                {
-            //                    item = parent.ContentChannelItem;
-            //                    exists = items.FirstOrDefault( i => i.Id == item.Id );
-            //                    if ( exists == null )
-            //                    {
-            //                        itemList.Add( item );
-            //                    }
-            //                }
-            //            }
-            //            else
-            //            {
-            //                itemList.Add( item );
-            //            }
-            //        }
-            //    }
-            //}
+            //Make sure desired item is in list
+            if ( id.HasValue )
+            {
+                var exists = items.FirstOrDefault( i => i.Id == id.Value );
+                if ( exists == null )
+                {
+                    item = new ContentChannelItemService( context ).Get( id.Value );
+                    if ( item != null )
+                    {
+                        if ( item.ContentChannelId == EventChangesContentChannelId )
+                        {
+                            var parent = item.ParentItems.FirstOrDefault( pi => pi.ContentChannelItem.ContentChannelId == EventContentChannelId );
+                            if ( parent != null )
+                            {
+                                item = parent.ContentChannelItem;
+                                exists = items.FirstOrDefault( i => i.Id == item.Id );
+                                if ( exists == null )
+                                {
+                                    itemList.Add( item );
+                                }
+                            }
+                        }
+                        else
+                        {
+                            itemList.Add( item );
+                        }
+                    }
+                }
+            }
 
-            //viewModel.events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
-            //{
-            //    var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
-            //    cci.LoadAttributes();
-            //    bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
-            //    return bag;
-            //} ).ToList();
-            //viewModel.eventDetails = itemList.SelectMany( i => i.ChildItems ).ToList();
-            return viewModel;
+            return itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
+            {
+                var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                cci.LoadAttributes();
+                bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
+                return bag;
+            } ).ToList();
         }
 
 
@@ -1335,7 +1332,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
         }
 
-        private List<ContentChannelItemBag> LoadRequests( Filters filters = null )
+        private List<ContentChannelItemBag> LoadRequestsNew( Filters filters = null )
         {
             using ( RockContext context = new RockContext() )
             {
