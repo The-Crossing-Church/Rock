@@ -713,7 +713,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 bool meetsCriteria = true;
                 if ( !String.IsNullOrEmpty( filters.submitter ) )
                 {
-                    if ( !i.CreatedByPersonAlias.Person.FullName.ToLower().Contains( filters.submitter.ToLower() ) && !i.ModifiedByPersonAlias.Person.FullName.ToLower().Contains( filters.submitter.ToLower() ) )
+                    if ( !i.CreatedByPersonName.ToLower().Contains( filters.submitter.ToLower() ) && !i.ModifiedByPersonName.ToLower().Contains( filters.submitter.ToLower() ) )
                     {
                         meetsCriteria = false;
                     }
@@ -728,7 +728,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
                 return meetsCriteria;
             } );
-            if ( filters.eventDates != null && !String.IsNullOrEmpty( filters.eventDates.lowerValue ) && !String.IsNullOrEmpty( filters.eventDates.upperValue ) )
+            if ( filters.eventDates != null && ( !String.IsNullOrEmpty( filters.eventDates.lowerValue ) || !String.IsNullOrEmpty( filters.eventDates.upperValue ) ) )
             {
                 DateTime? lowerValue = null;
                 DateTime? upperValue = null;
@@ -856,6 +856,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
             var events = itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
             {
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                bag.CreatedBy = cci.CreatedByPersonName;
+                bag.ModifiedBy = cci.ModifiedByPersonName;
                 cci.LoadAttributes();
                 bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
                 return bag;
