@@ -102,11 +102,11 @@
                         </div>
                     </div>
 
-                    <div v-if="acceptButtonWidthProvider" class="row">
+                    <!-- <div v-if="acceptButtonWidthProvider" class="row">
                         <div class="col-sm-12">
                             <ButtonWidthProperty :valueProvider="acceptButtonWidthProvider" />
                         </div>
-                    </div>
+                    </div> -->
                 </template>
 
                 <div v-if="acceptButtonShellElement"
@@ -160,11 +160,11 @@
                         </div>
                     </div>
 
-                    <div v-if="declineButtonWidthProvider" class="row">
+                    <!-- <div v-if="declineButtonWidthProvider" class="row">
                         <div class="col-sm-12">
                             <ButtonWidthProperty :valueProvider="declineButtonWidthProvider" />
                         </div>
-                    </div>
+                    </div> -->
                 </template>
 
                 <div v-if="declineButtonShellElement"
@@ -223,8 +223,8 @@
     import PaddingProperty from "../properties/paddingProperty.partial.obs";
     import DisplayProperty from "../properties/displayProperty.partial.obs";
     import TextContentProperty from "../properties/textContentProperty.partial.obs";
-    import { createButtonWidthValuesProvider } from "../providers.partial";
-    import { ButtonWidthValues, ValueProvider } from "../types.partial";
+    //import { createButtonWidthValuesProvider } from "../providers.partial";
+    import { ButtonWidthModel, ValueProvider } from "../types.partial";
     import { getRsvpComponentHelper } from "../utils.partial";
     import DropDownList from "@Obsidian/Controls/dropDownList.obs";
     import GroupPicker from "@Obsidian/Controls/groupPicker.obs";
@@ -344,8 +344,9 @@
     const hiddenOccurrenceIdElement = ref<HTMLInputElement | undefined>();
     const selectedFutureOccurrenceDataOrEmptyString = ref<string>("");
 
-    const acceptButtonWidthProvider = ref<ValueProvider<ButtonWidthValues | null | undefined> | null | undefined>(acceptButtonShellElement.value ? createButtonWidthValuesProvider(acceptButtonShellElement.value) : null);
-    const declineButtonWidthProvider = ref<ValueProvider<ButtonWidthValues | null | undefined> | null | undefined>(declineButtonShellElement.value ? createButtonWidthValuesProvider(declineButtonShellElement.value) : null);
+    // TODO JMH Implement RSVP button width
+    // const acceptButtonWidthProvider = ref<ValueProvider<ButtonWidthModel | null | undefined> | null | undefined>(acceptButtonShellElement.value ? createButtonWidthValuesProvider(acceptButtonShellElement.value) : null);
+    // const declineButtonWidthProvider = ref<ValueProvider<ButtonWidthModel | null | undefined> | null | undefined>(declineButtonShellElement.value ? createButtonWidthValuesProvider(declineButtonShellElement.value) : null);
 
     // #endregion Values
 
@@ -573,15 +574,15 @@
         updateRsvpHrefs();
     });
 
-    watch(acceptButtonShellElement, (newElement) => {
-        acceptButtonWidthProvider.value?.dispose();
-        acceptButtonWidthProvider.value = newElement ? createButtonWidthValuesProvider(newElement) : null;
-    });
+    // watch(acceptButtonShellElement, (newElement) => {
+    //     acceptButtonWidthProvider.value?.dispose();
+    //     acceptButtonWidthProvider.value = newElement ? createButtonWidthValuesProvider(newElement) : null;
+    // });
 
-    watch(declineButtonShellElement, (newElement) => {
-        declineButtonWidthProvider.value?.dispose();
-        declineButtonWidthProvider.value = newElement ? createButtonWidthValuesProvider(newElement) : null;
-    });
+    // watch(declineButtonShellElement, (newElement) => {
+    //     declineButtonWidthProvider.value?.dispose();
+    //     declineButtonWidthProvider.value = newElement ? createButtonWidthValuesProvider(newElement) : null;
+    // });
 
     // #endregion Watchers
 
@@ -612,10 +613,10 @@
         }
     });
 
-    onUnmounted(() => {
-        acceptButtonWidthProvider.value?.dispose();
-        declineButtonWidthProvider.value?.dispose();
-    });
+    // onUnmounted(() => {
+    //     acceptButtonWidthProvider.value?.dispose();
+    //     declineButtonWidthProvider.value?.dispose();
+    // });
 
     // #endregion Hooks
 </script>

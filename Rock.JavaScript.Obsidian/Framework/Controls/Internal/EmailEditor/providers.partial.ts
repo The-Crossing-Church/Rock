@@ -23,7 +23,6 @@ import {
 import {
     BackgroundSize,
     BackgroundFit,
-    ButtonWidth,
     BorderStyle,
     CssStyleDeclarationKebabKey,
     ProviderAlreadyExistsError,
@@ -36,7 +35,6 @@ import {
     ValueProvider,
     ValueProviderHooks,
     WeakPair,
-    ButtonWidthValues,
     ComponentStructure,
     ComponentTypeName,
     HorizontalAlignment
@@ -2001,7 +1999,9 @@ export function createComponentBackgroundColorProvider(
 
     const backgroundColorInlineStyleProvider = createDomWatcherProvider(
         componentElement,
-        getPaddingWrapperCellSelector(componentTypeName),
+        componentTypeName === "button"
+            ? getBorderWrapperCellSelector(componentTypeName)
+            : getPaddingWrapperCellSelector(componentTypeName),
         (el) => {
             return inlineStyleProvider(
                 el as HTMLElement,
@@ -2034,7 +2034,9 @@ export function createComponentBackgroundColorProvider(
 
     const bgcolorAttributeProvider = createDomWatcherProvider(
         componentElement,
-        getPaddingWrapperTableSelector(componentTypeName),
+        componentTypeName === "button"
+            ? getBorderWrapperCellSelector(componentTypeName)
+            : getPaddingWrapperTableSelector(componentTypeName),
         (el) => attributeProvider(el, "bgcolor", bgcolorConverter, undefined),
         backgroundColorInlineStyleProvider.value,
         {
@@ -2064,36 +2066,6 @@ export function createComponentBackgroundColorProvider(
     };
 }
 
-const globalButtonBackgroundColorProviderCache = new WeakPair<Document, ValueProvider<string | null | undefined>>();
-
-export function createGlobalButtonBackgroundColorProvider(
-    document: Document
-): ValueProvider<string | null | undefined> {
-    const provider = createGlobalComponentBackgroundColorProvider(
-        document,
-        "button",
-        "GlobalButtonBackgroundColorProvider",
-        globalButtonBackgroundColorProviderCache
-    );
-
-    if (isNullish(provider.value)) {
-        // Set the default global button color.
-        provider.value = "#2196f3";
-    }
-
-    return provider;
-}
-
-export function getGlobalButtonBackgroundColorProvider(
-    document: Document
-): ValueProvider<string | null | undefined> {
-    if (!globalButtonBackgroundColorProviderCache.has(document)) {
-        throw new ProviderNotCreatedError("GlobalButtonBackgroundColorProvider");
-    }
-
-    return globalButtonBackgroundColorProviderCache.get(document)!;
-}
-
 function createGlobalComponentBackgroundColorProvider(
     document: Document,
     componentTypeName: ComponentTypeName,
@@ -2109,7 +2081,7 @@ function createGlobalComponentBackgroundColorProvider(
 
     const bgcolorAttributeProvider = createDomWatcherProvider(
         body,
-        `.component:not([data-component-background-color="true"]) ${getPaddingWrapperTableSelector(componentTypeName)}`,
+        `.component:not([data-component-background-color="true"]) ${componentTypeName === "button" ? getBorderWrapperCellSelector(componentTypeName) : getPaddingWrapperTableSelector(componentTypeName)}`,
         (el) => {
             return attributeProvider(el, "bgcolor", bgcolorConverter);
         },
@@ -2119,7 +2091,7 @@ function createGlobalComponentBackgroundColorProvider(
     const backgroundColorStyleSheetProvider = styleSheetProvider(
         head,
         RockStylesCssClass,
-        `.component:not([data-component-background-color="true"]) ${getPaddingWrapperCellSelector(componentTypeName)}`,
+        `.component:not([data-component-background-color="true"]) ${componentTypeName === "button" ? getBorderWrapperCellSelector(componentTypeName) : getPaddingWrapperCellSelector(componentTypeName)}`,
         "background-color",
         stringConverter
     );
@@ -2358,281 +2330,6 @@ export function getGlobalBackgroundColorProvider(
     }
 
     return globalBackgroundColorProviderCache.get(document)!;
-}
-
-const globalButtonWidthValuesProviderCache = new WeakPair<Document, ValueProvider<ButtonWidthValues | null | undefined>>();
-
-export function createGlobalButtonWidthValuesProvider(
-    document: Document
-): ValueProvider<ButtonWidthValues | null | undefined> {
-    if (globalButtonWidthValuesProviderCache.has(document)) {
-        throw new ProviderAlreadyExistsError("GlobalButtonWidthValuesProvider");
-    }
-
-    const body = document.body;
-
-    const buttonShellMaxWidthProvider = styleSheetProvider(
-        body,
-        RockStylesCssClass,
-        `.component-button:not([data-component-button-width="true"]) .button-shell, .component-rsvp:not([data-component-button-width="true"]) .rsvp-button-shell`,
-        "max-width",
-        percentageConverter
-    );
-
-    const buttonShellWidthProvider = styleSheetProvider(
-        body,
-        RockStylesCssClass,
-        `.component-button:not([data-component-button-width="true"]) .button-shell, .component-rsvp:not([data-component-button-width="true"]) .rsvp-button-shell`,
-        "width",
-        stringConverter
-    );
-
-    const buttonShellWidthAttributeProvider = createDomWatcherProvider(
-        body,
-        `.component-button:not([data-component-button-width="true"]) .button-shell, .component-rsvp:not([data-component-button-width="true"]) .rsvp-button-shell`,
-        (el) => attributeProvider(
-            el,
-            "width",
-            stringConverter),
-        undefined
-    );
-
-    const buttonLinkDisplayProvider = styleSheetProvider(
-        body,
-        RockStylesCssClass,
-        `.component-button:not([data-component-button-width="true"]) .component-button .button-link, .component-rsvp:not([data-component-button-width="true"]) .rsvp-accept-link, .component-rsvp:not([data-component-button-width="true"]) .rsvp-decline-link`,
-        "display",
-        stringConverter
-    );
-
-    const value = ref<ButtonWidthValues | null | undefined>({
-        width: getCurrentWidth(),
-        fixedWidth: getCurrentFixedPixelWidth()
-    });
-
-    function getCurrentWidth(): ButtonWidth | null | undefined {
-        // Only check the style sheet providers since they aren't dependent
-        // on the existence of a button component.
-        const maxWidth = buttonShellMaxWidthProvider.value;
-        const width = buttonShellWidthProvider.value;
-        const display = buttonLinkDisplayProvider.value;
-
-        if (display === "inline-block" && maxWidth === 100) {
-            return "fitToText";
-        }
-        else if (maxWidth === 100) {
-            return "full";
-        }
-        else if (width?.endsWith("px") && display === "block") {
-            return "fixed";
-        }
-        else {
-            return null;
-        }
-    }
-
-    function getCurrentFixedPixelWidth(): number | null | undefined {
-        const width = buttonShellWidthProvider.value;
-
-        if (width?.endsWith("px")) {
-            const fixedPixelWidth = parseInt(width);
-
-            if (!Number.isNaN(fixedPixelWidth)) {
-                return fixedPixelWidth;
-            }
-        }
-    }
-
-    const watcher = watch(value, (newValue) => {
-        switch (newValue?.width) {
-            case "fitToText":
-                buttonShellMaxWidthProvider.value = 100;
-                buttonShellWidthProvider.value = null;
-                buttonShellWidthAttributeProvider.value = null;
-                buttonLinkDisplayProvider.value = "inline-block";
-                break;
-            case "full":
-                buttonShellMaxWidthProvider.value = 100;
-                buttonShellWidthProvider.value = "100%";
-                buttonShellWidthAttributeProvider.value = "100%";
-                buttonLinkDisplayProvider.value = "block";
-                break;
-            case "fixed":
-                buttonShellMaxWidthProvider.value = null;
-                // Default to 100px for fixed width.
-                buttonShellWidthProvider.value = `${newValue.fixedWidth ?? 100}px`;
-                buttonShellWidthAttributeProvider.value = `${newValue.fixedWidth ?? 100}`;
-                buttonLinkDisplayProvider.value = "block";
-                break;
-            default:
-                buttonShellMaxWidthProvider.value = null;
-                buttonShellWidthProvider.value = null;
-                buttonShellWidthAttributeProvider.value = null;
-                buttonLinkDisplayProvider.value = null;
-        }
-    });
-
-    const provider = createDefaultValueProvider(
-        {
-            get value(): ButtonWidthValues | null | undefined {
-                return value.value;
-            },
-            set value(newValue: ButtonWidthValues | null | undefined) {
-                value.value = newValue;
-            },
-            dispose() {
-                watcher();
-                buttonShellMaxWidthProvider.dispose();
-                buttonShellWidthProvider.dispose();
-                buttonShellWidthAttributeProvider.dispose();
-                buttonLinkDisplayProvider.dispose();
-            }
-        },
-        {
-            width: "fitToText",
-            fixedWidth: undefined
-        },
-        value => isNullish(value?.fixedWidth)
-    );
-
-    globalButtonWidthValuesProviderCache.set(document, provider);
-
-    return provider;
-}
-
-export function getGlobalButtonWidthValuesProvider(
-    document: Document
-): ValueProvider<ButtonWidthValues | null | undefined> {
-    if (!globalButtonWidthValuesProviderCache.has(document)) {
-        throw new ProviderNotCreatedError("GlobalButtonWidthValuesProvider");
-    }
-
-    return globalButtonWidthValuesProviderCache.get(document)!;
-}
-
-export function createButtonWidthValuesProvider(
-    buttonShellElement: HTMLElement
-): ValueProvider<ButtonWidthValues | null | undefined> {
-    const buttonShellMaxWidthProvider = inlineStyleProvider(
-        buttonShellElement,
-        "max-width",
-        percentageConverter
-    );
-
-    const buttonShellWidthProvider = inlineStyleProvider(
-        buttonShellElement,
-        "width",
-        stringConverter
-    );
-
-    const buttonShellWidthAttributeProvider = attributeProvider(
-        buttonShellElement,
-        "width",
-        stringConverter
-    );
-
-    const buttonLinkDisplayProvider = createDomWatcherProvider(
-        buttonShellElement,
-        ".button-link .rsvp-accept-link, .rsvp-decline-link",
-        (el) => inlineStyleProvider(
-            el as HTMLElement,
-            "display",
-            stringConverter
-        ),
-        undefined
-    );
-
-    const value = ref<ButtonWidthValues>({
-        width: getCurrentWidth(),
-        fixedWidth: getCurrentFixedPixelWidth()
-    });
-
-    const watcher = watch(value, (newValue) => {
-        let isOverriddenForComponent = true;
-        switch (newValue?.width) {
-            case "fitToText":
-                buttonShellMaxWidthProvider.value = 100;
-                buttonShellWidthProvider.value = null;
-                buttonShellWidthAttributeProvider.value = null;
-                buttonLinkDisplayProvider.value = "inline-block";
-                break;
-            case "full":
-                buttonShellMaxWidthProvider.value = 100;
-                buttonShellWidthProvider.value = "100%";
-                buttonShellWidthAttributeProvider.value = "100%";
-                buttonLinkDisplayProvider.value = "block";
-                break;
-            case "fixed":
-                buttonShellMaxWidthProvider.value = null;
-                // Default to 100px for fixed width.
-                buttonShellWidthProvider.value = `${newValue.fixedWidth ?? 100}px`;
-                buttonShellWidthAttributeProvider.value = `${newValue.fixedWidth ?? 100}`;
-                buttonLinkDisplayProvider.value = "block";
-                break;
-            default:
-                isOverriddenForComponent = false;
-                buttonShellMaxWidthProvider.value = null;
-                buttonShellWidthProvider.value = null;
-                buttonShellWidthAttributeProvider.value = null;
-                buttonLinkDisplayProvider.value = null;
-                break;
-        }
-
-        if (isOverriddenForComponent) {
-            // Doing this here instead of the width attribute sourceValueUpdated hook
-            // because the attribute could be set to null but still be a component-specific override.
-            // This override will prevent the global version of this property from setting component-overridden attribute values.
-            buttonShellElement.closest(".component-button")?.setAttribute("data-component-button-width", "true");
-        }
-        else {
-            buttonShellElement.closest(".component-button")?.removeAttribute("data-component-button-width");
-        }
-    });
-
-    function getCurrentWidth(): ButtonWidth | null | undefined {
-        const widthAttribute = buttonShellWidthAttributeProvider.value;
-
-        if (widthAttribute === "100%") {
-            return "full";
-        }
-        else if (widthAttribute) {
-            return "fixed";
-        }
-        else if (buttonLinkDisplayProvider.value === "inline-block") {
-            return "fitToText";
-        }
-        else {
-            return null;
-        }
-    }
-
-    function getCurrentFixedPixelWidth(): number | null | undefined {
-        const widthAttribute = buttonShellWidthAttributeProvider.value;
-
-        if (widthAttribute && !widthAttribute.endsWith("%")) {
-            const fixedPixelWidth = parseInt(widthAttribute);
-
-            if (!Number.isNaN(fixedPixelWidth)) {
-                return fixedPixelWidth;
-            }
-        }
-    }
-
-    return {
-        get value(): ButtonWidthValues {
-            return value.value;
-        },
-        set value(newValue: ButtonWidthValues) {
-            value.value = newValue;
-        },
-        dispose() {
-            watcher();
-            buttonShellMaxWidthProvider.dispose();
-            buttonShellWidthProvider.dispose();
-            buttonShellWidthAttributeProvider.dispose();
-            buttonLinkDisplayProvider.dispose();
-        }
-    };
 }
 
 function findOrCreateStyleElement(parent: Element, styleCssClass: string): HTMLStyleElement {
@@ -3029,4 +2726,20 @@ export function createComponentOuterHorizontalAlignmentProvider(
     );
 
     return alignAttributeProvider;
+}
+
+export function refValueProvider<T>(value: Ref<T>): ValueProvider<T> {
+    return {
+        get value(): T {
+            return value.value;
+        },
+
+        set value(newValue: T) {
+            value.value = newValue;
+        },
+
+        dispose() {
+            // No-op
+        }
+    };
 }

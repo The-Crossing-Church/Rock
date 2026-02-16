@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 // <copyright>
 // Copyright by the Spark Development Network
 //
@@ -22,7 +23,6 @@ import {
 } from "vue";
 import {
     AccordionManager,
-    BorderStyle,
     CssStyleDeclarationKebabKey,
     ComponentMigrationHelper,
     ComponentTypeName,
@@ -33,13 +33,28 @@ import {
     StyleSheetElements,
     ValueConverter,
     ComponentStructure,
-    TableElements
+    TableElements,
+    ButtonWidthModel,
+    ButtonWidthMode,
+    LetterCase,
+    BorderModel,
+    ShorthandModel,
+    BorderStyle,
+    ButtonComponentAdapter,
+    ComponentAdapter,
+    ButtonLocalProps,
+    ButtonGlobalProps,
+    ShorthandPropertyNames,
 } from "./types.partial";
 import { isElement, isHTMLElement, isHTMLTableElement } from "@Obsidian/Utility/dom";
 import { newGuid } from "@Obsidian/Utility/guid";
 import { Enumerable } from "@Obsidian/Utility/linq";
 import { splitCase, toTitleCase } from "@Obsidian/Utility/stringUtils";
 import { isNullish } from "@Obsidian/Utility/util";
+import { toNumberOrNull } from "@Obsidian/Utility/numberUtils";
+import { styleSheetProvider } from "./providers.partial";
+import { ChildProcessWithoutNullStreams } from "child_process";
+import { VERSION } from "luxon";
 
 // #region Constants
 
@@ -509,7 +524,7 @@ export function createComponentElementPlaceholder(document: Document): HTMLEleme
  * @param cellInnerHtml Inner HTML string to place inside the `<td>` cell.
  * @returns A table element with `.email-content` structure.
  */
-export function createTable<T extends Element>(cellInnerHtml?: string | Enumerable<T> | T[] | undefined): { table: HTMLTableElement, tbody: HTMLTableSectionElement, tr: HTMLTableRowElement, td: HTMLTableCellElement } {
+export function createTable<T extends Element>(cellInnerHtml?: string | Enumerable<T> | T[] | undefined): TableElements {
     const table = document.createElement("table");
     table.setAttribute("border", "0");
     table.setAttribute("cellpadding", "0");
@@ -736,7 +751,7 @@ export function ensureBodyWrapsEmailWrapper(document: Document): HTMLTableElemen
     const existingWrapper = document.querySelector(`table.${EmailWrapperCssClass}`) as HTMLTableElement;
 
     if (existingWrapper) {
-        console.info("Email wrapper table already exists. Skipping.");
+        console.debug("Email wrapper table already exists. Skipping.");
         return existingWrapper;
     }
 
@@ -796,8 +811,8 @@ export function createComponentElement(document: Document, componentTypeName: Ed
         }
 
         case "button": {
-            const { createComponentElement } = getButtonComponentHelper();
-            return createComponentElement();
+            const buttonAdapter = createButtonComponentAdapter();
+            return buttonAdapter.createComponentElement(document);
         }
 
         case "text": {
@@ -904,7 +919,7 @@ export function createCssRuleset(selector: string, declarations: Record<string, 
  * @example
  * const container = document.getElementById("content");
  * const elements = findDescendantContentAreaElements(container);
- * console.log(elements.outerTable); // Logs the first outer table found
+ * console.debug(elements.outerTable); // Logs the first outer table found
  */
 export function findDescendantContentAreaElements(element: HTMLElement): Partial<ContentAreaElements> {
     const searchResult: Partial<ContentAreaElements> = {};
@@ -1511,13 +1526,15 @@ export function checkDropzoneSize(rect: DOMRectReadOnly, element: Element): void
 }
 
 export function getComponentVersionNumber(componentElement: Element): string | null | undefined {
-    const version = (componentElement as HTMLElement).dataset.version ?? "";
+    if (isHTMLElement(componentElement)) {
+        const version = componentElement.dataset.version ?? "";
 
-    if (isComponentVersionNumber(version)) {
-        return version;
-    }
-    else {
-        return null;
+        if (isComponentVersionNumber(version)) {
+            return version;
+        }
+        else {
+            return null;
+        }
     }
 }
 
@@ -1527,7 +1544,9 @@ export function setComponentVersionNumber(componentElement: Element, version: st
         return;
     }
 
-    (componentElement as HTMLElement).dataset.version = version;
+    if (isHTMLElement(componentElement)) {
+        componentElement.dataset.version = version;
+    }
 }
 
 export function isComponentVersionNumber(str: string): boolean {
@@ -2307,8 +2326,28 @@ export function getTextComponentHelper(): ComponentMigrationHelper & {
     return helper;
 }
 
+type ButtonComponentStructure = {
+    /**
+     * The **outermost** structure that defines spacing and alignment.
+     * Ensures correct positioning within the email layout.
+     * - Controls **simulated margin** via padding.
+     * - Controls **horizontal alignment** (left, center, right).
+     */
+    marginWrapper: TableElements & {
+        /**
+         * Defines the **component's visual boundaries**.
+         * Handles styling and overall structure.
+         * - Controls **borders** and **border-radius**.
+         * - Defines **the width** of the component.
+         */
+        borderWrapper: TableElements;
+    };
+
+    readonly linkButton: HTMLAnchorElement | null;
+};
+
 export function getButtonComponentHelper(): ComponentMigrationHelper & {
-    getElements(componentElement: Element): ComponentStructure & { readonly linkButton: HTMLAnchorElement | null; } | null;
+    getElements(componentElement: Element): ButtonComponentStructure | null;
     createComponentElement(): HTMLElement;
 } {
     // Don't forget to add a migration below if the version changes.
@@ -2322,6 +2361,16 @@ export function getButtonComponentHelper(): ComponentMigrationHelper & {
                 `<a class="button-link ${RockCssClassContentEditable}" href="https://" rel="noopener noreferrer" title="Click Me" style="text-align: center; display: block;">Click Me</a>`
             );
 
+            // For button components, we need to strip out the padding wrapper since padding is applied directly to the link.
+            // Move the content of the padding wrapper td into the border wrapper td.
+            const paddingWrapperTd = componentElements.marginWrapper.borderWrapper.paddingWrapper.td;
+            const borderWrapperTd = componentElements.marginWrapper.borderWrapper.td;
+            while (paddingWrapperTd.firstChild) {
+                borderWrapperTd.appendChild(paddingWrapperTd.firstChild);
+            }
+            // Remove the padding wrapper table.
+            componentElements.marginWrapper.borderWrapper.paddingWrapper.table.remove();
+
             componentElements.marginWrapper.table.classList.add("button-outerwrap");
             componentElements.marginWrapper.table.style.minWidth = "100%";
             componentElements.marginWrapper.td.classList.add("button-innerwrap");
@@ -2332,25 +2381,32 @@ export function getButtonComponentHelper(): ComponentMigrationHelper & {
             componentElements.marginWrapper.borderWrapper.td.classList.add("button-content");
             componentElements.marginWrapper.borderWrapper.td.setAttribute("align", "center");
             componentElements.marginWrapper.borderWrapper.td.setAttribute("valign", "middle");
+
             return componentElements.marginWrapper.table;
         },
 
-        getElements(componentElement: Element): ComponentStructure & { readonly linkButton: HTMLAnchorElement | null; } | null {
+        getElements(componentElement: Element): ButtonComponentStructure | null {
             if (!componentElement.classList.contains("component-button")) {
                 throw new Error(`Element is not a button component element: ${componentElement.outerHTML}`);
             }
 
-            const wrappers = findComponentInnerWrappers(componentElement);
+            const wrappers = findComponentInnerWrappersPartial(componentElement);
 
-            if (!wrappers) {
+            if (!wrappers?.marginWrapper?.borderWrapper) {
                 return null;
             }
 
+            const typedWrappers = wrappers as {
+                marginWrapper: TableElements & {
+                    borderWrapper: TableElements;
+                };
+            };
+
             return {
-                ...wrappers,
+                ...typedWrappers,
 
                 get linkButton(): HTMLAnchorElement | null {
-                    const searchFrom = wrappers.marginWrapper.borderWrapper.paddingWrapper.td;
+                    const searchFrom = typedWrappers.marginWrapper.borderWrapper.td;
 
                     return (searchFrom.querySelector("a.button-link") ?? null) as HTMLAnchorElement | null;
                 }
@@ -3743,3 +3799,1786 @@ export const LineHeights = {
     loose: { value: "1.8", title: "Loose" },
     veryLoose: { value: "2", title: "Very Loose" }
 } as const;
+
+function isMigrationRequiredForComponent(componentElement: Element, componentTypeName: ComponentTypeName, latestVersion: string): boolean {
+    if (!componentElement.classList.contains(`component-${componentTypeName}`)) {
+        throw new Error(`Element is not a ${componentTypeName} component element: ${componentElement.outerHTML}`);
+    }
+
+    const versionNumber = getComponentVersionNumber(componentElement);
+    return !versionNumber || compareComponentVersions(versionNumber, latestVersion) < 0;
+}
+
+function createHtmlElement(document: Document, html: string): HTMLElement {
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    const element = template.content.firstElementChild;
+
+    if (!isHTMLElement(element)) {
+        throw new Error(`Failed to create element from HTML string:\n${html}`);
+    }
+
+    return element;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// TODO JMH Email Editor Refactor
+
+/** Local props model for one component instance (example shape). */
+export type LocalProps = Record<string, unknown>;
+
+/** Global props model for one component type (example shape). */
+export type GlobalProps = Record<string, unknown>;
+
+/**
+ * Adapter for globals that do not belong to any single component type.
+ * Example: main background color, page width, body background image.
+ */
+export type DocumentAdapter<G = GlobalProps> = {
+    /** Always "document" or similar. */
+    kind: string;
+
+    /**
+     * Migrates old DOM structures related to document-level globals
+     * into the canonical format.
+     */
+    migrate: (emailDocument: Document) => void;
+
+    /**
+     * Reads global document-level props from the DOM.
+     */
+    readGlobalProps: (emailDocument: Document) => G;
+
+    /**
+     * Writes document-level global props back into the DOM.
+     */
+    writeGlobalProps: (emailDocument: Document, globalProps: G) => void;
+};
+
+/**
+ * In-memory global state for all component types + document-level globals.
+ * Derived from DOM on load. Applied to DOM when edited.
+ */
+export type EditorGlobalState = Record<string, GlobalProps>;
+
+/**
+ * Registry mapping component type IDs to their adapters.
+ */
+export type ComponentAdapterRegistry = Record<
+    string,
+    ComponentAdapter<unknown, unknown>
+>;
+
+/**
+ * Value provider used by ButtonWidthProperty controls for both local
+ * and global scopes. It abstracts get and set of the logical width model.
+ */
+export type ButtonWidthValueProvider = {
+    /**
+     * Reads the current button width model from either local or global scope.
+     */
+    get: () => ButtonWidthModel;
+
+    /**
+     * Writes a new button width model to either local or global scope.
+     */
+    set: (value: ButtonWidthModel) => void;
+};
+
+function createShorthandModel<T>(value: T): ShorthandModel<T> {
+    return {
+        top: value,
+        right: value,
+        bottom: value,
+        left: value
+    };
+}
+
+/**
+ * Factory returning a self contained ButtonComponentAdapter.
+ * You can refine selectors and CSS logic inside without changing the public contract.
+ */
+export function createButtonComponentAdapter(): ButtonComponentAdapter {
+    // These are the supported versions for local and global props
+    // and are used to look up the appropriate reader/writer functions
+    // so that components can handle different versions correctly.
+    // Must be in the format "v{major}.{minor}-{tag}" for proper comparison.
+    const componentVersions = ["v0", "v2.1-alpha", "v17.3-alpha", "v18.2"] as const;
+    const globalVersions = ["v0", "v2.1-alpha", "v18.2"] as const;
+
+    type ComponentVersion = typeof componentVersions[number];
+    type GlobalVersion = typeof globalVersions[number];
+
+    const KIND = "button";
+    const LATEST_VERSION: ComponentVersion = Enumerable
+        .from(componentVersions)
+        .aggregate<ComponentVersion>((v1, v2) => compareComponentVersions(v1, v2) > 0 ? v1 : v2, "v0");
+    const LATEST_GLOBAL_VERSION: GlobalVersion = Enumerable
+        .from(globalVersions)
+        .aggregate<GlobalVersion>((v1, v2) => compareComponentVersions(v1, v2) > 0 ? v1 : v2, "v0");
+
+    const datasetKeys = {
+        VERSION: "data-version",
+        COMPONENT_BUTTON_WIDTH: "data-component-button-width",
+        COMPONENT_BACKGROUND_COLOR: "data-component-background-color",
+    } as const;
+
+    const metaKeys = {
+        GLOBAL_BUTTON_VERSION: "x-global-button-version",
+    } as const;
+
+    // These are for reading local component properties from different versions.
+    const localPropReaders: Record<ComponentVersion, (componentElement: HTMLElement) => ButtonLocalProps> = {
+        "v0": readLocalPropsV0,
+        "v2.1-alpha": readLocalPropsV2_1_Alpha,
+        "v17.3-alpha": readLocalPropsV2_1_Alpha, // Nothing changed except for a version bump.
+        "v18.2": readLocalPropsV18_2
+    };
+
+    // These are for reading global component properties from different versions.
+    const globalPropReaders: Record<GlobalVersion, (emailDocument: Document) => ButtonGlobalProps> = {
+        "v0": readGlobalPropsV0,
+        "v2.1-alpha": readGlobalPropsV2_1_Alpha,
+        "v18.2": readGlobalPropsV18_2
+    };
+
+    // These are for writing global component properties to different versions.
+    const globalPropWriters: Record<GlobalVersion, (emailDocument: Document, globalProps: ButtonGlobalProps) => void> = {
+        "v0": writeGlobalPropsV0,
+        "v2.1-alpha": writeGlobalPropsV2_1_Alpha,
+        "v18.2": writeGlobalPropsV18_2
+    };
+
+    function readLocalPropsV0(componentElement: HTMLElement): ButtonLocalProps {
+        const buttonShell = componentElement.querySelector(".button-shell") as HTMLElement | null;
+        const buttonContent = componentElement.querySelector(".button-content") as HTMLElement | null;
+        const buttonLink = componentElement.querySelector("a.button-link") as HTMLElement | null;
+        const innerwrap = componentElement.querySelector(".button-innerwrap") as HTMLElement | null;
+
+        const attrWidth = buttonShell?.getAttribute("width") || "";
+        const fixedWidthPx = toPixelNumericValueOrNull(buttonShell?.style.width || buttonLink?.style.width);
+        const isFullWidth = attrWidth === "100%" || buttonShell?.style.width === "100%";
+        const isFixedWidth = !isNullish(fixedWidthPx);
+
+        return {
+            backgroundColor: buttonLink?.style.backgroundColor || null,
+            // Old buttons always had a 1px solid border the same color as the button background
+            border: buttonLink?.style.backgroundColor
+                ? {
+                    style: createShorthandModel<BorderStyle>("solid"),
+                    color: createShorthandModel(buttonLink.style.backgroundColor),
+                    widthPx: createShorthandModel(1)
+                }
+                : null,
+            borderRadiusPx: getStyleBorderRadiusPx(buttonContent?.style),
+            fontFamily: buttonLink?.style.fontFamily || null,
+            fontSizePx: toPixelNumericValueOrNull(buttonLink?.style.fontSize),
+            horizontalAlignment: toHorizontalAlignmentOrNull(innerwrap?.getAttribute("align")) ?? "center",
+            href: buttonLink?.getAttribute("href") ?? "",
+            isBold: null, // no bold in this version
+            isItalicized: null, // no italic in this version
+            isUnderlined: null, // no underline in this version
+            letterCase: null, // no letter case in this version
+            lineHeight: null, // no line height in this version
+            marginPx: createShorthandModel(0),
+            paddingPx: getStylePaddingPx(buttonLink?.style),
+            text: buttonLink?.textContent?.trim() ?? "",
+            textColor: buttonLink?.style.color || null,
+            width: isFullWidth
+                ? { mode: "full", fixedWidthPx: null }
+                : isFixedWidth
+                    ? { mode: "fixed", fixedWidthPx: fixedWidthPx }
+                    : null // default to null so that later logic can apply global default
+        };
+    }
+
+    function readLocalPropsV2_1_Alpha(componentElement: HTMLElement): ButtonLocalProps {
+        const buttonLink = componentElement.querySelector(".button-link") as HTMLElement | null;
+        const buttonContent = componentElement.querySelector(".button-content") as HTMLElement | null;
+        const buttonShell = componentElement.querySelector(".button-shell") as HTMLElement | null;
+        const buttonInnerwrap = componentElement.querySelector(".button-innerwrap") as HTMLElement | null;
+        const paddingWrapperTd = componentElement.querySelector(".padding-wrapper-for-button > tbody > tr > td") as HTMLElement | null;
+
+        const attrWidth = buttonShell?.getAttribute("width") || "";
+        const fixedWidthPx = toPixelNumericValueOrNull(buttonShell?.style.width || buttonLink?.style.width);
+        const isFullWidth = attrWidth === "100%" || buttonShell?.style.width === "100%";
+        const isFixedWidth = !isNullish(fixedWidthPx);
+
+        return {
+            text: buttonLink?.textContent?.trim() ?? "",
+            href: buttonLink?.getAttribute("href") ?? "",
+            fontFamily: buttonLink?.style.fontFamily || null,
+            fontSizePx: toPixelNumericValueOrNull(buttonLink?.style.fontSize),
+            isBold: getStyleIsBold(buttonLink?.style),
+            isUnderlined: getStyleIsUnderlined(buttonLink?.style),
+            isItalicized: getStyleIsItalicized(buttonLink?.style),
+            letterCase: getStyleLetterCase(buttonLink?.style),
+            lineHeight: toNumberOrNull(buttonLink?.style.lineHeight),
+            textColor: buttonLink?.style.color || null,
+            horizontalAlignment: toHorizontalAlignmentOrNull(buttonInnerwrap?.getAttribute("align")),
+            backgroundColor: paddingWrapperTd?.style.backgroundColor || null,
+            borderRadiusPx: getStyleBorderRadiusPx(buttonContent?.style),
+            width: isFullWidth
+                ? { mode: "full", fixedWidthPx: null }
+                : isFixedWidth
+                    ? { mode: "fixed", fixedWidthPx: fixedWidthPx }
+                    : null,
+            marginPx: getStylePaddingPx(buttonInnerwrap?.style),
+            paddingPx: getStylePaddingPx(buttonLink?.style),
+            border: getStyleBorder(buttonLink?.style)
+        };
+    }
+
+    function readLocalPropsV18_2(componentElement: HTMLElement): ButtonLocalProps {
+        const buttonInnerwrap = componentElement.querySelector(".button-innerwrap") as HTMLElement | null;
+        const buttonLink = componentElement.querySelector(".button-link") as HTMLElement | null;
+
+        let buttonWidthModel: ButtonWidthModel | null = null;
+
+        const widthMode = (componentElement.getAttribute(datasetKeys.COMPONENT_BUTTON_WIDTH) || null) as (ButtonWidthMode | null);
+        if (widthMode) {
+            const fixedWidthPx = toPixelNumericValueOrNull(buttonLink?.style.width);
+            buttonWidthModel = {
+                mode: widthMode,
+                fixedWidthPx
+            };
+        }
+
+        return {
+            text: buttonLink?.textContent ?? "",
+            href: buttonLink?.getAttribute("href") || "",
+            fontFamily: buttonLink?.style.fontFamily || null,
+            fontSizePx: toPixelNumericValueOrNull(buttonLink?.style.fontSize),
+            isBold: getStyleIsBold(buttonLink?.style),
+            isUnderlined: getStyleIsUnderlined(buttonLink?.style),
+            isItalicized: getStyleIsItalicized(buttonLink?.style),
+            letterCase: getStyleLetterCase(buttonLink?.style),
+            lineHeight: toNumberOrNull(buttonLink?.style.lineHeight),
+            textColor: buttonLink?.style.color || null,
+            horizontalAlignment: toHorizontalAlignmentOrNull(buttonInnerwrap?.getAttribute("align")),
+            backgroundColor: buttonLink?.style.backgroundColor || null,
+            borderRadiusPx: getStyleBorderRadiusPx(buttonLink?.style),
+            width: buttonWidthModel,
+            marginPx: getStylePaddingPx(buttonInnerwrap?.style),
+            paddingPx: getStylePaddingPx(buttonLink?.style),
+            border: getStyleBorder(buttonLink?.style)
+        };
+    }
+
+    function readGlobalPropsV0(_emailDocument: Document): ButtonGlobalProps {
+        // No global props in v0 (legacy)
+        return {
+            backgroundColor: null,
+            fontFamily: null,
+            fontSizePx: null,
+            isBold: null,
+            isUnderlined: null,
+            isItalicized: null,
+            letterCase: null,
+            lineHeight: null,
+            textColor: null,
+            border: null,
+            borderRadiusPx: null,
+            width: null,
+            marginPx: null,
+            paddingPx: null
+        };
+    }
+
+    function readGlobalPropsV2_1_Alpha(emailDocument: Document): ButtonGlobalProps {
+        const buttonLinkStyles = findRockStyleRules(emailDocument, ".component-button .button-link")
+            .select(rule => rule.style)
+            .toArray();
+        const marginWrapperTdStyles = findRockStyleRules(emailDocument, ".margin-wrapper-for-button>tbody>tr>td")
+            .select(rule => rule.style)
+            .toArray();
+        const paddingWrapperTdStyles = findRockStyleRules(emailDocument, `.component:not([data-component-background-color="true"]) .padding-wrapper-for-button>tbody>tr>td`)
+            .select(rule => rule.style)
+            .toArray();
+        const borderWrapperTdStyles = findRockStyleRules(emailDocument, ".border-wrapper-for-button>tbody>tr>td")
+            .select(rule => rule.style)
+            .toArray();
+        const buttonShellWidthStyles = findRockStyleRules(emailDocument, `.component-button:not([data-component-button-width="true"]) .button-shell`)
+            .select(rule => rule.style)
+            .toArray();
+
+        const buttonShellWidth = getStylePropertyValueOrNull(buttonShellWidthStyles, "width");
+        const buttonShellWidthPx = toPixelNumericValueOrNull(buttonShellWidth);
+        const isFullWidth = buttonShellWidth === "100%";
+        const isFixedWidth = !isNullish(buttonShellWidthPx);
+
+        return {
+            backgroundColor: getStylePropertyValueOrNull(paddingWrapperTdStyles, "background-color"),
+            fontFamily: getStylePropertyValueOrNull(buttonLinkStyles, "font-family"),
+            fontSizePx: toPixelNumericValueOrNull(getStylePropertyValueOrNull(buttonLinkStyles, "font-size")),
+            isBold: getStyleIsBold(buttonLinkStyles),
+            isUnderlined: getStyleIsUnderlined(buttonLinkStyles),
+            isItalicized: getStyleIsItalicized(buttonLinkStyles),
+            letterCase: getStyleLetterCase(buttonLinkStyles),
+            lineHeight: toNumberOrNull(getStylePropertyValueOrNull(buttonLinkStyles, "line-height")),
+            textColor: getStylePropertyValueOrNull(buttonLinkStyles, "color"),
+            border: getStyleBorder(buttonLinkStyles),
+            borderRadiusPx: getStyleBorderRadiusPx(borderWrapperTdStyles),
+            width: isFullWidth
+                ? { mode: "full", fixedWidthPx: null }
+                : isFixedWidth
+                    ? { mode: "fixed", fixedWidthPx: buttonShellWidthPx }
+                    : { mode: "fitToText", fixedWidthPx: null },
+            marginPx: getStylePaddingPx(marginWrapperTdStyles),
+            paddingPx: getStylePaddingPx(buttonLinkStyles)
+        };
+    }
+
+    function readGlobalPropsV18_2(emailDocument: Document): ButtonGlobalProps {
+        const buttonLinkStyles = findRockStyleRules(emailDocument, ".component-button .button-link")
+            .select(rule => rule.style)
+            .toArray(); // Materialize to array the elements are only queried once.
+        const buttonWidthButtonShellRuleSelector = `.component-button:not([data-component-button-width]) .button-shell`;
+        const buttonWidthButtonShellStyles = findRockStyleRules(emailDocument, buttonWidthButtonShellRuleSelector)
+            .select(rule => rule.style)
+            .toArray();
+        const buttonInnerwrapStyles = findRockStyleRules(emailDocument, ".component-button .button-innerwrap")
+            .select(rule => rule.style)
+            .toArray();
+
+        let widthMode: ButtonWidthMode | null = emailDocument.body.getAttribute(datasetKeys.COMPONENT_BUTTON_WIDTH) as (ButtonWidthMode | null) || null;
+        if (<string>widthMode === "true") {
+            // Fix issues where the attribute was set to "true" instead of a valid mode.
+            widthMode = "fitToText";
+        }
+        const fixedWidthPx = toPixelNumericValueOrNull(getStylePropertyValueOrNull(buttonWidthButtonShellStyles, "width"));
+
+        return {
+            fontFamily: getStylePropertyValueOrNull(buttonLinkStyles, "font-family"),
+            fontSizePx: toPixelNumericValueOrNull(getStylePropertyValueOrNull(buttonLinkStyles, "font-size")),
+            isBold: getStyleIsBold(buttonLinkStyles),
+            isUnderlined: getStyleIsUnderlined(buttonLinkStyles),
+            isItalicized: getStyleIsItalicized(buttonLinkStyles),
+            letterCase: getStyleLetterCase(buttonLinkStyles),
+            lineHeight: toNumberOrNull(getStylePropertyValueOrNull(buttonLinkStyles, "line-height")),
+            textColor: getStylePropertyValueOrNull(buttonLinkStyles, "color"),
+            backgroundColor: getStylePropertyValueOrNull(buttonLinkStyles, "background-color"),
+            borderRadiusPx: getStyleBorderRadiusPx(buttonLinkStyles),
+            width: widthMode === "fixed"
+                ? {
+                    mode: "fixed",
+                    fixedWidthPx
+                }
+                : widthMode
+                    ? {
+                        mode: widthMode,
+                        fixedWidthPx: null
+                    }
+                    : null,
+            marginPx: getStylePaddingPx(buttonInnerwrapStyles),
+            paddingPx: getStylePaddingPx(buttonLinkStyles),
+            border: getStyleBorder(buttonLinkStyles)
+        };
+    }
+
+    function writeGlobalPropsV0(_emailDocument: Document, _globalProps: ButtonGlobalProps): void {
+        // No global props in v0 (legacy)
+        return;
+    }
+
+    function writeGlobalPropsV2_1_Alpha(emailDocument: Document, globalProps: ButtonGlobalProps): void {
+        const buttonLinkRule = findRockStyleRules(emailDocument, ".component-button .button-link").lastOrDefault()
+            ?? createRockStyleRule(emailDocument, ".component-button .button-link");
+        const backgroundColorRule = findRockStyleRules(emailDocument, `.component:not([data-component-background-color="true"]) .padding-wrapper-for-button>tbody>tr>td`).lastOrDefault()
+            ?? createRockStyleRule(emailDocument, `.component:not([data-component-background-color="true"]) .padding-wrapper-for-button>tbody>tr>td`);
+        const borderWrapperTdRule = findRockStyleRules(emailDocument, ".border-wrapper-for-button>tbody>tr>td").lastOrDefault()
+            ?? createRockStyleRule(emailDocument, ".border-wrapper-for-button>tbody>tr>td");
+        const marginWrapperTdRule = findRockStyleRules(emailDocument, ".margin-wrapper-for-button>tbody>tr>td").lastOrDefault()
+            ?? createRockStyleRule(emailDocument, ".margin-wrapper-for-button>tbody>tr>td");
+        const buttonWidthButtonShellRuleSelector = `.component-button:not([data-component-button-width="true"]) .button-shell`;
+        const buttonWidthButtonShellRule = findRockStyleRules(emailDocument, buttonWidthButtonShellRuleSelector).lastOrDefault()
+            ?? createRockStyleRule(emailDocument, buttonWidthButtonShellRuleSelector);
+        const rules = [
+            buttonLinkRule,
+            backgroundColorRule,
+            borderWrapperTdRule,
+            marginWrapperTdRule,
+            buttonWidthButtonShellRule
+        ];
+
+        // background color
+        if (globalProps.backgroundColor) {
+            buttonLinkRule.style.backgroundColor = globalProps.backgroundColor;
+            backgroundColorRule.style.backgroundColor = globalProps.backgroundColor;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("background-color");
+            backgroundColorRule.style.removeProperty("background-color");
+        }
+
+        // font family
+        if (globalProps.fontFamily) {
+            buttonLinkRule.style.fontFamily = globalProps.fontFamily;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-family");
+        }
+
+        // font size
+        if (!isNullish(globalProps.fontSizePx)) {
+            buttonLinkRule.style.fontSize = `${globalProps.fontSizePx}px`;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-size");
+        }
+
+        // bold
+        if (!isNullish(globalProps.isBold)) {
+            buttonLinkRule.style.fontWeight = globalProps.isBold ? "bold" : "normal";
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-weight");
+        }
+
+        // underlined
+        if (!isNullish(globalProps.isUnderlined)) {
+            buttonLinkRule.style.textDecoration = globalProps.isUnderlined ? "underline" : "none";
+        }
+        else {
+            buttonLinkRule.style.removeProperty("text-decoration");
+        }
+
+        // italicized
+        if (!isNullish(globalProps.isItalicized)) {
+            buttonLinkRule.style.fontStyle = globalProps.isItalicized ? "italic" : "normal";
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-style");
+        }
+
+        // letter case
+        if (!isNullish(globalProps.letterCase)) {
+            buttonLinkRule.style.textTransform = globalProps.letterCase;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("text-transform");
+        }
+
+        // line height
+        if (!isNullish(globalProps.lineHeight)) {
+            buttonLinkRule.style.lineHeight = globalProps.lineHeight.toString();
+        }
+        else {
+            buttonLinkRule.style.removeProperty("line-height");
+        }
+
+        // color
+        if (globalProps.textColor) {
+            buttonLinkRule.style.color = globalProps.textColor;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("color");
+        }
+
+        // border
+        if (globalProps.border) {
+            setStyleShorthandValue(
+                borderWrapperTdRule.style,
+                globalProps.border.style,
+                {
+                    topProperty: "border-top-style",
+                    rightProperty: "border-right-style",
+                    bottomProperty: "border-bottom-style",
+                    leftProperty: "border-left-style",
+                    format: v => v
+                });
+
+            setStyleShorthandValue(
+                borderWrapperTdRule.style,
+                globalProps.border.widthPx,
+                {
+                    topProperty: "border-top-width",
+                    rightProperty: "border-right-width",
+                    bottomProperty: "border-bottom-width",
+                    leftProperty: "border-left-width",
+                    format: v => `${v}px`
+                });
+
+            // border color
+            setStyleShorthandValue(
+                borderWrapperTdRule.style,
+                globalProps.border.color,
+                {
+                    topProperty: "border-top-color",
+                    rightProperty: "border-right-color",
+                    bottomProperty: "border-bottom-color",
+                    leftProperty: "border-left-color",
+                    format: v => v
+                });
+        }
+        else {
+            borderWrapperTdRule.style.removeProperty("border-style");
+            borderWrapperTdRule.style.removeProperty("border-width");
+            borderWrapperTdRule.style.removeProperty("border-color");
+        }
+
+        // border radius
+        setStyleShorthandValue(
+            borderWrapperTdRule.style,
+            globalProps.borderRadiusPx,
+            {
+                topProperty: "border-top-left-radius",
+                bottomProperty: "border-top-right-radius",
+                leftProperty: "border-bottom-left-radius",
+                rightProperty: "border-bottom-right-radius",
+                format: v => `${v}px`
+            });
+
+        // width
+        if (globalProps.width) {
+            if (globalProps.width.mode === "full") {
+                buttonWidthButtonShellRule.style.width = "100%";
+                // Also set the width attribute for compatibility on all buttons that meet the same selector.
+                Enumerable
+                    .from(emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector))
+                    .forEach(el => el.setAttribute("width", "100%"));
+            }
+            else if (globalProps.width.mode === "fixed") {
+                if (!isNullish(globalProps.width.fixedWidthPx)) {
+                    buttonWidthButtonShellRule.style.width = `${globalProps.width.fixedWidthPx}px`;
+                    // Also set the width attribute for compatibility on all buttons that meet the same selector.
+                    Enumerable
+                        .from(emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector))
+                        .forEach(el => el.setAttribute("width", `${globalProps.width!.fixedWidthPx}`)); // No "px" in the attribute.
+                }
+                else {
+                    buttonWidthButtonShellRule.style.removeProperty("width");
+                    Enumerable
+                        .from(emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector))
+                        .forEach(el => el.removeAttribute("width"));
+                }
+            }
+            else if (globalProps.width.mode === "fitToText") {
+                buttonWidthButtonShellRule.style.removeProperty("width");
+                Enumerable
+                    .from(emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector))
+                    .forEach(el => el.removeAttribute("width"));
+            }
+        }
+        else {
+            // No width at all. Default to essentially the same values as fit to text without explicitly setting it.
+            buttonWidthButtonShellRule.style.removeProperty("width");
+            Enumerable
+                .from(emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector))
+                .forEach(el => el.removeAttribute("width"));
+        }
+
+        // margin
+        setStyleShorthandValue(
+            marginWrapperTdRule.style,
+            globalProps.marginPx,
+            {
+                topProperty: "padding-top",
+                rightProperty: "padding-right",
+                bottomProperty: "padding-bottom",
+                leftProperty: "padding-left",
+                format: (v) => `${v}px`
+            });
+
+        // padding
+        setStyleShorthandValue(
+            buttonLinkRule.style,
+            globalProps.paddingPx,
+            {
+                topProperty: "padding-top",
+                rightProperty: "padding-right",
+                bottomProperty: "padding-bottom",
+                leftProperty: "padding-left",
+                format: (v) => `${v}px`
+            });
+
+        // All the above work only updates the in-memory document; now synchronize the sheet to the DOM.
+        const sheets = Enumerable
+            .from(rules)
+            .select(rule => rule.parentStyleSheet)
+            .distinct()
+            .toArray();
+
+        for (const sheet of sheets) {
+            if (sheet) {
+                synchronizeSheetToDom(sheet);
+            }
+        }
+    }
+
+    function writeGlobalPropsV18_2(emailDocument: Document, globalProps: ButtonGlobalProps): void {
+        // Write the version to the document body.
+        const globalVersionMeta = emailDocument.head.querySelector(`meta[name="${metaKeys.GLOBAL_BUTTON_VERSION}"]`) as HTMLMetaElement | null;
+        if (globalVersionMeta) {
+            globalVersionMeta.setAttribute("content", LATEST_GLOBAL_VERSION);
+        }
+        else {
+            const meta = emailDocument.createElement("meta");
+            meta.setAttribute("name", metaKeys.GLOBAL_BUTTON_VERSION);
+            meta.setAttribute("content", LATEST_GLOBAL_VERSION);
+            emailDocument.head.appendChild(meta);
+        }
+
+        const buttonLinkRule = findRockStyleRules(emailDocument, ".component-button .button-link").lastOrDefault()
+            ?? createRockStyleRule(emailDocument, ".component-button .button-link");
+        const buttonContentRule = findRockStyleRules(emailDocument, ".component-button .button-content").lastOrDefault()
+            ?? createRockStyleRule(emailDocument, ".component-button .button-content");
+        const buttonWidthButtonShellRuleSelector = `.component-button:not([data-component-button-width]) .button-shell`;
+        const buttonWidthButtonShellRule = findRockStyleRules(emailDocument, buttonWidthButtonShellRuleSelector).lastOrDefault()
+            ?? createRockStyleRule(emailDocument, buttonWidthButtonShellRuleSelector);
+        const buttonInnerwrapRule = findRockStyleRules(emailDocument, ".component-button .button-innerwrap").lastOrDefault()
+            ?? createRockStyleRule(emailDocument, ".component-button .button-innerwrap");
+        const rules = [
+            buttonLinkRule,
+            buttonContentRule,
+            buttonWidthButtonShellRule,
+            buttonInnerwrapRule
+        ];
+
+        const {
+            fontFamily,
+            fontSizePx,
+            isBold,
+            isUnderlined,
+            isItalicized,
+            letterCase,
+            lineHeight,
+            textColor,
+            backgroundColor,
+            borderRadiusPx,
+            width,
+            marginPx,
+            paddingPx,
+            border
+        } = globalProps;
+
+        // Delete old global rules from v2.1-alpha that are now inline in the buttonLinkRule.
+        buttonLinkRule.style.removeProperty("text-align");
+        buttonLinkRule.style.removeProperty("letter-spacing");
+
+        // font family
+        if (fontFamily) {
+            buttonLinkRule.style.fontFamily = fontFamily;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-family");
+        }
+
+        // font size
+        if (!isNullish(fontSizePx)) {
+            buttonLinkRule.style.fontSize = `${fontSizePx}px`;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-size");
+        }
+
+        // bold
+        if (!isNullish(isBold)) {
+            buttonLinkRule.style.fontWeight = isBold ? "bold" : "normal";
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-weight");
+        }
+
+        // underlined
+        if (!isNullish(isUnderlined)) {
+            buttonLinkRule.style.textDecoration = isUnderlined ? "underline" : "none";
+        }
+        else {
+            buttonLinkRule.style.removeProperty("text-decoration");
+        }
+
+        // italicized
+        if (!isNullish(isItalicized)) {
+            buttonLinkRule.style.fontStyle = isItalicized ? "italic" : "normal";
+        }
+        else {
+            buttonLinkRule.style.removeProperty("font-style");
+        }
+
+        // letter case
+        if (letterCase) {
+            buttonLinkRule.style.textTransform = letterCase;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("text-transform");
+        }
+
+        // line height
+        if (!isNullish(lineHeight)) {
+            buttonLinkRule.style.lineHeight = lineHeight.toString();
+        }
+        else {
+            buttonLinkRule.style.removeProperty("line-height");
+        }
+
+        // text color
+        if (textColor) {
+            buttonLinkRule.style.color = textColor;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("color");
+        }
+
+        // background color
+        if (backgroundColor) {
+            // Remove DATA_COMPONENT_BACKGROUND_COLOR attributes as they aren't needed anymore.
+            emailDocument.querySelectorAll(`.component-button[${datasetKeys.COMPONENT_BACKGROUND_COLOR}]`).forEach(el => el.removeAttribute(datasetKeys.COMPONENT_BACKGROUND_COLOR));
+
+            buttonLinkRule.style.backgroundColor = backgroundColor;
+            buttonContentRule.style.backgroundColor = backgroundColor;
+        }
+        else {
+            buttonLinkRule.style.removeProperty("background-color");
+            buttonContentRule.style.removeProperty("background-color");
+        }
+
+        // border radius
+        setStyleShorthandValue(
+            buttonLinkRule.style,
+            borderRadiusPx,
+            {
+                topProperty: "border-top-left-radius",
+                bottomProperty: "border-top-right-radius",
+                leftProperty: "border-bottom-left-radius",
+                rightProperty: "border-bottom-right-radius",
+                format: v => `${v}px`
+            });
+
+        // border radius (copy to .button-content)
+        setStyleShorthandValue(
+            buttonContentRule.style,
+            borderRadiusPx,
+            {
+                topProperty: "border-top-left-radius",
+                bottomProperty: "border-top-right-radius",
+                leftProperty: "border-bottom-left-radius",
+                rightProperty: "border-bottom-right-radius",
+                format: v => `${v}px`
+            });
+
+        // width
+        if (width?.mode) {
+            // Set data attribute to indicate global button width is used.
+            emailDocument.body.setAttribute(
+                datasetKeys.COMPONENT_BUTTON_WIDTH,
+                width.mode
+            );
+
+            if (width.mode === "full") {
+                emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector).forEach(buttonShell => {
+                    buttonShell.setAttribute("width", "100%");
+                });
+                buttonWidthButtonShellRule.style.width = "100%";
+            }
+            else if (width.mode === "fixed") {
+                if (!isNullish(width.fixedWidthPx)) {
+                    emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector).forEach(buttonShell => {
+                        buttonShell.setAttribute("width", `${width.fixedWidthPx}`);
+                    });
+                    buttonWidthButtonShellRule.style.width = `${width.fixedWidthPx}px`;
+                }
+                else {
+                    emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector).forEach(buttonShell => {
+                        buttonShell.removeAttribute("width");
+                    });
+                    buttonWidthButtonShellRule.style.removeProperty("width");
+                }
+            }
+            else if (width.mode === "fitToText") {
+                emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector).forEach(buttonShell => {
+                    buttonShell.removeAttribute("width");
+                });
+                buttonWidthButtonShellRule.style.removeProperty("width");
+            }
+        }
+        else {
+            emailDocument.body.removeAttribute(datasetKeys.COMPONENT_BUTTON_WIDTH);
+
+            // Set the effective width to "fitToText" without explicitly setting it.
+            emailDocument.querySelectorAll(buttonWidthButtonShellRuleSelector).forEach(buttonShell => {
+                buttonShell.removeAttribute("width");
+            });
+
+            buttonWidthButtonShellRule.style.removeProperty("width");
+        }
+
+        // padding
+        setStyleShorthandValue(
+            buttonLinkRule.style,
+            paddingPx,
+            {
+                topProperty: "padding-top",
+                rightProperty: "padding-right",
+                bottomProperty: "padding-bottom",
+                leftProperty: "padding-left",
+                format: v => `${v}px`
+            });
+
+        // margin
+        setStyleShorthandValue(
+            buttonInnerwrapRule.style,
+            marginPx,
+            {
+                topProperty: "padding-top",
+                rightProperty: "padding-right",
+                bottomProperty: "padding-bottom",
+                leftProperty: "padding-left",
+                format: (v) => `${v}px`
+            });
+
+        // border color
+        setStyleShorthandValue(
+            buttonLinkRule.style,
+            border?.color,
+            {
+                topProperty: "border-top-color",
+                rightProperty: "border-right-color",
+                bottomProperty: "border-bottom-color",
+                leftProperty: "border-left-color",
+                format: v => v
+            });
+
+        // border style
+        setStyleShorthandValue(
+            buttonLinkRule.style,
+            border?.style,
+            {
+                topProperty: "border-top-style",
+                rightProperty: "border-right-style",
+                bottomProperty: "border-bottom-style",
+                leftProperty: "border-left-style",
+                format: v => v
+            });
+
+        // border width
+        setStyleShorthandValue(
+            buttonLinkRule.style,
+            border?.widthPx,
+            {
+                topProperty: "border-top-width",
+                rightProperty: "border-right-width",
+                bottomProperty: "border-bottom-width",
+                leftProperty: "border-left-width",
+                format: v => `${v}px`
+            });
+
+        // All the above work only updates the in-memory document; now synchronize the sheet to the DOM.
+        const sheets = Enumerable
+            .from(rules)
+            .select(rule => rule.parentStyleSheet)
+            .distinct()
+            .toArray();
+
+        for (const sheet of sheets) {
+            if (sheet) {
+                synchronizeSheetToDom(sheet);
+            }
+        }
+    }
+
+    function createEmptyComponentElement(emailDocument: Document): HTMLElement {
+        // Only put static/constant structure here; all styles and content should be set via writeLocalProps/writeGlobalProps.
+        return createHtmlElement(emailDocument, `
+<div class="component component-button" data-state="component" ${datasetKeys.VERSION}="${LATEST_VERSION}">
+    <table class="button-outerwrap" border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%;">
+        <tbody>
+            <tr>
+                <td class="button-innerwrap" valign="top">
+                    <table class="button-shell" border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr>
+                                <td class="button-content" align="center" valign="middle">
+                                    <a class="button-link ${RockCssClassContentEditable}" target="_blank" rel="noopener noreferrer" style="display: block; letter-spacing: normal; text-align: center;"></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>`);
+    }
+
+    function getGlobalVersion(emailDocument: Document): GlobalVersion {
+        // v18.2 and later use the meta tag to track global button schema version.
+        const globalPropsVersion: GlobalVersion | undefined = (emailDocument.head.querySelector(`meta[name="${metaKeys.GLOBAL_BUTTON_VERSION}"]`)?.getAttribute("content") || undefined) as (GlobalVersion | undefined);
+
+        if (globalPropsVersion) {
+            return globalPropsVersion;
+        }
+
+        // Try to infer from structure.
+        const buttonLinkStyles = findRockStyleRules(emailDocument, ".component-button .button-link")
+            .select(rule => rule.style)
+            .toArray();
+
+        if (getStylePropertyValueOrNull(buttonLinkStyles, "text-align") === "center"
+            || getStylePropertyValueOrNull(buttonLinkStyles, "letter-spacing") === "normal") {
+            // v2.1-alpha and later used rock-styles for button styles.
+            return "v2.1-alpha";
+        }
+
+        // No version info, assume v0 (legacy).
+        return "v0";
+    }
+
+    const adapter: ButtonComponentAdapter = {
+        kind: KIND,
+        currentVersion: LATEST_VERSION,
+
+        migrateComponent(emailDocument: Document, componentElement: HTMLElement): HTMLElement {
+            const version: ComponentVersion | null = (getComponentVersionNumber(componentElement) ?? "v0") as ComponentVersion | null;
+
+            if (!version || !localPropReaders[version]) {
+                // Unknown version; cannot migrate.
+                console.warn(`Button component migration: unknown version "${version}".`);
+                return componentElement;
+            }
+
+            if (compareComponentVersions(version, LATEST_VERSION) >= 0) {
+                // Already latest version
+                return componentElement;
+            }
+
+            // Copy the local props from the old element to the new one.
+            const localProps = localPropReaders[version](componentElement);
+            const newComponentElement = createEmptyComponentElement(emailDocument);
+            adapter.writeLocalProps(newComponentElement, localProps);
+
+            // Replace the old element with the new one.
+            componentElement.replaceWith(newComponentElement);
+
+            return newComponentElement;
+        },
+
+        readLocalProps(componentElement: HTMLElement): ButtonLocalProps {
+            return localPropReaders[LATEST_VERSION](componentElement);
+        },
+
+        writeLocalProps(componentElement: HTMLElement, localProps: ButtonLocalProps): void {
+            // This always assumes the componentElement is already migrated to latest version.
+            // We don't keep track of version-specific writers; only the latest writer.
+
+            const {
+                text,
+                href,
+                fontFamily,
+                fontSizePx,
+                isBold,
+                isUnderlined,
+                isItalicized,
+                letterCase,
+                lineHeight,
+                textColor,
+                horizontalAlignment,
+                backgroundColor,
+                borderRadiusPx,
+                width,
+                marginPx,
+                paddingPx,
+                border
+            } = localProps;
+
+            const buttonInnerwrap = componentElement.querySelector(".button-innerwrap") as HTMLElement | null;
+            const buttonShell = componentElement.querySelector(".button-shell") as HTMLElement | null;
+            const buttonContent = componentElement.querySelector(".button-content") as HTMLElement | null;
+            const buttonLink = componentElement.querySelector(".button-link") as HTMLElement | null;
+
+            if (buttonLink) {
+                // text
+                buttonLink.textContent = text;
+                buttonLink.title = text;
+
+                // href
+                if (href) {
+                    buttonLink.setAttribute("href", href);
+                }
+                else {
+                    buttonLink.removeAttribute("href");
+                }
+
+                // font family
+                if (fontFamily) {
+                    buttonLink.style.fontFamily = fontFamily;
+                }
+                else {
+                    buttonLink.style.removeProperty("font-family");
+                }
+
+                // font size
+                if (!isNullish(fontSizePx)) {
+                    buttonLink.style.fontSize = `${fontSizePx}px`;
+                }
+                else {
+                    buttonLink.style.removeProperty("font-size");
+                }
+
+                // bold
+                if (!isNullish(isBold)) {
+                    buttonLink.style.fontWeight = isBold ? "bold" : "normal";
+                }
+                else {
+                    buttonLink.style.removeProperty("font-weight");
+                }
+
+                // underlined
+                if (!isNullish(isUnderlined)) {
+                    buttonLink.style.textDecoration = isUnderlined ? "underline" : "none";
+                }
+                else {
+                    buttonLink.style.removeProperty("text-decoration");
+                }
+
+                // italicized
+                if (!isNullish(isItalicized)) {
+                    buttonLink.style.fontStyle = isItalicized ? "italic" : "normal";
+                }
+                else {
+                    buttonLink.style.removeProperty("font-style");
+                }
+
+                // letter case
+                if (letterCase) {
+                    buttonLink.style.textTransform = letterCase;
+                }
+                else {
+                    buttonLink.style.removeProperty("text-transform");
+                }
+
+                // line height
+                if (!isNullish(lineHeight)) {
+                    buttonLink.style.lineHeight = lineHeight.toString();
+                }
+                else {
+                    buttonLink.style.removeProperty("line-height");
+                }
+
+                // text color
+                if (textColor) {
+                    buttonLink.style.color = textColor;
+                }
+                else {
+                    buttonLink.style.removeProperty("color");
+                }
+
+                // background color
+                if (backgroundColor) {
+                    componentElement.setAttribute(datasetKeys.COMPONENT_BACKGROUND_COLOR, "true");
+                    buttonLink.style.backgroundColor = backgroundColor;
+
+                    if (buttonContent) {
+                        buttonContent.style.backgroundColor = backgroundColor;
+                    }
+                }
+                else {
+                    componentElement.removeAttribute(datasetKeys.COMPONENT_BACKGROUND_COLOR);
+                    buttonLink.style.removeProperty("background-color");
+                    if (buttonContent) {
+                        buttonContent.style.removeProperty("background-color");
+                    }
+                }
+
+                // border radius
+                setStyleShorthandValue(
+                    buttonLink.style,
+                    borderRadiusPx,
+                    {
+                        topProperty: "border-top-left-radius",
+                        bottomProperty: "border-top-right-radius",
+                        leftProperty: "border-bottom-left-radius",
+                        rightProperty: "border-bottom-right-radius",
+                        format: v => `${v}px`
+                    });
+
+                // border radius (copy to .button-content)
+                if (buttonContent) {
+                    setStyleShorthandValue(
+                        buttonContent.style,
+                        borderRadiusPx,
+                        {
+                            topProperty: "border-top-left-radius",
+                            bottomProperty: "border-top-right-radius",
+                            leftProperty: "border-bottom-left-radius",
+                            rightProperty: "border-bottom-right-radius",
+                            format: v => `${v}px`
+                        }
+                    );
+                }
+
+                // padding
+                setStyleShorthandValue(
+                    buttonLink.style,
+                    paddingPx,
+                    {
+                        topProperty: "padding-top",
+                        rightProperty: "padding-right",
+                        bottomProperty: "padding-bottom",
+                        leftProperty: "padding-left",
+                        format: v => `${v}px`
+                    });
+
+                // border color
+                setStyleShorthandValue(
+                    buttonLink.style,
+                    border?.color,
+                    {
+                        topProperty: "border-top-color",
+                        rightProperty: "border-right-color",
+                        bottomProperty: "border-bottom-color",
+                        leftProperty: "border-left-color",
+                        format: v => v
+                    });
+
+                // border style
+                setStyleShorthandValue(
+                    buttonLink.style,
+                    border?.style,
+                    {
+                        topProperty: "border-top-style",
+                        rightProperty: "border-right-style",
+                        bottomProperty: "border-bottom-style",
+                        leftProperty: "border-left-style",
+                        format: v => v
+                    });
+
+                // border width
+                setStyleShorthandValue(
+                    buttonLink.style,
+                    border?.widthPx,
+                    {
+                        topProperty: "border-top-width",
+                        rightProperty: "border-right-width",
+                        bottomProperty: "border-bottom-width",
+                        leftProperty: "border-left-width",
+                        format: v => `${v}px`
+                    });
+            }
+
+            if (buttonShell) {
+                // width
+                if (width?.mode) {
+                    // Set data attribute to indicate local button width is used.
+                    componentElement.setAttribute(
+                        datasetKeys.COMPONENT_BUTTON_WIDTH,
+                        width.mode // TODO JMH for v18.2 use width.mode here
+                    );
+
+                    if (width.mode === "full") {
+                        buttonShell.setAttribute("width", "100%");
+                        buttonShell.style.width = "100%";
+                    }
+                    else if (width.mode === "fixed") {
+                        if (!isNullish(width.fixedWidthPx)) {
+                            buttonShell.setAttribute("width", `${width.fixedWidthPx}`);
+                            buttonShell.style.width = `${width.fixedWidthPx}px`;
+                        }
+                        else {
+                            buttonShell.removeAttribute("width");
+                            buttonShell.style.removeProperty("width");
+                        }
+                    }
+                    else if (width.mode === "fitToText") {
+                        buttonShell.removeAttribute("width");
+                        buttonShell.style.removeProperty("width");
+                    }
+                }
+                else {
+                    // No local width, remove data attribute to fall back to global.
+                    // Global will be set later by the caller.
+                    componentElement.removeAttribute(datasetKeys.COMPONENT_BUTTON_WIDTH);
+
+                    // Set the effective width to "fitToText" without explicitly setting it.
+                    buttonShell.removeAttribute("width");
+                    buttonShell.style.removeProperty("width");
+                }
+            }
+
+            if (buttonInnerwrap) {
+                // horizontal alignment
+                if (horizontalAlignment) {
+                    buttonInnerwrap.setAttribute("align", horizontalAlignment);
+                }
+                else {
+                    // Don't delete the horizontal alignment; let global styles handle it.
+                    //innerwrap.removeAttribute("align");
+                }
+
+                // margin
+                setStyleShorthandValue(
+                    buttonInnerwrap.style,
+                    marginPx,
+                    {
+                        topProperty: "padding-top",
+                        rightProperty: "padding-right",
+                        bottomProperty: "padding-bottom",
+                        leftProperty: "padding-left",
+                        format: (v) => `${v}px`
+                    });
+            }
+        },
+
+        readGlobalProps(emailDocument: Document): ButtonGlobalProps {
+            // This assumes the emailDocument is already migrated to latest global DOM structure.
+            return globalPropReaders[LATEST_GLOBAL_VERSION](emailDocument);
+        },
+
+        writeGlobalProps(emailDocument: Document, props: ButtonGlobalProps): void {
+            // This assumes the emailDocument is already migrated to latest global DOM structure.
+            globalPropWriters[LATEST_GLOBAL_VERSION](emailDocument, props);
+        },
+
+        migrateGlobalProps(emailDocument: Document): void {
+            const globalPropsVersion = getGlobalVersion(emailDocument);
+
+            if (compareComponentVersions(globalPropsVersion, LATEST_GLOBAL_VERSION) >= 0) {
+                // Already latest version; no migration needed.
+                return;
+            }
+
+            // To migrate global props:
+            // 1. Read global props using the old version reader.
+            // 2. Write null props using the old version writer to clear old styles.
+            // 3. Write the previously read props using the latest version writer.
+            const readOldGlobalProps = globalPropReaders[globalPropsVersion];
+            const writeOldGlobalProps = globalPropWriters[globalPropsVersion];
+            const writeLatestGlobalProps = globalPropWriters[LATEST_GLOBAL_VERSION];
+
+            if (!readOldGlobalProps || !writeOldGlobalProps || !writeLatestGlobalProps) {
+                console.warn(`Button global props migration: unknown version "${globalPropsVersion}".`);
+                return;
+            }
+
+            const globalProps = readOldGlobalProps(emailDocument);
+            writeOldGlobalProps(emailDocument, {
+                backgroundColor: null,
+                fontFamily: null,
+                fontSizePx: null,
+                isBold: null,
+                isUnderlined: null,
+                isItalicized: null,
+                letterCase: null,
+                lineHeight: null,
+                textColor: null,
+                border: null,
+                borderRadiusPx: null,
+                width: null,
+                marginPx: null,
+                paddingPx: null
+            });
+            writeLatestGlobalProps(emailDocument, globalProps);
+        },
+
+        createComponentElement(emailDocument: Document): HTMLElement {
+            const componentElement = createEmptyComponentElement(emailDocument);
+
+            // Use global props when possible.
+            const localPropDefaults: ButtonLocalProps = {
+                text: "Click Me",
+                href: "https://",
+                backgroundColor: null,
+                fontFamily: null,
+                fontSizePx: null,
+                isBold: null,
+                isUnderlined: null,
+                isItalicized: null,
+                letterCase: null,
+                lineHeight: null,
+                textColor: null,
+                horizontalAlignment: "center",
+                borderRadiusPx: null,
+                width: null,
+                border: null,
+                marginPx: null,
+                paddingPx: null
+            };
+
+            adapter.writeLocalProps(componentElement, localPropDefaults);
+
+            // Global props will be applied after the component is added to the email DOM.
+            return componentElement;
+        },
+
+        getDefaultGlobalProps(): ButtonGlobalProps {
+            return {
+                backgroundColor: "#2196f3",
+                fontFamily: FontFamilies.Arial,
+                fontSizePx: null,
+                isBold: true,
+                isUnderlined: false,
+                isItalicized: null,
+                letterCase: null,
+                lineHeight: toNumberOrNull(LineHeights.tight.value),
+                textColor: "#FFFFFF",
+                border: {
+                    style: createShorthandModel<BorderStyle>("solid"),
+                    widthPx: createShorthandModel<number>(1),
+                    color: createShorthandModel<string>("#2196f3")
+                },
+                borderRadiusPx: createShorthandModel<number>(4),
+                width: {
+                    mode: "fitToText",
+                    fixedWidthPx: null
+                },
+                marginPx: null,
+                paddingPx: createShorthandModel<number>(15)
+            };
+        },
+
+        areGlobalDefaultsNeeded(emailDocument: Document): boolean {
+            return getGlobalVersion(emailDocument) === "v0";
+        }
+    };
+
+    return adapter;
+}
+
+/**
+ * Converts a pixel value string (e.g., "10px") to a number (e.g., 10).
+ *
+ * @param pixels Pixel value string (e.g., "10px").
+ * @returns Numeric pixel value (e.g., 10), or null if invalid.
+ */
+function toPixelNumericValueOrNull(pixels: string | null | undefined): number | null {
+    pixels = pixels?.trim();
+
+    if (pixels?.endsWith("px")) {
+        const parsed = Number(pixels.slice(0, -2));
+
+        if (Number.isFinite(parsed)) {
+            return parsed;
+        }
+    }
+
+    // Not in the right format.
+    return null;
+}
+
+/**
+ * Converts a CSS border style (e.g., "solid", "dashed", etc.) string to a BorderStyle or null if invalid.
+ *
+ * @param cssBorderStyle CSS border style string.
+ * @returns BorderStyle or null if invalid.
+ */
+function toBorderStyleOrNull(cssBorderStyle: string | null | undefined): BorderStyle | null {
+    cssBorderStyle = cssBorderStyle?.trim().toLowerCase();
+    switch (cssBorderStyle) {
+        case "solid":
+        case "dashed":
+        case "dotted":
+        case "none":
+            return cssBorderStyle;
+        default:
+            return null;
+    }
+}
+
+/**
+ * Converts a string to HorizontalAlignment or null if invalid.
+ *
+ * @param align Alignment string (e.g., "left", "center", "right").
+ * @returns HorizontalAlignment or null if invalid.
+ */
+function toHorizontalAlignmentOrNull(align: string | null | undefined): HorizontalAlignment | null {
+    const alignValue = align?.trim().toLowerCase() || "";
+
+    return alignValue === "left" || alignValue === "center" || alignValue === "right"
+        ? (alignValue as HorizontalAlignment)
+        : null;
+}
+
+function isEnumerable<T>(obj: unknown): obj is Enumerable<T> {
+    return !!obj
+        && typeof obj === "object"
+        && typeof (obj as Enumerable<T>).ofType === "function"
+        && typeof (obj as Enumerable<T>).aggregate === "function";
+}
+
+/**
+ * Gets the last specified value of a CSS property from the provided style(s), mimicking cascading behavior (last style wins).
+ *
+ * @param style
+ * @param propertyName
+ * @returns
+ */
+function getStylePropertyValueOrNull(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined, propertyName: CssStyleDeclarationKebabKey): string | null {
+    const lastValue = Array.isArray(style)
+        ? Enumerable.from(style).select(s => s.getPropertyValue(propertyName)).lastOrDefault(v => !!v)
+        : isEnumerable<CSSStyleDeclaration>(style)
+            ? style.select(s => s.getPropertyValue(propertyName)).lastOrDefault(v => !!v)
+            : style?.getPropertyValue(propertyName);
+
+    return lastValue || null;
+}
+
+function getStyleShorthandValueOrNull<T>(
+    style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined,
+    { top, right, bottom, left }: ShorthandPropertyNames,
+    predicate: (value: string | null) => T
+): ShorthandModel<T> | null {
+    const topValue = predicate(getStylePropertyValueOrNull(style, top));
+    const rightValue = predicate(getStylePropertyValueOrNull(style, right));
+    const bottomValue = predicate(getStylePropertyValueOrNull(style, bottom));
+    const leftValue = predicate(getStylePropertyValueOrNull(style, left));
+
+    if (isNullish(topValue) && isNullish(rightValue) && isNullish(bottomValue) && isNullish(leftValue)) {
+        return null;
+    }
+
+    return {
+        top: topValue,
+        right: rightValue,
+        bottom: bottomValue,
+        left: leftValue
+    };
+}
+
+function setStyleShorthandValue<T>(style: CSSStyleDeclaration, value: ShorthandModel<T | null> | null | undefined, options: {
+    topProperty: CssStyleDeclarationKebabKey;
+    bottomProperty: CssStyleDeclarationKebabKey;
+    rightProperty: CssStyleDeclarationKebabKey;
+    leftProperty: CssStyleDeclarationKebabKey;
+    format: (v: T) => string;
+}): void {
+    if (!isNullish(value?.top)) {
+        style.setProperty(options.topProperty, options.format(value!.top));
+    }
+    else {
+        style.removeProperty(options.topProperty);
+    }
+
+    if (!isNullish(value?.right)) {
+        style.setProperty(options.rightProperty, options.format(value!.right));
+    }
+    else {
+        style.removeProperty(options.rightProperty);
+    }
+
+    if (!isNullish(value?.bottom)) {
+        style.setProperty(options.bottomProperty, options.format(value!.bottom));
+    }
+    else {
+        style.removeProperty(options.bottomProperty);
+    }
+
+    if (!isNullish(value?.left)) {
+        style.setProperty(options.leftProperty, options.format(value!.left));
+    }
+    else {
+        style.removeProperty(options.leftProperty);
+    }
+}
+
+/**
+ * Determines if the style indicates bold text.
+ *
+ * Interprets the last specified "font-weight" property from the provided style(s), mimicking cascading behavior (last style wins).
+ *
+ * @param style CSS style(s) to check.
+ * @returns `true` if bold, `false` if not bold, or `null` if unspecified.
+ */
+function getStyleIsBold(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): boolean | null {
+    const lastFontWeight = getStylePropertyValueOrNull(style, "font-weight");
+
+    if (!lastFontWeight) {
+        return null;
+    }
+
+    const fontWeight = lastFontWeight.toLocaleLowerCase();
+    const fontWeightAsNumber = toNumberOrNull(fontWeight);
+
+    // Use tri-state to indicate bold, not bold, or unspecified (for global inheritance)
+    if (fontWeight === "bold"
+        || fontWeight === "bolder"
+        || (!isNullish(fontWeightAsNumber) && fontWeightAsNumber >= 700)) {
+        return true;
+    }
+    else if (fontWeight === "normal"
+        || fontWeight === "light"
+        || fontWeight === "lighter"
+        || (!isNullish(fontWeightAsNumber) && fontWeightAsNumber < 700)) {
+        return false;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
+ * Determines if the style indicates italicized text.
+ *
+ * Interprets the last specified "font-style" property from the provided style(s), mimicking cascading behavior (last style wins).
+ *
+ * @param style CSS style(s) to check.
+ * @returns `true` if italicized, `false` if not italicized, or `null` if unspecified.
+ */
+function getStyleIsItalicized(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): boolean | null {
+    const lastFontStyle = getStylePropertyValueOrNull(style, "font-style");
+
+    if (!lastFontStyle) {
+        return null;
+    }
+
+    const fontStyle = lastFontStyle.toLocaleLowerCase();
+
+    // Use tri-state to indicate italicized, not italicized, or unspecified (for global inheritance)
+    if (fontStyle === "italic") {
+        return true;
+    }
+    else if (fontStyle === "normal") {
+        return false;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
+ * Determines if the style indicates underlined text.
+ *
+ * Interprets the last specified "text-decoration" property from the provided style(s), mimicking cascading behavior (last style wins).
+ *
+ * @param style CSS style(s) to check.
+ * @returns `true` if underlined, `false` if not underlined, or `null` if unspecified.
+ */
+function getStyleIsUnderlined(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): boolean | null {
+    const lastTextDecoration = getStylePropertyValueOrNull(style, "text-decoration");
+
+    if (!lastTextDecoration) {
+        return null;
+    }
+
+    const textDecoration = lastTextDecoration.toLocaleLowerCase();
+
+    // Use tri-state to indicate underlined, not underlined, or unspecified (for global inheritance)
+    if (textDecoration === "underline") {
+        return true;
+    }
+    else if (textDecoration === "none") {
+        return false;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
+ * Gets the letter case from the style.
+ *
+ * Interprets the last specified "text-transform" property from the provided style(s) to mimic cascading behavior (last style wins).
+ *
+ * @param style CSS style(s) to check.
+ * @returns LetterCase or null if unspecified.
+ */
+function getStyleLetterCase(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): LetterCase | null {
+    const lastTextTransform = getStylePropertyValueOrNull(style, "text-transform");
+
+    if (!lastTextTransform) {
+        return null;
+    }
+
+    const textTransform = lastTextTransform.toLocaleLowerCase();
+
+    if (textTransform === "none"
+        || textTransform === "uppercase"
+        || textTransform === "lowercase"
+        || textTransform === "capitalize") {
+        return textTransform as LetterCase;
+    }
+    else {
+        return null;
+    }
+}
+
+function getStylePaddingPx(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): ShorthandModel<number | null> | null {
+    return getStyleShorthandValueOrNull(
+        style,
+        {
+            top: "padding-top",
+            right: "padding-right",
+            bottom: "padding-bottom",
+            left: "padding-left"
+        },
+        toPixelNumericValueOrNull
+    );
+}
+
+function getStyleBorderRadiusPx(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): ShorthandModel<number | null> | null {
+    return getStyleShorthandValueOrNull(
+        style,
+        {
+            top: "border-top-left-radius",
+            bottom: "border-top-right-radius",
+            right: "border-bottom-right-radius",
+            left: "border-bottom-left-radius"
+        },
+        toPixelNumericValueOrNull
+    );
+}
+
+function getStyleBorder(style: Enumerable<CSSStyleDeclaration> | CSSStyleDeclaration[] | CSSStyleDeclaration | null | undefined): BorderModel | null {
+    const borderColor = getStyleShorthandValueOrNull(
+        style,
+        {
+            top: "border-top-color",
+            right: "border-right-color",
+            bottom: "border-bottom-color",
+            left: "border-left-color"
+        },
+        v => v || null
+    );
+
+    const borderStyle = getStyleShorthandValueOrNull(
+        style,
+        {
+            top: "border-top-style",
+            right: "border-right-style",
+            bottom: "border-bottom-style",
+            left: "border-left-style"
+        },
+        toBorderStyleOrNull
+    );
+
+    const borderWidth = getStyleShorthandValueOrNull(
+        style,
+        {
+            top: "border-top-width",
+            right: "border-right-width",
+            bottom: "border-bottom-width",
+            left: "border-left-width"
+        },
+        toPixelNumericValueOrNull
+    );
+
+    return !borderColor && !borderStyle && !borderWidth
+        ? null
+        : {
+            color: borderColor,
+            style: borderStyle,
+            widthPx: borderWidth
+        };
+}
+
+/**
+ * Finds rock style CSS rules matching the specified ruleset selector within the document.
+ *
+ * This looks for `<style class="rock-styles">` elements within the `<body>` of the document
+ *
+ * @param doc The document in which to find the rock style rules.
+ * @param rulesetSelector The CSS selector for the ruleset.
+ * @returns An enumerable of matching CSSStyleRule objects.
+ */
+function findRockStyleRules(doc: Document, rulesetSelector: string): Enumerable<CSSStyleRule> {
+    const emailDocWindow = doc.defaultView;
+
+    if (!emailDocWindow) {
+        return Enumerable.empty<CSSStyleRule>();
+    }
+
+    const normalizedRulesetSelectors = new Set(normalizeSelectorList(rulesetSelector));
+
+    // 1. Find the <style class="rock-styles"> elements within <body>.
+    return Enumerable
+        .from(doc.body.querySelectorAll(`style.rock-styles`))
+        .ofType((el): el is HTMLStyleElement => el instanceof emailDocWindow.HTMLStyleElement)
+        .selectMany(styleEl => {
+            if (!styleEl || !styleEl.sheet) {
+                return Enumerable.empty<CSSStyleRule>();
+            }
+
+            const sheet = styleEl.sheet as CSSStyleSheet;
+
+            // 2. Iterate through the matching CSS rules
+            return Enumerable
+                .from(sheet.cssRules)
+                .ofType<CSSStyleRule>((rule): rule is CSSStyleRule => rule instanceof emailDocWindow.CSSStyleRule)
+                .where(rule => normalizeSelectorList(rule.selectorText).some(selector => normalizedRulesetSelectors.has(selector)));
+        });
+}
+
+/**
+ * Creates a new rock style CSS rule for the specified ruleset selector within the document.
+ *
+ * This creates (or reuses) a `<style class="rock-styles">` element within the `<body>` of the document
+ *
+ * @param emailDocument The document in which to create or find the rock style rule.
+ * @param rulesetSelector The CSS selector for the ruleset.
+ * @returns The created or found CSSStyleRule.
+ */
+function createRockStyleRule(emailDocument: Document, rulesetSelector: string): CSSStyleRule {
+    const emailDocWindow = emailDocument.defaultView;
+    if (!emailDocWindow) {
+        throw new Error("Document has no defaultView.");
+    }
+
+    // Find the last or create the <style class="rock-styles"> elements within <body>.
+    let styleEl = Enumerable
+        .from(emailDocument.body.querySelectorAll(`style.rock-styles`))
+        .ofType((el): el is HTMLStyleElement => el instanceof emailDocWindow.HTMLStyleElement)
+        .lastOrDefault();
+    if (!styleEl) {
+        styleEl = emailDocument.createElement("style");
+        styleEl.className = "rock-styles";
+        emailDocument.body.insertBefore(styleEl, emailDocument.body.firstChild);
+    }
+
+    const sheet = styleEl.sheet as CSSStyleSheet; // This should not be `null` now that the style element is in the DOM.
+
+    // Create a new CSS rule for the specified selector.
+    const ruleIndex = sheet.cssRules.length;
+    sheet.insertRule(`${rulesetSelector} { }`, ruleIndex);
+    return sheet.cssRules.item(ruleIndex) as CSSStyleRule;
+}
+
+function normalizeSingleSelector(selector: string): string {
+    return selector
+        .trim()
+        // Remove spaces around combinators like ">", "+", "~"
+        .replace(/\s*([>+~])\s*/g, "$1")
+        // Collapse all remaining whitespace to a single space
+        .replace(/\s+/g, " ");
+}
+
+function normalizeSelectorList(selectorText: string): string[] {
+    return selectorText
+        .split(",")
+        .map(s => normalizeSingleSelector(s));
+}
+
+function serializeSheet(sheet: CSSStyleSheet): string {
+    let css = "";
+    for (const rule of sheet.cssRules) {
+        css += rule.cssText + "\n";
+    }
+    return css;
+}
+
+function synchronizeSheetToDom(sheet: CSSStyleSheet | null | undefined): void {
+    if (!sheet) {
+        return;
+    }
+
+    const ownerNode = sheet.ownerNode;
+
+    if (ownerNode?.ownerDocument?.defaultView) {
+        if (ownerNode instanceof ownerNode.ownerDocument.defaultView.HTMLStyleElement) {
+            ownerNode.textContent = serializeSheet(sheet);
+        }
+    }
+}

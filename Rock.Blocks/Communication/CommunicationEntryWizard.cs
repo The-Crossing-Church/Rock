@@ -692,6 +692,13 @@ namespace Rock.Blocks.Communication
             var commonMergeFields = this.RequestContext.GetCommonMergeFields( communicationCreatorOrLoggedInPerson );
             var mergeFields = sampleCommunicationRecipient.CommunicationMergeValues( commonMergeFields );
 
+            // Temp fix for issue: https://github.com/SparkDevNetwork/Rock/issues/6680
+            if ( sampleCommunicationRecipient.PersonAlias != null )
+            { 
+                var person = new PersonService( RockContext ).Get( sampleCommunicationRecipient.PersonAlias.PersonId );
+                mergeFields.AddOrReplace( "Person", person );
+            }
+
             var previewHtml = GenerateEmailHtmlPreview( communication, communicationCreatorOrLoggedInPerson, mergeFields );
 
             // Create response.

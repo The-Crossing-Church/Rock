@@ -486,6 +486,14 @@ export class Enumerable<T> {
     }
 
     /**
+     * Creates an empty Enumerable.
+     * @returns A new empty Enumerable instance.
+     */
+    static empty<T>(): Enumerable<T> {
+        return new Enumerable<T>(() => []);
+    }
+
+    /**
      * Creates an Enumerable from a regular iterable (e.g., Array, Set).
      * @param iterable - An iterable to create the Enumerable from.
      * @returns A new Enumerable instance.
