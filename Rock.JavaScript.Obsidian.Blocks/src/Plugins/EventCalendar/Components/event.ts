@@ -70,6 +70,12 @@ export default defineComponent({
       }
       return []
     },
+    uniqueid() {
+      if(this.event) {
+        return this.event.id + '_' + this.event.location
+      }
+      return ''
+    }
   },
   methods: {
     openEvent(e: any) {
@@ -111,6 +117,9 @@ export default defineComponent({
     },
     openInDash() {
       window.location.href = this.dashboardUrl + "?Id=" + this.event?.parentId
+    },
+    toggleRelatedEvents(element: string) {
+      $(element).collapse('toggle')
     }
   },
   watch: {
@@ -176,10 +185,10 @@ export default defineComponent({
       </div>
     </div>
     <template v-if="relatedEvents.length > 0">
-      <div class="mt-2 font-weight-bold hover" data-toggle="collapse" href="#relatedCollapse" aria-expanded="false" aria-controls="relatedCollapse">
+      <div class="mt-2 font-weight-bold hover" @click="toggleRelatedEvents('#relatedCollapse_' + uniqueid)" data-toggle="collapse" :data-target="'#relatedCollapse_' + uniqueid" aria-expanded="false" :aria-controls="'relatedCollapse_' + uniqueid">
         Other Events in Request <i class="fa fa-chevron-down"></i>
       </div>
-      <div class="collapse" id="relatedCollapse">
+      <div class="collapse" :id="'relatedCollapse_' + uniqueid">
         <div v-for="e in relatedEvents">
           {{getTimeFrame(e.events[0])}} {{e.rooms}}
         </div>
@@ -198,5 +207,17 @@ export default defineComponent({
       <rck-btn type="grey" @click="modal = false;">Close</rck-btn>
     </template>
   </rck-modal>
+  <v-style>
+  [aria-expanded="false"] .fa-chevron-down {
+    transition: transform 0.4s ease;
+    -webkit-transition: transform 0.4s ease;
+    transform: rotate(0deg);
+  }
+  [aria-expanded="true"] .fa-chevron-down {
+    transition: transform 0.4s ease;
+    -webkit-transition: transform 0.4s ease;
+    transform: rotate(180deg);
+  }
+  </v-style>
 `
 });
