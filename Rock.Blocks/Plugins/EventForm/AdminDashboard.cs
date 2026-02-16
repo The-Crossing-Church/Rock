@@ -525,6 +525,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         rockContext.SaveChanges();
                     }
                 }
+
+                rockContext.SaveChanges();
+                item.SetAttributeValue( requestStatusAttrKey, status );
+                item.SaveAttributeValue( requestStatusAttrKey );
+
                 if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) || status == "Approved" )
                 {
                     url = LaunchWorkflow( item.Id, status );
@@ -539,9 +544,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     taskBag.Add( task );
                     task.Start();
                 }
-                rockContext.SaveChanges();
-                item.SetAttributeValue( requestStatusAttrKey, status );
-                item.SaveAttributeValue( requestStatusAttrKey );
                 return ActionOk( new { status = item.GetAttributeValue( requestStatusAttrKey ), url = url } );
             }
             catch ( Exception e )
