@@ -727,7 +727,7 @@ namespace Rock.Communication.Transport
                 { "\u0314", "'" }, // Combining reversed comma above ( ̔)
                 { "\uFE10", "'" }, // Presentation form for vertical comma (︐)
                 { "\uFE11", "'" }, // Presentation form for vertical ideographic comma (︑)
-                { "\u00A0", "'" }, // No break space
+                //{ "\u00A0", "'" }, // No break space
                 { "\u2000", "'" }, // En quad
 
                 // Vulgar fractions
