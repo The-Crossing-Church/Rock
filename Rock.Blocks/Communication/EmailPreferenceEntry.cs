@@ -829,6 +829,63 @@ namespace Rock.Blocks.Communication
 
                 var personService = new PersonService( RockContext );
 
+                // [Crossing Custom Code] Get associated segment communication list(S)
+                List<Guid> commListGuids = new List<Guid>();
+                communication.LoadAttributes( RockContext );
+                var segmentCommGroupGuid = communication.GetAttributeValue( "CommunicationList" ).AsGuidOrNull();
+                if ( segmentCommGroupGuid.HasValue )
+                {
+                    commListGuids.Add( segmentCommGroupGuid.Value );
+                }
+                var segmentParentCommGroupGuid = communication.GetAttributeValue( "ParentCommunicationList" ).AsGuidOrNull();
+                if ( segmentParentCommGroupGuid.HasValue )
+                {
+                    commListGuids.Add( segmentParentCommGroupGuid.Value );
+                }
+                if ( commListGuids.Any() )
+                {
+                    var communicationListsQry = new GroupService( RockContext )
+                        .GetByGuids( commListGuids )
+                        .IsCommunicationList();
+
+                    personService.UnsubscribeFromEmail( person, communicationListsQry );
+
+                    unsubscribeLevel = UnsubscribeLevel.CommunicationList;
+
+                    var communicationList = new GroupService( RockContext ).Get( commListGuids.First() );
+                    if ( communicationList != null )
+                    {
+                        communicationList.LoadAttributes();
+
+                        var communicationListName = communicationList.GetAttributeValue( AttributeKey.PublicName );
+                        if ( communicationListName.IsNullOrWhiteSpace() )
+                        {
+                            communicationListName = communicationList.Name;
+                        }
+
+                        communicationChannel = new CommunicationChannel { Name = communicationListName };
+
+                        var communicationListIdKey = communicationList.IdKey;
+                        box.UnsubscribedFromChannel = new CommunicationChannelBag
+                        {
+                            IdKey = communicationListIdKey,
+                            CommunicationChannelType = CommunicationChannelType.List,
+                            Name = communicationListName
+                        };
+
+                        TryStartUnsubscribeWorkflow(
+                            new UnsubscribeWorkflowArgs
+                            {
+                                ChannelIdKey = communicationListIdKey,
+                                CommunicationChannelType = CommunicationChannelType.List,
+                                Person = person
+                            }
+                        );
+                    }
+                }
+                else
+                // [End Custom Code]
+
                 if ( communication?.ListGroupId.HasValue == true )
                 {
                     // Auto-unsubscribe from a specific communication list.
