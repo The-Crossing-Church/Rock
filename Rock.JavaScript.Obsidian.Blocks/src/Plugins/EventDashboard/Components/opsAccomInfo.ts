@@ -122,6 +122,12 @@ export default defineComponent({
           return inv
         }
         return []
+      },
+      getImageData(value: string) {
+        if(value) {
+          return JSON.parse(value)
+        }
+        return { value: '', text: 'Empty' }
       }
     },
     watch: {
@@ -256,6 +262,29 @@ export default defineComponent({
                   </li>
                 </ul>
               </div>
+            </div>
+          </div>
+        </template>
+      </template>
+      <template v-else-if="av.attr.key == 'SetupImage'">
+        <template v-if="av.changeValue != ''">
+          <div class="form-group static-control">
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div class="row mb-2">
+              <div class="col col-xs-6">
+                <img :src="'/GetImage.ashx?guid=' + getImageData(av.value).value" :alt="getImageData(av.value).text" class="img-responsive" />
+              </div>
+              <div class="col col-xs-6">
+                <img :src="'/GetImage.ashx?guid=' + getImageData(av.changeValue).value" :alt="getImageData(av.changeValue).text" class="img-responsive" />
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="mb-2">
+            <div class="form-group static-control">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <img :src="'/GetImage.ashx?guid=' + getImageData(av.value).value" :alt="getImageData(av.value).text" class="img-responsive" />
             </div>
           </div>
         </template>
