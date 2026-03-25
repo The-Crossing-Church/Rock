@@ -1716,7 +1716,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 {
                     List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
                     List<TableSetUp> currentSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
                     if ( originalSetUp != null )
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
@@ -1732,7 +1732,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul> <ul style='color: #347689;'>";
+                    message += "</ul> <ul style='color: #347689 !important;'>";
                     if ( currentSetUp != null )
                     {
                         for ( int i = 0; i < currentSetUp.Count(); i++ )
@@ -1754,7 +1754,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 {
                     List<OpsInventorySetUp> originalSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( original );
                     List<OpsInventorySetUp> currentSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
                     if ( originalSetUp != null )
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
@@ -1770,7 +1770,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul> <ul style='color: #347689;'>";
+                    message += "</ul> <ul style='color: #347689 !important;'>";
                     if ( currentSetUp != null )
                     {
                         for ( int i = 0; i < currentSetUp.Count(); i++ )
@@ -1793,7 +1793,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 {
                     List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
                     List<DiscountCodeSetUp> currentSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c;'>";
+                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
                     if ( originalSetUp != null )
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
@@ -1817,7 +1817,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul> <ul style='color: #347689;'>";
+                    message += "</ul> <ul style='color: #347689 !important;'>";
                     if ( currentSetUp != null )
                     {
                         for ( int i = 0; i < currentSetUp.Count(); i++ )
@@ -1846,7 +1846,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 }
                 else
                 {
-                    message = "<strong>" + title + ":</strong> <span style='color: #cc3f0c;'>" + original + "</span> <span style='color: #347689;'>" + current + "</span><br/>";
+                    message = "<strong>" + title + ":</strong> <span style='color: #cc3f0c !important;'>" + original + "</span> <span style='color: #347689 !important;'>" + current + "</span><br/>";
                 }
             }
             else
