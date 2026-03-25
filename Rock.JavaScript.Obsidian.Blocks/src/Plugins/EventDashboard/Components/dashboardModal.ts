@@ -638,6 +638,10 @@ export default defineComponent({
   .hidden-label label.control-label {
     visibility: hidden;
   }
+  .form-group.static-control .col, .form-group.static-control div {
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
 </v-style>
 `
 });

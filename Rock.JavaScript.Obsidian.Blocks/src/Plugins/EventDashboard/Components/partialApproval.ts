@@ -14,7 +14,9 @@ export default defineComponent({
       "tcc-pa-val": PAValues
     },
     props: {
-      request: Object
+      request: Object,
+      rooms: Array,
+      inventory: Array
     },
     setup() {
 
@@ -336,6 +338,8 @@ export default defineComponent({
         :attribute="i.attr"
         :originalValue="i.value"
         :newValue="i.changeValue"
+        :rooms="rooms"
+        :inventory="inventory"
         v-on:approved="approveAttribute(e.eventIdKey, i.attr.key)"
         v-on:denied="denyAttribute(e.eventIdKey, i.attr.key)"
       ></tcc-pa-val>
@@ -387,5 +391,15 @@ export default defineComponent({
     ></tcc-pa-val>
   </template>
 </div>
+
+<v-style>
+  .text-red:empty::before {
+    content: "Empty";
+  }
+  .form-control-static div {
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+</v-style>
 `
 });

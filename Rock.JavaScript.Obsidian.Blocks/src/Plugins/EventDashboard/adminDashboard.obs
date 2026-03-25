@@ -814,7 +814,7 @@ export default defineComponent({
   </template>
 </rck-modal>
 <rck-modal v-if="partialApprovalModal" v-model="partialApprovalModal" width="70%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
-  <tcc-partial :request="selected" ref="partialApprovalInfo"></tcc-partial>
+  <tcc-partial :request="selected" :rooms="viewModel.locations" :inventory="viewModel.inventory" ref="partialApprovalInfo"></tcc-partial>
   <template #customButtons>
     <rck-btn btnType="accent" @click="partialApproval">
       <i class="mr-1 fa fa-check"></i>
