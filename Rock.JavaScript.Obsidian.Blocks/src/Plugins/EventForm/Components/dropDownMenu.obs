@@ -1,6 +1,6 @@
 <!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
 <template>
-    <div ref="dropdownElement" :class="dropDownClasses">
+    <div ref="dropdownElement" :class="dropDownClasses" :id="id">
         <slot name="anchor" @click.prevent="onDropDownClick">
             <button :class="`btn btn-link btn-overflow ${anchorButtonCssClass}`" type="button" @click.prevent="onDropDownClick">
                 <slot>
@@ -79,6 +79,11 @@ li.disabled > button {
         },
 
         wrapperCssClass: {
+            type: String,
+            required: false
+        },
+
+        id: { 
             type: String,
             required: false
         }

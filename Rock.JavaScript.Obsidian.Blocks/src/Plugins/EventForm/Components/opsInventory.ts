@@ -351,7 +351,7 @@ export default defineComponent({
   template: `
 <div class="my-2 setup-table">
   <div class="row">
-    <div class="col col-xs-11">
+    <div class="col col-xs-10 col-md-11">
       <template v-if="opsInventory.length > 0">
         <div class="row" v-for="(o, idx) in opsInventory" :key="idx">
           <div class="col col-xs-12">
@@ -363,7 +363,7 @@ export default defineComponent({
         Click the add button below to reserve additional items
       </template>
     </div>
-    <div class="col col-xs-1">
+    <div class="col col-xs-2 col-md-1">
       <rck-btn class="pull-right btn-circle" btnType="accent" @click="openInventoryEditor" v-if="!readonly" id="btnOpenInventory">
         <i class="fa fa-plus"></i>
       </rck-btn>
@@ -371,7 +371,7 @@ export default defineComponent({
   </div>
 </div>
 <rck-modal v-model="modal" style="min-width: 50%;" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
-  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :id="'InventoryItem' + idx" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
+  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :id="'InventoryItem_' + idx" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
   <template #customButtons>
     <rck-btn btnType="accent" @click="addOpsInvConfiguration" id="btnAddRowToOps">Add Row</rck-btn>
     <rck-btn btnType="primary" @click="saveOpsInvConfiguration" id="btnSaveOps">Save</rck-btn>
@@ -392,6 +392,10 @@ export default defineComponent({
 }
 .spacer {
   flex-grow: 1!important;
+}
+.ops-inventory:has(.dropdown.open .tcc-dropdown) {
+  min-height: 365px; 
+  /* Not an ideal solution, but the mutation observer isn't firing on rows after the first on smaller sized screens */
 }
 </v-style>
 `

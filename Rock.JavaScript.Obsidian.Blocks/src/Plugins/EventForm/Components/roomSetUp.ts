@@ -87,7 +87,7 @@ export default defineComponent({
   },
   template: `
 <div class="row">
-  <div class="col col-xs-3">
+  <div class="col col-xs-10 col-md-4">
     <tcc-validator :rules="typeOfTableRules" ref="validators_typeoftable">
       <rck-lbl>Type of Table</rck-lbl>
       <rck-ddl
@@ -96,21 +96,25 @@ export default defineComponent({
       ></rck-ddl>
     </tcc-validator>
   </div>
-  <div class="col col-xs-4">
-    <rck-lbl>Number of Tables</rck-lbl>
-    <rck-text
-      v-model="roomSetUp.NumberofTables"
-      type="number"
-    ></rck-text>
+  <div class="col col-xs-10 col-md-3">
+    <div class="validator form-group">
+      <rck-lbl>Number of Tables</rck-lbl>
+      <rck-text
+        v-model="roomSetUp.NumberofTables"
+        type="number"
+      ></rck-text>
+    </div>
   </div>
-  <div class="col col-xs-4">
-    <rck-lbl>Number of Chairs</rck-lbl>
-    <rck-text
-      v-model="roomSetUp.NumberofChairs"
-      type="number"
-    ></rck-text>
+  <div class="col col-xs-10 col-md-3">
+    <div class="validator form-group">
+      <rck-lbl>Number of Chairs</rck-lbl>
+      <rck-text
+        v-model="roomSetUp.NumberofChairs"
+        type="number"
+      ></rck-text>
+    </div>
   </div>
-  <div class="col col-xs-1 pt-4 mt-2">
+  <div class="col col-xs-2 pt-4 mt-2">
     <rck-btn btnType="red" @click="removeConfiguration" :disabled="disabled">
       <i class="fas fa-trash"></i>
     </rck-btn>

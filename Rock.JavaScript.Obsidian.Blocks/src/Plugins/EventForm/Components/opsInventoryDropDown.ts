@@ -126,6 +126,7 @@ export default defineComponent({
   :label="label"
   :items="filteredItems"
   anchorButtonCssClass="w-100 px-0 text-left tcc-dropdown"
+  :id="id + '_ddl'"
 >
   <template #dropdownRender="{ item }" >
     <div v-if="item.isHeader" class="text-primary text-bold">
@@ -143,7 +144,7 @@ export default defineComponent({
     v-model="selectedValue.text"
     inputClasses="w-100"
     isReadOnly
-    :id="'txt' + id"
+    :id="id + '_txt'"
   ></rck-text>
 </tcc-dd>
 <v-style>

@@ -74,8 +74,8 @@ export default defineComponent({
     } 
   },
   template: `
-<div class="row" style="display: flex; align-items: end;">
-  <div class="col col-xs-5">
+<div class="row ops-inventory" :id=id>
+  <div class="col col-xs-10 col-md-5">
     <tcc-inv-ddl
       v-model="inventoryRes.InventoryItem"
       :items="inventory"
@@ -84,7 +84,7 @@ export default defineComponent({
       v-on:select="changeFocus"
     ></tcc-inv-ddl>
   </div>
-  <div class="col col-xs-5">
+  <div class="col col-xs-10 col-md-5">
     <rck-text
       v-model="inventoryRes.QuantityNeeded"
       type="number"
@@ -92,7 +92,7 @@ export default defineComponent({
       label="Quantity Needed"
     ></rck-text>
   </div>
-  <div class="col col-xs-2">
+  <div class="col col-xs-2 pt-4 mt-2">
     <rck-btn btnType="red" @click="removeConfiguration" :id="'btnRemove' + id">
       <i class="fas fa-trash"></i>
     </rck-btn>
