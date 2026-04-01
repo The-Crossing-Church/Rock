@@ -1,6 +1,7 @@
 import { defineComponent, PropType } from "vue";
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import imageDisplay from "./imageDisplay";
 
 type ListItem = {
   text: string,
@@ -12,7 +13,8 @@ export default defineComponent({
     name: "EventDashboard.Components.Modal.OpsAccomInfo",
     components: {
       "rck-field": RockField,
-      "rck-lbl": RockLabel
+      "rck-lbl": RockLabel,
+      "tcc-img": imageDisplay
     },
     props: {
       details: Object,
@@ -122,12 +124,6 @@ export default defineComponent({
           return inv
         }
         return []
-      },
-      getImageData(value: string) {
-        if(value) {
-          return JSON.parse(value)
-        }
-        return { value: '', text: 'Empty' }
       }
     },
     watch: {
@@ -272,10 +268,10 @@ export default defineComponent({
             <rck-lbl>{{av.attr.name}}</rck-lbl>
             <div class="row mb-2">
               <div class="col col-xs-6">
-                <img :src="'/GetImage.ashx?guid=' + getImageData(av.value).value" :alt="getImageData(av.value).text" class="img-responsive" />
+                <tcc-img :value="av.value"></tcc-img>
               </div>
               <div class="col col-xs-6">
-                <img :src="'/GetImage.ashx?guid=' + getImageData(av.changeValue).value" :alt="getImageData(av.changeValue).text" class="img-responsive" />
+                <tcc-img :value="av.changeValue"></tcc-img>
               </div>
             </div>
           </div>
@@ -284,7 +280,7 @@ export default defineComponent({
           <div class="mb-2">
             <div class="form-group static-control">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <img :src="'/GetImage.ashx?guid=' + getImageData(av.value).value" :alt="getImageData(av.value).text" class="img-responsive" />
+              <tcc-img :value="av.value"></tcc-img>
             </div>
           </div>
         </template>
