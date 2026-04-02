@@ -115,6 +115,18 @@ export default defineComponent({
         })
         return arr
       },
+      setUpImageAttr() {
+        if(this.e?.attributes?.SetupImage) {
+          let val = this.e?.attributes?.SetupImage
+          if(val.key == 'SetupImage' && val.configurationValues && val.configurationValues["img_tag_template"]) {
+            if(val.configurationValues["img_tag_template"].includes("{{'Global' | Attribute:'InternalApplicationRoot'}}")) {
+              val.configurationValues["img_tag_template"] = val.configurationValues["img_tag_template"].replaceAll("{{'Global' | Attribute:'InternalApplicationRoot'}}", "/")
+            }
+          }
+          return val
+        }
+        return null
+      }
     },
     methods: {
       matchRoomsToSetup() {
@@ -509,7 +521,7 @@ export default defineComponent({
     <div class="col col-xs-12 col-md-6">
       <rck-field
         v-model="e.attributeValues.SetupImage"
-        :attribute="e.attributes.SetupImage"
+        :attribute="setUpImageAttr"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
         id="imgSetupImage"

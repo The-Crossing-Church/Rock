@@ -29,6 +29,18 @@ export default defineComponent({
       },
       nVal() {
         return this.getDisplayValue(this.newValue)
+      },
+      attr() {
+        if(this.attribute) {
+          let val = this.attribute
+          if(val.key == 'SetupImage' && val.configurationValues && val.configurationValues["img_tag_template"]) {
+            if(val.configurationValues["img_tag_template"].includes("{{'Global' | Attribute:'InternalApplicationRoot'}}")) {
+              val.configurationValues["img_tag_template"] = val.configurationValues["img_tag_template"].replaceAll("{{'Global' | Attribute:'InternalApplicationRoot'}}", "/")
+            }
+          }
+          return val
+        }
+        return null
       }
     },
     methods: {
@@ -107,7 +119,7 @@ export default defineComponent({
         } else {
           this.$emit("denied")
         }
-      }
+      },
     },
     mounted() {
     },
@@ -118,7 +130,7 @@ export default defineComponent({
       <div class="col col-xs-6">
         <rck-field
           v-model="oVal"
-          :attribute="attribute"
+          :attribute="attr"
           :class="getClassName(true)"
           :showEmptyValue="true"
         ></rck-field>
@@ -126,7 +138,7 @@ export default defineComponent({
       <div class="col col-xs-6">
         <rck-field
           v-model="nVal"
-          :attribute="attribute"
+          :attribute="attr"
           :class="getClassName(false)"
           :showEmptyValue="true"
         ></rck-field>

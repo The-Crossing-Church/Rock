@@ -244,7 +244,13 @@ export default defineComponent({
       }
       this.loadDetails(item.idKey).then((response: any) => {
         if(response.data) {
-          response.data.details.forEach((detail: any) => {
+          if(response.data.isError) {
+            this.toastMessage = response.data.errorMessage
+            let el = document.getElementById('toast')
+            el?.classList.add("show")
+            return
+          }
+          response.data.details?.forEach((detail: any) => {
             detail.detail.changes = detail.detailPendingChanges
           })
           response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
@@ -347,7 +353,13 @@ export default defineComponent({
       }
       this.loadDetails(id).then((response: any) => {
         if(response.data) {
-          response.data.details.forEach((detail: any) => {
+          if(response.data.isError) {
+            this.toastMessage = response.data.errorMessage
+            let el = document.getElementById('toast')
+            el?.classList.add("show")
+            return
+          }
+          response.data.details?.forEach((detail: any) => {
             detail.detail.changes = detail.detailPendingChanges
           })
           response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
