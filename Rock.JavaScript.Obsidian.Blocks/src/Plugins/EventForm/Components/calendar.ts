@@ -249,7 +249,7 @@ export default defineComponent({
             if (this.max) {
                 this.endDate = DateTime.fromFormat(this.max, "yyyy-MM-dd")
             } else {
-                let span = Duration.fromObject({ months: 18 })
+                let span = Duration.fromObject({ months: 24 })
                 this.endDate = this.endDate.plus(span)
             }
         },
