@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 
 using Rock.Attribute;
@@ -596,7 +597,7 @@ namespace Rock.Blocks.Security
             // 2FA: An individual is authenticated after registering for a new person
             // or an existing person with a user confirmed account
             // or a brand new account. Mark the auth ticket as two-factor authenticated.
-            Authorization.SetAuthCookie(
+            Rock.Security.Authorization.SetAuthCookie(
                 userLogin.UserName,
                 isPersisted: true,
                 isImpersonated: false,
@@ -665,9 +666,9 @@ namespace Rock.Blocks.Security
         {
             var person = new Person
             {
-                FirstName = box.PersonInfo.FirstName,
-                LastName = box.PersonInfo.LastName,
-                Email = box.PersonInfo.Email,
+                FirstName = WebUtility.HtmlEncode( box.PersonInfo.FirstName ),
+                LastName = WebUtility.HtmlEncode( box.PersonInfo.LastName ),
+                Email = WebUtility.HtmlEncode( box.PersonInfo.Email ),
                 IsEmailActive = true,
                 EmailPreference = EmailPreference.EmailAllowed,
                 RecordTypeValueId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id,
@@ -736,6 +737,11 @@ namespace Rock.Blocks.Security
                  && address.City.IsNotNullOrWhiteSpace()
                  && address.PostalCode.IsNotNullOrWhiteSpace() )
             {
+                address.Street1 = WebUtility.HtmlEncode( address.Street1 );
+                address.Street2 = WebUtility.HtmlEncode( address.Street2 );
+                address.City = WebUtility.HtmlEncode( address.City );
+                address.State = WebUtility.HtmlEncode( address.State );
+                address.PostalCode = WebUtility.HtmlEncode( address.PostalCode );
                 var locationTypeGuid = GetAttributeValue( AttributeKey.LocationType ).AsGuid();
                 if ( locationTypeGuid != Guid.Empty )
                 {
@@ -1436,6 +1442,52 @@ namespace Rock.Blocks.Security
         }
 
         /// <summary>
+        /// Determines if the first name, last name, and address are valid.
+        /// </summary>
+        /// <param name="box">The register request box.</param>
+        /// <param name="config">The block initialization box.</param>
+        /// <returns><c>true</c> if valid; otherwise, <c>false</c>.</returns>
+        private static bool DoesDataIncludeCode( AccountEntryRegisterRequestBox box, AccountEntryInitializationBox config )
+        {
+            // Check user input for likely XXS
+            Regex regularExpression = new Regex( @"<|>|{|}|:|=" );
+            var isUserNameCode = regularExpression.IsMatch( box.AccountInfo.Username );
+            if ( isUserNameCode )
+            {
+                return false;
+            }
+            var isFirstNameCode = regularExpression.IsMatch( box.PersonInfo.FirstName );
+            if ( isFirstNameCode )
+            {
+                return false;
+            }
+            var isLastNameCode = regularExpression.IsMatch( box.PersonInfo.LastName );
+            if ( isLastNameCode )
+            {
+                return false;
+            }
+            var isEmailCode = regularExpression.IsMatch( box.PersonInfo.Email );
+            if ( isEmailCode )
+            {
+                return false;
+            }
+            if ( box.PersonInfo.Address != null )
+            {
+                var isAddressStreetOneCode = regularExpression.IsMatch( box.PersonInfo.Address.Street1 );
+                var isAddressStreetTwoCode = regularExpression.IsMatch( box.PersonInfo.Address.Street2 );
+                var isAddressCityCode = regularExpression.IsMatch( box.PersonInfo.Address.City );
+                var isAddressStateCode = regularExpression.IsMatch( box.PersonInfo.Address.State );
+                var isAddressZipCode = regularExpression.IsMatch( box.PersonInfo.Address.PostalCode );
+                if ( isAddressStreetOneCode || isAddressStreetTwoCode || isAddressCityCode || isAddressStateCode || isAddressZipCode )
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Determines if the register request is valid.
         /// </summary>
         /// <param name="box">The register request box.</param>
@@ -1497,6 +1549,12 @@ namespace Rock.Blocks.Security
             if ( !IsCampusValidIfRequired( box, config ) )
             {
                 errorMessage = "Campus is required";
+                return false;
+            }
+
+            if ( !DoesDataIncludeCode( box, config ) )
+            {
+                errorMessage = "Name and Address cannot include special characters";
                 return false;
             }
 
