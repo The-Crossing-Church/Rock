@@ -30,15 +30,18 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
     /// who matches the criteria afterwards is never included.
     ///
     /// This job finds every approved communication with a future send date that has not yet passed and that
-    /// carries the selection-state attribute, re-evaluates the stored criteria, and adds any newly-matching
-    /// people to the recipient list. It is add-only: it never removes recipients that are already on the list.
+    /// carries the selection-state attribute, re-evaluates the stored criteria, and reconciles the recipient
+    /// list against the result: newly-matching people are added, and recipients that no longer match the
+    /// criteria are removed. Only pending recipients (those that have not yet been sent to) are removed, and
+    /// removal is skipped entirely whenever the criteria can't be fully rebuilt, so a recipient is never
+    /// dropped on the basis of an incomplete query.
     ///
     /// NOTE: The recipient query below intentionally mirrors <c>GetCommunicationQry</c> in
     /// <c>RockWeb/Plugins/com_9embers/Communication/CommunicationListSegments.ascx.cs</c>. If that block's
     /// filtering logic changes, update this job to match so the two stay in sync.
     /// </summary>
     [DisplayName( "Update Segment Communication Recipients" )]
-    [Description( "Re-evaluates the recipient criteria stored by the Communication List Segments block on approved communications scheduled to send in the future, and adds any newly-matching people to the recipient list." )]
+    [Description( "Re-evaluates the recipient criteria stored by the Communication List Segments block on approved communications scheduled to send in the future, adds any newly-matching people to the recipient list, and removes any pending recipients that no longer match the criteria." )]
 
     [TextField(
         "Selection State Attribute Key",
@@ -85,6 +88,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
             var errors = new List<string>();
             int communicationsUpdated = 0;
             int recipientsAdded = 0;
+            int recipientsRemoved = 0;
 
             string selectionStateKey = GetAttributeValue( AttributeKey.SelectionStateAttributeKey );
             if ( selectionStateKey.IsNullOrWhiteSpace() )
@@ -159,11 +163,13 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
 
                         var matchingPersons = recipientQry.ToList();
                         int added = AddNewRecipients( rockContext, communication, matchingPersons );
-                        if ( added > 0 )
+                        int removed = RemoveStaleRecipients( rockContext, communication, matchingPersons );
+                        if ( added > 0 || removed > 0 )
                         {
                             rockContext.SaveChanges();
                             communicationsUpdated++;
                             recipientsAdded += added;
+                            recipientsRemoved += removed;
                         }
                     }
                     catch ( Exception ex )
@@ -174,7 +180,7 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
                 }
             }
 
-            var status = $"Added {recipientsAdded} recipient{( recipientsAdded == 1 ? "" : "s" )} across {communicationsUpdated} communication{( communicationsUpdated == 1 ? "" : "s" )} ({candidateCommunicationIds.Count} scheduled communication{( candidateCommunicationIds.Count == 1 ? "" : "s" )} evaluated).";
+            var status = $"Evaluated {candidateCommunicationIds.Count} scheduled communication{( candidateCommunicationIds.Count == 1 ? "" : "s" )}; added {recipientsAdded} and removed {recipientsRemoved} recipient(s) across {communicationsUpdated} updated communication{( communicationsUpdated == 1 ? "" : "s" )}.";
             if ( errors.Any() )
             {
                 status += $"\n\n{errors.Count} error{( errors.Count == 1 ? "" : "s" )}:\n{string.Join( "\n", errors )}";
@@ -438,8 +444,8 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
         #endregion Recipient Evaluation
 
         /// <summary>
-        /// Adds a recipient for every matching person that isn't already a recipient. Add-only: existing recipients
-        /// are never removed.
+        /// Adds a recipient for every matching person that isn't already a recipient. Removal of recipients that no
+        /// longer match is handled separately by <see cref="RemoveStaleRecipients" />.
         /// </summary>
         /// <returns>The number of recipients added.</returns>
         private int AddNewRecipients( RockContext rockContext, Rock.Model.Communication communication, List<Person> matchingPersons )
@@ -482,6 +488,43 @@ namespace org.thecrossingchurch.CustomJobs.Jobs
             }
 
             return added;
+        }
+
+        /// <summary>
+        /// Removes recipients that are no longer in the matching set. Only recipients that are still
+        /// <see cref="CommunicationRecipientStatus.Pending" /> are removed, so anyone who has already been sent to,
+        /// failed, opened, etc. is left untouched. Because these communications are scheduled for the future and
+        /// have not been sent, all of their recipients should normally still be pending; the status check is a guard.
+        /// </summary>
+        /// <returns>The number of recipients removed.</returns>
+        private int RemoveStaleRecipients( RockContext rockContext, Rock.Model.Communication communication, List<Person> matchingPersons )
+        {
+            var matchingPersonIds = new HashSet<int>( matchingPersons.Where( p => p != null ).Select( p => p.Id ) );
+
+            var recipientService = new CommunicationRecipientService( rockContext );
+
+            // Pull the pending recipients into memory, then filter against the matching set in memory so we don't
+            // depend on the query provider translating a HashSet.Contains into SQL.
+            var pendingRecipients = recipientService.Queryable()
+                .Where( cr =>
+                    cr.CommunicationId == communication.Id &&
+                    cr.Status == CommunicationRecipientStatus.Pending &&
+                    cr.PersonAlias != null )
+                .Select( cr => new { Recipient = cr, cr.PersonAlias.PersonId } )
+                .ToList();
+
+            var staleRecipients = pendingRecipients
+                .Where( cr => !matchingPersonIds.Contains( cr.PersonId ) )
+                .Select( cr => cr.Recipient )
+                .ToList();
+
+            if ( !staleRecipients.Any() )
+            {
+                return 0;
+            }
+
+            recipientService.DeleteRange( staleRecipients );
+            return staleRecipients.Count;
         }
 
         private static List<int> ToIntList( List<string> values )
