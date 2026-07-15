@@ -20,7 +20,7 @@ import PersonPicker from "@Obsidian/Controls/personPicker.obs"
 import Modal from "@Obsidian/Controls/modal.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
-import Comment from "./Components/comment"
+import Comments from "./Components/comment"
 import UserGridAction from "./Components/userGridAction"
 
 const store = useStore();
@@ -29,7 +29,7 @@ export default defineComponent({
   name: "EventDashboard.UserDashboard",
   components: {
     "tcc-details": Details,
-    "tcc-comment": Comment,
+    "tcc-comments": Comments,
     "tcc-grid": UserGridAction,
     "tcc-date-picker": DatePicker,
     "tcc-chip": Chip,
@@ -848,10 +848,13 @@ export default defineComponent({
   <rck-modal v-model="modal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
     <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
     <template v-if="selected.comments && selected.comments.length > 0">
+      <tcc-comments :comments="selected.comments"></tcc-comments>
+      <!--
       <h3 class="text-accent">Comments</h3>
       <div>
         <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.idKey"></tcc-comment>
       </div>
+      -->
     </template>
     <template #customButtons>
       <div class="d-flex justify-left w-100">

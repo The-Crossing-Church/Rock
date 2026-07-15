@@ -20,7 +20,7 @@ import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import PopOver from "@Obsidian/Controls/popOver.obs"
 import Grid, { Column, TextColumn, DateColumn, PersonColumn, textValueFilter, dateValueFilter, pickExistingValueFilter } from "@Obsidian/Controls/grid"
-import Comment from "./Components/comment"
+import Comments from "./Components/comments"
 import TCCTable from "./Components/requestTable"
 import PartialApproval from "./Components/partialApproval"
 
@@ -33,7 +33,7 @@ export default defineComponent({
     "tcc-model": TCCModal,
     "tcc-details": Details,
     "tcc-table": TCCTable,
-    "tcc-comment": Comment,
+    "tcc-comments": Comments,
     "tcc-partial": PartialApproval,
     "rck-ddl": DropDownList,
     "rck-text": RockText,
@@ -433,13 +433,13 @@ export default defineComponent({
         }
       })
     },
-    getNextComment(idx: number) {
-      let req = this.selected as any
-      if(idx < (req.comments.length - 1)) {
-        return req.comments[idx + 1]
-      }
-      return null
-    },
+    // getNextComment(idx: number) {
+    //   let req = this.selected as any
+    //   if(idx < (req.comments.length - 1)) {
+    //     return req.comments[idx + 1]
+    //   }
+    //   return null
+    // },
     newComment() {
       this.comment = ""
       this.commentModal = true
@@ -730,10 +730,13 @@ export default defineComponent({
 <rck-modal v-model="modal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
   <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" v-on:openrequest="selectItem"></tcc-details>
   <template v-if="selected.comments && selected.comments.length > 0">
+    <tcc-comments :comments="selected.comments"></tcc-comments>
+    <!--
     <h3 class="text-accent">Comments</h3>
     <div>
       <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.idKey"></tcc-comment>
     </div>
+    -->
   </template>
   <template #customButtons>
     <div class="d-flex justify-left w-100">
