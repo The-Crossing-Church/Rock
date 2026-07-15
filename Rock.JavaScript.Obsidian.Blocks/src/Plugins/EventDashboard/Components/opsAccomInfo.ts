@@ -76,7 +76,7 @@ export default defineComponent({
                 if(v.NumberofTables == 0) {
                   return `${v.NumberofChairs} chairs.`
                 }
-                return `${v.NumberofTables} ${v.TypeofTable} ${parseInt(v.NumberofTables) > 1 ? 'tables' : 'table'} with ${v.NumberofChairs} chairs each.`
+                return `${v.NumberofTables} ${v.NeedsTablecloths == 'True' ? 'Clothed ' : ''}${v.TypeofTable} ${parseInt(v.NumberofTables) > 1 ? 'tables' : 'table'} with ${v.NumberofChairs} chairs each.`
               })
             }
             setup.push(obj)
@@ -96,7 +96,8 @@ export default defineComponent({
             return selectedDrinks.map((d: any) => { 
               let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
               let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
-              return `${d.value}: ${amount} ${term}` 
+              return `${d.value}` 
+              // return `${d.value}: ${amount} ${term}` 
             })
           }
         }
