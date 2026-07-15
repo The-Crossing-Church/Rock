@@ -62,7 +62,8 @@ export default defineComponent({
           return selectedDrinks.map((d: any) => { 
             let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
             let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
-            return `${d.value}: ${amount} ${term}` 
+            return `${d.value}` 
+            // return `${d.value}: ${amount} ${term}` 
           })
         }
       }
