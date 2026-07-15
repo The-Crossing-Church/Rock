@@ -21,6 +21,7 @@ export type SubmissionFormBlockViewModel = {
     ministries: DefinedValueBag[];
     budgetLines: DefinedValueBag[];
     inventoryList: DefinedValueBag[];
+    vendorList: DefinedValueBag[];
     adminDashboardURL: string;
     userDashboardURL: string;
     discountCodeAttrs: AttributeBag[];

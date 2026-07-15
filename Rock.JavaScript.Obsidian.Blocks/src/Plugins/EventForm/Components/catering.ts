@@ -31,6 +31,7 @@ export default defineComponent({
         type: Object as PropType<ContentChannelItemBag>,
         required: false
       },
+      vendorList: Array as PropType<any[]>,
       showValidation: Boolean,
       refName: String,
       readonly: Boolean
@@ -43,25 +44,27 @@ export default defineComponent({
         rules: rules,
         errors: [] as Record<string, string>[],
         vendorMenu: false,
-        vendors: [
-          "Pancheros",
-          "Domino’s",
-          "Pizza Tree",
-          "Italian Village",
-          "Shakespeare’s",
-          "HyVee",
-          "Como S&F",
-          "D’Rowes",
-          "CFA",
-          "Pickleman’s",
-          "Panera",
-          "Ozark Mountain Biscuit",
-          "Eclipse"
-        ]
+        // vendors: [
+        //   "Pancheros",
+        //   "Domino’s",
+        //   "Pizza Tree",
+        //   "Italian Village",
+        //   "Shakespeare’s",
+        //   "HyVee",
+        //   "Como S&F",
+        //   "D’Rowes",
+        //   "CFA",
+        //   "Pickleman’s",
+        //   "Panera",
+        //   "Ozark Mountain Biscuit",
+        //   "Eclipse"
+        // ]
       };
     },
     computed: {
-      
+      vendors() {
+        return this.vendorList?.filter(dv => dv.isActive).map(dv => dv.value)
+      }
     },
     methods: {
       validate() {
@@ -144,12 +147,12 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange" class="catering-form">
   <div class="form-group dropdown">
     <rck-btn btnType="link" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="vendoreMenu">
-      <rck-lbl>
+      <rck-lbl class="hover">
         For a list of our preferred vendors - <span class="text-accent">please click here.</span>
       </rck-lbl>
     </rck-btn>
     <div class="dropdown-menu" aria-labelledby="vendoreMenu">
-      <div class="d-flex" style="flex-direction: column;">
+      <div class="d-flex px-2" style="flex-direction: column;">
         <a v-for="vendor in vendors" @click="setVendor(vendor)" style="color: inherit;">
           <rck-lbl>{{vendor}}</rck-lbl>  
         </a>

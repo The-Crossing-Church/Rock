@@ -147,6 +147,7 @@ export default defineComponent({
           preFillModalOption: "",
           preFillTarget: "",
           preFillSource: "",
+          copyModal: false,
           rules: rules,
           readonlySections: [] as string[],
           toastMessage: "",
@@ -279,7 +280,7 @@ export default defineComponent({
         return 'toast-success'
       },
       preFillOptions() {
-        let dates = this.viewModel.events.map(e => { 
+        let dates = this.viewModel?.events.map(e => { 
           return e.attributeValues?.EventDate
         }).filter((value, index, self) => {
           return value != this.preFillTarget
@@ -293,6 +294,19 @@ export default defineComponent({
           return 'Select the date of the event you wish to use to prefill the ' + this.preFillModalOption + ' information for your event on ' + this.formatDate(this.preFillTarget)
         }
         return 'Select the date of the event you wish to use to prefill all information for your event on ' + this.formatDate(this.preFillTarget)
+      },
+      copyOptions() {
+        let dates = this.viewModel?.events.map(e => { 
+          return e.attributeValues?.EventDate
+        }).filter((value, index, self) => {
+          return value != this.preFillSource
+        }).map(dt => {
+          return { text: this.formatDate(dt), value: dt}
+        })
+        return dates
+      },
+      copyLabel() {
+        return `Select the dates you wish to prefill with the information from ${this.formatDate(this.preFillSource)}.`
       }
   },
   methods: {
@@ -884,6 +898,9 @@ export default defineComponent({
       this.preFillModal = false
       this.preFillSource = ""
     }, 
+    copyDetails() {
+      this.copyModal = false
+    },
     findTense(numDays: any, specificDate?: any): String {
       if (this.viewModel?.request.attributeValues) {
         let av = this.viewModel?.request?.attributeValues.EventDates
@@ -1268,6 +1285,7 @@ export default defineComponent({
             Information for {{formatDate(e.attributeValues.EventDate)}}
             <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event</rck-btn>
             <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</rck-btn>
+            <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="preFillSource = e.attributeValues.EventDate; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Details to Other Dates</rck-btn>
           </h2>
         </template>
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
@@ -1289,7 +1307,7 @@ export default defineComponent({
             Catering Information
             <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</rck-btn>
           </h3>
-          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
+          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1427,6 +1445,24 @@ export default defineComponent({
       <rck-btn btnType="grey" @click="preFillModal = false;">Cancel</rck-btn>
     </template>
   </rck-modal>
+  <rck-modal v-model="copyModal" :clickBackdropToClose="true" :isCloseButtonHidden="true" cancelText="" modalWrapperClasses="modal-no-header">
+    <div class="pt-2">
+      <div class="row">
+        <div class="col col-xs-12">
+          <rck-ddl
+            :label="copyLabel"
+            :items="copyOptions"
+            v-model="preFillTarget"
+            multiple
+          ></rck-ddl>
+        </div>
+      </div>
+    </div>
+    <template #customButtons>
+      <rck-btn btnType="primary" @click="copyDetails">Copy to Dates</rck-btn>
+      <rck-btn btnType="grey" @click="copyModal = false;">Cancel</rck-btn>
+    </template>
+  </rck-modal>
   <rck-modal v-model="changeDateModal" :clickBackdropToClose="true" :isCloseButtonHidden="true" cancelText="" modalWrapperClasses="modal-no-header">
     <div class="pt-2">
       <div class="row">
@@ -1471,7 +1507,9 @@ export default defineComponent({
 </div>
 <v-style>
 @import "/Styles/Blocks/Plugins/eventForm.css";
-
+.hover {
+  cursor: pointer;
+}
 .text-red, 
   .text-errors, 
   .has-error input, 

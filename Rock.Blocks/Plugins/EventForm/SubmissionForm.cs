@@ -36,6 +36,7 @@ namespace Rock.Blocks.Plugins.EventForm
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
     [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 3 )]
+    [DefinedTypeField( "Preferred Vendors Defined Type", key: AttributeKey.VendorList, category: "Lists", required: true, order: 4 )]
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 1 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
@@ -78,6 +79,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
             public const string InventoryList = "InventoryList";
+            public const string VendorList = "VendorList";
             public const string MinistryBudgetList = "MinistryBudgetList";
             public const string SubmissionPage = "SubmissionPage";
             public const string AdminDashboard = "AdminDashboard";
@@ -137,6 +139,7 @@ namespace Rock.Blocks.Plugins.EventForm
             Guid ministryGuid = Guid.Empty;
             Guid budgetLineGuid = Guid.Empty;
             Guid inventoryGuid = Guid.Empty;
+            Guid vendorGuid = Guid.Empty;
             var p = GetCurrentPerson();
             DefinedTypeService dt_svc = new DefinedTypeService( context );
             DefinedValueService dv_svc = new DefinedValueService( context );
@@ -176,6 +179,11 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 DefinedTypeCache inventoryDT = DefinedTypeCache.Get( inventoryGuid );
                 viewModel.inventoryList = inventoryDT.DefinedValues;
+            }
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.VendorList ), out vendorGuid ) )
+            {
+                DefinedTypeCache vendorDT = DefinedTypeCache.Get( vendorGuid );
+                viewModel.vendorList = vendorDT.DefinedValues;
             }
             string matrixId = GetAttributeValue( AttributeKey.DiscountCodeMatrix );
             if ( !String.IsNullOrEmpty( matrixId ) )
@@ -903,6 +911,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     bool validRooms = true;
                     bool validAttendance = true;
                     bool noConflicts = true;
+                    bool noNotes = true;
                     for ( int i = 0; i < eventDates.Count(); i++ )
                     {
                         if ( inRange )
@@ -1082,7 +1091,13 @@ namespace Rock.Blocks.Plugins.EventForm
                             }
                         }
                     }
-                    if ( inRange && validAttendance && validRooms && noConflicts )
+                    //Request has extra notes
+                    if ( !String.IsNullOrEmpty( item.GetAttributeValue( "RequestIsValid" ) ) )
+                    {
+                        notValidForPreApprovalReasons.Add( "Request has additional notes." );
+                        noNotes = false;
+                    }
+                    if ( inRange && validAttendance && validRooms && noConflicts && noNotes )
                     {
                         item.SetAttributeValue( "IsPreApproved", "True" );
                         if ( isSubmission ) //We were pre-approving when people tried to save drafts, need to not do that. 
@@ -1937,6 +1952,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public List<DefinedValueCache> ministries { get; set; }
             public List<DefinedValueCache> budgetLines { get; set; }
             public List<DefinedValueCache> inventoryList { get; set; }
+            public List<DefinedValueCache> vendorList { get; set; }
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
             public List<AttributeBag> discountCodeAttrs { get; set; }

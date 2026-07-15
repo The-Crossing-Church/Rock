@@ -23,7 +23,8 @@ type RoomSetUp = {
   Room: string,
   TypeofTable: string,
   NumberofTables: number,
-  NumberofChairs: number
+  NumberofChairs: number,
+  NeedsTablecloths: string
 }
 type ListItem = {
   text: string,
@@ -171,11 +172,11 @@ export default defineComponent({
           //Set to default if exists
           let def = this.getSetUpDesc(guid)
           if(def.length == 0) {
-            setup = [{ Room: guid, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0}]
+            setup = [{ Room: guid, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0, NeedsTablecloths: 'False'}]
           } else {
             setup = []
             def.forEach((s: any) => {
-              setup.push({ Room: guid, TypeofTable: s.attributeValues.TypeofTable.value, NumberofTables: s.attributeValues.NumberofTables.value, NumberofChairs: s.attributeValues.NumberofChairs.value })
+              setup.push({ Room: guid, TypeofTable: s.attributeValues.TypeofTable.value, NumberofTables: s.attributeValues.NumberofTables.value, NumberofChairs: s.attributeValues.NumberofChairs.value, NeedsTablecloths: s.attributeValues.NeedsTablecloths.value })
             })
           }
         }
@@ -184,7 +185,7 @@ export default defineComponent({
       },
       addSetUpConfiguration() {
         let room = this.selectedRoomSetUp[0].Room
-        this.selectedRoomSetUp.push({Room: room, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0})
+        this.selectedRoomSetUp.push({Room: room, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0, NeedsTablecloths: 'False'})
       },
       removeSetUpConfiguration(idx: number) {
         this.selectedRoomSetUp.splice(idx, 1)
@@ -208,7 +209,7 @@ export default defineComponent({
           if(s.guid == room) {
             if(s.standard.length > 0) {
               s.standard.forEach((su: any) => {
-                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable.value, NumberofTables: su.attributeValues.NumberofTables.value, NumberofChairs: su.attributeValues.NumberofChairs.value })
+                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable.value, NumberofTables: su.attributeValues.NumberofTables.value, NumberofChairs: su.attributeValues.NumberofChairs.value, NeedsTablecloths: su.attributeValues.NeedsTablecloths.value })
               })
             }
           }
@@ -375,10 +376,10 @@ export default defineComponent({
             <rck-lbl>Standard Set-Up will be used for {{gsu.room}}</rck-lbl> <br/>
             <div v-for="(su, idx) in gsu.standard" :key="idx">
               <template v-if="su.attributeValues.NumberofTables.value > 1">
-                {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} tables with {{su.attributeValues.NumberofChairs.value}} chairs each.
+                {{su.attributeValues.NumberofTables.value}} {{ (su.attributeValues.NeedsTablecloths.value == 'True' ? 'Clothed ' : '') }} {{su.attributeValues.TypeofTable.value}} tables with {{su.attributeValues.NumberofChairs.value}} chairs each.
               </template>
               <template v-else>
-                {{su.attributeValues.NumberofTables.value}} {{su.attributeValues.TypeofTable.value}} table with {{su.attributeValues.NumberofChairs.value}} chairs.
+                {{su.attributeValues.NumberofTables.value}} {{ (su.attributeValues.NeedsTablecloths.value == 'True' ? 'Clothed ' : '') }} {{su.attributeValues.TypeofTable.value}} table with {{su.attributeValues.NumberofChairs.value}} chairs.
               </template>
             </div>
           </div>
@@ -393,7 +394,7 @@ export default defineComponent({
             <rck-lbl>Custom Set-Up for {{gsu.room}}: </rck-lbl><br/>
             <div v-for="(su, idx) in gsu.items" :key="idx">
               <template v-if="su.NumberofTables > 1">
-                {{su.NumberofTables}} {{su.TypeofTable}} tables with {{su.NumberofChairs}} chairs each.
+                {{su.NumberofTables}} {{ (su.NeedsTablecloths == 'True' ? 'Clothed ' : '') }} {{su.TypeofTable}} tables with {{su.NumberofChairs}} chairs each.
               </template>
               <template v-else-if="su.NumberofTables == 0">
                 <template v-if="su.NumberofChairs > 0">
@@ -404,7 +405,7 @@ export default defineComponent({
                 </template>
               </template>
               <template v-else>
-                {{su.NumberofTables}} {{su.TypeofTable}} table with {{su.NumberofChairs}} chairs.
+                {{su.NumberofTables}} {{ (su.NeedsTablecloths == 'True' ? 'Clothed ' : '') }} {{su.TypeofTable}} table with {{su.NumberofChairs}} chairs.
               </template>
             </div>
           </div>

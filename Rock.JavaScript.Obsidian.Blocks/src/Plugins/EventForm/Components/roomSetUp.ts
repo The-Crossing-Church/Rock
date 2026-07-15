@@ -3,6 +3,7 @@ import TextBox from "@Obsidian/Controls/textBox.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import DDL from "@Obsidian/Controls/dropDownList.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
+import Checkbox from "@Obsidian/Controls/checkBox.obs"
 import Validator from "./validator"
 import rules from "../Rules/rules"
 
@@ -10,7 +11,8 @@ type RoomSetUp = {
   Room: string,
   TypeofTable: string,
   NumberofTables: number,
-  NumberofChairs: number
+  NumberofChairs: number,
+  NeedsTablecloths: string
 }
 
 export default defineComponent({
@@ -21,6 +23,7 @@ export default defineComponent({
     "rck-ddl": DDL,
     "tcc-validator": Validator,
     "rck-btn": RockButton,
+    "rck-chk": Checkbox
   },
   props: {
     modelValue: Object as PropType<RoomSetUp>,
@@ -43,6 +46,7 @@ export default defineComponent({
   data() {
     return {
       roomSetUp: {} as RoomSetUp,
+      needsTablecloths: false,
       rules: rules,
       errors: []
     };
@@ -78,6 +82,22 @@ export default defineComponent({
           }
         }
       }
+    },
+    'roomSetUp.NeedsTablecloths': {
+      handler(val) {
+        if(val == 'True' && !this.needsTablecloths) {
+          this.needsTablecloths = true
+        } else if(val == 'False' && this.needsTablecloths) {
+          this.needsTablecloths = false
+        }
+      }
+    },
+    needsTablecloths(val) {
+      if(val) {
+        this.roomSetUp.NeedsTablecloths = 'True'
+      } else {
+        this.roomSetUp.NeedsTablecloths = 'False'
+      }
     }
   },
   mounted() {
@@ -87,12 +107,12 @@ export default defineComponent({
   },
   template: `
 <div class="row">
-  <div class="col col-xs-10 col-md-4">
+  <div class="col col-xs-10 col-md-3">
     <tcc-validator :rules="typeOfTableRules" ref="validators_typeoftable">
       <rck-lbl>Type of Table</rck-lbl>
       <rck-ddl
         v-model="roomSetUp.TypeofTable"
-        :items="[{value: 'Round', text: 'Round'}, {value: 'Rectangular', text: 'Rectangular'}]"
+        :items="[{value: 'Round', text: 'Round'}, {value: '6ft Rectangular', text: '6ft Rectangular'}, {value: '4ft Rectangular', text: '4ft Rectangular'}]"
       ></rck-ddl>
     </tcc-validator>
   </div>
@@ -114,7 +134,15 @@ export default defineComponent({
       ></rck-text>
     </div>
   </div>
-  <div class="col col-xs-2 pt-4 mt-2">
+  <div class="col col-xs-10 col-md-2">
+    <div class="validator form-group">
+      <rck-lbl>Tablecloths</rck-lbl>
+      <rck-chk
+        v-model="needsTablecloths"
+      ></rck-chk>
+    </div>
+  </div>
+  <div class="col col-xs-1 pt-4 mt-2">
     <rck-btn btnType="red" @click="removeConfiguration" :disabled="disabled">
       <i class="fas fa-trash"></i>
     </rck-btn>
