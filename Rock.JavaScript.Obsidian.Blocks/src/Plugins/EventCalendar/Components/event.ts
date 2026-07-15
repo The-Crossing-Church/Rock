@@ -72,7 +72,13 @@ export default defineComponent({
     },
     uniqueid() {
       if(this.event) {
-        return this.event.id + '_' + this.event.location.replaceAll(' ', '_').replaceAll(',', '')
+        return this.event.id + '_' + 
+          this.event.location.replaceAll(' ', '_')
+                             .replaceAll(',', '')
+                             .replaceAll('(', '').replaceAll(')', '')
+                             .replaceAll('&', 'and')
+                             .replaceAll(':', '').replaceAll('|', '')
+                             .replaceAll('*', '')
       }
       return ''
     }
