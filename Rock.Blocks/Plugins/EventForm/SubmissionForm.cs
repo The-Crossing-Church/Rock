@@ -976,8 +976,14 @@ namespace Rock.Blocks.Plugins.EventForm
                                 if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
                                 {
                                     Rock.Model.DefinedType locationDT = new DefinedTypeService( context ).Get( locationGuid );
-                                    var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id && ( dv.Value == "Gym" || dv.Value == "Auditorium" ) ).Select( dv => dv.Guid.ToString().ToLower() ).ToList();
-                                    var intersection = rooms.Intersect( locs );
+                                    var locs = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
+                                    locs.LoadAttributes();
+                                    var locGuids = locs.Where( dv =>
+                                    {
+                                        var ineligible = dv.GetAttributeValue( "IneligibleForPreApproval" ).AsBoolean();
+                                        return ineligible;
+                                    } ).Select( dv => dv.Guid.ToString().ToLower() ).ToList();
+                                    var intersection = rooms.Intersect( locGuids );
                                     if ( intersection != null && intersection.Count() > 0 )
                                     {
                                         validRooms = false;
@@ -1092,7 +1098,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         }
                     }
                     //Request has extra notes
-                    if ( !String.IsNullOrEmpty( item.GetAttributeValue( "RequestIsValid" ) ) )
+                    if ( !String.IsNullOrEmpty( item.GetAttributeValue( "Notes" ) ) )
                     {
                         notValidForPreApprovalReasons.Add( "Request has additional notes." );
                         noNotes = false;
