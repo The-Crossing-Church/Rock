@@ -316,7 +316,19 @@ export default defineComponent({
             return rooms.includes(set.Room)
           })
         }
-      }
+      },
+      // 'e.attributeValues.ExpectedAttendance': {
+      //   handler(val) {
+      //     if(val >= 200) {
+      //       if(this.request?.attributeValues) {
+      //         this.request.attributeValues.NeedsOpsAccommodations = 'True'
+      //       }
+      //       if(this.e?.attributeValues) {
+      //         this.e.attributeValues.NeedsSecurity = 'True'
+      //       }
+      //     }
+      //   }
+      // }
     },
     mounted() {
       if(this.e?.attributeValues) {
@@ -421,22 +433,6 @@ export default defineComponent({
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
-        v-model="e.attributeValues.Tablecloths"
-        :label="e.attributes.Tablecloths.name"
-        v-if="!readonly"
-        id="boolTablecloths"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.Tablecloths"
-        :attribute="e.attributes.Tablecloths"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolTablecloths"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
         v-model="e.attributeValues.NeedsDoorsUnlocked"
         :label="e.attributes.NeedsDoorsUnlocked.name"
         v-if="!readonly"
@@ -459,24 +455,6 @@ export default defineComponent({
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
         id="ddlDoors"
-      ></rck-field>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsSecurity"
-        :label="e.attributes.NeedsSecurity.name"
-        id="boolNeedsSecurity"
-        v-if="!readonly"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.NeedsSecurity"
-        :attribute="e.attributes.NeedsSecurity"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolNeedsSecurity"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -519,7 +497,7 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-4">
       <rck-field
         v-model="e.attributeValues.SetupImage"
         :attribute="setUpImageAttr"
@@ -528,7 +506,16 @@ export default defineComponent({
         id="imgSetupImage"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.HasDangerousActivity == 'True'">
+    <div class="col col-xs-12 col-md-4">
+      <rck-field
+        v-model="e.attributeValues.AdditionalSetupImages"
+        :attribute="e.attributes.AdditionalSetupImages"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
+        id="imgAdditionalSetupImages"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-4" v-if="e.attributeValues.HasDangerousActivity == 'True'">
       <rck-field
         v-model="e.attributeValues.InsuranceCertificate"
         :attribute="e.attributes.InsuranceCertificate"
@@ -582,6 +569,51 @@ export default defineComponent({
   </template>
   <h4 class="text-accent mt-2">Ops Inventory</h4>
   <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing" :readonly="readonly"></tcc-ops-inv>
+  <h4 class="text-accent mt-2">Security</h4>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsSecurity"
+        :label="e.attributes.NeedsSecurity.name"
+        :hint="e.attributeValues.ExpectedAttendance >= 200 ? 'Events expecting 200 or more people are required to have security personnel' : ''"
+        :disabled="e.attributeValues.ExpectedAttendance >= 200"
+        id="boolNeedsSecurity"
+        v-if="!readonly"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsSecurity"
+        :attribute="e.attributes.NeedsSecurity"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsSecurity"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.NeedsSecurity == 'True'">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityBudgetMinistry, e.attributes.SecurityBudgetMinistry.name)]" ref="validators_budgetmin">
+        <rck-field
+          v-model="e.attributeValues.SecurityBudgetMinistry"
+          :attribute="e.attributes.SecurityBudgetMinistry"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="ddlSecurityBudgetMinistry"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityBudgetLine, e.attributes.SecurityBudgetLine.name)]" ref="validators_budgetline">
+        <rck-field
+          v-model="e.attributeValues.SecurityBudgetLine"
+          :attribute="e.attributes.SecurityBudgetLine"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="ddlSecurityBudgetLine"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
 </rck-form>
 <rck-modal v-model="modal" style="min-width: 50%;" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
   <div style="height: 16px;"></div>

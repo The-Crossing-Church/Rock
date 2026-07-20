@@ -310,6 +310,18 @@ export default defineComponent({
         }
       },
       deep: true
+    },
+    'e.attributeValues.ExpectedAttendance': {
+      handler(val) {
+        if(val >= 200) {
+          if(this.request?.attributeValues) {
+            this.request.attributeValues.NeedsOpsAccommodations = 'True'
+          }
+          if(this.e?.attributeValues) {
+            this.e.attributeValues.NeedsSecurity = 'True'
+          }
+        }
+      }
     }
   },
   mounted() {

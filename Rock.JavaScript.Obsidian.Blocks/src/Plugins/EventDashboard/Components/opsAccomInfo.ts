@@ -44,6 +44,20 @@ export default defineComponent({
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
               }
+              if(key == 'AdditionalSetupImages') {
+                console.log('SET UP IMGS')
+                console.log(item.value)
+                let matrix = JSON.parse(item.value)
+                if(matrix.matrixItems) {
+                  item.value = matrix.matrixItems.map(mi => mi.editValues.Image)
+                }
+                if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
+                  matrix = JSON.parse(this.details.changes.attributeValues[key].value)
+                  if(matrix.matrixItems) {
+                    item.changeValue = matrix.matrixItems.map(mi => mi.editValues.Image)
+                  }
+                }
+              }
               if(this.needsCatering && categories.includes("Event Catering")) {
                 continue
               }
@@ -52,7 +66,7 @@ export default defineComponent({
           }
         }
         return attrs.sort((a,b) => a.attr.order - b.attr.order)
-      }
+      },
     },
     methods: {
       getSetUpDesc(value: string) {
@@ -282,6 +296,29 @@ export default defineComponent({
             <div class="form-group static-control">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
               <tcc-img :value="av.value"></tcc-img>
+            </div>
+          </div>
+        </template>
+      </template>
+      <template v-else-if="av.attr.key == 'AdditionalSetupImages'">
+        <template v-if="av.changeValue != ''">
+          <div class="form-group static-control">
+            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <div class="row mb-2">
+              <div class="col col-xs-6">
+                <tcc-img v-for="(img, idx) in av.value" :value="img" :key="'img_' + idx"></tcc-img>
+              </div>
+              <div class="col col-xs-6">
+                <tcc-img v-for="(img, idx) in av.changeValue" :value="img" :key="'new_img_' + idx"></tcc-img>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="mb-2">
+            <div class="form-group static-control">
+              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <tcc-img v-for="img in av.value" :value="img" :key="'img_' + idx"></tcc-img>
             </div>
           </div>
         </template>
