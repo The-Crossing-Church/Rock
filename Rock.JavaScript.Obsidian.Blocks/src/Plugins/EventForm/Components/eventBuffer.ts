@@ -2,11 +2,15 @@ import { defineComponent, PropType } from "vue"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime, Interval } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import TimePicker from "./timePicker"
 
 export default defineComponent({
     name: "EventForm.Components.EventBuffer",
     components: {
-      "rck-field": RockField
+      "rck-field": RockField,
+      "rck-lbl": RockLabel,
+      "tcc-time": TimePicker,
     },
     props: {
       e: {
@@ -19,7 +23,8 @@ export default defineComponent({
     },
     data() {
       return {
-
+        setUpTime: "",
+        tearDownTime: ""
       };
     },
     computed: {
@@ -29,59 +34,86 @@ export default defineComponent({
       startChanged() {
         if(this.e && this.e.attributeValues) {
           let buffer = this.e.attributeValues.StartBuffer ? parseInt(this.e.attributeValues.StartBuffer) : 0
-          if(this.e.attributeValues.RoomSetUp) {
-            let data = JSON.parse(this.e.attributeValues.RoomSetUp)
-            if(data && data.length > 0) {
-              if(buffer < 30) {
-                this.e.attributeValues.StartBuffer = "30"
+          let newBuffer = buffer
+          let start = DateTime.fromFormat(this.e.attributeValues.StartTime, "HH:mm:ss")
+
+          if(start.isValid){
+            if(this.setUpTime) {
+              let setUp = DateTime.fromFormat(this.setUpTime, "HH:mm:ss")
+              if(start && setUp) {
+                let interval = Interval.fromDateTimes(setUp, start)
+                newBuffer = interval.length('minutes')
               }
             }
-          }
-          if(this.e.attributeValues.StartTime) {
-            let start = DateTime.fromFormat(this.e.attributeValues.StartTime, "HH:mm:ss")
-            let minStart = start.startOf('day')
-            let interval = Interval.fromDateTimes(minStart, start)
-            let maxBuffer = interval.length('minutes')
-            if(buffer > maxBuffer) {
-              this.e.attributeValues.StartBuffer = `${maxBuffer}`
+
+            if(this.e.attributeValues.RoomSetUp) {
+              let data = JSON.parse(this.e.attributeValues.RoomSetUp)
+              if(data && data.length > 0) {
+                if(newBuffer < 30) {
+                  newBuffer = 30
+                }
+              }
             }
+
+            if(this.e.attributeValues.StartTime) {
+              let minStart = start.startOf('day')
+              let interval = Interval.fromDateTimes(minStart, start)
+              let maxBuffer = interval.length('minutes')
+              if(buffer > maxBuffer) {
+                newBuffer = maxBuffer
+              }
+            }
+            
+            if(newBuffer >= 0) {
+              this.e.attributeValues.StartBuffer = `${newBuffer}`
+              this.setUpTime = start.minus({minutes: newBuffer}).toFormat("HH:mm:ss")
+            } 
           }
         }
       },
       endChanged() {
         if(this.e && this.e.attributeValues) {
           let buffer = this.e.attributeValues.EndBuffer ? parseInt(this.e.attributeValues.EndBuffer) : 0
-          if(this.e.attributeValues.RoomSetUp) {
-            let data = JSON.parse(this.e.attributeValues.RoomSetUp)
-            if(data && data.length > 0) {
-              if(buffer < 30) {
-                this.e.attributeValues.EndBuffer = "30"
+          let newBuffer = buffer
+          let end = DateTime.fromFormat(this.e.attributeValues.EndTime, "HH:mm:ss")
+
+          if(end.isValid){
+            if(this.tearDownTime) {
+              let tearDown = DateTime.fromFormat(this.tearDownTime, "HH:mm:ss")
+              if(end && tearDown) {
+                let interval = Interval.fromDateTimes(end, tearDown)
+                newBuffer = interval.length('minutes')
               }
             }
-          }
-          if(this.e.attributeValues.EndTime) {
-            let end = DateTime.fromFormat(this.e.attributeValues.EndTime, "HH:mm:ss")
-            let maxEnd = end.endOf('day')
-            let interval = Interval.fromDateTimes(end, maxEnd)
-            let maxBuffer = Math.floor(interval.length('minutes'))
-            if(buffer > maxBuffer) {
-              this.e.attributeValues.EndBuffer = `${maxBuffer}`
+  
+            if(this.e.attributeValues.RoomSetUp) {
+              let data = JSON.parse(this.e.attributeValues.RoomSetUp)
+              if(data && data.length > 0) {
+                if(buffer < 30) {
+                  newBuffer = 30
+                }
+              }
+            }
+            if(this.e.attributeValues.EndTime) {
+              let maxEnd = end.endOf('day')
+              let interval = Interval.fromDateTimes(end, maxEnd)
+              let maxBuffer = Math.floor(interval.length('minutes'))
+              if(buffer > maxBuffer) {
+                newBuffer = maxBuffer
+              }
+            }
+            
+            if(newBuffer >= 0) {
+              this.e.attributeValues.EndBuffer = `${newBuffer}`
+              this.tearDownTime = end.plus({minutes: newBuffer}).toFormat("HH:mm:ss")
             }
           }
         }
       },
-      previewStartBuffer(time: string, buffer: any) {
-        if(time && buffer) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
-        } else if (time) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
-        }
-      },
-      previewEndBuffer(time: string, buffer: any) {
-        if(time && buffer) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
-        } else if (time) {
-          return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+      formatTime(val) {
+        if(val) {
+          let dt = DateTime.fromFormat(val, "HH:mm:ss")
+          return dt.toFormat("h:mm a")
         }
       }
     },
@@ -95,41 +127,56 @@ export default defineComponent({
         handler(val) {
           this.endChanged()
         }
+      },
+      'e.attributeValues.StartBuffer': {
+        handler(val) {
+          if(val) {
+            this.startChanged()
+          }
+        }
+      },
+      'e.attributeValues.EndBuffer': {
+        handler(val) {
+          if(val) {
+            this.endChanged()
+          }
+        }
+      },
+      setUpTime(val) {
+        this.startChanged()
+      },
+      tearDownTime(val) {
+        this.endChanged()
       }
     },
     mounted() {
-
+      this.startChanged()
+      this.endChanged()
     },
     template: `
 <div class="row">
   <div class="col col-xs-12 col-md-6">
-    <rck-field
-      v-model="e.attributeValues.StartBuffer"
-      :attribute="e.attributes.StartBuffer"
-      :is-edit-mode="true"
-      v-on:change="startChanged"
-      id="txtStartBuffer"
-    ></rck-field>
+    <tcc-time
+      :label="e.attributes.StartBuffer.name"
+      v-model="setUpTime"
+    ></tcc-time> 
   </div>
   <div class="col col-xs-12 col-md-6">
-    <rck-field
-      v-model="e.attributeValues.EndBuffer"
-      :attribute="e.attributes.EndBuffer"
-      :is-edit-mode="true"
-      v-on:change="endChanged"
-      id="txtEndBuffer"
-    ></rck-field>
+    <tcc-time
+      :label="e.attributes.EndBuffer.name"
+      v-model="tearDownTime"
+    ></tcc-time> 
   </div>
 </div>
 <br/>
 <div class="row" >
-  <div class="col col-xs-6" v-if="e.attributeValues.StartBuffer != ''">
-    <rck-lbl>Space Reservation Starting At</rck-lbl> <br/>
-    {{e.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(e.attributeValues.StartTime, e.attributeValues.StartBuffer)}}
+  <div class="col col-xs-6" v-if="setUpTime != ''">
+    <rck-lbl>Set-up</rck-lbl> <br/>
+    Begins at {{formatTime(setUpTime)}}, {{e.attributeValues.StartBuffer}} minutes before the start of your event.
   </div>
-  <div class="col col-xs-6" v-if="e.attributeValues.EndBuffer != ''">
-    <rck-lbl>Space Reservation Ending At</rck-lbl> <br/>
-    {{e.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(e.attributeValues.EndTime, e.attributeValues.EndBuffer)}}
+  <div class="col col-xs-6" v-if="tearDownTime != ''">
+    <rck-lbl>Tear-down</rck-lbl> <br/>
+    Ends at {{formatTime(tearDownTime)}}, {{e.attributeValues.EndBuffer}} minutes after the end of your event.
   </div>
 </div>
 `
