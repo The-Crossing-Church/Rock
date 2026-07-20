@@ -97,6 +97,19 @@ const rules = {
     }
     return true
   },
+  securityMinimumHours:(start: string, end: string) => {
+    if(start && end) {
+      let startTime = DateTime.fromFormat(start, "HH:mm:ss")
+      let endTime = DateTime.fromFormat(end, "HH:mm:ss")
+      let interval = Interval.fromDateTimes(startTime, endTime)
+      let hours = interval.length('hours')
+      console.log(startTime, endTime, interval, hours)
+      if(hours < 3) {
+        return 'Security personnel must be hired for a minimum of 3 hours'
+      }
+    }
+    return true
+  },
   dateCannotBeAfterEvent: (value: string, endDate: string, key: string) =>  {
     if(value && endDate) {
       let date = DateTime.fromFormat(`${value} 00:00:00`, "yyyy-MM-dd HH:mm:ss")

@@ -613,6 +613,24 @@ export default defineComponent({
         ></rck-field>
       </tcc-validator>
     </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityStartTime, e.attributes.SecurityStartTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityStart">
+        <tcc-time 
+          :label="e.attributes.SecurityStartTime.name"
+          v-model="e.attributeValues.SecurityStartTime"
+          id="TimeSecurityStart"
+        ></tcc-time>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityEndTime, e.attributes.SecurityEndTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityEnd">
+        <tcc-time 
+          :label="e.attributes.SecurityEndTime.name"
+          v-model="e.attributeValues.SecurityEndTime"
+          id="TimeSecurityEnd"
+        ></tcc-time>
+      </tcc-validator>
+    </div>
   </div>
 </rck-form>
 <rck-modal v-model="modal" style="min-width: 50%;" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
