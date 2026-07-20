@@ -20,7 +20,7 @@ import PersonPicker from "@Obsidian/Controls/personPicker.obs"
 import Modal from "@Obsidian/Controls/modal.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
-import Comments from "./Components/comment"
+import Comments from "./Components/comments"
 import UserGridAction from "./Components/userGridAction"
 
 const store = useStore();
@@ -50,10 +50,6 @@ export default defineComponent({
   setup() {
       const invokeBlockAction = useInvokeBlockAction();
       const viewModel = useConfigurationValues<UserDashboardBlockViewModel | null>();
-      // viewModel?.events.forEach((e: any) => {
-      //   e.childItems = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == viewModel.eventDetailsCCId })
-      //   e.comments = viewModel.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == viewModel.commentsCCId })
-      // })
 
       let defaultFilters = {
         title: "",
@@ -261,80 +257,6 @@ export default defineComponent({
         }
         return date.toFormat("yyyy-MM-dd")
       },
-      // filteredEvents() {
-      //   let items = [] as any[]
-      //   if(this.viewModel?.events) {
-      //     items = this.viewModel.events
-      //   }
-      //   if(items && items.length > 0 && this.filters) {
-      //     let ids = [] as string[]
-      //     if(this.filters.eventModified && (this.filters.eventModified.lowerValue || this.filters.eventModified.upperValue)) {
-      //       let start = this.filters.eventModified.lowerValue ? DateTime.fromFormat(this.filters.eventModified.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2000-01-01", "yyyy-MM-dd")
-      //       let end = this.filters.eventModified.upperValue ? DateTime.fromFormat(this.filters.eventModified.upperValue, "yyyy-MM-dd") : DateTime.now()
-      //       let range = Interval.fromDateTimes(start, end)
-      //       ids = items.filter((e: any) => {
-      //         return range.contains(DateTime.fromISO(e.modifiedDateTime))
-      //       }).map((e: any) => e.idKey)
-      //     }
-
-      //     if(this.filters.title) {
-      //       let title = this.filters.title.toLowerCase()
-      //       items = items.filter((e: any) => e.title.toLowerCase().includes(title) || ids.includes(e.idKey))
-      //     }
-
-      //     if(this.filters.submitter) {
-      //       let submitter = this.filters.submitter.toLowerCase()
-      //       items = items.filter((e: any) => e.createdBy.toLowerCase().includes(submitter) || e.modifiedBy.toLowerCase().includes(submitter) || ids.includes(e.idKey) )
-      //     }
-
-      //     if(this.filters.resources && this.filters.resources.length > 0) {
-      //       items = items?.filter((e: any) => {
-      //         let res = e.attributeValues.RequestType.split(',').map((r: string) => r.trim())
-      //         let intersects = false
-      //         res.forEach((r: string) => {
-      //           if(this.filters.resources.includes(r)) {
-      //             intersects = true
-      //           }
-      //         })
-      //         return intersects || ids.includes(e.idKey)
-      //       })
-      //     }
-
-      //     if(this.filters.statuses && this.filters.statuses.length > 0) {
-      //       items = items?.filter((e: any) => this.filters.statuses.includes(e.attributeValues.RequestStatus) || ids.includes(e.idKey))
-      //     }
-
-      //     if(this.filters.eventDates && (this.filters.eventDates.lowerValue || this.filters.eventDates.upperValue)) {
-      //       let lower = this.filters.eventDates.lowerValue ? DateTime.fromFormat(this.filters.eventDates.lowerValue, "yyyy-MM-dd") : DateTime.fromFormat("2010-01-01", "yyyy-MM-dd")
-      //       let upper = this.filters.eventDates.upperValue ? DateTime.fromFormat(this.filters.eventDates.upperValue, "yyyy-MM-dd") : DateTime.fromFormat("2100-01-01", "yyyy-MM-dd")
-      //       let interval = Interval.fromDateTimes(lower, upper)
-      //       items = items?.filter((e: any) => {
-      //         let dates = e.attributeValues.EventDates.split(',')
-      //         let inRange = false
-      //         dates.forEach((d: string) => {
-      //           let dt = DateTime.fromFormat(d, "yyyy-MM-dd")
-      //           if(interval.contains(dt)) {
-      //             inRange = true
-      //           }
-      //         })
-      //         return inRange || ids.includes(e.idKey)
-      //       })
-      //     }
-
-      //     //Check for only recently modified 
-      //     if( !this.filters.title && 
-      //         !this.filters.submitter &&
-      //         this.filters.statuses.length == 0 &&
-      //         this.filters.resources.length == 0 &&
-      //         !this.filters.eventDates?.lowerValue &&
-      //         !this.filters.eventDates?.upperValue && 
-      //         ids.length > 0
-      //     ) {
-      //       items = items.filter((e: any) => ids.includes(e.idKey))
-      //     }
-      //   }
-      //   return items
-      // }
   },
   methods: {
     formatDateTime(date: any): string {
@@ -405,10 +327,6 @@ export default defineComponent({
       this.filterRequests(this.filters).then((response: any) => {
         if(this.viewModel) {
           this.viewModel.events = response.data.events
-          // this.viewModel?.events.forEach((e: any) => {
-          //   e.childItems = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == this.viewModel?.eventDetailsCCId })
-          //   e.comments = this.viewModel?.eventDetails.filter((d: any) => { return d.contentChannelItemId == e.id && d.childContentChannelItem.contentChannelId == this.viewModel?.commentsCCId })
-          // })
         }
         if(response.isError) {
           this.toastMessage = response.errorMessage
@@ -480,23 +398,23 @@ export default defineComponent({
         }
       })
     },
-    getNextComment(idx: number) {
-      let req = this.selected as any
-      if(idx < (req.comments.length - 1)) {
-        return req.comments[idx + 1]
-      }
-      return null
-    },
+    // getNextComment(idx: number) {
+    //   let req = this.selected as any
+    //   if(idx < (req.comments.length - 1)) {
+    //     return req.comments[idx + 1]
+    //   }
+    //   return null
+    // },
     newComment() {
       this.comment = ""
       this.commentModal = true
     },
-    createComment() {
+    createComment(comment) {
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'
       }
-      this.addComment(this.selected.idKey, this.comment).then((res: any) => {
+      this.addComment(this.selected.idKey, comment).then((res: any) => {
         if(res.isSuccess) {
           if(res.data?.comment) {
             let req = this.selected as any
@@ -508,7 +426,6 @@ export default defineComponent({
           el?.classList.add("show")
         }
         this.commentModal = false
-        this.comment = ""
       }).finally(() => {
         if(el) {
           el.style.display = 'none'
@@ -847,8 +764,8 @@ export default defineComponent({
   </rck-grid>
   <rck-modal v-model="modal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
     <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
-    <template v-if="selected.comments && selected.comments.length > 0">
-      <tcc-comments :comments="selected.comments"></tcc-comments>
+    <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
+      <tcc-comments :comments="selected.comments" :newComment="commentModal" v-on:createComment="createComment"></tcc-comments>
       <!--
       <h3 class="text-accent">Comments</h3>
       <div>
@@ -881,6 +798,7 @@ export default defineComponent({
       </div>
     </template>
   </rck-modal>
+  <!--
   <rck-modal v-model="commentModal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" style="z-index: 2000 !important;" modalWrapperClasses="modal-no-header">
     <rck-lbl>New Comment</rck-lbl>
     <rck-text
@@ -898,6 +816,7 @@ export default defineComponent({
       </rck-btn>
     </template>
   </rck-modal>
+  -->
   <rck-modal v-model="resubmissionModal" width="75%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" style="z-index: 2000 !important;" modalWrapperClasses="modal-no-header">
     <h3>Resubmit {{copy.title}}</h3>
     <div>To resubmit a request, please select the new date(s) for your event.</div>

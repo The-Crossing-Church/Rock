@@ -100,9 +100,9 @@ export default defineComponent({
       }
       provide("addComment", addComment);
       
-      const completePartialApproval: (id: string | null | undefined, approved: string[], denied: string[], events: any[]) => Promise<any> = async (id, approved, denied, events) => {
+      const completePartialApproval: (id: string | null | undefined, approved: string[], denied: string[], events: any[], message: string) => Promise<any> = async (id, approved, denied, events, message) => {
         const response = await invokeBlockAction("PartialApproval", {
-          id: id, approved: approved, denied: denied, events: events
+          id: id, approved: approved, denied: denied, events: events, notes: message
         });
         return response
       }
@@ -444,12 +444,12 @@ export default defineComponent({
       this.comment = ""
       this.commentModal = true
     },
-    createComment() {
+    createComment(comment) {
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'
       }
-      this.addComment(this.selected.idKey, this.comment).then((res: any) => {
+      this.addComment(this.selected.idKey, comment).then((res: any) => {
         if(res.isSuccess) {
           if(res.data?.comment) {
             let req = this.selected as any
@@ -461,7 +461,6 @@ export default defineComponent({
           el?.classList.add("show")
         }
         this.commentModal = false
-        this.comment = ""
       }).finally(() => {
         if(el) {
           el.style.display = 'none'
@@ -473,11 +472,12 @@ export default defineComponent({
       let approved = ref.approvedAttributes as string[]
       let denied = ref.deniedAttributes as string[]
       let events = ref.eventChanges as any[]
+      let message = ref.message as string
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'
       }
-      this.completePartialApproval(this.selected.idKey, approved, denied, events).then((res) => {
+      this.completePartialApproval(this.selected.idKey, approved, denied, events, message).then((res) => {
         this.partialApprovalModal = false
         if(res.isSuccess) {
           if(res.data?.id) {
@@ -729,8 +729,8 @@ export default defineComponent({
 </div>
 <rck-modal v-model="modal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
   <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" v-on:openrequest="selectItem"></tcc-details>
-  <template v-if="selected.comments && selected.comments.length > 0">
-    <tcc-comments :comments="selected.comments"></tcc-comments>
+  <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
+    <tcc-comments :comments="selected.comments" :newComment="commentModal" v-on:createComment="createComment"></tcc-comments>
     <!--
     <h3 class="text-accent">Comments</h3>
     <div>
@@ -811,6 +811,7 @@ export default defineComponent({
     </div>
   </template>
 </rck-modal>
+<!--
 <rck-modal v-model="commentModal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
   <rck-lbl>New Comment</rck-lbl>
   <rck-text
@@ -828,6 +829,7 @@ export default defineComponent({
     </rck-btn>
   </template>
 </rck-modal>
+-->
 <rck-modal v-if="partialApprovalModal" v-model="partialApprovalModal" width="70%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
   <tcc-partial :request="selected" :rooms="viewModel.locations" :inventory="viewModel.inventory" ref="partialApprovalInfo"></tcc-partial>
   <template #customButtons>
