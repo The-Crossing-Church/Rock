@@ -2,6 +2,7 @@ import { defineComponent } from "vue"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
+import RockHtml from "@Obsidian/Controls/htmlEditor.obs"
 import PAValues from "./partialApprovalValues"
 
 
@@ -11,7 +12,8 @@ export default defineComponent({
       "rck-field": RockField,
       "rck-lbl": RockLabel,
       "rck-btn": RockButton,
-      "tcc-pa-val": PAValues
+      "rck-html": RockHtml,
+      "tcc-pa-val": PAValues,
     },
     props: {
       request: Object,
@@ -26,7 +28,8 @@ export default defineComponent({
         approvedAttributes: [] as string[],
         deniedAttributes: [] as string[],
         eventChanges: [] as any[],
-        titleApproved: null
+        titleApproved: null,
+        message: ""
       };
     },
     computed: {
@@ -345,7 +348,7 @@ export default defineComponent({
       ></tcc-pa-val>
     </template>
   </template>
-  <h4>Additional Changes</h4>
+  <h4 v-if="(publicityChanges.length > 0) || (productionTechChanges.length > 0) || (request.attributeValues.WebCalendarDescription != request.changes.attributeValues.WebCalendarDescription) || (request.attributeValues.Notes != request.changes.attributeValues.Notes)">Additional Changes</h4>
   <template v-if="publicityChanges.length > 0">
     <h4 class="text-accent">Publicity</h4>
     <tcc-pa-val 
@@ -390,6 +393,11 @@ export default defineComponent({
       v-on:denied="denyRequestAttribute(request.attributes.Notes.key)"
     ></tcc-pa-val>
   </template>
+  <h4>Custom Message</h4>
+  <rck-html
+    v-model="message"
+    :editorHeight="300"
+  ></rck-html>
 </div>
 
 <v-style>

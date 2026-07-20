@@ -242,7 +242,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         #region Block Actions
 
         [BlockAction]
-        public BlockActionResult PartialApproval( string id, List<string> approved, List<string> denied, List<EventPartialApproval> events )
+        public BlockActionResult PartialApproval( string id, List<string> approved, List<string> denied, List<EventPartialApproval> events, string notes )
         {
             try
             {
@@ -347,7 +347,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
                 Task task = new Task( () =>
                 {
-                    PartialApprovalNotifications( item, approved, denied, events );
+                    PartialApprovalNotifications( item, approved, denied, events, notes );
                 } );
                 taskBag.Add( task );
                 task.Start();
@@ -1886,7 +1886,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             var output = email.Send();
         }
 
-        private void PartialApprovalNotifications( ContentChannelItem item, List<string> approved, List<string> denied, List<EventPartialApproval> events )
+        private void PartialApprovalNotifications( ContentChannelItem item, List<string> approved, List<string> denied, List<EventPartialApproval> events, string notes )
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
@@ -1897,8 +1897,13 @@ namespace Rock.Blocks.Plugins.EventDashboard
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             item.LoadAttributes();
             item.ChildItems.Select( ccia => ccia.ChildContentChannelItem ).ToList().LoadAttributes();
-            string subject = "Some of Your Changes Have Been Approved";
-            string message = "Please see below which modifications have been approved or denied:<br/>";
+            string subject = "Some of Your Changes Have Been Approved for " + item.Title;
+            string message = "";
+            if ( !String.IsNullOrEmpty( notes ) )
+            {
+                message = notes + "<br/>";
+            }
+            message += "Please see below which modifications have been approved or denied:<br/>";
             message += "<strong>Approved Modifications</strong><br/>";
             message += "<ul>";
             for ( int i = 0; i < approved.Count(); i++ )
