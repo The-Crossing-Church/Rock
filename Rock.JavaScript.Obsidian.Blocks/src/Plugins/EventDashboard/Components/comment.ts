@@ -74,8 +74,8 @@ export default defineComponent({
   </div>
   <div class="note">
     <div><small>{{formatDateTime(comment.createdDateTime)}}</small></div>
-    <div class="content">
-      {{comment.content}}
+    <div class="content" v-html="comment.content">
+      <!-- {{comment.content}} -->
     </div>
   </div>
   <div class="avatar-wrapper" v-if="className.includes('my-note')" data-toggle="collapse" :data-target="collapseId" aria-expanded="false" :aria-controls="collapseName">
