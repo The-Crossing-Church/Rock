@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using Rock.Attribute;
-using Rock.Data;
-using Rock.Model;
-using Rock.Blocks.Plugins.ViewModels;
-using Rock.Web.Cache;
-using Rock.SystemGuid;
-using Rock.Communication;
+
 using Newtonsoft.Json;
+
+using Rock.Attribute;
+using Rock.Blocks.Plugins.ViewModels;
+using Rock.Communication;
+using Rock.Data;
+using Rock.Field;
+using Rock.Model;
+using Rock.SystemGuid;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugins.EventForm
 {
@@ -1377,6 +1380,10 @@ namespace Rock.Blocks.Plugins.EventForm
             events.LoadAttributes();
             string message = "";
             string subject = "";
+
+            EventFormShared helper = new EventFormShared();
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
+
             List<GroupMember> groupMembers = new List<GroupMember>();
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
@@ -1404,7 +1411,9 @@ namespace Rock.Blocks.Plugins.EventForm
                 subject = p.FullName + " is Requesting Changes to " + item.Title;
                 message = "Details of the changes are as follows: <br/><br/>";
             }
-            message += GetRequestDetails( item, events );
+
+            //message += GetRequestDetails( item, events );
+            message += helper.GetRequestDetails( item, events );
 
             GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
             var header = attributesCache.GetValue( "EmailHeader" );
@@ -1448,6 +1457,10 @@ namespace Rock.Blocks.Plugins.EventForm
             events.LoadAttributes();
             string message = "";
             string subject = "";
+
+            EventFormShared helper = new EventFormShared();
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
+
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
                 subject = "Your Request has been approved";
@@ -1458,7 +1471,8 @@ namespace Rock.Blocks.Plugins.EventForm
                 subject = "Your Request has been submitted";
                 message = "Your Event Request has been submitted and is pending approval. You can expect a response from the Events Director within 48 hours and/or 2 business days, if not sooner. Thank you! <br/>The details of your request are as follows: <br/><br/>";
             }
-            message += GetRequestDetails( item, events );
+            //message += GetRequestDetails( item, events );
+            message += helper.GetRequestDetails( item, events );
 
             //Deadline Reminders
             DateTime firstDate = item.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ) ).OrderBy( e => e.Date ).FirstOrDefault();
@@ -1586,6 +1600,7 @@ namespace Rock.Blocks.Plugins.EventForm
             var output = email.Send();
         }
 
+        /*
         private string GetRequestDetails( ContentChannelItem item, List<ContentChannelItem> events )
         {
             ContentChannelItem itemChanges = null;
@@ -1938,6 +1953,7 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             return message;
         }
+        */
 
         #endregion Helpers
 
