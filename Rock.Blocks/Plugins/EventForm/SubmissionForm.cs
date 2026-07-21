@@ -1979,26 +1979,5 @@ namespace Rock.Blocks.Plugins.EventForm
             public bool isPreApproved { get; set; }
             public string message { get; set; }
         }
-        public class TableSetUp
-        {
-            public string Room { get; set; }
-            public string TypeofTable { get; set; }
-            public int NumberofTables { get; set; }
-            public int NumberofChairs { get; set; }
-        }
-        public class OpsInventorySetUp
-        {
-            public string InventoryItem { get; set; }
-            public int QuantityNeeded { get; set; }
-        }
-        public class DiscountCodeSetUp
-        {
-            public string CodeType { get; set; }
-            public string Code { get; set; }
-            public int Amount { get; set; }
-            public string AutoApply { get; set; }
-            public string EffectiveDateRange { get; set; }
-            public int? MaxUses { get; set; }
-        }
     }
 }

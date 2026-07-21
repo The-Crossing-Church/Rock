@@ -1897,6 +1897,10 @@ namespace Rock.Blocks.Plugins.EventDashboard
             url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
             item.LoadAttributes();
             item.ChildItems.Select( ccia => ccia.ChildContentChannelItem ).ToList().LoadAttributes();
+
+            EventFormShared helper = new EventFormShared();
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, "RoomSetUp", "DiscountCodes", "OpsInventory" );
+
             string subject = "Some of Your Changes Have Been Approved for " + item.Title;
             string message = "";
             if ( !String.IsNullOrEmpty( notes ) )
@@ -1971,6 +1975,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     }
                 }
             }
+
+            message += "<strong>Here is the Current State of your Request</strong><br/>";
+            var details = item.ChildItems.Select( ccia => ccia.ChildContentChannelItem ).Where( cci => cci.ContentChannelId == EventDetailsContentChannelId ).ToList();
+            message += helper.GetRequestDetails( item, details );
+
             message +=
                 "<table style='width: 100%;'>" +
                     "<tr>" +
