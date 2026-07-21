@@ -53,7 +53,8 @@ export default defineComponent({
     originalRequest: Object as PropType<ContentChannelItemBag>,
     existing: Array as PropType<any[]>,
     showValidation: Boolean,
-    refName: String
+    refName: String,
+    isSuperUser: Boolean
   },
   setup() {
 
@@ -314,11 +315,13 @@ export default defineComponent({
     'e.attributeValues.ExpectedAttendance': {
       handler(val) {
         if(val >= 200) {
-          if(this.request?.attributeValues) {
-            this.request.attributeValues.NeedsOpsAccommodations = 'True'
-          }
-          if(this.e?.attributeValues) {
-            this.e.attributeValues.NeedsSecurity = 'True'
+          if(this.isSuperUser) {
+            if(this.request?.attributeValues) {
+              this.request.attributeValues.NeedsOpsAccommodations = 'True'
+            }
+            if(this.e?.attributeValues) {
+              this.e.attributeValues.NeedsSecurity = 'True'
+            }
           }
         }
       }
@@ -333,7 +336,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name)]" ref="validator_att">
+      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name), rules.largeEventSecurity(e.attributeValues.ExpectedAttendance, request.attributeValues.NeedsOpsAccommodations, e.attributeValues.NeedsSecurity, isSuperUser)]" ref="validator_att">
         <rck-field
           v-model="e.attributeValues.ExpectedAttendance"
           :attribute="e.attributes.ExpectedAttendance"

@@ -11,10 +11,10 @@ export default defineComponent({
         "tcc-switch": Toggle
     },
     props: {
-        viewModel: {
-            type: Object as PropType<SubmissionFormBlockViewModel>,
-            required: false
-        }
+      viewModel: {
+        type: Object as PropType<SubmissionFormBlockViewModel>,
+        required: false
+      }
     },
     setup() {
     },

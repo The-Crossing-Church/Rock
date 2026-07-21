@@ -49,6 +49,17 @@ const rules = {
     }
     return true
   },
+  largeEventSecurity: (attendance: number, needsOps: string, needsSecurity: string, isSuperUser: boolean) => {
+    if(attendance >= 200) {
+      if(!isSuperUser) {
+        return `Events expecting 200 or more people are required to have security personnel, please ask your ministry's event admin to submit your request`
+      }
+      if(needsOps == 'False' || needsSecurity == 'False') {
+        return `Events expecting 200 or more people are required to have security personnel`
+      }
+    }
+    return true
+  },
   maxRegistration: (value: number, rooms: string, locs: Array<any>, key: string, hasOnline: boolean) => {
     if(rooms) {
       let selectedRooms = JSON.parse(rooms)
@@ -103,7 +114,6 @@ const rules = {
       let endTime = DateTime.fromFormat(end, "HH:mm:ss")
       let interval = Interval.fromDateTimes(startTime, endTime)
       let hours = interval.length('hours')
-      console.log(startTime, endTime, interval, hours)
       if(hours < 3) {
         return 'Security personnel must be hired for a minimum of 3 hours'
       }
