@@ -1,151 +1,149 @@
-import { defineComponent, PropType } from "vue";
-import { DefinedValueBag } from "../../ViewModels/definedValueBag"
-import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel";
-import Toggle from "./toggle";
-import { DateTime, Duration } from "luxon";
-
+import { defineComponent, PropType } from "vue"
+import { SubmissionFormBlockViewModel } from "../submissionFormBlockViewModel"
+import Toggle from "./toggle"
+import { DateTime, Duration } from "luxon"
 
 export default defineComponent({
-    name: "EventForm.Components.ResourceSwitches",
-    components: {
-        "tcc-switch": Toggle
+  name: "EventForm.Components.ResourceSwitches",
+  components: {
+    "tcc-switch": Toggle
+  },
+  props: {
+    viewModel: {
+      type: Object as PropType<SubmissionFormBlockViewModel>,
+      required: false
+    }
+  },
+  setup() {
+  },
+  data() {
+    return {
+
+    };
+  },
+  methods: {
+    findTense(numDays: any): String {
+      if (this.viewModel?.request.attributeValues) {
+        let av = this.viewModel?.request?.attributeValues.EventDates
+        if (av) {
+          let dates = av?.split(",").map(d => d.trim())
+          if (dates && dates.length > 0) {
+            let today = DateTime.now()
+            let first = dates.map((i) => {
+              return DateTime.fromFormat(i, 'yyyy-MM-dd')
+            })?.sort().shift()?.minus({ days: numDays })
+            if (this.isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
+              return 'is'
+            }
+            return 'was'
+          } 
+        }
+      }
+      return 'is'
     },
-    props: {
-      viewModel: {
-        type: Object as PropType<SubmissionFormBlockViewModel>,
-        required: false
+    findDate(numDays: any): String {
+      if (this.viewModel?.request.attributeValues) {
+        let av = this.viewModel?.request?.attributeValues.EventDates
+        let dates = av?.split(",").map(d => d.trim())
+        if (dates && dates.length > 0) {
+          let span = Duration.fromObject({ days: numDays })
+          let first = dates.map((i) => {
+            return DateTime.fromFormat(i, 'yyyy-MM-dd')
+          })?.sort().shift()
+          return first != null ? first.minus(span).toFormat("EEEE, MMMM d") : ''
+        }
+      }
+      return ''
+    },
+    switchIsDisabled(tense: string, key: string) {
+      if(!(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser || this.viewModel?.isRoomAdmin)) {
+        return true
+      }
+      if(tense == 'was') {
+        //We are past the date you can request new resources
+        //Allow toggle if the original request has the resource
+        if(this.viewModel?.originalRequest?.attributeValues) {
+          let val = this.viewModel.originalRequest.attributeValues[key]
+          return val == 'False'
+        } 
+        if(this.viewModel?.request?.attributeValues) {
+          return this.viewModel?.request?.attributeValues[key] == 'False'
+        }
+        return true
+      }
+      return false
+    }
+  },
+  computed: {
+    isFuneralRequest() {
+      if (this.viewModel?.request.attributeValues) {
+        var av = (this.viewModel.request.attributeValues['Ministry'])
+        if(av != '') {
+          let val = JSON.parse(av)
+          if (val?.text?.toLowerCase().includes("funeral")) {
+            return true
+          }
+        }
+      }
+      return false
+    },
+    twoWeeksTense(): any {
+      return this.findTense(14)
+    },
+    thirtyDaysTense(): any {
+      return this.findTense(30)
+    },
+    sixWeeksTense(): any {
+      return this.findTense(42)
+    },
+    twoWeeksBeforeEventStart(): any {
+      return this.findDate(14)
+    },
+    thirtyDaysBeforeEventStart(): any {
+      return this.findDate(30)
+    },
+    sixWeeksBeforeEventStart(): any {
+      return this.findDate(42)
+    },
+    earliestPubDate() {
+      let eDate = DateTime.now()
+      if (this.viewModel && this.viewModel.request?.attributeValues) {
+        let av = (this.viewModel.request.attributeValues['Status'])
+        if (this.viewModel.request?.idKey && av != 'Draft') {
+          if (this.viewModel.request.startDateTime) {
+            eDate = DateTime.fromFormat(this.viewModel.request.startDateTime, 'yyyy-MM-DD')
+          }
+        }
+        let span = Duration.fromObject({ days: 21 })
+        eDate = eDate.plus(span)
+        //Override for Funerals
+        if (this.isFuneralRequest) {
+          eDate = DateTime.now()
+        }
+      }
+      return eDate.toFormat('yyyy-MM-DD')
+    },
+  },
+  watch: {
+    'viewModel.request.attributeValues.NeedsOpsAccommodations': {
+      handler(val) {
+        if(val == 'True' && this.viewModel?.request?.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsSpace = "True"
+        }
       }
     },
-    setup() {
+    'viewModel.request.attributeValues.NeedsSpace': {
+      handler(val) {
+        if(val == 'False' && this.viewModel?.request?.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
+        }
+      }
     },
-    data() {
-        return {
+  },
+  mounted() {
 
-        };
-    },
-    methods: {
-        findTense(numDays: any): String {
-            if (this.viewModel?.request.attributeValues) {
-                let av = this.viewModel?.request?.attributeValues.EventDates
-                if (av) {
-                    let dates = av?.split(",").map(d => d.trim())
-                    if (dates && dates.length > 0) {
-                        let today = DateTime.now()
-                        let first = dates.map((i) => {
-                            return DateTime.fromFormat(i, 'yyyy-MM-dd')
-                        })?.sort().shift()?.minus({ days: numDays })
-                        if (this.isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
-                            return 'is'
-                        }
-                        return 'was'
-                    } 
-                }
-            }
-            return 'is'
-        },
-        findDate(numDays: any): String {
-          if (this.viewModel?.request.attributeValues) {
-            let av = this.viewModel?.request?.attributeValues.EventDates
-            let dates = av?.split(",").map(d => d.trim())
-            if (dates && dates.length > 0) {
-              let span = Duration.fromObject({ days: numDays })
-              let first = dates.map((i) => {
-                return DateTime.fromFormat(i, 'yyyy-MM-dd')
-              })?.sort().shift()
-              return first != null ? first.minus(span).toFormat("EEEE, MMMM d") : ''
-            }
-          }
-          return ''
-        },
-        switchIsDisabled(tense: string, key: string) {
-          if(!(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser || this.viewModel?.isRoomAdmin)) {
-            return true
-          }
-          if(tense == 'was') {
-            //We are past the date you can request new resources
-            //Allow toggle if the original request has the resource
-            if(this.viewModel?.originalRequest?.attributeValues) {
-              let val = this.viewModel.originalRequest.attributeValues[key]
-              return val == 'False'
-            } 
-            if(this.viewModel?.request?.attributeValues) {
-              return this.viewModel?.request?.attributeValues[key] == 'False'
-            }
-            return true
-          }
-          return false
-        }
-    },
-    computed: {
-        isFuneralRequest() {
-            if (this.viewModel?.request.attributeValues) {
-                var av = (this.viewModel.request.attributeValues['Ministry'])
-                if(av != '') {
-                    let val = JSON.parse(av)
-                    if (val?.text?.toLowerCase().includes("funeral")) {
-                        return true
-                    }
-                }
-            }
-            return false
-        },
-        twoWeeksTense(): any {
-            return this.findTense(14)
-        },
-        thirtyDaysTense(): any {
-            return this.findTense(30)
-        },
-        sixWeeksTense(): any {
-            return this.findTense(42)
-        },
-        twoWeeksBeforeEventStart(): any {
-            return this.findDate(14)
-        },
-        thirtyDaysBeforeEventStart(): any {
-            return this.findDate(30)
-        },
-        sixWeeksBeforeEventStart(): any {
-            return this.findDate(42)
-        },
-        earliestPubDate() {
-            let eDate = DateTime.now()
-            if (this.viewModel && this.viewModel.request?.attributeValues) {
-                let av = (this.viewModel.request.attributeValues['Status'])
-                if (this.viewModel.request?.idKey && av != 'Draft') {
-                    if (this.viewModel.request.startDateTime) {
-                        eDate = DateTime.fromFormat(this.viewModel.request.startDateTime, 'yyyy-MM-DD')
-                    }
-                }
-                let span = Duration.fromObject({ days: 21 })
-                eDate = eDate.plus(span)
-                //Override for Funerals
-                if (this.isFuneralRequest) {
-                    eDate = DateTime.now()
-                }
-            }
-            return eDate.toFormat('yyyy-MM-DD')
-        },
-    },
-    watch: {
-      'viewModel.request.attributeValues.NeedsOpsAccommodations': {
-        handler(val) {
-          if(val == 'True' && this.viewModel?.request?.attributeValues) {
-            this.viewModel.request.attributeValues.NeedsSpace = "True"
-          }
-        }
-      },
-      'viewModel.request.attributeValues.NeedsSpace': {
-        handler(val) {
-          if(val == 'False' && this.viewModel?.request?.attributeValues) {
-            this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
-          }
-        }
-      },
-    },
-    mounted() {
-
-    },
-    template: `
+  },
+  template: `
 <h3>Let's Design Your Event</h3>
 <i><b>Select all that apply</b></i>
 <br />

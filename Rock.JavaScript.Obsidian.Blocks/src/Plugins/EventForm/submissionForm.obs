@@ -531,12 +531,70 @@ export default defineComponent({
       let requestIsValid = true
       let invalidSections = [] as string[]
       if(this.viewModel?.request && this.viewModel.request.attributeValues) {
+        let dates = this.viewModel.request.attributeValues.EventDates.split(',').map((d) => DateTime.fromFormat(d.trim(), 'yyyy-MM-dd')).sort()
+        let firstDate = dates[0]
+        let lastDate = dates[dates.length - 1]
+
         if(this.rules.required(this.viewModel.request.title, '') != true ||
           this.rules.required(this.viewModel.request.attributeValues.Contact, '') != true ||
           this.rules.required(this.viewModel.request.attributeValues.Ministry, '') != true ||
           this.rules.required(this.viewModel.request.attributeValues.EventDates, '') != true
         ) {
           requestIsValid = false
+        }
+
+        let twoWeeksTense = this.findTense(14)
+        let thirtyDaysTense = this.findTense(30)
+        let pubDateCutOff = lastDate.minus({weeks: 6})
+        if(this.viewModel.request.attributeValues.PublicityStartDate) {
+          pubDateCutOff = DateTime.fromISO(this.viewModel.request.attributeValues.PublicityStartDate).minus({days: 21})
+        }
+        let sixWeeksTense = DateTime.now() > pubDateCutOff ? 'was' : 'is'
+        let registrationFirstGoLive = ''
+        if(this.viewModel.request.attributeValues.IsSame == 'True') {
+          if(this.viewModel.events && this.viewModel.events.length > 0 ) {
+            let event = this.viewModel.events[0]
+            registrationFirstGoLive = event?.attributeValues?.RegistrationStartDate as string
+          }
+        } else {
+          let registrationDates = this.viewModel.events.map((e: any) => { 
+            let str = e?.attributeValues?.RegistrationStartDate.trim() 
+            if(str) {
+              return DateTime.fromFormat(str, 'yyyy-MM-dd')
+            }
+          }).sort((a: any, b: any) => {
+            if(a < b) {
+              return -1
+            } else if(a > b) {
+              return 1
+            }
+            return 0
+          })
+          if(registrationDates && registrationDates.length > 0) {
+            let regDate = registrationDates[0]
+            registrationFirstGoLive = regDate?.toFormat('yyyy-MM-dd') as string
+          }
+        }
+        let registrationTense = this.findTense(14, registrationFirstGoLive)
+        let webCalTense = this.findTense(14, this.viewModel.request.attributeValues.WebCalendarGoLive)
+
+        //Drafts, cut anything that is past-deadline
+        //Do this before validation so we don't have errors display for sections not on the request anymore
+        if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
+          if(twoWeeksTense == 'was') {
+            this.viewModel.request.attributeValues.NeedsOnline = 'False'
+            this.viewModel.request.attributeValues.NeedsCatering = 'False'
+            this.viewModel.request.attributeValues.NeedsOpsAccommodations = 'False'
+            this.viewModel.request.attributeValues.NeedsWebCalendar = 'False'
+            this.viewModel.request.attributeValues.NeedsProductionAccommodations = 'False'
+            this.viewModel.request.attributeValues.NeedsRegistration = 'False'
+          }
+          if(thirtyDaysTense == 'was') {
+            this.viewModel.request.attributeValues.NeedsChildCare = 'False'
+          }
+          if(sixWeeksTense == 'was') {
+            this.viewModel.request.attributeValues.NeedsPublicity = 'False'
+          }
         }
 
         //Fields on Event 
@@ -546,9 +604,6 @@ export default defineComponent({
             submittedDate = DateTime.fromISO(this.viewModel.request?.startDateTime)
           }
         }
-        let dates = this.viewModel.request.attributeValues.EventDates.split(',').map((d) => DateTime.fromFormat(d.trim(), 'yyyy-MM-dd')).sort()
-        let firstDate = dates[0]
-        let lastDate = dates[dates.length - 1]
         if(this.viewModel.request.attributeValues.NeedsPublicity == 'True') {
           let minStart = submittedDate.plus({weeks: 3})
           let minPubStartDate = minStart.toFormat("yyyy-MM-dd")
@@ -611,7 +666,8 @@ export default defineComponent({
               let rooms = this.viewModel.events[i].attributeValues?.Rooms as string
               if(this.rules.required(this.viewModel.events[i].attributeValues?.Rooms, '') != true ||
                 this.rules.required(this.viewModel.events[i].attributeValues?.ExpectedAttendance, '') != true ||
-                this.rules.attendance(numAttendance, rooms, this.viewModel.locations, '') != true
+                this.rules.attendance(numAttendance, rooms, this.viewModel.locations, '') != true || 
+                this.rules.largeEventSecurity(numAttendance, this.viewModel.request.attributeValues.NeedsOpsAccommodations, `${this.viewModel.events[i].attributeValues?.NeedsSecurity}`, this.viewModel.isSuperUser ) != true
               ) {
                 requestIsValid = false
                 eventIsValid = false
@@ -728,7 +784,19 @@ export default defineComponent({
               for(let attr in opsAttrs) {
                 let event = this.viewModel.events[i]
                 if(event.attributeValues && (event.attributeValues[attr] != '' && event.attributeValues[attr] != 'False')) {
+                  console.log(attr, 'is true now')
                   opsIsValid = true
+                }
+              }
+              if(this.viewModel.request.attributeValues.NeedsOpsAccommodations == 'True') {
+                if(this.viewModel.events[i].attributeValues?.NeedsSecurity == 'True') {
+                  if(this.rules.required(this.viewModel.events[i].attributeValues?.SecurityBudgetMinistry, '') != true ||
+                    this.rules.required(this.viewModel.events[i].attributeValues?.SecurityBudgetLine, '') != true ||
+                    this.rules.required(this.viewModel.events[i].attributeValues?.SecurityStartTime, '') != true ||
+                    this.rules.required(this.viewModel.events[i].attributeValues?.SecurityEndTime, '') != true
+                  ) {
+                    opsIsValid = false
+                  }
                 }
               }
               if(!opsIsValid) {
@@ -746,60 +814,9 @@ export default defineComponent({
             }
           }
         }
-        this.viewModel.request.attributeValues.RequestIsValid = requestIsValid ? 'True' : 'False'
 
         //Remove/Readonly Sections
-        let twoWeeksTense = this.findTense(14)
-        let thirtyDaysTense = this.findTense(30)
-        let pubDateCutOff = lastDate.minus({weeks: 6})
-        if(this.viewModel.request.attributeValues.PublicityStartDate) {
-          pubDateCutOff = DateTime.fromISO(this.viewModel.request.attributeValues.PublicityStartDate).minus({days: 21})
-        }
-        let sixWeeksTense = DateTime.now() > pubDateCutOff ? 'was' : 'is'
-        let registrationFirstGoLive = ''
-        if(this.viewModel.request.attributeValues.IsSame == 'True') {
-          if(this.viewModel.events && this.viewModel.events.length > 0 ) {
-            let event = this.viewModel.events[0]
-            registrationFirstGoLive = event?.attributeValues?.RegistrationStartDate as string
-          }
-        } else {
-          let registrationDates = this.viewModel.events.map((e: any) => { 
-            let str = e?.attributeValues?.RegistrationStartDate.trim() 
-            if(str) {
-              return DateTime.fromFormat(str, 'yyyy-MM-dd')
-            }
-          }).sort((a: any, b: any) => {
-            if(a < b) {
-              return -1
-            } else if(a > b) {
-              return 1
-            }
-            return 0
-          })
-          if(registrationDates && registrationDates.length > 0) {
-            let regDate = registrationDates[0]
-            registrationFirstGoLive = regDate?.toFormat('yyyy-MM-dd') as string
-          }
-        }
-        let registrationTense = this.findTense(14, registrationFirstGoLive)
-        let webCalTense = this.findTense(14, this.viewModel.request.attributeValues.WebCalendarGoLive)
-        //Drafts, cut anything that is past-deadline
-        if(this.viewModel.request.attributeValues.RequestStatus == 'Draft') {
-          if(twoWeeksTense == 'was') {
-            this.viewModel.request.attributeValues.NeedsOnline = 'False'
-            this.viewModel.request.attributeValues.NeedsCatering = 'False'
-            this.viewModel.request.attributeValues.NeedsOpsAccommodations = 'False'
-            this.viewModel.request.attributeValues.NeedsWebCalendar = 'False'
-            this.viewModel.request.attributeValues.NeedsProductionAccommodations = 'False'
-            this.viewModel.request.attributeValues.NeedsRegistration = 'False'
-          }
-          if(thirtyDaysTense == 'was') {
-            this.viewModel.request.attributeValues.NeedsChildCare = 'False'
-          }
-          if(sixWeeksTense == 'was') {
-            this.viewModel.request.attributeValues.NeedsPublicity = 'False'
-          }
-        } else if (this.viewModel.request.attributeValues.RequestStatus == 'Submitted' || this.viewModel.request.attributeValues.RequestStatus == 'In Progress'){
+        if (this.viewModel.request.attributeValues.RequestStatus == 'Submitted' || this.viewModel.request.attributeValues.RequestStatus == 'In Progress'){
           //If the request is Submitted or In Progress, only remove if the section is invalid
           if(twoWeeksTense == 'was') {
             if(invalidSections.includes('Online')) {
@@ -859,6 +876,8 @@ export default defineComponent({
         console.log(invalidSections)
         console.log('ReadOnly Sections')
         console.log(this.readonlySections)
+
+        this.viewModel.request.attributeValues.RequestIsValid = requestIsValid ? 'True' : 'False'
       }
     },
     validationChange(errs: any) {
@@ -1016,6 +1035,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Space requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('space_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Add Space to Requested Resources List
         if(idx < 0) {
@@ -1032,6 +1057,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Online requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('online_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Add Online to Requested Resources List
         if(idx < 0) {
@@ -1048,6 +1079,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Catering requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('catering_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Auto-true for CC Catering
         if(this.viewModel?.request.attributeValues?.NeedsChildCare == 'True') {
@@ -1072,6 +1109,12 @@ export default defineComponent({
         if(this.viewModel?.request.attributeValues) {
           this.viewModel.request.attributeValues.NeedsChildCareCatering = 'False'
         }
+        //Remove any errors related to Childcare requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('childcare_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Auto-true for CC Catering
         if(this.viewModel?.request.attributeValues?.NeedsCatering == 'True') {
@@ -1092,6 +1135,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Childcare Catering requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('cccatering_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Add Childcare to Requested Resources List
         if(idx < 0) {
@@ -1108,6 +1157,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to OPS requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('ops_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Add Ops to Requested Resources List
         if(idx < 0) {
@@ -1129,6 +1184,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Registration requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('reg_')) {
+            err.errors = []
+          }
+        })
       } else {
         //Add Registration to Requested Resources List
         if(idx < 0) {
@@ -1145,6 +1206,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Publicity requests
+        this.requestErrors.forEach(err => {
+          if(err.ref == 'publicity') {
+            err.errors = []
+          }
+        })
       } else {
         //Add Publicity to Requested Resources List
         if(idx < 0) {
@@ -1161,6 +1228,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Production requests
+        this.requestErrors.forEach(err => {
+          if(err.ref == 'prodtech') {
+            err.errors = []
+          }
+        })
       } else {
         //Add Production to Requested Resources List
         if(idx < 0) {
@@ -1177,6 +1250,12 @@ export default defineComponent({
         if(idx > -1) {
           this.resources.splice(idx, 1)
         }
+        //Remove any errors related to Web Cal requests
+        this.requestErrors.forEach(err => {
+          if(err.ref == 'webcal') {
+            err.errors = []
+          }
+        })
       } else {
         //Add Web Calendar to Requested Resources List
         if(idx < 0) {

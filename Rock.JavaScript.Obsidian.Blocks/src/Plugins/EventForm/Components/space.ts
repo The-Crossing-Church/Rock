@@ -278,7 +278,29 @@ export default defineComponent({
     },
     validationChange(errs: Record<string, string>[]) {
       this.errors = errs
-    }
+    },
+    withinValidWindowForResource(numDays: any): Boolean {
+      //Determine if the request is within the window for number of days provided 
+      //numDays: the minimum number of days out the request has to be for the desired additional resources 
+      //i.e. Ops Accommodations must be requested 14 days in advance 
+      if (this.request?.attributeValues) {
+        let av = this.request?.attributeValues.EventDates
+        if (av) {
+          let dates = av?.split(",").map(d => d.trim())
+          if (dates && dates.length > 0) {
+            let today = DateTime.now()
+            let first = dates.map((i) => {
+              return DateTime.fromFormat(i, 'yyyy-MM-dd')
+            })?.sort().shift()?.minus({ days: numDays })
+            if ((first && first.startOf("day") >= today.startOf("day"))) {
+              return true
+            }
+            return false
+          } 
+        }
+      }
+      return true
+    },
   },
   watch: {
     errors: {
@@ -317,7 +339,12 @@ export default defineComponent({
         if(val >= 200) {
           if(this.isSuperUser) {
             if(this.request?.attributeValues) {
-              this.request.attributeValues.NeedsOpsAccommodations = 'True'
+              if(this.request.attributeValues?.NeedsOpsAccommodations == 'False') {
+                let canRequestSecurity = this.withinValidWindowForResource(14)
+                if(canRequestSecurity) {
+                  this.request.attributeValues.NeedsOpsAccommodations = 'True'
+                }
+              }
             }
             if(this.e?.attributeValues) {
               this.e.attributeValues.NeedsSecurity = 'True'

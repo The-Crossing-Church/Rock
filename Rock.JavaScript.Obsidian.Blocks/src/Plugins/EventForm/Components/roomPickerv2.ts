@@ -105,8 +105,6 @@ export default defineComponent({
       selectedValue: { 
         handler (val, oval) {
           if (val) {
-            console.log('Selected Val Watch')
-            console.log(val)
             let rockVal = {
               value: val.map((i: any) => i.value).join(","),
               text: val.map((i: any) => i.text.split(" (")[0]).join(", ")
