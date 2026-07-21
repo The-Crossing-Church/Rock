@@ -38,14 +38,6 @@ export default defineComponent({
           let start = DateTime.fromFormat(this.e.attributeValues.StartTime, "HH:mm:ss")
 
           if(start.isValid){
-            if(this.setUpTime) {
-              let setUp = DateTime.fromFormat(this.setUpTime, "HH:mm:ss")
-              if(start && setUp) {
-                let interval = Interval.fromDateTimes(setUp, start)
-                newBuffer = interval.length('minutes')
-              }
-            }
-
             if(this.e.attributeValues.RoomSetUp) {
               let data = JSON.parse(this.e.attributeValues.RoomSetUp)
               if(data && data.length > 0) {
@@ -78,14 +70,6 @@ export default defineComponent({
           let end = DateTime.fromFormat(this.e.attributeValues.EndTime, "HH:mm:ss")
 
           if(end.isValid){
-            if(this.tearDownTime) {
-              let tearDown = DateTime.fromFormat(this.tearDownTime, "HH:mm:ss")
-              if(end && tearDown) {
-                let interval = Interval.fromDateTimes(end, tearDown)
-                newBuffer = interval.length('minutes')
-              }
-            }
-  
             if(this.e.attributeValues.RoomSetUp) {
               let data = JSON.parse(this.e.attributeValues.RoomSetUp)
               if(data && data.length > 0) {
@@ -143,10 +127,30 @@ export default defineComponent({
         }
       },
       setUpTime(val) {
-        this.startChanged()
+        if(this.e?.attributeValues?.StartTime) {
+          let start = DateTime.fromFormat(this.e.attributeValues.StartTime, "HH:mm:ss")
+          if(val) {
+            let setUp = DateTime.fromFormat(val, "HH:mm:ss")
+            if(start && setUp) {
+              let interval = Interval.fromDateTimes(setUp, start)
+              let buffer = interval.length('minutes')
+              this.e.attributeValues.StartBuffer = `${buffer}`
+            }
+          }
+        }
       },
       tearDownTime(val) {
-        this.endChanged()
+        if(this.e?.attributeValues?.EndTime) {
+          let end = DateTime.fromFormat(this.e.attributeValues.EndTime, "HH:mm:ss")
+          if(val) {
+            let tearDown = DateTime.fromFormat(val, "HH:mm:ss")
+            if(end && tearDown) {
+              let interval = Interval.fromDateTimes(end, tearDown)
+              let buffer = interval.length('minutes')
+              this.e.attributeValues.EndBuffer = `${buffer}`
+            }
+          }
+        }
       }
     },
     mounted() {
