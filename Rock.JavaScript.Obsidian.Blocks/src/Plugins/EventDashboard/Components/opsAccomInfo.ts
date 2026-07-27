@@ -318,7 +318,9 @@ export default defineComponent({
           <div class="mb-2">
             <div class="form-group static-control">
               <rck-lbl>{{av.attr.name}}</rck-lbl>
-              <tcc-img v-for="img in av.value" :value="img" :key="'img_' + idx"></tcc-img>
+              <div>
+                <tcc-img v-for="img in av.value" :value="img" :key="'img_' + idx"></tcc-img>
+              </div>
             </div>
           </div>
         </template>

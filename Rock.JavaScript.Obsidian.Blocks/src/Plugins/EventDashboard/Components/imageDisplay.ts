@@ -44,7 +44,7 @@ export default defineComponent({
     },
     template: `
     <template v-if="imgAlt != ''">
-        <img :src="imgUrl" :alt="imgAlt" class="img-responsive" style="max-width: 250px;" />
+        <img :src="imgUrl" :alt="imgAlt" class="img-responsive" style="max-width: 250px; display: inline-block;" />
     </template>
     <template v-else>
         <div>Empty</div>

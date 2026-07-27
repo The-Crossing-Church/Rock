@@ -28,6 +28,7 @@ import RockField from "@Obsidian/Controls/rockField.obs"
 import Modal from "@Obsidian/Controls/modal.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
+import TabbedBar from "@Obsidian/Controls/tabbedBar.obs"
 import rules from "./Rules/rules"
 
 const store = useStore()
@@ -68,7 +69,8 @@ export default defineComponent({
       "rck-field": RockField,
       "rck-btn": RockButton,
       "rck-modal": Modal,
-      "rck-ddl": DropDownList
+      "rck-ddl": DropDownList,
+      "rck-tabs": TabbedBar
   },
   setup() {
       const viewModel = useConfigurationValues<SubmissionFormBlockViewModel | null>();
@@ -147,6 +149,8 @@ export default defineComponent({
           preFillModalOption: "",
           preFillTarget: "",
           preFillSource: "",
+          preFillOrCopyTabs: ['Prefill', 'Copy', 'Edit'],
+          preFillOrCopySelectedTab: 'Prefill',
           copyModal: false,
           rules: rules,
           readonlySections: [] as string[],
@@ -279,6 +283,28 @@ export default defineComponent({
         }
         return 'toast-success'
       },
+      preFillSectionOptions() { 
+        let options = [] as any[]
+        if(this.viewModel?.request?.attributeValues?.NeedsSpace == 'True') {
+          options.push({ text: 'Space', value: 'Event Space' })
+        }
+        if(this.viewModel?.request?.attributeValues?.NeedsCatering == 'True') {
+          options.push({ text: 'Catering', value: 'Event Catering' })
+        }
+        if(this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == 'True') {
+          options.push({ text: 'OPS Accomodations', value: 'Event Ops Requests' })
+        }
+        if(this.viewModel?.request?.attributeValues?.NeedsChildCare == 'True') {
+          options.push({ text: 'Childcare', value: 'Event Childcare' })
+        }
+        if(this.viewModel?.request?.attributeValues?.NeedsRegistration == 'True') {
+          options.push({ text: 'Registration', value: 'Event Registration' })
+        }
+        if(this.viewModel?.request?.attributeValues?.NeedsOnline == 'True') {
+          options.push({ text: 'Zoom', value: 'Event Online' })
+        }
+        return options
+      },
       preFillOptions() {
         let dates = this.viewModel?.events.map(e => { 
           return e.attributeValues?.EventDate
@@ -306,7 +332,98 @@ export default defineComponent({
         return dates
       },
       copyLabel() {
-        return `Select the dates you wish to prefill with the information from ${this.formatDate(this.preFillSource)}.`
+        return `Select the dates you wish to copy information from ${this.formatDate(this.preFillSource)} to.`
+      },
+      prefillCopyPreviewText() {
+        if(this.preFillOrCopySelectedTab == 'Copy') {
+          let preview = 'Copy details of '
+          if(!this.preFillModalOption || this.preFillModalOption == '') {
+            preview += 'all sections'
+          } else {
+            let sections
+            if(Array.isArray(this.preFillModalOption)) {
+              sections = this.preFillModalOption
+            } else if (typeof this.preFillModalOption === "string") {
+              sections = this.preFillModalOption?.split(',')
+            }
+            if(sections.length == 1) {
+              preview += 'the ' + sections[0] + ' section'
+            } else if(sections.length == 2) {
+              preview += 'the ' + sections.join(' and ') + ' sections'
+            } else {
+              preview += 'the '
+              sections.forEach((section, idx) => {
+                if(idx < (sections.length - 1)) {
+                  preview += section + ', '
+                } else {
+                  preview += section + ', and '
+                }
+              })
+              preview += ' sections'
+            }
+          }
+          preview += ' from ' + this.formatDate(this.preFillSource) + ' to ' 
+          if(!this.preFillTarget || this.preFillTarget == '') {
+            return ''
+          } else {
+            let dates
+            if(Array.isArray(this.preFillTarget)) {
+              dates = this.preFillTarget.map(d => { return this.formatDate(d) })
+            } else if (typeof this.preFillTarget === "string") {
+              dates = this.preFillTarget?.split(',').map(d => { return this.formatDate(d) })
+            }
+            if(dates.length == 1) {
+              preview += dates[0]
+            } else if(dates.length == 2) {
+              preview += dates.join(' and ')
+            } else {
+              dates.forEach((dt, idx) => {
+                if(idx < (dates.length - 1)) {
+                  preview += dt + ', '
+                } else {
+                  preview += dt + ', and '
+                }
+              })
+            }
+          }
+          return preview
+        } else if(this.preFillOrCopySelectedTab == 'Prefill') {
+          let preview = 'Prefill ' 
+          if(!this.preFillModalOption || this.preFillModalOption == '') {
+            preview += 'all sections of '
+          } else {
+            let sections
+            if(Array.isArray(this.preFillModalOption)) {
+              sections = this.preFillModalOption
+            } else if (typeof this.preFillModalOption === "string") {
+              sections = this.preFillModalOption?.split(',')
+            }
+            if(sections.length == 1) {
+              preview += 'the ' + sections[0] + ' section of '
+            } else if(sections.length == 2) {
+              preview += 'the ' + sections.join(' and ') + ' sections of '
+            } else {
+              preview += 'the '
+              sections.forEach((section, idx) => {
+                if(idx < (sections.length - 1)) {
+                  preview += section + ', '
+                } else {
+                  preview += section + ', and '
+                }
+              })
+              preview += ' sections of '
+            }
+          }
+          preview += this.formatDate(this.preFillTarget) + ' with details from ' 
+          if(this.preFillSource) {
+            preview += this.formatDate(this.preFillSource) 
+          } else {
+            preview += 'another date'
+          }
+          return preview
+        } else {
+          return ''
+        }
       }
   },
   methods: {
@@ -350,12 +467,12 @@ export default defineComponent({
         })
       }
     },
-    formatDate(date: string) {
+    formatDate(date: string, format: string = "MM/dd/yyyy") {
       let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
       if(!dt.isValid) {
         dt = DateTime.fromISO(date)
       }
-      return dt.toFormat("MM/dd/yyyy")
+      return dt.toFormat(format)
     },
     getEventStepTitle(idx: number) {
       if(this.viewModel?.events) {
@@ -698,7 +815,11 @@ export default defineComponent({
                 this.rules.required(this.viewModel.events[i].attributeValues?.FoodTime, '') != true ||
                 this.rules.timeCannotBeAfterEvent(foodTime, endTime, '') != true ||
                 this.rules.drinkTimeRequired(drinkTime, drinks, '') != true ||
-                (this.viewModel.events[i].attributeValues?.NeedsDelivery == 'True' && this.rules.required(this.viewModel.events[i].attributeValues?.FoodSetupLocation, '') != true)
+                (this.viewModel.events[i].attributeValues?.NeedsDelivery == 'True' && 
+                  this.rules.required(this.viewModel.events[i].attributeValues?.FoodSetupLocation, '') != true) ||
+                (this.viewModel.events[i].attributeValues?.NeedsDietaryAccommodations == 'True' && 
+                  this.rules.required(this.viewModel.events[i].attributeValues?.DietaryAccommodationInfo, '') != true
+                ) 
               ) {
                 requestIsValid = false
                 eventIsValid = false
@@ -772,42 +893,44 @@ export default defineComponent({
                   invalidSections.push('Registration')
                 }
               }
-              let opsAttrs = [] as string[]
-              let attrs = this.viewModel.events[i].attributes
-              for(let attr in attrs) {
-                let categories = attrs[attr].categories as any[]
-                if(categories.map((c: any) => c.name).includes('Event Ops Requests')) {
-                  opsAttrs.push(attr)
-                }
+            }
+            let opsAttrs = [] as string[]
+            let attrs = this.viewModel.events[i].attributes
+            for(let attr in attrs) {
+              let categories = attrs[attr].categories as any[]
+              if(categories.map((c: any) => c.name).includes('Event Ops Requests')) {
+                opsAttrs.push(attr)
               }
-              let opsIsValid = false
-              for(let attr in opsAttrs) {
-                let event = this.viewModel.events[i]
-                if(event.attributeValues && (event.attributeValues[attr] != '' && event.attributeValues[attr] != 'False')) {
-                  console.log(attr, 'is true now')
-                  opsIsValid = true
-                }
+            }
+            let opsIsValid = false
+            for(let attr in opsAttrs) {
+              let event = this.viewModel.events[i]
+              if(event.attributeValues && (event.attributeValues[attr] != '' && event.attributeValues[attr] != 'False')) {
+                opsIsValid = true
               }
-              if(this.viewModel.request.attributeValues.NeedsOpsAccommodations == 'True') {
-                if(this.viewModel.events[i].attributeValues?.NeedsSecurity == 'True') {
-                  if(this.rules.required(this.viewModel.events[i].attributeValues?.SecurityBudgetMinistry, '') != true ||
-                    this.rules.required(this.viewModel.events[i].attributeValues?.SecurityBudgetLine, '') != true ||
-                    this.rules.required(this.viewModel.events[i].attributeValues?.SecurityStartTime, '') != true ||
-                    this.rules.required(this.viewModel.events[i].attributeValues?.SecurityEndTime, '') != true
-                  ) {
-                    opsIsValid = false
-                  }
-                }
-              }
-              if(!opsIsValid) {
-                requestIsValid = false
-                eventIsValid = false
-                let idx = invalidSections.indexOf('Ops')
-                if(idx < 0) {
-                  invalidSections.push('Ops')
+            }
+            if(this.viewModel.request.attributeValues.NeedsOpsAccommodations == 'True') {
+              if(this.viewModel.events[i].attributeValues?.NeedsSecurity == 'True') {
+                if(this.rules.required(this.viewModel.events[i].attributeValues?.SecurityBudgetMinistry, '') != true ||
+                  this.rules.required(this.viewModel.events[i].attributeValues?.SecurityBudgetLine, '') != true ||
+                  this.rules.required(this.viewModel.events[i].attributeValues?.SecurityStartTime, '') != true ||
+                  this.rules.required(this.viewModel.events[i].attributeValues?.SecurityEndTime, '') != true ||
+                  this.rules.securityMinimumHours(`${this.viewModel.events[i].attributeValues?.SecurityStartTime}`, `${this.viewModel.events[i].attributeValues?.SecurityEndTime}`) != true
+                ) {
+                  opsIsValid = false
                 }
               }
             }
+
+            if(!opsIsValid) {
+              requestIsValid = false
+              eventIsValid = false
+              let idx = invalidSections.indexOf('Ops')
+              if(idx < 0) {
+                invalidSections.push('Ops')
+              }
+            }
+
             let event = this.viewModel.events[i]
             if(event.attributeValues) {
               event.attributeValues.EventIsValid = eventIsValid ? 'True' : 'False'
@@ -899,13 +1022,61 @@ export default defineComponent({
       let target = this.viewModel?.events.filter((e: any) => {
         return e.attributeValues.EventDate == this.preFillTarget
       })[0] 
+      this.copyInformation(source, target)
+      // if(source?.attributeValues && target?.attributeValues) {
+      //   let cats
+      //   if(Array.isArray(this.preFillModalOption)) {
+      //     cats = this.preFillModalOption
+      //   } else if (typeof this.preFillModalOption === "string") {
+      //     cats = this.preFillModalOption?.split(',')
+      //   }
+      //   cats = new Set(cats)
+      //   for(let attr in target?.attributes) {
+      //     if(attr != 'EventDate') {
+      //       if(this.preFillModalOption != '') {
+      //         let categories = target.attributes[attr].categories as any[]
+      //         categories = categories.map((c: any) => c.name)
+      //         let intersection = Array.from(cats.intersection(new Set(categories)))
+      //         if(intersection.length > 0) {
+      //           target.attributeValues[attr] = source.attributeValues[attr]
+      //         }
+      //       } else {
+      //         target.attributeValues[attr] = source.attributeValues[attr]
+      //       }
+      //     }
+      //   }
+      // }
+      this.preFillModal = false
+      // this.preFillSource = ""
+    }, 
+    copyDetails() {
+      this.copyModal = false
+      let source = this.viewModel?.events.filter((e: any) => {
+        return e.attributeValues.EventDate == this.preFillSource
+      })[0]
+      for(let i = 0; i < this.preFillTarget.length; i++) {
+        let target = this.viewModel?.events.filter((e: any) => {
+          return e.attributeValues.EventDate == this.preFillTarget[i]
+        })[0] 
+        this.copyInformation(source, target)
+      }
+    },
+    copyInformation(source, target) {
       if(source?.attributeValues && target?.attributeValues) {
+        let cats
+        if(Array.isArray(this.preFillModalOption)) {
+          cats = this.preFillModalOption
+        } else if (typeof this.preFillModalOption === "string") {
+          cats = this.preFillModalOption?.split(',')
+        }
+        cats = new Set(cats)
         for(let attr in target?.attributes) {
           if(attr != 'EventDate') {
             if(this.preFillModalOption != '') {
               let categories = target.attributes[attr].categories as any[]
               categories = categories.map((c: any) => c.name)
-              if(categories.includes(this.preFillModalOption)) {
+              let intersection = Array.from(cats.intersection(new Set(categories)))
+              if(intersection.length > 0) {
                 target.attributeValues[attr] = source.attributeValues[attr]
               }
             } else {
@@ -914,11 +1085,6 @@ export default defineComponent({
           }
         }
       }
-      this.preFillModal = false
-      this.preFillSource = ""
-    }, 
-    copyDetails() {
-      this.copyModal = false
     },
     findTense(numDays: any, specificDate?: any): String {
       if (this.viewModel?.request.attributeValues) {
@@ -1021,6 +1187,13 @@ export default defineComponent({
           if(this.viewModel.events[0].attributeValues) {
             this.viewModel.events[0].attributeValues.EventDate = ''
           }
+        } else if(val == 'True' && this.viewModel.events.length == 1) {
+          //Remove any errors related to Individual Times
+          this.requestErrors.forEach(err => {
+            if(err.ref.startsWith('time_')) {
+              err.errors = []
+            }
+          })
         } else {
           this.matchMultiEvent()
         }
@@ -1319,7 +1492,7 @@ export default defineComponent({
         }
       },
       deep: true
-    }
+    },
   },
   mounted() {
     if (!this.viewModel?.isSuperUser) {
@@ -1360,11 +1533,32 @@ export default defineComponent({
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
-          <h2 class="text-accent" style="display: flex; align-items: center;">
-            Information for {{formatDate(e.attributeValues.EventDate)}}
-            <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event</rck-btn>
-            <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</rck-btn>
-            <rck-btn class="ml-1 rounded-huge" btnType="accent-outlined" @click="preFillSource = e.attributeValues.EventDate; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Details to Other Dates</rck-btn>
+          <h2 class="text-accent d-none d-md-block" style="display: flex; align-items: center;">
+            Information for {{formatDate(e.attributeValues.EventDate, 'DDDD')}}
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-accent-outlined dropdown-toggle ml-2 mb-2 rounded-huge" data-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-file-pencil"></i> Copy/Fill
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = ''; preFillOrCopySelectedTab = 'Prefill'; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event Details</a>
+                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = e.attributeValues.EventDate; preFillOrCopySelectedTab = 'Copy'; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Event Details</a>
+                <a class="dropdown-item text-accent h6 my-1 hover" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a>
+              </div>
+            </div>
+          </h2>
+          <h2 class="text-accent d-block d-md-none">
+            Information for {{formatDate(e.attributeValues.EventDate, 'EEE, MMM d, yyyy')}}
+            <br/>
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-accent-outlined dropdown-toggle rounded-huge" data-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-file-pencil"></i> Copy/Fill
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = ''; preFillOrCopySelectedTab = 'Prefill'; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event Details</a>
+                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = e.attributeValues.EventDate; preFillOrCopySelectedTab = 'Copy'; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Event Details</a>
+                <a class="dropdown-item text-accent h6 my-1 hover" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a>
+              </div>
+            </div>
           </h2>
         </template>
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
@@ -1507,7 +1701,14 @@ export default defineComponent({
     </template>
   </rck-modal>
   <!-- Prefill Modal --> 
-  <rck-modal v-model="preFillModal" :clickBackdropToClose="true" :isCloseButtonHidden="true" cancelText="" modalWrapperClasses="modal-no-header">
+  <rck-modal 
+    v-model="preFillModal" 
+    :clickBackdropToClose="true" 
+    :isCloseButtonHidden="true" 
+    :isNarrow="true"
+    cancelText="" 
+    modalWrapperClasses="modal-no-header"
+  >
     <div class="pt-2">
       <div class="row">
         <div class="col col-xs-12">
@@ -1518,13 +1719,35 @@ export default defineComponent({
           ></rck-ddl>
         </div>
       </div>
+      <div class="row">
+        <div class="col col-xs-12">
+          <rck-ddl
+            label="If you only wish to prefill specific sections of this date select them here"
+            :items="preFillSectionOptions"
+            v-model="preFillModalOption"
+            multiple
+          ></rck-ddl>
+        </div>
+      </div>
+      <div class="mt-4 text-center">
+        <i>
+          {{ prefillCopyPreviewText }}
+        </i>
+      </div>
     </div>
     <template #customButtons>
       <rck-btn btnType="primary" @click="preFill">Prefill</rck-btn>
       <rck-btn btnType="grey" @click="preFillModal = false;">Cancel</rck-btn>
     </template>
   </rck-modal>
-  <rck-modal v-model="copyModal" :clickBackdropToClose="true" :isCloseButtonHidden="true" cancelText="" modalWrapperClasses="modal-no-header">
+  <rck-modal 
+    v-model="copyModal" 
+    :clickBackdropToClose="true" 
+    :isCloseButtonHidden="true" 
+    :isNarrow="true"
+    cancelText="" 
+    modalWrapperClasses="modal-no-header"
+  >
     <div class="pt-2">
       <div class="row">
         <div class="col col-xs-12">
@@ -1536,13 +1759,35 @@ export default defineComponent({
           ></rck-ddl>
         </div>
       </div>
+      <div class="row">
+        <div class="col col-xs-12">
+          <rck-ddl
+            label="If you only wish to copy specific sections to other dates select them here"
+            :items="preFillSectionOptions"
+            v-model="preFillModalOption"
+            multiple
+          ></rck-ddl>
+        </div>
+      </div>
+      <div class="mt-4 text-center">
+        <i>
+          {{ prefillCopyPreviewText }}
+        </i>
+      </div>
     </div>
     <template #customButtons>
       <rck-btn btnType="primary" @click="copyDetails">Copy to Dates</rck-btn>
       <rck-btn btnType="grey" @click="copyModal = false;">Cancel</rck-btn>
     </template>
   </rck-modal>
-  <rck-modal v-model="changeDateModal" :clickBackdropToClose="true" :isCloseButtonHidden="true" cancelText="" modalWrapperClasses="modal-no-header">
+  <rck-modal 
+    v-model="changeDateModal" 
+    :clickBackdropToClose="true" 
+    :isCloseButtonHidden="true" 
+    :isNarrow="true"
+    cancelText="" 
+    modalWrapperClasses="modal-no-header"
+  >
     <div class="pt-2">
       <div class="row">
         <div class="col col-xs-12">

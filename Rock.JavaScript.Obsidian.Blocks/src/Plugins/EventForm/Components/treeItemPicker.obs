@@ -192,7 +192,7 @@
      */
     const selectedItems = computed((): string => {
         return forceToArray(props.modelValue, true).map((i: any) => { 
-            return { name: i.text, value: i.value, backgroundColor: 'default' } 
+            return { name: i.text, value: i.value } 
         });
     });
 

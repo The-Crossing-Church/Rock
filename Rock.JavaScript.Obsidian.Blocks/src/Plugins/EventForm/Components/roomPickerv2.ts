@@ -166,7 +166,7 @@ export default defineComponent({
         multiple
         autoExpand
         fullWidth
-        iconCssClass="ti ti-map2"
+        iconCssClass="ti ti-map-2 d-none"
         :disabled="disabled"
       >
         <template #pickerContentSuperHeader>

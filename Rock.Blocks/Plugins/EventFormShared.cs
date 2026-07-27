@@ -208,7 +208,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
                             {
                                 var room = new DefinedValueService( _context ).Get( Guid.Parse( originalSetUp[i].Room ) );
-                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {( originalSetUp[i].NeedsTablecloths == "True" ? "Clothed " : String.Empty )}{originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
                             }
                         }
                     }
@@ -224,7 +224,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             if ( !String.IsNullOrEmpty( currentSetUp[i].Room ) )
                             {
                                 var room = new DefinedValueService( _context ).Get( Guid.Parse( currentSetUp[i].Room ) );
-                                message += $"<li>{room}: {currentSetUp[i].NumberofTables} {currentSetUp[i].TypeofTable} tables with {currentSetUp[i].NumberofChairs} each.</li>";
+                                message += $"<li>{room}: {currentSetUp[i].NumberofTables} {( currentSetUp[i].NeedsTablecloths == "True" ? "Clothed " : String.Empty )}{currentSetUp[i].TypeofTable} tables with {currentSetUp[i].NumberofChairs} each.</li>";
                             }
                         }
                     }
@@ -346,7 +346,7 @@ namespace Rock.Blocks.Plugins.EventForm
                             if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
                             {
                                 var room = new DefinedValueService( _context ).Get( Guid.Parse( originalSetUp[i].Room ) );
-                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
+                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {( originalSetUp[i].NeedsTablecloths == "True" ? "Clothed " : String.Empty )}{originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
                             }
                         }
                     }
@@ -408,6 +408,7 @@ namespace Rock.Blocks.Plugins.EventForm
         public string TypeofTable { get; set; }
         public int NumberofTables { get; set; }
         public int NumberofChairs { get; set; }
+        public string NeedsTablecloths { get; set; }
     }
     public class OpsInventorySetUp
     {

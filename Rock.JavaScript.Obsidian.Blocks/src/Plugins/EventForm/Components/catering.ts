@@ -207,12 +207,43 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
-  <div class="row mb-2">
+  <div class="row">
     <div class="col col-xs-12">
       <tcc-validator :rules="[rules.required(e.attributeValues.PreferredMenu, e.attributes.PreferredMenu.name)]" ref="validator_menu">
         <rck-field
           v-model="e.attributeValues.PreferredMenu"
           :attribute="e.attributes.PreferredMenu"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtMenu"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsDietaryAccommodations"
+        :label="e.attributes.NeedsDietaryAccommodations.name"
+        v-if="!readonly"
+        id="boolNeedsDietaryAccommodations"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsDietaryAccommodations"
+        :attribute="e.attributes.NeedsDietaryAccommodations"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsDietaryAccommodations"
+      ></rck-field>
+    </div>
+  </div>
+  <div class="row mb-2">
+    <div class="col col-xs-12" v-if="e.attributeValues.NeedsDietaryAccommodations == 'True'">
+      <tcc-validator :rules="[rules.required(e.attributeValues.DietaryAccommodationInfo, e.attributes.DietaryAccommodationInfo.name)]" ref="validator_diet">
+        <rck-field
+          v-model="e.attributeValues.DietaryAccommodationInfo"
+          :attribute="e.attributes.DietaryAccommodationInfo"
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
           id="txtMenu"

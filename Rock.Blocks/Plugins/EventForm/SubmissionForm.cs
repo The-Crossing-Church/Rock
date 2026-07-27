@@ -59,6 +59,7 @@ namespace Rock.Blocks.Plugins.EventForm
     [TextField( "Room Set-up", "Attribute Key for Room SetUp", key: AttributeKey.RoomSetUp, defaultValue: "RoomSetUp", category: "Attributes", order: 10 )]
     [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCodes", category: "Attributes", order: 11 )]
     [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 12 )]
+    [BinaryFileTypeField( "Event Image File Type", "The file type all images and files associated with an event request should be assigned to", key: AttributeKey.EventImageFileType, category: "Attributes", order: 13 )]
 
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 2, key: AttributeKey.SharedWithAttr )]
@@ -103,6 +104,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string RoomSetUp = "RoomSetUp";
             public const string DiscountCode = "DiscountCode";
             public const string DiscountCodeMatrix = "DiscountCodeMatrix";
+            public const string EventImageFileType = "EventImageFileType";
             public const string SharingGroupType = "SharingGroupType";
             public const string SharedWithAttr = "SharedWithAttr";
         }
@@ -1387,7 +1389,7 @@ namespace Rock.Blocks.Plugins.EventForm
             List<GroupMember> groupMembers = new List<GroupMember>();
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
-                subject = "Room Request from " + p.FullName;
+                subject = "New Room Request " + item.Title + " from " + p.FullName;
                 message = p.FullName + " has submitted a room request. This request meets criteria for pre-approval. Details of the request are as follows:<br/><br/>";
 
                 Guid? securityRoleGuid = GetAttributeValue( AttributeKey.RoomAdminRole ).AsGuidOrNull();
@@ -1398,7 +1400,7 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             else
             {
-                subject = "New Event Request from " + p.FullName;
+                subject = "New Event Request " + item.Title + " from " + p.FullName;
                 message = "Details of the request are as follows: <br/><br/>";
                 Guid? securityRoleGuid = GetAttributeValue( AttributeKey.EventAdminRole ).AsGuidOrNull();
                 if ( securityRoleGuid.HasValue )
@@ -1463,12 +1465,12 @@ namespace Rock.Blocks.Plugins.EventForm
 
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
-                subject = "Your Request has been approved";
+                subject = "Your Request " + item.Title + " has been approved";
                 message = "Your room/space request has been approved. The details of your request are as follows: <br/><br/>";
             }
             else
             {
-                subject = "Your Request has been submitted";
+                subject = "Your Request " + item.Title + " has been submitted";
                 message = "Your Event Request has been submitted and is pending approval. You can expect a response from the Events Director within 48 hours and/or 2 business days, if not sooner. Thank you! <br/>The details of your request are as follows: <br/><br/>";
             }
             //message += GetRequestDetails( item, events );
