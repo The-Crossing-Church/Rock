@@ -203,7 +203,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
+      <tcc-validator :name="e.attributes.RegistrationStartDate.key" :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
         <tcc-date-pkr
           :label="e.attributes.RegistrationStartDate.name"
           v-model="e.attributeValues.RegistrationStartDate"
@@ -221,7 +221,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeType, e.attributes.RegistrationFeeType.name)]" ref="validators_feetype">
+      <tcc-validator :name="e.attributes.RegistrationFeeType.key" :rules="[rules.required(e.attributeValues.RegistrationFeeType, e.attributes.RegistrationFeeType.name)]" ref="validators_feetype">
         <rck-field
           v-model="e.attributeValues.RegistrationFeeType"
           :attribute="e.attributes.RegistrationFeeType"
@@ -234,7 +234,7 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
+      <tcc-validator :name="e.attributes.RegistrationFeeBudgetMinistry.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
         <rck-field
           v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
           :attribute="e.attributes.RegistrationFeeBudgetMinistry"
@@ -245,7 +245,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
+      <tcc-validator :name="e.attributes.RegistrationFeeBudgetLine.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
         <rck-field
           v-model="e.attributeValues.RegistrationFeeBudgetLine"
           :attribute="e.attributes.RegistrationFeeBudgetLine"
@@ -258,7 +258,7 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
-      <tcc-validator :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
+      <tcc-validator :name="e.attributes.IndividualRegistrationFee.key" :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
         <rck-field
           v-model="e.attributeValues.IndividualRegistrationFee"
           :attribute="e.attributes.IndividualRegistrationFee"
@@ -269,7 +269,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Couple')">
-      <tcc-validator :rules="[rules.required(e.attributeValues.CoupleRegistrationFee, e.attributes.CoupleRegistrationFee.name)]" ref="validators_couple">
+      <tcc-validator :name="e.attributes.CoupleRegistrationFee.key" :rules="[rules.required(e.attributeValues.CoupleRegistrationFee, e.attributes.CoupleRegistrationFee.name)]" ref="validators_couple">
         <rck-field
           v-model="e.attributeValues.CoupleRegistrationFee"
           :attribute="e.attributes.CoupleRegistrationFee"
@@ -280,7 +280,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Online')">
-      <tcc-validator :rules="[rules.required(e.attributeValues.OnlineRegistrationFee, e.attributes.OnlineRegistrationFee.name)]" ref="validators_online">
+      <tcc-validator :name="e.attributes.OnlineRegistrationFee.key" :rules="[rules.required(e.attributeValues.OnlineRegistrationFee, e.attributes.OnlineRegistrationFee.name)]" ref="validators_online">
         <rck-field
           v-model="e.attributeValues.OnlineRegistrationFee"
           :attribute="e.attributes.OnlineRegistrationFee"
@@ -294,7 +294,7 @@ export default defineComponent({
   <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs"></tcc-discount>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
+      <tcc-validator :name="e.attributes.RegistrationEndDate.key" :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
         <tcc-date-pkr
           :label="e.attributes.RegistrationEndDate.name"
           v-model="e.attributeValues.RegistrationEndDate"
@@ -312,7 +312,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
+      <tcc-validator :name="e.attributes.RegistrationEndTime.key" :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.RegistrationEndTime.name"
           v-model="e.attributeValues.RegistrationEndTime"
@@ -379,7 +379,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
+      <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
         <rck-field
           v-model="e.attributeValues.MaxRegistrants"
           :attribute="e.attributes.MaxRegistrants"
@@ -394,7 +394,7 @@ export default defineComponent({
   <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
   <div class="row">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
+      <tcc-validator :name="e.attributes.RegistrationConfirmationEmailSender.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
         <rck-field
           v-model="e.attributeValues.RegistrationConfirmationEmailSender"
           :attribute="e.attributes.RegistrationConfirmationEmailSender"
@@ -421,7 +421,7 @@ export default defineComponent({
   </div>
   <div class="row mb-2">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
+      <tcc-validator :name="e.attributes.RegistrationConfirmationEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
         <rck-field
           v-model="e.attributeValues.RegistrationConfirmationEmailAdditionalDetails"
           :attribute="e.attributes.RegistrationConfirmationEmailAdditionalDetails"
@@ -453,7 +453,7 @@ export default defineComponent({
   <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
     <div class="row">
       <div class="col col-xs-12">
-        <tcc-validator :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+        <tcc-validator :name="e.attributes.RegistrationReminderEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
           <rck-field
             v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
             :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"

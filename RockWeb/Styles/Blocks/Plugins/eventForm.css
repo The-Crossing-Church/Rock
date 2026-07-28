@@ -141,7 +141,7 @@
 .text-cancelled, .text-cancelledbyuser {
   color: var(--color-cancelled) !important;
 }
-.text-denied, .text-red, .text-proposedchangesdenied {
+.text-denied, .text-red, .text-proposedchangesdenied, .label-red, .label-red .static-control .control-label {
   color: var(--color-denied) !important;
 }
 

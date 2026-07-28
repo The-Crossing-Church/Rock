@@ -10,7 +10,9 @@ export default defineComponent({
       "rck-lbl": RockLabel
     },
     props: {
-      details: Object
+      details: Object,
+      requestValidation: Object,
+      index: Number
     },
     setup() {
 
@@ -26,7 +28,7 @@ export default defineComponent({
         if(this.details?.attributes && this.details.attributeValues) {
           for(let key in this.details.attributes) {
             let attr = this.details.attributes[key]
-            let item = { attr: attr, value: "", changeValue: "" }
+            let item = { attr: attr, value: "", changeValue: "", class: "", errors: [] as any[] }
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Registration")) {
               item.value = this.details.attributeValues[key]
@@ -35,18 +37,53 @@ export default defineComponent({
                 if(this.details.changes) {
                   if(this.details.attributeValues[key].split('T')[0] != this.details.changes.attributeValues[key].split('T')[0]) {
                     item.changeValue = this.details.changes.attributeValues[key]
+                    item.class = 'text-red'
                   }
                 }
               } else {
                 if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                   item.changeValue = this.details.changes.attributeValues[key]
+                  item.class = 'text-red'
                 }
               }
+              if(!this.sectionIsValid && this.requestValidation) {
+                let errs = [] as any[]
+                this.requestValidation?.errors.forEach(err => { 
+                  let errorsApply = false
+                  if(err.ref.includes("_")) {
+                    let idx = err.ref.split("_")[1]
+                    if(idx == this.index) {
+                      errorsApply = true
+                    }
+                  } else {
+                    errorsApply = true
+                  }
+                  if(errorsApply) {
+                    errs.push(...err.errors.filter(e => {
+                      return e.name == item.attr.key
+                    }))
+                  }
+                })
+                if(errs && errs.length > 0) {
+                  item.class += ' label-red'
+                  item.errors = errs
+                }
+              } 
               attrs.push(item)
             }
           }
         }
         return attrs.sort((a,b) => a.attr.order - b.attr.order)
+      },
+      sectionIsValid() {
+        if(this.requestValidation?.invalidSections) {
+          if(this.requestValidation.invalidSections.includes("Event Registration")) {
+            return false
+          } else {
+            return true
+          }
+        }
+        return false
       }
     },
     methods: {
@@ -91,7 +128,11 @@ export default defineComponent({
     },
     template: `
 <div>
-  <h4 class="text-accent">Registration Information</h4>
+  <h4 class="text-accent">
+    Registration Information
+    <i v-if="sectionIsValid" class="fa fa-check-circle text-accent ml-2"></i>
+    <i v-else class="fa fa-exclamation-circle text-inprogress ml-2"></i>
+  </h4>
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in regAttrs">
       <template v-if="av.attr.key == 'DiscountCodes'">
@@ -99,7 +140,7 @@ export default defineComponent({
           <template v-if="av.changeValue != ''">
             <div class="row" style="pading-bottom: 12px;">
               <div class="col col-xs-6">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl class>{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
                     <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
@@ -117,7 +158,7 @@ export default defineComponent({
             </div>
           </template>
           <template v-else>
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div style="pading-bottom: 12px;">
               <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
                 <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <template v-if="c.AutoApply == 'True'"><i class="fas fa-check-square" style="font-size: 16px;"></i> Auto Apply</template> {{formatDiscountCodeMaxUses(c)}}
@@ -141,7 +182,7 @@ export default defineComponent({
             </div>
           </template>
           <template v-else>
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="mb-2" v-html="av.value.replaceAll('\\n','<br>')"></div>
           </template>
         </div>
@@ -165,7 +206,7 @@ export default defineComponent({
             </div>
           </template>
           <template v-else>
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="mb-2">
               {{formatDateTime(av.value)}}
             </div>
@@ -198,9 +239,16 @@ export default defineComponent({
             v-model="av.value"
             :attribute="av.attr"
             :showEmptyValue="true"
+            :class="av.class"
           ></rck-field>
         </template>
       </template>
+      <ul v-if="!sectionIsValid && av.errors.length > 0" class="field-error list-unstyled">
+        <li
+          v-for="(e, idx) in av.errors"
+          :key="idx"
+        >{{ e.text }}</li>
+      </ul>
     </div>
   </div>
 </div>
