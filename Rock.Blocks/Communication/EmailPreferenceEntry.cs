@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
 
 using Rock.Attribute;
 using Rock.Data;
@@ -1402,6 +1403,10 @@ namespace Rock.Blocks.Communication
             }
 
             var selfInactivatedDefinedValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_REVIEW_REASON_SELF_INACTIVATED );
+
+            // HTML-encode the anonymous free-text reason note before it is persisted to the
+            // Person record and later rendered to staff in the Person Profile / record-status UI.
+            bag.InactiveReasonNote = WebUtility.HtmlEncode( bag.InactiveReasonNote );
 
             // If the inactive reason note is the same as the current review reason note, update it also.
             string inactiveReasonNote = ( trackedPerson.InactiveReasonNote ?? string.Empty ) == ( trackedPerson.ReviewReasonNote ?? string.Empty )

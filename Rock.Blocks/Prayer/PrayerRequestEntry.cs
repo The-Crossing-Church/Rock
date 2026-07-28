@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net;
 
 using Microsoft.Extensions.Logging;
 
@@ -611,9 +612,9 @@ namespace Rock.Blocks.Prayer
                         }
                     }
 
-                    prayerRequest.FirstName = bag.FirstName;
-                    prayerRequest.LastName = bag.LastName;
-                    prayerRequest.Email = bag.Email;
+                    prayerRequest.FirstName = WebUtility.HtmlEncode( bag.FirstName );
+                    prayerRequest.LastName = WebUtility.HtmlEncode( bag.LastName );
+                    prayerRequest.Email = WebUtility.HtmlEncode( bag.Email );
 
                     if ( person != null )
                     {
@@ -640,7 +641,7 @@ namespace Rock.Blocks.Prayer
                 }
 
                 prayerRequest.CampusId = campusId;
-                prayerRequest.Text = bag.Request;
+                prayerRequest.Text = WebUtility.HtmlEncode( bag.Request );
 
                 if ( this.IsUrgentShown )
                 {
