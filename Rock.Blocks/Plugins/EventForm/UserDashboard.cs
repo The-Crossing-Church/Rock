@@ -1,19 +1,24 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
+using System.Web.Configuration;
+
+using Microsoft.Ajax.Utilities;
+
+using OpenXmlPowerTools;
+
 using Rock.Attribute;
+using Rock.Blocks.Plugins.EventForm;
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
-using Rock.Blocks.Plugins.ViewModels;
-using Rock.Blocks.Plugins.EventForm;
 using Rock.Web.Cache;
-using System.Web.Configuration;
 
 namespace Rock.Blocks.Plugins.EventDashboard
 {
@@ -831,24 +836,25 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     aliasIds.AddRange( ids );
                 }
             }
-            List<int?> sharedRequests = new List<int?>();
-            if ( sharedWithAttr != null )
-            {
-                sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
-            }
-            Guid ministryGuid = Guid.Empty;
-            List<int?> personalRequests = new List<int?>();
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-            {
-                DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
-                var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
-                var personalRequest = min.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
-                if ( personalRequest != null )
-                {
-                    //filter out personal requests from the shared requests list
-                    personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
-                }
-            }
+
+            List<int?> sharedRequests = GetSharedRequests( context, p, sharedWithAttr, ministryAttr );
+            //if ( sharedWithAttr != null )
+            //{
+            //    sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
+            //}
+            //Guid ministryGuid = Guid.Empty;
+            //List<int?> personalRequests = new List<int?>();
+            //if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+            //{
+            //    DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
+            //    var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
+            //    var personalRequest = min.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
+            //    if ( personalRequest != null )
+            //    {
+            //        //filter out personal requests from the shared requests list
+            //        personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
+            //    }
+            //}
             items = items.Where( i =>
             {
                 if ( i.CreatedByPersonAliasId == p.PrimaryAliasId )
@@ -859,13 +865,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 if ( sharedRequests.Contains( i.Id ) )
                 {
                     return true;
-                }
-                if ( !personalRequests.Contains( i.Id ) )
-                {
-                    if ( aliasIds.Contains( i.CreatedByPersonAliasId ) )
-                    {
-                        return true;
-                    }
                 }
                 return false;
             } );
@@ -1498,6 +1497,71 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 }
             }
             return hasRole;
+        }
+
+        private List<int?> GetSharedRequests( RockContext context, Person p, AttributeCache sharedWithAttr, AttributeCache ministryAttr )
+        {
+            List<int?> sharedRequests = new List<int?>();
+            Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+
+            if ( sharedWithAttr != null )
+            {
+                sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
+            }
+
+            if ( sharedRequestGroupTypeGuid.HasValue )
+            {
+                Guid ministryListGuid = Guid.Empty;
+                List<DefinedValue> ministries = new List<DefinedValue>();
+                List<int?> personalRequests = new List<int?>();
+                DefinedValue personalRequest = null;
+
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryListGuid ) )
+                {
+                    DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryListGuid );
+                    ministries = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id ).ToList();
+                    personalRequest = ministries.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
+                }
+
+                //Only Requests Created By the Current Person or Shared With the Current Person
+                //Shared requests are configured, find any for the current user.
+                var sharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == sharedRequestGT.Id );
+                //Anything but Request Creator roles
+                var sharingMembership = new GroupMemberService( context ).Queryable().Where( gm => gm.GroupTypeId == sharedRequestGT.Id && gm.PersonId == p.Id && !gm.GroupRole.IsLeader ).ToList();
+                sharingMembership.LoadAttributes();
+
+                for ( int k = 0; k < sharingMembership.Count(); k++ )
+                {
+                    DefinedValue limitedToMinistry = null;
+                    Guid? limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                    if ( limitedToMinistryGuid.HasValue )
+                    {
+                        limitedToMinistry = ministries.FirstOrDefault( dv => dv.Guid == limitedToMinistryGuid.Value );
+                    }
+
+                    GroupMember creator = sharingMembership[k].Group.Members.FirstOrDefault( gm => gm.GroupRole.IsLeader );
+                    if ( creator != null )
+                    {
+                        var aliasIds = creator.Person.Aliases.Select( pa => pa.Id ).ToList();
+                        var creatorsRequests = new ContentChannelItemService( context ).Queryable().Where( cci => aliasIds.Contains( cci.CreatedByPersonAliasId.Value ) );
+                        var requestMinistries = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value != personalRequest.Guid.ToString() );
+                        if ( limitedToMinistry != null )
+                        {
+                            requestMinistries = requestMinistries.Where( av => av.Value == limitedToMinistry.Guid.ToString() );
+                        }
+                        creatorsRequests = creatorsRequests.Join( requestMinistries,
+                            cci => cci.Id,
+                            av => av.EntityId,
+                            ( cci, av ) => cci
+                        );
+                        List<int?> creatorRequestIds = creatorsRequests.Select( cci => ( int? ) cci.Id ).ToList();
+
+                        sharedRequests.AddRange( creatorRequestIds );
+                    }
+                }
+            }
+            return sharedRequests;
         }
 
         private ContentChannelItem FromViewModel( ContentChannelItem viewModel )

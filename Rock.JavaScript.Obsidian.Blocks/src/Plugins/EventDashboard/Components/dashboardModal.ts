@@ -650,6 +650,9 @@ export default defineComponent({
     font-style: italic;
     margin-top: -20px;
   }
+  .row-eq-height {
+    flex-wrap: wrap;
+  }
 </v-style>
 `
 });
