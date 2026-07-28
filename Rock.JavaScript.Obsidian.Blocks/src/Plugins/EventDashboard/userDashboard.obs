@@ -22,6 +22,7 @@ import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import Comments from "./Components/comments"
 import UserGridAction from "./Components/userGridAction"
+import rules from "../EventForm/Rules/rules"
 
 const store = useStore();
 
@@ -106,7 +107,7 @@ export default defineComponent({
       provide("resubmitEvent", resubmitEvent);
 
       /** A method for the user to respond to Proposed Changes Denied */
-      const userAction: (id: string | null | undefined, actin: string) => Promise<any> = async (id, action) => {
+      const userAction: (id: string | null | undefined, action: string) => Promise<any> = async (id, action) => {
           const response = await invokeBlockAction<{ expirationDateTime: string }>("ProposedChangesAction", {
               id: id, action: action
           });
@@ -116,6 +117,17 @@ export default defineComponent({
       };
       provide("userAction", userAction);
 
+      /** A method for the user to delete a draft */
+      const deleteDraft: (id: string | null | undefined) => Promise<any> = async (id) => {
+        const response = await invokeBlockAction<{ expirationDateTime: string }>("DeleteDraft", {
+          id: id
+        });
+        if (response) {
+          return response
+        }
+      };
+      provide("deleteDraft", deleteDraft);
+
       return {
           viewModel,
           defaultFilters,
@@ -124,7 +136,8 @@ export default defineComponent({
           changeStatus,
           addComment,
           resubmitEvent,
-          userAction
+          userAction,
+          deleteDraft
       }
   },
   data() {
@@ -159,6 +172,7 @@ export default defineComponent({
         modal: false,
         commentModal: false,
         resubmissionModal: false,
+        deleteModal: false,
         comment: "",
         visible: false,
         requestStatuses: [
@@ -187,10 +201,13 @@ export default defineComponent({
         loading: false,
         btnLoading: {
           inprogress: false,
-          cancelled: false
+          cancelled: false,
+          delete: false
         },
         toastMessage: "",
-        filters: {} as any
+        filters: {} as any,
+        rules: rules,
+        requestValidation: {} as any
       };
   },
   computed: {
@@ -307,6 +324,10 @@ export default defineComponent({
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
+          this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, true)
+          if(this.selected?.attributeValues?.RequestErrors) {
+            this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
+          }
         }
         if(response.isError) {
           this.toastMessage = response.errorMessage
@@ -398,13 +419,6 @@ export default defineComponent({
         }
       })
     },
-    // getNextComment(idx: number) {
-    //   let req = this.selected as any
-    //   if(idx < (req.comments.length - 1)) {
-    //     return req.comments[idx + 1]
-    //   }
-    //   return null
-    // },
     newComment() {
       this.comment = ""
       this.commentModal = true
@@ -628,6 +642,43 @@ export default defineComponent({
           }
         }
       })
+    },
+    confirmDelete() {
+      this.deleteModal = true
+    },
+    deleteRequest() {
+      this.btnLoading.delete = true
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.deleteDraft(this.selected.idKey)
+        .then((res) => {
+          if(res.data) {
+            this.deleteModal = false
+
+            if(this.viewModel?.events) {
+              let idx = this.viewModel.events.map(cci => cci.idKey).indexOf(this.selected.idKey)
+              this.viewModel.events.splice(idx, 1)
+            }
+            this.modal = false
+          }
+
+          if(res.isError) {
+            this.toastMessage = res.errorMessage
+            let toast = document.getElementById('toast')
+            toast?.classList.add("show")
+          }
+        }).catch((err) => {
+          this.toastMessage = err
+          let toast = document.getElementById('toast')
+          toast?.classList.add("show")
+        }).finally(() => {
+          this.btnLoading.delete = false
+          if(el) {
+            el.style.display = 'none'
+          }
+        })
     }
   },
   watch: {
@@ -763,21 +814,19 @@ export default defineComponent({
     </rck-col>
   </rck-grid>
   <rck-modal v-model="modal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
-    <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy"></tcc-details>
+    <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" :requestValidation="requestValidation"></tcc-details>
     <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
       <tcc-comments :comments="selected.comments" :newComment="commentModal" v-on:createComment="createComment"></tcc-comments>
-      <!--
-      <h3 class="text-accent">Comments</h3>
-      <div>
-        <tcc-comment v-for="(c, idx) in selected.comments" :comment="c.comment" :createdBy="c.createdBy" :next="getNextComment(idx)" :key="c.comment.idKey"></tcc-comment>
-      </div>
-      -->
     </template>
     <template #customButtons>
       <div class="d-flex justify-left w-100">
         <rck-btn v-if="canEdit" btnType="primary" @click="editItem(selected.idKey)">
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
+        </rck-btn>
+        <rck-btn v-if="selectedStatus == 'Draft'" btnType="denied" @click="confirmDelete" >
+          <i class="mr-1 fa fa-trash-alt"></i>
+          Delete
         </rck-btn>
         <rck-btn btnType="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled by User')">
           <i class="mr-1 fa fa-ban"></i>
@@ -787,7 +836,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-check"></i>
           Use Originally Approved
         </rck-btn>
-        <rck-btn btnType="accent" @click="newComment">
+        <rck-btn v-if="selectedStatus != 'Draft'" btnType="accent" @click="newComment">
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
         </rck-btn>
@@ -798,25 +847,6 @@ export default defineComponent({
       </div>
     </template>
   </rck-modal>
-  <!--
-  <rck-modal v-model="commentModal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" style="z-index: 2000 !important;" modalWrapperClasses="modal-no-header">
-    <rck-lbl>New Comment</rck-lbl>
-    <rck-text
-      v-model="comment"
-      textMode="multiline"
-    ></rck-text>
-    <template #customButtons>
-      <rck-btn btnType="accent" @click="createComment">
-        <i class="mr-1 fa fa-comment-alt"></i>
-        Add Comment
-      </rck-btn>
-      <rck-btn btnType="grey" @click="commentModal = false;">
-        <i class="mr-1 fa fa-ban"></i>
-        Cancel
-      </rck-btn>
-    </template>
-  </rck-modal>
-  -->
   <rck-modal v-model="resubmissionModal" width="75%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" style="z-index: 2000 !important;" modalWrapperClasses="modal-no-header">
     <h3>Resubmit {{copy.title}}</h3>
     <div>To resubmit a request, please select the new date(s) for your event.</div>
@@ -890,6 +920,25 @@ export default defineComponent({
         <i class="mr-1 fa fa-ban"></i>
         Cancel
       </rck-btn>
+    </template>
+  </rck-modal>
+  <rck-modal 
+    v-model="deleteModal"
+    :clickBackdropToClose="true" 
+    :isCloseButtonHidden="true" 
+    :isNarrow="true"
+    cancelText="" 
+    modalWrapperClasses="modal-no-header"
+  >
+    <div class="pt-2">
+      Are you sure you would like to delete your draft, {{selected.title}}? 
+    </div>
+    <div class="text-center">
+      <i class="text-red">This action cannot be undone.</i>
+    </div>
+    <template #customButtons>
+      <rck-btn btnType="denied" @click="deleteRequest">Delete Draft</rck-btn>
+      <rck-btn btnType="grey" @click="deleteModal = false;">Cancel</rck-btn>
     </template>
   </rck-modal>
 </div>

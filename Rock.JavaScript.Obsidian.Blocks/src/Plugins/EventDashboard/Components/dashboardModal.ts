@@ -44,7 +44,8 @@ export default defineComponent({
       inventory: Array,
       createdBy: Object,
       modifiedBy: Object,
-      sections: String
+      sections: String,
+      requestValidation: Object
     },
     setup() {
 
@@ -52,11 +53,11 @@ export default defineComponent({
     data() {
         return {
           modal: false,
-          panels: [true]
+          panels: [true],
         };
     },
     created() {
-
+      
     },
     computed: {
       statusClass() {
@@ -286,7 +287,7 @@ export default defineComponent({
         <template v-else>
           {{request.title}}
         </template>
-        <i v-if="request.attributeValues.RequestIsValid == 'True'" class="fa fa-check-circle text-accent ml-2"></i>
+        <i v-if="requestValidation.isValid" class="fa fa-check-circle text-accent ml-2"></i>
         <i v-else class="fa fa-exclamation-circle text-inprogress ml-2"></i>
       </h4>
       <div :class="statusClass">{{request.attributeValues.RequestStatus}}</div>
@@ -533,7 +534,7 @@ export default defineComponent({
     <tcc-catering v-if="(sections == null || sections?.includes('Catering')) && (request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' ))" :details="ci" :drinks="drinks" :needsSpace="needsSpace"></tcc-catering>
     <tcc-ops v-if="(sections == null || sections?.includes('Extra Resources')) && (request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' ))" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering"></tcc-ops>
     <tcc-childcare v-if="(sections == null || sections?.includes('Childcare')) && (request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' ))" :details="ci" :needsCatering="needsChildcareCatering"></tcc-childcare>
-    <tcc-registration v-if="(sections == null || sections?.includes('Registration')) && (request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' ))" :details="ci"></tcc-registration>
+    <tcc-registration v-if="(sections == null || sections?.includes('Registration')) && (request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-registration>
     <tcc-online v-if="(sections == null || sections?.includes('Online')) && (request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' ))" :details="ci"></tcc-online>
   </rck-panel>
   <tcc-web-cal v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" :request="request"></tcc-web-cal>
@@ -642,6 +643,12 @@ export default defineComponent({
   .form-group.static-control .col, .form-group.static-control div {
     word-break: break-word;
     white-space: pre-wrap;
+  }
+  .field-error {
+    color: var(--color-danger-strong);
+    font-size: 14px;
+    font-style: italic;
+    margin-top: -20px;
   }
 </v-style>
 `

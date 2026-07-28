@@ -23,6 +23,7 @@ import Grid, { Column, TextColumn, DateColumn, PersonColumn, textValueFilter, da
 import Comments from "./Components/comments"
 import TCCTable from "./Components/requestTable"
 import PartialApproval from "./Components/partialApproval"
+import rules from "../EventForm/Rules/rules"
 
 const store = useStore()
 
@@ -171,7 +172,9 @@ export default defineComponent({
         filters: {} as any,
         textValueFilter: textValueFilter,
         dateValueFilter: dateValueFilter,
-        pickExistingValueFilter: pickExistingValueFilter
+        pickExistingValueFilter: pickExistingValueFilter,
+        rules: rules,
+        requestValidation: {} as any
       };
   },
   computed: {
@@ -271,6 +274,8 @@ export default defineComponent({
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
+          this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, true)
+          this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
         }
       }).finally(() => {
         if(el) {
@@ -433,13 +438,6 @@ export default defineComponent({
         }
       })
     },
-    // getNextComment(idx: number) {
-    //   let req = this.selected as any
-    //   if(idx < (req.comments.length - 1)) {
-    //     return req.comments[idx + 1]
-    //   }
-    //   return null
-    // },
     newComment() {
       this.comment = ""
       this.commentModal = true
@@ -728,7 +726,7 @@ export default defineComponent({
   </div>
 </div>
 <rck-modal v-model="modal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
-  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" v-on:openrequest="selectItem"></tcc-details>
+  <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" :requestValidation="requestValidation" v-on:openrequest="selectItem"></tcc-details>
   <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
     <tcc-comments :comments="selected.comments" :newComment="commentModal" v-on:createComment="createComment"></tcc-comments>
     <!--
