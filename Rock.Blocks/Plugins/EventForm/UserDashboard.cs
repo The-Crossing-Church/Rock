@@ -725,6 +725,50 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 return ActionBadRequest( e.Message );
             }
         }
+
+        [BlockAction]
+        public BlockActionResult DeleteDraft( string id )
+        {
+            try
+            {
+                RockContext context = new RockContext();
+                var cci_svc = new ContentChannelItemService( context );
+                var ccia_svc = new ContentChannelItemAssociationService( context );
+                SetProperties();
+                ContentChannelItem item = cci_svc.Get( id );
+                string title = item.Title;
+                if ( item != null )
+                {
+                    item.LoadAttributes();
+                    string status = item.GetAttributeValue( "RequestStatus" );
+                    if ( status != "Draft" )
+                    {
+                        throw new Exception( "Only drafts can be deleted." );
+                    }
+
+                    var children = item.ChildItems.ToList();
+                    for ( int i = 0; i < children.Count; i++ )
+                    {
+                        cci_svc.Delete( children[i].ChildContentChannelItem );
+                        ccia_svc.Delete( children[i] );
+                    }
+                    cci_svc.Delete( item );
+
+                    context.SaveChanges();
+                }
+                else
+                {
+                    throw new Exception( "Draft not found." );
+                }
+
+                return ActionOk( "Draft for " + title + " has been deleted." );
+            }
+            catch ( Exception e )
+            {
+                ExceptionLogService.LogException( e );
+                return ActionBadRequest( e.Message );
+            }
+        }
         #endregion Block Actions
 
         #region Helpers
