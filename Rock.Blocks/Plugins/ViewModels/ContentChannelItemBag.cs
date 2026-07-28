@@ -183,5 +183,10 @@ namespace Rock.Blocks.Plugins.ViewModels
 
         public string ModifiedBy { get; set; }
 
+        /// <summary>
+        /// Gets or sets the value determinig if the current person has edit rights to the content channel item
+        /// </summary>
+        public bool CanEdit { get; set; }
+
     }
 }

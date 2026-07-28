@@ -250,8 +250,14 @@ export default defineComponent({
         return undefined
       },
       canEdit(): boolean {
-        if(this.selected && this.selected?.attributeValues?.RequestStatus) {
-          return this.selected.attributeValues.RequestStatus == 'Draft' || this.selected.attributeValues.RequestStatus == 'Submitted' || this.selected.attributeValues.RequestStatus == 'In Progress' || this.selected.attributeValues.RequestStatus == 'Approved' || this.selected.attributeValues.RequestStatus == 'Pending Changes'
+        if(this.selected) {
+          let req = this.selected as any
+          if(!req.canEdit) {
+            return false
+          }
+          if(this.selected?.attributeValues?.RequestStatus) {
+            return this.selected.attributeValues.RequestStatus == 'Draft' || this.selected.attributeValues.RequestStatus == 'Submitted' || this.selected.attributeValues.RequestStatus == 'In Progress' || this.selected.attributeValues.RequestStatus == 'Approved' || this.selected.attributeValues.RequestStatus == 'Pending Changes'
+          }
         }
         return false
       },
@@ -824,19 +830,19 @@ export default defineComponent({
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
         </rck-btn>
-        <rck-btn v-if="selectedStatus == 'Draft'" btnType="denied" @click="confirmDelete" >
+        <rck-btn v-if="selectedStatus == 'Draft' && selected.canEdit" btnType="denied" @click="confirmDelete" >
           <i class="mr-1 fa fa-trash-alt"></i>
           Delete
         </rck-btn>
-        <rck-btn btnType="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled'" @click="updateStatus('Cancelled by User')">
+        <rck-btn btnType="grey" v-if="selectedStatus != 'Cancelled by User' && selectedStatus != 'Cancelled' && selected.canEdit" @click="updateStatus('Cancelled by User')">
           <i class="mr-1 fa fa-ban"></i>
           Cancel Request
         </rck-btn>
-        <rck-btn btnType="primary" v-if="selectedStatus == 'Proposed Changes Denied'" @click="proposedChangesAction('Original', selected.idKey)">
+        <rck-btn btnType="primary" v-if="selectedStatus == 'Proposed Changes Denied' && selected.canEdit" @click="proposedChangesAction('Original', selected.idKey)">
           <i class="mr-1 fa fa-check"></i>
           Use Originally Approved
         </rck-btn>
-        <rck-btn v-if="selectedStatus != 'Draft'" btnType="accent" @click="newComment">
+        <rck-btn v-if="selected.canEdit" btnType="accent" @click="newComment">
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
         </rck-btn>

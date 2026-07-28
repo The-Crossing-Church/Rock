@@ -8,6 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Configuration;
 
+using DocumentFormat.OpenXml.Math;
+
 using Microsoft.Ajax.Utilities;
 
 using OpenXmlPowerTools;
@@ -19,6 +21,8 @@ using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+
+using static Rock.Model.StepProgram;
 
 namespace Rock.Blocks.Plugins.EventDashboard
 {
@@ -283,6 +287,14 @@ namespace Rock.Blocks.Plugins.EventDashboard
             response.comments = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).Select( ci => new Comment { comment = EventFormHelper.GetCommonContentChannelItemEntityBag( ci.ChildContentChannelItem ), createdBy = ci.ChildContentChannelItem.CreatedByPersonName } ).ToList();
             response.createdBy = EventFormHelper.GetCommonPersonEntityBag( item.CreatedByPersonAlias.Person );
             response.modifiedBy = EventFormHelper.GetCommonPersonEntityBag( item.ModifiedByPersonAlias.Person );
+
+            // Get Permissions
+            var auth = CheckRequestPermissions( item );
+            if ( !auth.CanView )
+            {
+                return ActionBadRequest( "You do not have permission to view this request." );
+            }
+            response.request.CanEdit = auth.CanEdit;
             return ActionOk( response );
         }
 
@@ -322,6 +334,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 var ccia_svc = new ContentChannelItemAssociationService( rockContext );
                 ContentChannelItem item = cci_svc.Get( id );
                 item.LoadAttributes();
+                RequestAuthorization auth = CheckRequestPermissions( item );
+                if ( !auth.CanEdit )
+                {
+                    throw new UnauthorizedAccessException( "You do not have permission to make changes to request." );
+                }
                 string currentStatus = item.GetAttributeValue( requestStatusAttrKey );
                 item.ModifiedByPersonAliasId = p.PrimaryAliasId;
                 item.ModifiedDateTime = RockDateTime.Now;
@@ -359,6 +376,12 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 SetProperties();
                 Person p = GetCurrentPerson();
                 ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
+                ContentChannelItem request = cci_svc.Get( id );
+                RequestAuthorization auth = CheckRequestPermissions( request );
+                if ( !auth.CanEdit )
+                {
+                    throw new UnauthorizedAccessException( "You do not have permission to comment on this request." );
+                }
                 ContentChannel commentChannel = new ContentChannelService( rockContext ).Get( EventCommentsContentChannelId );
                 ContentChannelItem comment = new ContentChannelItem()
                 {
@@ -375,7 +398,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 rockContext.SaveChanges();
 
                 //We want the request to move to the top of the stack when a note is added
-                ContentChannelItem request = cci_svc.Get( id );
                 request.ModifiedDateTime = RockDateTime.Now;
 
                 //Add association between comment and request
@@ -674,6 +696,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 if ( item != null )
                 {
                     item.LoadAttributes();
+                    RequestAuthorization auth = CheckRequestPermissions( item );
+                    if ( !auth.CanEdit )
+                    {
+                        throw new UnauthorizedAccessException( "You do not have permission to make changes to request." );
+                    }
                     string status = item.GetAttributeValue( "RequestStatus" );
                     if ( status != "Proposed Changes Denied" )
                     {
@@ -745,6 +772,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 if ( item != null )
                 {
                     item.LoadAttributes();
+                    RequestAuthorization auth = CheckRequestPermissions( item );
+                    if ( !auth.CanEdit )
+                    {
+                        throw new UnauthorizedAccessException( "You do not have permission to delete this request." );
+                    }
                     string status = item.GetAttributeValue( "RequestStatus" );
                     if ( status != "Draft" )
                     {
@@ -837,7 +869,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 }
             }
 
-            List<int?> sharedRequests = GetSharedRequests( context, p, sharedWithAttr, ministryAttr );
+            List<RequestAuthorization> sharedRequestAuth = GetSharedRequests( context, p, sharedWithAttr, ministryAttr );
+            List<int> sharedRequests = sharedRequestAuth.Select( ra => ra.RequestId ).ToList();
             //if ( sharedWithAttr != null )
             //{
             //    sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
@@ -1050,6 +1083,13 @@ namespace Rock.Blocks.Plugins.EventDashboard
             return itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
             {
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                //Update Authorization on Request to use in Dashboard 
+                bag.CanEdit = true;
+                var auth = sharedRequestAuth.FirstOrDefault( ra => ra.RequestId == cci.Id );
+                if ( auth != null )
+                {
+                    bag.CanEdit = auth.CanEdit;
+                }
                 cci.LoadAttributes();
                 bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
                 return bag;
@@ -1499,14 +1539,14 @@ namespace Rock.Blocks.Plugins.EventDashboard
             return hasRole;
         }
 
-        private List<int?> GetSharedRequests( RockContext context, Person p, AttributeCache sharedWithAttr, AttributeCache ministryAttr )
+        private List<RequestAuthorization> GetSharedRequests( RockContext context, Person p, AttributeCache sharedWithAttr, AttributeCache ministryAttr )
         {
-            List<int?> sharedRequests = new List<int?>();
+            List<RequestAuthorization> sharedRequests = new List<RequestAuthorization>();
             Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
 
             if ( sharedWithAttr != null )
             {
-                sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
+                sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => new RequestAuthorization { RequestId = av.EntityId.Value, CanEdit = true } ).ToList();
             }
 
             if ( sharedRequestGroupTypeGuid.HasValue )
@@ -1526,7 +1566,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 //Only Requests Created By the Current Person or Shared With the Current Person
                 //Shared requests are configured, find any for the current user.
                 var sharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
-                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == sharedRequestGT.Id );
                 //Anything but Request Creator roles
                 var sharingMembership = new GroupMemberService( context ).Queryable().Where( gm => gm.GroupTypeId == sharedRequestGT.Id && gm.PersonId == p.Id && !gm.GroupRole.IsLeader ).ToList();
                 sharingMembership.LoadAttributes();
@@ -1535,9 +1574,14 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 {
                     DefinedValue limitedToMinistry = null;
                     Guid? limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                    bool membershipHasEdit = false;
                     if ( limitedToMinistryGuid.HasValue )
                     {
                         limitedToMinistry = ministries.FirstOrDefault( dv => dv.Guid == limitedToMinistryGuid.Value );
+                    }
+                    if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
+                    {
+                        membershipHasEdit = true;
                     }
 
                     GroupMember creator = sharingMembership[k].Group.Members.FirstOrDefault( gm => gm.GroupRole.IsLeader );
@@ -1555,13 +1599,80 @@ namespace Rock.Blocks.Plugins.EventDashboard
                             av => av.EntityId,
                             ( cci, av ) => cci
                         );
-                        List<int?> creatorRequestIds = creatorsRequests.Select( cci => ( int? ) cci.Id ).ToList();
+                        List<RequestAuthorization> creatorRequestIds = creatorsRequests.Select( cci => new RequestAuthorization { RequestId = cci.Id, CanEdit = membershipHasEdit } ).ToList();
 
                         sharedRequests.AddRange( creatorRequestIds );
                     }
                 }
             }
             return sharedRequests;
+        }
+
+        private RequestAuthorization CheckRequestPermissions( ContentChannelItem request )
+        {
+            RequestAuthorization auth = new RequestAuthorization() { RequestId = request.Id, CanEdit = false, CanView = false };
+
+            using ( RockContext context = new RockContext() )
+            {
+                var p = GetCurrentPerson();
+                var ids = p.Aliases.Select( pa => pa.Id ).ToList();
+                //Created the request or is an Event/Room Admin
+                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) || CheckSecurityRole( context, AttributeKey.EventAdminRole ) || CheckSecurityRole( context, AttributeKey.RoomAdminRole ) )
+                {
+                    auth.CanEdit = true;
+                    auth.CanView = true;
+                }
+                else
+                {
+                    Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+                    if ( sharedRequestGroupTypeGuid.HasValue )
+                    {
+                        var sharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                        //Anything but Request Creator roles
+                        var sharingMembership = new GroupMemberService( context ).Queryable().Where( gm => gm.GroupTypeId == sharedRequestGT.Id && gm.PersonId == p.Id && !gm.GroupRole.IsLeader ).ToList();
+                        for ( int k = 0; k < sharingMembership.Count(); k++ )
+                        {
+                            GroupMember creator = sharingMembership[k].Group.Members.FirstOrDefault( gm => gm.GroupRole.IsLeader );
+                            bool membershipHasEdit = false;
+                            if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
+                            {
+                                membershipHasEdit = true;
+                            }
+                            if ( creator != null )
+                            {
+                                //The request in question belongs to someone in a sharing group witht the current person
+                                ids = creator.Person.Aliases.Select( pa => pa.Id ).ToList();
+                                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) )
+                                {
+                                    sharingMembership[k].LoadAttributes();
+                                    Guid? limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                                    if ( limitedToMinistryGuid.HasValue )
+                                    {
+                                        Guid? requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                                        if ( !requestMinistry.HasValue )
+                                        {
+                                            request.LoadAttributes();
+                                            requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                                        }
+                                        if ( limitedToMinistryGuid.Value == requestMinistry.Value )
+                                        {
+                                            auth.CanView = true;
+                                            auth.CanEdit = membershipHasEdit;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    auth.CanView = true;
+                                    auth.CanEdit = membershipHasEdit;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return auth;
         }
 
         private ContentChannelItem FromViewModel( ContentChannelItem viewModel )
@@ -1787,6 +1898,12 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public string EventDates { get; set; }
             public string IsValid { get; set; }
             public int? UnreadComments { get; set; }
+        }
+        private class RequestAuthorization
+        {
+            public int RequestId { get; set; }
+            public bool CanEdit { get; set; }
+            public bool CanView { get; set; }
         }
     }
 }

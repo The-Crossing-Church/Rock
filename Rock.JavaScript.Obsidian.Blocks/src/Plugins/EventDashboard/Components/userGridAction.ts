@@ -30,6 +30,10 @@ export default defineComponent({
         return this.request?.attributeValues?.RequestStatus.replace(" ", "").replace(" ", "").toLowerCase().replace("legacyrequest", "default")
       },
       canEdit() {
+        let req = this.request as any
+        if(!req.canEdit) {
+          return false
+        }
         if(this.request?.attributeValues?.RequestStatus) {
           return this.request.attributeValues.RequestStatus == 'Submitted' || this.request.attributeValues.RequestStatus == 'In Progress' || this.request.attributeValues.RequestStatus == 'Approved' || this.request.attributeValues.RequestStatus == 'Pending Changes'
         }
@@ -46,7 +50,7 @@ export default defineComponent({
       duplicate() {
         this.$emit("duplicate", this.request?.idKey)
         this.visible = false
-      }
+      },
     },
     watch: {
       
@@ -69,7 +73,7 @@ export default defineComponent({
       </rck-btn>
     </div>
     <template #activator="props">
-      <rck-btn :btnType="btnColor" @click="visible = !visible">{{request.attributeValues.RequestStatus}}</rck-btn>
+      <rck-btn :btnType="btnColor" :disabled="!request.canEdit" @click="visible = !visible">{{request.attributeValues.RequestStatus}}</rck-btn>
     </template>
   </rck-pop>
 </a-badge>
