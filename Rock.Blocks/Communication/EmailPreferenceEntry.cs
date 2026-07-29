@@ -1752,7 +1752,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 visibleCommunicationListItems = communicationListItems
-                    .Where( i => i.ListGroup.IsAuthorized( Authorization.VIEW, person ) )
+                    .Where( i => i.ListGroup.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
                     .ToList();
             }
 
@@ -2042,7 +2042,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 visibleListGroups = listGroups
-                    .Where( g => g.IsAuthorized( Authorization.VIEW, person ) )
+                    .Where( g => g.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
                     .ToList();
             }
 

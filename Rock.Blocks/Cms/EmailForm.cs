@@ -483,7 +483,7 @@ namespace Rock.Blocks.Cms
 
             var responseMergeFields = mergeFields;
             string responseMessage = GetAttributeValue( AttributeKey.ResponseMessage ).ResolveMergeFields( responseMergeFields, enabledLavaCommands );
-            if ( GetAttributeValue( AttributeKey.EnableDebug ).AsBoolean() && BlockCache.IsAuthorized( Authorization.EDIT, RequestContext.CurrentPerson ) )
+            if ( GetAttributeValue( AttributeKey.EnableDebug ).AsBoolean() && BlockCache.IsAuthorized( Rock.Security.Authorization.EDIT, RequestContext.CurrentPerson ) )
             {
                 responseMessage += MergeTemplateType.GetDefaultLavaDebugInfo( new List<object>(), responseMergeFields );
             }
