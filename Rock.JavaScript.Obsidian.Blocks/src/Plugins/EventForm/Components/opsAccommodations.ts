@@ -234,6 +234,20 @@ export default defineComponent({
         if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0 && stdrSetUp.length == 0) {
           isSame = true
         }
+        //Remove extra empty rows
+        if(this.selectedRoomSetUp.length > 1) {
+          if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0) {
+            console.log('Removing extra empty rooms when multiple empty rows')
+            this.selectedRoomSetUp = this.selectedRoomSetUp.filter((rsu: any, idx: Number) => {
+              return idx == 0
+            })
+          } else {
+            console.log('Removing empty row in middle of other set up')
+            this.selectedRoomSetUp = this.selectedRoomSetUp.filter((rsu: any) => {
+              return rsu.NumberofTables > 0 || rsu.NumberofChairs > 0
+            })
+          }
+        }
         if(!isSame) {
           this.roomSetUp.push(...this.selectedRoomSetUp)
         }
