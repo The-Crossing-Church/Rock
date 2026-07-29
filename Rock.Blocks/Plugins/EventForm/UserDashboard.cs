@@ -123,6 +123,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         #endregion Keys
 
         private ObsidianPluginsShared EventFormHelper = new ObsidianPluginsShared();
+        private EventFormShared EventFormShared = new EventFormShared();
 
         #region Obsidian Block Type Overrides
 
@@ -1608,71 +1609,21 @@ namespace Rock.Blocks.Plugins.EventDashboard
             return sharedRequests;
         }
 
+        /// <summary>
+        /// Method to verify the permissions the current person has for this request
+        /// </summary>
+        /// <param name="request">The Event Request Content Channel Item</param>
+        /// <returns>Auth model with view and edit permissions for the current person</returns>
         private RequestAuthorization CheckRequestPermissions( ContentChannelItem request )
         {
-            RequestAuthorization auth = new RequestAuthorization() { RequestId = request.Id, CanEdit = false, CanView = false };
-
             using ( RockContext context = new RockContext() )
             {
                 var p = GetCurrentPerson();
-                var ids = p.Aliases.Select( pa => pa.Id ).ToList();
-                //Created the request or is an Event/Room Admin
-                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) || CheckSecurityRole( context, AttributeKey.EventAdminRole ) || CheckSecurityRole( context, AttributeKey.RoomAdminRole ) )
-                {
-                    auth.CanEdit = true;
-                    auth.CanView = true;
-                }
-                else
-                {
-                    Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-                    if ( sharedRequestGroupTypeGuid.HasValue )
-                    {
-                        var sharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
-                        //Anything but Request Creator roles
-                        var sharingMembership = new GroupMemberService( context ).Queryable().Where( gm => gm.GroupTypeId == sharedRequestGT.Id && gm.PersonId == p.Id && !gm.GroupRole.IsLeader ).ToList();
-                        for ( int k = 0; k < sharingMembership.Count(); k++ )
-                        {
-                            GroupMember creator = sharingMembership[k].Group.Members.FirstOrDefault( gm => gm.GroupRole.IsLeader );
-                            bool membershipHasEdit = false;
-                            if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
-                            {
-                                membershipHasEdit = true;
-                            }
-                            if ( creator != null )
-                            {
-                                //The request in question belongs to someone in a sharing group witht the current person
-                                ids = creator.Person.Aliases.Select( pa => pa.Id ).ToList();
-                                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) )
-                                {
-                                    sharingMembership[k].LoadAttributes();
-                                    Guid? limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).AsGuidOrNull();
-                                    if ( limitedToMinistryGuid.HasValue )
-                                    {
-                                        Guid? requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
-                                        if ( !requestMinistry.HasValue )
-                                        {
-                                            request.LoadAttributes();
-                                            requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
-                                        }
-                                        if ( limitedToMinistryGuid.Value == requestMinistry.Value )
-                                        {
-                                            auth.CanView = true;
-                                            auth.CanEdit = membershipHasEdit;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    auth.CanView = true;
-                                    auth.CanEdit = membershipHasEdit;
-                                }
-                            }
-                        }
-                    }
-                }
+                bool isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
+                bool isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
+                Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+                return EventFormShared.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid );
             }
-
-            return auth;
         }
 
         private ContentChannelItem FromViewModel( ContentChannelItem viewModel )
@@ -1899,11 +1850,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public string IsValid { get; set; }
             public int? UnreadComments { get; set; }
         }
-        private class RequestAuthorization
-        {
-            public int RequestId { get; set; }
-            public bool CanEdit { get; set; }
-            public bool CanView { get; set; }
-        }
+        //private class RequestAuthorization
+        //{
+        //    public int RequestId { get; set; }
+        //    public bool CanEdit { get; set; }
+        //    public bool CanView { get; set; }
+        //}
     }
 }

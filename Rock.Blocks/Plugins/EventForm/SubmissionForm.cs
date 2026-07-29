@@ -6,6 +6,8 @@ using System.Linq;
 
 using Newtonsoft.Json;
 
+using OpenXmlPowerTools;
+
 using Rock.Attribute;
 using Rock.Blocks.Plugins.ViewModels;
 using Rock.Communication;
@@ -14,6 +16,8 @@ using Rock.Field;
 using Rock.Model;
 using Rock.SystemGuid;
 using Rock.Web.Cache;
+
+using static Rock.Model.StepProgram;
 
 namespace Rock.Blocks.Plugins.EventForm
 {
@@ -129,74 +133,78 @@ namespace Rock.Blocks.Plugins.EventForm
         /// </returns>
         public override object GetObsidianBlockInitialization()
         {
-            SetProperties();
-
-            SubmissionFormViewModel viewModel = LoadRequest();
-            viewModel.isSuperUser = CheckSecurityRole( context, AttributeKey.SuperUserRole );
-            viewModel.isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
-            viewModel.isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
-            viewModel.permissions = SetPermissions( viewModel.request, viewModel.isEventAdmin );
-            viewModel.existing = LoadExisting( viewModel.request.IdKey );
-            viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
-
-            //Lists
-            Guid locationGuid = Guid.Empty;
-            Guid ministryGuid = Guid.Empty;
-            Guid budgetLineGuid = Guid.Empty;
-            Guid inventoryGuid = Guid.Empty;
-            Guid vendorGuid = Guid.Empty;
-            var p = GetCurrentPerson();
-            DefinedTypeService dt_svc = new DefinedTypeService( context );
-            DefinedValueService dv_svc = new DefinedValueService( context );
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
+            SubmissionFormViewModel viewModel = new SubmissionFormViewModel();
+            try
             {
-                DefinedTypeCache locationDT = DefinedTypeCache.Get( locationGuid );
-                viewModel.locations = locationDT.DefinedValues;
-                string templateIdVal;
-                int templateid;
-                var setUpAttr = viewModel.locations.First().Attributes["StandardSetUp"];
-                setUpAttr.ConfigurationValues.TryGetValue( "attributematrixtemplate", out templateIdVal );
-                if ( !String.IsNullOrEmpty( templateIdVal ) )
+                SetProperties();
+
+                viewModel = LoadRequest();
+                viewModel.isSuperUser = CheckSecurityRole( context, AttributeKey.SuperUserRole );
+                viewModel.existing = LoadExisting( viewModel.request.IdKey );
+                viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
+
+                //Lists
+                Guid locationGuid = Guid.Empty;
+                Guid ministryGuid = Guid.Empty;
+                Guid budgetLineGuid = Guid.Empty;
+                Guid inventoryGuid = Guid.Empty;
+                Guid vendorGuid = Guid.Empty;
+                var p = GetCurrentPerson();
+                DefinedTypeService dt_svc = new DefinedTypeService( context );
+                DefinedValueService dv_svc = new DefinedValueService( context );
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
                 {
-                    if ( Int32.TryParse( templateIdVal, out templateid ) )
+                    DefinedTypeCache locationDT = DefinedTypeCache.Get( locationGuid );
+                    viewModel.locations = locationDT.DefinedValues;
+                    string templateIdVal;
+                    int templateid;
+                    var setUpAttr = viewModel.locations.First().Attributes["StandardSetUp"];
+                    setUpAttr.ConfigurationValues.TryGetValue( "attributematrixtemplate", out templateIdVal );
+                    if ( !String.IsNullOrEmpty( templateIdVal ) )
                     {
-                        var guids = viewModel.locations.Select( l => l.AttributeValues["StandardSetUp"].Value ).ToList();
-                        AttributeMatrixService am_svc = new AttributeMatrixService( context );
-                        var ams = am_svc.Queryable().Where( am => am.AttributeMatrixTemplateId == templateid && guids.Contains( am.Guid.ToString() ) );
-                        var amis = ams.SelectMany( am => am.AttributeMatrixItems ).ToList();
-                        amis.LoadAttributes();
-                        viewModel.locationSetupMatrix = ams.ToList();
-                        viewModel.locationSetupMatrixItem = amis.ToList();
+                        if ( Int32.TryParse( templateIdVal, out templateid ) )
+                        {
+                            var guids = viewModel.locations.Select( l => l.AttributeValues["StandardSetUp"].Value ).ToList();
+                            AttributeMatrixService am_svc = new AttributeMatrixService( context );
+                            var ams = am_svc.Queryable().Where( am => am.AttributeMatrixTemplateId == templateid && guids.Contains( am.Guid.ToString() ) );
+                            var amis = ams.SelectMany( am => am.AttributeMatrixItems ).ToList();
+                            amis.LoadAttributes();
+                            viewModel.locationSetupMatrix = ams.ToList();
+                            viewModel.locationSetupMatrixItem = amis.ToList();
+                        }
                     }
                 }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+                {
+                    DefinedTypeCache ministryDT = DefinedTypeCache.Get( ministryGuid );
+                    viewModel.ministries = ministryDT.DefinedValues;
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
+                {
+                    DefinedTypeCache budgetDT = DefinedTypeCache.Get( budgetLineGuid );
+                    viewModel.budgetLines = budgetDT.DefinedValues;
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.InventoryList ), out inventoryGuid ) )
+                {
+                    DefinedTypeCache inventoryDT = DefinedTypeCache.Get( inventoryGuid );
+                    viewModel.inventoryList = inventoryDT.DefinedValues;
+                }
+                if ( Guid.TryParse( GetAttributeValue( AttributeKey.VendorList ), out vendorGuid ) )
+                {
+                    DefinedTypeCache vendorDT = DefinedTypeCache.Get( vendorGuid );
+                    viewModel.vendorList = vendorDT.DefinedValues;
+                }
+                string matrixId = GetAttributeValue( AttributeKey.DiscountCodeMatrix );
+                if ( !String.IsNullOrEmpty( matrixId ) )
+                {
+                    viewModel.discountCodeAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
+                }
             }
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
+            catch ( Exception ex )
             {
-                DefinedTypeCache ministryDT = DefinedTypeCache.Get( ministryGuid );
-                viewModel.ministries = ministryDT.DefinedValues;
+                ExceptionLogService.LogException( ex );
+                viewModel.errors = ex.Message;
             }
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
-            {
-                DefinedTypeCache budgetDT = DefinedTypeCache.Get( budgetLineGuid );
-                viewModel.budgetLines = budgetDT.DefinedValues;
-            }
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.InventoryList ), out inventoryGuid ) )
-            {
-                DefinedTypeCache inventoryDT = DefinedTypeCache.Get( inventoryGuid );
-                viewModel.inventoryList = inventoryDT.DefinedValues;
-            }
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.VendorList ), out vendorGuid ) )
-            {
-                DefinedTypeCache vendorDT = DefinedTypeCache.Get( vendorGuid );
-                viewModel.vendorList = vendorDT.DefinedValues;
-            }
-            string matrixId = GetAttributeValue( AttributeKey.DiscountCodeMatrix );
-            if ( !String.IsNullOrEmpty( matrixId ) )
-            {
-                viewModel.discountCodeAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
-                //viewModel.discountCodeAttrs = new AttributeService( context ).Queryable().Where( a => a.EntityTypeQualifierColumn == "AttributeMatrixTemplateId" && a.EntityTypeQualifierValue == matrixId ).ToList().Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
-            }
-
             return viewModel;
         }
 
@@ -205,6 +213,7 @@ namespace Rock.Blocks.Plugins.EventForm
         #region Properties
 
         private ObsidianPluginsShared EventFormHelper = new ObsidianPluginsShared();
+        private EventFormShared helper = new EventFormShared();
         private int EventContentChannelId { get; set; }
         private int EventContentChannelTypeId { get; set; }
         private int EventDetailsContentChannelId { get; set; }
@@ -230,6 +239,10 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 SetProperties();
                 SubmissionFormViewModel viewModel = LoadRequest( id );
+                if ( !String.IsNullOrEmpty( viewModel.errors ) )
+                {
+                    throw new Exception( viewModel.errors );
+                }
                 if ( viewModel.request.ContentChannelId == EventChangesContentChannelId )
                 {
                     //Need to get the events differently
@@ -327,6 +340,13 @@ namespace Rock.Blocks.Plugins.EventForm
                 Rock.Model.Person p = GetCurrentPerson();
                 ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
                 ContentChannel commentChannel = new ContentChannelService( rockContext ).Get( EventCommentsContentChannelId );
+                ContentChannelItem request = cci_svc.Get( id );
+                var authCheck = CheckRequestPermissions( new SubmissionFormViewModel(), request );
+                if ( !authCheck.permissions.Contains( "Edit" ) )
+                {
+                    throw new UnauthorizedAccessException( "You are not authorized to comment on this request." );
+                }
+
                 ContentChannelItem comment = new ContentChannelItem()
                 {
                     ContentChannelId = EventCommentsContentChannelId,
@@ -342,7 +362,6 @@ namespace Rock.Blocks.Plugins.EventForm
                 rockContext.SaveChanges();
 
                 //We want the request to move to the top of the stack when a note is added
-                ContentChannelItem request = cci_svc.Get( id );
                 request.ModifiedDateTime = RockDateTime.Now;
 
                 //Add association between comment and request
@@ -398,6 +417,14 @@ namespace Rock.Blocks.Plugins.EventForm
                 item = new ContentChannelItemService( context ).Get( id );
                 viewModel.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
                 item.LoadAttributes();
+                // Verify User Permissions
+                viewModel = CheckRequestPermissions( viewModel, item );
+                if ( !viewModel.permissions.Any() )
+                {
+                    viewModel = GenerateNewRequest( new ContentChannelItem(), viewModel, p );
+                    viewModel.errors = "You do not have permission to view this request";
+                    return viewModel;
+                }
                 viewModel.request.LoadAttributesAndValuesForPublicEdit( item, p, false );
                 viewModel.events = item.ChildItems.Where( cd => cd.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci =>
                 {
@@ -433,23 +460,28 @@ namespace Rock.Blocks.Plugins.EventForm
                         viewModel.request.ContentChannelId = EventChangesContentChannelId;
                     }
                 }
-                //TODO: Verify Permission
                 return viewModel;
             }
             else
             {
-                item.ContentChannelId = EventContentChannelId;
-                item.ContentChannelTypeId = EventContentChannelTypeId;
-                var details = new ContentChannelItem() { ContentChannelId = EventDetailsContentChannelId, ContentChannelTypeId = EventDetailsContentChannelTypeId };
-                viewModel.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
-                item.LoadAttributes();
-                viewModel.request.LoadAttributesAndValuesForPublicEdit( item, p, false );
-                var detailBag = EventFormHelper.GetCommonContentChannelItemEntityBag( details );
-                details.LoadAttributes();
-                detailBag.LoadAttributesAndValuesForPublicEdit( details, p, false );
-                viewModel.events = new List<ContentChannelItemBag>() { detailBag };
+                viewModel = GenerateNewRequest( item, viewModel, p );
                 return viewModel;
             }
+        }
+
+        private SubmissionFormViewModel GenerateNewRequest( ContentChannelItem item, SubmissionFormViewModel viewModel, Rock.Model.Person p )
+        {
+            item.ContentChannelId = EventContentChannelId;
+            item.ContentChannelTypeId = EventContentChannelTypeId;
+            var details = new ContentChannelItem() { ContentChannelId = EventDetailsContentChannelId, ContentChannelTypeId = EventDetailsContentChannelTypeId };
+            viewModel.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
+            item.LoadAttributes();
+            viewModel.request.LoadAttributesAndValuesForPublicEdit( item, p, false );
+            var detailBag = EventFormHelper.GetCommonContentChannelItemEntityBag( details );
+            details.LoadAttributes();
+            detailBag.LoadAttributesAndValuesForPublicEdit( details, p, false );
+            viewModel.events = new List<ContentChannelItemBag>() { detailBag };
+            return viewModel;
         }
 
         private List<ContentChannelItem> LoadExisting( string id )
@@ -630,8 +662,8 @@ namespace Rock.Blocks.Plugins.EventForm
         {
             SetProperties();
             ContentChannelItem item = FromViewModel( viewModel );
-            List<string> permissions = SetPermissions( viewModel, CheckSecurityRole( context, AttributeKey.EventAdminRole ) );
-            if ( !permissions.Contains( "Edit" ) )
+            var authCheck = CheckRequestPermissions( new SubmissionFormViewModel(), item );
+            if ( !authCheck.permissions.Contains( "Edit" ) )
             {
                 throw new UnauthorizedAccessException( "You are not authorized to edit this request." );
             }
@@ -1198,6 +1230,37 @@ namespace Rock.Blocks.Plugins.EventForm
             return hasRole;
         }
 
+        /// <summary>
+        /// Method to verify the permissions the current person has for this request
+        /// </summary>
+        /// <param name="request">The Event Request Content Channel Item</param>
+        /// <returns>Auth model with view and edit permissions for the current person</returns>
+        private SubmissionFormViewModel CheckRequestPermissions( SubmissionFormViewModel viewModel, ContentChannelItem request )
+        {
+            using ( RockContext context = new RockContext() )
+            {
+                var p = GetCurrentPerson();
+                bool isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
+                bool isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
+                Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
+                RequestAuthorization auth = helper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid );
+                List<string> permissions = new List<string>();
+                if ( auth.CanEdit )
+                {
+                    permissions.Add( "Edit" );
+                    permissions.Add( "View" );
+                }
+                else if ( auth.CanView )
+                {
+                    permissions.Add( "View" );
+                }
+                viewModel.isEventAdmin = isEventAdmin;
+                viewModel.isRoomAdmin = isRoomAdmin;
+                viewModel.permissions = permissions;
+                return viewModel;
+            }
+        }
+
         private List<string> SetPermissions( ContentChannelItemBag item, bool isAdmin )
         {
             List<string> permissions = new List<string>();
@@ -1383,7 +1446,6 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "";
             string subject = "";
 
-            EventFormShared helper = new EventFormShared();
             helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
 
             List<GroupMember> groupMembers = new List<GroupMember>();
@@ -1460,7 +1522,6 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "";
             string subject = "";
 
-            EventFormShared helper = new EventFormShared();
             helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
 
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
@@ -1602,361 +1663,6 @@ namespace Rock.Blocks.Plugins.EventForm
             var output = email.Send();
         }
 
-        /*
-        private string GetRequestDetails( ContentChannelItem item, List<ContentChannelItem> events )
-        {
-            ContentChannelItem itemChanges = null;
-            ContentChannelItemAssociation itemChangesAssoc = item.ParentItems.FirstOrDefault( ci => ci.ContentChannelItem.ContentChannelId == EventContentChannelId );
-            if ( item.ContentChannelId == EventChangesContentChannelId && itemChangesAssoc != null )
-            {
-                itemChanges = item;
-                item = itemChangesAssoc.ContentChannelItem;
-                events = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
-                events.LoadAttributes();
-                item.LoadAttributes();
-                //itemChanges.LoadAttributes();
-            }
-            string message = "";
-            message += RenderValue( "Ministry", item.AttributeValues["Ministry"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Ministry"].ValueFormatted : "" );
-            string changeTitle = itemChanges != null ? itemChanges.Title : "";
-            if ( item.AttributeValues["RequestType"].Value == "Room" )
-            {
-                message += RenderValue( "Meeting Listing on Calendar", item.Title, itemChanges != null ? changeTitle : "" );
-            }
-            else
-            {
-                message += RenderValue( "Event Name on Calendar", item.Title, itemChanges != null ? changeTitle : "" );
-
-            }
-            message += RenderValue( "Ministry Contact", item.AttributeValues["Contact"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["Contact"].ValueFormatted : "" );
-            message += "<br/>";
-
-            for ( int i = 0; i < events.Count(); i++ )
-            {
-                ContentChannelItem eventChanges = null;
-                ContentChannelItemAssociation eventChangesAssoc = events[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
-                if ( eventChangesAssoc != null )
-                {
-                    eventChanges = eventChangesAssoc.ChildContentChannelItem;
-                    eventChanges.LoadAttributes();
-                }
-                message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>Date Information</strong><br/>";
-                if ( events.Count() == 1 )
-                {
-                    message += RenderValue( "Event Dates", String.Join( ", ", item.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ), itemChanges != null ? String.Join( ", ", itemChanges.AttributeValues["EventDates"].Value.Split( ',' ).Select( e => DateTime.Parse( e.Trim() ).ToString( "MM/dd/yyyy" ) ) ) : "" );
-
-                }
-                else
-                {
-                    message += RenderValue( "Event Date", DateTime.Parse( events[i].AttributeValues["EventDate"].Value ).ToString( "MM/dd/yyyy" ), eventChanges != null ? DateTime.Parse( eventChanges.AttributeValues["EventDate"].Value ).ToString( "MM/dd/yyyy" ) : "" );
-                }
-                if ( !String.IsNullOrEmpty( events[i].AttributeValues["StartTime"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["StartTime"].Value ) ) )
-                {
-                    message += RenderValue( "Start Time", events[i].AttributeValues["StartTime"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["StartTime"].ValueFormatted : "" );
-                }
-                if ( !String.IsNullOrEmpty( events[i].AttributeValues["EndTime"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["EndTime"].Value ) ) )
-                {
-                    message += RenderValue( "End Time", events[i].AttributeValues["EndTime"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["EndTime"].ValueFormatted : "" );
-                }
-                if ( !String.IsNullOrEmpty( events[i].AttributeValues["StartBuffer"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["StartBuffer"].Value ) ) )
-                {
-                    message += RenderValue( "Start Time Set-up Buffer", events[i].AttributeValues["StartBuffer"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["StartBuffer"].ValueFormatted : "" );
-                }
-                if ( !String.IsNullOrEmpty( events[i].AttributeValues["EndBuffer"].Value ) || ( eventChanges != null && !String.IsNullOrEmpty( eventChanges.AttributeValues["EndBuffer"].Value ) ) )
-                {
-                    message += RenderValue( "End Time Tear-down Buffer", events[i].AttributeValues["EndBuffer"].ValueFormatted, eventChanges != null ? eventChanges.AttributeValues["EndBuffer"].ValueFormatted : "" );
-                }
-                message += "</div>";
-
-                if ( ( item.AttributeValues["NeedsSpace"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsSpace"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Space", "Space", events[i], eventChanges );
-                }
-                if ( ( item.AttributeValues["NeedsCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsCatering"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Catering", "Catering", events[i], eventChanges );
-                }
-                if ( ( item.AttributeValues["NeedsOpsAccommodations"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsOpsAccommodations"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Ops Requests", "Ops Accommodations", events[i], eventChanges );
-                }
-                if ( ( item.AttributeValues["NeedsChildCare"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsChildCare"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Childcare", "Childcare", events[i], eventChanges );
-                }
-                if ( ( item.AttributeValues["NeedsChildCareCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsChildCareCatering"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Childcare Catering", "Childcare Catering", events[i], eventChanges );
-                }
-                if ( ( item.AttributeValues["NeedsRegistration"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsRegistration"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Registration", "Registration", events[i], eventChanges );
-                }
-                if ( ( item.AttributeValues["NeedsOnline"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsOnline"].Value == "True" ) )
-                {
-                    message += GetCategoryDetails( "Event Online", "Zoom", events[i], eventChanges );
-                }
-                message += "<br/>";
-            }
-
-            if ( ( item.AttributeValues["NeedsWebCalendar"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsWebCalendar"].Value == "True" ) )
-            {
-                if ( !String.IsNullOrEmpty( item.AttributeValues["WebCalendarDescription"].Value ) || !String.IsNullOrEmpty( item.AttributeValues["WebCalendarGoLive"].Value ) )
-                {
-                    message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>Web Calendar Information</strong><br/>";
-                    message += RenderValue( item.Attributes["WebCalendarGoLive"].Name, item.AttributeValues["WebCalendarGoLive"].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues["WebCalendarGoLive"].ValueFormatted : "" );
-                    message += RenderValue( item.Attributes["WebCalendarDescription"].Name, item.AttributeValues["WebCalendarDescription"].Value, itemChanges != null ? itemChanges.AttributeValues["WebCalendarDescription"].Value : "" );
-                    message += "</div>";
-                }
-            }
-            if ( ( item.AttributeValues["NeedsPublicity"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsPublicity"].Value == "True" ) )
-            {
-                message += GetCategoryDetails( "Event Publicity", "Publicity", item, itemChanges );
-            }
-            if ( ( item.AttributeValues["NeedsProductionAccommodations"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsProductionAccommodations"].Value == "True" ) )
-            {
-                message += GetCategoryDetails( "Event Production", "Production Accommodations", item, itemChanges );
-            }
-            if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) || ( itemChanges != null && !String.IsNullOrEmpty( itemChanges.AttributeValues["Notes"].Value ) ) )
-            {
-                message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";
-                message += RenderValue( "Notes", item.AttributeValues["Notes"].Value, itemChanges != null ? itemChanges.AttributeValues["Notes"].Value : "" );
-            }
-
-            return message;
-        }
-
-        private string GetCategoryDetails( string category, string sectionTitle, ContentChannelItem item, ContentChannelItem itemChanges )
-        {
-            string message = "";
-            var attrs = item.Attributes.Where( a => a.Value.Categories.Select( c => c.Name ).Contains( category ) ).OrderBy( a => a.Value.Order ).Select( a => a.Key ).ToList();
-            if ( attrs.Count() > 0 )
-            {
-                message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>" + sectionTitle + " Information</strong><br/>";
-            }
-            for ( int k = 0; k < attrs.Count(); k++ )
-            {
-                message += RenderValue( item.Attributes[attrs[k]].Name, item.AttributeValues[attrs[k]].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues[attrs[k]].ValueFormatted : "", attrs[k] );
-            }
-            if ( attrs.Count() > 0 )
-            {
-                message += "</div>";
-            }
-            return message;
-        }
-
-        private string RenderValue( string title, string original, string current, string key = "" )
-        {
-            string message = "";
-            if ( !String.IsNullOrEmpty( current ) && original != current )
-            {
-                if ( key == RoomSetUpKey )
-                {
-                    List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
-                    List<TableSetUp> currentSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
-                    if ( originalSetUp != null )
-                    {
-                        for ( int i = 0; i < originalSetUp.Count(); i++ )
-                        {
-                            if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
-                            {
-                                var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
-                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        message += "<li>Empty</li>";
-                    }
-                    message += "</ul> <ul style='color: #347689 !important;'>";
-                    if ( currentSetUp != null )
-                    {
-                        for ( int i = 0; i < currentSetUp.Count(); i++ )
-                        {
-                            if ( !String.IsNullOrEmpty( currentSetUp[i].Room ) )
-                            {
-                                var room = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].Room ) );
-                                message += $"<li>{room}: {currentSetUp[i].NumberofTables} {currentSetUp[i].TypeofTable} tables with {currentSetUp[i].NumberofChairs} each.</li>";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        message += "<li>Empty</li>";
-                    }
-                    message += "</ul>";
-                }
-                else if ( key == OpsInventoryKey )
-                {
-                    List<OpsInventorySetUp> originalSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( original );
-                    List<OpsInventorySetUp> currentSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
-                    if ( originalSetUp != null )
-                    {
-                        for ( int i = 0; i < originalSetUp.Count(); i++ )
-                        {
-                            if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryItem ) )
-                            {
-                                var item = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
-                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}</li>";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        message += "<li>Empty</li>";
-                    }
-                    message += "</ul> <ul style='color: #347689 !important;'>";
-                    if ( currentSetUp != null )
-                    {
-                        for ( int i = 0; i < currentSetUp.Count(); i++ )
-                        {
-                            if ( !String.IsNullOrEmpty( currentSetUp[i].InventoryItem ) )
-                            {
-                                var item = new DefinedValueService( context ).Get( Guid.Parse( currentSetUp[i].InventoryItem ) );
-                                message += $"<li>{currentSetUp[i].QuantityNeeded} {item.Value} {( currentSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}</li>";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        message += "<li>Empty</li>";
-                    }
-                    message += "</ul>";
-
-                }
-                else if ( key == DiscountCodeKey )
-                {
-                    List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
-                    List<DiscountCodeSetUp> currentSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
-                    if ( originalSetUp != null )
-                    {
-                        for ( int i = 0; i < originalSetUp.Count(); i++ )
-                        {
-                            string dates = "";
-                            if ( !String.IsNullOrEmpty( originalSetUp[i].EffectiveDateRange ) )
-                            {
-                                dates = String.Join( " - ", originalSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
-                            }
-                            if ( originalSetUp[i].CodeType == "$" )
-                            {
-                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
-                            }
-                            else
-                            {
-                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].Amount}{originalSetUp[i].CodeType}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        message += "<li>Empty</li>";
-                    }
-                    message += "</ul> <ul style='color: #347689 !important;'>";
-                    if ( currentSetUp != null )
-                    {
-                        for ( int i = 0; i < currentSetUp.Count(); i++ )
-                        {
-                            string dates = "";
-                            if ( !String.IsNullOrEmpty( currentSetUp[i].EffectiveDateRange ) )
-                            {
-                                dates = String.Join( " - ", currentSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
-                            }
-                            if ( currentSetUp[i].CodeType == "$" )
-                            {
-                                message += $"<li>{currentSetUp[i].Code}: {currentSetUp[i].CodeType}{currentSetUp[i].Amount}, Auto-Apply: {currentSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {currentSetUp[i].MaxUses}</li>";
-                            }
-                            else
-                            {
-                                message += $"<li>{currentSetUp[i].Code}: {currentSetUp[i].Amount}{currentSetUp[i].CodeType}, Auto-Apply: {currentSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {currentSetUp[i].MaxUses}</li>";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        message += "<li>Empty</li>";
-                    }
-                    message += "</ul>";
-
-                }
-                else
-                {
-                    message = "<strong>" + title + ":</strong> <span style='color: #cc3f0c !important;'>" + original + "</span> <span style='color: #347689 !important;'>" + current + "</span><br/>";
-                }
-            }
-            else
-            {
-                if ( key == RoomSetUpKey )
-                {
-                    List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
-                    message = "<strong>" + title + ":</strong> <ul>";
-                    if ( originalSetUp != null )
-                    {
-                        for ( int i = 0; i < originalSetUp.Count(); i++ )
-                        {
-                            if ( !String.IsNullOrEmpty( originalSetUp[i].Room ) )
-                            {
-                                var room = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].Room ) );
-                                message += $"<li>{room.Value}: {originalSetUp[i].NumberofTables} {originalSetUp[i].TypeofTable} tables with {originalSetUp[i].NumberofChairs} each.</li>";
-                            }
-                        }
-                    }
-                    message += "</ul>";
-                }
-                else if ( key == OpsInventoryKey )
-                {
-                    List<OpsInventorySetUp> originalSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( original );
-                    message = "<strong>" + title + ":</strong> <ul>";
-                    if ( originalSetUp != null )
-                    {
-                        for ( int i = 0; i < originalSetUp.Count(); i++ )
-                        {
-                            if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryItem ) )
-                            {
-                                var item = new DefinedValueService( context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
-                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}</li>";
-                            }
-                        }
-                    }
-                    message += "</ul>";
-                }
-                else if ( key == DiscountCodeKey )
-                {
-                    List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
-                    message = "<strong>" + title + ":</strong> <ul>";
-                    if ( originalSetUp != null )
-                    {
-                        for ( int i = 0; i < originalSetUp.Count(); i++ )
-                        {
-                            string dates = "";
-                            if ( !String.IsNullOrEmpty( originalSetUp[i].EffectiveDateRange ) )
-                            {
-                                dates = String.Join( " - ", originalSetUp[i].EffectiveDateRange.Split( ',' ).Select( d => DateTime.Parse( d ).ToString( "MM/dd/yy" ) ) );
-                            }
-                            if ( originalSetUp[i].CodeType == "$" )
-                            {
-                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].CodeType}{originalSetUp[i].Amount}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
-                            }
-                            else
-                            {
-                                message += $"<li>{originalSetUp[i].Code}: {originalSetUp[i].Amount}{originalSetUp[i].CodeType}, Auto-Apply: {originalSetUp[i].AutoApply}, Date Range: {dates}, Max Usage: {originalSetUp[i].MaxUses}</li>";
-                            }
-                        }
-                    }
-                    message += "</ul>";
-                }
-                else
-                {
-                    message = "<strong>" + title + ":</strong> " + original + "<br/>";
-                }
-            }
-            return message;
-        }
-        */
-
         #endregion Helpers
 
         public class SubmissionFormViewModel
@@ -1980,6 +1686,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
             public List<AttributeBag> discountCodeAttrs { get; set; }
+            public string errors { get; set; }
         }
 
         public class PreApprovalData

@@ -401,6 +401,71 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             return message;
         }
+
+        public RequestAuthorization CheckRequestPermissions( ContentChannelItem request, Person p, bool isEventAdmin, bool isRoomAdmin, Guid? sharedRequestGroupTypeGuid )
+        {
+            RequestAuthorization auth = new RequestAuthorization() { RequestId = request.Id, CanEdit = false, CanView = false };
+
+            using ( RockContext context = new RockContext() )
+            {
+                var ids = p.Aliases.Select( pa => pa.Id ).ToList();
+                //Created the request or is an Event/Room Admin
+                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) || isEventAdmin || isRoomAdmin )
+                {
+                    auth.CanEdit = true;
+                    auth.CanView = true;
+                }
+                else
+                {
+                    if ( sharedRequestGroupTypeGuid.HasValue )
+                    {
+                        var sharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                        //Anything but Request Creator roles
+                        var sharingMembership = new GroupMemberService( context ).Queryable().Where( gm => gm.GroupTypeId == sharedRequestGT.Id && gm.PersonId == p.Id && !gm.GroupRole.IsLeader ).ToList();
+                        for ( int k = 0; k < sharingMembership.Count(); k++ )
+                        {
+                            GroupMember creator = sharingMembership[k].Group.Members.FirstOrDefault( gm => gm.GroupRole.IsLeader );
+                            bool membershipHasEdit = false;
+                            if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
+                            {
+                                membershipHasEdit = true;
+                            }
+                            if ( creator != null )
+                            {
+                                //The request in question belongs to someone in a sharing group witht the current person
+                                ids = creator.Person.Aliases.Select( pa => pa.Id ).ToList();
+                                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) )
+                                {
+                                    sharingMembership[k].LoadAttributes();
+                                    Guid? limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                                    if ( limitedToMinistryGuid.HasValue )
+                                    {
+                                        Guid? requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                                        if ( !requestMinistry.HasValue )
+                                        {
+                                            request.LoadAttributes();
+                                            requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                                        }
+                                        if ( limitedToMinistryGuid.Value == requestMinistry.Value )
+                                        {
+                                            auth.CanView = true;
+                                            auth.CanEdit = membershipHasEdit;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    auth.CanView = true;
+                                    auth.CanEdit = membershipHasEdit;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return auth;
+        }
     }
     public class TableSetUp
     {
@@ -423,5 +488,11 @@ namespace Rock.Blocks.Plugins.EventForm
         public string AutoApply { get; set; }
         public string EffectiveDateRange { get; set; }
         public int? MaxUses { get; set; }
+    }
+    public class RequestAuthorization
+    {
+        public int RequestId { get; set; }
+        public bool CanEdit { get; set; }
+        public bool CanView { get; set; }
     }
 }
