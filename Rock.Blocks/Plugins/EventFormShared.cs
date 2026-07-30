@@ -410,7 +410,12 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 var ids = p.Aliases.Select( pa => pa.Id ).ToList();
                 //Created the request or is an Event/Room Admin
-                if ( ids.Contains( request.CreatedByPersonAliasId.Value ) || isEventAdmin || isRoomAdmin )
+                if ( request.Id == 0 )
+                {
+                    auth.CanEdit = true;
+                    auth.CanView = true;
+                }
+                else if ( ids.Contains( request.CreatedByPersonAliasId.Value ) || isEventAdmin || isRoomAdmin )
                 {
                     auth.CanEdit = true;
                     auth.CanView = true;
