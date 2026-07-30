@@ -228,7 +228,6 @@ namespace Rock.Blocks.Plugins.EventForm
         private string RoomSetUpKey { get; set; }
         private string DiscountCodeKey { get; set; }
         private string OpsInventoryKey { get; set; }
-        private string ExtensiveSetUpKey { get; set; }
 
         #endregion
 
@@ -1428,7 +1427,6 @@ namespace Rock.Blocks.Plugins.EventForm
             RoomSetUpKey = GetAttributeValue( AttributeKey.RoomSetUp );
             OpsInventoryKey = GetAttributeValue( AttributeKey.OpsInventory );
             DiscountCodeKey = GetAttributeValue( AttributeKey.DiscountCode );
-            ExtensiveSetUpKey = "Setup";
         }
 
         private void SubmittedNotifications( ContentChannelItem item )
@@ -1449,7 +1447,7 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "";
             string subject = "";
 
-            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey, ExtensiveSetUpKey );
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
 
             List<GroupMember> groupMembers = new List<GroupMember>();
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
@@ -1525,7 +1523,7 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "";
             string subject = "";
 
-            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey, ExtensiveSetUpKey );
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
 
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {

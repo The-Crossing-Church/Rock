@@ -21,10 +21,9 @@ namespace Rock.Blocks.Plugins.EventForm
         private string RoomSetUpKey { get; set; }
         private string DiscountCodeKey { get; set; }
         private string OpsInventoryKey { get; set; }
-        private string ExtensiveSetUpKey { get; set; }
 
 
-        public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey, string extensiveSetUpKey )
+        public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey )
         {
             EventContentChannelId = eventCCId;
             EventDetailsContentChannelId = eventDetailCCId;
@@ -34,7 +33,6 @@ namespace Rock.Blocks.Plugins.EventForm
             RoomSetUpKey = roomSetUpKey;
             DiscountCodeKey = discountCodeKey;
             OpsInventoryKey = opsInvKey;
-            ExtensiveSetUpKey = extensiveSetUpKey;
         }
 
         /// <summary>
@@ -160,7 +158,7 @@ namespace Rock.Blocks.Plugins.EventForm
             if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) || ( itemChanges != null && !String.IsNullOrEmpty( itemChanges.AttributeValues["Notes"].Value ) ) )
             {
                 message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";
-                message += RenderValue( "Notes", item.AttributeValues["Notes"].Value, itemChanges != null ? itemChanges.AttributeValues["Notes"].Value : "" );
+                message += RenderValue( "Notes", item.AttributeValues["Notes"].Value, itemChanges != null ? itemChanges.AttributeValues["Notes"].Value : "", fieldTypeGuid: item.Attributes["Notes"].FieldType.Guid );
             }
 
             return message;
@@ -184,7 +182,7 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             for ( int k = 0; k < attrs.Count(); k++ )
             {
-                message += RenderValue( item.Attributes[attrs[k]].Name, item.AttributeValues[attrs[k]].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues[attrs[k]].ValueFormatted : "", attrs[k] );
+                message += RenderValue( item.Attributes[attrs[k]].Name, item.AttributeValues[attrs[k]].ValueFormatted, itemChanges != null ? itemChanges.AttributeValues[attrs[k]].ValueFormatted : "", attrs[k], item.Attributes[attrs[k]].FieldType.Guid );
             }
             if ( attrs.Count() > 0 )
             {
@@ -193,7 +191,7 @@ namespace Rock.Blocks.Plugins.EventForm
             return message;
         }
 
-        private string RenderValue( string title, string original, string current, string key = "" )
+        private string RenderValue( string title, string original, string current, string key = "", Guid? fieldTypeGuid = null )
         {
             string message = "";
             if ( !String.IsNullOrEmpty( current ) && original != current )
@@ -330,7 +328,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     message += "</ul>";
 
                 }
-                else if ( key == ExtensiveSetUpKey )
+                else if ( fieldTypeGuid.HasValue && fieldTypeGuid.Value == SystemGuid.FieldType.MEMO.AsGuid() )
                 {
                     message = "<strong>" + title + ":</strong>";
                     message += "<div>";
@@ -408,7 +406,7 @@ namespace Rock.Blocks.Plugins.EventForm
                     }
                     message += "</ul>";
                 }
-                else if ( key == ExtensiveSetUpKey )
+                else if ( fieldTypeGuid.HasValue && fieldTypeGuid.Value == SystemGuid.FieldType.MEMO.AsGuid() )
                 {
                     message = "<strong>" + title + ":</strong> <br/>" + original.Replace( "\n", "<br/>" ) + "<br/>";
                 }
