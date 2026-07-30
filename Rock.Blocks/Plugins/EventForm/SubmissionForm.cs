@@ -481,6 +481,7 @@ namespace Rock.Blocks.Plugins.EventForm
             details.LoadAttributes();
             detailBag.LoadAttributesAndValuesForPublicEdit( details, p, false );
             viewModel.events = new List<ContentChannelItemBag>() { detailBag };
+            viewModel.permissions = new List<string>() { "Edit" };
             return viewModel;
         }
 
