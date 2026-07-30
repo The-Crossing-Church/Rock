@@ -21,9 +21,10 @@ namespace Rock.Blocks.Plugins.EventForm
         private string RoomSetUpKey { get; set; }
         private string DiscountCodeKey { get; set; }
         private string OpsInventoryKey { get; set; }
+        private string ExtensiveSetUpKey { get; set; }
 
 
-        public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey )
+        public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey, string extensiveSetUpKey )
         {
             EventContentChannelId = eventCCId;
             EventDetailsContentChannelId = eventDetailCCId;
@@ -33,6 +34,7 @@ namespace Rock.Blocks.Plugins.EventForm
             RoomSetUpKey = roomSetUpKey;
             DiscountCodeKey = discountCodeKey;
             OpsInventoryKey = opsInvKey;
+            ExtensiveSetUpKey = extensiveSetUpKey;
         }
 
         /// <summary>
@@ -328,6 +330,18 @@ namespace Rock.Blocks.Plugins.EventForm
                     message += "</ul>";
 
                 }
+                else if ( key == ExtensiveSetUpKey )
+                {
+                    message = "<strong>" + title + ":</strong>";
+                    message += "<div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #cc3f0c !important;'>";
+                    message += original.Replace( "\n", "<br/>" );
+                    message += "  </div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #347689 !important;'>";
+                    message += current.Replace( "\n", "<br/>" );
+                    message += "  </div>";
+                    message += "</div>";
+                }
                 else
                 {
                     message = "<strong>" + title + ":</strong> <span style='color: #cc3f0c !important;'>" + original + "</span> <span style='color: #347689 !important;'>" + current + "</span><br/>";
@@ -393,6 +407,10 @@ namespace Rock.Blocks.Plugins.EventForm
                         }
                     }
                     message += "</ul>";
+                }
+                else if ( key == ExtensiveSetUpKey )
+                {
+                    message = "<strong>" + title + ":</strong> <br/>" + original.Replace( "\n", "<br/>" ) + "<br/>";
                 }
                 else
                 {

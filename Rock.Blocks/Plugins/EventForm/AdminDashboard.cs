@@ -1899,7 +1899,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             item.ChildItems.Select( ccia => ccia.ChildContentChannelItem ).ToList().LoadAttributes();
 
             EventFormShared helper = new EventFormShared();
-            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, "RoomSetUp", "DiscountCodes", "OpsInventory" );
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, "RoomSetUp", "DiscountCodes", "OpsInventory", "Setup" );
 
             string subject = "Some of Your Changes Have Been Approved for " + item.Title;
             string message = "";
