@@ -378,6 +378,22 @@ export default defineComponent({
         id="boolEventNeedsSeparateLink"
       ></rck-field>
     </div>
+    <div class="col col-xs-12 col-md-12">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsShortLink"
+        :label="e.attributes.NeedsShortLink.name"
+        v-if="!readonly"
+        id="boolNeedsShortLink"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsShortLink"
+        :attribute="e.attributes.NeedsShortLink"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsShortLink"
+      ></rck-field>
+    </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
         <rck-field
