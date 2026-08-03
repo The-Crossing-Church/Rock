@@ -382,6 +382,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 }
             }
             response.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
+            response.request.Id = item.Id;
             item.LoadAttributes();
             response.request.LoadAttributesAndValuesForPublicEdit( item, RequestContext.CurrentPerson, false );
             var requestchanges = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).FirstOrDefault();
@@ -860,6 +861,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
                 bag.CreatedBy = cci.CreatedByPersonName;
                 bag.ModifiedBy = cci.ModifiedByPersonName;
+                bag.Id = cci.Id;
                 cci.LoadAttributes();
                 bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
                 return bag;

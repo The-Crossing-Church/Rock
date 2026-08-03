@@ -138,8 +138,9 @@ export default defineComponent({
         partialApprovalModal: false,
         bufferModal: false,
         comment: "",
-        visible: false,
+        denyPop: false,
         approvePop: false,
+        editPop: false,
         requestStatuses: [
           { text: "Draft", value: "Draft" },
           { text: "Submitted", value: "Submitted" },
@@ -275,7 +276,9 @@ export default defineComponent({
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
           this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, true)
-          this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
+          if(this.selected?.attributeValues?.RequestErrors) {
+            this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
+          }
         }
       }).finally(() => {
         if(el) {
@@ -728,7 +731,7 @@ export default defineComponent({
 <rck-modal v-model="modal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
   <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" :requestValidation="requestValidation" v-on:openrequest="selectItem"></tcc-details>
   <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
-    <tcc-comments :comments="selected.comments" :newComment="commentModal" v-on:createComment="createComment"></tcc-comments>
+    <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
     <!--
     <h3 class="text-accent">Comments</h3>
     <div>
@@ -738,10 +741,26 @@ export default defineComponent({
   </template>
   <template #customButtons>
     <div class="d-flex justify-left w-100">
-      <rck-btn btnType="primary" @click="editItem(selected.idKey)">
-        <i class="mr-1 fa fa-pencil-alt"></i>
-        Edit
-      </rck-btn>
+      <div style="position: relative;">
+        <rck-pop v-model:isVisible="editPop" trigger="click" placement="top">
+          <div style="display: flex; flex-direction: column;">
+            <rck-btn class="mb-1" btnType="primary" @click="editItem(selected.idKey)">
+              <!--<i class="mr-1 ti ti-clipboard-list"></i>-->
+              Form
+            </rck-btn>
+            <a class="btn btn-primary" target="_blank" :href="'/admin/cms/content-channels/items/' + selected.id">
+              <!--<i class="mr-1 ti ti-speakerphone"></i>-->
+              CC Editor
+            </a>
+          </div>
+          <template #activator="props">
+            <rck-btn btnType="primary" @click="editPop = !editPop">
+              <i class="mr-1 fa fa-pencil-alt"></i>
+              Edit
+            </rck-btn>
+          </template>
+        </rck-pop>
+      </div>
       <rck-btn btnType="accent" v-if="selectedStatus != 'Approved' && selectedStatus != 'Pending Changes'" @click="updateStatus('Approved')">
         <i class="mr-1 fa fa-check"></i>
         Approve
@@ -771,7 +790,7 @@ export default defineComponent({
         In Progress
       </rck-btn>
       <div v-if="selectedStatus != 'Denied'" style="position: relative;">
-        <rck-pop v-model:isVisible="visible" trigger="click" placement="top">
+        <rck-pop v-model:isVisible="denyPop" trigger="click" placement="top">
           <div style="display: flex; flex-direction: column;">
             <rck-btn class="mb-1" btnType="red" v-if="selectedStatus == 'Pending Changes'" @click="updateStatus('Proposed Changes Denied', true)">
               <i class="mr-1 fa fa-times"></i>
@@ -787,7 +806,7 @@ export default defineComponent({
             </rck-btn>
           </div>
           <template #activator="props">
-            <rck-btn btnType="red" @click="visible = !visible">
+            <rck-btn btnType="red" @click="denyPop = !denyPop">
               <i class="mr-1 fa fa-times"></i>
               Deny
             </rck-btn>

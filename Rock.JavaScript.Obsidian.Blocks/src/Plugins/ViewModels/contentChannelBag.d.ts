@@ -64,6 +64,9 @@ export type ContentChannelBag = {
     /** Gets or sets the identifier key of this entity. */
     idKey?: string | null;
 
+    /** Gets or sets the identifier key of this entity. */
+    id?: number | null;
+
     /** Gets or sets a value indicating whether this instance is index enabled. */
     isIndexEnabled: boolean;
 

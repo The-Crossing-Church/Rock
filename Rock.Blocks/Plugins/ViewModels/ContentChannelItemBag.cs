@@ -33,6 +33,8 @@ namespace Rock.Blocks.Plugins.ViewModels
     /// </summary>
     public partial class ContentChannelItemBag : EntityBagBase
     {
+        public int? Id { get; set; }
+
         /// <summary>
         /// Gets or sets the PersonAliasId of the Rock.Model.Person who either approved or declined the ContentItem. If no approval action has been performed on this item, this value will be null.
         /// </summary>
