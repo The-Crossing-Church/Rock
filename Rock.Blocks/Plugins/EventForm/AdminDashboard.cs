@@ -436,17 +436,17 @@ namespace Rock.Blocks.Plugins.EventDashboard
             if ( opt == "Submitted" )
             {
                 filters.statuses = new List<string>() { "Submitted" };
-                viewModel.submittedEvents = LoadByStatusFromSQL( "Submitted" );// LoadByStatus( filters );
+                viewModel.submittedEvents = LoadByStatus( "Submitted" );// LoadByStatusFromSQL( "Submitted" );// LoadByStatus( filters );
             }
             else if ( opt == "PendingChanges" )
             {
                 filters.statuses = new List<string>() { "Pending Changes", "Changes Accepted by User", "Cancelled by User" };
-                viewModel.changedEvents = LoadByStatusFromSQL( "Pending Changes, Changes Accepted by User, Cancelled by User" );//LoadByStatus( filters );
+                viewModel.changedEvents = LoadByStatus( "Pending Changes,Changes Accepted by User,Cancelled by User" );// LoadByStatusFromSQL( "Pending Changes, Changes Accepted by User, Cancelled by User" );//LoadByStatus( filters );
             }
             else if ( opt == "InProgress" )
             {
                 filters.statuses = new List<string>() { "In Progress" };
-                viewModel.inprogressEvents = LoadByStatusFromSQL( "In Progress" );//LoadByStatus( filters );
+                viewModel.inprogressEvents = LoadByStatus( "In Progress" );// LoadByStatusFromSQL( "In Progress" );//LoadByStatus( filters );
             }
             else
             {
@@ -1317,6 +1317,59 @@ namespace Rock.Blocks.Plugins.EventDashboard
             return results;
         }
 
+        private List<ContentChannelItemBag> LoadByStatus( string status )
+        {
+
+            int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
+            ContentChannelItem item = new ContentChannelItem();
+            List<ContentChannelItem> itemList = new List<ContentChannelItem>();
+            IEnumerable<ContentChannelItem> items = null;
+            RockContext context = new RockContext();
+            AttributeValueService av_svc = new AttributeValueService( context );
+            var p = GetCurrentPerson();
+            items = new ContentChannelItemService( new RockContext() ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
+            items.First().LoadAttributes();
+            List<string> statuses = status.Split( ',' ).ToList();
+
+            IEnumerable<ContentChannelItem> filtered_items = null;
+            string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
+            var requestStatusAttr = items.First().Attributes[requestStatusAttrKey];
+
+            var requestStatuses = av_svc.Queryable().Where( av => av.AttributeId == requestStatusAttr.Id && statuses.Contains( av.Value ) );
+            filtered_items = items.Join( requestStatuses,
+                    i => i.Id,
+                    av => av.EntityId,
+                    ( i, av ) => i
+                );
+            var results = filtered_items.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
+            {
+                var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                cci.LoadAttributes();
+                bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
+                return bag;
+            } ).ToList();
+            results = results.Select( e =>
+            {
+                int? entityId = Rock.Utility.IdHasher.Instance.GetId( e.IdKey );
+                var i = filtered_items.FirstOrDefault( il => il.Id == entityId );
+                var comments = i.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventCommentsContentChannelId ).OrderByDescending( ci => ci.ChildContentChannelItem.CreatedDateTime ).ToList();
+                int ct = 0;
+                for ( var k = 0; k < comments.Count(); k++ )
+                {
+                    if ( comments[k].ChildContentChannelItem.CreatedByPersonAliasId != p.PrimaryAlias.Id )
+                    {
+                        ct++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                e.AttributeValues.Add( "CommentNotifications", ct.ToString() );
+                return e;
+            } ).ToList();
+            return results;
+        }
         private List<ContentChannelItemBag> LoadByStatusFromSQL( string status )
         {
             Person p = GetCurrentPerson();
@@ -1901,7 +1954,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             item.ChildItems.Select( ccia => ccia.ChildContentChannelItem ).ToList().LoadAttributes();
 
             EventFormShared helper = new EventFormShared();
-            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, "RoomSetUp", "DiscountCodes", "OpsInventory");
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, "RoomSetUp", "DiscountCodes", "OpsInventory" );
 
             string subject = "Some of Your Changes Have Been Approved for " + item.Title;
             string message = "";
