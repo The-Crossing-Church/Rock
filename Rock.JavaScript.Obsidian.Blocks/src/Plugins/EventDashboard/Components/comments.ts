@@ -20,7 +20,7 @@ export default defineComponent({
   },
   props: {
     comments: Array,
-    newComment: Boolean
+    modelValue: Boolean
   },
   setup() {
 
@@ -62,6 +62,9 @@ export default defineComponent({
         this.comment = ""
         $('.new-comment').collapse('hide')
       }
+    },
+    cancel() {
+      this.$emit("update:modelValue", false)
     }
   },
   watch: {
@@ -71,13 +74,13 @@ export default defineComponent({
       },
       deep: true
     },
-    newComment(val) {
+    modelValue(val) {
       this.toggleNewComment(val)
     }
   },
   mounted() {
     this.scrollComments()
-    this.toggleNewComment(this.newComment)
+    this.toggleNewComment(this.modelValue)
   },
   template: `
 <h3 class="text-accent">Comments</h3>
@@ -92,11 +95,11 @@ export default defineComponent({
   ></rck-html>
   <div class="d-flex mt-2">
     <div class="spacer"></div>
-    <rck-btn class="mr-2" btnType="grey" @click="newComment = false;">
+    <rck-btn class="mr-2" btnType="grey" @click="cancel">
       <i class="mr-1 fa fa-ban"></i>
       Cancel
     </rck-btn>
-    <rck-btn btnType="accent" @click="createComment">
+    <rck-btn btnType="accent" @click="createComment" :disabled="!this.comment">
       <i class="mr-1 fa fa-comment-alt"></i>
       Add Comment
     </rck-btn>

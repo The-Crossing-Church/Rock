@@ -161,7 +161,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.PreferredVendor, e.attributes.PreferredVendor.name)]" ref="validator_vendor">
+      <tcc-validator :name="e.attributes.PreferredVendor.key" :rules="[rules.required(e.attributeValues.PreferredVendor, e.attributes.PreferredVendor.name)]" ref="validator_vendor">
         <rck-field
           v-model="e.attributeValues.PreferredVendor"
           :attribute="e.attributes.PreferredVendor"
@@ -172,7 +172,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'False'">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, [], e.attributes.ExpectedAttendance.name)]" ref="validator_att">
+      <tcc-validator :name="e.attributes.ExpectedAttendance.key" :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, [], e.attributes.ExpectedAttendance.name)]" ref="validator_att">
         <rck-field
           v-model="e.attributeValues.ExpectedAttendance"
           :attribute="e.attributes.ExpectedAttendance"
@@ -185,7 +185,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetMinistry, e.attributes.FoodBudgetMinistry.name)]" ref="validator_budgetmin">
+      <tcc-validator :name="e.attributes.FoodBudgetMinistry.key" :rules="[rules.required(e.attributeValues.FoodBudgetMinistry, e.attributes.FoodBudgetMinistry.name)]" ref="validator_budgetmin">
         <rck-field
           v-model="e.attributeValues.FoodBudgetMinistry"
           :attribute="e.attributes.FoodBudgetMinistry"
@@ -196,7 +196,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodBudgetLine, e.attributes.FoodBudgetLine.name)]" ref="validator_budget">
+      <tcc-validator :name="e.attributes.FoodBudgetLine.key" :rules="[rules.required(e.attributeValues.FoodBudgetLine, e.attributes.FoodBudgetLine.name)]" ref="validator_budget">
         <rck-field
           v-model="e.attributeValues.FoodBudgetLine"
           :attribute="e.attributes.FoodBudgetLine"
@@ -209,7 +209,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(e.attributeValues.PreferredMenu, e.attributes.PreferredMenu.name)]" ref="validator_menu">
+      <tcc-validator :name="e.attributes.PreferredMenu.key" :rules="[rules.required(e.attributeValues.PreferredMenu, e.attributes.PreferredMenu.name)]" ref="validator_menu">
         <rck-field
           v-model="e.attributeValues.PreferredMenu"
           :attribute="e.attributes.PreferredMenu"
@@ -240,7 +240,7 @@ export default defineComponent({
   </div>
   <div class="row mb-2">
     <div class="col col-xs-12" v-if="e.attributeValues.NeedsDietaryAccommodations == 'True'">
-      <tcc-validator :rules="[rules.required(e.attributeValues.DietaryAccommodationInfo, e.attributes.DietaryAccommodationInfo.name)]" ref="validator_diet">
+      <tcc-validator :name="e.attributes.DietaryAccommodationInfo.key" :rules="[rules.required(e.attributeValues.DietaryAccommodationInfo, e.attributes.DietaryAccommodationInfo.name)]" ref="validator_diet">
         <rck-field
           v-model="e.attributeValues.DietaryAccommodationInfo"
           :attribute="e.attributes.DietaryAccommodationInfo"
@@ -271,7 +271,7 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.NeedsDelivery == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime" v-if="!readonly">
+      <tcc-validator :name="e.attributes.FoodTime.key" :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.FoodTime.name"
           v-model="e.attributeValues.FoodTime"
@@ -288,7 +288,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodSetupLocation, e.attributes.FoodSetupLocation.name)]" ref="validator_foodloc">
+      <tcc-validator :name="e.attributes.FoodSetupLocation.key" :rules="[rules.required(e.attributeValues.FoodSetupLocation, e.attributes.FoodSetupLocation.name)]" ref="validator_foodloc">
         <rck-field
           v-model="e.attributeValues.FoodSetupLocation"
           :attribute="e.attributes.FoodSetupLocation"
@@ -301,7 +301,7 @@ export default defineComponent({
   </div>
   <div class="row" v-else>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime" v-if="!readonly">
+      <tcc-validator :name="e.attributes.FoodTime.key" :rules="[rules.required(e.attributeValues.FoodTime, e.attributes.FoodTime.name)]" ref="validator_foodtime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.FoodTime.name"
           v-model="e.attributeValues.FoodTime"
@@ -330,7 +330,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime" v-if="!readonly">
+      <tcc-validator :name="e.attributes.DrinkTime.key" :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.DrinkTime.name"
           v-model="e.attributeValues.DrinkTime"

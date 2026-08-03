@@ -227,6 +227,18 @@ const rules = {
     }
     return 'is'
   },
+  sectionInfo: [
+    { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
+    { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
+    { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
+    { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
+    { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
+    { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
+    { attr: "NeedsRegistration", cat: "Event Registration", section: "Registration" },
+    { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },
+    { attr: "NeedsProductionAccommodations", cat: "Event Publicity", section: "Publicity" },
+    { attr: "NeedsWebCalendar", cat: "Event Calendar", section: "Calendar" }
+  ],
   validate(request: ContentChannelItemBag | undefined, events: ContentChannelItemBag[], locations: DefinedValueBag[] | undefined, ministries: DefinedValueBag[] | undefined, isSuperUser: boolean | undefined) {
       let requestIsValid = true
       let invalidSections = [] as string[]
@@ -584,28 +596,28 @@ const rules = {
         console.log('ReadOnly Sections')
         console.log(readonlySections)
         
-        let sectionInfo = [
-          { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
-          { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
-          { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
-          { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
-          { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
-          { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
-          { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },
-          { attr: "NeedsProductionAccommodations", cat: "Event Publicity", section: "Publicity" },
-          { attr: "NeedsRegistration", cat: "Event Registration", section: "Calendar" }
-        ]
+        // let sectionInfo = [
+        //   { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
+        //   { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
+        //   { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
+        //   { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
+        //   { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
+        //   { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
+        //   { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },
+        //   { attr: "NeedsProductionAccommodations", cat: "Event Publicity", section: "Publicity" },
+        //   { attr: "NeedsRegistration", cat: "Event Registration", section: "Calendar" }
+        // ]
         let invalidCategories = [] as string[]
         let readOnlyCategories = [] as string[]
         if(invalidSections.length > 0) {
-          invalidCategories = sectionInfo.filter((si: any) => {
+          invalidCategories = this.sectionInfo.filter((si: any) => {
             return invalidSections.includes(si.section)
-          }).map(si => si.cat)
+          }).map(si => si.section)
         }
         if(readOnlyCategories.length > 0) {
-          readOnlyCategories = sectionInfo.filter((si: any) => {
+          readOnlyCategories = this.sectionInfo.filter((si: any) => {
             return readOnlyCategories.includes(si.section)
-          }).map(si => si.cat)
+          }).map(si => si.section)
         }
 
         request.attributeValues.RequestIsValid = requestIsValid ? 'True' : 'False'

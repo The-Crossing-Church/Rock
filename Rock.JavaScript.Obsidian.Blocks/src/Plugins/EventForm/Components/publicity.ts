@@ -144,7 +144,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(request.attributeValues.WhyAttend, request.attributes.WhyAttend.name)]" ref="validators_why">
+      <tcc-validator :name="request.attributes.WhyAttend.key" :rules="[rules.required(request.attributeValues.WhyAttend, request.attributes.WhyAttend.name)]" ref="validators_why">
         <rck-field
           v-model="request.attributeValues.WhyAttend"
           :attribute="request.attributes.WhyAttend"
@@ -157,7 +157,7 @@ export default defineComponent({
   </div>
   <div class="row row-equal-height">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.TargetAudience, request.attributes.TargetAudience.name)]" ref="validators_audience"  style="width: 100%;" v-if="!readonly">
+      <tcc-validator :name="request.attributes.TargetAudience.key" :rules="[rules.required(request.attributeValues.TargetAudience, request.attributes.TargetAudience.name)]" ref="validators_audience"  style="width: 100%;" v-if="!readonly">
         <tcc-pub-ddl
           v-model="request.attributeValues.TargetAudience"
           :label="request.attributes.TargetAudience.name"
@@ -193,7 +193,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start" v-if="!readonly">
+      <tcc-validator :name="request.attributes.PublicityStartDate.key" :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start" v-if="!readonly">
         <tcc-date-pkr
           v-model="request.attributeValues.PublicityStartDate"
           :label="request.attributes.PublicityStartDate.name"
@@ -212,7 +212,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.PublicityEndDate, request.attributes.PublicityEndDate.name), rules.pubEndIsValid(request.attributeValues.PublicityEndDate, request.attributeValues.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate)]" ref="validators_end" v-if="!readonly">
+      <tcc-validator :name="request.attributes.PublicityEndDate.key" :rules="[rules.required(request.attributeValues.PublicityEndDate, request.attributes.PublicityEndDate.name), rules.pubEndIsValid(request.attributeValues.PublicityEndDate, request.attributeValues.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate)]" ref="validators_end" v-if="!readonly">
         <tcc-date-pkr
           v-model="request.attributeValues.PublicityEndDate"
           :label="request.attributes.PublicityEndDate.name"
@@ -234,7 +234,7 @@ export default defineComponent({
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <div id="pubStrat">
-        <tcc-validator :rules="[rules.required(request.attributeValues.PublicityStrategies, request.attributes.PublicityStrategies.name)]" ref="validators_strategies">
+        <tcc-validator :name="request.attributes.PublicityStrategies.key" :rules="[rules.required(request.attributeValues.PublicityStrategies, request.attributes.PublicityStrategies.name)]" ref="validators_strategies">
           <rck-field
             v-if="request.attributeValues.EventisSticky == 'False'"
             v-model="request.attributeValues.PublicityStrategies"

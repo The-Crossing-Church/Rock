@@ -363,7 +363,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name), rules.largeEventSecurity(e.attributeValues.ExpectedAttendance, request.attributeValues.NeedsOpsAccommodations, e.attributeValues.NeedsSecurity, isSuperUser)]" ref="validator_att">
+      <tcc-validator :name="e.attributes.ExpectedAttendance.key" :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name), rules.largeEventSecurity(e.attributeValues.ExpectedAttendance, request.attributeValues.NeedsOpsAccommodations, e.attributeValues.NeedsSecurity, isSuperUser)]" ref="validator_att">
         <rck-field
           v-model="e.attributeValues.ExpectedAttendance"
           :attribute="e.attributes.ExpectedAttendance"
@@ -373,7 +373,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.Rooms, e.attributes.Rooms.name)]" ref="validator_room">
+      <tcc-validator :name="e.attributes.Rooms.key" :rules="[rules.required(e.attributeValues.Rooms, e.attributes.Rooms.name)]" ref="validator_room">
         <tcc-room
           v-model="e.attributeValues.Rooms"
           :label="e.attributes.Rooms.name"

@@ -98,7 +98,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareStartTime, e.attributes.ChildcareStartTime.name)]" ref="validators_start" v-if="!readonly">
+      <tcc-validator :name="e.attributes.ChildcareStartTime.key" :rules="[rules.required(e.attributeValues.ChildcareStartTime, e.attributes.ChildcareStartTime.name)]" ref="validators_start" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.ChildcareStartTime.name"
           v-model="e.attributeValues.ChildcareStartTime"
@@ -115,7 +115,7 @@ export default defineComponent({
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareEndTime, e.attributes.ChildcareEndTime.name)]" ref="validators_end" v-if="!readonly">
+      <tcc-validator :name="e.attributes.ChildcareEndTime.key" :rules="[rules.required(e.attributeValues.ChildcareEndTime, e.attributes.ChildcareEndTime.name)]" ref="validators_end" v-if="!readonly">
         <tcc-time 
           :label="e.attributes.ChildcareEndTime.name"
           v-model="e.attributeValues.ChildcareEndTime"
@@ -134,7 +134,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareBudgetMinistry, e.attributes.ChildcareBudgetMinistry.name)]" ref="validators_budgetmin">
+      <tcc-validator :name="e.attributes.ChildcareBudgetMinistry.key" :rules="[rules.required(e.attributeValues.ChildcareBudgetMinistry, e.attributes.ChildcareBudgetMinistry.name)]" ref="validators_budgetmin">
         <rck-field
           v-model="e.attributeValues.ChildcareBudgetMinistry"
           :attribute="e.attributes.ChildcareBudgetMinistry"
@@ -145,7 +145,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareBudgetLine, e.attributes.ChildcareBudgetLine.name)]" ref="validators_budget">
+      <tcc-validator :name="e.attributes.ChildcareBudgetLine.key" :rules="[rules.required(e.attributeValues.ChildcareBudgetLine, e.attributes.ChildcareBudgetLine.name)]" ref="validators_budget">
         <rck-field
           v-model="e.attributeValues.ChildcareBudgetLine"
           :attribute="e.attributes.ChildcareBudgetLine"
@@ -158,7 +158,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.ChildcareOptions, e.attributes.ChildcareOptions.name)]" ref="validators_ops">
+      <tcc-validator :name="e.attributes.ChildcareOptions.key" :rules="[rules.required(e.attributeValues.ChildcareOptions, e.attributes.ChildcareOptions.name)]" ref="validators_ops">
         <rck-field
           v-model="e.attributeValues.ChildcareOptions"
           :attribute="childcareOptsAttr"
@@ -169,7 +169,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.EstimatedNumberofKids, e.attributes.EstimatedNumberofKids.name)]" ref="validators_numkids">
+      <tcc-validator :name="e.attributes.EstimatedNumberofKids.key" :rules="[rules.required(e.attributeValues.EstimatedNumberofKids, e.attributes.EstimatedNumberofKids.name)]" ref="validators_numkids">
         <rck-field
           v-model="e.attributeValues.EstimatedNumberofKids"
           :attribute="e.attributes.EstimatedNumberofKids"

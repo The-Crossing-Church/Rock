@@ -48,7 +48,7 @@ export default defineComponent({
               }
               if(!this.sectionIsValid && this.requestValidation) {
                 let errs = [] as any[]
-                this.requestValidation?.errors.forEach(err => { 
+                this.requestValidation?.errors?.forEach(err => { 
                   let errorsApply = false
                   if(err.ref.includes("_")) {
                     let idx = err.ref.split("_")[1]
@@ -77,7 +77,7 @@ export default defineComponent({
       },
       sectionIsValid() {
         if(this.requestValidation?.invalidSections) {
-          if(this.requestValidation.invalidSections.includes("Event Registration")) {
+          if(this.requestValidation.invalidSections.includes("Registration")) {
             return false
           } else {
             return true
@@ -131,7 +131,7 @@ export default defineComponent({
   <h4 class="text-accent">
     Registration Information
     <i v-if="sectionIsValid" class="fa fa-check-circle text-accent ml-2"></i>
-    <i v-else class="fa fa-exclamation-circle text-inprogress ml-2"></i>
+    <i v-else-if="!sectionIsValid" class="fa fa-exclamation-circle text-inprogress ml-2"></i>
   </h4>
   <div class="row row-eq-height">
     <div class="col col-xs-12 col-md-6" v-for="av in regAttrs">
@@ -140,7 +140,7 @@ export default defineComponent({
           <template v-if="av.changeValue != ''">
             <div class="row" style="pading-bottom: 12px;">
               <div class="col col-xs-6">
-                <rck-lbl class>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
                     <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
@@ -148,7 +148,7 @@ export default defineComponent({
                 </div>
               </div>
               <div class="col col-xs-6 hidden-label">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-primary">
                   <div v-for="c in getDiscountCodes(av.changeValue)" :key="c.Code">
                     <strong>{{c.Code}}:</strong> {{c.CodeType}} {{c.Amount}}
@@ -172,7 +172,7 @@ export default defineComponent({
           <template v-if="av.changeValue != ''">
             <div class="row">
               <div class="col col-xs-6">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="mb-2 text-red" v-html="av.value.replaceAll('\\n','<br>')"></div>
               </div>
               <div class="col col-xs-6 hidden-label">
@@ -192,7 +192,7 @@ export default defineComponent({
           <template v-if="av.changeValue != ''">
             <div class="row">
               <div class="col col-xs-6">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   {{formatDateTime(av.value)}}
                 </div>
@@ -220,7 +220,7 @@ export default defineComponent({
               <rck-field
                 v-model="av.value"
                 :attribute="av.attr"
-                class="text-red"
+                :class="av.class"
                 :showEmptyValue="true"
               ></rck-field>
             </div>

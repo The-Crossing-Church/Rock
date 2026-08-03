@@ -646,10 +646,14 @@ export default defineComponent({
     },
     validate() {
       let req = this.viewModel?.request as any
-      let res = this.rules.validate(this.viewModel?.request, req.childItems, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser )
+      let res = this.rules.validate(this.viewModel?.request, req.childItems, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
+      this.readonlySections = res.readonlySections
+      if(!this.viewModel?.permissions.includes("Edit")) {
+        this.readonlySections = this.rules.sectionInfo.map(si => si.section)
+      }
       if(this.viewModel?.request.attributeValues) {
         this.viewModel.request.attributeValues.RequestIsValid = res?.isValid ? 'True' : 'False'
-        this.viewModel.request.attributeValues.RequestErrors = JSON.stringify(this.requestErrors) //TODO: map to just errors and flatten
+        this.viewModel.request.attributeValues.RequestErrors = JSON.stringify(this.requestErrors)
       }
     },
     validationChange(errs: any) {
@@ -1172,7 +1176,7 @@ export default defineComponent({
       for(let i=0; i<= this.lastStep; i++) {
         this.pagesViewed.push(i)
       }
-      this.validate()
+      this.validate() 
     }
   },
   template: `

@@ -552,7 +552,7 @@ export default defineComponent({
         ></rck-field>
       </div>
       <div class="col col-xs-12 col-md-6">
-        <tcc-validator :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime" v-if="!readonly">
+        <tcc-validator :name="e.attributes.DrinkTime.key" :rules="[rules.drinkTimeRequired(e.attributeValues.DrinkTime, e.attributeValues.Drinks, e.attributes.DrinkTime.name)]" ref="validator_drinktime" v-if="!readonly">
           <tcc-time 
             :label="e.attributes.DrinkTime.name"
             v-model="e.attributeValues.DrinkTime"
@@ -606,7 +606,7 @@ export default defineComponent({
   </div>
   <div class="row" v-if="e.attributeValues.NeedsSecurity == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityBudgetMinistry, e.attributes.SecurityBudgetMinistry.name)]" ref="validators_budgetmin">
+      <tcc-validator :name="e.attributes.SecurityBudgetMinistry.key" :rules="[rules.required(e.attributeValues.SecurityBudgetMinistry, e.attributes.SecurityBudgetMinistry.name)]" ref="validators_budgetmin">
         <rck-field
           v-model="e.attributeValues.SecurityBudgetMinistry"
           :attribute="e.attributes.SecurityBudgetMinistry"
@@ -617,7 +617,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityBudgetLine, e.attributes.SecurityBudgetLine.name)]" ref="validators_budgetline">
+      <tcc-validator :name="e.attributes.SecurityBudgetLine.key" :rules="[rules.required(e.attributeValues.SecurityBudgetLine, e.attributes.SecurityBudgetLine.name)]" ref="validators_budgetline">
         <rck-field
           v-model="e.attributeValues.SecurityBudgetLine"
           :attribute="e.attributes.SecurityBudgetLine"
@@ -628,7 +628,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityStartTime, e.attributes.SecurityStartTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityStart">
+      <tcc-validator :name="e.attributes.SecurityStartTime.key" :rules="[rules.required(e.attributeValues.SecurityStartTime, e.attributes.SecurityStartTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityStart">
         <tcc-time 
           :label="e.attributes.SecurityStartTime.name"
           v-model="e.attributeValues.SecurityStartTime"
@@ -637,7 +637,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.SecurityEndTime, e.attributes.SecurityEndTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityEnd">
+      <tcc-validator :name="e.attributes.SecurityEndTime.key" :rules="[rules.required(e.attributeValues.SecurityEndTime, e.attributes.SecurityEndTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityEnd">
         <tcc-time 
           :label="e.attributes.SecurityEndTime.name"
           v-model="e.attributeValues.SecurityEndTime"

@@ -21,7 +21,9 @@ export default defineComponent({
       rooms: Array,
       drinks: Array,
       inventory: Array,
-      needsCatering: Boolean
+      needsCatering: Boolean,
+      requestValidation: Object,
+      index: Number
     },
     setup() {
 
@@ -37,12 +39,13 @@ export default defineComponent({
         if(this.details?.attributes && this.details.attributeValues) {
           for(let key in this.details.attributes) {
             let attr = this.details.attributes[key]
-            let item = { attr: attr, value: "", changeValue: "" }
+            let item = { attr: attr, value: "", changeValue: "", class: "", errors: [] as any[] }
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Ops Requests")) {
               item.value = this.details.attributeValues[key]
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]
+                item.class = 'text-red'
               }
               if(key == 'AdditionalSetupImages') {
                 console.log('SET UP IMGS')
@@ -55,18 +58,52 @@ export default defineComponent({
                   matrix = JSON.parse(this.details.changes.attributeValues[key].value)
                   if(matrix.matrixItems) {
                     item.changeValue = matrix.matrixItems.map(mi => mi.editValues.Image)
+                    item.class = 'text-red'
                   }
                 }
               }
               if(this.needsCatering && categories.includes("Event Catering")) {
                 continue
               }
+              if(!this.sectionIsValid && this.requestValidation) {
+                let errs = [] as any[]
+                this.requestValidation?.errors?.forEach(err => { 
+                  let errorsApply = false
+                  if(err.ref.includes("_")) {
+                    let idx = err.ref.split("_")[1]
+                    if(idx == this.index) {
+                      errorsApply = true
+                    }
+                  } else {
+                    errorsApply = true
+                  }
+                  if(errorsApply) {
+                    errs.push(...err.errors.filter(e => {
+                      return e.name == item.attr.key
+                    }))
+                  }
+                })
+                if(errs && errs.length > 0) {
+                  item.class += ' label-red'
+                  item.errors = errs
+                }
+              } 
               attrs.push(item)
             }
           }
         }
         return attrs.sort((a,b) => a.attr.order - b.attr.order)
       },
+      sectionIsValid() {
+        if(this.requestValidation?.invalidSections) {
+          if(this.requestValidation.invalidSections.includes("Ops")) {
+            return false
+          } else {
+            return true
+          }
+        }
+        return false
+      }
     },
     methods: {
       getSetUpDesc(value: string) {
@@ -149,7 +186,11 @@ export default defineComponent({
     },
     template: `
 <div>
-  <h4 class="text-accent">Ops Accomodations Information</h4>
+  <h4 class="text-accent">
+    Ops Accomodations Information
+    <i v-if="sectionIsValid" class="fa fa-check-circle text-accent ml-2"></i>
+    <i v-else-if="!sectionIsValid" class="fa fa-exclamation-circle text-inprogress ml-2"></i>
+  </h4>
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in opsAttrs">
       <template v-if="av.attr.key =='RoomSetUp'">
@@ -157,7 +198,7 @@ export default defineComponent({
           <div class="form-group static-control">
             <div class="row mb-2">
               <div class="col col-xs-6">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
                     <template v-if="su.items.length > 0">
@@ -194,7 +235,7 @@ export default defineComponent({
         <template v-else>
           <div class="mb-2">
             <div class="form-group static-control">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
               <div v-for="su in getSetUpDesc(av.value)" :key="su.room">
                 <template v-if="su.items.length > 0">
                   <b>{{su.room}}:</b> Custom Setup <br/>
@@ -215,7 +256,7 @@ export default defineComponent({
           <div class="form-group static-control">
             <div class="row mb-2">
               <div class="col col-xs-6">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx" class="text-red">{{d}}</div>
               </div>
               <div class="col col-xs-6">
@@ -227,7 +268,7 @@ export default defineComponent({
         <template v-else>
           <div class="mb-2">
             <div class="form-group static-control">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
               <div v-for="(d, idx) in getDrinkInfo(av.value)" :key="idx">{{d}}</div>
             </div>
           </div>
@@ -238,7 +279,7 @@ export default defineComponent({
           <div class="form-group static-control">
             <div class="row mb-2">
               <div class="col col-xs-6">
-                <rck-lbl>{{av.attr.name}}</rck-lbl>
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   <ul v-if="av.value">
                     <li v-for="(val, idx) in getOpsInventory(av.value)" :key="val.InventoryItem">
@@ -265,7 +306,7 @@ export default defineComponent({
         <template v-else>
           <div class="mb-2">
             <div class="form-group static-control">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
               <div>
                 <ul>
                   <li v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
@@ -280,7 +321,7 @@ export default defineComponent({
       <template v-else-if="av.attr.key == 'SetupImage'">
         <template v-if="av.changeValue != ''">
           <div class="form-group static-control">
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="row mb-2">
               <div class="col col-xs-6">
                 <tcc-img :value="av.value"></tcc-img>
@@ -294,7 +335,7 @@ export default defineComponent({
         <template v-else>
           <div class="mb-2">
             <div class="form-group static-control">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
               <tcc-img :value="av.value"></tcc-img>
             </div>
           </div>
@@ -303,7 +344,7 @@ export default defineComponent({
       <template v-else-if="av.attr.key == 'AdditionalSetupImages'">
         <template v-if="av.changeValue != ''">
           <div class="form-group static-control">
-            <rck-lbl>{{av.attr.name}}</rck-lbl>
+            <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="row mb-2">
               <div class="col col-xs-6">
                 <tcc-img v-for="(img, idx) in av.value" :value="img" :key="'img_' + idx"></tcc-img>
@@ -317,7 +358,7 @@ export default defineComponent({
         <template v-else>
           <div class="mb-2">
             <div class="form-group static-control">
-              <rck-lbl>{{av.attr.name}}</rck-lbl>
+              <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
               <div>
                 <tcc-img v-for="img in av.value" :value="img" :key="'img_' + idx"></tcc-img>
               </div>
@@ -332,7 +373,7 @@ export default defineComponent({
               <rck-field
                 v-model="av.value"
                 :attribute="av.attr"
-                class="text-red"
+                :class="av.class"
                 :showEmptyValue="true"
               ></rck-field>
             </div>
@@ -351,9 +392,16 @@ export default defineComponent({
             v-model="av.value"
             :attribute="av.attr"
             :showEmptyValue="true"
+            :class="av.class"
           ></rck-field>
         </template>
       </template>
+      <ul v-if="!sectionIsValid && av.errors.length > 0" class="field-error list-unstyled">
+        <li
+          v-for="(e, idx) in av.errors"
+          :key="idx"
+        >{{ e.text }}</li>
+      </ul>
     </div>
   </div>
 </div>

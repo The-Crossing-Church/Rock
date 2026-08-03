@@ -202,7 +202,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator name="ministry" :rules="[rules.required(viewModel.request.attributeValues.Ministry, 'Ministry')]" ref="validators_ministry">
+      <tcc-validator :name="viewModel.request.attributeValues.Ministry.key" :rules="[rules.required(viewModel.request.attributeValues.Ministry, 'Ministry')]" ref="validators_ministry">
         <rck-field
           v-model="viewModel.request.attributeValues.Ministry"
           :attribute="viewModel.request.attributes.Ministry"
@@ -212,7 +212,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="contact" :rules="[rules.required(viewModel.request.attributeValues.Contact, 'Contact')]" ref="validators_contact">
+      <tcc-validator :name="viewModel.request.attributeValues.Contact.key" :rules="[rules.required(viewModel.request.attributeValues.Contact, 'Contact')]" ref="validators_contact">
         <rck-field
           v-model="viewModel.request.attributeValues.Contact"
           :attribute="viewModel.request.attributes.Contact"
@@ -248,7 +248,7 @@ export default defineComponent({
   </div>
   <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator name="starttime" :rules="[rules.required(viewModel.events[0].attributeValues.StartTime, 'Start Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, true)]" ref="validators_start">
+      <tcc-validator :name="viewModel.events[0].attributeValues.StartTime.key" :rules="[rules.required(viewModel.events[0].attributeValues.StartTime, 'Start Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, true)]" ref="validators_start">
         <tcc-time 
           :label="viewModel.events[0].attributes.StartTime.name"
           v-model="viewModel.events[0].attributeValues.StartTime"
@@ -264,7 +264,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator name="endtime" :rules="[rules.required(viewModel.events[0].attributeValues.EndTime, 'End Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, false)]" ref="validators_end">
+      <tcc-validator :name="viewModel.events[0].attributeValues.EndTime.key" :rules="[rules.required(viewModel.events[0].attributeValues.EndTime, 'End Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, false)]" ref="validators_end">
         <tcc-time 
           :label="viewModel.events[0].attributes.EndTime.name"
           v-model="viewModel.events[0].attributeValues.EndTime"

@@ -64,7 +64,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(e.attributeValues.EventURL, e.attributes.EventURL.name)]" ref="validators_url">
+      <tcc-validator :name="e.attributes.EventURL.key" :rules="[rules.required(e.attributeValues.EventURL, e.attributes.EventURL.name)]" ref="validators_url">
         <rck-field
           v-model="e.attributeValues.EventURL"
           :attribute="e.attributes.EventURL"

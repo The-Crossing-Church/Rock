@@ -69,7 +69,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.StartTime, 'Start Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, true)]" ref="validators_start">
+      <tcc-validator :name="e.attributes.StartTime.key" :rules="[rules.required(e.attributeValues.StartTime, 'Start Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, true)]" ref="validators_start">
         <tcc-time 
           :label="e.attributes.StartTime.name"
           v-model="e.attributeValues.StartTime"
@@ -85,7 +85,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(e.attributeValues.EndTime, 'End Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, false)]" ref="validators_end">
+      <tcc-validator :name="e.attributes.EndTime.key" :rules="[rules.required(e.attributeValues.EndTime, 'End Time'), rules.timeIsValid(e.attributeValues.StartTime, e.attributeValues.EndTime, false)]" ref="validators_end">
         <tcc-time 
           :label="e.attributes.EndTime.name"
           v-model="e.attributeValues.EndTime"

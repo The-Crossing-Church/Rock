@@ -116,11 +116,16 @@ namespace Rock.Blocks.Plugins.EventForm
                 }
                 if ( ( item.AttributeValues["NeedsOpsAccommodations"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsOpsAccommodations"].Value == "True" ) )
                 {
-                    message += GetCategoryDetails( "Event Ops Requests", "Ops Accommodations", events[i], eventChanges );
+                    string exclusion = "";
+                    if ( ( item.AttributeValues["NeedsCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsCatering"].Value == "True" ) )
+                    {
+                        exclusion = "Event Catering";
+                    }
+                    message += GetCategoryDetails( "Event Ops Requests", "Ops Accommodations", events[i], eventChanges, exclusion );
                 }
                 if ( ( item.AttributeValues["NeedsChildCare"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsChildCare"].Value == "True" ) )
                 {
-                    message += GetCategoryDetails( "Event Childcare", "Childcare", events[i], eventChanges );
+                    message += GetCategoryDetails( "Event Childcare", "Childcare", events[i], eventChanges, "Event Childcare Catering" );
                 }
                 if ( ( item.AttributeValues["NeedsChildCareCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsChildCareCatering"].Value == "True" ) )
                 {
@@ -172,10 +177,10 @@ namespace Rock.Blocks.Plugins.EventForm
         /// <param name="item">Event Request</param>
         /// <param name="itemChanges">Changes Requested to Event Request</param>
         /// <returns></returns>
-        private string GetCategoryDetails( string category, string sectionTitle, ContentChannelItem item, ContentChannelItem itemChanges )
+        private string GetCategoryDetails( string category, string sectionTitle, ContentChannelItem item, ContentChannelItem itemChanges, string excludeCategory = "" )
         {
             string message = "";
-            var attrs = item.Attributes.Where( a => a.Value.Categories.Select( c => c.Name ).Contains( category ) ).OrderBy( a => a.Value.Order ).Select( a => a.Key ).ToList();
+            var attrs = item.Attributes.Where( a => a.Value.Categories.Select( c => c.Name ).Contains( category ) && ( excludeCategory == "" || !a.Value.Categories.Select( c => c.Name ).Contains( excludeCategory ) ) ).OrderBy( a => a.Value.Order ).Select( a => a.Key ).ToList();
             if ( attrs.Count() > 0 )
             {
                 message += "<div style='font-size: 18px; margin-bottom: 16px;'><strong style='color: #6485b3;'>" + sectionTitle + " Information</strong><br/>";

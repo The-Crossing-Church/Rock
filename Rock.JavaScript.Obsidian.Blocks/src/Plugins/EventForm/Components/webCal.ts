@@ -112,7 +112,7 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :rules="[rules.required(request.attributeValues.WebCalendarGoLive, request.attributes.WebCalendarGoLive.name), rules.dateCannotBeAfterEvent(request.attributeValues.WebCalendarGoLive, lastDate, request.attributes.WebCalendarGoLive.name)]" ref="validators_start" v-if="!readonly">
+      <tcc-validator :name="request.attributes.WebCalendarGoLive.key" :rules="[rules.required(request.attributeValues.WebCalendarGoLive, request.attributes.WebCalendarGoLive.name), rules.dateCannotBeAfterEvent(request.attributeValues.WebCalendarGoLive, lastDate, request.attributes.WebCalendarGoLive.name)]" ref="validators_start" v-if="!readonly">
         <tcc-date-pkr
           :label="request.attributes.WebCalendarGoLive.name"
           v-model="request.attributeValues.WebCalendarGoLive"
@@ -133,7 +133,7 @@ export default defineComponent({
   </div>
   <div class="row">
     <div class="col col-xs-12">
-      <tcc-validator :rules="[rules.required(request.attributeValues.WebCalendarDescription, request.attributes.WebCalendarDescription.name)]" ref="validators_webcal">
+      <tcc-validator :name="request.attributes.WebCalendarDescription.key" :rules="[rules.required(request.attributeValues.WebCalendarDescription, request.attributes.WebCalendarDescription.name)]" ref="validators_webcal">
         <rck-field
           v-model="request.attributeValues.WebCalendarDescription"
           :attribute="request.attributes.WebCalendarDescription"
