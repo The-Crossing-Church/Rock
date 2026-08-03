@@ -12,6 +12,8 @@ using DocumentFormat.OpenXml.Math;
 
 using Microsoft.Ajax.Utilities;
 
+using Newtonsoft.Json;
+
 using OpenXmlPowerTools;
 
 using Rock.Attribute;
@@ -22,6 +24,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 
+using static Rock.Blocks.Plugins.EventDashboard.UserDashboard;
 using static Rock.Model.StepProgram;
 
 namespace Rock.Blocks.Plugins.EventDashboard
@@ -258,6 +261,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 }
             }
             response.request = EventFormHelper.GetCommonContentChannelItemEntityBag( item );
+            response.request.Id = item.Id;
             item.LoadAttributes();
             response.request.LoadAttributesAndValuesForPublicEdit( item, RequestContext.CurrentPerson, false );
             var requestchanges = item.ChildItems.Where( i => i.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).FirstOrDefault();
@@ -872,23 +876,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
             List<RequestAuthorization> sharedRequestAuth = GetSharedRequests( context, p, sharedWithAttr, ministryAttr );
             List<int> sharedRequests = sharedRequestAuth.Select( ra => ra.RequestId ).ToList();
-            //if ( sharedWithAttr != null )
-            //{
-            //    sharedRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == sharedWithAttr.Id ).ToList().Where( av => !String.IsNullOrEmpty( av.Value ) && av.Value.Split( ',' ).Contains( p.Id.ToString() ) ).Select( av => av.EntityId ).ToList();
-            //}
-            //Guid ministryGuid = Guid.Empty;
-            //List<int?> personalRequests = new List<int?>();
-            //if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-            //{
-            //    DefinedType ministryDT = new DefinedTypeService( context ).Get( ministryGuid );
-            //    var min = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id );
-            //    var personalRequest = min.FirstOrDefault( dv => dv.Value.ToLower().Contains( "personal" ) );
-            //    if ( personalRequest != null )
-            //    {
-            //        //filter out personal requests from the shared requests list
-            //        personalRequests = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id ).ToList().Where( av => av.Value == personalRequest.Guid.ToString() ).Select( av => av.EntityId ).ToList();
-            //    }
-            //}
             items = items.Where( i =>
             {
                 if ( i.CreatedByPersonAliasId == p.PrimaryAliasId )
@@ -922,22 +909,10 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     }
                 }
             }
-            Person submitter = null;
-            if ( filters.submitter != null && !String.IsNullOrEmpty( filters.submitter ) )
-            {
-                submitter = new PersonService( context ).Get( Guid.Parse( filters.submitter ) );
-            }
             //AND Filters
             filtered_items = items.Where( i =>
             {
                 bool meetsCriteria = true;
-                if ( submitter != null )
-                {
-                    if ( i.CreatedByPersonAliasId != submitter.PrimaryAlias.Id && i.ModifiedByPersonAliasId != submitter.PrimaryAlias.Id )
-                    {
-                        meetsCriteria = false;
-                    }
-                }
                 if ( !String.IsNullOrEmpty( filters.title ) )
                 {
                     if ( !i.Title.ToLower().Contains( filters.title.ToLower() ) )
@@ -1008,6 +983,15 @@ namespace Rock.Blocks.Plugins.EventDashboard
                             ( i, av ) => i
                         );
                 }
+            }
+            if ( filters.ministry != null && !String.IsNullOrEmpty( filters.ministry ) )
+            {
+                var ministries = av_svc.Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value.ToLower() == filters.ministry.ToLower() );
+                filtered_items = filtered_items.Join( ministries,
+                        i => i.Id,
+                        av => av.EntityId,
+                        ( i, av ) => i
+                    );
             }
             if ( filters.resources != null && filters.resources.Count() > 0 )
             {
@@ -1084,6 +1068,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
             return itemList.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
             {
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                bag.CreatedBy = cci.CreatedByPersonName;
+                bag.ModifiedBy = cci.ModifiedByPersonName;
+                bag.Id = cci.Id;
                 //Update Authorization on Request to use in Dashboard 
                 bag.CanEdit = true;
                 var auth = sharedRequestAuth.FirstOrDefault( ra => ra.RequestId == cci.Id );
@@ -1094,7 +1081,12 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 cci.LoadAttributes();
                 bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
                 return bag;
-            } ).ToList();
+            } ).Where( ccib =>
+                //Run Submitted filter criteria now that we have Created By and Modified By names as strings
+                String.IsNullOrEmpty( filters.submitter ) ||
+                ( !String.IsNullOrEmpty( ccib.CreatedBy ) && ccib.CreatedBy.ToLower().Contains( filters.submitter.ToLower() ) ) ||
+                ( !String.IsNullOrEmpty( ccib.ModifiedBy ) && ccib.ModifiedBy.ToLower().Contains( filters.submitter.ToLower() ) )
+            ).ToList();
         }
 
 
