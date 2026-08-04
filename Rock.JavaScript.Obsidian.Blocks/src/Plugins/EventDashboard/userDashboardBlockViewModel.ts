@@ -9,6 +9,7 @@ export type UserDashboardBlockViewModel = {
     comments: ContentChannelItemBag[];
     isEventAdmin: boolean;
     isRoomAdmin: boolean;
+    isSuperUser: boolean;
     locations: DefinedValueBag[];
     ministries: DefinedValueBag[];
     budgetLines: DefinedValueBag[];

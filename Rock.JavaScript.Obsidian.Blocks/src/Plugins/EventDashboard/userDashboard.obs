@@ -303,7 +303,7 @@ export default defineComponent({
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
-          this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, true)
+          this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser)
           if(this.selected?.attributeValues?.RequestErrors) {
             this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
           }
@@ -830,7 +830,7 @@ export default defineComponent({
   <rck-modal v-model="modal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
     <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" :requestValidation="requestValidation"></tcc-details>
     <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
-      <tcc-comments :comments="selected.comments" :newComment="commentModal" v-on:createComment="createComment"></tcc-comments>
+      <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
     </template>
     <template #customButtons>
       <div class="d-flex justify-left w-100">
@@ -854,7 +854,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
         </rck-btn>
-        <rck-btn btnType="med-blue" @click="copyRequest">
+        <rck-btn v-if="viewModel?.isSuperUser" btnType="med-blue" @click="copyRequest">
           <i class="mr-1 fas fa-history"></i>
           Resubmit
         </rck-btn>

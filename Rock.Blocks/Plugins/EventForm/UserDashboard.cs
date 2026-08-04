@@ -60,6 +60,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
+    [SecurityRoleField( "Ministry Event Admin", key: AttributeKey.MinistryEventAdminRole, category: "Security", required: true, order: 2 )]
 
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", required: false, order: 0 )]
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
@@ -103,6 +104,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public const string UserDashboard = "UserDashboard";
             public const string EventAdminRole = "EventAdminRole";
             public const string RoomAdminRole = "RoomAdminRole";
+            public const string MinistryEventAdminRole = "MinistryEventAdminRole";
             public const string DefaultStatuses = "DefaultStatuses";
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
@@ -152,6 +154,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     //viewModel.events = LoadRequests();
                     viewModel.isEventAdmin = CheckSecurityRole( rockContext, AttributeKey.EventAdminRole );
                     viewModel.isRoomAdmin = CheckSecurityRole( rockContext, AttributeKey.RoomAdminRole );
+                    viewModel.isSuperUser = CheckSecurityRole( rockContext, AttributeKey.MinistryEventAdminRole );
                     viewModel.eventDetailsCCId = EventDetailsContentChannelId;
                     viewModel.commentsCCId = EventCommentsContentChannelId;
 
@@ -1565,13 +1568,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
                 for ( int k = 0; k < sharingMembership.Count(); k++ )
                 {
-                    DefinedValue limitedToMinistry = null;
-                    Guid? limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).AsGuidOrNull();
+                    //List<DefinedValue> limitedToMinistry = null;
+                    List<string> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).ToList();
                     bool membershipHasEdit = false;
-                    if ( limitedToMinistryGuid.HasValue )
-                    {
-                        limitedToMinistry = ministries.FirstOrDefault( dv => dv.Guid == limitedToMinistryGuid.Value );
-                    }
                     if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
                     {
                         membershipHasEdit = true;
@@ -1583,9 +1582,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         var aliasIds = creator.Person.Aliases.Select( pa => pa.Id ).ToList();
                         var creatorsRequests = new ContentChannelItemService( context ).Queryable().Where( cci => aliasIds.Contains( cci.CreatedByPersonAliasId.Value ) );
                         var requestMinistries = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value != personalRequest.Guid.ToString() );
-                        if ( limitedToMinistry != null )
+                        if ( limitedToMinistryGuid.Any() )
                         {
-                            requestMinistries = requestMinistries.Where( av => av.Value == limitedToMinistry.Guid.ToString() );
+                            requestMinistries = requestMinistries.Where( av => limitedToMinistryGuid.Contains( av.Value ) );
                         }
                         creatorsRequests = creatorsRequests.Join( requestMinistries,
                             cci => cci.Id,
@@ -1765,6 +1764,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public List<ContentChannelItemAssociation> eventDetails { get; set; }
             public bool isEventAdmin { get; set; }
             public bool isRoomAdmin { get; set; }
+            public bool isSuperUser { get; set; }
             public List<DefinedValue> locations { get; set; }
             public List<DefinedValue> ministries { get; set; }
             public List<DefinedValue> budgetLines { get; set; }
