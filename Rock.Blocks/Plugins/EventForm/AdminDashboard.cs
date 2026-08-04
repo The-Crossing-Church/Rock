@@ -576,7 +576,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     ModifiedDateTime = RockDateTime.Now
                 };
                 cci_svc.Add( comment );
-                rockContext.SaveChanges();
+                rockContext.SaveChanges( true ); //Disable Pre/Post Save
 
                 //We want the request to move to the top of the stack when a note is added
                 ContentChannelItem request = cci_svc.Get( id );
