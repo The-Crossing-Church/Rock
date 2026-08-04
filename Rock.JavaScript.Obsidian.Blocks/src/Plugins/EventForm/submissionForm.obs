@@ -306,14 +306,17 @@ export default defineComponent({
         return options
       },
       preFillOptions() {
-        let dates = this.viewModel?.events.map(e => { 
-          return e.attributeValues?.EventDate
-        }).filter((value, index, self) => {
-          return value != this.preFillTarget
-        }).map(dt => {
-          return { text: this.formatDate(dt), value: dt}
-        })
-        return dates
+        if(this.viewModel?.events) {
+          let dates = this.viewModel?.events.map(e => { 
+            return e.attributeValues?.EventDate
+          }).filter((value, index, self) => {
+            return value != this.preFillTarget
+          }).map(dt => {
+            return { text: this.formatDate(dt), value: dt}
+          })
+          return dates
+        }
+        return []
       },
       preFillLabel() {
         if(this.preFillModalOption) {
@@ -322,14 +325,17 @@ export default defineComponent({
         return 'Select the date of the event you wish to use to prefill all information for your event on ' + this.formatDate(this.preFillTarget)
       },
       copyOptions() {
-        let dates = this.viewModel?.events.map(e => { 
-          return e.attributeValues?.EventDate
-        }).filter((value, index, self) => {
-          return value != this.preFillSource
-        }).map(dt => {
-          return { text: this.formatDate(dt), value: dt}
-        })
-        return dates
+        if(this.viewModel?.events) {
+          let dates = this.viewModel?.events.map(e => { 
+            return e.attributeValues?.EventDate
+          }).filter((value, index, self) => {
+            return value != this.preFillSource
+          }).map(dt => {
+            return { text: this.formatDate(dt), value: dt}
+          })
+          return dates
+        }
+        return []
       },
       copyLabel() {
         return `Select the dates you wish to copy information from ${this.formatDate(this.preFillSource)} to.`
@@ -646,7 +652,10 @@ export default defineComponent({
     },
     validate() {
       let req = this.viewModel?.request as any
-      let res = this.rules.validate(this.viewModel?.request, req.childItems, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
+      let events = this.viewModel?.events as any
+      console.log(req)
+      console.log(events)
+      let res = this.rules.validate(this.viewModel?.request, events, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
       this.readonlySections = res.readonlySections
       if(!this.viewModel?.permissions.includes("Edit")) {
         this.readonlySections = this.rules.sectionInfo.map(si => si.section)
