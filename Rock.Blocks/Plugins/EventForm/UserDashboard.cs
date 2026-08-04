@@ -395,7 +395,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 {
                     ContentChannelId = EventCommentsContentChannelId,
                     ContentChannelTypeId = commentChannel.ContentChannelTypeId,
-                    Title = "Comment From " + p.FullName,
+                    Title = "Comment From " + p.FullName + " for " + request.Title + " on " + RockDateTime.Now.ToString( "M/d/yy h:mm tt" ),
                     Content = message,
                     CreatedByPersonAliasId = p.PrimaryAliasId,
                     ModifiedByPersonAliasId = p.PrimaryAliasId,
