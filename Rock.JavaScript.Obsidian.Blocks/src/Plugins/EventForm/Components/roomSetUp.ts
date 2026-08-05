@@ -108,7 +108,7 @@ export default defineComponent({
   template: `
 <div class="row">
   <div class="col col-xs-10 col-md-3">
-    <tcc-validator :name="e.attributes.TypeofTable.key" :rules="typeOfTableRules" ref="validators_typeoftable">
+    <tcc-validator :rules="typeOfTableRules" ref="validators_typeoftable">
       <rck-lbl>Type of Table</rck-lbl>
       <rck-ddl
         v-model="roomSetUp.TypeofTable"
