@@ -657,7 +657,7 @@ export default defineComponent({
       console.log(events)
       let res = this.rules.validate(this.viewModel?.request, events, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
       this.readonlySections = res.readonlySections
-      if(!this.viewModel?.permissions.includes("Edit")) {
+      if(!this.viewModel?.permissions?.includes("Edit")) {
         this.readonlySections = this.rules.sectionInfo.map(si => si.section)
       }
       if(this.viewModel?.request.attributeValues) {
@@ -1199,7 +1199,7 @@ export default defineComponent({
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
-    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" refName="basic" @validation-change="validationChange" ref="basic" v-on:createComment="createComment"></tcc-basic>
+    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" :readonly="readonlySections.includes('Basic')" refName="basic" @validation-change="validationChange" ref="basic" v-on:createComment="createComment"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
@@ -1242,7 +1242,7 @@ export default defineComponent({
             Space Information
             <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Space'; preFillModal = true;">Prefill Section</rck-btn>
           </h3>
-          <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
+          <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="readonlySections.includes('Space')" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
@@ -1309,7 +1309,7 @@ export default defineComponent({
       <rck-field
         v-model="viewModel.request.attributeValues.Notes"
         :attribute="viewModel.request.attributes.Notes"
-        :is-edit-mode="true"
+        :is-edit-mode="viewModel?.permissions?.includes('Edit')"
       ></rck-field>
     </template>
   </div>

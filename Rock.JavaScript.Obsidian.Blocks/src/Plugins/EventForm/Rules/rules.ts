@@ -228,6 +228,7 @@ const rules = {
     return 'is'
   },
   sectionInfo: [
+    { section: "Basic" },
     { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
     { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
     { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },

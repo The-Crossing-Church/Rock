@@ -35,6 +35,12 @@ export default defineComponent({
     currentPerson(): CurrentPersonBag | null {
       return store.state.currentPerson
     },
+    isDisabled() {
+      if(this.comment && this.comment != '') {
+        return false
+      }
+      return true
+    }
   },
   methods: {
     getNextComment(idx: number) {
@@ -99,7 +105,7 @@ export default defineComponent({
       <i class="mr-1 fa fa-ban"></i>
       Cancel
     </rck-btn>
-    <rck-btn btnType="accent" @click="createComment" :disabled="!this.comment">
+    <rck-btn btnType="accent" @click="createComment" :disabled="isDisabled">
       <i class="mr-1 fa fa-comment-alt"></i>
       Add Comment
     </rck-btn>
