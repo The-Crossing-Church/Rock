@@ -205,7 +205,11 @@ namespace Rock.Blocks.Plugins.EventForm
                 {
                     List<TableSetUp> originalSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( original );
                     List<TableSetUp> currentSetUp = JsonConvert.DeserializeObject<List<TableSetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
+                    message = "<strong>" + title + ":</strong>";
+                    message = "<strong>" + title + ":</strong>";
+                    message += "<div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #cc3f0c !important;'>";
+                    message += "    <ul style='color: #cc3f0c !important;'>";
                     if ( originalSetUp != null )
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
@@ -221,7 +225,10 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul> <ul style='color: #347689 !important;'>";
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #347689 !important;'>";
+                    message += "    <ul style='color: #347689 !important;'>";
                     if ( currentSetUp != null )
                     {
                         for ( int i = 0; i < currentSetUp.Count(); i++ )
@@ -237,13 +244,18 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul>";
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "</div>";
                 }
                 else if ( key == OpsInventoryKey )
                 {
                     List<OpsInventorySetUp> originalSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( original );
                     List<OpsInventorySetUp> currentSetUp = JsonConvert.DeserializeObject<List<OpsInventorySetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
+                    message = "<strong>" + title + ":</strong>";
+                    message += "<div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #cc3f0c !important;'>";
+                    message += "    <ul style='color: #cc3f0c !important;'>";
                     if ( originalSetUp != null )
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
@@ -251,7 +263,18 @@ namespace Rock.Blocks.Plugins.EventForm
                             if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryItem ) )
                             {
                                 var item = new DefinedValueService( _context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
-                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}</li>";
+                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}";
+                                if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryDelivery ) )
+                                {
+                                    string[] deliveryInfo = originalSetUp[i].InventoryDelivery.Split( '\n' );
+                                    message += "<ul>";
+                                    for ( int k = 0; k < deliveryInfo.Length; k++ )
+                                    {
+                                        message += $"<li>{deliveryInfo[k]}</li>";
+                                    }
+                                    message += "</ul>";
+                                }
+                                message += "</li>";
                             }
                         }
                     }
@@ -259,7 +282,10 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul> <ul style='color: #347689 !important;'>";
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #347689 !important;'>";
+                    message += "    <ul style='color: #347689 !important;'>";
                     if ( currentSetUp != null )
                     {
                         for ( int i = 0; i < currentSetUp.Count(); i++ )
@@ -267,7 +293,18 @@ namespace Rock.Blocks.Plugins.EventForm
                             if ( !String.IsNullOrEmpty( currentSetUp[i].InventoryItem ) )
                             {
                                 var item = new DefinedValueService( _context ).Get( Guid.Parse( currentSetUp[i].InventoryItem ) );
-                                message += $"<li>{currentSetUp[i].QuantityNeeded} {item.Value} {( currentSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}</li>";
+                                message += $"<li>{currentSetUp[i].QuantityNeeded} {item.Value} {( currentSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}";
+                                if ( !String.IsNullOrEmpty( currentSetUp[i].InventoryDelivery ) )
+                                {
+                                    string[] deliveryInfo = currentSetUp[i].InventoryDelivery.Split( '\n' );
+                                    message += "<ul>";
+                                    for ( int k = 0; k < deliveryInfo.Length; k++ )
+                                    {
+                                        message += $"<li>{deliveryInfo[k]}</li>";
+                                    }
+                                    message += "</ul>";
+                                }
+                                message += "</li>";
                             }
                         }
                     }
@@ -275,14 +312,19 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul>";
-
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "</div>";
                 }
                 else if ( key == DiscountCodeKey )
                 {
                     List<DiscountCodeSetUp> originalSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( original );
                     List<DiscountCodeSetUp> currentSetUp = JsonConvert.DeserializeObject<List<DiscountCodeSetUp>>( current );
-                    message = "<strong>" + title + ":</strong> <ul style='color: #cc3f0c !important;'>";
+                    message = "<strong>" + title + ":</strong>";
+
+                    message += "<div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #cc3f0c !important;'>";
+                    message += "    <ul style='color: #cc3f0c !important;'>";
                     if ( originalSetUp != null )
                     {
                         for ( int i = 0; i < originalSetUp.Count(); i++ )
@@ -306,7 +348,10 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul> <ul style='color: #347689 !important;'>";
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #347689 !important;'>";
+                    message += "    <ul style='color: #347689 !important;'>";
                     if ( currentSetUp != null )
                     {
                         for ( int i = 0; i < currentSetUp.Count(); i++ )
@@ -330,8 +375,9 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         message += "<li>Empty</li>";
                     }
-                    message += "</ul>";
-
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "</div>";
                 }
                 else if ( fieldTypeGuid.HasValue && fieldTypeGuid.Value == SystemGuid.FieldType.MEMO.AsGuid() )
                 {
@@ -380,7 +426,18 @@ namespace Rock.Blocks.Plugins.EventForm
                             if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryItem ) )
                             {
                                 var item = new DefinedValueService( _context ).Get( Guid.Parse( originalSetUp[i].InventoryItem ) );
-                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}</li>";
+                                message += $"<li>{originalSetUp[i].QuantityNeeded} {item.Value} {( originalSetUp[i].QuantityNeeded > 1 && !item.Value.Trim().EndsWith( "s" ) ? "s" : "" )}";
+                                if ( !String.IsNullOrEmpty( originalSetUp[i].InventoryDelivery ) )
+                                {
+                                    string[] deliveryInfo = originalSetUp[i].InventoryDelivery.Split( '\n' );
+                                    message += "<ul>";
+                                    for ( int k = 0; k < deliveryInfo.Length; k++ )
+                                    {
+                                        message += $"<li>{deliveryInfo[k]}</li>";
+                                    }
+                                    message += "</ul>";
+                                }
+                                message += "</li>";
                             }
                         }
                     }
@@ -505,6 +562,7 @@ namespace Rock.Blocks.Plugins.EventForm
     {
         public string InventoryItem { get; set; }
         public int QuantityNeeded { get; set; }
+        public string InventoryDelivery { get; set; }
     }
     public class DiscountCodeSetUp
     {
