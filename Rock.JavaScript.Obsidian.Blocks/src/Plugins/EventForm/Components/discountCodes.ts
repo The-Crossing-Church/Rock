@@ -1,4 +1,4 @@
-import { defineComponent, PropType } from "vue"
+import { defineComponent, PropType, readonly } from "vue"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { AttributeBag } from "../../ViewModels/attributeBag"
 import { DateTime, Duration, Interval } from "luxon"
@@ -37,7 +37,8 @@ export default defineComponent({
       type: Object as PropType<ContentChannelItemBag>,
       required: false
     },
-    attrs: Array as PropType<AttributeBag[]>
+    attrs: Array as PropType<AttributeBag[]>,
+    readonly: Boolean
   },
   setup() {
 
@@ -218,7 +219,7 @@ export default defineComponent({
               <template v-if="dc.AutoApply == 'True'">
                 <i class="fas fa-check-square"></i> Auto-Apply 
               </template>
-              <rck-btn @click="edit(idx)" btnType="accent" class="pull-right btn-circle" :id="'btnEditDiscount' + idx">
+              <rck-btn @click="edit(idx)" btnType="accent" class="pull-right btn-circle" v-if="!readonly" :id="'btnEditDiscount' + idx">
                 <i class="fa fa-pencil-alt"></i>
               </rck-btn>
             </div>
@@ -230,7 +231,7 @@ export default defineComponent({
       </template>
     </div>
     <div class="col col-xs-1">
-      <rck-btn class="pull-right btn-circle" btnType="accent" @click="newCode = { AutoApply: 'False', CodeType: '%', Amount: '', MaxUses: '', EffectiveDateRange: '', Code: '' }; modal = true;" id="btnNewCode">
+      <rck-btn class="pull-right btn-circle" btnType="accent" @click="newCode = { AutoApply: 'False', CodeType: '%', Amount: '', MaxUses: '', EffectiveDateRange: '', Code: '' }; modal = true;" v-if="!readonly" id="btnNewCode">
         <i class="fa fa-plus"></i>
       </rck-btn>
     </div>

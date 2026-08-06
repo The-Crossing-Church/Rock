@@ -152,6 +152,8 @@
             type: String as PropType<string>,
             default: ""
         },
+
+        disabled: Boolean
     });
 
     const emit = defineEmits<{

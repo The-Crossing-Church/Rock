@@ -42,7 +42,8 @@ export default defineComponent({
         },
         minEventDate: String,
         showValidation: Boolean,
-        refName: String
+        refName: String,
+        readonly: Boolean
     },
     setup() {
       
@@ -196,6 +197,7 @@ export default defineComponent({
         <rck-text
           v-model="viewModel.request.title"
           id="txtTitle"
+          :disabled="readonly"
         ></rck-text>
       </tcc-validator>
     </div>
@@ -206,7 +208,7 @@ export default defineComponent({
         <rck-field
           v-model="viewModel.request.attributeValues.Ministry"
           :attribute="viewModel.request.attributes.Ministry"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
           id="ddlMinistry"
         ></rck-field>
       </tcc-validator>
@@ -216,7 +218,7 @@ export default defineComponent({
         <rck-field
           v-model="viewModel.request.attributeValues.Contact"
           :attribute="viewModel.request.attributes.Contact"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
           id="txtContact"
         ></rck-field>
       </tcc-validator>
@@ -225,11 +227,11 @@ export default defineComponent({
   <br/>
   <div class="row">
     <div class="col col-xs-12 col-md-4">
-      <tcc-date v-model="viewModel.request.attributeValues.EventDates" :min="minEventDate" :multiple="true" :readonly="viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')" id="eventDates"></tcc-date>
+      <tcc-date v-model="viewModel.request.attributeValues.EventDates" :min="minEventDate" :multiple="true" :readonly="readonly || (viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress'))" id="eventDates"></tcc-date>
     </div>
     <div class="col col-xs-12 col-md-8" style="display: flex; flex-wrap: wrap; align-content: flex-start;">
       <tcc-chip v-if="showValidation && eventDates.length == 0" class="bg-red text-red">Event Date(s) are required.</tcc-chip>
-      <tcc-chip v-for="d in eventDates" :key="d" v-on:chipdeleted="removeDate(d)" :disabled="viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')">
+      <tcc-chip v-for="d in eventDates" :key="d" v-on:chipdeleted="removeDate(d)" :disabled="readonly || (viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress'))">
         {{formatDate(d)}}
       </tcc-chip>
       <tcc-comment v-if="viewModel.request.attributeValues.IsSame == 'False' && !(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')" :request="viewModel.request" v-on:addComment="addComment"></tcc-comment>
@@ -241,14 +243,23 @@ export default defineComponent({
       <tcc-switch
         v-model="viewModel.request.attributeValues.IsSame"
         :label="viewModel.request.attributes.IsSame.name"
+        v-if="!readonly"
         :disabled="!(viewModel.request.attributeValues.RequestStatus == 'Draft' || viewModel.request.attributeValues.RequestStatus == 'Submitted' || viewModel.request.attributeValues.RequestStatus == 'In Progress')"
         id="switchSame"
       ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="viewModel.request.attributeValues.IsSame"
+        :attribute="viewModel.request.attribute.IsSame"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolIsSame"
+      ></rck-field>
     </div>
   </div>
   <div class="row" v-if="viewModel.request.attributeValues.IsSame == 'True'">
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="viewModel.events[0].attributeValues.StartTime.key" :rules="[rules.required(viewModel.events[0].attributeValues.StartTime, 'Start Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, true)]" ref="validators_start">
+      <tcc-validator :name="viewModel.events[0].attributeValues.StartTime.key" :rules="[rules.required(viewModel.events[0].attributeValues.StartTime, 'Start Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, true)]" v-if="!readonly" ref="validators_start">
         <tcc-time 
           :label="viewModel.events[0].attributes.StartTime.name"
           v-model="viewModel.events[0].attributeValues.StartTime"
@@ -262,9 +273,17 @@ export default defineComponent({
           id="TimeStart"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="viewModel.events[0].attributeValues.StartTime"
+        :attribute="viewModel.events[0].attributes.StartTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="TimeStart"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="viewModel.events[0].attributeValues.EndTime.key" :rules="[rules.required(viewModel.events[0].attributeValues.EndTime, 'End Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, false)]" ref="validators_end">
+      <tcc-validator :name="viewModel.events[0].attributeValues.EndTime.key" :rules="[rules.required(viewModel.events[0].attributeValues.EndTime, 'End Time'), rules.timeIsValid(viewModel.events[0].attributeValues.StartTime, viewModel.events[0].attributeValues.EndTime, false)]" v-if="!readonly" ref="validators_end">
         <tcc-time 
           :label="viewModel.events[0].attributes.EndTime.name"
           v-model="viewModel.events[0].attributeValues.EndTime"
@@ -278,10 +297,18 @@ export default defineComponent({
           id="TimeEnd"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="viewModel.events[0].attributeValues.EndTime"
+        :attribute="viewModel.events[0].attributes.EndTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="TimeEnd"
+      ></rck-field>
     </div>
   </div>
   <br/>
-  <tcc-buffer v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)" :e="viewModel.events[0]"></tcc-buffer>
+  <tcc-buffer v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)" :e="viewModel.events[0]" :readonly="readonly"></tcc-buffer>
   <br/>
 </rck-form>
 `

@@ -16,7 +16,8 @@ export default defineComponent({
       e: {
         type: Object as PropType<ContentChannelItemBag>,
         required: false
-      }
+      },
+      readonly: Boolean
     },
     setup() {
 
@@ -163,12 +164,14 @@ export default defineComponent({
     <tcc-time
       :label="e.attributes.StartBuffer.name"
       v-model="setUpTime"
+      v-if="!readonly"
     ></tcc-time> 
   </div>
   <div class="col col-xs-12 col-md-6">
     <tcc-time
       :label="e.attributes.EndBuffer.name"
       v-model="tearDownTime"
+      v-if="!readonly"
     ></tcc-time> 
   </div>
 </div>

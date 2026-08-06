@@ -59,6 +59,9 @@ export default defineComponent({
       if(!(this.viewModel?.isEventAdmin || this.viewModel?.isSuperUser || this.viewModel?.isRoomAdmin)) {
         return true
       }
+      if(!this.viewModel?.permissions?.includes('Edit')) {
+        return true
+      }
       if(tense == 'was') {
         //We are past the date you can request new resources
         //Allow toggle if the original request has the resource
@@ -155,6 +158,7 @@ export default defineComponent({
       :label="viewModel.request.attributes.NeedsSpace.name"
       hint="If you need any doors unlocked for this event, please be sure to include Operations accommodations below. Selecting a physical space does not assume unlocked doors."
       :persistent-hint="viewModel.request.attributeValues.NeedsSpace == 'True'"
+      :disabled="!viewModel?.permissions?.includes('Edit')"
       id="switchNeedsSpace"
     ></tcc-switch>
   </div>

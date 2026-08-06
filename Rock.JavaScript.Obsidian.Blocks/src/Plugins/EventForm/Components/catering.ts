@@ -145,7 +145,7 @@ export default defineComponent({
     },
     template: `
 <rck-form ref="form" @validationChanged="validationChange" class="catering-form">
-  <div class="form-group dropdown">
+  <div class="form-group dropdown" v-if="!readonly">
     <rck-btn btnType="link" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="vendoreMenu">
       <rck-lbl class="hover">
         For a list of our preferred vendors - <span class="text-accent">please click here.</span>

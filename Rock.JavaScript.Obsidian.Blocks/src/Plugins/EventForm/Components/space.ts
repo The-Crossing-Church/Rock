@@ -1,4 +1,4 @@
-import { defineComponent, PropType} from "vue"
+import { defineComponent, PropType, readonly} from "vue"
 import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime, Duration, Interval } from "luxon"
@@ -54,7 +54,8 @@ export default defineComponent({
     existing: Array as PropType<any[]>,
     showValidation: Boolean,
     refName: String,
-    isSuperUser: Boolean
+    isSuperUser: Boolean,
+    readonly: Boolean
   },
   setup() {
 
@@ -367,21 +368,29 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.ExpectedAttendance"
           :attribute="e.attributes.ExpectedAttendance"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
           id="txtAttendance"
         ></rck-field>
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.Rooms.key" :rules="[rules.required(e.attributeValues.Rooms, e.attributes.Rooms.name)]" ref="validator_room">
+      <tcc-validator :name="e.attributes.Rooms.key" :rules="[rules.required(e.attributeValues.Rooms, e.attributes.Rooms.name)]" v-if="!readonly" ref="validator_room">
         <tcc-room
           v-model="e.attributeValues.Rooms"
           :label="e.attributes.Rooms.name"
           :items="groupedRooms"
+          :disabled="readonly"
           :multiple="true"
           id="PkrRoom"
         ></tcc-room>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.Rooms"
+        :attribute="e.attributes.Rooms"
+        :is-edit-mode="false"
+        id="PkrRoom"
+      ></rck-field>
     </div>
   </div>
   <div class="row" v-if="ministry == 'Infrastructure'">
@@ -390,7 +399,7 @@ export default defineComponent({
         <rck-field
           v-model="e.attributeValues.InfrastructureSpace"
           :attribute="e.attributes.InfrastructureSpace"
-          :is-edit-mode="true"
+          :is-edit-mode="!readonly"
           id="txtInfrastructureSpace"
         ></rck-field>
       </tcc-validator>
