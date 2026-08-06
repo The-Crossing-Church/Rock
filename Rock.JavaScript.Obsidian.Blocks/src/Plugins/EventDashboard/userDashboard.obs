@@ -253,6 +253,33 @@ export default defineComponent({
         }
         return date.toFormat("yyyy-MM-dd")
       },
+      canResubmit() {
+        if(this.viewModel) {
+          if(this.viewModel.isSuperUser || this.viewModel.isEventAdmin) {
+            return true
+          } else {
+            if(this.selected) {
+              if(this.selected.attributeValues) {
+                if(this.selected.attributeValues.NeedsCatering == 'True' ||
+                  this.selected.attributeValues.NeedsChildCare == 'True' ||
+                  this.selected.attributeValues.NeedsChildCareCatering == 'True' ||
+                  this.selected.attributeValues.NeedsOnline == 'True' ||
+                  this.selected.attributeValues.NeedsOpsAccommodations == 'True' ||
+                  this.selected.attributeValues.NeedsProductionAccommodations == 'True' ||
+                  this.selected.attributeValues.NeedsPublicity == 'True' ||
+                  this.selected.attributeValues.NeedsRegistration == 'True' ||
+                  this.selected.attributeValues.NeedsWebCalendar == 'True'
+                ) {
+                  return false
+                } else {
+                  return true
+                }
+              }
+            }
+          }
+        }
+        return false
+      }
   },
   methods: {
     formatDateTime(date: any): string {
@@ -854,7 +881,7 @@ export default defineComponent({
           <i class="mr-1 fa fa-comment-alt"></i>
           Add Comment
         </rck-btn>
-        <rck-btn v-if="viewModel?.isSuperUser" btnType="med-blue" @click="copyRequest">
+        <rck-btn v-if="canResubmit" btnType="med-blue" @click="copyRequest">
           <i class="mr-1 fas fa-history"></i>
           Resubmit
         </rck-btn>
