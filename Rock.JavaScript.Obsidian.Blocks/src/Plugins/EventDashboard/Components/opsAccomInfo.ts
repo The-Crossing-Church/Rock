@@ -176,7 +176,13 @@ export default defineComponent({
           return inv
         }
         return []
-      }
+      },
+      getDeliveryInfo(info: string) {
+        if(info) {
+          return info.split('\n')
+        }
+        return []
+      },
     },
     watch: {
       
@@ -284,6 +290,11 @@ export default defineComponent({
                   <ul v-if="av.value">
                     <li v-for="(val, idx) in getOpsInventory(av.value)" :key="val.InventoryItem">
                       {{val.QuantityNeeded}} {{val.ItemName}}
+                      <ul v-if="val.InventoryDelivery != ''">
+                        <li v-for="(delivery, dIdx) in getDeliveryInfo(val.InventoryDelivery)" :key="dIdx">
+                          {{delivery}}
+                        </li>
+                      </ul>
                     </li>
                   </ul>
                   <div v-else>Empty</div>
@@ -295,6 +306,11 @@ export default defineComponent({
                   <ul v-if="av.changeValue">
                     <li v-for="(val, idx) in getOpsInventory(av.changeValue)" :key="val.InventoryItem">
                       {{val.QuantityNeeded}} {{val.ItemName}}
+                      <ul v-if="val.InventoryDelivery != ''">
+                        <li v-for="(delivery, dIdx) in getDeliveryInfo(val.InventoryDelivery)" :key="dIdx">
+                          {{delivery}}
+                        </li>
+                      </ul>
                     </li>
                   </ul>
                   <div v-else>Empty</div>
@@ -311,6 +327,11 @@ export default defineComponent({
                 <ul>
                   <li v-for="i in getOpsInventory(av.value)" :key="i.InventoryItem">
                     {{i.QuantityNeeded}} {{i.ItemName}}
+                    <ul v-if="i.InventoryDelivery != ''">
+                      <li v-for="(delivery, dIdx) in getDeliveryInfo(i.InventoryDelivery)" :key="dIdx">
+                        {{delivery}}
+                      </li>
+                    </ul>
                   </li>
                 </ul>
               </div>

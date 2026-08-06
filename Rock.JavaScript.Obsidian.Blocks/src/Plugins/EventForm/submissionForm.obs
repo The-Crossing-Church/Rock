@@ -1258,7 +1258,7 @@ export default defineComponent({
             Other Accomodations
             <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</rck-btn>
           </h3>
-          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
+          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
           <br/>
         </template>
         <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">

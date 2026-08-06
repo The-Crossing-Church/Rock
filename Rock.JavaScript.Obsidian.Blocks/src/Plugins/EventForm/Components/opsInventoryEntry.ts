@@ -1,13 +1,16 @@
 import { defineComponent, PropType } from "vue"
+import { AttributeBag } from "../../ViewModels/attributeBag"
 import TextBox from "@Obsidian/Controls/textBox.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import DDL from "@Obsidian/Controls/dropDownList.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
+import RockField from "@Obsidian/Controls/rockField.obs"
 import OpsInvDDL from "./opsInventoryDropDown"
 
 type InventoryReservation = {
   InventoryItem: string,
-  QuantityNeeded: number
+  QuantityNeeded: number,
+  InventoryDelivery: string
 }
 
 export default defineComponent({
@@ -17,10 +20,12 @@ export default defineComponent({
     "rck-lbl": RockLabel,
     "rck-ddl": DDL,
     "rck-btn": RockButton,
+    "rck-field": RockField,
     "tcc-inv-ddl": OpsInvDDL
   },
   props: {
     modelValue: Object as PropType<InventoryReservation>,
+    attrs: Array as PropType<AttributeBag[]>,
     inventory: Array,
     disabled: {
       type: Boolean,
@@ -45,6 +50,15 @@ export default defineComponent({
     };
   },
   computed: {
+    inventoryDeliveryAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "InventoryDelivery" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
   },
   methods: {
     removeConfiguration() {
@@ -92,7 +106,15 @@ export default defineComponent({
       label="Quantity Needed"
     ></rck-text>
   </div>
-  <div class="col col-xs-2 pt-4 mt-2">
+  <div class="col col-xs-10 col-md-10">
+    <rck-field
+      v-model="inventoryRes.InventoryDelivery"
+      :attribute="inventoryDeliveryAttr"
+      :is-edit-mode="true"
+      id="txtDelivery"
+    ></rck-field>
+  </div>
+  <div class="col col-xs-2 pt-4 mt-2 ops-inventory-row-action">
     <rck-btn btnType="red" @click="removeConfiguration" :id="'btnRemove' + id">
       <i class="fas fa-trash"></i>
     </rck-btn>

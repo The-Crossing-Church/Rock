@@ -39,17 +39,21 @@ namespace Rock.Blocks.Plugins.EventForm
     [ContentChannelField( "Event Changes Content Channel", key: AttributeKey.EventChangesContentChannel, category: "General", required: true, order: 2 )]
     [ContentChannelField( "Event Details Changes Content Channel", key: AttributeKey.EventDetailsChangesContentChannel, category: "General", required: true, order: 3 )]
     [ContentChannelField( "Event Comments Content Channel", key: AttributeKey.EventCommentsContentChannel, category: "General", required: true, order: 4 )]
+
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
     [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 3 )]
     [DefinedTypeField( "Preferred Vendors Defined Type", key: AttributeKey.VendorList, category: "Lists", required: true, order: 4 )]
+
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 1 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
+
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
     [SecurityRoleField( "Super User", key: AttributeKey.SuperUserRole, category: "Security", required: true, order: 2 )]
+
     [AttributeField( name: "Request Status", key: AttributeKey.RequestStatusAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 0 )]
     [AttributeField( name: "Event Dates", key: AttributeKey.EventDatesAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 1 )]
     [AttributeField( name: "Details are Same", key: AttributeKey.IsSameAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 2 )]
@@ -60,10 +64,11 @@ namespace Rock.Blocks.Plugins.EventForm
     [TextField( "Start Buffer", "Attribute Key for Start Buffer", key: AttributeKey.StartBuffer, defaultValue: "StartBuffer", category: "Attributes", order: 7 )]
     [TextField( "End Buffer", "Attribute Key for End Buffer", key: AttributeKey.EndBuffer, defaultValue: "EndBuffer", category: "Attributes", order: 8 )]
     [TextField( "Ops Inventory", "Attribute Key for Ops Inventory", key: AttributeKey.OpsInventory, defaultValue: "OpsInventory", category: "Attributes", order: 9 )]
-    [TextField( "Room Set-up", "Attribute Key for Room SetUp", key: AttributeKey.RoomSetUp, defaultValue: "RoomSetUp", category: "Attributes", order: 10 )]
-    [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCodes", category: "Attributes", order: 11 )]
-    [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 12 )]
-    [BinaryFileTypeField( "Event Image File Type", "The file type all images and files associated with an event request should be assigned to", key: AttributeKey.EventImageFileType, category: "Attributes", order: 13 )]
+    [TextField( "Ops Inventory Matrix Template Id", "The Id of the Attribute Matrix Template for Ops Inventory", key: AttributeKey.OpsInventoryMatrix, category: "Attributes", order: 10 )]
+    [TextField( "Room Set-up", "Attribute Key for Room SetUp", key: AttributeKey.RoomSetUp, defaultValue: "RoomSetUp", category: "Attributes", order: 11 )]
+    [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCodes", category: "Attributes", order: 12 )]
+    [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 13 )]
+    [BinaryFileTypeField( "Event Image File Type", "The file type all images and files associated with an event request should be assigned to", key: AttributeKey.EventImageFileType, category: "Attributes", order: 14 )]
 
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 2, key: AttributeKey.SharedWithAttr )]
@@ -105,6 +110,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string StartBuffer = "StartBuffer";
             public const string EndBuffer = "EndBuffer";
             public const string OpsInventory = "OpsInventory";
+            public const string OpsInventoryMatrix = "OpsInventoryMatrix";
             public const string RoomSetUp = "RoomSetUp";
             public const string DiscountCode = "DiscountCode";
             public const string DiscountCodeMatrix = "DiscountCodeMatrix";
@@ -198,6 +204,11 @@ namespace Rock.Blocks.Plugins.EventForm
                 if ( !String.IsNullOrEmpty( matrixId ) )
                 {
                     viewModel.discountCodeAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
+                }
+                matrixId = GetAttributeValue( AttributeKey.OpsInventoryMatrix );
+                if ( !String.IsNullOrEmpty( matrixId ) )
+                {
+                    viewModel.opsInventoryAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
                 }
             }
             catch ( Exception ex )
@@ -1666,6 +1677,7 @@ namespace Rock.Blocks.Plugins.EventForm
 
         #endregion Helpers
 
+        #region Classes
         public class SubmissionFormViewModel
         {
             public ContentChannelItemBag request { get; set; }
@@ -1687,6 +1699,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public string adminDashboardURL { get; set; }
             public string userDashboardURL { get; set; }
             public List<AttributeBag> discountCodeAttrs { get; set; }
+            public List<AttributeBag> opsInventoryAttrs { get; set; }
             public string errors { get; set; }
         }
 
@@ -1705,5 +1718,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public bool isPreApproved { get; set; }
             public string message { get; set; }
         }
+
+        #endregion
     }
 }

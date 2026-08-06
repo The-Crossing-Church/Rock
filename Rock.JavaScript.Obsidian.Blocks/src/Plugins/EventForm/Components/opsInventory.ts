@@ -1,5 +1,6 @@
 import { defineComponent, PropType } from "vue"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { AttributeBag } from "../../ViewModels/attributeBag"
 import { DateTime, Interval } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
@@ -10,7 +11,8 @@ import OpsInventory from "./opsInventoryEntry"
 
 type InventoryReservation = {
   InventoryItem: string,
-  QuantityNeeded: number
+  QuantityNeeded: number,
+  InventoryDelivery: string
 }
 type ListItem = {
   text: string,
@@ -39,6 +41,7 @@ export default defineComponent({
     },
     request: Object as PropType<ContentChannelItemBag>,
     originalRequest: Object as PropType<ContentChannelItemBag>,
+    inventoryAttrs: Array as PropType<AttributeBag[]>,
     inventoryList: Array as PropType<any[]>,
     existing: Array as PropType<any[]>,
     readonly: Boolean
@@ -239,12 +242,12 @@ export default defineComponent({
   methods: {
     openInventoryEditor() {
       if(this.opsInventory.length == 0) {
-        this.opsInventory.push({InventoryItem: "", QuantityNeeded: 0})
+        this.opsInventory.push({InventoryItem: "", QuantityNeeded: 0, InventoryDelivery: ""})
       }
       this.modal = true
     },
     addOpsInvConfiguration() {
-      this.opsInventory.push({InventoryItem: "", QuantityNeeded: 0})
+      this.opsInventory.push({InventoryItem: "", QuantityNeeded: 0, InventoryDelivery: ""})
     },
     removeOpsInvConfiguration(idx: number) {
       this.opsInventory.splice(idx, 1)
@@ -265,6 +268,12 @@ export default defineComponent({
         }
       }
     },
+    getDeliveryInfo(info: string) {
+      if(info) {
+        return info.split('\n')
+      }
+      return []
+    },
     saveOpsInvConfiguration() {
       this.modal = false
       //Combine inventory rows
@@ -280,6 +289,7 @@ export default defineComponent({
           let existingQty = parseInt(inv[idx].QuantityNeeded)
           let newQty = parseInt(i.QuantityNeeded)
           inv[idx].QuantityNeeded = existingQty + newQty
+          inv[idx].InventoryDelivery = existingQty + ': ' + inv[idx].InventoryDelivery + '\n' + newQty + ': ' + i.InventoryDelivery
         } else {
           inv.push(i)
         }
@@ -356,6 +366,11 @@ export default defineComponent({
         <div class="row" v-for="(o, idx) in opsInventory" :key="idx">
           <div class="col col-xs-12">
             {{o.QuantityNeeded}} {{getInventoryName(o.InventoryItem, o.QuantityNeeded)}}
+            <ul v-if="o.InventoryDelivery != ''">
+              <li v-for="(delivery, dIdx) in getDeliveryInfo(o.InventoryDelivery)" :key="dIdx">
+                {{delivery}}
+              </li>
+            </ul>
           </div>
         </div>
       </template>
@@ -371,7 +386,7 @@ export default defineComponent({
   </div>
 </div>
 <rck-modal v-model="modal" style="min-width: 50%;" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
-  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :id="'InventoryItem_' + idx" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
+  <tcc-ops-inv v-model="oi" v-for="(oi, idx) in opsInventory" :inventory="groupedInventory" :attrs="inventoryAttrs" :id="'InventoryItem_' + idx" :key="(oi.InventoryItem + '_' + idx)" v-on:removeinventoryconfig="removeOpsInvConfiguration(idx)"></tcc-ops-inv>
   <template #customButtons>
     <rck-btn btnType="accent" @click="addOpsInvConfiguration" id="btnAddRowToOps">Add Row</rck-btn>
     <rck-btn btnType="primary" @click="saveOpsInvConfiguration" id="btnSaveOps">Save</rck-btn>
@@ -396,6 +411,15 @@ export default defineComponent({
 .ops-inventory:has(.dropdown.open .tcc-dropdown) {
   min-height: 365px; 
   /* Not an ideal solution, but the mutation observer isn't firing on rows after the first on smaller sized screens */
+}
+.ops-inventory {
+  display: flex;
+  flex-wrap: wrap;
+}
+.ops-inventory-row-action {
+  display: flex;
+  align-items: end;
+  justify-content: end;
 }
 </v-style>
 `

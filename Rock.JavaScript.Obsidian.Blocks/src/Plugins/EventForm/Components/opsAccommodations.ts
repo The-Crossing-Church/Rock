@@ -1,6 +1,7 @@
 import { defineComponent, PropType } from "vue"
 import { DefinedValueBag } from "../../ViewModels/definedValueBag"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { AttributeBag } from "../../ViewModels/attributeBag"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
@@ -62,6 +63,7 @@ export default defineComponent({
       request: Object as PropType<ContentChannelItemBag>,
       originalRequest: Object as PropType<ContentChannelItemBag>,
       inventoryList: Array as PropType<any[]>,
+      inventoryAttrs: Array as PropType<AttributeBag[]>,
       existing: Array as PropType<any[]>,
       readonly: Boolean
     },
@@ -582,7 +584,7 @@ export default defineComponent({
     </div>
   </template>
   <h4 class="text-accent mt-2">Ops Inventory</h4>
-  <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :existing="existing" :readonly="readonly"></tcc-ops-inv>
+  <tcc-ops-inv :e="e" :request="request" :originalRequest="originalRequest" :inventoryList="inventoryList" :inventoryAttrs="inventoryAttrs" :existing="existing" :readonly="readonly"></tcc-ops-inv>
   <h4 class="text-accent mt-2">Security</h4>
   <div class="row">
     <div class="col col-xs-12 col-md-6">
