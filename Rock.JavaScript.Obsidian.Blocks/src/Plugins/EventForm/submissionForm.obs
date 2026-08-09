@@ -284,7 +284,7 @@ export default defineComponent({
         return 'toast-success'
       },
       preFillSectionOptions() { 
-        let options = [] as any[]
+        let options = [{ text: 'Time', value:'Event' }] as any[]
         if(this.viewModel?.request?.attributeValues?.NeedsSpace == 'True') {
           options.push({ text: 'Space', value: 'Event Space' })
         }
@@ -1199,7 +1199,7 @@ export default defineComponent({
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
-    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" :readonly="readonlySections.includes('Basic')" refName="basic" @validation-change="validationChange" ref="basic" v-on:createComment="createComment"></tcc-basic>
+    <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" :readonly="readonlySections.includes('Time')" refName="basic" @validation-change="validationChange" ref="basic" v-on:createComment="createComment"></tcc-basic>
     <template v-for="(e, idx) in viewModel.events" :key="idx">
       <template v-if="step == (idx + 2)">
         <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
