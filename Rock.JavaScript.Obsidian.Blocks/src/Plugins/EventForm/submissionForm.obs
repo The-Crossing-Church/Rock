@@ -182,28 +182,19 @@ export default defineComponent({
               step++
             }
           } else {
-            if(this.hasEventData) {
-              step += this.viewModel.events.length
-            }
+            step += this.viewModel.events.length
           }
         }
         return step
       },
       lastStep(): any {
         let step = 1
-        if(this.viewModel?.request.attributeValues?.NeedsSpace == "True" ||
-          this.viewModel?.request.attributeValues?.NeedsOnline == "True" ||
-          this.viewModel?.request.attributeValues?.NeedsCatering == "True" ||
-          this.viewModel?.request.attributeValues?.NeedsChildCare == "True" ||
-          this.viewModel?.request.attributeValues?.NeedsChildCareCatering == "True" ||
-          this.viewModel?.request.attributeValues?.NeedsRegistration == "True" ||
-          this.viewModel?.request.attributeValues?.NeedsOpsAccommodations == "True"
-        ) {
-          if(this.viewModel?.request.attributeValues?.IsSame == "True") {
+        if(this.viewModel?.request.attributeValues?.IsSame == "True") {
+          if(this.hasEventData){
             step++
-          } else {
-            step += this.viewModel?.events ? this.viewModel.events.length : 0
           }
+        } else {
+          step += this.viewModel?.events ? this.viewModel.events.length : 0
         }
         if(this.viewModel?.request.attributeValues?.NeedsPublicity == "True" || this.viewModel?.request.attributeValues?.NeedsProductionAccommodations == "True" || this.viewModel?.request.attributeValues?.NeedsWebCalendar == "True") {
           step++
@@ -430,7 +421,7 @@ export default defineComponent({
         } else {
           return ''
         }
-      }
+      },
   },
   methods: {
     matchMultiEvent() {
@@ -1193,100 +1184,104 @@ export default defineComponent({
   <a-steps :current="step">
     <a-step class="hover" :key="0" @click="jumpTo(0)" title="Resources" />
     <a-step class="hover" :key="1" @click="jumpTo(1)" title="Basic Info" />
-    <a-step class="hover" v-for="(e, idx) in viewModel.events" @click="jumpTo((2 + idx))" :key="(2 + idx)" :title="getEventStepTitle(idx)" />
+    <template v-if="hasEventData || viewModel.events.length > 1">
+      <a-step class="hover" v-for="(e, idx) in viewModel.events" @click="jumpTo((2 + idx))" :key="(2 + idx)" :title="getEventStepTitle(idx)" />
+    </template>
     <a-step class="hover" v-if="viewModel.request.attributeValues.NeedsPublicity == 'True' || viewModel.request.attributeValues.NeedsWebCalendar == 'True' || viewModel.request.attributeValues.NeedsProductionAccommodations == 'True'" :key="publicityStep" @click="jumpTo(publicityStep)" title="Additional Requests" />
   </a-steps>
   <div class="steps-content">
     <br/>
     <tcc-resources v-if="step == 0" :view-model="viewModel"></tcc-resources>
     <tcc-basic v-if="step == 1" :view-model="viewModel" :minEventDate="minEventDate" :showValidation="pagesViewed.includes(1)" :readonly="readonlySections.includes('Time')" refName="basic" @validation-change="validationChange" ref="basic" v-on:createComment="createComment"></tcc-basic>
-    <template v-for="(e, idx) in viewModel.events" :key="idx">
-      <template v-if="step == (idx + 2)">
-        <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
-          <h2 class="text-accent d-none d-md-block" style="display: flex; align-items: center;">
-            Information for {{formatDate(e.attributeValues.EventDate, 'DDDD')}}
-            <div class="btn-group" role="group">
-              <button type="button" class="btn btn-accent-outlined dropdown-toggle ml-2 mb-2 rounded-huge" data-toggle="dropdown" aria-expanded="false">
-                <i class="ti ti-file-pencil"></i> Copy/Fill
-              </button>
-              <div class="dropdown-menu">
-                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = ''; preFillOrCopySelectedTab = 'Prefill'; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event Details</a>
-                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = e.attributeValues.EventDate; preFillOrCopySelectedTab = 'Copy'; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Event Details</a>
-                <a class="dropdown-item text-accent h6 my-1 hover" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a>
+    <template v-if="hasEventData || viewModel.events.length > 1">
+      <template v-for="(e, idx) in viewModel.events" :key="idx">
+        <template v-if="step == (idx + 2)">
+          <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
+            <h2 class="text-accent d-none d-md-block" style="display: flex; align-items: center;">
+              Information for {{formatDate(e.attributeValues.EventDate, 'DDDD')}}
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-accent-outlined dropdown-toggle ml-2 mb-2 rounded-huge" data-toggle="dropdown" aria-expanded="false">
+                  <i class="ti ti-file-pencil"></i> Copy/Fill
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = ''; preFillOrCopySelectedTab = 'Prefill'; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event Details</a>
+                  <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = e.attributeValues.EventDate; preFillOrCopySelectedTab = 'Copy'; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Event Details</a>
+                  <a class="dropdown-item text-accent h6 my-1 hover" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a>
+                </div>
               </div>
-            </div>
-          </h2>
-          <h2 class="text-accent d-block d-md-none">
-            Information for {{formatDate(e.attributeValues.EventDate, 'EEE, MMM d, yyyy')}}
+            </h2>
+            <h2 class="text-accent d-block d-md-none">
+              Information for {{formatDate(e.attributeValues.EventDate, 'EEE, MMM d, yyyy')}}
+              <br/>
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-accent-outlined dropdown-toggle rounded-huge" data-toggle="dropdown" aria-expanded="false">
+                  <i class="ti ti-file-pencil"></i> Copy/Fill
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = ''; preFillOrCopySelectedTab = 'Prefill'; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event Details</a>
+                  <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = e.attributeValues.EventDate; preFillOrCopySelectedTab = 'Copy'; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Event Details</a>
+                  <a class="dropdown-item text-accent h6 my-1 hover" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a>
+                </div>
+              </div>
+            </h2>
+          </template>
+          <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
+            <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
+            <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
+            <tcc-buffer v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)" :e="e"></tcc-buffer>
             <br/>
-            <div class="btn-group" role="group">
-              <button type="button" class="btn btn-accent-outlined dropdown-toggle rounded-huge" data-toggle="dropdown" aria-expanded="false">
-                <i class="ti ti-file-pencil"></i> Copy/Fill
-              </button>
-              <div class="dropdown-menu">
-                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = ''; preFillOrCopySelectedTab = 'Prefill'; preFillTarget = e.attributeValues.EventDate; preFillModalOption = ''; preFillModal = true;">Prefill Event Details</a>
-                <a class="dropdown-item text-accent h6 my-1 hover" @click="preFillSource = e.attributeValues.EventDate; preFillOrCopySelectedTab = 'Copy'; preFillTarget = ''; preFillModalOption = ''; copyModal = true;">Copy Event Details</a>
-                <a class="dropdown-item text-accent h6 my-1 hover" @click="changeDateOriginal = e.attributeValues.EventDate; changeDateReplacement = ''; changeDateModal = true;">Change Event Date</a>
-              </div>
-            </div>
-          </h2>
-        </template>
-        <template v-if="viewModel.request.attributeValues.IsSame == 'False'">
-          <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
-          <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
-          <tcc-buffer v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)" :e="e"></tcc-buffer>
-          <br/>
-        </template>
-        <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
-          <h3 class="text-primary">
-            Space Information
-            <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Space'; preFillModal = true;">Prefill Section</rck-btn>
-          </h3>
-          <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="readonlySections.includes('Space')" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
-          <br/>
-        </template>
-        <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
-          <h3 class="text-primary">
-            Catering Information
-            <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</rck-btn>
-          </h3>
-          <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
-          <br/>
-        </template>
-        <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
-          <h3 class="text-primary">
-            Other Accomodations
-            <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</rck-btn>
-          </h3>
-          <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
-          <br/>
-        </template>
-        <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
-          <h3 class="text-primary">
-            Childcare Information
-            <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</rck-btn>
-          </h3>
-          <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')"></tcc-childcare>
-          <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
-          <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
-          <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
-          <br/>
-        </template>
-        <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
-          <h3 class="text-primary">
-            Registration Information
-            <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</rck-btn>
-          </h3>
-          <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
-          <br/>
-        </template>
-        <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
-          <h3 class="text-primary">
-            Zoom Information
-            <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</rck-btn>
-          </h3>
-          <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')"></tcc-online>
-          <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
+            <h3 class="text-primary">
+              Space Information
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Space'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="readonlySections.includes('Space')" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
+            <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
+            <h3 class="text-primary">
+              Catering Information
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
+            <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
+            <h3 class="text-primary">
+              Other Accomodations
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
+            <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
+            <h3 class="text-primary">
+              Childcare Information
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')"></tcc-childcare>
+            <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
+            <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
+            <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
+            <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
+            <h3 class="text-primary">
+              Registration Information
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
+            <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
+            <h3 class="text-primary">
+              Zoom Information
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')"></tcc-online>
+            <br/>
+          </template>
         </template>
       </template>
     </template>

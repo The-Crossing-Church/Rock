@@ -91,18 +91,6 @@ export default defineComponent({
           }
           return "event"
         },
-        hasEventSpecificRequests() {
-          if(this.viewModel?.request?.attributeValues?.NeedsSpace == "True"
-            || this.viewModel?.request?.attributeValues?.NeedsOnline == "True"
-            || this.viewModel?.request?.attributeValues?.NeedsCatering == "True"
-            || this.viewModel?.request?.attributeValues?.NeedsChildCare == "True"
-            || this.viewModel?.request?.attributeValues?.NeedsChildCareCatering == "True"
-            || this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == "True"
-            || this.viewModel?.request?.attributeValues?.NeedsRegistration == "True") {
-              return true
-          }
-          return false
-        },
         labelIsSame() {
           return `Will each occurrence of your ${this.requestType} have the exact same start and end time? (${this.viewModel?.request?.attributeValues?.IsSame == 'True' ? 'Yes' : 'No'})`
         },
@@ -238,7 +226,7 @@ export default defineComponent({
     </div>
   </div>
   <br/><br/>
-  <div class="row" v-if="eventDates.length > 1 && hasEventSpecificRequests">
+  <div class="row" v-if="eventDates.length > 1">
     <div class="col col-xs-12">
       <tcc-switch
         v-model="viewModel.request.attributeValues.IsSame"
