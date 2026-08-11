@@ -192,7 +192,6 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-  -->
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="request.attributes.PublicityStartDate.key" :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start" v-if="!readonly">
@@ -233,7 +232,6 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-  <!--
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <div id="pubStrat">
