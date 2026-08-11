@@ -155,6 +155,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
+  <!--
   <div class="row row-equal-height">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="request.attributes.TargetAudience.key" :rules="[rules.required(request.attributeValues.TargetAudience, request.attributes.TargetAudience.name)]" ref="validators_audience"  style="width: 100%;" v-if="!readonly">
@@ -191,6 +192,7 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
+  -->
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="request.attributes.PublicityStartDate.key" :rules="[rules.required(request.attributeValues.PublicityStartDate, request.attributes.PublicityStartDate.name), rules.pubStartIsValid(request.attributeValues.PublicityStartDate, request.attributeValues.PublicityEndDate, minPubStartDate, maxPubStartDate)]" ref="validators_start" v-if="!readonly">
@@ -231,6 +233,7 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
+  <!--
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <div id="pubStrat">
@@ -255,6 +258,7 @@ export default defineComponent({
       </div>
     </div>
   </div>
+  -->
   <br/>
 </rck-form>
 `

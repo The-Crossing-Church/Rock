@@ -86,6 +86,15 @@ const rules = {
     }
     return true
   },
+  nonNegativeNumber: (value: string, key: string) => {
+    if(value) {
+      let amt = parseFloat(value)
+      if(amt < 0) {
+        return `${key} cannot be a negative number.`
+      }
+    }
+    return true
+  },
   drinkTimeRequired: (value: string, drinkStr: string, key: string) => {
     if(drinkStr != '') {
       let drinks = JSON.parse(drinkStr)
@@ -234,6 +243,7 @@ const rules = {
     { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
     { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
     { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
+    { cat: "Event Childcare Registration", section: "Childcare Registration" },
     { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
     { attr: "NeedsRegistration", cat: "Event Registration", section: "Registration" },
     { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },

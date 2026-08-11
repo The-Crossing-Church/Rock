@@ -19,6 +19,7 @@ import WebCal from "./Components/webCal"
 import ProdTech from "./Components/productionTech"
 import BasicInfo from "./Components/basicInfo"
 import CCCatering from "./Components/childcareCatering"
+import CCRegistration from "./Components/childcareRegistration"
 import EventTime from "./Components/eventTime"
 import DatePicker from "./Components/datePicker"
 import EventBuffer from "./Components/eventBuffer"
@@ -39,6 +40,7 @@ const categoryAttrs = [
   { attr: "NeedsCatering", cat: "Event Catering" },
   { attr: "NeedsChildCare", cat: "Event Childcare" },
   { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering" },
+  { attr: "NeedsChildCareRegistration", cat: "Event Childcare Registration" },
   { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests" },
   { attr: "NeedsPublicity", cat: "Event Production" },
   { attr: "NeedsProductionAccommodations", cat: "Event Publicity" },
@@ -57,6 +59,7 @@ export default defineComponent({
       "tcc-catering": Catering,
       "tcc-childcare": Childcare,
       "tcc-childcare-catering": CCCatering,
+      "tcc-childcare-registration": CCRegistration,
       "tcc-ops": Ops,
       "tcc-registration": Registration,
       "tcc-publicity": Publicity,
@@ -1264,6 +1267,9 @@ export default defineComponent({
             <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
             <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
             <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
+            <br />
+            <h4 class="text-accent">Childcare Registration Information</h4>
+            <tcc-childcare-registration :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="readonlySections.includes('Childcare Registration')"></tcc-childcare-registration>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
@@ -1510,7 +1516,7 @@ export default defineComponent({
 {
   border-color: var(--color-denied);
 }
-.text-errors {
+.text-errors, .text-help {
   font-size: .85em;
 }
 .tcc-dropdown {
