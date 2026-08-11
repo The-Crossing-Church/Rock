@@ -1269,7 +1269,7 @@ export default defineComponent({
             <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
             <br />
             <h4 class="text-accent">Childcare Registration Information</h4>
-            <tcc-childcare-registration :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="readonlySections.includes('Childcare Registration')"></tcc-childcare-registration>
+            <tcc-childcare-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="readonlySections.includes('Childcare Registration')"></tcc-childcare-registration>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">

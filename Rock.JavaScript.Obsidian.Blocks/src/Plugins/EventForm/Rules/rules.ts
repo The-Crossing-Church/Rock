@@ -198,6 +198,25 @@ const rules = {
     }
     return true
   },
+  childcareCloseIsValid(value: string, eventDates: string) {
+    if(eventDates) {
+      let dates = eventDates.split(",").map(d => DateTime.fromFormat(d.trim(), "yyyy-MM-dd")).sort()
+      let dt = DateTime.fromFormat(value, "yyyy-MM-dd")
+      let maxCloseDate
+      if(dates.length > 1) {
+        maxCloseDate = dates[0].minus({ week: 1 })
+        if(dt > maxCloseDate) {
+          return 'Childcare registration must close 1 week before recurring events.'
+        }
+      } else {
+        maxCloseDate = dates[0].minus({ day: 2 })
+        if(dt > maxCloseDate) {
+          return 'Childcare registration must close 48 hours before one time events.'
+        }
+      }
+    }
+    return true
+  },
 
   findTense( request: ContentChannelItemBag, ministries: DefinedValueBag[] | undefined, numDays: any, specificDate?: any): String {
     if (request.attributeValues) {
