@@ -93,6 +93,12 @@ export default defineComponent({
         }
         return []
       },
+      getRegistrationQuestions(value: string) {
+        if(value) {
+          return JSON.parse(value)
+        }
+        return []
+      },
       formatDiscountCodeAmount(value: any) {
         if(value.CodeType == '$') {
           return `$${value.Amount}`
@@ -164,6 +170,42 @@ export default defineComponent({
                 <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <template v-if="c.AutoApply == 'True'"><i class="fas fa-check-square" style="font-size: 16px;"></i> Auto Apply</template> {{formatDiscountCodeMaxUses(c)}}
               </div>
             </div>
+          </template>
+        </div>
+      </template>
+      <template v-else-if="av.attr.key == 'AdditionalRegistrationQuestions'">
+        <div class="form-group static-control">
+          <template v-if="av.changeValue != ''">
+            <div class="row" style="pading-bottom: 12px;">
+              <div class="col col-xs-6">
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
+                <div class="text-red">
+                  <ul>
+                    <li v-for="(q, qIdx) in getRegistrationQuestions(av.value)" :key="q.QuestionFieldType + '_' + qIdx">
+                      {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col col-xs-6 hidden-label">
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
+                <div class="text-primary">
+                  <ul>
+                    <li v-for="(q, qIdx) in getRegistrationQuestions(av.changeValue)" :key="q.QuestionFieldType + '_' + qIdx">
+                      {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
+            <ul>
+              <li v-for="(q, qIdx) in getRegistrationQuestions(av.value)" :key="q.QuestionFieldType + '_' + qIdx">
+                {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
+              </li>
+            </ul>
           </template>
         </div>
       </template>

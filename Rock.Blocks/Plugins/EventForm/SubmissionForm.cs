@@ -69,6 +69,8 @@ namespace Rock.Blocks.Plugins.EventForm
     [TextField( "Discount Code", "Attribute Key for Discount Code", key: AttributeKey.DiscountCode, defaultValue: "DiscountCodes", category: "Attributes", order: 12 )]
     [TextField( "Discount Code Matrix Template Id", "The Id of the Attribute Matrix Template for Discount Codes", key: AttributeKey.DiscountCodeMatrix, category: "Attributes", order: 13 )]
     [BinaryFileTypeField( "Event Image File Type", "The file type all images and files associated with an event request should be assigned to", key: AttributeKey.EventImageFileType, category: "Attributes", order: 14 )]
+    [TextField( "Registration Questions", "Attribute Key for Additional Registration Questions", key: AttributeKey.RegistrationQuestions, category: "Attributes", order: 15 )]
+    [TextField( "Registration Questions Matrix Template Id", "The Id of the Attribute Matrix Template for Additional Registration Questions", key: AttributeKey.RegistrationQuestionsMatrix, category: "Attributes", order: 16 )]
 
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 1, AttributeKey.SharingGroupType )]
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 2, key: AttributeKey.SharedWithAttr )]
@@ -114,6 +116,8 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string RoomSetUp = "RoomSetUp";
             public const string DiscountCode = "DiscountCode";
             public const string DiscountCodeMatrix = "DiscountCodeMatrix";
+            public const string RegistrationQuestionsMatrix = "RegistrationQuestionsMatrix";
+            public const string RegistrationQuestions = "RegistrationQuestions";
             public const string EventImageFileType = "EventImageFileType";
             public const string SharingGroupType = "SharingGroupType";
             public const string SharedWithAttr = "SharedWithAttr";
@@ -210,6 +214,11 @@ namespace Rock.Blocks.Plugins.EventForm
                 {
                     viewModel.opsInventoryAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
                 }
+                matrixId = GetAttributeValue( AttributeKey.RegistrationQuestionsMatrix );
+                if ( !String.IsNullOrEmpty( matrixId ) )
+                {
+                    viewModel.reqQuestionAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => EventFormHelper.GetCommonAttributeEntityBag( a ) ).ToList();
+                }
             }
             catch ( Exception ex )
             {
@@ -238,6 +247,7 @@ namespace Rock.Blocks.Plugins.EventForm
         private RockContext context { get; set; }
         private string RoomSetUpKey { get; set; }
         private string DiscountCodeKey { get; set; }
+        private string AdditionalRegQuestionsKey { get; set; }
         private string OpsInventoryKey { get; set; }
 
         #endregion
@@ -1438,6 +1448,7 @@ namespace Rock.Blocks.Plugins.EventForm
             RoomSetUpKey = GetAttributeValue( AttributeKey.RoomSetUp );
             OpsInventoryKey = GetAttributeValue( AttributeKey.OpsInventory );
             DiscountCodeKey = GetAttributeValue( AttributeKey.DiscountCode );
+            AdditionalRegQuestionsKey = GetAttributeValue( AttributeKey.RegistrationQuestions );
         }
 
         private void SubmittedNotifications( ContentChannelItem item )
@@ -1458,7 +1469,7 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "";
             string subject = "";
 
-            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey, AdditionalRegQuestionsKey );
 
             List<GroupMember> groupMembers = new List<GroupMember>();
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
@@ -1534,7 +1545,7 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "";
             string subject = "";
 
-            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey );
+            helper.InitializeEventFormHelper( EventContentChannelId, EventDetailsContentChannelId, EventChangesContentChannelId, EventDetailsChangesContentChannelId, RoomSetUpKey, DiscountCodeKey, OpsInventoryKey, AdditionalRegQuestionsKey );
 
             if ( item.GetAttributeValue( "IsPreApproved" ) == "True" )
             {
@@ -1700,6 +1711,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public string userDashboardURL { get; set; }
             public List<AttributeBag> discountCodeAttrs { get; set; }
             public List<AttributeBag> opsInventoryAttrs { get; set; }
+            public List<AttributeBag> reqQuestionAttrs { get; set; }
             public string errors { get; set; }
         }
 

@@ -120,6 +120,50 @@ const rules = {
     }
     return true
   },
+  charLimit: (value: string, limit: number, key: string, isList: boolean, separator: string) => {
+    let checkVals = [] as string[]
+    let errorVals = [] as string[]
+    if(isList) {
+      if(separator) {
+        checkVals = value.split(separator)
+      } else {
+        checkVals = JSON.parse(value)
+      }
+    } else {
+      checkVals.push(value)
+    }
+    for(let i = 0; i < checkVals.length; i++) {
+      if(checkVals[i].length > limit) {
+        errorVals.push(checkVals[i])
+      }
+    }
+    if(errorVals.length > 0) {
+      return `${key} cannot exceed a length of ${limit} characters. (${errorVals.join(', ')})`
+    }
+    return true
+  },
+  nonASCII: (value: string, key: string, isList: boolean, separator: string) => {
+    let checkVals = [] as string[]
+    let errorVals = [] as string[]
+    if(isList) {
+      if(separator) {
+        checkVals = value.split(separator)
+      } else {
+        checkVals = JSON.parse(value)
+      }
+    } else {
+      checkVals.push(value)
+    }
+    for(let i = 0; i < checkVals.length; i++) {
+      if(/[^\x00-\x7F]/.test(checkVals[i])) {
+        errorVals.push(checkVals[i])
+      }
+    }
+    if(errorVals.length > 0) {
+      return `${key} can only contain ACSII characters. (${errorVals.join(', ')})`
+    }
+    return true
+  },
   securityMinimumHours:(start: string, end: string) => {
     if(start && end) {
       let startTime = DateTime.fromFormat(start, "HH:mm:ss")
@@ -217,7 +261,6 @@ const rules = {
     }
     return true
   },
-
   findTense( request: ContentChannelItemBag, ministries: DefinedValueBag[] | undefined, numDays: any, specificDate?: any): String {
     if (request.attributeValues) {
       let av = request?.attributeValues.EventDates
@@ -256,13 +299,13 @@ const rules = {
     return 'is'
   },
   sectionInfo: [
-    { cat: "Event", section: "Time" },
+    { cat:  "Event", section: "Time" },
     { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
     { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
     { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
     { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
     { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
-    { cat: "Event Childcare Registration", section: "Childcare Registration" },
+    { cat:  "Event Childcare Registration", section: "Childcare Registration" },
     { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
     { attr: "NeedsRegistration", cat: "Event Registration", section: "Registration" },
     { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },

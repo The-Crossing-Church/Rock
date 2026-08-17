@@ -26,5 +26,6 @@ export type SubmissionFormBlockViewModel = {
     userDashboardURL: string;
     discountCodeAttrs: AttributeBag[];
     opsInventoryAttrs: AttributeBag[];
+    reqQuestionAttrs: AttributeBag[];
     errors: string;
 };

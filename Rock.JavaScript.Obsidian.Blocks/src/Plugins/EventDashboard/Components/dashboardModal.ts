@@ -172,16 +172,18 @@ export default defineComponent({
             title = dates.join(", ")
           }
         }
-        title += " ("
         let rooms = JSON.parse(room)
         let roomList = rooms.text.split(", ")
-        if(roomList.length > 5) {
-          title += roomList.slice(0,5).join(", ")
-          title += "..."
-        } else {
-          title += rooms.text
+        if(rooms && rooms.text != '' && roomList && roomList.length > 0) {
+          title += " ("
+          if(roomList.length > 5) {
+            title += roomList.slice(0,5).join(", ")
+            title += "..."
+          } else {
+            title += rooms.text
+          }
+          title +=")"
         }
-        title +=")"
         return title
       },
       formatDateTime(dt: string) {

@@ -20,10 +20,11 @@ namespace Rock.Blocks.Plugins.EventForm
         private RockContext _context { get; set; }
         private string RoomSetUpKey { get; set; }
         private string DiscountCodeKey { get; set; }
+        private string AdditionalRegQuestionsKey { get; set; }
         private string OpsInventoryKey { get; set; }
 
 
-        public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey )
+        public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey, string addRegQuestionsKey )
         {
             EventContentChannelId = eventCCId;
             EventDetailsContentChannelId = eventDetailCCId;
@@ -32,6 +33,7 @@ namespace Rock.Blocks.Plugins.EventForm
             _context = new RockContext();
             RoomSetUpKey = roomSetUpKey;
             DiscountCodeKey = discountCodeKey;
+            AdditionalRegQuestionsKey = addRegQuestionsKey;
             OpsInventoryKey = opsInvKey;
         }
 
@@ -379,6 +381,45 @@ namespace Rock.Blocks.Plugins.EventForm
                     message += "  </div>";
                     message += "</div>";
                 }
+                else if ( key == AdditionalRegQuestionsKey )
+                {
+                    List<RegistrationQuestionConfig> originalSetUp = JsonConvert.DeserializeObject<List<RegistrationQuestionConfig>>( original );
+                    List<RegistrationQuestionConfig> currentSetUp = JsonConvert.DeserializeObject<List<RegistrationQuestionConfig>>( current );
+                    message = "<strong>" + title + ":</strong>";
+
+                    message += "<div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #cc3f0c !important;'>";
+                    message += "    <ul style='color: #cc3f0c !important;'>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            message += $"<li>{originalSetUp[i].QuestionName} ({originalSetUp[i].QuestionFieldTypeName})</li>";
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "  <div style='display: inline-block; width: 48%; color: #347689 !important;'>";
+                    message += "    <ul style='color: #347689 !important;'>";
+                    if ( currentSetUp != null )
+                    {
+                        for ( int i = 0; i < currentSetUp.Count(); i++ )
+                        {
+                            message += $"<li>{currentSetUp[i].QuestionName} ({currentSetUp[i].QuestionFieldTypeName})</li>";
+                        }
+                    }
+                    else
+                    {
+                        message += "<li>Empty</li>";
+                    }
+                    message += "    </ul>";
+                    message += "  </div>";
+                    message += "</div>";
+                }
                 else if ( fieldTypeGuid.HasValue && fieldTypeGuid.Value == SystemGuid.FieldType.MEMO.AsGuid() )
                 {
                     message = "<strong>" + title + ":</strong>";
@@ -467,6 +508,20 @@ namespace Rock.Blocks.Plugins.EventForm
                         }
                     }
                     message += "</ul>";
+                }
+                else if ( key == AdditionalRegQuestionsKey )
+                {
+                    List<RegistrationQuestionConfig> originalSetUp = JsonConvert.DeserializeObject<List<RegistrationQuestionConfig>>( original );
+                    message = "<strong>" + title + ":</strong> <ul>";
+                    if ( originalSetUp != null )
+                    {
+                        for ( int i = 0; i < originalSetUp.Count(); i++ )
+                        {
+                            message += $"<li>{originalSetUp[i].QuestionName} ({originalSetUp[i].QuestionFieldTypeName})</li>";
+                        }
+                    }
+                    message += "</ul>";
+
                 }
                 else if ( fieldTypeGuid.HasValue && fieldTypeGuid.Value == SystemGuid.FieldType.MEMO.AsGuid() )
                 {
@@ -572,6 +627,13 @@ namespace Rock.Blocks.Plugins.EventForm
         public string AutoApply { get; set; }
         public string EffectiveDateRange { get; set; }
         public int? MaxUses { get; set; }
+    }
+    public class RegistrationQuestionConfig
+    {
+        public string QuestionName { get; set; }
+        public string QuestionFieldType { get; set; }
+        public string QuestionFieldTypeName { get; set; }
+        public string QuestionConfigurationValues { get; set; }
     }
     public class RequestAuthorization
     {

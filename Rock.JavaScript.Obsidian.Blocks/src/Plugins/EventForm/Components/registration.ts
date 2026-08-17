@@ -10,6 +10,7 @@ import TimePicker from "./timePicker"
 import Toggle from "./toggle"
 import DatePicker from "./datePicker"
 import DiscountCodes from "./discountCodes"
+import AdditionalRegQuestions from "./additionalRegQuestions"
 import { DateTime } from "luxon"
 import rules from "../Rules/rules"
 
@@ -23,16 +24,17 @@ export default defineComponent({
       "tcc-time": TimePicker,
       "tcc-switch": Toggle,
       "tcc-date-pkr": DatePicker,
-      "tcc-discount": DiscountCodes
+      "tcc-discount": DiscountCodes,
+      "tcc-reg-questions": AdditionalRegQuestions
     },
     props: {
       e: {
-          type: Object as PropType<ContentChannelItemBag>,
-          required: false
+        type: Object as PropType<ContentChannelItemBag>,
+        required: false
       },
       request: {
-          type: Object as PropType<ContentChannelItemBag>,
-          required: false
+        type: Object as PropType<ContentChannelItemBag>,
+        required: false
       },
       original: {
         type: Object as PropType<ContentChannelItemBag>,
@@ -40,6 +42,7 @@ export default defineComponent({
       },
       ministries: Array as PropType<DefinedValueBag[]>,
       discountAttrs: Array as PropType<AttributeBag[]>,
+      regAttrs: Array as PropType<AttributeBag[]>,
       locations: Array,
       showValidation: Boolean,
       refName: String,
@@ -49,10 +52,11 @@ export default defineComponent({
 
     },
     data() {
-        return {
-          rules: rules,
-          errors: [] as Record<string, string>[]
-        };
+      return {
+        rules: rules,
+        errors: [] as Record<string, string>[],
+        needsAdditionalRegQuestions: 'False'
+      };
     },
     computed: {
       lastDate() {
@@ -152,6 +156,10 @@ export default defineComponent({
           }
           if(val == 'False') {
             this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
+            this.e.attributeValues.NeedsLabels = 'False'
+          }
+          if(val == 'True') {
+            this.e.attributeValues.NeedsAttendanceOccurrence = 'False'
           }
         }
       },
@@ -161,7 +169,17 @@ export default defineComponent({
           if(val == 'False' && att >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
             this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
           }
+          if(this.e.attributeValues.NeedsDatabaseSupportTeam == 'True') {
+            this.e.attributeValues.NeedsCheckin = 'True'
+          }
         }
+      },
+      'e.attributeValues.AdditionalRegistrationQuestions'(val, original) {
+        console.log('Additional Reg Updated')
+        console.log(this.e?.attributeValues?.AdditionalRegistrationQuestions)
+        if(val) {
+          this.needsAdditionalRegQuestions = 'True'
+        } 
       },
       errors: {
         handler(val) {
@@ -197,6 +215,9 @@ export default defineComponent({
         if(this.e.attributeValues.RegistrationEndTime == '') {
           this.e.attributeValues.RegistrationEndTime = defaultTime.toFormat("HH:mm:ss")
         }
+      }
+      if(this.e?.attributeValues?.AdditionalRegistrationQuestions) {
+        this.needsAdditionalRegQuestions = 'True'
       }
     },
     template: `
@@ -330,38 +351,6 @@ export default defineComponent({
     </div>
   </div>
   <div class="row mt-2">
-    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'True'">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsCheckin"
-        :label="e.attributes.NeedsCheckin.name"
-        v-if="!readonly"
-        id="boolNeedsCheckin"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.NeedsCheckin"
-        :attribute="e.attributes.NeedsCheckin"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolNeedsCheckin"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
-        :label="e.attributes.NeedsDatabaseSupportTeam.name"
-        v-if="!readonly"
-        id="boolNeedsDatabaseSupportTeam"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
-        :attribute="e.attributes.NeedsDatabaseSupportTeam"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolNeedsDatabaseSupportTeam"
-      ></rck-field>
-    </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.EventNeedsSeparateLink"
@@ -378,7 +367,7 @@ export default defineComponent({
         id="boolEventNeedsSeparateLink"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-12">
+    <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.NeedsShortLink"
         :label="e.attributes.NeedsShortLink.name"
@@ -405,7 +394,16 @@ export default defineComponent({
         ></rck-field>
       </tcc-validator>
     </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="needsAdditionalRegQuestions"
+        label="All registrations will ask for Name, DOB, Gender, Email, Phone Number, and Agape. Do you need to ask your registrants any other questions?"
+        v-if="!readonly"
+        id="boolNeedsAddReg"
+      ></tcc-switch>
+    </div>
   </div>
+  <tcc-reg-questions v-if="needsAdditionalRegQuestions == 'True'" :e="e" :attrs="regAttrs" :readonly="readonly"></tcc-reg-questions>
   <br/>
   <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
   <div class="row">
@@ -492,6 +490,101 @@ export default defineComponent({
       </div>
     </div>
   </template>
+  <h4 class="text-accent">Check-in Information</h4>
+  <div class="row mb-2">
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'True'">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsCheckin"
+        :label="e.attributes.NeedsCheckin.name"
+        v-if="!readonly"
+        id="boolNeedsCheckin"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsCheckin"
+        :attribute="e.attributes.NeedsCheckin"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsCheckin"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'False'">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsAttendanceOccurrence"
+        :label="e.attributes.NeedsAttendanceOccurrence.name"
+        v-if="!readonly"
+        id="boolNeedsAttendanceOccurrence"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsAttendanceOccurrence"
+        :attribute="e.attributes.NeedsAttendanceOccurrence"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsAttendanceOccurrence"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'True'">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsLabels"
+        :label="e.attributes.NeedsLabels.name"
+        v-if="!readonly"
+        id="boolNeedsLabels"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsLabels"
+        :attribute="e.attributes.NeedsLabels"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsLabels"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
+        :label="e.attributes.NeedsDatabaseSupportTeam.name"
+        v-if="!readonly"
+        id="boolNeedsDatabaseSupportTeam"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsDatabaseSupportTeam"
+        :attribute="e.attributes.NeedsDatabaseSupportTeam"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsDatabaseSupportTeam"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsDatabaseSupportTeam == 'True'">
+      <tcc-validator :name="e.attributes.DatabaseSupportStartTime.key" :rules="[rules.required(e.attributeValues.DatabaseSupportStartTime, e.attributes.DatabaseSupportStartTime.name), rules.timeCannotBeAfterEvent(e.attributeValues.DatabaseSupportStartTime, e.attributeValues.StartTime, e.attributes.DatabaseSupportStartTime.name)]" ref="validators_db_start_time" v-if="!readonly">
+        <tcc-time 
+          :label="e.attributes.DatabaseSupportStartTime.name"
+          v-model="e.attributeValues.DatabaseSupportStartTime"
+          id="timeDatabaseSupportStartTime"
+        ></tcc-time>
+      </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.DatabaseSupportStartTime"
+        :attribute="e.attributes.DatabaseSupportStartTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="timeDatabaseSupportStartTime"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'True' || e.attributeValues.NeedsAttendanceOccurrence == 'True'">
+      <tcc-validator :name="e.attributes.CheckinGroupName.key" :rules="[rules.charLimit(e.attributeValues.CheckinGroupName, 22, 'Check-in group names', true, null), rules.nonASCII(e.attributeValues.CheckinGroupName, 'Check-in group names', true, null)]" ref="validators_checkin_group" v-if="!readonly">
+        <rck-field
+          v-model="e.attributeValues.CheckinGroupName"
+          :attribute="e.attributes.CheckinGroupName"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="listCheckinGroupName"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
 </rck-form>
 `
 });

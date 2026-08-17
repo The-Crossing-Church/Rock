@@ -60,14 +60,14 @@ export default defineComponent({
         }
         return className
       },
-      getDisplayValue(value: string) {
+      getDisplayValue(value: string | any) {
         if(value?.includes('{') || value?.includes('[')) {
           // JSON Value
           let obj = JSON.parse(value)
           if (Array.isArray(obj)) {
             if(this.attribute?.key == 'OpsInventory') {
               return obj.map(i => {
-                let inv = this.inventory?.filter((inv) => inv.guid == i.InventoryItem)
+                let inv = this.inventory?.filter((inv: any) => inv.guid == i.InventoryItem) as any
                 let itm = ''
                 if(inv && inv.length > 0) {
                   itm = inv[0].value
@@ -86,14 +86,54 @@ export default defineComponent({
                 }
                 return `${i.Code}: ${amt}` + (i.AutoApply == 'True' ? ', Auto-Apply' : '') + (i.MaxUses ? `, ${i.MaxUses} Uses` : '') + (i.EffectiveDateRange ? `, ${i.EffectiveDateRange}` : '')
               }).join('\n')
+            } else if (this.attribute?.key == 'AdditionalRegistrationQuestions') {
+              return obj.map((q: any) => {
+                let data = `${q.QuestionName} (${q.QuestionFieldTypeName})`
+                console.log('Data')
+                console.log(q)
+                if(q.QuestionConfigurationValues) {
+                  console.log('has config')
+                  let config = JSON.parse(q.QuestionConfigurationValues)
+                  console.log(config)
+                  if(config.defaultValue) {
+                    let val = config.defaultValue
+                    data += '\n\t'
+                    if(val.startsWith('{') || val.startsWith('[')) {
+                      val = JSON.parse(config.defaultValue)
+                      data += "default: " + val.text
+                    } else {
+                      data += "default: " + val
+                    }
+                  }
+                  if(config.configurationValues) {
+                    for (const [key, value] of Object.entries(config.configurationValues)) {
+                      let val = value as any
+                      data += '\n\t'
+                      if(key == "values") {
+                        console.log('is vals')
+                        val = JSON.parse(val)
+                        data += `${key}: ${val.map((v: any) => { 
+                          if(v.text) {
+                            return v.text
+                          } 
+                          return v
+                        }).join(', ')}`
+                      } else {
+                        data += `${key}: ${value}`
+                      }
+                    }
+                  }
+                }
+                return data
+              }).join('\n')
             } else if (this.attribute?.key == 'RoomSetUp') {
               if(value == '[]') {
                 return 'None'
               }
               let rooms = Object.groupBy(obj, i => i.Room)
-              let result = []
+              let result = [] as any[]
               Object.keys(rooms).forEach(key => {
-                let rm = this.rooms?.filter((r) => r.guid == key)
+                let rm = this.rooms?.filter((r: any) => r.guid == key) as any
                 let space = ''
                 if(rm && rm.length > 0) {
                   space = rm[0].value
