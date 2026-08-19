@@ -284,6 +284,21 @@ export default defineComponent({
 <div class="row" style="padding-bottom:16px;">
   <div class="col col-xs-12">
     <tcc-switch
+      v-model="viewModel.request.attributeValues.NeedsWorship"
+      :label="viewModel.request.attributes.NeedsWorship.name"
+      :disabled="switchIsDisabled(twoWeeksTense,'NeedsWorship')"
+      hint="Requests involving anything more than a physical space with table and chair set-up must be made at least 14 days in advance."
+      :persistent-hint="viewModel.request.attributeValues.NeedsWorship == 'True'"
+      id="switchNeedsProduction"
+    ></tcc-switch>
+    <div class="date-warning" v-if="!isFuneralRequest && viewModel.request.attributeValues.EventDates && viewModel.request.attributeValues.EventDates?.split(',').length > 0 && viewModel.request.attributeValues.NeedsWorship == 'False'">
+      The last possible date to request worship {{twoWeeksTense}} {{twoWeeksBeforeEventStart}}
+    </div>
+  </div>
+</div>
+<div class="row" style="padding-bottom:16px;">
+  <div class="col col-xs-12">
+    <tcc-switch
       v-model="viewModel.request.attributeValues.NeedsOnline"
       :disabled="switchIsDisabled(twoWeeksTense, 'NeedsOnline')"
       :label="viewModel.request.attributes.NeedsOnline.name"

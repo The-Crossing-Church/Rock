@@ -308,8 +308,9 @@ const rules = {
     { cat:  "Event Childcare Registration", section: "Childcare Registration" },
     { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
     { attr: "NeedsRegistration", cat: "Event Registration", section: "Registration" },
-    { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },
-    { attr: "NeedsProductionAccommodations", cat: "Event Publicity", section: "Publicity" },
+    { attr: "NeedsPublicity", cat: "Event Publicity", section: "Publicity" },
+    { attr: "NeedsProductionAccommodations", cat: "Event Production", section: "Production" },
+    { attr: "NeedsWorship", cat: "Event Worship", section: "Worship" },
     { attr: "NeedsWebCalendar", cat: "Event Calendar", section: "Calendar" }
   ],
   validate(request: ContentChannelItemBag | undefined, events: ContentChannelItemBag[], locations: DefinedValueBag[] | undefined, ministries: DefinedValueBag[] | undefined, isSuperUser: boolean | undefined) {

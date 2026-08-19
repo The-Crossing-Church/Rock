@@ -20,8 +20,8 @@ export default defineComponent({
     },
     props: {
       request: {
-          type: Object as PropType<ContentChannelItemBag>,
-          required: false
+        type: Object as PropType<ContentChannelItemBag>,
+        required: false
       },
       original: {
         type: Object as PropType<ContentChannelItemBag>,
