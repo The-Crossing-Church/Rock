@@ -1449,42 +1449,51 @@ namespace Rock.Blocks.Security
         /// <returns><c>true</c> if valid; otherwise, <c>false</c>.</returns>
         private static bool DoesDataIncludeCode( AccountEntryRegisterRequestBox box, AccountEntryInitializationBox config )
         {
-            // Check user input for likely XXS
+            // Check user input for likely XXS.
+            // Any of these values can legitimately be missing from the request -- fields that are
+            // hidden by block configuration (address, email) or by the passwordless registration
+            // flow (username) are still posted, just not populated -- so each one must be checked
+            // for null before it is run through the regular expression.
             Regex regularExpression = new Regex( @"<|>|{|}|:|=" );
-            var isUserNameCode = regularExpression.IsMatch( box.AccountInfo.Username );
-            if ( isUserNameCode )
+
+            // Username is not collected when account info is hidden from the individual.
+            if ( !config.IsAccountInfoHidden && DoesValueIncludeCode( regularExpression, box.AccountInfo?.Username ) )
             {
                 return false;
             }
-            var isFirstNameCode = regularExpression.IsMatch( box.PersonInfo.FirstName );
-            if ( isFirstNameCode )
+
+            if ( DoesValueIncludeCode( regularExpression, box.PersonInfo?.FirstName )
+                 || DoesValueIncludeCode( regularExpression, box.PersonInfo?.LastName )
+                 || DoesValueIncludeCode( regularExpression, box.PersonInfo?.Email ) )
             {
                 return false;
             }
-            var isLastNameCode = regularExpression.IsMatch( box.PersonInfo.LastName );
-            if ( isLastNameCode )
+
+            var address = box.PersonInfo?.Address;
+            if ( address != null )
             {
-                return false;
-            }
-            var isEmailCode = regularExpression.IsMatch( box.PersonInfo.Email );
-            if ( isEmailCode )
-            {
-                return false;
-            }
-            if ( box.PersonInfo.Address != null )
-            {
-                var isAddressStreetOneCode = regularExpression.IsMatch( box.PersonInfo.Address.Street1 );
-                var isAddressStreetTwoCode = regularExpression.IsMatch( box.PersonInfo.Address.Street2 );
-                var isAddressCityCode = regularExpression.IsMatch( box.PersonInfo.Address.City );
-                var isAddressStateCode = regularExpression.IsMatch( box.PersonInfo.Address.State );
-                var isAddressZipCode = regularExpression.IsMatch( box.PersonInfo.Address.PostalCode );
-                if ( isAddressStreetOneCode || isAddressStreetTwoCode || isAddressCityCode || isAddressStateCode || isAddressZipCode )
+                if ( DoesValueIncludeCode( regularExpression, address.Street1 )
+                     || DoesValueIncludeCode( regularExpression, address.Street2 )
+                     || DoesValueIncludeCode( regularExpression, address.City )
+                     || DoesValueIncludeCode( regularExpression, address.State )
+                     || DoesValueIncludeCode( regularExpression, address.PostalCode ) )
                 {
                     return false;
                 }
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Determines if a single user-supplied value includes likely code.
+        /// </summary>
+        /// <param name="regularExpression">The regular expression identifying likely code.</param>
+        /// <param name="value">The value to check. May be <c>null</c>.</param>
+        /// <returns><c>true</c> if the value includes likely code; otherwise, <c>false</c>.</returns>
+        private static bool DoesValueIncludeCode( Regex regularExpression, string value )
+        {
+            return value.IsNotNullOrWhiteSpace() && regularExpression.IsMatch( value );
         }
 
         /// <summary>
