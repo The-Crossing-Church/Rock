@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
 using Rock.Model;
 

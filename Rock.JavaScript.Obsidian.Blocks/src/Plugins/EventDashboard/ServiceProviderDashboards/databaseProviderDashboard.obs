@@ -1,0 +1,51 @@
+<script lang="ts">
+import { defineComponent, provide } from "vue"
+import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
+import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
+import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
+import { DatabaseProviderBlockViewModel } from "./databaseProviderDashboardBlockViewModel"
+import { useStore } from "@Obsidian/PageState"
+import { DateTime, Duration } from "luxon"
+import rules from "../../EventForm/Rules/rules"
+
+const store = useStore()
+
+export default defineComponent({
+  name: "EventDashboard.DatabaseProviderDashboard",
+  components: {
+    
+  },
+  setup() {
+    const invokeBlockAction = useInvokeBlockAction();
+    const viewModel = useConfigurationValues<DatabaseProviderBlockViewModel | null>();
+
+    return {
+      viewModel,
+    }
+  },
+  data() {
+    return {
+      rules: rules
+    }
+  },
+  computed: {
+    /** The person currently authenticated */
+    currentPerson(): CurrentPersonBag | null {
+      return store.state.currentPerson
+    },
+  },
+  methods: {
+  },
+  watch: {
+    
+  },
+  mounted() {
+  },
+  template: `
+<v-style>
+@import "/Styles/Blocks/Plugins/eventForm.css";
+</v-style>
+`
+})
+</script>
