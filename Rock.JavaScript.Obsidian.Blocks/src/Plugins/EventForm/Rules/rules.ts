@@ -52,7 +52,7 @@ const rules = {
     }
     return true
   },
-  largeEventSecurity: (attendance: number, needsOps: string, needsSecurity: string, isSuperUser: boolean) => {
+  largeEventSecurity: (attendance: number, needsOps: string, needsSecurity: string, isSuperUser: boolean | undefined) => {
     if(attendance >= 200) {
       if(!isSuperUser) {
         return `Events expecting 200 or more people are required to have security personnel, please ask your ministry's event admin to submit your request`
@@ -395,15 +395,15 @@ const rules = {
           let minStart = submittedDate.plus({weeks: 3})
           let minPubStartDate = minStart.toFormat("yyyy-MM-dd")
           let maxPubStartDate = firstDate.minus({weeks: 3}).toFormat("yyyy-MM-dd")
-          let minPubEndDate = DateTime.fromFormat(request.attributeValues.PublicityStartDate, 'yyyy-MM-dd').plus({weeks: 3}).toFormat("yyyy-MM-dd")
-          let maxPubEndDate = lastDate.toFormat("yyyy-MM-dd")
-          if(this.required(request.attributeValues?.WhyAttend, '') != true ||
-            this.required(request.attributeValues?.TargetAudience, '') != true ||
-            this.required(request.attributeValues?.PublicityStartDate, '') != true ||
-            this.pubStartIsValid(request.attributeValues?.PublicityStartDate, request.attributeValues?.PublicityEndDate, minPubStartDate, maxPubStartDate) != true ||
-            this.required(request.attributeValues?.PublicityEndDate, '') != true ||
-            this.pubEndIsValid(request.attributeValues?.PublicityEndDate, request.attributeValues?.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate) != true ||
-            this.required(request.attributeValues?.PublicityStrategies, '') != true
+          // let minPubEndDate = DateTime.fromFormat(request.attributeValues.PublicityStartDate, 'yyyy-MM-dd').plus({weeks: 3}).toFormat("yyyy-MM-dd")
+          // let maxPubEndDate = lastDate.toFormat("yyyy-MM-dd")
+          if(this.required(request.attributeValues?.WhyAttend, '') != true //||
+            // this.required(request.attributeValues?.TargetAudience, '') != true ||
+            // this.required(request.attributeValues?.PublicityStartDate, '') != true ||
+            // this.pubStartIsValid(request.attributeValues?.PublicityStartDate, request.attributeValues?.PublicityEndDate, minPubStartDate, maxPubStartDate) != true ||
+            // this.required(request.attributeValues?.PublicityEndDate, '') != true ||
+            // this.pubEndIsValid(request.attributeValues?.PublicityEndDate, request.attributeValues?.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate) != true ||
+            // this.required(request.attributeValues?.PublicityStrategies, '') != true
           ) {
             requestIsValid = false
             let idx = invalidSections.indexOf('Publicity')
