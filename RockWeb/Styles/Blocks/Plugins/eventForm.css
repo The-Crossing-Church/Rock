@@ -185,6 +185,9 @@
   align-items: start;
   justify-content: center;
 }
+.row-equal-height > .col > div {
+  width: 100%;
+}
 
 .modal-no-header .modal-header {
   display: none;

@@ -174,7 +174,7 @@ export default defineComponent({
       </div>
     </div>
   </template>
-    
+  
   <div class="row">
     <div v-if="isGymRequested" class="col col-xs-12 col-md-6">
       <tcc-switch
@@ -203,29 +203,6 @@ export default defineComponent({
         id="ddlProductionInventory"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="request.attributeValues.ProductionMicrophones"
-        :attribute="request.attributes.ProductionMicrophones"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="ddlProductionMicrophones"
-      ></rck-field>
-    </div>
-
-    <!--
-    <div class="col col-xs-12">
-      <tcc-validator :name="request.attributes.ProductionTech.key" :rules="[rules.required(request.attributeValues.ProductionTech, request.attributes.ProductionTech.name)]" ref="validators_prodTech">
-        <rck-field
-          v-model="request.attributeValues.ProductionTech"
-          :attribute="request.attributes.ProductionTech"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="ddlProductionTech"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-    -->
   </div>
   <br/>
 </rck-form>

@@ -8,11 +8,14 @@ import Modal from "@Obsidian/Controls/modal.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import FieldTypeEditor from "@Obsidian/Controls/fieldTypeEditor.obs"
+import Toggle from "./toggle"
 
 type RegistrationQuestion = {
   QuestionName: string,
   QuestionFieldType: string,
-  QuestionConfigurationValues: string
+  QuestionConfigurationValues: string,
+  QuestionIsRequired: string,
+  Conditions: string
 }
 
 export default defineComponent({
@@ -24,7 +27,8 @@ export default defineComponent({
     "rck-modal": Modal,
     "rck-btn": RockButton,
     "rck-ddl": DropDownList,
-    "rck-field-type": FieldTypeEditor
+    "rck-field-type": FieldTypeEditor,
+    "tcc-switch": Toggle,
   },
   props: {
     e: {
@@ -79,6 +83,24 @@ export default defineComponent({
               }
             }
           }
+          return attr[0]
+        }
+      }
+      return null
+    },
+    requiredAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "QuestionIsRequired" })
+        if(attr && attr.length > 0) {
+          return attr[0]
+        }
+      }
+      return null
+    },
+    conditionsAttr() {
+      if(this.attrs) {
+        let attr = this.attrs.filter((a: any) => { return a.key == "Conditions" })
+        if(attr && attr.length > 0) {
           return attr[0]
         }
       }
@@ -176,7 +198,7 @@ export default defineComponent({
             config.configurationValues.displaydescription = "True"
           }
           if(val == "College Year") {
-            config.configurationValues.definedtype = "576ff1e2-6225-4565-a16d-230e26167a3d"
+            config.configurationValues.definedtype = "6BBB37B2-40BC-4E19-9BD6-40B52AA43D6F"
           }
         } else {
           config.fieldTypeGuid = val
@@ -248,6 +270,32 @@ export default defineComponent({
       :isFieldTypeReadOnly="true" 
       :attributeGuid="attributeGuid"
     ></rck-field-type>
+  </div>
+  <h4>Additional Configuration</h4>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="newQuestion.QuestionIsRequired"
+        :label="requiredAttr.name"
+        v-if="!readonly"
+        id="boolQuestionIsRequired"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="newQuestion.QuestionIsRequired"
+        :attribute="requiredAttr"
+        :is-edit-mode="false"
+        id="boolQuestionIsRequired"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="newQuestion.Conditions"
+        :attribute="conditionsAttr"
+        :is-edit-mode="true"
+        id="txtConditions"
+      ></rck-field>
+    </div>
   </div>
   <template #customButtons>
     <rck-btn btnType="red" @click="removeQuestion" v-if="selectedIdx >= 0" id="btnDeleteQuestion">Delete</rck-btn>

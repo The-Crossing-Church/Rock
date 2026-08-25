@@ -135,10 +135,32 @@ export default defineComponent({
         }
       }
     },
+    'viewModel.request.attributeValues.NeedsProductionAccommodations': {
+      handler(val) {
+        if(val == 'True' && this.viewModel?.request?.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsSpace = "True"
+        }
+      }
+    },
+    'viewModel.request.attributeValues.NeedsPublicity': {
+      handler(val) {
+        if(val == 'True' && this.viewModel?.request?.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsWebCalendar = "True"
+        }
+      }
+    },
     'viewModel.request.attributeValues.NeedsSpace': {
       handler(val) {
         if(val == 'False' && this.viewModel?.request?.attributeValues) {
           this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
+          this.viewModel.request.attributeValues.NeedsProductionAccommodations = "False"
+        }
+      }
+    },
+    'viewModel.request.attributeValues.NeedsWebCalendar': {
+      handler(val) {
+        if(val == 'False' && this.viewModel?.request?.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsPublicity = "False"
         }
       }
     },

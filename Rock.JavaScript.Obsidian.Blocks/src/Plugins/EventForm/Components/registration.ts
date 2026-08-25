@@ -101,6 +101,40 @@ export default defineComponent({
           }
           return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
         }
+      },
+      separateRegLinkLabel() {
+        if(this.request?.attributeValues) {
+          if(this.request.attributeValues.IsSame == 'False') {
+            return 'Does this occurrence require a separate link?'
+          } else {
+            if(this.request.attributeValues.EventDates) {
+              let dates = this.request.attributeValues.EventDates.split(',')
+              if(dates.length > 1) {
+                return 'Does each occurrence of this event require a separate link?'
+              }
+            }
+          }
+        }
+        return this.e?.attributes?.EventNeedsSeparateLink?.name
+      },
+      separateLinksValid() {
+        let isValid = false
+        if(this.request?.attributeValues) {
+          if(this.request.attributeValues.IsSame == 'False') {
+            isValid = true
+            if(this.refName == "reg_0") {
+              isValid = false
+            }
+          } else {
+            if(this.request.attributeValues.EventDates) {
+              let dates = this.request.attributeValues.EventDates.split(',')
+              if(dates.length > 1) {
+                isValid = true
+              }
+            }
+          }
+        }
+        return isValid
       }
     },
     methods: {
@@ -223,138 +257,10 @@ export default defineComponent({
     template: `
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.RegistrationStartDate.key" :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
-        <tcc-date-pkr
-          :label="e.attributes.RegistrationStartDate.name"
-          v-model="e.attributeValues.RegistrationStartDate"
-          :min="earliestDate"
-          id="dateRegistrationStartDate"
-        ></tcc-date-pkr>
-      </tcc-validator>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.RegistrationStartDate"
-        :attribute="e.attributes.RegistrationStartDate"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="dateRegistrationStartDate"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.RegistrationFeeType.key" :rules="[rules.required(e.attributeValues.RegistrationFeeType, e.attributes.RegistrationFeeType.name)]" ref="validators_feetype">
-        <rck-field
-          v-model="e.attributeValues.RegistrationFeeType"
-          :attribute="e.attributes.RegistrationFeeType"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="ddlRegistrationFeeType"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-  </div>
-  <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.RegistrationFeeBudgetMinistry.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
-        <rck-field
-          v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
-          :attribute="e.attributes.RegistrationFeeBudgetMinistry"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="ddlRegistrationFeeBudgetMinistry"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.RegistrationFeeBudgetLine.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
-        <rck-field
-          v-model="e.attributeValues.RegistrationFeeBudgetLine"
-          :attribute="e.attributes.RegistrationFeeBudgetLine"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="ddlRegistrationFeeBudgetLine"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-  </div>
-  <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
-      <tcc-validator :name="e.attributes.IndividualRegistrationFee.key" :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
-        <rck-field
-          v-model="e.attributeValues.IndividualRegistrationFee"
-          :attribute="e.attributes.IndividualRegistrationFee"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="txtIndividualRegistrationFee"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Couple')">
-      <tcc-validator :name="e.attributes.CoupleRegistrationFee.key" :rules="[rules.required(e.attributeValues.CoupleRegistrationFee, e.attributes.CoupleRegistrationFee.name)]" ref="validators_couple">
-        <rck-field
-          v-model="e.attributeValues.CoupleRegistrationFee"
-          :attribute="e.attributes.CoupleRegistrationFee"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="txtCoupleRegistrationFee"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Online')">
-      <tcc-validator :name="e.attributes.OnlineRegistrationFee.key" :rules="[rules.required(e.attributeValues.OnlineRegistrationFee, e.attributes.OnlineRegistrationFee.name)]" ref="validators_online">
-        <rck-field
-          v-model="e.attributeValues.OnlineRegistrationFee"
-          :attribute="e.attributes.OnlineRegistrationFee"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="OnlineRegistrationFee"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-  </div>
-  <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs" :readonly="readonly"></tcc-discount>
-  <div class="row">
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.RegistrationEndDate.key" :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
-        <tcc-date-pkr
-          :label="e.attributes.RegistrationEndDate.name"
-          v-model="e.attributeValues.RegistrationEndDate"
-          :min="earliestDate"
-          id="dateRegistrationEndDate"
-        ></tcc-date-pkr>
-      </tcc-validator>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.RegistrationEndDate"
-        :attribute="e.attributes.RegistrationEndDate"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="dateRegistrationEndDate"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.RegistrationEndTime.key" :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
-        <tcc-time 
-          :label="e.attributes.RegistrationEndTime.name"
-          v-model="e.attributeValues.RegistrationEndTime"
-          id="TimeRegistrationEndTime"
-        ></tcc-time>
-      </tcc-validator>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.RegistrationEndTime"
-        :attribute="e.attributes.RegistrationEndTime"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="timeRegistrationEndTime"
-      ></rck-field>
-    </div>
-  </div>
-  <div class="row mt-2">
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-6" v-if="separateLinksValid">
       <tcc-switch
         v-model="e.attributeValues.EventNeedsSeparateLink"
-        :label="e.attributes.EventNeedsSeparateLink.name"
+        :label="separateRegLinkLabel"
         v-if="!readonly"
         id="boolEventNeedsSeparateLink"
       ></tcc-switch>
@@ -367,128 +273,260 @@ export default defineComponent({
         id="boolEventNeedsSeparateLink"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsShortLink"
-        :label="e.attributes.NeedsShortLink.name"
-        v-if="!readonly"
-        id="boolNeedsShortLink"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.NeedsShortLink"
-        :attribute="e.attributes.NeedsShortLink"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolNeedsShortLink"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
-        <rck-field
-          v-model="e.attributeValues.MaxRegistrants"
-          :attribute="e.attributes.MaxRegistrants"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="txtMaxRegistrants"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="needsAdditionalRegQuestions"
-        label="All registrations will ask for Name, DOB, Gender, Email, Phone Number, and Agape. Do you need to ask your registrants any other questions?"
-        v-if="!readonly"
-        id="boolNeedsAddReg"
-      ></tcc-switch>
-    </div>
   </div>
-  <tcc-reg-questions v-if="needsAdditionalRegQuestions == 'True'" :e="e" :attrs="regAttrs" :readonly="readonly"></tcc-reg-questions>
-  <br/>
-  <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
-  <div class="row">
-    <div class="col col-xs-12">
-      <tcc-validator :name="e.attributes.RegistrationConfirmationEmailSender.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
-        <rck-field
-          v-model="e.attributeValues.RegistrationConfirmationEmailSender"
-          :attribute="e.attributes.RegistrationConfirmationEmailSender"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="txtRegistrationConfirmationEmailSender"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col col-xs-12">
-      <tcc-validator :rules="[]" ref="validators_email">
-        <rck-field
-          v-model="e.attributeValues.RegistrationConfirmationEmailFromAddress"
-          :attribute="e.attributes.RegistrationConfirmationEmailFromAddress"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="txtRegistrationConfirmationEmailFromAddress"
-        ></rck-field>
-        <div class="input-hint rock-hint">If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here</div>
-      </tcc-validator>
-    </div>
-  </div>
-  <div class="row mb-2">
-    <div class="col col-xs-12">
-      <tcc-validator :name="e.attributes.RegistrationConfirmationEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
-        <rck-field
-          v-model="e.attributeValues.RegistrationConfirmationEmailAdditionalDetails"
-          :attribute="e.attributes.RegistrationConfirmationEmailAdditionalDetails"
-          :is-edit-mode="!readonly"
-          :showEmptyValue="true"
-          id="txtRegistrationConfirmationEmailAdditionalDetails"
-        ></rck-field>
-      </tcc-validator>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col col-xs-12">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsReminderEmail"
-        :label="e.attributes.NeedsReminderEmail.name"
-        v-if="!readonly"
-        id="boolNeedsReminderEmail"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.NeedsReminderEmail"
-        :attribute="e.attributes.NeedsReminderEmail"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolNeedsReminderEmail"
-      ></rck-field>
-    </div>
-  </div>
-  <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
+  <template v-if="!separateLinksValid || e.attributeValues.EventNeedsSeparateLink == 'True' || request.attributeValues.IsSame == 'True'">
     <div class="row">
-      <div class="col col-xs-12">
-        <tcc-validator :name="e.attributes.RegistrationReminderEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.RegistrationStartDate.key" :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
+          <tcc-date-pkr
+            :label="e.attributes.RegistrationStartDate.name"
+            v-model="e.attributeValues.RegistrationStartDate"
+            :min="earliestDate"
+            id="dateRegistrationStartDate"
+          ></tcc-date-pkr>
+        </tcc-validator>
+        <rck-field
+          v-else
+          v-model="e.attributeValues.RegistrationStartDate"
+          :attribute="e.attributes.RegistrationStartDate"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="dateRegistrationStartDate"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.RegistrationFeeType.key" :rules="[rules.required(e.attributeValues.RegistrationFeeType, e.attributes.RegistrationFeeType.name)]" ref="validators_feetype">
           <rck-field
-            v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
-            :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+            v-model="e.attributeValues.RegistrationFeeType"
+            :attribute="e.attributes.RegistrationFeeType"
             :is-edit-mode="!readonly"
             :showEmptyValue="true"
-            id="txtRegistrationReminderEmailAdditionalDetails"
+            id="ddlRegistrationFeeType"
           ></rck-field>
         </tcc-validator>
       </div>
     </div>
-    <div class="row mb-2">
+    <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
       <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.RegistrationFeeBudgetMinistry.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
+          <rck-field
+            v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
+            :attribute="e.attributes.RegistrationFeeBudgetMinistry"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="ddlRegistrationFeeBudgetMinistry"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.RegistrationFeeBudgetLine.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
+          <rck-field
+            v-model="e.attributeValues.RegistrationFeeBudgetLine"
+            :attribute="e.attributes.RegistrationFeeBudgetLine"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="ddlRegistrationFeeBudgetLine"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
+      <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
+        <tcc-validator :name="e.attributes.IndividualRegistrationFee.key" :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
+          <rck-field
+            v-model="e.attributeValues.IndividualRegistrationFee"
+            :attribute="e.attributes.IndividualRegistrationFee"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtIndividualRegistrationFee"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Couple')">
+        <tcc-validator :name="e.attributes.CoupleRegistrationFee.key" :rules="[rules.required(e.attributeValues.CoupleRegistrationFee, e.attributes.CoupleRegistrationFee.name)]" ref="validators_couple">
+          <rck-field
+            v-model="e.attributeValues.CoupleRegistrationFee"
+            :attribute="e.attributes.CoupleRegistrationFee"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtCoupleRegistrationFee"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Online')">
+        <tcc-validator :name="e.attributes.OnlineRegistrationFee.key" :rules="[rules.required(e.attributeValues.OnlineRegistrationFee, e.attributes.OnlineRegistrationFee.name)]" ref="validators_online">
+          <rck-field
+            v-model="e.attributeValues.OnlineRegistrationFee"
+            :attribute="e.attributes.OnlineRegistrationFee"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="OnlineRegistrationFee"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs" :readonly="readonly"></tcc-discount>
+    <div class="row">
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.RegistrationEndDate.key" :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
+          <tcc-date-pkr
+            :label="e.attributes.RegistrationEndDate.name"
+            v-model="e.attributeValues.RegistrationEndDate"
+            :min="earliestDate"
+            id="dateRegistrationEndDate"
+          ></tcc-date-pkr>
+        </tcc-validator>
         <rck-field
-          v-model="e.attributeValues.ReminderEmailSendDate"
-          :attribute="e.attributes.ReminderEmailSendDate"
-          :is-edit-mode="!readonly"
+          v-else
+          v-model="e.attributeValues.RegistrationEndDate"
+          :attribute="e.attributes.RegistrationEndDate"
+          :is-edit-mode="false"
           :showEmptyValue="true"
-          id="dateReminderEmailSendDate"
+          id="dateRegistrationEndDate"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.RegistrationEndTime.key" :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
+          <tcc-time 
+            :label="e.attributes.RegistrationEndTime.name"
+            v-model="e.attributeValues.RegistrationEndTime"
+            id="TimeRegistrationEndTime"
+          ></tcc-time>
+        </tcc-validator>
+        <rck-field
+          v-else
+          v-model="e.attributeValues.RegistrationEndTime"
+          :attribute="e.attributes.RegistrationEndTime"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="timeRegistrationEndTime"
         ></rck-field>
       </div>
     </div>
+    <div class="row mt-2">
+      <div class="col col-xs-12 col-md-6">
+        <tcc-switch
+          v-model="e.attributeValues.NeedsShortLink"
+          :label="e.attributes.NeedsShortLink.name"
+          v-if="!readonly"
+          id="boolNeedsShortLink"
+        ></tcc-switch>
+        <rck-field
+          v-else
+          v-model="e.attributeValues.NeedsShortLink"
+          :attribute="e.attributes.NeedsShortLink"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="boolNeedsShortLink"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
+          <rck-field
+            v-model="e.attributeValues.MaxRegistrants"
+            :attribute="e.attributes.MaxRegistrants"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtMaxRegistrants"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-switch
+          v-model="needsAdditionalRegQuestions"
+          label="All registrations will ask for Name, DOB, Gender, Email, Phone Number, and Agape. Do you need to ask your registrants any other questions?"
+          v-if="!readonly"
+          id="boolNeedsAddReg"
+        ></tcc-switch>
+      </div>
+    </div>
+    <tcc-reg-questions v-if="needsAdditionalRegQuestions == 'True'" :e="e" :attrs="regAttrs" :readonly="readonly"></tcc-reg-questions>
+    <br/>
+    <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
+    <div class="row">
+      <div class="col col-xs-12">
+        <tcc-validator :name="e.attributes.RegistrationConfirmationEmailSender.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
+          <rck-field
+            v-model="e.attributeValues.RegistrationConfirmationEmailSender"
+            :attribute="e.attributes.RegistrationConfirmationEmailSender"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtRegistrationConfirmationEmailSender"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12">
+        <tcc-validator :rules="[]" ref="validators_email">
+          <rck-field
+            v-model="e.attributeValues.RegistrationConfirmationEmailFromAddress"
+            :attribute="e.attributes.RegistrationConfirmationEmailFromAddress"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtRegistrationConfirmationEmailFromAddress"
+          ></rck-field>
+          <div class="input-hint rock-hint">If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here</div>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row mb-2">
+      <div class="col col-xs-12">
+        <tcc-validator :name="e.attributes.RegistrationConfirmationEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
+          <rck-field
+            v-model="e.attributeValues.RegistrationConfirmationEmailAdditionalDetails"
+            :attribute="e.attributes.RegistrationConfirmationEmailAdditionalDetails"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtRegistrationConfirmationEmailAdditionalDetails"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col col-xs-12">
+        <tcc-switch
+          v-model="e.attributeValues.NeedsReminderEmail"
+          :label="e.attributes.NeedsReminderEmail.name"
+          v-if="!readonly"
+          id="boolNeedsReminderEmail"
+        ></tcc-switch>
+        <rck-field
+          v-else
+          v-model="e.attributeValues.NeedsReminderEmail"
+          :attribute="e.attributes.NeedsReminderEmail"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="boolNeedsReminderEmail"
+        ></rck-field>
+      </div>
+    </div>
+    <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
+      <div class="row">
+        <div class="col col-xs-12">
+          <tcc-validator :name="e.attributes.RegistrationReminderEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+            <rck-field
+              v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
+              :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+              :is-edit-mode="!readonly"
+              :showEmptyValue="true"
+              id="txtRegistrationReminderEmailAdditionalDetails"
+            ></rck-field>
+          </tcc-validator>
+        </div>
+      </div>
+      <div class="row mb-2">
+        <div class="col col-xs-12 col-md-6">
+          <rck-field
+            v-model="e.attributeValues.ReminderEmailSendDate"
+            :attribute="e.attributes.ReminderEmailSendDate"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="dateReminderEmailSendDate"
+          ></rck-field>
+        </div>
+      </div>
+    </template>
   </template>
   <h4 class="text-accent">Check-in Information</h4>
   <div class="row mb-2">

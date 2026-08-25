@@ -1041,9 +1041,6 @@ export default defineComponent({
         //Add Publicity to Requested Resources List
         if(idx < 0) {
           this.resources.push('Publicity')
-          if(this.viewModel?.request?.attributeValues) {
-            this.viewModel.request.attributeValues.NeedsWebCalendar = 'True'
-          }
         }
       }
     },

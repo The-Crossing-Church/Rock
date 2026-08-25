@@ -33,7 +33,8 @@ export default defineComponent({
   data() {
     return {
       rules: rules,
-      errors: [] as Record<string, string>[]
+      errors: [] as Record<string, string>[],
+      needsCustomSong: 'False'
     }
   },
   computed: {
@@ -58,6 +59,13 @@ export default defineComponent({
         this.$emit("validation-change", { ref: this.refName, errors: val})
       },
       deep: true
+    },
+    'request.attributeValues.CustomWorshipSongTitle': {
+      handler(val) {
+        if(val) {
+          this.needsCustomSong = 'True'
+        }
+      }
     }
   },
   mounted() {
@@ -67,14 +75,32 @@ export default defineComponent({
   },
   template: `
 <rck-form ref="form" @validationChanged="validationChange">
-  <div class="row">
+  <div class="row row-equal-height">
     <div class="col col-xs-12 col-md-6">
       <rck-field
-        v-model="request.attributeValues.NumberOfMusiciansBudgeted"
-        :attribute="request.attributes.NumberOfMusiciansBudgeted"
+        v-model="request.attributeValues.NumberOfMusiciansDesired"
+        :attribute="request.attributes.NumberOfMusiciansDesired"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
-        id="txtNumberOfMusiciansBudgeted"
+        id="txtNumberOfMusiciansDesired"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <rck-field
+        v-model="request.attributeValues.AmountBudgetedForMusicians"
+        :attribute="request.attributes.AmountBudgetedForMusicians"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
+        id="txtAmountBudgetedForMusicians"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="request.attributeValues.WorshipLeaderRequest"
+        :attribute="request.attributes.WorshipLeaderRequest"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
+        id="txtWorshipLeaderRequest"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
@@ -94,13 +120,30 @@ export default defineComponent({
         id="timePublicArrivalTime"
       ></rck-field>
     </div>
-    <div class="col col-xs-12">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="request.attributeValues.HasGuestMusician"
+        :label="request.attributes.HasGuestMusician.name"
+        style="margin-top: 22px;"
+        v-if="!readonly"
+        id="boolHasGuestMusician"
+      ></tcc-switch>
       <rck-field
-        v-model="request.attributeValues.WorshipLeaderRequest"
-        :attribute="request.attributes.WorshipLeaderRequest"
+        v-else
+        v-model="request.attributeValues.HasGuestMusician"
+        :attribute="request.attributes.HasGuestMusician"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolHasGuestMusician"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.HasGuestMusician == 'True'">
+      <rck-field
+        v-model="request.attributeValues.GuestMusicianInstrument"
+        :attribute="request.attributes.GuestMusicianInstrument"
         :is-edit-mode="!readonly"
         :showEmptyValue="true"
-        id="txtWorshipLeaderRequest"
+        id="txtGuestMusicianInstrument"
       ></rck-field>
     </div>
   </div>
@@ -142,6 +185,43 @@ export default defineComponent({
           :is-edit-mode="!readonly"
           :showEmptyValue="true"
           id="ddlWorshipSongs"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-switch
+          v-model="needsCustomSong"
+          label="Would the family like a song not on the provided list?"
+          hint="Due to time constraints, our worship team can only learn one new song for any funeral"
+          style="margin-top: 22px;"
+          v-if="!readonly"
+          id="boolneedsCustomSong"
+        ></tcc-switch>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="needsCustomSong == 'True'">
+        <rck-field
+          v-model="request.attributeValues.CustomWorshipSongTitle"
+          :attribute="request.attributes.CustomWorshipSongTitle"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtCustomWorshipSongTitle"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="needsCustomSong == 'True'">
+        <rck-field
+          v-model="request.attributeValues.CustomWorshipSongArtist"
+          :attribute="request.attributes.CustomWorshipSongArtist"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtCustomWorshipSongArtist"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="needsCustomSong == 'True'">
+        <rck-field
+          v-model="request.attributeValues.CustomWorshipSongLink"
+          :attribute="request.attributes.CustomWorshipSongLink"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtCustomWorshipSongLink"
         ></rck-field>
       </div>
       <div class="col col-xs-12 col-md-6">
