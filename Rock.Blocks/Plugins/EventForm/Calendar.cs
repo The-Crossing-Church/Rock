@@ -672,7 +672,7 @@ FROM (
                                                     NeedsChildcareCatering,
                                                     NeedsOps,
                                                     NeedsProduction,
-                                                    NeedsWorship,
+                                                    CAST(IIF(NeedsWorship IS NULL, 0, NeedsWorship) AS BIT) AS NeedsWorship,
                                                     IsSame,
                                                     MinistryContact,
                                                     Ministry
