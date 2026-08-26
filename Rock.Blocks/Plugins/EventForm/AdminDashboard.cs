@@ -1869,7 +1869,8 @@ namespace Rock.Blocks.Plugins.EventDashboard
             string subject = p.FullName + " Has Added a Comment to " + item.Title;
             string message = "<p>This comment has been added to your request, " + item.Title + "</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>" +
+                "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
             var header = attributesCache.GetValue( "EmailHeader" );
             var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;
@@ -1922,6 +1923,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                     "</tr>" +
                 "</table>";
             }
+            message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
             var header = attributesCache.GetValue( "EmailHeader" );
             var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;
@@ -2048,6 +2050,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         "<td></td>" +
                     "</tr>" +
                 "</table>";
+            message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
             var header = attributesCache.GetValue( "EmailHeader" );
             var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;

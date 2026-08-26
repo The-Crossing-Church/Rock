@@ -1199,6 +1199,7 @@ namespace Rock.Blocks.Plugins.EventForm
             string message = "<p>This comment has been added to " + p.FullName + "'s request:</p>" +
                 "<blockquote>" + comment.Content + "</blockquote><br/>" +
                 "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+            message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
             var header = attributeCache.GetValue( "EmailHeader" );
             var footer = attributeCache.GetValue( "EmailFooter" );
             message = header + message + footer;
@@ -1521,6 +1522,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         "<td></td>" +
                     "</tr>" +
                 "</table>";
+            message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
 
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
@@ -1674,6 +1676,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         "<td></td>" +
                     "</tr>" +
                 "</table>";
+            message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
             RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( p, new Dictionary<string, object>() );
