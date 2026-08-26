@@ -79,6 +79,7 @@ export default defineComponent({
                              .replaceAll('&', 'and')
                              .replaceAll(':', '').replaceAll('|', '')
                              .replaceAll('*', '')
+                             .replaceAll("'", '').replaceAll('"', '')
       }
       return ''
     }
@@ -165,13 +166,13 @@ export default defineComponent({
           <i class="mr-1 fas fa-utensils"></i> Catering
         </tcc-chip>
         <tcc-chip v-if="event.needsChildcare" :disabled="true">
-          <i class="mr-1 fas fa-child"></i> Childcare
+          <i class="mr-1 ti ti-baby-carriage"></i> Childcare
         </tcc-chip>
         <tcc-chip v-if="event.needsChildcareCatering" :disabled="true">
           <i class="mr-1 fas fa-pizza-slice"></i> Childcare Catering
         </tcc-chip>
         <tcc-chip v-if="event.needsOnline" :disabled="true">
-          <i class="mr-1 fas fa-child"></i> Zoom
+          <i class="mr-1 ti ti-device-desktop"></i> Zoom
         </tcc-chip>
         <tcc-chip v-if="event.needsPublicity" :disabled="true">
           <i class="mr-1 fas fa-bullhorn"></i> Publicity
@@ -186,7 +187,10 @@ export default defineComponent({
           <i class="mr-1 fas fa-calendar"></i> Web Calendar
         </tcc-chip>
         <tcc-chip v-if="event.needsProduction" :disabled="true">
-          <i class="mr-1 fas fa-music"></i> Production
+          <i class="mr-1 ti ti-adjustments"></i> Production
+        </tcc-chip>
+        <tcc-chip v-if="event.needsWorship" :disabled="true">
+          <i class="mr-1 ti ti-microphone-2"></i> Worship
         </tcc-chip>
       </div>
     </div>

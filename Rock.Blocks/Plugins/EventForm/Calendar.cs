@@ -54,7 +54,8 @@ namespace Rock.Blocks.Plugins.EventCalendar
     [TextField( "NeedsChildcareCatering", "Attribute Key for NeedsChildcareCatering", key: AttributeKey.NeedsChildcareCateringAttrKey, defaultValue: "NeedsChildCareCatering", category: "Attributes", order: 18 )]
     [TextField( "NeedsOps", "Attribute Key for NeedsOps", key: AttributeKey.NeedsOpsAttrKey, defaultValue: "NeedsOpsAccommodations", category: "Attributes", order: 19 )]
     [TextField( "NeedsProduction", "Attribute Key for NeedsProduction", key: AttributeKey.NeedsProductionAttrKey, defaultValue: "NeedsProductionAccommodations", category: "Attributes", order: 20 )]
-    [TextField( "Infrastructure Space", "Attribute Key for Infrastructure Space", key: AttributeKey.InfrstructureSpaceAttrKey, defaultValue: "InfrastructureSpace", category: "Attributes", order: 21 )]
+    [TextField( "NeedsWorship", "Attribute Key for NeedsWorshipAttrKey", key: AttributeKey.NeedsWorshipAttrKey, defaultValue: "NeedsWorship", category: "Attributes", order: 21 )]
+    [TextField( "Infrastructure Space", "Attribute Key for Infrastructure Space", key: AttributeKey.InfrstructureSpaceAttrKey, defaultValue: "InfrastructureSpace", category: "Attributes", order: 22 )]
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
 
     #endregion Block Attributes
@@ -100,6 +101,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
             public const string NeedsChildcareCateringAttrKey = "NeedsChildcareCateringAttrKey";
             public const string NeedsOpsAttrKey = "NeedsOpsAttrKey";
             public const string NeedsProductionAttrKey = "NeedsProductionAttrKey";
+            public const string NeedsWorshipAttrKey = "NeedsWorshipAttrKey";
             public const string InfrstructureSpaceAttrKey = "InfrstructureSpaceAttrKey";
             public const string Rooms = "Rooms";
             public const string StartBuffer = "StartBuffer";
@@ -138,6 +140,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
         private Rock.Model.Attribute NeedsChildcareCateringAttr { get; set; }
         private Rock.Model.Attribute NeedsOpsAttr { get; set; }
         private Rock.Model.Attribute NeedsProductionAttr { get; set; }
+        private Rock.Model.Attribute NeedsWorshipAttr { get; set; }
         private DefinedType LocationDT { get; set; }
         private DefinedType MinistryDT { get; set; }
         private List<DefinedValue> Locations { get; set; }
@@ -384,6 +387,11 @@ namespace Rock.Blocks.Plugins.EventCalendar
             {
                 NeedsProductionAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsProductionAttrKey );
             }
+            string needsWorshipAttrKey = GetAttributeValue( AttributeKey.NeedsWorshipAttrKey );
+            if ( !String.IsNullOrEmpty( needsWorshipAttrKey ) )
+            {
+                NeedsWorshipAttr = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == needsWorshipAttrKey );
+            }
 
             Guid locationGuid = Guid.Empty;
             if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
@@ -448,6 +456,7 @@ namespace Rock.Blocks.Plugins.EventCalendar
                     new SqlParameter( "@needsChildcareCateringAttrId", NeedsChildcareCateringAttr.Id ),
                     new SqlParameter( "@needsOpsAttrId", NeedsOpsAttr.Id ),
                     new SqlParameter( "@needsProductionAttrId", NeedsProductionAttr.Id ),
+                    new SqlParameter( "@needsWorshipAttrId", NeedsWorshipAttr.Id ),
                     new SqlParameter( "@startTimeAttrId", StartTimeAttr.Id ),
                     new SqlParameter( "@startBufferAttrId", StartBufferAttr.Id ),
                     new SqlParameter( "@endTimeAttrId", EndTimeAttr.Id ),
@@ -492,6 +501,7 @@ SELECT ParentId AS 'parentId',
        NeedsChildcareCatering AS 'needsChildcareCatering',
        NeedsOps AS 'needsOps',
        NeedsProduction AS 'needsProduction',
+       NeedsWorship AS 'needsWorship',
        MinistryContact AS 'contact',
        Ministry AS 'ministry',
        InfrastructureSpaces AS 'infrastructureSpaces'
@@ -526,6 +536,7 @@ FROM (
                 NeedsChildcareCatering,
                 NeedsOps,
                 NeedsProduction,
+                NeedsWorship,
                 MinistryContact,
                 Ministry,
                 InfrastructureSpaces
@@ -560,6 +571,7 @@ FROM (
                          NeedsChildcareCatering,
                          NeedsOps,
                          NeedsProduction,
+                         NeedsWorship,
                          MinistryContact,
                          Ministry,
                          InfrastructureSpaces
@@ -593,6 +605,7 @@ FROM (
                                   NeedsChildcareCatering,
                                   NeedsOps,
                                   NeedsProduction,
+                                  NeedsWorship,
                                   MinistryContact,
                                   Ministry,
                                   RoomGuids,
@@ -620,6 +633,7 @@ FROM (
                                            NeedsChildcareCatering,
                                            NeedsOps,
                                            NeedsProduction,
+                                           NeedsWorship,
                                            MinistryContact,
                                            Ministry,
                                            StartTime,
@@ -658,6 +672,7 @@ FROM (
                                                     NeedsChildcareCatering,
                                                     NeedsOps,
                                                     NeedsProduction,
+                                                    NeedsWorship,
                                                     IsSame,
                                                     MinistryContact,
                                                     Ministry
@@ -758,6 +773,12 @@ FROM (
                                                           WHERE AttributeId = @needsProductionAttrId
                                                             AND EntityId = ParentId
                                                       ) AS needsProduction
+                                                               OUTER APPLY (
+                                                          SELECT ValueAsBoolean AS 'NeedsWorship'
+                                                          FROM AttributeValue
+                                                          WHERE AttributeId = @needsWorshipAttrId
+                                                            AND EntityId = ParentId
+                                                      ) AS needsWorship
                                                                CROSS APPLY (
                                                           SELECT ValueAsBoolean AS 'IsSame'
                                                           FROM AttributeValue
@@ -866,7 +887,7 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
          ModifiedByPersonId, ModifiedByPersonName, NeedsSpace, NeedsOnline,
          NeedsPublicity, NeedsRegistration,
          NeedsCalendar, NeedsCatering, NeedsChildcare, NeedsChildcareCatering,
-         NeedsOps, NeedsProduction, Ministry,
+         NeedsOps, NeedsProduction, NeedsWorship, Ministry,
          MinistryContact, InfrastructureSpaces, Calendar
 ", sqlParams ).ToList();
 
@@ -944,6 +965,7 @@ GROUP BY ParentId, ChildId, Title, RequestStatus, IsSame, EventDate,
             public bool needsChildcareCatering { get; set; }
             public bool needsOps { get; set; }
             public bool needsProduction { get; set; }
+            public bool needsWorship { get; set; }
             public String contact { get; set; }
             public String ministry { get; set; }
             public String infrastructureSpaces { get; set; }
