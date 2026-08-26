@@ -445,6 +445,24 @@ export default defineComponent({
     <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
     <div class="row">
       <div class="col col-xs-12">
+        <tcc-switch
+          v-model="e.attributeValues.NeedsCustomCommContent"
+          :label="e.attributes.NeedsCustomCommContent.name"
+          :hint="e.attributes.NeedsCustomCommContent.description"
+          :persistentHint="true"
+          v-if="!readonly"
+          id="boolNeedsCustomCommContent"
+        ></tcc-switch>
+        <rck-field
+          v-else
+          v-model="e.attributeValues.NeedsCustomCommContent"
+          :attribute="e.attributes.NeedsCustomCommContent"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="boolNeedsCustomCommContent"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12">
         <tcc-validator :name="e.attributes.RegistrationConfirmationEmailSender.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
           <rck-field
             v-model="e.attributeValues.RegistrationConfirmationEmailSender"
@@ -470,7 +488,7 @@ export default defineComponent({
         </tcc-validator>
       </div>
     </div>
-    <div class="row mb-2">
+    <div class="row mb-2" v-if="e.attributeValues.NeedsCustomCommContent == 'True'">
       <div class="col col-xs-12">
         <tcc-validator :name="e.attributes.RegistrationConfirmationEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
           <rck-field
@@ -502,7 +520,7 @@ export default defineComponent({
       </div>
     </div>
     <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
-      <div class="row">
+      <div class="row" v-if="e.attributeValues.NeedsCustomCommContent == 'True'">
         <div class="col col-xs-12">
           <tcc-validator :name="e.attributes.RegistrationReminderEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
             <rck-field

@@ -424,14 +424,28 @@ const rules = {
             }
           }
         }
-        if(request.attributeValues.NeedsProductionAccommodations == 'True') {
-          if(this.required(request.attributeValues?.ProductionTech, '') != true ||
-            this.required(request.attributeValues?.ProductionSetup, '') != true
+        if(request.attributeValues.NeedsProductionAccommodations == 'True' && request.attributeValues.IsExecApproved == 'True') {
+          if(this.required(request.attributeValues?.ProductionLightingNeeds, '') != true ||
+            this.required(request.attributeValues?.ProductionSetup, '') != true ||
+            this.required(request.attributeValues?.PublicArrivalTime, '') != true
           ) {
             requestIsValid = false
             let idx = invalidSections.indexOf('Production')
             if(idx < 0) {
               invalidSections.push('Production')
+            }
+          }
+        }
+        if(request.attributeValues.NeedsWorship == 'True') {
+          if(this.required(request.attributeValues?.NumberOfMusiciansDesired, '') != true ||
+            this.required(request.attributeValues?.AmountBudgetedForMusicians, '') != true ||
+            this.required(request.attributeValues?.WorshipLeaderRequest, '') != true ||
+            this.required(request.attributeValues?.PublicArrivalTime, '') != true
+          ) {
+            requestIsValid = false
+            let idx = invalidSections.indexOf('Worship')
+            if(idx < 0) {
+              invalidSections.push('Worship')
             }
           }
         }

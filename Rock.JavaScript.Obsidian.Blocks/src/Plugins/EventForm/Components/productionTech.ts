@@ -211,8 +211,6 @@ export default defineComponent({
         id="boolGymLightPresets"
       ></rck-field>
     </div>
-  </div>
-  <div class="row">
     <div class="col col-xs-12 col-md-6">
       <rck-field
         v-model="request.attributeValues.ProductionInventory"

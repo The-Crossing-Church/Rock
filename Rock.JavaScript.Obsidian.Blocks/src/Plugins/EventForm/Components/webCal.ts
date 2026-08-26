@@ -4,6 +4,7 @@ import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
+import Toggle from "./toggle"
 import Validator from "./validator"
 import DatePicker from "./datePicker"
 import { DateTime } from "luxon"
@@ -17,6 +18,7 @@ export default defineComponent({
       "rck-form": RockForm,
       "tcc-date-pkr": DatePicker,
       "tcc-validator": Validator,
+      "tcc-switch": Toggle,
     },
     props: {
       request: {
@@ -110,7 +112,7 @@ export default defineComponent({
     },
     template: `
 <rck-form ref="form" @validationChanged="validationChange">
-  <div class="row">
+  <div class="row row-equal-height">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="request.attributes.WebCalendarGoLive.key" :rules="[rules.required(request.attributeValues.WebCalendarGoLive, request.attributes.WebCalendarGoLive.name), rules.dateCannotBeAfterEvent(request.attributeValues.WebCalendarGoLive, lastDate, request.attributes.WebCalendarGoLive.name)]" ref="validators_start" v-if="!readonly">
         <tcc-date-pkr
@@ -128,6 +130,38 @@ export default defineComponent({
         :is-edit-mode="false"
         :showEmptyValue="true"
         id="dateWebCalendarGoLive"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6 pt-3">
+      <tcc-switch
+        v-model="request.attributeValues.DisplayOnPublicCalendar"
+        :label="request.attributes.DisplayOnPublicCalendar.name"
+        v-if="!readonly"
+        id="boolDisplayOnPublicCalendar"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.DisplayOnPublicCalendar"
+        :attribute="request.attributes.DisplayOnPublicCalendar"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolDisplayOnPublicCalendar"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6 pt-3">
+      <tcc-switch
+        v-model="request.attributeValues.NeedsCalendarShortLink"
+        :label="request.attributes.NeedsCalendarShortLink.name"
+        v-if="!readonly"
+        id="boolNeedsCalendarShortLink"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.NeedsCalendarShortLink"
+        :attribute="request.attributes.NeedsCalendarShortLink"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsCalendarShortLink"
       ></rck-field>
     </div>
   </div>

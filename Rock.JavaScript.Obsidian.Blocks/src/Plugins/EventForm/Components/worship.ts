@@ -77,31 +77,37 @@ export default defineComponent({
 <rck-form ref="form" @validationChanged="validationChange">
   <div class="row row-equal-height">
     <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="request.attributeValues.NumberOfMusiciansDesired"
-        :attribute="request.attributes.NumberOfMusiciansDesired"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="txtNumberOfMusiciansDesired"
-      ></rck-field>
+      <tcc-validator :name="request.attributes.NumberOfMusiciansDesired.key" :rules="[rules.required(request.attributeValues.NumberOfMusiciansDesired, request.attributes.NumberOfMusiciansDesired.name)]" ref="validators_numMusicians">
+        <rck-field
+          v-model="request.attributeValues.NumberOfMusiciansDesired"
+          :attribute="request.attributes.NumberOfMusiciansDesired"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtNumberOfMusiciansDesired"
+        ></rck-field>
+      </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <rck-field
-        v-model="request.attributeValues.AmountBudgetedForMusicians"
-        :attribute="request.attributes.AmountBudgetedForMusicians"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="txtAmountBudgetedForMusicians"
-      ></rck-field>
+      <tcc-validator :name="request.attributes.AmountBudgetedForMusicians.key" :rules="[rules.required(request.attributeValues.AmountBudgetedForMusicians, request.attributes.AmountBudgetedForMusicians.name)]" ref="validators_budgetMusician">
+        <rck-field
+          v-model="request.attributeValues.AmountBudgetedForMusicians"
+          :attribute="request.attributes.AmountBudgetedForMusicians"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtAmountBudgetedForMusicians"
+        ></rck-field>
+      </tcc-validator>
     </div>
     <div class="col col-xs-12">
-      <rck-field
-        v-model="request.attributeValues.WorshipLeaderRequest"
-        :attribute="request.attributes.WorshipLeaderRequest"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="txtWorshipLeaderRequest"
-      ></rck-field>
+      <tcc-validator :name="request.attributes.WorshipLeaderRequest.key" :rules="[rules.required(request.attributeValues.WorshipLeaderRequest, request.attributes.WorshipLeaderRequest.name)]" ref="validators_wlRequest">
+        <rck-field
+          v-model="request.attributeValues.WorshipLeaderRequest"
+          :attribute="request.attributes.WorshipLeaderRequest"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtWorshipLeaderRequest"
+        ></rck-field>
+      </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="request.attributes.PublicArrivalTime.key" :rules="[rules.required(request.attributeValues.PublicArrivalTime, request.attributes.PublicArrivalTime.name)]" ref="validators_doors_open" v-if="!readonly">
@@ -118,32 +124,6 @@ export default defineComponent({
         :is-edit-mode="false"
         :showEmptyValue="true"
         id="timePublicArrivalTime"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="request.attributeValues.HasGuestMusician"
-        :label="request.attributes.HasGuestMusician.name"
-        style="margin-top: 22px;"
-        v-if="!readonly"
-        id="boolHasGuestMusician"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="request.attributeValues.HasGuestMusician"
-        :attribute="request.attributes.HasGuestMusician"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolHasGuestMusician"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.HasGuestMusician == 'True'">
-      <rck-field
-        v-model="request.attributeValues.GuestMusicianInstrument"
-        :attribute="request.attributes.GuestMusicianInstrument"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="txtGuestMusicianInstrument"
       ></rck-field>
     </div>
   </div>
@@ -176,6 +156,32 @@ export default defineComponent({
           id="boolHasVisitation"
         ></rck-field>
       </div>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="request.attributeValues.HasGuestMusician"
+        :label="request.attributes.HasGuestMusician.name"
+        style="margin-top: 22px;"
+        v-if="!readonly"
+        id="boolHasGuestMusician"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.HasGuestMusician"
+        :attribute="request.attributes.HasGuestMusician"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolHasGuestMusician"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.HasGuestMusician == 'True'">
+      <rck-field
+        v-model="request.attributeValues.GuestMusicianInstrument"
+        :attribute="request.attributes.GuestMusicianInstrument"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
+        id="txtGuestMusicianInstrument"
+      ></rck-field>
     </div>
     <div class="row">
       <div class="col col-xs-12 col-md-6">
