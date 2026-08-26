@@ -94,7 +94,11 @@ export default defineComponent({
     },
     template: `
 <div>
-  <h4 class="text-accent">Worship Information</h4>
+  <h4 class="text-accent">
+    Worship Information
+    <i v-if="sectionIsValid" class="fa fa-check-circle text-accent ml-2"></i>
+    <i v-else-if="!sectionIsValid" class="fa fa-exclamation-circle text-inprogress ml-2"></i>
+  </h4>
   <div class="row">
     <div class="col col-xs-12 col-md-6" v-for="av in worshipAttrs">
       <template v-if="av.changeValue != ''">
