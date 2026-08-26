@@ -4,6 +4,7 @@ import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import Validator from "./validator"
 import Toggle from "./toggle"
+import TimePicker from "./timePicker"
 import rules from "../Rules/rules"
 
 
@@ -14,6 +15,7 @@ export default defineComponent({
     "rck-form": RockForm,
     "tcc-validator": Validator,
     "tcc-switch": Toggle,
+    "tcc-time": TimePicker,
   },
   props: {
     request: {
@@ -146,6 +148,23 @@ export default defineComponent({
           :is-edit-mode="false"
           :showEmptyValue="true"
           id="boolHasMedia"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsWorship == 'False'">
+        <tcc-validator :name="request.attributes.PublicArrivalTime.key" :rules="[rules.required(request.attributeValues.PublicArrivalTime, request.attributes.PublicArrivalTime.name)]" ref="validators_doors_open" v-if="!readonly">
+          <tcc-time 
+            :label="request.attributes.PublicArrivalTime.name"
+            v-model="request.attributeValues.PublicArrivalTime"
+            id="timePublicArrivalTime"
+          ></tcc-time>
+        </tcc-validator>
+        <rck-field
+          v-else
+          v-model="request.attributeValues.PublicArrivalTime"
+          :attribute="request.attributes.PublicArrivalTime"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="timePublicArrivalTime"
         ></rck-field>
       </div>
     </div>

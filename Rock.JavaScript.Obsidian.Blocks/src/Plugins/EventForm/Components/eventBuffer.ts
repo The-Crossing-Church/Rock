@@ -175,8 +175,7 @@ export default defineComponent({
     ></tcc-time> 
   </div>
 </div>
-<br/>
-<div class="row" >
+<div class="row">
   <div class="col col-xs-6" v-if="setUpTime != ''">
     <rck-lbl>Set-up</rck-lbl> <br/>
     Begins at {{formatTime(setUpTime)}}, {{e.attributeValues.StartBuffer}} minutes before the start of your event.

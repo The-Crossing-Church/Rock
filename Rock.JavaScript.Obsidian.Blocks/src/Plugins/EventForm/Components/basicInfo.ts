@@ -22,78 +22,78 @@ const store = useStore();
 export default defineComponent({
     name: "EventForm.Components.BasicInfo",
     components: {
-        "tcc-chip": Chip,
-        "tcc-switch": Toggle,
-        "tcc-time": TimePicker,
-        "tcc-date": DatePicker,
-        "tcc-buffer": EventBuffer,
-        "tcc-validator": Validator,
-        "tcc-comment": AddComment,
-        "rck-form": RockForm,
-        "rck-field": RockField,
-        "rck-form-field": RockFormField,
-        "rck-lbl": RockLabel,
-        "rck-text": TextBox
+      "tcc-chip": Chip,
+      "tcc-switch": Toggle,
+      "tcc-time": TimePicker,
+      "tcc-date": DatePicker,
+      "tcc-buffer": EventBuffer,
+      "tcc-validator": Validator,
+      "tcc-comment": AddComment,
+      "rck-form": RockForm,
+      "rck-field": RockField,
+      "rck-form-field": RockFormField,
+      "rck-lbl": RockLabel,
+      "rck-text": TextBox
     },
     props: {
-        viewModel: {
-            type: Object as PropType<SubmissionFormBlockViewModel>,
-            required: false
-        },
-        minEventDate: String,
-        showValidation: Boolean,
-        refName: String,
-        readonly: Boolean
+      viewModel: {
+        type: Object as PropType<SubmissionFormBlockViewModel>,
+        required: false
+      },
+      minEventDate: String,
+      showValidation: Boolean,
+      refName: String,
+      readonly: Boolean
     },
     setup() {
       
     },
     data() {
-        return {
-          rules: rules,
-          errors: [] as Record<string, string>[]
-        };
+      return {
+        rules: rules,
+        errors: [] as Record<string, string>[]
+      };
     },
     computed: {
-        /** The person currently authenticated */
-        currentPerson(): CurrentPersonBag | null {
-            return store.state.currentPerson;
-        },
-        eventDates() {
-          if (this.viewModel?.request?.attributeValues?.EventDates) {
-            return this.viewModel.request.attributeValues.EventDates.split(',').map((d: any) => d.trim())
-          }
-          return []
-        },
-        ministries(): Array<any> | null {
-            let list = [] as any[]
-            if (this.viewModel) {
-                list = this.viewModel.ministries.map(m => {
-                    return { value: `${m.idKey}`, text: m.value }
-                })
-            }
-            return list
-        },
-        requestType() {
-          if(this.viewModel?.request?.attributeValues?.NeedsSpace == "True"
-            && (this.viewModel?.request?.attributeValues?.NeedsOnline == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsCatering == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsChildCare == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsChildCareCatering == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsRegistration == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsPublicity == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsProductionAccommodations == "False"
-              && this.viewModel?.request?.attributeValues?.NeedsWebCalendar == "False"
-            )
-          ) {
-            return "meeting"
-          }
-          return "event"
-        },
-        labelIsSame() {
-          return `Will each occurrence of your ${this.requestType} have the exact same start and end time? (${this.viewModel?.request?.attributeValues?.IsSame == 'True' ? 'Yes' : 'No'})`
-        },
+      /** The person currently authenticated */
+      currentPerson(): CurrentPersonBag | null {
+        return store.state.currentPerson;
+      },
+      eventDates() {
+        if (this.viewModel?.request?.attributeValues?.EventDates) {
+          return this.viewModel.request.attributeValues.EventDates.split(',').map((d: any) => d.trim())
+        }
+        return []
+      },
+      ministries(): Array<any> | null {
+        let list = [] as any[]
+        if (this.viewModel) {
+          list = this.viewModel.ministries.map(m => {
+            return { value: `${m.idKey}`, text: m.value }
+          })
+        }
+        return list
+      },
+      requestType() {
+        if(this.viewModel?.request?.attributeValues?.NeedsSpace == "True"
+          && (this.viewModel?.request?.attributeValues?.NeedsOnline == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsCatering == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsChildCare == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsChildCareCatering == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsRegistration == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsPublicity == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsProductionAccommodations == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsWebCalendar == "False"
+          )
+        ) {
+          return "meeting"
+        }
+        return "event"
+      },
+      labelIsSame() {
+        return `Will each occurrence of your ${this.requestType} have the exact same start and end time? (${this.viewModel?.request?.attributeValues?.IsSame == 'True' ? 'Yes' : 'No'})`
+      },
     },
     methods: {
       removeDate(date: string) {
@@ -295,9 +295,33 @@ export default defineComponent({
       ></rck-field>
     </div>
   </div>
-  <br/>
   <tcc-buffer v-if="viewModel.request.attributeValues.IsSame == 'True' && (viewModel.isEventAdmin || viewModel.isSuperUser)" :e="viewModel.events[0]" :readonly="readonly"></tcc-buffer>
-  <br/>
+  <template v-if="viewModel.request.attributeValues.IsSame == 'True' && viewModel.request.attributeValues.NeedsSpace == 'False'">
+    <div class="row mt-2">
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="viewModel.events[0].attributeValues.OffsiteLocation.key" :rules="[rules.required(viewModel.events[0].attributeValues.OffsiteLocation, viewModel.events[0].attributeValues.OffsiteLocation.key)]" ref="validators_location">
+          <rck-field
+            v-model="viewModel.events[0].attributeValues.OffsiteLocation"
+            :attribute="viewModel.events[0].attributes.OffsiteLocation"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtOffsiteLocation"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+      <div class="col col-xs-12 col-md-6">
+        <tcc-validator :name="viewModel.events[0].attributeValues.ExpectedAttendance.key" :rules="[rules.required(viewModel.events[0].attributeValues.ExpectedAttendance, viewModel.events[0].attributeValues.ExpectedAttendance.key)]" ref="validators_attendance">
+          <rck-field
+            v-model="viewModel.events[0].attributeValues.ExpectedAttendance"
+            :attribute="viewModel.events[0].attributes.ExpectedAttendance"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtExpectedAttendance"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+  </template>
 </rck-form>
 `
 });

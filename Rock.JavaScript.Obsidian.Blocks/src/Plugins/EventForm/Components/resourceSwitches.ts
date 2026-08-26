@@ -135,6 +135,13 @@ export default defineComponent({
         }
       }
     },
+    'viewModel.request.attributeValues.NeedsChildCare': {
+      handler(val) {
+        if(val == 'True' && this.viewModel?.request?.attributeValues) {
+          this.viewModel.request.attributeValues.NeedsSpace = "True"
+        }
+      }
+    },
     'viewModel.request.attributeValues.NeedsProductionAccommodations': {
       handler(val) {
         if(val == 'True' && this.viewModel?.request?.attributeValues) {
@@ -154,6 +161,8 @@ export default defineComponent({
         if(val == 'False' && this.viewModel?.request?.attributeValues) {
           this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
           this.viewModel.request.attributeValues.NeedsProductionAccommodations = "False"
+          this.viewModel.request.attributeValues.NeedsChildCare = "False"
+          this.viewModel.request.attributeValues.NeedsChildCareCatering = "False"
         }
       }
     },

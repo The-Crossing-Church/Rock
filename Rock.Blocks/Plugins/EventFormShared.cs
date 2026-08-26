@@ -163,6 +163,10 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 message += GetCategoryDetails( "Event Production", "Production Accommodations", item, itemChanges );
             }
+            if ( ( item.AttributeValues["NeedsWorship"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsWorship"].Value == "True" ) )
+            {
+                message += GetCategoryDetails( "Event Worship", "Worship Information", item, itemChanges );
+            }
             if ( !String.IsNullOrEmpty( item.AttributeValues["Notes"].Value ) || ( itemChanges != null && !String.IsNullOrEmpty( itemChanges.AttributeValues["Notes"].Value ) ) )
             {
                 message += "<br/><strong style='color: #6485b3;'>Additional Notes</strong><br/>";

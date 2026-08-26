@@ -1250,7 +1250,32 @@ export default defineComponent({
             <strong>What time will your event begin and end on {{formatDate(e.attributeValues.EventDate)}}?</strong>
             <tcc-event-time :request="viewModel.request" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('time', idx)" @validation-change="validationChange" :ref="getRefName('time', idx)"></tcc-event-time>
             <tcc-buffer v-if="(viewModel.isEventAdmin || viewModel.isSuperUser)" :e="e"></tcc-buffer>
-            <br/>
+            <template v-if="viewModel.request.attributeValues.NeedsSpace == 'False'">
+              <div class="row mt-2">
+                <div class="col col-xs-12 col-md-6">
+                  <tcc-validator :name="e.attributeValues.OffsiteLocation.key" :rules="[rules.required(e.attributeValues.OffsiteLocation, e.attributeValues.OffsiteLocation.key)]" ref="validators_location">
+                    <rck-field
+                      v-model="e.attributeValues.OffsiteLocation"
+                      :attribute="e.attributes.OffsiteLocation"
+                      :is-edit-mode="!readonly"
+                      :showEmptyValue="true"
+                      id="txtOffsiteLocation"
+                    ></rck-field>
+                  </tcc-validator>
+                </div>
+                <div class="col col-xs-12 col-md-6">
+                  <tcc-validator :name="e.attributeValues.ExpectedAttendance.key" :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributeValues.ExpectedAttendance.key)]" ref="validators_attendance">
+                    <rck-field
+                      v-model="e.attributeValues.ExpectedAttendance"
+                      :attribute="e.attributes.ExpectedAttendance"
+                      :is-edit-mode="!readonly"
+                      :showEmptyValue="true"
+                      id="txtExpectedAttendance"
+                    ></rck-field>
+                  </tcc-validator>
+                </div>
+              </div>
+            </template>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsSpace == 'True'">
             <h3 class="text-primary">

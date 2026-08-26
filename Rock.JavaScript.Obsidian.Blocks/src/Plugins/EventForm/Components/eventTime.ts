@@ -101,7 +101,6 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
-  <br/>
 </rck-form>
 `
 });

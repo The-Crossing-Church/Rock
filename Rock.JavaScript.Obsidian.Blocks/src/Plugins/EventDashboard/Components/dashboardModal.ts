@@ -12,6 +12,7 @@ import OpsAccomInfo from "./opsAccomInfo"
 import RegistrationInfo from "./registrationInfo"
 import WebCalInfo from "./calendarInfo"
 import ProdAccomInfo from "./productionAccomInfo"
+import WorshipInfo from "./worshipInfo"
 import PublicityInfo from "./publicityInfo"
 import { DateTime } from "luxon"
 import DatePicker from "../../EventForm/Components/calendar"
@@ -28,6 +29,7 @@ export default defineComponent({
       "tcc-registration": RegistrationInfo,
       "tcc-web-cal": WebCalInfo,
       "tcc-production": ProdAccomInfo,
+      "tcc-worship": WorshipInfo,
       "tcc-publicity": PublicityInfo,
       "tcc-date": DatePicker,
       "tcc-chip": Chip,
@@ -541,6 +543,7 @@ export default defineComponent({
   </rck-panel>
   <tcc-web-cal v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-web-cal>
   <tcc-production v-if="(sections == null || sections?.includes('Production')) && (request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-production>
+  <tcc-worship v-if="(sections == null || sections?.includes('Worship')) && (request.attributeValues.NeedsWorship == 'True' || ( request.changes && request.changes.attributeValues.NeedsWorship == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-worship>
   <tcc-publicity v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-publicity>
   <div class="row" v-if="request.attributeValues.Notes != '' || (request.changes && request.changes.attributeValues.Notes != '')">
     <template v-if="request.changes && request.changes.attributeValues.Notes != request.attributeValues.Notes">
