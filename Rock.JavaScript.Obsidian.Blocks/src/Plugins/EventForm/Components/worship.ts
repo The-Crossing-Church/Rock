@@ -157,33 +157,33 @@ export default defineComponent({
         ></rck-field>
       </div>
     </div>
-    <div class="col col-xs-12 col-md-6">
-      <tcc-switch
-        v-model="request.attributeValues.HasGuestMusician"
-        :label="request.attributes.HasGuestMusician.name"
-        style="margin-top: 22px;"
-        v-if="!readonly"
-        id="boolHasGuestMusician"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="request.attributeValues.HasGuestMusician"
-        :attribute="request.attributes.HasGuestMusician"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolHasGuestMusician"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.HasGuestMusician == 'True'">
-      <rck-field
-        v-model="request.attributeValues.GuestMusicianInstrument"
-        :attribute="request.attributes.GuestMusicianInstrument"
-        :is-edit-mode="!readonly"
-        :showEmptyValue="true"
-        id="txtGuestMusicianInstrument"
-      ></rck-field>
-    </div>
     <div class="row">
+      <div class="col col-xs-12 col-md-6">
+        <tcc-switch
+          v-model="request.attributeValues.HasGuestMusician"
+          :label="request.attributes.HasGuestMusician.name"
+          style="margin-top: 22px;"
+          v-if="!readonly"
+          id="boolHasGuestMusician"
+        ></tcc-switch>
+        <rck-field
+          v-else
+          v-model="request.attributeValues.HasGuestMusician"
+          :attribute="request.attributes.HasGuestMusician"
+          :is-edit-mode="false"
+          :showEmptyValue="true"
+          id="boolHasGuestMusician"
+        ></rck-field>
+      </div>
+      <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.HasGuestMusician == 'True'">
+        <rck-field
+          v-model="request.attributeValues.GuestMusicianInstrument"
+          :attribute="request.attributes.GuestMusicianInstrument"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtGuestMusicianInstrument"
+        ></rck-field>
+      </div>
       <div class="col col-xs-12 col-md-6">
         <rck-field
           v-model="request.attributeValues.WorshipSongs"

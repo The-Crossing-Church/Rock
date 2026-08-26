@@ -102,6 +102,9 @@ export default defineComponent({
     if(this.showValidation) {
       this.validate()
     }
+    if(this.request?.attributeValues && this.isFuneralRequest) {
+      this.request.attributeValues.IsExecApproved = 'True'
+    }
   },
   template: `
 <rck-form ref="form" @validationChanged="validationChange">
@@ -132,7 +135,7 @@ export default defineComponent({
     </div>
   </div>
 
-  <template v-if="request.attributeValues.IsExecApproved == 'True' || isFuneralRequest">
+  <template v-if="request.attributeValues.IsExecApproved == 'True'">
     <div class="row">
       <div class="col col-xs-12 col-md-6">
         <tcc-switch
