@@ -113,6 +113,10 @@ namespace Rock.Blocks.Plugins.EventForm
                 {
                     message += GetCategoryDetails( "Event Space", "Space", events[i], eventChanges );
                 }
+                else
+                {
+                    message += GetCategoryDetails( "Event Offsite", "Offsite", events[i], eventChanges );
+                }
                 if ( ( item.AttributeValues["NeedsCatering"].Value == "True" && itemChanges == null ) || ( itemChanges != null && itemChanges.AttributeValues["NeedsCatering"].Value == "True" ) )
                 {
                     message += GetCategoryDetails( "Event Catering", "Catering", events[i], eventChanges );
