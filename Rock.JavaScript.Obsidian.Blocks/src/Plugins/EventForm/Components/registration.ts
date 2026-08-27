@@ -209,7 +209,7 @@ export default defineComponent({
             this.e.attributeValues.NeedsLabels = 'False'
           }
           if(val == 'True') {
-            this.e.attributeValues.NeedsAttendanceOccurrence = 'False'
+            this.e.attributeValues.NeedsAttendanceOccurrence = 'True'
           }
         }
       },
