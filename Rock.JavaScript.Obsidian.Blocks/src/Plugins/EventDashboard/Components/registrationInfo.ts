@@ -95,6 +95,7 @@ export default defineComponent({
       },
       getRegistrationQuestions(value: string) {
         if(value) {
+          console.log(JSON.parse(value))
           return JSON.parse(value)
         }
         return []
@@ -124,6 +125,9 @@ export default defineComponent({
           return DateTime.fromISO(value).toFormat("f")
         }
         return ""
+      },
+      toggleConditions(id: string) {
+        $(id).collapse('toggle')
       }
     },
     watch: {
@@ -182,7 +186,16 @@ export default defineComponent({
                 <div class="text-red">
                   <ul>
                     <li v-for="(q, qIdx) in getRegistrationQuestions(av.value)" :key="q.QuestionFieldType + '_' + qIdx">
-                      {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
+                      {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }}) 
+                      <i v-if="q.QuestionIsRequired == 'True'" class="ti ti-exclamation-circle"></i>
+                      <i 
+                        v-if="q.Conditions && q.Conditions != ''" 
+                        class="ti ti-bolt hover"
+                        @click="toggleConditions('#condition_' + qIdx)"
+                      ></i>
+                      <div class="collapse" :id="'condition_' + qIdx">
+                        {{ q.Conditions }}
+                      </div>
                     </li>
                   </ul>
                 </div>
@@ -193,6 +206,15 @@ export default defineComponent({
                   <ul>
                     <li v-for="(q, qIdx) in getRegistrationQuestions(av.changeValue)" :key="q.QuestionFieldType + '_' + qIdx">
                       {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
+                      <i v-if="q.QuestionIsRequired == 'True'" class="ti ti-exclamation-circle"></i>
+                      <i 
+                        v-if="q.Conditions && q.Conditions != ''" 
+                        class="ti ti-bolt hover"
+                        @click="toggleConditions('#condition_change_' + qIdx)"
+                      ></i>
+                      <div class="collapse" :id="'condition_change_' + qIdx">
+                        {{ q.Conditions }}
+                      </div>
                     </li>
                   </ul>
                 </div>
@@ -204,6 +226,15 @@ export default defineComponent({
             <ul>
               <li v-for="(q, qIdx) in getRegistrationQuestions(av.value)" :key="q.QuestionFieldType + '_' + qIdx">
                 {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
+                <i v-if="q.QuestionIsRequired == 'True'" class="ti ti-exclamation-circle"></i>
+                <i 
+                  v-if="q.Conditions && q.Conditions != ''" 
+                  class="ti ti-bolt hover"
+                  @click="toggleConditions('#condition_' + qIdx)"
+                ></i>
+                <div class="collapse" :id="'condition_' + qIdx">
+                  {{ q.Conditions }}
+                </div>
               </li>
             </ul>
           </template>

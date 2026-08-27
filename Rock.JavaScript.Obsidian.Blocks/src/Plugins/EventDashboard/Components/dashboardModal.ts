@@ -5,6 +5,7 @@ import Modal from "@Obsidian/Controls/modal.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
 import Panel from "@Obsidian/Controls/panel.obs"
 import SpaceInfo from "./spaceInfo"
+import OffsiteInfo from "./offsiteInfo"
 import OnlineInfo from "./onlineInfo"
 import CateringInfo from "./cateringInfo"
 import ChildcareInfo from "./childcareInfo"
@@ -22,6 +23,7 @@ export default defineComponent({
     name: "EventDashboard.Components.Modal",
     components: {
       "tcc-space": SpaceInfo,
+      "tcc-offsite": OffsiteInfo,
       "tcc-online": OnlineInfo,
       "tcc-catering": CateringInfo,
       "tcc-childcare": ChildcareInfo,
@@ -535,6 +537,7 @@ export default defineComponent({
       </div>
     </div>
     <tcc-space v-if="(sections == null || sections?.includes('Room')) && (request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' ))" :details="ci" :rooms="rooms" :index="idx" :requestValidation="requestValidation"></tcc-space>
+    <tcc-offsite v-else :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-offsite>
     <tcc-catering v-if="(sections == null || sections?.includes('Catering')) && (request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' ))" :details="ci" :drinks="drinks" :needsSpace="needsSpace" :index="idx" :requestValidation="requestValidation"></tcc-catering>
     <tcc-ops v-if="(sections == null || sections?.includes('Extra Resources')) && (request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' ))" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering" :index="idx" :requestValidation="requestValidation"></tcc-ops>
     <tcc-childcare v-if="(sections == null || sections?.includes('Childcare')) && (request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' ))" :details="ci" :needsCatering="needsChildcareCatering" :index="idx" :requestValidation="requestValidation"></tcc-childcare>
