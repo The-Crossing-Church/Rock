@@ -182,6 +182,22 @@ export default defineComponent({
           }
         }
       },
+      'e.attributeValues.NeedsReminderEmail'(val, original) {
+        if(this.e?.attributeValues) {
+          if(val == 'False') {
+            this.e.attributeValues.RegistrationReminderEmailAdditionalDetails = ''
+            this.e.attributeValues.ReminderEmailSendDate = ''
+          }
+        }
+      },
+      'e.attributeValues.NeedsCustomCommContent'(val, original) {
+        if(this.e?.attributeValues) {
+          if(val == 'False') {
+            this.e.attributeValues.RegistrationReminderEmailAdditionalDetails = ''
+            this.e.attributeValues.RegistrationConfirmationEmailAdditionalDetails = ''
+          }
+        }
+      },
       'e.attributeValues.NeedsCheckin'(val, original) {
         if(this.e?.attributeValues) {
           let att = parseInt(this.e.attributeValues.ExpectedAttendance)
@@ -548,23 +564,7 @@ export default defineComponent({
   </template>
   <h4 class="text-accent">Check-in Information</h4>
   <div class="row mb-2">
-    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'True'">
-      <tcc-switch
-        v-model="e.attributeValues.NeedsCheckin"
-        :label="e.attributes.NeedsCheckin.name"
-        v-if="!readonly"
-        id="boolNeedsCheckin"
-      ></tcc-switch>
-      <rck-field
-        v-else
-        v-model="e.attributeValues.NeedsCheckin"
-        :attribute="e.attributes.NeedsCheckin"
-        :is-edit-mode="false"
-        :showEmptyValue="true"
-        id="boolNeedsCheckin"
-      ></rck-field>
-    </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'False'">
+    <div class="col col-xs-12 col-md-6">
       <tcc-switch
         v-model="e.attributeValues.NeedsAttendanceOccurrence"
         :label="e.attributes.NeedsAttendanceOccurrence.name"
@@ -578,6 +578,22 @@ export default defineComponent({
         :is-edit-mode="false"
         :showEmptyValue="true"
         id="boolNeedsAttendanceOccurrence"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsSpace == 'True' && e.attributeValues.NeedsAttendanceOccurrence == 'True'">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsCheckin"
+        :label="e.attributes.NeedsCheckin.name"
+        v-if="!readonly"
+        id="boolNeedsCheckin"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsCheckin"
+        :attribute="e.attributes.NeedsCheckin"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsCheckin"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'True'">
@@ -596,7 +612,7 @@ export default defineComponent({
         id="boolNeedsLabels"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.ExpectedAttendance > 100">
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'True' && e.attributeValues.ExpectedAttendance > 100">
       <tcc-switch
         v-model="e.attributeValues.NeedsDatabaseSupportTeam"
         :label="e.attributes.NeedsDatabaseSupportTeam.name"
@@ -629,7 +645,7 @@ export default defineComponent({
         id="timeDatabaseSupportStartTime"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsCheckin == 'True' || e.attributeValues.NeedsAttendanceOccurrence == 'True'">
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.NeedsAttendanceOccurrence == 'True'">
       <tcc-validator :name="e.attributes.CheckinGroupName.key" :rules="[rules.charLimit(e.attributeValues.CheckinGroupName, 22, 'Check-in group names', true, null), rules.nonASCII(e.attributeValues.CheckinGroupName, 'Check-in group names', true, null)]" ref="validators_checkin_group" v-if="!readonly">
         <rck-field
           v-model="e.attributeValues.CheckinGroupName"
